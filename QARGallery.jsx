@@ -1143,17 +1143,23 @@ Antworte auf Deutsch in 1-2 Sätzen mit einer hilfreichen Erklärung oder Handlu
       ).length : 0;
 
   // ── auth ──
+  const roleScreen = (role) => {
+    if(role==="workshop")     return "workshopDash";
+    if(role==="fleet")        return "fleetDash";
+    if(role==="insurer")      return "insurerDash";
+    if(role==="veranstalter") return "eventsDash";
+    return "dashboard";
+  };
+
   const doRegister = () => {
     if (!authForm.email||!authForm.password||!authForm.name) return toast_("Alle Felder ausfüllen","err");
     if (users[authForm.email]) return toast_("E-Mail bereits vergeben","err");
     const u = { email:authForm.email, password:authForm.password, name:authForm.name,
                 company:authForm.company, role:authForm.role,
-                // workshop gets empty granted vehicles list
                 grantedVehicles: authForm.role==="workshop" ? [] : undefined };
     setUsers(p=>({...p,[u.email]:u}));
     setMe(u);
-    const dest = u.role==="workshop" ? "workshopDash" : u.role==="fleet" ? "fleetDash" : u.role==="insurer" ? "insurerDash" : "dashboard";
-    setScreen(dest);
+    setScreen(roleScreen(u.role));
     toast_("Account erstellt ✓");
   };
 
@@ -1161,8 +1167,7 @@ Antworte auf Deutsch in 1-2 Sätzen mit einer hilfreichen Erklärung oder Handlu
     const u = users[authForm.email];
     if (!u||u.password!==authForm.password) return toast_("Zugangsdaten falsch","err");
     setMe(u);
-    const dest = u.role==="workshop" ? "workshopDash" : u.role==="fleet" ? "fleetDash" : u.role==="insurer" ? "insurerDash" : "dashboard";
-    setScreen(dest);
+    setScreen(roleScreen(u.role));
     toast_(`Willkommen, ${u.name}`);
   };
 
