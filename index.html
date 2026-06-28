@@ -4,40 +4,54 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="theme-color" content="#0a1820"/>
-  <meta name="description" content="QAR.Gallery — Digitale Fahrzeugakte & Veranstaltungsplattform"/>
+  <meta name="description" content="QAR.Gallery — Digitale Fahrzeugakte"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="QAR.Gallery"/>
   <title>QAR.Gallery</title>
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏁</text></svg>"/>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     html,body,#root{height:100%}
     body{background:#0a1820;-webkit-font-smoothing:antialiased}
     #loading{position:fixed;inset:0;background:#0a1820;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999;transition:opacity .4s ease}
-    #loading .logo{font-size:52px;animation:pulse 1.5s ease-in-out infinite}
-    #loading .text{color:#0dcfb4;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;font-family:sans-serif}
-    #loading .sub{color:#2a3d50;font-size:11px;font-family:sans-serif}
+    .logo{font-size:52px;animation:pulse 1.5s ease-in-out infinite}
+    .ltext{color:#0dcfb4;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;font-family:sans-serif}
+    .lsub{color:#2a3d50;font-size:11px;font-family:sans-serif}
     @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.95)}}
   </style>
 </head>
 <body>
   <div id="loading">
     <div class="logo">🏁</div>
-    <div class="text">QAR.Gallery</div>
-    <div class="sub">Lädt…</div>
+    <div class="ltext">QAR.Gallery</div>
+    <div class="lsub">Lädt…</div>
   </div>
   <div id="root"></div>
+
+  <!-- React -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Recharts -->
+  <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+
+  <!-- App (pre-compiled, no Babel needed) -->
   <script src="QARGallery.compiled.js"></script>
+
   <script>
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(React.createElement(QARGallery));
-    const el = document.getElementById('loading');
-    if(el){ el.style.opacity='0'; setTimeout(()=>el.remove(),400); }
+    // UMD exposes QARGallery.default
+    const App = window.QARGallery && window.QARGallery.default
+      ? window.QARGallery.default
+      : window.QARGallery;
+
+    if(!App) {
+      document.getElementById('loading').innerHTML =
+        '<div style="color:#ef4444;font-family:sans-serif;padding:24px">Fehler: App konnte nicht geladen werden.</div>';
+    } else {
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(App));
+      const el = document.getElementById('loading');
+      if(el){ el.style.opacity='0'; setTimeout(()=>el.remove(),400); }
+    }
   </script>
 </body>
 </html>
