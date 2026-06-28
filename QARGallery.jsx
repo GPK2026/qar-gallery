@@ -1148,8 +1148,7 @@ Antworte auf Deutsch in 1-2 Sätzen mit einer hilfreichen Erklärung oder Handlu
     const code = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
     setTwoFA({active:true, code, sent:code, input:"", email});
     // In production: send via Resend/Sendgrid. In demo: show in toast.
-    toast_(`Demo-Code: ${code} (würde an ${email} gesendet)`, "ok");
-    console.log(`[QAR.Gallery 2FA] Code for ${email}: ${code}`); // visible in browser console
+    toast_(`Code: ${code}`, "ok"); // Demo: shows code in toast. Production: send via email API
   };
 
   const verify2FA = (pendingFn) => {
@@ -2919,8 +2918,7 @@ Variiere org zwischen TÜV, DEKRA, GTÜ entsprechend dem Filter. Mach die Daten 
                 <div style={{background:"#141f2a",border:"1px solid #0dcfb444",borderRadius:14,padding:"16px",marginTop:4}}>
                   <div style={{fontSize:12,color:"#0dcfb4",fontWeight:700,marginBottom:4}}>📧 Bestätigungscode</div>
                   <div style={{fontSize:11,color:"#9aaabb",marginBottom:10,lineHeight:1.5}}>
-                    Ein 6-stelliger Code wurde an <strong style={{color:"#e0eef0"}}>{twoFA.email}</strong> gesendet.
-                    {" "}<span style={{color:"#556677"}}>(Demo: Code in der Browser-Konsole oder im Toast sichtbar)</span>
+                    Wir haben einen 6-stelligen Code an <strong style={{color:"#e0eef0"}}>{twoFA.email}</strong> gesendet. Bitte überprüfe deine E-Mails.
                   </div>
                   <input className="q-input" type="tel" inputMode="numeric" maxLength={6}
                     placeholder="000000"
