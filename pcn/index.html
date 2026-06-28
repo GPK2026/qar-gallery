@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0a0a0a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+  <meta name="apple-mobile-web-app-title" content="PCN"/>
+  <title>Porsche Club Nürburgring</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='.85em' x='10' font-size='80'>🏎️</text></svg>"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body,#root{height:100%}
+    body{background:#0a0a0a}
+    #loading{position:fixed;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
+    .l-logo{width:200px;max-width:70%;object-fit:contain;filter:brightness(1.1)}
+    .l-bar{width:120px;height:2px;background:#1a1a1a;border-radius:99px;overflow:hidden}
+    .l-fill{height:100%;background:#e30613;border-radius:99px;animation:fill 2.5s ease forwards}
+    @keyframes fill{0%{width:5%}50%{width:70%}100%{width:95%}}
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <img class="l-logo" src="https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg" alt="PCN" onerror="this.style.display='none'"/>
+    <div class="l-bar"><div class="l-fill"></div></div>
+  </div>
+  <div id="root"></div>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="PCN_MVP.compiled.js"></script>
+  <script>
+    try {
+      const App=(window.PCN_MVP&&window.PCN_MVP.default?window.PCN_MVP.default:window.PCN_MVP;
+      if(!App) throw new Error("App nicht geladen");
+      ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+      const el=document.getElementById('loading');
+      if(el){el.style.opacity='0';setTimeout(()=>el.remove(),500);}
+    } catch(e) {
+      document.getElementById('loading').innerHTML='<div style="color:#e30613;font-family:sans-serif;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div>'+e.message+'</div><button onclick="location.reload()" style="margin-top:16px;background:#e30613;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px">Neu laden</button></div>';
+    }
+  </script>
+</body>
+</html>
