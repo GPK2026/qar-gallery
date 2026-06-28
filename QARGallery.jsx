@@ -5313,7 +5313,7 @@ Variiere org zwischen TÜV, DEKRA, GTÜ entsprechend dem Filter. Mach die Daten 
                     <button className="q-outline sm" onClick={()=>{setPubV(v);setScreen("public");}}>👁 Öffentliche Ansicht</button>
                   </div>
                 </div>
-              </DropSec>
+              </Sec>
               </div>
 
             </div>
@@ -5412,7 +5412,7 @@ Variiere org zwischen TÜV, DEKRA, GTÜ entsprechend dem Filter. Mach die Daten 
                     <div key={l} style={{background:"#1e2d3d",padding:"10px 14px"}}><div style={{fontSize:10,color:"#9aaabb",fontWeight:700,textTransform:"uppercase"}}>{l}</div><div style={{fontSize:13,fontWeight:600,color:"#e0eef0"}}>{val}</div></div>
                   ))}
                 </div>
-              </Sec>
+              </DropSec>
             )}
 
             {/* Claims */}
@@ -5425,7 +5425,7 @@ Variiere org zwischen TÜV, DEKRA, GTÜ entsprechend dem Filter. Mach die Daten 
                     <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:99,background:c.status==="Eingereicht"?"#f59e0b22":"#0dcfb418",color:c.status==="Eingereicht"?"#f59e0b":"#0dcfb4",flexShrink:0}}>{c.status}</span>
                   </div>
                 ))}
-              </Sec>
+              </DropSec>
             )}
 
             {/* Sale */}
