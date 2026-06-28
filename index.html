@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0a1820"/>
+  <meta name="description" content="QAR.Gallery — Digitale Fahrzeugakte & Veranstaltungsplattform"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="QAR.Gallery"/>
+  <title>QAR.Gallery</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json"/>
+
+  <!-- Favicon placeholder -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏁</text></svg>"/>
+
+  <!-- React 18 -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Recharts (charts) -->
+  <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+
+  <!-- jsPDF (PDF export) -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- QR Code -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Babel Standalone (JSX transform) -->
+  <script crossorigin src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; }
+    body {
+      background: #0a1820;
+      font-family: 'Barlow', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    #loading {
+      position: fixed; inset: 0;
+      background: #0a1820;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; z-index: 9999;
+      transition: opacity .3s ease;
+    }
+    #loading .logo {
+      font-size: 48px; animation: pulse 1.5s ease-in-out infinite;
+    }
+    #loading .text {
+      color: #0dcfb4; font-size: 14px; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase;
+      font-family: sans-serif;
+    }
+    #loading .sub {
+      color: #2a3d50; font-size: 11px; font-family: sans-serif;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.95); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading screen -->
+  <div id="loading">
+    <div class="logo">🏁</div>
+    <div class="text">QAR.Gallery</div>
+    <div class="sub">Lädt…</div>
+  </div>
+
+  <div id="root"></div>
+
+  <!-- Load the app -->
+  <script type="text/babel" src="QARGallery.jsx" data-presets="react"></script>
+
+  <script type="text/babel" data-presets="react">
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(QARGallery));
+    // Hide loading screen
+    const el = document.getElementById('loading');
+    if(el) { el.style.opacity = '0'; setTimeout(() => el.remove(), 400); }
+  </script>
+</body>
+</html>
