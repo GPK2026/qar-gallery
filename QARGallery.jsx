@@ -7076,8 +7076,24 @@ function ExpandableKpiGrid({tiles}) {
   );
 }
 
-function FuhrparkDashboard({vehicles,logbook,reminders_={},invoices_,fixedCosts_,toMonthly_,getInvStatus,onBookTuev}){
+function FuhrparkDashboard({vehicles=[],logbook={},reminders_={},invoices_={},fixedCosts_={},toMonthly_,getInvStatus,onBookTuev}){
+  // Safety: toMonthly_ fallback
+  const toMonthly = toMonthly_ || ((amount, interval) => {
+    const a = parseFloat(amount)||0;
+    if(interval==="monatlich") return a;
+    if(interval==="vierteljährlich") return a/3;
+    if(interval==="halbjährlich") return a/6;
+    return a/12;
+  });
   const year=new Date().getFullYear(); const now=new Date();
+  // Early return for empty fleet
+  if(!vehicles || vehicles.length===0) return (
+    <div style={{textAlign:"center",padding:"60px 20px",color:"#9aaabb"}}>
+      <div style={{fontSize:48,marginBottom:16}}>📊</div>
+      <div style={{fontSize:16,fontWeight:700,color:"#e0eef0",marginBottom:8}}>Noch keine Fahrzeuge</div>
+      <div style={{fontSize:13}}>Lege dein erstes Fahrzeug an um die Fuhrpark-Analyse zu sehen.</div>
+    </div>
+  );
   const count=vehicles.length;
   const withWert=vehicles.filter(v=>parseMarktwert(v)>0);
   const gesamtwert=withWert.reduce((s,v)=>s+parseMarktwert(v),0);
@@ -7164,7 +7180,7 @@ function FuhrparkDashboard({vehicles,logbook,reminders_={},invoices_,fixedCosts_
         const allFc=vehicles.flatMap(v=>fixedCosts_[v.id]||[]);
         const paidTotal=allInv.filter(x=>x.status==="Bezahlt"||x.status==="Teilbezahlt").reduce((s,x)=>s+(parseFloat(x.paidAmount||x.amount)||0),0);
         const openTotal=allInv.filter(x=>x.status==="Offen").reduce((s,x)=>s+(parseFloat(x.amount)||0),0);
-        const monthlyFC=allFc.reduce((s,x)=>s+toMonthly_(x.amount,x.interval),0);
+        const monthlyFC=allFc.reduce((s,x)=>s+toMonthly(x.amount,x.interval),0);
         const gesamtkosten=paidTotal+(monthlyFC*12);
 
         // Each tile: { id, icon, label, value, color, detail: [{label,value,sub?,vid?,section?,action?}] }
@@ -7373,7 +7389,7 @@ function FuhrparkDashboard({vehicles,logbook,reminders_={},invoices_,fixedCosts_
           const totalOpen=allInv.filter(x=>x.status==="Offen").reduce((s,x)=>s+(parseFloat(x.amount)||0),0);
           const totalPaid=allInv.filter(x=>x.status==="Bezahlt").reduce((s,x)=>s+(parseFloat(x.amount)||0),0);
           const totalPart=allInv.filter(x=>x.status==="Teilbezahlt").reduce((s,x)=>s+(parseFloat(x.amount)||0)-(parseFloat(x.paidAmount)||0),0);
-          const totalMonthlyFC=allFc.reduce((s,x)=>s+toMonthly_(x.amount,x.interval),0);
+          const totalMonthlyFC=allFc.reduce((s,x)=>s+toMonthly(x.amount,x.interval),0);
           const tTip2={contentStyle:{background:"#1e2d3d",border:"1px solid #2a3d50",borderRadius:8,color:"#e0eef0",fontSize:12}};
           return <>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8,marginBottom:16}}>
