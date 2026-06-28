@@ -1,0 +1,20 @@
+{
+  "name": "QAR.Gallery",
+  "short_name": "QAR.Gallery",
+  "description": "Digitale Fahrzeugakte & Veranstaltungsplattform",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0a1820",
+  "theme_color": "#0a1820",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230a1820' rx='24'/><text y='145' x='20' font-size='140'>🏁</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["automotive", "utilities"],
+  "lang": "de"
+}
