@@ -463,6 +463,7 @@ export default function QARGallery() {
   const [me,           setMe]          = useState(null);
   const [vForm,        setVForm]       = useState(null);
   const [authForm,     setAuthForm]    = useState({email:"",password:"",name:"",company:"",role:"private"});
+  const [twoFA, setTwoFA]                 = useState({active:false, code:"", sent:"", input:"", email:""});
   const [viewV,        setViewV]       = useState(null);
   const [pubV,         setPubV]        = useState(null);
   const [toast,        setToast]       = useState(null);
@@ -1142,6 +1143,24 @@ Antworte auf Deutsch in 1-2 Sätzen mit einer hilfreichen Erklärung oder Handlu
         t.messages.some(m=>m.from!==me.email&&!m.read)
       ).length : 0;
 
+  // ── 2FA ─────────────────────────────────────────────────────────────────────
+  const send2FA = (email) => {
+    const code = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
+    setTwoFA({active:true, code, sent:code, input:"", email});
+    // In production: send via Resend/Sendgrid. In demo: show in toast.
+    toast_(`Demo-Code: ${code} (würde an ${email} gesendet)`, "ok");
+    console.log(`[QAR.Gallery 2FA] Code for ${email}: ${code}`); // visible in browser console
+  };
+
+  const verify2FA = (pendingFn) => {
+    if(twoFA.input.trim() === twoFA.sent) {
+      setTwoFA({active:false,code:"",sent:"",input:"",email:""});
+      pendingFn();
+    } else {
+      toast_("Falscher Code — bitte erneut versuchen","err");
+    }
+  };
+
   // ── auth ──
   const roleScreen = (role) => {
     if(role==="workshop")     return "workshopDash";
@@ -1154,21 +1173,27 @@ Antworte auf Deutsch in 1-2 Sätzen mit einer hilfreichen Erklärung oder Handlu
   const doRegister = () => {
     if (!authForm.email||!authForm.password||!authForm.name) return toast_("Alle Felder ausfüllen","err");
     if (users[authForm.email]) return toast_("E-Mail bereits vergeben","err");
-    const u = { email:authForm.email, password:authForm.password, name:authForm.name,
-                company:authForm.company, role:authForm.role,
-                grantedVehicles: authForm.role==="workshop" ? [] : undefined };
-    setUsers(p=>({...p,[u.email]:u}));
-    setMe(u);
-    setScreen(roleScreen(u.role));
-    toast_("Account erstellt ✓");
+    if(!twoFA.active) { send2FA(authForm.email); return; }
+    verify2FA(()=>{
+      const u = { email:authForm.email, password:authForm.password, name:authForm.name,
+                  company:authForm.company, role:authForm.role,
+                  grantedVehicles: authForm.role==="workshop" ? [] : undefined };
+      setUsers(p=>({...p,[u.email]:u}));
+      setMe(u);
+      setScreen(roleScreen(u.role));
+      toast_("Account erstellt ✓");
+    });
   };
 
   const doLogin = () => {
     const u = users[authForm.email];
     if (!u||u.password!==authForm.password) return toast_("Zugangsdaten falsch","err");
-    setMe(u);
-    setScreen(roleScreen(u.role));
-    toast_(`Willkommen, ${u.name}`);
+    if(!twoFA.active) { send2FA(authForm.email); return; }
+    verify2FA(()=>{
+      setMe(u);
+      setScreen(roleScreen(u.role));
+      toast_(`Willkommen, ${u.name}`);
+    });
   };
 
   const doLogout = () => { setMe(null); setScreen("home"); };
@@ -2888,7 +2913,35 @@ Variiere org zwischen TÜV, DEKRA, GTÜ entsprechend dem Filter. Mach die Daten 
 
               <input className="q-input" type="email" placeholder="E-Mail-Adresse" value={authForm.email} onChange={e=>setAuthForm(p=>({...p,email:e.target.value}))}/>
               <input className="q-input" type="password" placeholder="Passwort" value={authForm.password} onChange={e=>setAuthForm(p=>({...p,password:e.target.value}))}/>
-              <button className="q-cta full" onClick={screen==="login"?doLogin:doRegister}>{screen==="login"?"Anmelden":"Account erstellen"}</button>
+
+              {/* 2FA code input */}
+              {twoFA.active && (
+                <div style={{background:"#141f2a",border:"1px solid #0dcfb444",borderRadius:14,padding:"16px",marginTop:4}}>
+                  <div style={{fontSize:12,color:"#0dcfb4",fontWeight:700,marginBottom:4}}>📧 Bestätigungscode</div>
+                  <div style={{fontSize:11,color:"#9aaabb",marginBottom:10,lineHeight:1.5}}>
+                    Ein 6-stelliger Code wurde an <strong style={{color:"#e0eef0"}}>{twoFA.email}</strong> gesendet.
+                    {" "}<span style={{color:"#556677"}}>(Demo: Code in der Browser-Konsole oder im Toast sichtbar)</span>
+                  </div>
+                  <input className="q-input" type="tel" inputMode="numeric" maxLength={6}
+                    placeholder="000000"
+                    value={twoFA.input}
+                    onChange={e=>setTwoFA(p=>({...p,input:e.target.value.replace(/\D/g,"")}))}
+                    style={{letterSpacing:"0.4em",fontSize:22,textAlign:"center",fontWeight:800}}
+                    autoFocus
+                  />
+                  <button style={{background:"transparent",border:"none",color:"#556677",fontSize:11,cursor:"pointer",marginTop:8,padding:0}}
+                    onClick={()=>{setTwoFA(p=>({...p,active:false,sent:"",input:""}));send2FA(twoFA.email);}}>
+                    Code erneut senden →
+                  </button>
+                </div>
+              )}
+
+              <button className="q-cta full" onClick={screen==="login"?doLogin:doRegister}>
+                {twoFA.active
+                  ? "Code bestätigen ✓"
+                  : screen==="login" ? "Anmelden" : "Account erstellen"
+                }
+              </button>
 
               {/* Workshop code entry */}
               {screen==="login" && me?.role==="workshop" && (
@@ -7636,7 +7689,7 @@ const S = {
   logo:{ fontSize:21, fontWeight:800, cursor:"pointer", letterSpacing:"-0.5px" },
   navChip:{ fontSize:13, color:C.muted },
   badge:{ position:"absolute", top:-6, right:-6, background:"#e03030", color:"#fff", borderRadius:"50%", width:17, height:17, fontSize:10, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center" },
-  main:{ maxWidth:980, margin:"0 auto", padding:"48px 20px 90px" },
+  main:{ maxWidth:980, margin:"0 auto", padding:"20px 14px 90px" },
   wide:{ maxWidth:860, margin:"0 auto" },
   // Hero
   hero:{ textAlign:"center", padding:"52px 20px 44px", maxWidth:700, margin:"0 auto" },
@@ -7663,8 +7716,8 @@ const S = {
   featD:{ fontSize:12, color:C.muted, lineHeight:1.5 },
   b2bBanner:{ display:"flex", alignItems:"center", gap:24, background:"linear-gradient(135deg,#1a3a4a,#1a2d3e)", border:`1px solid ${C.teal}33`, borderRadius:20, padding:"26px 30px", marginTop:36, flexWrap:"wrap" },
   // Auth
-  authWrap:{ display:"flex", justifyContent:"center", paddingTop:40 },
-  authCard:{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:"36px 32px", width:"100%", maxWidth:440 },
+  authWrap:{ display:"flex", justifyContent:"center", padding:"20px 16px 40px" },
+  authCard:{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:"28px 20px", width:"100%", maxWidth:440 },
   authTitle:{ fontWeight:800, fontSize:22, color:C.white, marginBottom:4 },
   authSub:{ fontSize:14, color:C.muted, marginBottom:24 },
   lbl:{ fontSize:12, fontWeight:700, color:C.muted, letterSpacing:"0.4px", textTransform:"uppercase", marginBottom:5, display:"block" },
@@ -7780,6 +7833,9 @@ select.q-input{cursor:pointer;}
 .vgrid-mobile{display:none}
 .dropcols{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
 @media(max-width:640px){
+  .q-cta,.q-ghost,.q-outline{min-height:44px;} /* touch targets */
+  .q-input{font-size:16px!important;} /* prevent iOS zoom */
+  .q-role-on,.q-role-off{font-size:11px!important;padding:8px 6px!important;}
   .vgrid-desktop{display:none!important}
   .vgrid-mobile{display:flex!important}
   .vgrid-mobile::-webkit-scrollbar{display:none}
