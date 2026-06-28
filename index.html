@@ -2,55 +2,90 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
   <meta name="theme-color" content="#0a1820"/>
-  <meta name="description" content="QAR.Gallery — Digitale Fahrzeugakte"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+  <meta name="apple-mobile-web-app-title" content="QAR.Gallery"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <title>QAR.Gallery</title>
   <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a1820' rx='20'/><text y='.85em' x='10' font-size='80'>🏁</text></svg>"/>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏁</text></svg>"/>
   <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body,#root{height:100%}
-    body{background:#0a1820;-webkit-font-smoothing:antialiased}
-    #loading{position:fixed;inset:0;background:#0a1820;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999;transition:opacity .4s ease}
-    .logo{font-size:52px;animation:pulse 1.5s ease-in-out infinite}
-    .ltext{color:#0dcfb4;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;font-family:sans-serif}
-    .lsub{color:#2a3d50;font-size:11px;font-family:sans-serif}
-    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.95)}}
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body,#root{height:100%;overflow-x:hidden}
+    body{background:#0a1820;-webkit-font-smoothing:antialiased;font-family:sans-serif}
+    #loading{
+      position:fixed;inset:0;background:#0a1820;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      gap:20px;z-index:9999;
+      transition:opacity .5s ease;
+    }
+    .l-icon{font-size:64px;animation:bounce 1.4s ease-in-out infinite}
+    .l-title{
+      font-size:26px;font-weight:800;letter-spacing:3px;
+      color:#e0eef0;font-family:sans-serif;
+    }
+    .l-title span{color:#0dcfb4}
+    .l-bar{
+      width:120px;height:3px;background:#1e2d3d;
+      border-radius:99px;overflow:hidden;
+    }
+    .l-fill{
+      height:100%;background:#0dcfb4;border-radius:99px;
+      animation:fill 2s ease-in-out forwards;
+    }
+    .l-sub{font-size:11px;color:#2a3d50;letter-spacing:1px}
+    @keyframes bounce{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-10px)}
+    }
+    @keyframes fill{
+      0%{width:5%} 30%{width:40%} 70%{width:75%} 100%{width:95%}
+    }
   </style>
 </head>
 <body>
   <div id="loading">
-    <div class="logo">🏁</div>
-    <div class="ltext">QAR.Gallery</div>
-    <div class="lsub">Lädt…</div>
+    <div class="l-icon">🏁</div>
+    <div class="l-title">QAR<span>.Gallery</span></div>
+    <div class="l-bar"><div class="l-fill"></div></div>
+    <div class="l-sub">DIGITALE FAHRZEUGAKTE</div>
   </div>
   <div id="root"></div>
 
-  <!-- React -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Recharts -->
   <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-
-  <!-- App (pre-compiled, no Babel needed) -->
   <script src="QARGallery.compiled.js"></script>
 
   <script>
-    // UMD exposes QARGallery.default
-    const App = window.QARGallery && window.QARGallery.default
-      ? window.QARGallery.default
-      : window.QARGallery;
+    try {
+      const App = (window.QARGallery && window.QARGallery.default)
+        ? window.QARGallery.default
+        : window.QARGallery;
 
-    if(!App) {
-      document.getElementById('loading').innerHTML =
-        '<div style="color:#ef4444;font-family:sans-serif;padding:24px">Fehler: App konnte nicht geladen werden.</div>';
-    } else {
+      if(!App) throw new Error("App nicht gefunden");
+
       const root = ReactDOM.createRoot(document.getElementById('root'));
       root.render(React.createElement(App));
+
+      // Fade out loading screen
       const el = document.getElementById('loading');
-      if(el){ el.style.opacity='0'; setTimeout(()=>el.remove(),400); }
+      if(el){ el.style.opacity='0'; setTimeout(()=>el.remove(), 500); }
+
+    } catch(err) {
+      document.getElementById('loading').innerHTML = `
+        <div style="padding:32px;text-align:center;color:#ef4444;font-family:sans-serif">
+          <div style="font-size:40px;margin-bottom:16px">⚠️</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:8px">Ladefehler</div>
+          <div style="font-size:12px;color:#9aaabb;max-width:280px">${err.message}</div>
+          <button onclick="location.reload()" style="margin-top:20px;background:#0dcfb4;color:#0a1820;border:none;padding:10px 24px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">
+            Neu laden
+          </button>
+        </div>`;
     }
   </script>
 </body>
