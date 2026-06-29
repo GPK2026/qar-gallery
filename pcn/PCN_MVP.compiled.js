@@ -613,28 +613,17 @@
     (0, _react.useEffect)(() => {
       if (scannerOpen && scannerStatus === "loading" && videoRef.current && canvasRef.current) {
         const loadScript = () => new Promise((res, rej) => {
+          // jsQR is bundled in index.html — should always be available
           if (window.jsQR) {
             res();
             return;
           }
-          // Try multiple CDNs
-          const cdns = ["https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js", "https://unpkg.com/jsqr@1.4.0/dist/jsQR.js", "https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"];
-          let i = 0;
-          const tryNext = () => {
-            if (i >= cdns.length) {
-              rej(new Error("jsQR konnte nicht geladen werden — bitte HTTPS verwenden"));
-              return;
-            }
-            const s = document.createElement("script");
-            s.src = cdns[i++];
-            s.onload = res;
-            s.onerror = () => {
-              document.head.removeChild(s);
-              tryNext();
-            };
-            document.head.appendChild(s);
-          };
-          tryNext();
+          // Fallback: try loading from same origin
+          const s = document.createElement("script");
+          s.src = "jsQR.js";
+          s.onload = () => window.jsQR ? res() : rej(new Error("jsQR nicht verfügbar"));
+          s.onerror = () => rej(new Error("jsQR konnte nicht geladen werden"));
+          document.head.appendChild(s);
         });
         loadScript().then(() => {
           setScannerStatus("scanning");
