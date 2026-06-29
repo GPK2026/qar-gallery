@@ -19,11 +19,11 @@ const PCN_STORAGE = (() => {
 
   // ── CONFIG ─────────────────────────────────────────────────────────────────
   // Change this to switch backends
-  const BACKEND = "local"; // "local" | "supabase" | "api"
+  const BACKEND = "supabase"; // "local" | "supabase" | "api"
 
   // Supabase credentials (fill in when ready)
-  const SUPABASE_URL  = ""; // e.g. "https://xxxx.supabase.co"
-  const SUPABASE_KEY  = ""; // anon/public key from Supabase dashboard
+  const SUPABASE_URL  = "https://xsyuhfleesstrchcwspg.supabase.co"; // e.g. "https://xxxx.supabase.co"
+  const SUPABASE_KEY  = "sb_publishable_tX_a5f1ncF32XY5sfr1Zww_ZeJrMTux"; // anon/public key from Supabase dashboard
 
   // API endpoint (for custom backend)
   const API_BASE      = ""; // e.g. "https://api.qar.gallery/v1"
