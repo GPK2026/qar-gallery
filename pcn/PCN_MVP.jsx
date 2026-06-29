@@ -924,7 +924,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           {/* Contact + Status section */}
           <div style={{marginBottom:14}}>
             {/* Phone — only if public and has number */}
-            {priv.pub_phone&&v.phone&&(!me||v.owner!==me.email)&&(
+            {priv.pub_phone===true&&v.phone&&v.phone.trim()&&(!me||v.owner!==me.email)&&(
               <a href={`tel:${v.phone.replace(/\s/g,"")}`}
                 style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
                   background:`${C.green}18`,border:`1px solid ${C.green}44`,borderRadius:12,
@@ -957,6 +957,72 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           </div>
           {me&&<button className="btn sm ghost" style={{width:"100%",marginTop:10}} onClick={()=>setScreen(viewV?"vehicle":"app")}>← Zurück</button>}
         </div>
+
+      {/* ── OVERLAYS (rendered in every screen) ── */}
+      {showStatusPicker&&(
+        <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
+          <div className="sheet">
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Status setzen</div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+              {STATUS_PRESETS.map((p,i)=>(
+                <button key={i} onClick={()=>setStatus(showStatusPicker,p)}
+                  style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                  <span style={{fontSize:24,flexShrink:0}}>{p.icon}</span>
+                  <div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.text}</div>
+                    <div style={{fontSize:11,color:C.muted}}>Läuft ab nach {p.mins} Min</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginBottom:10}}>
+              <div style={{fontSize:11,color:C.muted,marginBottom:8}}>Eigener Text</div>
+              <div style={{display:"flex",gap:8}}>
+                <input className="inp" placeholder="z.B. Bin gleich beim Einlass..." value={statusCustom}
+                  onChange={e=>setStatusCustom(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
+                  style={{flex:1}}/>
+                <button className="btn" disabled={!statusCustom.trim()}
+                  onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
+                  style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
+              </div>
+            </div>
+            {getActiveStatus(showStatusPicker)&&(
+              <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
+                onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Status gelöscht");}}>
+                Status löschen
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {lightbox&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:600,display:"flex",flexDirection:"column"}}
+          onClick={()=>setLightbox(null)}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
+            <button onClick={()=>setLightbox(null)} style={{background:"rgba(255,255,255,.1)",border:"none",color:"#fff",fontSize:20,width:40,height:40,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+          </div>
+          <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 16px",position:"relative"}} onClick={e=>e.stopPropagation()}>
+            <img src={lightbox.images[lightbox.index]} alt="" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8}}/>
+            {lightbox.images.length>1&&<>
+              <button onClick={()=>setLightbox(p=>({...p,index:Math.max(0,p.index-1)}))}
+                style={{position:"absolute",left:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===0?"none":"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+              <button onClick={()=>setLightbox(p=>({...p,index:Math.min(p.images.length-1,p.index+1)}))}
+                style={{position:"absolute",right:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===lightbox.images.length-1?"none":"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+            </>}
+          </div>
+          {lightbox.images.length>1&&(
+            <div style={{display:"flex",gap:6,justifyContent:"center",padding:"16px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
+              {lightbox.images.map((_,i)=>(
+                <div key={i} onClick={()=>setLightbox(p=>({...p,index:i}))}
+                  style={{width:i===lightbox.index?20:6,height:6,borderRadius:99,background:i===lightbox.index?"#fff":"rgba(255,255,255,.3)",transition:"all .2s",cursor:"pointer"}}/>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       </div>
     );
   }
@@ -1232,6 +1298,72 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             </div>
           </div>
         )}
+
+      {/* ── OVERLAYS (rendered in every screen) ── */}
+      {showStatusPicker&&(
+        <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
+          <div className="sheet">
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Status setzen</div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+              {STATUS_PRESETS.map((p,i)=>(
+                <button key={i} onClick={()=>setStatus(showStatusPicker,p)}
+                  style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                  <span style={{fontSize:24,flexShrink:0}}>{p.icon}</span>
+                  <div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.text}</div>
+                    <div style={{fontSize:11,color:C.muted}}>Läuft ab nach {p.mins} Min</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginBottom:10}}>
+              <div style={{fontSize:11,color:C.muted,marginBottom:8}}>Eigener Text</div>
+              <div style={{display:"flex",gap:8}}>
+                <input className="inp" placeholder="z.B. Bin gleich beim Einlass..." value={statusCustom}
+                  onChange={e=>setStatusCustom(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
+                  style={{flex:1}}/>
+                <button className="btn" disabled={!statusCustom.trim()}
+                  onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
+                  style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
+              </div>
+            </div>
+            {getActiveStatus(showStatusPicker)&&(
+              <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
+                onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Status gelöscht");}}>
+                Status löschen
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {lightbox&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:600,display:"flex",flexDirection:"column"}}
+          onClick={()=>setLightbox(null)}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
+            <button onClick={()=>setLightbox(null)} style={{background:"rgba(255,255,255,.1)",border:"none",color:"#fff",fontSize:20,width:40,height:40,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+          </div>
+          <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 16px",position:"relative"}} onClick={e=>e.stopPropagation()}>
+            <img src={lightbox.images[lightbox.index]} alt="" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8}}/>
+            {lightbox.images.length>1&&<>
+              <button onClick={()=>setLightbox(p=>({...p,index:Math.max(0,p.index-1)}))}
+                style={{position:"absolute",left:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===0?"none":"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+              <button onClick={()=>setLightbox(p=>({...p,index:Math.min(p.images.length-1,p.index+1)}))}
+                style={{position:"absolute",right:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===lightbox.images.length-1?"none":"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+            </>}
+          </div>
+          {lightbox.images.length>1&&(
+            <div style={{display:"flex",gap:6,justifyContent:"center",padding:"16px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
+              {lightbox.images.map((_,i)=>(
+                <div key={i} onClick={()=>setLightbox(p=>({...p,index:i}))}
+                  style={{width:i===lightbox.index?20:6,height:6,borderRadius:99,background:i===lightbox.index?"#fff":"rgba(255,255,255,.3)",transition:"all .2s",cursor:"pointer"}}/>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
         {/* Add Log Sheet */}
         {showAddLog===v.id&&(
           <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddLog(null);}}>
@@ -1526,85 +1658,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         )}
       </div>
 
-      {/* ── STATUS PICKER ── */}
-      {showStatusPicker&&(
-        <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
-          <div className="sheet">
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Status setzen</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
-
-            {/* Presets */}
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
-              {STATUS_PRESETS.map((p,i)=>(
-                <button key={i} onClick={()=>setStatus(showStatusPicker,p)}
-                  style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left",transition:"border-color .15s"}}
-                  onTouchStart={e=>e.currentTarget.style.borderColor=C.amber}
-                  onTouchEnd={e=>e.currentTarget.style.borderColor=C.border}>
-                  <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
-                  <div>
-                    <div style={{fontSize:14,fontWeight:700,color:C.white}}>{p.text}</div>
-                    <div style={{fontSize:11,color:C.muted}}>Läuft ab nach {p.mins} Min</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Custom text */}
-            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginBottom:10}}>
-              <div style={{fontSize:11,color:C.muted,marginBottom:8}}>Eigener Text</div>
-              <div style={{display:"flex",gap:8}}>
-                <input className="inp" placeholder="z.B. Bin gleich beim Einlass..." value={statusCustom}
-                  onChange={e=>setStatusCustom(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
-                  style={{flex:1}}/>
-                <button className="btn" disabled={!statusCustom.trim()}
-                  onClick={()=>setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom)}
-                  style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
-              </div>
-            </div>
-
-            {/* Clear status */}
-            {getActiveStatus(showStatusPicker)&&(
-              <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
-                onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Status gelöscht");}}>
-                Status löschen
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── LIGHTBOX ── */}
-      {lightbox&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:400,display:"flex",flexDirection:"column"}}
-          onClick={()=>setLightbox(null)}>
-          {/* Header */}
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
-            <button onClick={()=>setLightbox(null)} style={{background:"rgba(255,255,255,.1)",border:"none",color:"#fff",fontSize:20,width:40,height:40,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-          </div>
-          {/* Image */}
-          <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 16px",position:"relative"}} onClick={e=>e.stopPropagation()}>
-            <img src={lightbox.images[lightbox.index]} alt=""
-              style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8,userSelect:"none"}}/>
-            {lightbox.images.length>1&&<>
-              <button onClick={()=>setLightbox(p=>({...p,index:Math.max(0,p.index-1)}))}
-                style={{position:"absolute",left:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===0?"none":"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
-              <button onClick={()=>setLightbox(p=>({...p,index:Math.min(p.images.length-1,p.index+1)}))}
-                style={{position:"absolute",right:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===lightbox.images.length-1?"none":"flex",alignItems:"center",justifyContent:"center"}}>›</button>
-            </>}
-          </div>
-          {/* Dot indicators */}
-          {lightbox.images.length>1&&(
-            <div style={{display:"flex",gap:6,justifyContent:"center",padding:"16px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
-              {lightbox.images.map((_,i)=>(
-                <div key={i} onClick={()=>setLightbox(p=>({...p,index:i}))}
-                  style={{width:i===lightbox.index?20:6,height:6,borderRadius:99,background:i===lightbox.index?"#fff":"rgba(255,255,255,.3)",transition:"all .2s",cursor:"pointer"}}/>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* overlays moved to each screen */}
 
       {/* Add Vehicle Sheet */}
       {showAddV&&(
