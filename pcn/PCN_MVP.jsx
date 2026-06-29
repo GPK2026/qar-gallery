@@ -195,7 +195,8 @@ export default function PCN() {
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(null); // vehicleId
-  const [addVForm, setAddVForm]     = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:""});
+  const [addVForm, setAddVForm]     = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",image:""});
+  const [imgUploading, setImgUploading] = useState(false);
   const [addLogForm, setAddLogForm] = useState({type:"Ölwechsel",km:"",notes:"",workshop:""});
   const [remForm, setRemForm]       = useState({vehicleId:"",title:"",date:""});
   const msgEndRef     = useRef(null);
@@ -206,6 +207,43 @@ export default function PCN() {
   const [scannerStatus, setScannerStatus] = useState("idle"); // idle|loading|scanning|found
 
   const toast_ = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3500); };
+
+  // ── Image upload — converts to base64 dataURL ─────────────────────────────
+  const handleImageUpload = (file, onDone) => {
+    if(!file) return;
+    if(file.size > 5*1024*1024) { toast_("Bild zu groß — max. 5MB","err"); return; }
+    setImgUploading(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      // Resize to max 800px wide via canvas
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        const scale = Math.min(1, MAX/img.width, MAX/img.height);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width*scale);
+        canvas.height = Math.round(img.height*scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        onDone(dataUrl);
+        setImgUploading(false);
+        toast_("Bild geladen ✓");
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ── Update vehicle image ──────────────────────────────────────────────────
+  const updateVehicleImage = async (vehicleId, dataUrl) => {
+    const v = vehicles[vehicleId];
+    if(!v) return;
+    const updated = {...v, image: dataUrl};
+    setVehicles(prev=>({...prev,[vehicleId]:updated}));
+    if(viewV?.id===vehicleId) setViewV(updated);
+    const DB = window.PCN_DB;
+    if(DB) await DB.vehicles.save(updated);
+  };
 
   // ── DB refresh — loads all data for a user from storage layer ──────────────
   const refreshAll = async (user) => {
@@ -560,7 +598,17 @@ export default function PCN() {
         </div>
         {/* Hero */}
         <div style={{height:220,position:"relative",overflow:"hidden",background:"#111"}}>
-          {v.image&&<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>}
+          {v.image
+            ?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+            :isOwn&&(
+              <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",height:"100%",color:C.muted}}>
+                <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
+                  onChange={e=>handleImageUpload(e.target.files[0], url=>updateVehicleImage(v.id, url))}/>
+                <span style={{fontSize:36}}>📷</span>
+                <span style={{fontSize:12,fontWeight:600}}>Foto hinzufügen</span>
+              </label>
+            )
+          }
           <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 30%,#000000f0)"}}/>
           <div style={{position:"absolute",bottom:16,left:16,right:16}}>
             <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:8}}>{v.hersteller} {v.modell}</h1>
@@ -672,8 +720,17 @@ export default function PCN() {
 
         <div style={{padding:"16px",maxWidth:520,margin:"0 auto"}}>
           <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,lineHeight:1,marginBottom:8}}>{v.hersteller} {v.modell}</h1>
-          <div style={{display:"inline-flex",alignItems:"center",background:"#fff",border:"2px solid #222",borderRadius:5,padding:"3px 10px",marginBottom:14}}>
-            <span style={{fontSize:14,fontWeight:800,color:"#111",letterSpacing:2,fontFamily:"Arial,sans-serif"}}>{kz}</span>
+          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:14,flexWrap:"wrap"}}>
+            <div style={{display:"inline-flex",alignItems:"center",background:"#fff",border:"2px solid #222",borderRadius:5,padding:"3px 10px"}}>
+              <span style={{fontSize:14,fontWeight:800,color:"#111",letterSpacing:2,fontFamily:"Arial,sans-serif"}}>{kz}</span>
+            </div>
+            {isOwn&&(
+              <label style={{display:"inline-flex",alignItems:"center",gap:6,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:12,color:C.muted,fontFamily:"'Barlow',sans-serif"}}>
+                <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
+                  onChange={e=>handleImageUpload(e.target.files[0], url=>updateVehicleImage(v.id, url))}/>
+                {imgUploading?"⏳ Lädt…":"📷 Foto"}
+              </label>
+            )}
           </div>
 
           {/* Status */}
@@ -1239,6 +1296,23 @@ export default function PCN() {
         <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddV(false);}}>
           <div className="sheet">
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:14}}>Fahrzeug hinzufügen</div>
+            {/* Image upload */}
+            <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1px dashed ${C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",marginBottom:10,overflow:"hidden"}}>
+              <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
+                onChange={e=>handleImageUpload(e.target.files[0], url=>setAddVForm(p=>({...p,image:url})))}/>
+              {addVForm.image
+                ?<><img src={addVForm.image} alt="" style={{width:52,height:52,objectFit:"cover",borderRadius:7,flexShrink:0}}/>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600,color:C.white}}>Foto geladen ✓</div>
+                    <div style={{fontSize:11,color:C.muted}}>Erneut tippen zum Ändern</div>
+                  </div></>
+                :<><span style={{fontSize:28}}>📷</span>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600,color:C.white}}>Fahrzeugfoto hinzufügen</div>
+                    <div style={{fontSize:11,color:C.muted}}>Kamera oder Bibliothek · max. 5MB</div>
+                  </div></>
+              }
+            </label>
             {[["Modell *","modell","Cayman GT4"],["Kennzeichen *","kennzeichen","AW-PC 718"],["Baujahr","baujahr","2023"],["Farbe","farbe","Pythongrün"]].map(([ph,key,ex])=>(
               <input key={key} className="inp" placeholder={`${ph} (z.B. ${ex})`} style={{marginBottom:8}}
                 value={addVForm[key]||""} onChange={e=>setAddVForm(p=>({...p,[key]:e.target.value}))}/>
