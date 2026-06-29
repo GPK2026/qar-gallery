@@ -19,7 +19,7 @@ const PCN_STORAGE = (() => {
 
   // ── CONFIG ─────────────────────────────────────────────────────────────────
   // Change this to switch backends
-  const BACKEND = "supabase"; // "local" | "supabase" | "api"
+  const BACKEND = "local"; // "local" | "supabase" | "api"  ← Switch to "supabase" when ready
 
   // Supabase credentials (fill in when ready)
   const SUPABASE_URL  = "https://xsyuhfleesstrchcwspg.supabase.co"; // e.g. "https://xxxx.supabase.co"
@@ -92,7 +92,15 @@ const PCN_STORAGE = (() => {
     // ── Vehicles ──
     async getVehicles(userId) {
       const all = local._get("vehicles") || {};
-      return { data: Object.values(all).filter(v => v.userId === userId) };
+      // Match by userId OR owner email (handles both registration methods)
+      const session = local._get("session");
+      const email = session?.email || "";
+      return { data: Object.values(all).filter(v =>
+        v.userId === userId ||
+        v.owner === userId ||
+        v.owner === email ||
+        v.userId === email
+      )};
     },
 
     async saveVehicle(vehicle) {
