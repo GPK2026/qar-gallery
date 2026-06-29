@@ -218,16 +218,21 @@ export default function PCN() {
       // Resize to max 800px wide via canvas
       const img = new Image();
       img.onload = () => {
-        const MAX = 800;
+        // Downsampling: max 600px, 72% JPEG quality → ~80-120KB
+        const MAX = 600;
         const scale = Math.min(1, MAX/img.width, MAX/img.height);
         const canvas = document.createElement("canvas");
         canvas.width = Math.round(img.width*scale);
         canvas.height = Math.round(img.height*scale);
-        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        const ctx2 = canvas.getContext("2d");
+        ctx2.imageSmoothingEnabled = true;
+        ctx2.imageSmoothingQuality = "high";
+        ctx2.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
         onDone(dataUrl);
         setImgUploading(false);
-        toast_("Bild geladen ✓");
+        const kb = Math.round(dataUrl.length * 0.75 / 1024);
+        toast_(`Bild geladen ✓ (${kb} KB)`);
       };
       img.src = e.target.result;
     };
