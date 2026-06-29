@@ -2337,60 +2337,147 @@
         }
       }, h.result)))), /*#__PURE__*/React.createElement("div", {
         style: {
-          marginBottom: 14
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+          marginBottom: 16
         }
-      }, priv.pub_phone === true && v.phone && v.phone.trim() && (!me || v.owner !== me.email) && /*#__PURE__*/React.createElement("a", {
+      }, (priv.pub_phone === true || priv.pub_phone === undefined && DEF_PRIVACY.pub_phone) && v.phone && v.phone.trim() && /*#__PURE__*/React.createElement("a", {
         href: `tel:${v.phone.replace(/\s/g, "")}`,
         style: {
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
+          gap: 14,
           background: `${C.green}18`,
-          border: `1px solid ${C.green}44`,
-          borderRadius: 12,
-          padding: "14px",
-          marginBottom: 8,
+          border: `2px solid ${C.green}55`,
+          borderRadius: 14,
+          padding: "16px 18px",
           textDecoration: "none",
-          color: C.green,
-          fontWeight: 700,
-          fontSize: 15
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 20
-        }
-      }, "📞"), /*#__PURE__*/React.createElement("div", {
-        style: {
-          textAlign: "left"
+          cursor: "pointer"
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          fontWeight: 800
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          background: `${C.green}22`,
+          border: `1px solid ${C.green}44`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 20,
+          flexShrink: 0
+        }
+      }, "📞"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontWeight: 800,
+          fontSize: 16,
+          color: C.green
         }
       }, "Direkt anrufen"), /*#__PURE__*/React.createElement("div", {
         style: {
-          fontSize: 11,
-          color: `${C.green}aa`,
-          fontWeight: 400
+          fontSize: 12,
+          color: C.muted,
+          marginTop: 2
         }
-      }, v.phone))), (!me || v.owner !== me.email) && /*#__PURE__*/React.createElement("button", {
-        className: "btn",
+      }, v.phone)), /*#__PURE__*/React.createElement("div", {
         style: {
-          width: "100%",
-          marginBottom: 8,
-          fontSize: 15
-        },
+          marginLeft: "auto",
+          color: C.green,
+          fontSize: 20
+        }
+      }, "›")), (!me || v.owner !== me.email) && /*#__PURE__*/React.createElement("button", {
         onClick: () => {
-          if (me && v.owner !== me.email) startContact(v.id);else if (!me) toast_("App öffnen um Kontakt aufzunehmen", "err");
-        }
-      }, "💬 Nachricht an Besitzer schreiben"), me && v.owner === me.email && /*#__PURE__*/React.createElement("button", {
-        className: "btn ghost",
-        style: {
-          width: "100%"
+          if (!me) {
+            toast_("Bitte einloggen um Nachrichten zu senden", "err");
+            return;
+          }
+          startContact(v.id);
         },
-        onClick: () => setShowStatusPicker(v.id)
-      }, getActiveStatus(v.id) ? `${getActiveStatus(v.id).icon} Status ändern` : "📍 Status setzen")), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          background: `${C.red}11`,
+          border: `2px solid ${C.red}44`,
+          borderRadius: 14,
+          padding: "16px 18px",
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          textAlign: "left",
+          width: "100%"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          background: `${C.red}22`,
+          border: `1px solid ${C.red}44`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 20,
+          flexShrink: 0
+        }
+      }, "💬"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontWeight: 800,
+          fontSize: 16,
+          color: C.white
+        }
+      }, "Nachricht schreiben"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: C.muted,
+          marginTop: 2
+        }
+      }, "Anonym · Besitzer antwortet per App")), /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginLeft: "auto",
+          color: C.muted,
+          fontSize: 20
+        }
+      }, "›")), me && (v.owner === me.email || v.userId === me.id) && /*#__PURE__*/React.createElement("button", {
+        onClick: () => setShowStatusPicker(v.id),
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          background: getActiveStatus(v.id) ? `${C.amber}18` : "transparent",
+          border: `1.5px solid ${getActiveStatus(v.id) ? C.amber + "55" : C.border}`,
+          borderRadius: 14,
+          padding: "14px 18px",
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          textAlign: "left",
+          width: "100%"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          background: `${C.amber}22`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 18,
+          flexShrink: 0
+        }
+      }, getActiveStatus(v.id) ? getActiveStatus(v.id).icon : "📍"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontWeight: 700,
+          fontSize: 14,
+          color: getActiveStatus(v.id) ? C.amber : C.white
+        }
+      }, getActiveStatus(v.id) ? getActiveStatus(v.id).text : "Status setzen"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginTop: 1
+        }
+      }, getActiveStatus(v.id) ? "Wird Besuchern beim Scannen angezeigt" : "Wird beim Scannen angezeigt")))), /*#__PURE__*/React.createElement("div", {
         style: {
           textAlign: "center",
           padding: "12px 0",
