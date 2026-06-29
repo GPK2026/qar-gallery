@@ -1359,7 +1359,7 @@ export default function PCN() {
                 :<><span style={{fontSize:28}}>📷</span>
                   <div>
                     <div style={{fontSize:13,fontWeight:600,color:C.white}}>Fahrzeugfoto hinzufügen</div>
-                    <div style={{fontSize:11,color:C.muted}}>Kamera oder Bibliothek · max. 5MB</div>
+                    <div style={{fontSize:11,color:C.muted}}>Kamera oder Bibliothek — alle Größen</div>
                   </div></>
               }
             </label>
