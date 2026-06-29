@@ -325,7 +325,7 @@ export default function PCN() {
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [loginForm, setLoginForm] = useState({mode:"register",code:"",email:"",name:""});
-  const [addVForm, setAddVForm]   = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:""});
+  const [addVForm, setAddVForm]   = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[]});
   const [addLogForm, setAddLogForm] = useState({type:"Ölwechsel",km:"",notes:"",workshop:""});
   const [remForm, setRemForm]     = useState({vehicleId:"",title:"",date:""});
 
@@ -336,6 +336,8 @@ export default function PCN() {
   const [showAddRem, setShowAddRem] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(null);
   const [imgUploading, setImgUploading] = useState(false);
+  const [lightbox, setLightbox]       = useState(null); // {images:[], index:0}
+  const [gallerySwipe, setGallerySwipe] = useState({}); // {vehicleId: currentIndex}
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState(null);
   const [scannerStatus, setScannerStatus] = useState("idle");
@@ -355,6 +357,31 @@ export default function PCN() {
   const toast_ = useCallback((msg,type="ok")=>{
     setToast({msg,type}); setTimeout(()=>setToast(null),3500);
   },[]);
+
+  // ── Gallery helpers ──────────────────────────────────────────────────────────
+  const getImages = (v) => {
+    // Support both single image and images array
+    const imgs = v.images || (v.image ? [v.image] : []);
+    return imgs.filter(Boolean);
+  };
+
+  const addImageToVehicle = async (vehicleId, dataUrl) => {
+    const v = vehicles[vehicleId]; if(!v) return;
+    const images = getImages(v);
+    const updated = {...v, images:[...images, dataUrl], image:images[0]||dataUrl};
+    setVehicles(prev=>({...prev,[vehicleId]:updated}));
+    if(viewV?.id===vehicleId) setViewV(updated);
+    const DB=window.PCN_DB; await DB.vehicles.save(updated);
+  };
+
+  const removeImageFromVehicle = async (vehicleId, index) => {
+    const v = vehicles[vehicleId]; if(!v) return;
+    const images = getImages(v).filter((_,i)=>i!==index);
+    const updated = {...v, images, image:images[0]||""};
+    setVehicles(prev=>({...prev,[vehicleId]:updated}));
+    if(viewV?.id===vehicleId) setViewV(updated);
+    const DB=window.PCN_DB; await DB.vehicles.save(updated);
+  };
 
   // ── Image upload ─────────────────────────────────────────────────────────────
   const handleImageUpload = (file, onDone) => {
@@ -487,11 +514,11 @@ export default function PCN() {
   const addVehicle = async () => {
     if(!addVForm.modell||!addVForm.kennzeichen) return toast_("Modell und Kennzeichen angeben","err");
     const DB=window.PCN_DB;
-    const v={qarId:genQARId(),userId:me.id,owner:me.email,...addVForm,privacy:{...DEF_PRIVACY}};
+    const v={qarId:genQARId(),userId:me.id,owner:me.email,...addVForm,images:addVForm.images||[],image:(addVForm.images||[])[0]||"",privacy:{...DEF_PRIVACY}};
     const {data:saved,error}=await DB.vehicles.save(v);
     if(error){toast_("Fehler: "+error,"err");return;}
     setVehicles(prev=>({...prev,[saved.id]:saved}));
-    setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:""});
+setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[]});
     toast_("Fahrzeug hinzugefügt ✓");
   };
 
@@ -850,27 +877,70 @@ export default function PCN() {
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {ScannerOverlay}
-        {/* Hero */}
-        <div style={{height:220,position:"relative",overflow:"hidden",background:"#111"}}>
-          {v.image
-            ?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
-            :isOwn&&(
-              <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",height:"100%",color:C.muted}}>
-                <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>updateVehicleImage(v.id,url))}/>
-                <span style={{fontSize:36}}>📷</span>
-                <span style={{fontSize:12,fontWeight:600}}>Foto hinzufügen</span>
-              </label>
-            )
-          }
-          <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.3),#000000ee)"}}/>
-          <div style={{position:"absolute",top:14,left:14}}>
-            <button onClick={()=>setScreen("app")} style={{background:"rgba(0,0,0,.6)",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.white,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>← Zurück</button>
-          </div>
-          <div style={{position:"absolute",top:14,right:14,display:"flex",gap:8}}>
-            {isOwn&&<button onClick={()=>setShowPrivacy(v.id)} style={{background:"rgba(0,0,0,.6)",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.white,cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif"}}>🔒 QR</button>}
-            <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}} style={{background:"rgba(0,0,0,.6)",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.white,cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif"}}>👁 Vorschau</button>
-          </div>
-        </div>
+        {/* ── Photo Gallery Hero ── */}
+        {(()=>{
+          const imgs = getImages(v);
+          const curIdx = gallerySwipe[v.id]||0;
+          const curImg = imgs[curIdx];
+          return (
+            <div style={{height:260,position:"relative",overflow:"hidden",background:"#111",touchAction:"pan-y"}}>
+              {/* Main image — tap for lightbox */}
+              {curImg
+                ?<img src={curImg} alt="" style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}
+                    onClick={()=>setLightbox({images:imgs,index:curIdx})}
+                    onError={e=>e.target.style.display="none"}/>
+                :isOwn&&(
+                  <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",height:"100%",color:C.muted}}>
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
+                    <span style={{fontSize:36}}>📷</span>
+                    <span style={{fontSize:12,fontWeight:600}}>Foto hinzufügen</span>
+                  </label>
+                )
+              }
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.35) 0%,transparent 40%,transparent 55%,rgba(0,0,0,.85) 100%)",pointerEvents:"none"}}/>
+
+              {/* Dots indicator */}
+              {imgs.length>1&&(
+                <div style={{position:"absolute",bottom:14,left:"50%",transform:"translateX(-50%)",display:"flex",gap:5,zIndex:3}}>
+                  {imgs.map((_,i)=>(
+                    <div key={i} onClick={()=>setGallerySwipe(p=>({...p,[v.id]:i}))}
+                      style={{width:i===curIdx?18:6,height:6,borderRadius:99,background:i===curIdx?"#fff":"rgba(255,255,255,.4)",transition:"all .2s",cursor:"pointer"}}/>
+                  ))}
+                </div>
+              )}
+
+              {/* Prev/Next arrows */}
+              {imgs.length>1&&<>
+                <button onClick={()=>setGallerySwipe(p=>({...p,[v.id]:Math.max(0,(p[v.id]||0)-1)}))}
+                  style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.5)",border:"none",color:"#fff",fontSize:20,width:36,height:36,borderRadius:"50%",cursor:"pointer",display:(gallerySwipe[v.id]||0)===0?"none":"flex",alignItems:"center",justifyContent:"center",zIndex:3}}>‹</button>
+                <button onClick={()=>setGallerySwipe(p=>({...p,[v.id]:Math.min(imgs.length-1,(p[v.id]||0)+1)}))}
+                  style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.5)",border:"none",color:"#fff",fontSize:20,width:36,height:36,borderRadius:"50%",cursor:"pointer",display:(gallerySwipe[v.id]||0)===imgs.length-1?"none":"flex",alignItems:"center",justifyContent:"center",zIndex:3}}>›</button>
+              </>}
+
+              {/* Photo count badge */}
+              {imgs.length>0&&(
+                <div style={{position:"absolute",bottom:14,right:14,background:"rgba(0,0,0,.6)",borderRadius:6,padding:"2px 8px",fontSize:10,color:"rgba(255,255,255,.8)",zIndex:3}}>
+                  {imgs.length>1?`${(gallerySwipe[v.id]||0)+1}/${imgs.length}`:"📷"}
+                </div>
+              )}
+
+              {/* Top controls */}
+              <div style={{position:"absolute",top:14,left:14,zIndex:3}}>
+                <button onClick={()=>setScreen("app")} style={{background:"rgba(0,0,0,.6)",border:`1px solid rgba(255,255,255,.2)`,borderRadius:8,padding:"7px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>← Zurück</button>
+              </div>
+              <div style={{position:"absolute",top:14,right:14,display:"flex",gap:8,zIndex:3}}>
+                {isOwn&&<>
+                  <label style={{background:"rgba(0,0,0,.6)",border:`1px solid rgba(255,255,255,.2)`,borderRadius:8,padding:"7px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
+                    {imgUploading?"⏳":"📷+"}
+                  </label>
+                  <button onClick={()=>setShowPrivacy(v.id)} style={{background:"rgba(0,0,0,.6)",border:`1px solid rgba(255,255,255,.2)`,borderRadius:8,padding:"7px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif"}}>🔒</button>
+                </>}
+                <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}} style={{background:"rgba(0,0,0,.6)",border:`1px solid rgba(255,255,255,.2)`,borderRadius:8,padding:"7px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif"}}>👁</button>
+              </div>
+            </div>
+          );
+        })()}
 
         <div style={{padding:"16px",maxWidth:520,margin:"0 auto"}}>
           <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,lineHeight:1,marginBottom:8}}>{v.hersteller} {v.modell}</h1>
@@ -886,6 +956,26 @@ export default function PCN() {
             )}
             {!isOwn&&<button className="btn sm ghost" style={{fontSize:11}} onClick={()=>startContact(v.id)}>💬 Kontakt</button>}
           </div>
+
+          {/* Thumbnail strip */}
+          {(()=>{
+            const imgs = getImages(v);
+            if(imgs.length<=1) return null;
+            return (
+              <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:14,paddingBottom:4}}>
+                {imgs.map((img,i)=>(
+                  <div key={i} style={{position:"relative",flexShrink:0}}>
+                    <img src={img} alt="" onClick={()=>setGallerySwipe(p=>({...p,[v.id]:i}))}
+                      style={{width:64,height:64,objectFit:"cover",borderRadius:8,cursor:"pointer",border:`2px solid ${(gallerySwipe[v.id]||0)===i?C.red:"transparent"}`}}/>
+                    {isOwn&&(
+                      <button onClick={()=>removeImageFromVehicle(v.id,i)}
+                        style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,.7)",border:"none",color:"#fff",fontSize:10,width:18,height:18,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>✕</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
 
           {/* Status strip */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
@@ -1287,20 +1377,61 @@ export default function PCN() {
         )}
       </div>
 
+      {/* ── LIGHTBOX ── */}
+      {lightbox&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:400,display:"flex",flexDirection:"column"}}
+          onClick={()=>setLightbox(null)}>
+          {/* Header */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
+            <button onClick={()=>setLightbox(null)} style={{background:"rgba(255,255,255,.1)",border:"none",color:"#fff",fontSize:20,width:40,height:40,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+          </div>
+          {/* Image */}
+          <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 16px",position:"relative"}} onClick={e=>e.stopPropagation()}>
+            <img src={lightbox.images[lightbox.index]} alt=""
+              style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8,userSelect:"none"}}/>
+            {lightbox.images.length>1&&<>
+              <button onClick={()=>setLightbox(p=>({...p,index:Math.max(0,p.index-1)}))}
+                style={{position:"absolute",left:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===0?"none":"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+              <button onClick={()=>setLightbox(p=>({...p,index:Math.min(p.images.length-1,p.index+1)}))}
+                style={{position:"absolute",right:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===lightbox.images.length-1?"none":"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+            </>}
+          </div>
+          {/* Dot indicators */}
+          {lightbox.images.length>1&&(
+            <div style={{display:"flex",gap:6,justifyContent:"center",padding:"16px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
+              {lightbox.images.map((_,i)=>(
+                <div key={i} onClick={()=>setLightbox(p=>({...p,index:i}))}
+                  style={{width:i===lightbox.index?20:6,height:6,borderRadius:99,background:i===lightbox.index?"#fff":"rgba(255,255,255,.3)",transition:"all .2s",cursor:"pointer"}}/>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Add Vehicle Sheet */}
       {showAddV&&(
         <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddV(false);}}>
           <div className="sheet">
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:14}}>Fahrzeug hinzufügen</div>
-            <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1px dashed ${C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",marginBottom:10}}>
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>setAddVForm(p=>({...p,image:url})))}/>
-              {addVForm.image
-                ?<><img src={addVForm.image} alt="" style={{width:52,height:52,objectFit:"cover",borderRadius:7,flexShrink:0}}/>
-                    <div><div style={{fontSize:13,fontWeight:600,color:C.white}}>Foto geladen ✓</div><div style={{fontSize:11,color:C.muted}}>Tippen zum Ändern</div></div></>
-                :<><span style={{fontSize:28}}>📷</span>
-                    <div><div style={{fontSize:13,fontWeight:600,color:C.white}}>Fahrzeugfoto hinzufügen</div><div style={{fontSize:11,color:C.muted}}>Kamera oder Bibliothek — alle Größen</div></div></>
-              }
-            </label>
+            {/* Multi-photo upload */}
+            <div style={{marginBottom:10}}>
+              <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:6}}>
+                {(addVForm.images||[]).map((img,i)=>(
+                  <div key={i} style={{position:"relative",flexShrink:0}}>
+                    <img src={img} alt="" style={{width:70,height:70,objectFit:"cover",borderRadius:8,border:`2px solid ${C.border}`}}/>
+                    <button onClick={()=>setAddVForm(p=>({...p,images:p.images.filter((_,j)=>j!==i)}))}
+                      style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,.7)",border:"none",color:"#fff",fontSize:10,width:18,height:18,borderRadius:"50%",cursor:"pointer"}}>✕</button>
+                  </div>
+                ))}
+                <label style={{width:70,height:70,background:C.card,border:`1px dashed ${C.border}`,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,gap:2}}>
+                  <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>setAddVForm(p=>({...p,images:[...(p.images||[]),url]})))}/>
+                  <span style={{fontSize:20}}>📷</span>
+                  <span style={{fontSize:9,color:C.muted}}>Foto</span>
+                </label>
+              </div>
+              <div style={{fontSize:11,color:C.muted}}>Mehrere Fotos möglich — erstes Foto = Titelbild</div>
+            </div>
             {[["Modell *","modell","Cayman GT4"],["Kennzeichen *","kennzeichen","AW-PC 718"],["Baujahr","baujahr","2023"],["Farbe","farbe","Pythongrün"]].map(([ph,key,ex])=>(
               <input key={key} className="inp" placeholder={`${ph} (z.B. ${ex})`} style={{marginBottom:8}}
                 value={addVForm[key]||""} onChange={e=>setAddVForm(p=>({...p,[key]:e.target.value}))}/>
