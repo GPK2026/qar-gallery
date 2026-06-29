@@ -1,0 +1,19 @@
+{
+  "name": "Porsche Club Nürburgring",
+  "short_name": "PCN",
+  "description": "Digitale Clubplattform für PCN-Mitglieder",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg",
+      "sizes": "600x315",
+      "type": "image/jpeg"
+    }
+  ],
+  "categories": ["sports", "lifestyle"],
+  "lang": "de"
+}
