@@ -207,6 +207,55 @@ export default function PCN() {
 
   const toast_ = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3500); };
 
+  // ── DB refresh — loads all data for a user from storage layer ──────────────
+  const refreshAll = async (user) => {
+    if(!user) return;
+    const DB = window.PCN_DB;
+    const [vRes, remRes, evRes, thRes] = await Promise.all([
+      DB.vehicles.list(user.id||user.email),
+      DB.reminders.list(user.id),
+      DB.events.list(),
+      DB.threads.list(user.id),
+    ]);
+    // Vehicles
+    const vMap = {};
+    (vRes.data||[]).forEach(v => vMap[v.id]=v);
+    setVehicles(vMap);
+    // Logbook (load per vehicle)
+    const lMap = {};
+    await Promise.all((vRes.data||[]).map(async v => {
+      const r = await DB.logbook.list(v.id);
+      lMap[v.id] = r.data||[];
+    }));
+    setLogbook(lMap);
+    // Reminders
+    setReminders(remRes.data||[]);
+    // Events (keep demo events always)
+    // Participants (load per event)
+    const pMap = {};
+    await Promise.all((evRes.data||[]).map(async ev => {
+      const r = await DB.events.participants(ev.id);
+      pMap[ev.id] = r.data||[];
+    }));
+    setParticipants(pMap);
+    // Threads
+    const tMap = {};
+    (thRes.data||[]).forEach(t => tMap[t.id]=t);
+    setThreads(tMap);
+    // Set user
+    setMe(user);
+  };
+
+  // ── Session restore on mount ───────────────────────────────────────────────
+  useEffect(()=>{
+    (async()=>{
+      const DB = window.PCN_DB;
+      if(!DB){ return; }
+      const {data:session} = await DB.auth.session();
+      if(session){ await refreshAll(session); setScreen("app"); }
+    })();
+  },[]);
+
   // ── QR Scanner ──────────────────────────────────────────────────────────────
   const openScanner = () => { setScannerOpen(true); setScannerError(null); setScannerStatus("loading"); };
 
@@ -296,64 +345,94 @@ export default function PCN() {
 
   useEffect(()=>{ msgEndRef.current?.scrollIntoView({behavior:"smooth"}); },[activeThread,threads]);
 
-  const loadDemo = () => {
-    setMe(DEMO_USER); setAllUsers({u1:DEMO_USER,u2:DEMO_USER2,u3:DEMO_USER3});
-    setVehicles(DEMO_VEHICLES); setLogbook(DEMO_LOGBOOK);
-    setReminders([
+  const loadDemo = async () => {
+    // Seed demo data into localStorage so DB layer persists it
+    const stored = JSON.parse(localStorage.getItem("pcn_v1")||"{}");
+    stored.users = stored.users || {};
+    stored.users[DEMO_USER.email] = DEMO_USER;
+    stored.session = DEMO_USER;
+    stored.vehicles = DEMO_VEHICLES;
+    stored.logbook = DEMO_LOGBOOK;
+    stored.events = DEMO_EVENTS;
+    stored.participants = DEMO_PARTICIPANTS;
+    stored.threads = DEMO_THREADS;
+    stored.reminders = {[DEMO_USER.id]:[
       {id:"R1",vehicleId:"V001",title:"PCN TrackDay — Fahrzeug vorbereiten",date:d(10),done:false},
       {id:"R2",vehicleId:"V002",title:"Sommerreifenwechsel",date:d(4),done:false},
       {id:"R3",vehicleId:"V001",title:"TÜV Termin vereinbaren",date:d(45),done:false},
-    ]);
-    setParticipants(DEMO_PARTICIPANTS);
-    setThreads(DEMO_THREADS);
+    ]};
+    stored.eventHistory = {"V001":EVENT_HISTORY.filter(h=>h.vehicleId==="V001"),"V002":[],"V003":EVENT_HISTORY.filter(h=>h.vehicleId==="V003")};
+    localStorage.setItem("pcn_v1", JSON.stringify(stored));
+    // Load from DB layer
+    await refreshAll(DEMO_USER);
+    setAllUsers({u1:DEMO_USER,u2:DEMO_USER2,u3:DEMO_USER3});
     setScreen("app"); setTab("dashboard");
     toast_("Willkommen, Max! 🏁");
   };
 
-  const joinEvent = (eventId,vehicleId,cls) => {
+  const joinEvent = async (eventId, vehicleId, cls) => {
     if(!vehicleId) return toast_("Fahrzeug wählen","err");
-    const ev=events[eventId]; const count=(participants[eventId]||[]).length;
-    const p={id:uid(),eventId,vehicleId,userId:me.id,class:cls,startNr:String(count+1).padStart(2,"0"),status:"confirmed"};
+    const DB = window.PCN_DB;
+    const {data:p, error} = await DB.events.join(eventId, me.id, vehicleId, cls);
+    if(error){ toast_("Fehler: "+error,"err"); return; }
     setParticipants(prev=>({...prev,[eventId]:[...(prev[eventId]||[]),p]}));
     toast_(`Angemeldet — Startnr. #${p.startNr} ✓`);
   };
 
-  const addLogEntry = (vehicleId) => {
+  const addLogEntry = async (vehicleId) => {
     if(!addLogForm.km) return toast_("Kilometerstand angeben","err");
-    setLogbook(prev=>({...prev,[vehicleId]:[...(prev[vehicleId]||[]),{id:uid(),date:today(),...addLogForm}]}));
-    setShowAddLog(null); setAddLogForm({type:"Ölwechsel",km:"",notes:"",workshop:""});
+    const DB = window.PCN_DB;
+    const {data:e, error} = await DB.logbook.add(vehicleId, {date:today(),...addLogForm});
+    if(error){ toast_("Fehler: "+error,"err"); return; }
+    setLogbook(prev=>({...prev,[vehicleId]:[e,...(prev[vehicleId]||[])]}));
+    setShowAddLog(null);
+    setAddLogForm({type:"Ölwechsel",km:"",notes:"",workshop:""});
     toast_("Eintrag gespeichert ✓");
   };
 
-  const addVehicle = () => {
+  const addVehicle = async () => {
     if(!addVForm.modell||!addVForm.kennzeichen) return toast_("Modell und Kennzeichen angeben","err");
-    const v={id:"V"+uid(),qarId:genQARId(),owner:me.email,...addVForm,privacy:{...DEF_PRIVACY}};
-    setVehicles(prev=>({...prev,[v.id]:v}));
-    setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:""});
+    const DB = window.PCN_DB;
+    const v={qarId:genQARId(),userId:me.id,owner:me.email,...addVForm,privacy:{...DEF_PRIVACY}};
+    const {data:saved, error} = await DB.vehicles.save(v);
+    if(error){ toast_("Fehler: "+error,"err"); return; }
+    setVehicles(prev=>({...prev,[saved.id]:saved}));
+    setShowAddV(false);
+    setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:""});
     toast_("Fahrzeug hinzugefügt ✓");
   };
 
-  const togglePrivacy = (vehicleId,key) => {
-    setVehicles(prev=>({...prev,[vehicleId]:{...prev[vehicleId],privacy:{...prev[vehicleId].privacy,[key]:!prev[vehicleId].privacy?.[key]}}}));
+  const togglePrivacy = async (vehicleId, key) => {
+    const v = vehicles[vehicleId];
+    const updated = {...v, privacy:{...(v.privacy||DEF_PRIVACY),[key]:!v.privacy?.[key]}};
+    setVehicles(prev=>({...prev,[vehicleId]:updated}));
+    const DB = window.PCN_DB;
+    await DB.vehicles.save(updated); // persist
   };
 
-  const sendMsg = (threadId) => {
+  const sendMsg = async (threadId) => {
     if(!msgInput.trim()) return;
-    const msg={id:uid(),from:me.id,text:msgInput.trim(),ts:fmtTime(),read:false};
-    setThreads(prev=>({...prev,[threadId]:{...prev[threadId],messages:[...prev[threadId].messages,msg]}}));
+    const DB = window.PCN_DB;
+    const {data:msg, error} = await DB.threads.send(threadId, me.id, msgInput.trim());
+    if(error){ toast_("Fehler: "+error,"err"); return; }
+    setThreads(prev=>({...prev,[threadId]:{...prev[threadId],messages:[...(prev[threadId].messages||[]),msg]}}));
     setMsgInput("");
   };
 
-  const startContact = (vehicleId) => {
+  const startContact = async (vehicleId) => {
     const v=vehicles[vehicleId]; if(!v||v.owner===me.email) return;
-    const ownerId=Object.values(allUsers).find(u=>u.email===v.owner)?.id;
-    if(!ownerId) return toast_("Besitzer nicht gefunden","err");
+    const ownerId=Object.values(allUsers).find(u=>u.email===v.owner)?.id||v.userId;
+    if(!ownerId){ toast_("Besitzer nicht gefunden","err"); return; }
     const existing=Object.values(threads).find(t=>t.vehicleId===vehicleId&&t.participants.includes(me.id));
-    if(existing){setActiveThread(existing.id);setTab("messages");setScreen("app");return;}
-    const tid="T"+uid();
-    const sysMsg={id:uid(),from:"system",text:`Kontakt über QAR-ID: ${v.qarId}`,ts:fmtTime(),isSystem:true,read:true};
-    setThreads(prev=>({...prev,[tid]:{id:tid,participants:[me.id,ownerId],vehicleId,vehicleName:`${v.hersteller} ${v.modell}`,messages:[sysMsg],anonymous:true}}));
-    setActiveThread(tid); setTab("messages"); setScreen("app");
+    if(existing){ setActiveThread(existing.id); setTab("messages"); setScreen("app"); return; }
+    const DB = window.PCN_DB;
+    const {data:t, error} = await DB.threads.create([me.id, ownerId], vehicleId, `${v.hersteller} ${v.modell}`);
+    if(error){ toast_("Fehler: "+error,"err"); return; }
+    // Add system message
+    await DB.threads.send(t.id, "system", `Kontakt über QAR-ID: ${v.qarId}`);
+    const updated = {...t, messages:[{id:uid(),from:"system",text:`Kontakt über QAR-ID: ${v.qarId}`,ts:fmtTime(),isSystem:true,read:true}]};
+    setThreads(prev=>({...prev,[t.id]:updated}));
+    setActiveThread(t.id); setTab("messages"); setScreen("app");
     toast_("Anonyme Nachricht gestartet 🔒");
   };
 
@@ -428,9 +507,16 @@ export default function PCN() {
             value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
         </>}
         {loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email
-          ?<button className="btn" style={{width:"100%"}} onClick={()=>{
-              const u={id:uid(),name:loginForm.name,email:loginForm.email,role:"member",memberNr:"PCN-"+uid().slice(0,4)};
-              setMe(u); setAllUsers(p=>({...p,[u.id]:u})); setScreen("app");
+          ?<button className="btn" style={{width:"100%"}} onClick={async()=>{
+              const DB = window.PCN_DB;
+              const {data:u, error} = await DB.auth.register(loginForm.name, loginForm.email, loginForm.code);
+              if(error){ toast_(error, "err"); return; }
+              // Seed demo events into storage on first register
+              const {data:evs} = await DB.events.list();
+              if(!evs||evs.length===0){
+                Object.values(DEMO_EVENTS).forEach(e=>{ const all=JSON.parse(localStorage.getItem("pcn_v1")||"{}"); all.events=all.events||{}; all.events[e.id]=e; localStorage.setItem("pcn_v1",JSON.stringify(all)); });
+              }
+              setMe(u); setAllUsers(p=>({...p,[u.id]:u})); setScreen("app"); toast_("Willkommen, "+u.name+"! 🏁");
             }}>Beitreten →</button>
           :<button className="btn ghost" style={{width:"100%",marginTop:4}} onClick={loadDemo}>Demo ansehen</button>
         }
@@ -868,7 +954,9 @@ export default function PCN() {
                     <div style={{fontSize:13,fontWeight:600,color:days<=3?C.amber:C.white}}>{r.title}</div>
                     <div style={{fontSize:10,color:C.muted,marginTop:2}}>{v?v.hersteller+" "+v.modell+" · ":""}{days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}</div>
                   </div>
-                  <button onClick={()=>{setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:"0 4px"}}>✓</button>
+                  <button onClick={async()=>{
+        const DB=window.PCN_DB; if(DB) await DB.reminders.done(me.id, r.id);
+        setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x)); toast_("Erledigt ✓");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:"0 4px"}}>✓</button>
                 </div>
               );
             })}
@@ -1048,7 +1136,10 @@ export default function PCN() {
                 </div>
               );})}
             </div>
-            <button className="btn ghost" style={{width:"100%"}} onClick={()=>{setMe(null);setVehicles({});setLogbook({});setReminders([]);setParticipants({});setThreads({});setScreen("splash");}}>Abmelden</button>
+            <button className="btn ghost" style={{width:"100%"}} onClick={async()=>{
+      const DB=window.PCN_DB; if(DB) await DB.auth.logout();
+      setMe(null);setVehicles({});setLogbook({});setReminders([]);setParticipants({});setThreads({});setScreen("splash");
+    }}>Abmelden</button>
           </div>
         )}
       </div>
@@ -1158,7 +1249,13 @@ export default function PCN() {
               <option value="">Kein Fahrzeug</option>
               {myVehicles.map(v=><option key={v.id} value={v.id}>{v.hersteller} {v.modell}</option>)}
             </select>
-            <button className="btn" style={{width:"100%"}} onClick={()=>{if(!remForm.title||!remForm.date)return toast_("Titel und Datum angeben","err");setReminders(prev=>[...prev,{id:uid(),...remForm,done:false}]);setShowAddRem(false);setRemForm({vehicleId:"",title:"",date:""});toast_("Gespeichert ✓");}}>Speichern ✓</button>
+            <button className="btn" style={{width:"100%"}} onClick={async()=>{
+      if(!remForm.title||!remForm.date) return toast_("Titel und Datum angeben","err");
+      const DB=window.PCN_DB;
+      const {data:r,error}=await DB.reminders.save(me.id,{...remForm,done:false});
+      if(error){ toast_("Fehler","err"); return; }
+      setReminders(prev=>[...prev,r]); setShowAddRem(false); setRemForm({vehicleId:"",title:"",date:""}); toast_("Gespeichert ✓");
+    }}>Speichern ✓</button>
           </div>
         </div>
       )}
