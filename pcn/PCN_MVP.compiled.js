@@ -932,7 +932,8 @@
       kennzeichen: "",
       farbe: "",
       kraftstoff: "Benzin",
-      getriebe: ""
+      getriebe: "",
+      images: []
     });
     const [addLogForm, setAddLogForm] = (0, _react.useState)({
       type: "Ölwechsel",
@@ -953,6 +954,8 @@
     const [showAddRem, setShowAddRem] = (0, _react.useState)(false);
     const [showPrivacy, setShowPrivacy] = (0, _react.useState)(null);
     const [imgUploading, setImgUploading] = (0, _react.useState)(false);
+    const [lightbox, setLightbox] = (0, _react.useState)(null); // {images:[], index:0}
+    const [gallerySwipe, setGallerySwipe] = (0, _react.useState)({}); // {vehicleId: currentIndex}
     const [scannerOpen, setScannerOpen] = (0, _react.useState)(false);
     const [scannerError, setScannerError] = (0, _react.useState)(null);
     const [scannerStatus, setScannerStatus] = (0, _react.useState)("idle");
@@ -981,6 +984,47 @@
       });
       setTimeout(() => setToast(null), 3500);
     }, []);
+
+    // ── Gallery helpers ──────────────────────────────────────────────────────────
+    const getImages = v => {
+      // Support both single image and images array
+      const imgs = v.images || (v.image ? [v.image] : []);
+      return imgs.filter(Boolean);
+    };
+    const addImageToVehicle = async (vehicleId, dataUrl) => {
+      const v = vehicles[vehicleId];
+      if (!v) return;
+      const images = getImages(v);
+      const updated = {
+        ...v,
+        images: [...images, dataUrl],
+        image: images[0] || dataUrl
+      };
+      setVehicles(prev => ({
+        ...prev,
+        [vehicleId]: updated
+      }));
+      if (viewV?.id === vehicleId) setViewV(updated);
+      const DB = window.PCN_DB;
+      await DB.vehicles.save(updated);
+    };
+    const removeImageFromVehicle = async (vehicleId, index) => {
+      const v = vehicles[vehicleId];
+      if (!v) return;
+      const images = getImages(v).filter((_, i) => i !== index);
+      const updated = {
+        ...v,
+        images,
+        image: images[0] || ""
+      };
+      setVehicles(prev => ({
+        ...prev,
+        [vehicleId]: updated
+      }));
+      if (viewV?.id === vehicleId) setViewV(updated);
+      const DB = window.PCN_DB;
+      await DB.vehicles.save(updated);
+    };
 
     // ── Image upload ─────────────────────────────────────────────────────────────
     const handleImageUpload = (file, onDone) => {
@@ -1184,6 +1228,8 @@
         userId: me.id,
         owner: me.email,
         ...addVForm,
+        images: addVForm.images || [],
+        image: (addVForm.images || [])[0] || "",
         privacy: {
           ...DEF_PRIVACY
         }
@@ -1208,7 +1254,8 @@
         kennzeichen: "",
         farbe: "",
         kraftstoff: "Benzin",
-        getriebe: ""
+        getriebe: "",
+        images: []
       });
       toast_("Fahrzeug hinzugefügt ✓");
     };
@@ -2221,113 +2268,230 @@
         }
       }, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
         className: `toast ${toast.type}`
-      }, toast.msg), ScannerOverlay, /*#__PURE__*/React.createElement("div", {
-        style: {
-          height: 220,
-          position: "relative",
-          overflow: "hidden",
-          background: "#111"
-        }
-      }, v.image ? /*#__PURE__*/React.createElement("img", {
-        src: v.image,
-        alt: "",
-        style: {
-          width: "100%",
-          height: "100%",
-          objectFit: "cover"
-        },
-        onError: e => e.target.style.display = "none"
-      }) : isOwn && /*#__PURE__*/React.createElement("label", {
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          cursor: "pointer",
-          height: "100%",
-          color: C.muted
-        }
-      }, /*#__PURE__*/React.createElement("input", {
-        type: "file",
-        accept: "image/*",
-        style: {
-          display: "none"
-        },
-        onChange: e => handleImageUpload(e.target.files[0], url => updateVehicleImage(v.id, url))
-      }), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 36
-        }
-      }, "📷"), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 12,
-          fontWeight: 600
-        }
-      }, "Foto hinzufügen")), /*#__PURE__*/React.createElement("div", {
-        style: {
-          position: "absolute",
-          inset: 0,
-          background: "linear-gradient(to bottom,rgba(0,0,0,.3),#000000ee)"
-        }
-      }), /*#__PURE__*/React.createElement("div", {
-        style: {
-          position: "absolute",
-          top: 14,
-          left: 14
-        }
-      }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => setScreen("app"),
-        style: {
-          background: "rgba(0,0,0,.6)",
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          padding: "7px 12px",
-          color: C.white,
-          cursor: "pointer",
-          fontSize: 12,
-          fontWeight: 700,
-          fontFamily: "'Barlow',sans-serif"
-        }
-      }, "← Zurück")), /*#__PURE__*/React.createElement("div", {
-        style: {
-          position: "absolute",
-          top: 14,
-          right: 14,
-          display: "flex",
-          gap: 8
-        }
-      }, isOwn && /*#__PURE__*/React.createElement("button", {
-        onClick: () => setShowPrivacy(v.id),
-        style: {
-          background: "rgba(0,0,0,.6)",
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          padding: "7px 12px",
-          color: C.white,
-          cursor: "pointer",
-          fontSize: 12,
-          fontFamily: "'Barlow',sans-serif"
-        }
-      }, "🔒 QR"), /*#__PURE__*/React.createElement("button", {
-        onClick: () => {
-          setPublicV({
-            ...v,
-            privacy: priv
-          });
-          setScreen("public");
-        },
-        style: {
-          background: "rgba(0,0,0,.6)",
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          padding: "7px 12px",
-          color: C.white,
-          cursor: "pointer",
-          fontSize: 12,
-          fontFamily: "'Barlow',sans-serif"
-        }
-      }, "👁 Vorschau"))), /*#__PURE__*/React.createElement("div", {
+      }, toast.msg), ScannerOverlay, (() => {
+        const imgs = getImages(v);
+        const curIdx = gallerySwipe[v.id] || 0;
+        const curImg = imgs[curIdx];
+        return /*#__PURE__*/React.createElement("div", {
+          style: {
+            height: 260,
+            position: "relative",
+            overflow: "hidden",
+            background: "#111",
+            touchAction: "pan-y"
+          }
+        }, curImg ? /*#__PURE__*/React.createElement("img", {
+          src: curImg,
+          alt: "",
+          style: {
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            cursor: "zoom-in"
+          },
+          onClick: () => setLightbox({
+            images: imgs,
+            index: curIdx
+          }),
+          onError: e => e.target.style.display = "none"
+        }) : isOwn && /*#__PURE__*/React.createElement("label", {
+          style: {
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            cursor: "pointer",
+            height: "100%",
+            color: C.muted
+          }
+        }, /*#__PURE__*/React.createElement("input", {
+          type: "file",
+          accept: "image/*",
+          style: {
+            display: "none"
+          },
+          onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
+        }), /*#__PURE__*/React.createElement("span", {
+          style: {
+            fontSize: 36
+          }
+        }, "📷"), /*#__PURE__*/React.createElement("span", {
+          style: {
+            fontSize: 12,
+            fontWeight: 600
+          }
+        }, "Foto hinzufügen")), /*#__PURE__*/React.createElement("div", {
+          style: {
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to bottom,rgba(0,0,0,.35) 0%,transparent 40%,transparent 55%,rgba(0,0,0,.85) 100%)",
+            pointerEvents: "none"
+          }
+        }), imgs.length > 1 && /*#__PURE__*/React.createElement("div", {
+          style: {
+            position: "absolute",
+            bottom: 14,
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            gap: 5,
+            zIndex: 3
+          }
+        }, imgs.map((_, i) => /*#__PURE__*/React.createElement("div", {
+          key: i,
+          onClick: () => setGallerySwipe(p => ({
+            ...p,
+            [v.id]: i
+          })),
+          style: {
+            width: i === curIdx ? 18 : 6,
+            height: 6,
+            borderRadius: 99,
+            background: i === curIdx ? "#fff" : "rgba(255,255,255,.4)",
+            transition: "all .2s",
+            cursor: "pointer"
+          }
+        }))), imgs.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+          onClick: () => setGallerySwipe(p => ({
+            ...p,
+            [v.id]: Math.max(0, (p[v.id] || 0) - 1)
+          })),
+          style: {
+            position: "absolute",
+            left: 8,
+            top: "50%",
+            transform: "translateY(-50%)",
+            background: "rgba(0,0,0,.5)",
+            border: "none",
+            color: "#fff",
+            fontSize: 20,
+            width: 36,
+            height: 36,
+            borderRadius: "50%",
+            cursor: "pointer",
+            display: (gallerySwipe[v.id] || 0) === 0 ? "none" : "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 3
+          }
+        }, "‹"), /*#__PURE__*/React.createElement("button", {
+          onClick: () => setGallerySwipe(p => ({
+            ...p,
+            [v.id]: Math.min(imgs.length - 1, (p[v.id] || 0) + 1)
+          })),
+          style: {
+            position: "absolute",
+            right: 8,
+            top: "50%",
+            transform: "translateY(-50%)",
+            background: "rgba(0,0,0,.5)",
+            border: "none",
+            color: "#fff",
+            fontSize: 20,
+            width: 36,
+            height: 36,
+            borderRadius: "50%",
+            cursor: "pointer",
+            display: (gallerySwipe[v.id] || 0) === imgs.length - 1 ? "none" : "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 3
+          }
+        }, "›")), imgs.length > 0 && /*#__PURE__*/React.createElement("div", {
+          style: {
+            position: "absolute",
+            bottom: 14,
+            right: 14,
+            background: "rgba(0,0,0,.6)",
+            borderRadius: 6,
+            padding: "2px 8px",
+            fontSize: 10,
+            color: "rgba(255,255,255,.8)",
+            zIndex: 3
+          }
+        }, imgs.length > 1 ? `${(gallerySwipe[v.id] || 0) + 1}/${imgs.length}` : "📷"), /*#__PURE__*/React.createElement("div", {
+          style: {
+            position: "absolute",
+            top: 14,
+            left: 14,
+            zIndex: 3
+          }
+        }, /*#__PURE__*/React.createElement("button", {
+          onClick: () => setScreen("app"),
+          style: {
+            background: "rgba(0,0,0,.6)",
+            border: `1px solid rgba(255,255,255,.2)`,
+            borderRadius: 8,
+            padding: "7px 12px",
+            color: "#fff",
+            cursor: "pointer",
+            fontSize: 12,
+            fontWeight: 700,
+            fontFamily: "'Barlow',sans-serif"
+          }
+        }, "← Zurück")), /*#__PURE__*/React.createElement("div", {
+          style: {
+            position: "absolute",
+            top: 14,
+            right: 14,
+            display: "flex",
+            gap: 8,
+            zIndex: 3
+          }
+        }, isOwn && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
+          style: {
+            background: "rgba(0,0,0,.6)",
+            border: `1px solid rgba(255,255,255,.2)`,
+            borderRadius: 8,
+            padding: "7px 12px",
+            color: "#fff",
+            cursor: "pointer",
+            fontSize: 12,
+            fontFamily: "'Barlow',sans-serif",
+            display: "flex",
+            alignItems: "center",
+            gap: 4
+          }
+        }, /*#__PURE__*/React.createElement("input", {
+          type: "file",
+          accept: "image/*",
+          style: {
+            display: "none"
+          },
+          onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
+        }), imgUploading ? "⏳" : "📷+"), /*#__PURE__*/React.createElement("button", {
+          onClick: () => setShowPrivacy(v.id),
+          style: {
+            background: "rgba(0,0,0,.6)",
+            border: `1px solid rgba(255,255,255,.2)`,
+            borderRadius: 8,
+            padding: "7px 12px",
+            color: "#fff",
+            cursor: "pointer",
+            fontSize: 12,
+            fontFamily: "'Barlow',sans-serif"
+          }
+        }, "🔒")), /*#__PURE__*/React.createElement("button", {
+          onClick: () => {
+            setPublicV({
+              ...v,
+              privacy: priv
+            });
+            setScreen("public");
+          },
+          style: {
+            background: "rgba(0,0,0,.6)",
+            border: `1px solid rgba(255,255,255,.2)`,
+            borderRadius: 8,
+            padding: "7px 12px",
+            color: "#fff",
+            cursor: "pointer",
+            fontSize: 12,
+            fontFamily: "'Barlow',sans-serif"
+          }
+        }, "👁")));
+      })(), /*#__PURE__*/React.createElement("div", {
         style: {
           padding: "16px",
           maxWidth: 520,
@@ -2394,7 +2558,59 @@
           fontSize: 11
         },
         onClick: () => startContact(v.id)
-      }, "💬 Kontakt")), /*#__PURE__*/React.createElement("div", {
+      }, "💬 Kontakt")), (() => {
+        const imgs = getImages(v);
+        if (imgs.length <= 1) return null;
+        return /*#__PURE__*/React.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 6,
+            overflowX: "auto",
+            marginBottom: 14,
+            paddingBottom: 4
+          }
+        }, imgs.map((img, i) => /*#__PURE__*/React.createElement("div", {
+          key: i,
+          style: {
+            position: "relative",
+            flexShrink: 0
+          }
+        }, /*#__PURE__*/React.createElement("img", {
+          src: img,
+          alt: "",
+          onClick: () => setGallerySwipe(p => ({
+            ...p,
+            [v.id]: i
+          })),
+          style: {
+            width: 64,
+            height: 64,
+            objectFit: "cover",
+            borderRadius: 8,
+            cursor: "pointer",
+            border: `2px solid ${(gallerySwipe[v.id] || 0) === i ? C.red : "transparent"}`
+          }
+        }), isOwn && /*#__PURE__*/React.createElement("button", {
+          onClick: () => removeImageFromVehicle(v.id, i),
+          style: {
+            position: "absolute",
+            top: 2,
+            right: 2,
+            background: "rgba(0,0,0,.7)",
+            border: "none",
+            color: "#fff",
+            fontSize: 10,
+            width: 18,
+            height: 18,
+            borderRadius: "50%",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            lineHeight: 1
+          }
+        }, "✕"))));
+      })(), /*#__PURE__*/React.createElement("div", {
         style: {
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
@@ -3645,7 +3861,129 @@
         setScreen("splash");
         setTab("dashboard");
       }
-    }, "Abmelden"))), showAddV && /*#__PURE__*/React.createElement("div", {
+    }, "Abmelden"))), lightbox && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.97)",
+        zIndex: 400,
+        display: "flex",
+        flexDirection: "column"
+      },
+      onClick: () => setLightbox(null)
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "16px 20px",
+        flexShrink: 0
+      },
+      onClick: e => e.stopPropagation()
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "rgba(255,255,255,.6)"
+      }
+    }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setLightbox(null),
+      style: {
+        background: "rgba(255,255,255,.1)",
+        border: "none",
+        color: "#fff",
+        fontSize: 20,
+        width: 40,
+        height: 40,
+        borderRadius: "50%",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, "✕")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "0 16px",
+        position: "relative"
+      },
+      onClick: e => e.stopPropagation()
+    }, /*#__PURE__*/React.createElement("img", {
+      src: lightbox.images[lightbox.index],
+      alt: "",
+      style: {
+        maxWidth: "100%",
+        maxHeight: "100%",
+        objectFit: "contain",
+        borderRadius: 8,
+        userSelect: "none"
+      }
+    }), lightbox.images.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+      onClick: () => setLightbox(p => ({
+        ...p,
+        index: Math.max(0, p.index - 1)
+      })),
+      style: {
+        position: "absolute",
+        left: 8,
+        background: "rgba(255,255,255,.15)",
+        border: "none",
+        color: "#fff",
+        fontSize: 28,
+        width: 44,
+        height: 44,
+        borderRadius: "50%",
+        cursor: "pointer",
+        display: lightbox.index === 0 ? "none" : "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, "‹"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setLightbox(p => ({
+        ...p,
+        index: Math.min(p.images.length - 1, p.index + 1)
+      })),
+      style: {
+        position: "absolute",
+        right: 8,
+        background: "rgba(255,255,255,.15)",
+        border: "none",
+        color: "#fff",
+        fontSize: 28,
+        width: 44,
+        height: 44,
+        borderRadius: "50%",
+        cursor: "pointer",
+        display: lightbox.index === lightbox.images.length - 1 ? "none" : "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        justifyContent: "center",
+        padding: "16px",
+        flexShrink: 0
+      },
+      onClick: e => e.stopPropagation()
+    }, lightbox.images.map((_, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      onClick: () => setLightbox(p => ({
+        ...p,
+        index: i
+      })),
+      style: {
+        width: i === lightbox.index ? 20 : 6,
+        height: 6,
+        borderRadius: 99,
+        background: i === lightbox.index ? "#fff" : "rgba(255,255,255,.3)",
+        transition: "all .2s",
+        cursor: "pointer"
+      }
+    })))), showAddV && /*#__PURE__*/React.createElement("div", {
       className: "overlay",
       onClick: e => {
         if (e.target === e.currentTarget) setShowAddV(false);
@@ -3660,17 +3998,65 @@
         color: C.white,
         marginBottom: 14
       }
-    }, "Fahrzeug hinzufügen"), /*#__PURE__*/React.createElement("label", {
+    }, "Fahrzeug hinzufügen"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
-        alignItems: "center",
-        gap: 10,
+        gap: 6,
+        overflowX: "auto",
+        marginBottom: 6
+      }
+    }, (addVForm.images || []).map((img, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        position: "relative",
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      src: img,
+      alt: "",
+      style: {
+        width: 70,
+        height: 70,
+        objectFit: "cover",
+        borderRadius: 8,
+        border: `2px solid ${C.border}`
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setAddVForm(p => ({
+        ...p,
+        images: p.images.filter((_, j) => j !== i)
+      })),
+      style: {
+        position: "absolute",
+        top: 2,
+        right: 2,
+        background: "rgba(0,0,0,.7)",
+        border: "none",
+        color: "#fff",
+        fontSize: 10,
+        width: 18,
+        height: 18,
+        borderRadius: "50%",
+        cursor: "pointer"
+      }
+    }, "✕"))), /*#__PURE__*/React.createElement("label", {
+      style: {
+        width: 70,
+        height: 70,
         background: C.card,
         border: `1px dashed ${C.border}`,
-        borderRadius: 10,
-        padding: "12px 14px",
+        borderRadius: 8,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
         cursor: "pointer",
-        marginBottom: 10
+        flexShrink: 0,
+        gap: 2
       }
     }, /*#__PURE__*/React.createElement("input", {
       type: "file",
@@ -3680,45 +4066,23 @@
       },
       onChange: e => handleImageUpload(e.target.files[0], url => setAddVForm(p => ({
         ...p,
-        image: url
+        images: [...(p.images || []), url]
       })))
-    }), addVForm.image ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
-      src: addVForm.image,
-      alt: "",
+    }), /*#__PURE__*/React.createElement("span", {
       style: {
-        width: 52,
-        height: 52,
-        objectFit: "cover",
-        borderRadius: 7,
-        flexShrink: 0
+        fontSize: 20
       }
-    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, "📷"), /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 13,
-        fontWeight: 600,
-        color: C.white
+        fontSize: 9,
+        color: C.muted
       }
-    }, "Foto geladen ✓"), /*#__PURE__*/React.createElement("div", {
+    }, "Foto"))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted
       }
-    }, "Tippen zum Ändern"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 28
-      }
-    }, "📷"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        fontWeight: 600,
-        color: C.white
-      }
-    }, "Fahrzeugfoto hinzufügen"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.muted
-      }
-    }, "Kamera oder Bibliothek — alle Größen")))), [["Modell *", "modell", "Cayman GT4"], ["Kennzeichen *", "kennzeichen", "AW-PC 718"], ["Baujahr", "baujahr", "2023"], ["Farbe", "farbe", "Pythongrün"]].map(([ph, key, ex]) => /*#__PURE__*/React.createElement("input", {
+    }, "Mehrere Fotos möglich — erstes Foto = Titelbild")), [["Modell *", "modell", "Cayman GT4"], ["Kennzeichen *", "kennzeichen", "AW-PC 718"], ["Baujahr", "baujahr", "2023"], ["Farbe", "farbe", "Pythongrün"]].map(([ph, key, ex]) => /*#__PURE__*/React.createElement("input", {
       key: key,
       className: "inp",
       placeholder: `${ph} (z.B. ${ex})`,
