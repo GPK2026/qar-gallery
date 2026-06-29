@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <title>QAR.codes — Kurzlink</title>
+  <script>
+    // QR code shortlink handler
+    // qar.codes/v/QAR-XXXXXXXX → redirects to qar.gallery/pcn/#/v/QAR-XXXXXXXX
+    const path = window.location.pathname;
+    const match = path.match(/\/v\/(QAR-[A-Z2-9]{8})/);
+    if(match) {
+      window.location.replace('https://qar.gallery/pcn/?v=' + match[1]);
+    } else {
+      window.location.replace('https://qar.gallery');
+    }
+  </script>
+  <meta http-equiv="refresh" content="0;url=https://qar.gallery"/>
+</head>
+<body>
+  <p>Weiterleitung zu <a href="https://qar.gallery">qar.gallery</a>...</p>
+</body>
+</html>
