@@ -1,3 +1,5 @@
+const genQARId = () => { const C='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let id='QAR-'; for(let i=0;i<8;i++) id+=C[Math.floor(Math.random()*C.length)]; return id; };
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PCN Data Layer — Storage Abstraction
 // ─────────────────────────────────────────────────────────────────────────────
@@ -241,42 +243,190 @@ const PCN_STORAGE = (() => {
     },
   };
 
-  // ── SUPABASE BACKEND ────────────────────────────────────────────────────────
-  // TODO: implement when Supabase credentials are available
-  // Schema mirrors the local structure:
-  //
-  //   users(id, name, email, club_code, role, member_nr, created_at)
-  //   vehicles(id, user_id, qar_id, data jsonb, privacy jsonb, created_at)
-  //   logbook(id, vehicle_id, date, type, km, notes, workshop, created_at)
-  //   reminders(id, user_id, vehicle_id, title, date, done, done_at)
-  //   events(id, name, subtitle, date, location, category, data jsonb)
-  //   participants(id, event_id, user_id, vehicle_id, class, start_nr, status)
-  //   threads(id, participants text[], vehicle_id, anonymous bool, created_at)
-  //   messages(id, thread_id, from_id, text, read bool, created_at)
-  //
-  // Migration command (run once):
-  //   supabase db push
-  //
+  // ── SUPABASE BACKEND ─────────────────────────────────────────────────────────
+  // Full REST implementation — matches local backend API exactly
+  // Switch: set BACKEND = "supabase" and fill SUPABASE_URL + SUPABASE_KEY
   const supabase = {
-    _headers: () => ({
+    _h: () => ({
       "Content-Type": "application/json",
       "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Authorization": "Bearer " + SUPABASE_KEY,
+      "Prefer": "return=representation",
     }),
-    _fetch: async (path, opts={}) => {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-        ...opts, headers: { ...supabase._headers(), ...(opts.headers||{}) }
-      });
+    _q: async (table, params="") => {
+      const r = await fetch(SUPABASE_URL+"/rest/v1/"+table+params, { headers: supabase._h() });
       if(!r.ok) return { error: await r.text() };
       return { data: await r.json() };
     },
-    // All methods follow same signature as local.*
-    // TODO: implement each method
-    async register() { return { error: "Supabase not configured" }; },
-    async login()    { return { error: "Supabase not configured" }; },
-    async getSession() { return { data: null }; },
-    async logout()   { return { data: true }; },
-    // ... rest follows same pattern
+    _post: async (table, body) => {
+      const r = await fetch(SUPABASE_URL+"/rest/v1/"+table, {
+        method:"POST", headers: supabase._h(), body: JSON.stringify(body)
+      });
+      if(!r.ok) return { error: await r.text() };
+      const d = await r.json(); return { data: Array.isArray(d)?d[0]:d };
+    },
+    _patch: async (table, filter, body) => {
+      const r = await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+filter, {
+        method:"PATCH", headers: supabase._h(), body: JSON.stringify(body)
+      });
+      if(!r.ok) return { error: await r.text() };
+      const d = await r.json(); return { data: Array.isArray(d)?d[0]:d };
+    },
+    _delete: async (table, filter) => {
+      const r = await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+filter, {
+        method:"DELETE", headers: supabase._h()
+      });
+      if(!r.ok) return { error: await r.text() };
+      return { data: true };
+    },
+
+    // ── Auth (simple email-based, no JWT needed for MVP) ──
+    async register(name, email, clubCode) {
+      // Check existing
+      const {data:existing} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
+      if(existing&&existing.length>0) return { error: "E-Mail bereits registriert" };
+      const user = { name, email, club_code:clubCode, role:"member",
+        member_nr:"PCN-"+Math.floor(1000+Math.random()*8999) };
+      const res = await supabase._post("users", user);
+      if(res.error) return res;
+      const u = { id:res.data.id, name, email, role:"member", memberNr:res.data.member_nr };
+      localStorage.setItem("pcn_session", JSON.stringify(u));
+      return { data: u };
+    },
+    async login(email) {
+      const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
+      if(error) return { error };
+      if(!users||users.length===0) return { error: "Kein Account mit dieser E-Mail" };
+      const u = users[0];
+      const session = { id:u.id, name:u.name, email:u.email, role:u.role, memberNr:u.member_nr };
+      localStorage.setItem("pcn_session", JSON.stringify(session));
+      await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
+      return { data: session };
+    },
+    async getSession() {
+      try { return { data: JSON.parse(localStorage.getItem("pcn_session")) }; }
+      catch { return { data: null }; }
+    },
+    async logout() {
+      localStorage.removeItem("pcn_session"); return { data: true };
+    },
+
+    // ── Vehicles ──
+    async getVehicles(userId) {
+      return await supabase._q("vehicles","?user_id=eq."+userId+"&order=created_at.asc");
+    },
+    async saveVehicle(vehicle) {
+      const row = {
+        id: vehicle.id||("V"+uid()), qar_id: vehicle.qarId||genQARId(),
+        user_id: vehicle.userId||vehicle.owner,
+        hersteller:vehicle.hersteller, modell:vehicle.modell, baujahr:vehicle.baujahr,
+        kraftstoff:vehicle.kraftstoff, getriebe:vehicle.getriebe, farbe:vehicle.farbe,
+        kennzeichen:vehicle.kennzeichen, fin:vehicle.fin,
+        kilometerstand:vehicle.kilometerstand, tuev_faelligkeit:vehicle.tuev_faelligkeit,
+        marktwert:vehicle.marktwert, zustand:vehicle.zustand,
+        besonderheiten:vehicle.besonderheiten, image:vehicle.image,
+        privacy:vehicle.privacy||{}, updated_at:now(),
+      };
+      if(vehicle.id) {
+        const res = await supabase._patch("vehicles","id=eq."+vehicle.id, row);
+        return { data: {...vehicle,...row,id:vehicle.id,qarId:row.qar_id} };
+      }
+      row.created_at = now();
+      const res = await supabase._post("vehicles", row);
+      if(res.error) return res;
+      return { data: {...vehicle,...row,id:res.data.id,qarId:res.data.qar_id} };
+    },
+    async deleteVehicle(id) { return await supabase._delete("vehicles","id=eq."+id); },
+    async getPublicVehicle(qarId) {
+      const {data:rows,error} = await supabase._q("vehicles","?qar_id=eq."+encodeURIComponent(qarId));
+      return { data: rows&&rows[0]||null, error };
+    },
+
+    // ── Logbook ──
+    async getLogbook(vehicleId) {
+      return await supabase._q("logbook","?vehicle_id=eq."+vehicleId+"&order=date.desc");
+    },
+    async addLogEntry(vehicleId, entry) {
+      return await supabase._post("logbook",{vehicle_id:vehicleId,...entry,created_at:now()});
+    },
+
+    // ── Reminders ──
+    async getReminders(userId) {
+      return await supabase._q("reminders","?user_id=eq."+userId+"&done=eq.false&order=date.asc");
+    },
+    async saveReminder(userId, reminder) {
+      if(reminder.id) {
+        await supabase._patch("reminders","id=eq."+reminder.id,reminder);
+        return { data: reminder };
+      }
+      return await supabase._post("reminders",{...reminder,user_id:userId,created_at:now()});
+    },
+    async doneReminder(userId, id) {
+      return await supabase._patch("reminders","id=eq."+id,{done:true,done_at:now()});
+    },
+
+    // ── Events ──
+    async getEvents() {
+      return await supabase._q("events","?order=date.asc");
+    },
+    async getParticipants(eventId) {
+      return await supabase._q("participants","?event_id=eq."+eventId+"&order=start_nr.asc");
+    },
+    async joinEvent(eventId, userId, vehicleId, cls) {
+      const {data:existing} = await supabase._q("participants",
+        "?event_id=eq."+eventId+"&user_id=eq."+userId+"&vehicle_id=eq."+vehicleId);
+      if(existing&&existing.length>0) return { error:"Bereits angemeldet" };
+      const {data:all} = await supabase._q("participants","?event_id=eq."+eventId+"&select=count");
+      const count = all?all.length:0;
+      return await supabase._post("participants",{
+        event_id:eventId,user_id:userId,vehicle_id:vehicleId,
+        class:cls, start_nr:String(count+1).padStart(2,"0"),
+        status:"confirmed", registered_at:now()
+      });
+    },
+    async getEventHistory(vehicleId) {
+      return await supabase._q("event_history","?vehicle_id=eq."+vehicleId+"&order=date.desc");
+    },
+
+    // ── Threads ──
+    async getThreads(userId) {
+      // Supabase array contains filter
+      return await supabase._q("threads","?participants=cs.{"+userId+"}&order=created_at.desc");
+    },
+    async getThread(threadId) {
+      const {data:rows,error} = await supabase._q("threads","?id=eq."+threadId);
+      return { data:rows&&rows[0]||null, error };
+    },
+    async createThread(participants, vehicleId, vehicleName) {
+      const res = await supabase._post("threads",{
+        participants, vehicle_id:vehicleId, vehicle_name:vehicleName,
+        anonymous:true, created_at:now()
+      });
+      if(res.error) return res;
+      return { data: {...res.data, messages:[]} };
+    },
+    async sendMessage(threadId, fromId, text) {
+      return await supabase._post("messages",{
+        thread_id:threadId, from_id:fromId, text,
+        is_system:fromId==="system", created_at:now()
+      });
+    },
+    async markRead(threadId, userId) {
+      return await supabase._patch("messages",
+        "thread_id=eq."+threadId+"&from_id=neq."+userId,{read:true});
+    },
+    async getStats(userId) {
+      const [v,r,p,t] = await Promise.all([
+        supabase._q("vehicles","?user_id=eq."+userId+"&select=count"),
+        supabase._q("reminders","?user_id=eq."+userId+"&done=eq.false&select=count"),
+        supabase._q("participants","?user_id=eq."+userId+"&select=count"),
+        supabase._q("threads","?participants=cs.{"+userId+"}&select=count"),
+      ]);
+      return { data:{
+        vehicles:(v.data||[]).length, reminders:(r.data||[]).length,
+        events:(p.data||[]).length, threads:(t.data||[]).length,
+      }};
+    },
   };
 
   // ── API BACKEND ─────────────────────────────────────────────────────────────
