@@ -866,6 +866,63 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             </div>
           </div>
         </div>
+        {/* ── Action Buttons — directly under hero, always visible ── */}
+        <div style={{padding:"12px 14px",background:C.dark,borderBottom:`1px solid ${C.border}`}}>
+          <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:520,margin:"0 auto"}}>
+
+            {/* PHONE — prominent green call button */}
+            {(priv.pub_phone===true)&&v.phone&&v.phone.trim()&&(
+              <a href={`tel:${(v.phone||"").replace(/[^+\d]/g,"")}`}
+                style={{display:"flex",alignItems:"center",gap:12,background:"#16a34a",border:"none",
+                  borderRadius:12,padding:"14px 16px",textDecoration:"none",color:"#fff",cursor:"pointer"}}>
+                <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>📞</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:800,fontSize:15,color:"#fff"}}>Direkt anrufen</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:1}}>{v.phone}</div>
+                </div>
+                <span style={{fontSize:20,color:"rgba(255,255,255,.7)"}}>›</span>
+              </a>
+            )}
+
+            {/* CHAT — prominent red message button, always show for non-owners */}
+            {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
+              <button
+                onClick={()=>{ if(me){ startContact(v.id); } else { toast_("App öffnen um Nachrichten zu senden","err"); }}}
+                style={{display:"flex",alignItems:"center",gap:12,background:C.red,border:"none",
+                  borderRadius:12,padding:"14px 16px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#fff",width:"100%"}}>
+                <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>💬</div>
+                <div style={{flex:1,textAlign:"left"}}>
+                  <div style={{fontWeight:800,fontSize:15}}>Nachricht an Fahrer(in)</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:1}}>Anonym · Besitzer antwortet per App</div>
+                </div>
+                <span style={{fontSize:20,color:"rgba(255,255,255,.7)"}}>›</span>
+              </button>
+            )}
+
+            {/* STATUS — for owner only */}
+            {me&&(v.owner===me.email||v.userId===me.id)&&(
+              <button onClick={()=>setShowStatusPicker(v.id)}
+                style={{display:"flex",alignItems:"center",gap:12,
+                  background:getActiveStatus(v.id)?`${C.amber}22`:"transparent",
+                  border:`1.5px solid ${getActiveStatus(v.id)?C.amber+"66":C.border}`,
+                  borderRadius:12,padding:"12px 16px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",width:"100%"}}>
+                <div style={{width:36,height:36,borderRadius:"50%",background:`${C.amber}22`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
+                  {getActiveStatus(v.id)?getActiveStatus(v.id).icon:"📍"}
+                </div>
+                <div style={{flex:1,textAlign:"left"}}>
+                  <div style={{fontWeight:700,fontSize:14,color:getActiveStatus(v.id)?C.amber:C.white}}>
+                    {getActiveStatus(v.id)?getActiveStatus(v.id).text:"Status für Besucher setzen"}
+                  </div>
+                  <div style={{fontSize:11,color:C.muted,marginTop:1}}>
+                    {getActiveStatus(v.id)?`Noch ca. ${Math.max(0,Math.ceil((getActiveStatus(v.id).expiresAt-Date.now())/60000))} Min`:"Wird beim Scannen angezeigt"}
+                  </div>
+                </div>
+              </button>
+            )}
+
+          </div>
+        </div>
+
         <div style={{padding:"14px 16px",maxWidth:520,margin:"0 auto"}}>
           {/* ── Status Banner ── */}
           {(()=>{
@@ -922,65 +979,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               ))}
             </div>
           )}
-          {/* ── Contact & Actions ── */}
-          <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
 
-            {/* Phone call — show if pub_phone on AND has phone */}
-            {(priv.pub_phone===true||priv.pub_phone===undefined&&DEF_PRIVACY.pub_phone)&&v.phone&&v.phone.trim()&&(
-              <a href={`tel:${v.phone.replace(/\s/g,"")}`}
-                style={{display:"flex",alignItems:"center",gap:14,
-                  background:`${C.green}18`,border:`2px solid ${C.green}55`,borderRadius:14,
-                  padding:"16px 18px",textDecoration:"none",cursor:"pointer"}}>
-                <div style={{width:44,height:44,borderRadius:"50%",background:`${C.green}22`,border:`1px solid ${C.green}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>📞</div>
-                <div>
-                  <div style={{fontWeight:800,fontSize:16,color:C.green}}>Direkt anrufen</div>
-                  <div style={{fontSize:12,color:C.muted,marginTop:2}}>{v.phone}</div>
-                </div>
-                <div style={{marginLeft:"auto",color:C.green,fontSize:20}}>›</div>
-              </a>
-            )}
-
-            {/* Chat — show for non-owner visitors */}
-            {(!me||v.owner!==me.email)&&(
-              <button
-                onClick={()=>{
-                  if(!me){ toast_("Bitte einloggen um Nachrichten zu senden","err"); return; }
-                  startContact(v.id);
-                }}
-                style={{display:"flex",alignItems:"center",gap:14,
-                  background:`${C.red}11`,border:`2px solid ${C.red}44`,borderRadius:14,
-                  padding:"16px 18px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left",width:"100%"}}>
-                <div style={{width:44,height:44,borderRadius:"50%",background:`${C.red}22`,border:`1px solid ${C.red}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>💬</div>
-                <div>
-                  <div style={{fontWeight:800,fontSize:16,color:C.white}}>Nachricht schreiben</div>
-                  <div style={{fontSize:12,color:C.muted,marginTop:2}}>Anonym · Besitzer antwortet per App</div>
-                </div>
-                <div style={{marginLeft:"auto",color:C.muted,fontSize:20}}>›</div>
-              </button>
-            )}
-
-            {/* Status — owner only */}
-            {me&&(v.owner===me.email||v.userId===me.id)&&(
-              <button
-                onClick={()=>setShowStatusPicker(v.id)}
-                style={{display:"flex",alignItems:"center",gap:14,
-                  background:getActiveStatus(v.id)?`${C.amber}18`:"transparent",
-                  border:`1.5px solid ${getActiveStatus(v.id)?C.amber+"55":C.border}`,borderRadius:14,
-                  padding:"14px 18px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left",width:"100%"}}>
-                <div style={{width:40,height:40,borderRadius:"50%",background:`${C.amber}22`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>
-                  {getActiveStatus(v.id)?getActiveStatus(v.id).icon:"📍"}
-                </div>
-                <div>
-                  <div style={{fontWeight:700,fontSize:14,color:getActiveStatus(v.id)?C.amber:C.white}}>
-                    {getActiveStatus(v.id)?getActiveStatus(v.id).text:"Status setzen"}
-                  </div>
-                  <div style={{fontSize:11,color:C.muted,marginTop:1}}>
-                    {getActiveStatus(v.id)?"Wird Besuchern beim Scannen angezeigt":"Wird beim Scannen angezeigt"}
-                  </div>
-                </div>
-              </button>
-            )}
-          </div>
           <div style={{textAlign:"center",padding:"12px 0",borderTop:`1px solid ${C.border}`}}>
             <div style={{fontSize:9,color:"#333",letterSpacing:2,marginBottom:4}}>VERIFIZIERT DURCH QAR.GALLERY</div>
             <div style={{fontFamily:"monospace",fontSize:11,color:"#444"}}>{v.qarId}</div>
