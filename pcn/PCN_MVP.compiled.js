@@ -536,9 +536,28 @@
       setMe(user);
     };
 
-    // ── Session restore on mount ───────────────────────────────────────────────
+    // ── Session restore + QR URL param handling ───────────────────────────────
     (0, _react.useEffect)(() => {
       (async () => {
+        // Check for QR-Code URL param: ?v=QAR-XXXXXXXX
+        const urlParams = new URLSearchParams(window.location.search);
+        const qarId = urlParams.get('v');
+        if (qarId && qarId.match(/^QAR-[A-Z2-9]{8}$/)) {
+          // Find vehicle by QAR-ID (public lookup, no auth needed)
+          const v = Object.values(DEMO_VEHICLES).find(v => v.qarId === qarId);
+          if (v) {
+            setPublicV({
+              ...v,
+              privacy: {
+                ...DEF_PRIVACY,
+                ...(v.privacy || {})
+              }
+            });
+            setScreen("public");
+            return;
+          }
+        }
+        // Normal session restore
         const DB = window.PCN_DB;
         if (!DB) {
           return;
