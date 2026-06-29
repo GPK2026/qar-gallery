@@ -607,7 +607,7 @@
       }
     };
     const handleScanError = e => {
-      setScannerError(e.name === "NotAllowedError" ? "Kamera-Zugriff verweigert. Bitte in den iPhone-Einstellungen erlauben: Einstellungen → Safari → Kamera → Erlauben." : e.name === "NotFoundError" ? "Keine Kamera gefunden." : "Kamera-Fehler: " + e.message);
+      setScannerError(e.message && e.message.includes("jsQR") ? "HTTPS erforderlich für den Scanner. Bitte öffne: https://gpk2026.github.io/qar-gallery/pcn/ — oder warte bis qar.gallery HTTPS-Zertifikat erhält (heute Nacht)." : e.name === "NotAllowedError" ? "Kamera-Zugriff verweigert. Einstellungen → Safari → Kamera → Erlauben." : e.name === "NotFoundError" ? "Keine Kamera gefunden." : "Kamera-Fehler: " + e.message);
       setScannerStatus("error");
     };
     (0, _react.useEffect)(() => {
@@ -617,11 +617,24 @@
             res();
             return;
           }
-          const s = document.createElement("script");
-          s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
-          s.onload = res;
-          s.onerror = rej;
-          document.head.appendChild(s);
+          // Try multiple CDNs
+          const cdns = ["https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js", "https://unpkg.com/jsqr@1.4.0/dist/jsQR.js", "https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"];
+          let i = 0;
+          const tryNext = () => {
+            if (i >= cdns.length) {
+              rej(new Error("jsQR konnte nicht geladen werden — bitte HTTPS verwenden"));
+              return;
+            }
+            const s = document.createElement("script");
+            s.src = cdns[i++];
+            s.onload = res;
+            s.onerror = () => {
+              document.head.removeChild(s);
+              tryNext();
+            };
+            document.head.appendChild(s);
+          };
+          tryNext();
         });
         loadScript().then(() => {
           setScannerStatus("scanning");
@@ -3095,23 +3108,51 @@
         width: 220,
         height: 220
       }
-    }, [["0%", "0%", "top", "left"], ["0%", "auto", "top", "right"], ["auto", "0%", "bottom", "left"], ["auto", "auto", "bottom", "right"]].map(([t, r, vp, hp], i) => /*#__PURE__*/React.createElement("div", {
-      key: i,
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         position: "absolute",
-        top: t,
-        right: r === "auto" ? undefined : 0,
-        bottom: vp === "bottom" ? 0 : undefined,
-        left: hp === "left" ? 0 : undefined,
+        top: 0,
+        left: 0,
         width: 32,
         height: 32,
-        borderTop: vp === "top" ? "3px solid #e30613" : "none",
-        borderBottom: vp === "bottom" ? "3px solid #e30613" : "none",
-        borderLeft: hp === "left" ? "3px solid #e30613" : "none",
-        borderRight: hp === "right" ? "3px solid #e30613" : "none",
-        borderRadius: hp === "left" && vp === "top" ? "8px 0 0 0" : hp === "right" && vp === "top" ? "0 8px 0 0" : hp === "left" && vp === "bottom" ? "0 0 0 8px" : "0 0 8px 0"
+        borderTop: "3px solid #e30613",
+        borderLeft: "3px solid #e30613",
+        borderRadius: "8px 0 0 0"
       }
-    })), scannerStatus === "scanning" && /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        top: 0,
+        right: 0,
+        width: 32,
+        height: 32,
+        borderTop: "3px solid #e30613",
+        borderRight: "3px solid #e30613",
+        borderRadius: "0 8px 0 0"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        width: 32,
+        height: 32,
+        borderBottom: "3px solid #e30613",
+        borderLeft: "3px solid #e30613",
+        borderRadius: "0 0 0 8px"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        bottom: 0,
+        right: 0,
+        width: 32,
+        height: 32,
+        borderBottom: "3px solid #e30613",
+        borderRight: "3px solid #e30613",
+        borderRadius: "0 0 8px 0"
+      }
+    }), scannerStatus === "scanning" && /*#__PURE__*/React.createElement("div", {
       style: {
         position: "absolute",
         left: 4,
