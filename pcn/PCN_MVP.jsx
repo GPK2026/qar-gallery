@@ -27,7 +27,7 @@ const DEF_PRIVACY = {
   hersteller:true, modell:true, baujahr:true, farbe:true,
   kraftstoff:true, getriebe:true, kennzeichen:true,
   kilometerstand:false, zustand:false, tuev_faelligkeit:false,
-  fin:false, marktwert:false, pub_logbook:false, pub_events:true,
+  fin:false, marktwert:false, pub_logbook:false, pub_events:true, pub_phone:false,
 };
 
 // ─── QR Code (Canvas) ─────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ const DEMO_VEHICLES = {
   "V001":{id:"V001",qarId:"QAR-R4T8W3NX",userId:"u1",owner:"max@pcn.de",
     hersteller:"Porsche",modell:"911 Carrera 4S",baujahr:"2021",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"GT-Silbermetallic",
-    kennzeichen:"AW-PC 911",fin:"WP0ZZZ99ZLS100001",
+    kennzeichen:"AW-PC 911",fin:"WP0ZZZ99ZLS100001",phone:"+49 171 9110911",
     kilometerstand:"32400",tuev_faelligkeit:"02/2027",marktwert:"138000",zustand:"1",
     besonderheiten:"Sport-Chrono, PASM, Sportabgasanlage, PCCB",
     image:"https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
@@ -351,7 +351,7 @@ export default function PCN() {
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [loginForm, setLoginForm] = useState({mode:"register",code:"",email:"",name:""});
-  const [addVForm, setAddVForm]   = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[]});
+  const [addVForm, setAddVForm]   = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[],phone:""});
   const [addLogForm, setAddLogForm] = useState({type:"Ölwechsel",km:"",notes:"",workshop:""});
   const [remForm, setRemForm]     = useState({vehicleId:"",title:"",date:""});
 
@@ -923,6 +923,19 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           )}
           {/* Contact + Status section */}
           <div style={{marginBottom:14}}>
+            {/* Phone — only if public and has number */}
+            {priv.pub_phone&&v.phone&&(!me||v.owner!==me.email)&&(
+              <a href={`tel:${v.phone.replace(/\s/g,"")}`}
+                style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+                  background:`${C.green}18`,border:`1px solid ${C.green}44`,borderRadius:12,
+                  padding:"14px",marginBottom:8,textDecoration:"none",color:C.green,fontWeight:700,fontSize:15}}>
+                <span style={{fontSize:20}}>📞</span>
+                <div style={{textAlign:"left"}}>
+                  <div style={{fontWeight:800}}>Direkt anrufen</div>
+                  <div style={{fontSize:11,color:`${C.green}aa`,fontWeight:400}}>{v.phone}</div>
+                </div>
+              </a>
+            )}
             {/* Contact button — always visible to non-owners */}
             {(!me||v.owner!==me.email)&&(
               <button className="btn" style={{width:"100%",marginBottom:8,fontSize:15}}
@@ -1155,6 +1168,27 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             </div>
           )}
 
+          {/* Phone — owner edit */}
+          {isOwn&&(
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>📞 Kontakt</div>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <input className="inp" placeholder="Telefonnummer" type="tel"
+                  value={viewV.phone||""}
+                  onChange={async e=>{
+                    const updated={...viewV,phone:e.target.value};
+                    setViewV(updated);
+                    setVehicles(prev=>({...prev,[viewV.id]:updated}));
+                    const DB=window.PCN_DB; await DB.vehicles.save(updated);
+                  }}
+                  style={{flex:1,fontSize:14}}/>
+                <div style={{fontSize:10,color:C.muted,flexShrink:0,lineHeight:1.4,maxWidth:100}}>
+                  {priv.pub_phone?"🔓 Öffentlich":"🔒 Privat"}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* QR Code */}
           <div className="card" style={{padding:16}}>
             <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>📱 QR-Code</div>
@@ -1182,6 +1216,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                 ["Basis",[["kennzeichen","Kennzeichen"],["farbe","Farbe"],["kraftstoff","Kraftstoff"],["getriebe","Getriebe"],["baujahr","Baujahr"]]],
                 ["Details",[["kilometerstand","Kilometerstand"],["tuev_faelligkeit","TÜV-Datum"],["zustand","Zustand"],["marktwert","Marktwert"]]],
                 ["Abschnitte",[["pub_events","Veranstaltungsteilnahmen"],["pub_logbook","Service-Logbuch"]]],
+                ["Kontakt",[["pub_phone","Telefonnummer (Direktanruf)"]]],
               ].map(([group,fields])=>(
                 <div key={group} style={{marginBottom:14}}>
                   <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{group}</div>
@@ -1601,9 +1636,13 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             <select className="inp" value={addVForm.kraftstoff} onChange={e=>setAddVForm(p=>({...p,kraftstoff:e.target.value}))} style={{marginBottom:10}}>
               {["Benzin","Diesel","Elektro","Hybrid"].map(k=><option key={k}>{k}</option>)}
             </select>
-            <select className="inp" value={addVForm.getriebe||"PDK"} onChange={e=>setAddVForm(p=>({...p,getriebe:e.target.value}))} style={{marginBottom:14}}>
+            <select className="inp" value={addVForm.getriebe||"PDK"} onChange={e=>setAddVForm(p=>({...p,getriebe:e.target.value}))} style={{marginBottom:8}}>
               {["PDK","7-Gang PDK","6-Gang manuell","8-Gang Automatik","Stufenlos"].map(k=><option key={k}>{k}</option>)}
             </select>
+            <input className="inp" placeholder="Telefon (optional, für Direktanruf)" type="tel"
+              value={addVForm.phone||""} onChange={e=>setAddVForm(p=>({...p,phone:e.target.value}))}
+              style={{marginBottom:6}}/>
+            <div style={{fontSize:10,color:C.muted,marginBottom:14}}>🔒 Standardmäßig privat — Sichtbarkeit in QR-Einstellungen</div>
             <button className="btn" style={{width:"100%"}} onClick={addVehicle}>Hinzufügen ✓</button>
           </div>
         </div>
