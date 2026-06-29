@@ -187,6 +187,15 @@ const LOCKED_FEATURES = [
   {id:"token",icon:"🪙",label:"Digitaler Fahrzeugpass",milestone:"Beta-Programm",desc:"Blockchain-Eigentumsnachweis"},
 ];
 
+// ─── Status Presets ──────────────────────────────────────────────────────────
+const STATUS_PRESETS = [
+  {icon:"🏁", text:"Komme gleich zurück",  mins:15},
+  {icon:"⏱️", text:"Bin in 5 Min zurück",  mins:5},
+  {icon:"⏱️", text:"Bin in 10 Min zurück", mins:10},
+  {icon:"⏱️", text:"Bin in 15 Min zurück", mins:15},
+  {icon:"⏱️", text:"Bin in 30 Min zurück", mins:30},
+];
+
 // ─── Sub-components (proper React components — no hooks-in-render) ─────────────
 
 function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin, onViewVehicle}) {
@@ -354,6 +363,9 @@ export default function PCN() {
   const [showPrivacy, setShowPrivacy] = useState(null);
   const [imgUploading, setImgUploading] = useState(false);
   const [lightbox, setLightbox]       = useState(null); // {images:[], index:0}
+  const [vehicleStatus, setVehicleStatus] = useState({}); // {vehicleId: {text, icon, expiresAt}}
+  const [showStatusPicker, setShowStatusPicker] = useState(null); // vehicleId
+  const [statusCustom, setStatusCustom]   = useState("");
   const [gallerySwipe, setGallerySwipe] = useState({}); // {vehicleId: currentIndex}
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState(null);
@@ -371,6 +383,35 @@ export default function PCN() {
   const unlockedFeatures = new Set(MILESTONES.filter(m=>m.check(appState)).flatMap(m=>m.unlocks));
 
   // ── Toast ────────────────────────────────────────────────────────────────────
+  // ── Status helpers ────────────────────────────────────────────────────────────
+  const setStatus = (vehicleId, preset, customText="") => {
+    const text = customText || preset.text;
+    const expiresAt = preset.mins ? Date.now() + preset.mins*60*1000 : null;
+    const status = {text, icon:preset.icon||"💬", expiresAt, setAt:Date.now()};
+    setVehicleStatus(prev=>({...prev,[vehicleId]:status}));
+    // Save to localStorage
+    const stored = JSON.parse(localStorage.getItem("pcn_v1")||"{}");
+    stored.vehicleStatus = stored.vehicleStatus||{};
+    stored.vehicleStatus[vehicleId] = status;
+    localStorage.setItem("pcn_v1", JSON.stringify(stored));
+    setShowStatusPicker(null); setStatusCustom("");
+    toast_(`Status gesetzt: "${text}"`);
+  };
+
+  const clearStatus = (vehicleId) => {
+    setVehicleStatus(prev=>{const n={...prev};delete n[vehicleId];return n;});
+    const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
+    if(stored.vehicleStatus) delete stored.vehicleStatus[vehicleId];
+    localStorage.setItem("pcn_v1",JSON.stringify(stored));
+  };
+
+  const getActiveStatus = (vehicleId) => {
+    const s = vehicleStatus[vehicleId];
+    if(!s) return null;
+    if(s.expiresAt && Date.now() > s.expiresAt) { clearStatus(vehicleId); return null; }
+    return s;
+  };
+
   const toast_ = useCallback((msg,type="ok")=>{
     setToast({msg,type}); setTimeout(()=>setToast(null),3500);
   },[]);
@@ -427,6 +468,9 @@ export default function PCN() {
   // ── DB refresh ───────────────────────────────────────────────────────────────
   const refreshAll = async (user) => {
     if(!user) return;
+    // Load saved statuses
+    const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
+    if(stored.vehicleStatus) setVehicleStatus(stored.vehicleStatus);
     const DB=window.PCN_DB; if(!DB) return;
     const [vRes,remRes,evRes,thRes] = await Promise.all([
       DB.vehicles.list(user.id||user.email),
@@ -822,7 +866,25 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           </div>
         </div>
         <div style={{padding:"14px 16px",maxWidth:520,margin:"0 auto"}}>
-          {nextEvent&&priv.pub_events&&(
+          {/* ── Status Banner ── */}
+          {(()=>{
+            const s = getActiveStatus(v.id);
+            if(!s) return null;
+            const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt-Date.now())/60000) : null;
+            return (
+              <div style={{background:`${C.amber}18`,border:`2px solid ${C.amber}66`,borderRadius:14,padding:"14px 16px",marginBottom:14,animation:"fadeIn .3s ease"}}>
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  <span style={{fontSize:28,flexShrink:0}}>{s.icon}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:800,fontSize:16,color:C.amber,lineHeight:1.2}}>{s.text}</div>
+                    {minsLeft&&minsLeft>0&&<div style={{fontSize:11,color:C.muted,marginTop:3}}>Noch ca. {minsLeft} Min</div>}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+        {nextEvent&&priv.pub_events&&(
             <div style={{background:`${C.red}11`,border:`1px solid ${C.red}33`,borderRadius:12,padding:"12px 14px",marginBottom:14}}>
               <div style={{fontSize:9,color:C.red,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>🏁 Nächste Veranstaltung — in {daysUntil(nextEvent.ev.date)} Tagen</div>
               <div style={{fontWeight:700,fontSize:14,color:C.white}}>{nextEvent.ev.name}</div>
@@ -859,11 +921,23 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               ))}
             </div>
           )}
-          {me&&v.owner!==me.email&&(
-            <button className="btn ghost" style={{width:"100%",marginBottom:10}} onClick={()=>startContact(v.id)}>
-              💬 Besitzer anonym kontaktieren
-            </button>
-          )}
+          {/* Contact + Status section */}
+          <div style={{marginBottom:14}}>
+            {/* Contact button — always visible to non-owners */}
+            {(!me||v.owner!==me.email)&&(
+              <button className="btn" style={{width:"100%",marginBottom:8,fontSize:15}}
+                onClick={()=>me?startContact(v.id):(toast_("Bitte zuerst anmelden","err"))}>
+                💬 Nachricht an Besitzer schreiben
+              </button>
+            )}
+            {/* Status button — only for owner */}
+            {me&&v.owner===me.email&&(
+              <button className="btn ghost" style={{width:"100%"}}
+                onClick={()=>setShowStatusPicker(v.id)}>
+                {getActiveStatus(v.id)?`${getActiveStatus(v.id).icon} Status ändern`:"📍 Status setzen"}
+              </button>
+            )}
+          </div>
           <div style={{textAlign:"center",padding:"12px 0",borderTop:`1px solid ${C.border}`}}>
             <div style={{fontSize:9,color:"#333",letterSpacing:2,marginBottom:4}}>VERIFIZIERT DURCH QAR.GALLERY</div>
             <div style={{fontFamily:"monospace",fontSize:11,color:"#444"}}>{v.qarId}</div>
@@ -971,8 +1045,31 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                 {imgUploading?"⏳ Lädt…":"📷 Foto"}
               </label>
             )}
+            {isOwn&&(
+              <button className="btn sm ghost" style={{fontSize:11}}
+                onClick={()=>setShowStatusPicker(v.id)}>
+                {getActiveStatus(v.id)?`${getActiveStatus(v.id).icon} Status`:"📍 Status"}
+              </button>
+            )}
             {!isOwn&&<button className="btn sm ghost" style={{fontSize:11}} onClick={()=>startContact(v.id)}>💬 Kontakt</button>}
           </div>
+
+          {/* Active status banner */}
+          {(()=>{
+            const s=getActiveStatus(v.id);
+            if(!s||!isOwn) return null;
+            return (
+              <div style={{background:`${C.amber}18`,border:`1px solid ${C.amber}44`,borderRadius:10,padding:"10px 14px",marginBottom:12,display:"flex",gap:10,alignItems:"center"}}>
+                <span style={{fontSize:20}}>{s.icon}</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.amber}}>{s.text}</div>
+                  {s.expiresAt&&<div style={{fontSize:10,color:C.muted}}>Läuft ab in {Math.max(0,Math.ceil((s.expiresAt-Date.now())/60000))} Min</div>}
+                </div>
+                <button onClick={()=>clearStatus(v.id)}
+                  style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,padding:4}}>✕</button>
+              </div>
+            );
+          })()}
 
           {/* Thumbnail strip */}
           {(()=>{
@@ -1393,6 +1490,54 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           </div>
         )}
       </div>
+
+      {/* ── STATUS PICKER ── */}
+      {showStatusPicker&&(
+        <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
+          <div className="sheet">
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Status setzen</div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
+
+            {/* Presets */}
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+              {STATUS_PRESETS.map((p,i)=>(
+                <button key={i} onClick={()=>setStatus(showStatusPicker,p)}
+                  style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left",transition:"border-color .15s"}}
+                  onTouchStart={e=>e.currentTarget.style.borderColor=C.amber}
+                  onTouchEnd={e=>e.currentTarget.style.borderColor=C.border}>
+                  <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:700,color:C.white}}>{p.text}</div>
+                    <div style={{fontSize:11,color:C.muted}}>Läuft ab nach {p.mins} Min</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Custom text */}
+            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginBottom:10}}>
+              <div style={{fontSize:11,color:C.muted,marginBottom:8}}>Eigener Text</div>
+              <div style={{display:"flex",gap:8}}>
+                <input className="inp" placeholder="z.B. Bin gleich beim Einlass..." value={statusCustom}
+                  onChange={e=>setStatusCustom(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
+                  style={{flex:1}}/>
+                <button className="btn" disabled={!statusCustom.trim()}
+                  onClick={()=>setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom)}
+                  style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
+              </div>
+            </div>
+
+            {/* Clear status */}
+            {getActiveStatus(showStatusPicker)&&(
+              <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
+                onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Status gelöscht");}}>
+                Status löschen
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── LIGHTBOX ── */}
       {lightbox&&(
