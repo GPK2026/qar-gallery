@@ -922,33 +922,62 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               ))}
             </div>
           )}
-          {/* Contact + Status section */}
-          <div style={{marginBottom:14}}>
-            {/* Phone — only if public and has number */}
-            {priv.pub_phone===true&&v.phone&&v.phone.trim()&&(!me||v.owner!==me.email)&&(
+          {/* ── Contact & Actions ── */}
+          <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+
+            {/* Phone call — show if pub_phone on AND has phone */}
+            {(priv.pub_phone===true||priv.pub_phone===undefined&&DEF_PRIVACY.pub_phone)&&v.phone&&v.phone.trim()&&(
               <a href={`tel:${v.phone.replace(/\s/g,"")}`}
-                style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
-                  background:`${C.green}18`,border:`1px solid ${C.green}44`,borderRadius:12,
-                  padding:"14px",marginBottom:8,textDecoration:"none",color:C.green,fontWeight:700,fontSize:15}}>
-                <span style={{fontSize:20}}>📞</span>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontWeight:800}}>Direkt anrufen</div>
-                  <div style={{fontSize:11,color:`${C.green}aa`,fontWeight:400}}>{v.phone}</div>
+                style={{display:"flex",alignItems:"center",gap:14,
+                  background:`${C.green}18`,border:`2px solid ${C.green}55`,borderRadius:14,
+                  padding:"16px 18px",textDecoration:"none",cursor:"pointer"}}>
+                <div style={{width:44,height:44,borderRadius:"50%",background:`${C.green}22`,border:`1px solid ${C.green}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>📞</div>
+                <div>
+                  <div style={{fontWeight:800,fontSize:16,color:C.green}}>Direkt anrufen</div>
+                  <div style={{fontSize:12,color:C.muted,marginTop:2}}>{v.phone}</div>
                 </div>
+                <div style={{marginLeft:"auto",color:C.green,fontSize:20}}>›</div>
               </a>
             )}
-            {/* Contact button — always visible to non-owners */}
+
+            {/* Chat — show for non-owner visitors */}
             {(!me||v.owner!==me.email)&&(
-              <button className="btn" style={{width:"100%",marginBottom:8,fontSize:15}}
-                onClick={()=>{ if(me&&v.owner!==me.email) startContact(v.id); else if(!me) toast_("App öffnen um Kontakt aufzunehmen","err"); }}>
-                💬 Nachricht an Besitzer schreiben
+              <button
+                onClick={()=>{
+                  if(!me){ toast_("Bitte einloggen um Nachrichten zu senden","err"); return; }
+                  startContact(v.id);
+                }}
+                style={{display:"flex",alignItems:"center",gap:14,
+                  background:`${C.red}11`,border:`2px solid ${C.red}44`,borderRadius:14,
+                  padding:"16px 18px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left",width:"100%"}}>
+                <div style={{width:44,height:44,borderRadius:"50%",background:`${C.red}22`,border:`1px solid ${C.red}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>💬</div>
+                <div>
+                  <div style={{fontWeight:800,fontSize:16,color:C.white}}>Nachricht schreiben</div>
+                  <div style={{fontSize:12,color:C.muted,marginTop:2}}>Anonym · Besitzer antwortet per App</div>
+                </div>
+                <div style={{marginLeft:"auto",color:C.muted,fontSize:20}}>›</div>
               </button>
             )}
-            {/* Status button — only for owner */}
-            {me&&v.owner===me.email&&(
-              <button className="btn ghost" style={{width:"100%"}}
-                onClick={()=>setShowStatusPicker(v.id)}>
-                {getActiveStatus(v.id)?`${getActiveStatus(v.id).icon} Status ändern`:"📍 Status setzen"}
+
+            {/* Status — owner only */}
+            {me&&(v.owner===me.email||v.userId===me.id)&&(
+              <button
+                onClick={()=>setShowStatusPicker(v.id)}
+                style={{display:"flex",alignItems:"center",gap:14,
+                  background:getActiveStatus(v.id)?`${C.amber}18`:"transparent",
+                  border:`1.5px solid ${getActiveStatus(v.id)?C.amber+"55":C.border}`,borderRadius:14,
+                  padding:"14px 18px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left",width:"100%"}}>
+                <div style={{width:40,height:40,borderRadius:"50%",background:`${C.amber}22`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>
+                  {getActiveStatus(v.id)?getActiveStatus(v.id).icon:"📍"}
+                </div>
+                <div>
+                  <div style={{fontWeight:700,fontSize:14,color:getActiveStatus(v.id)?C.amber:C.white}}>
+                    {getActiveStatus(v.id)?getActiveStatus(v.id).text:"Status setzen"}
+                  </div>
+                  <div style={{fontSize:11,color:C.muted,marginTop:1}}>
+                    {getActiveStatus(v.id)?"Wird Besuchern beim Scannen angezeigt":"Wird beim Scannen angezeigt"}
+                  </div>
+                </div>
               </button>
             )}
           </div>
