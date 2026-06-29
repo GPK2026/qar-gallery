@@ -3513,7 +3513,7 @@
         fontSize: 11,
         color: C.muted
       }
-    }, "Kamera oder Bibliothek · max. 5MB")))), [["Modell *", "modell", "Cayman GT4"], ["Kennzeichen *", "kennzeichen", "AW-PC 718"], ["Baujahr", "baujahr", "2023"], ["Farbe", "farbe", "Pythongrün"]].map(([ph, key, ex]) => /*#__PURE__*/React.createElement("input", {
+    }, "Kamera oder Bibliothek — alle Größen")))), [["Modell *", "modell", "Cayman GT4"], ["Kennzeichen *", "kennzeichen", "AW-PC 718"], ["Baujahr", "baujahr", "2023"], ["Farbe", "farbe", "Pythongrün"]].map(([ph, key, ex]) => /*#__PURE__*/React.createElement("input", {
       key: key,
       className: "inp",
       placeholder: `${ph} (z.B. ${ex})`,
