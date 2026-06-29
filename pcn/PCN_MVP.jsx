@@ -1,7 +1,7 @@
-// PCN — Porsche Club Nürburgring · Digitale Clubplattform v2
-// Features: Fahrzeugakte · Events · QR-Code · Privacy · Logbuch · Erinnerungen · Messenger
+// PCN — Porsche Club Nürburgring · Digitale Clubplattform v3
+// Vollständig neu geschrieben — alle Bugs behoben
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2,9).toUpperCase();
@@ -11,13 +11,15 @@ const fmtTime = () => new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minu
 const daysUntil = d => Math.ceil((new Date(d)-new Date())/86400000);
 const QAR_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const genQARId = () => { let id="QAR-"; for(let i=0;i<8;i++) id+=QAR_CHARS[Math.floor(Math.random()*QAR_CHARS.length)]; return id; };
+const isH = (baujahr) => baujahr && (new Date().getFullYear()-parseInt(baujahr)>=30);
+const fmtKz = (kz, baujahr) => isH(baujahr) ? (kz||"").replace(/\s*H\s*$/,"").trim()+" H" : (kz||"");
 
 // ─── Brand ───────────────────────────────────────────────────────────────────
 const LOGO_URL = "https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg";
 const C = {
   black:"#0a0a0a", dark:"#111111", card:"#191919", border:"#272727",
   red:"#e30613", gold:"#c8a96e", white:"#f0f0f0", muted:"#666",
-  green:"#22c55e", amber:"#f59e0b", blue:"#3b82f6",
+  green:"#22c55e", amber:"#f59e0b",
 };
 
 // ─── Privacy defaults ─────────────────────────────────────────────────────────
@@ -25,8 +27,7 @@ const DEF_PRIVACY = {
   hersteller:true, modell:true, baujahr:true, farbe:true,
   kraftstoff:true, getriebe:true, kennzeichen:true,
   kilometerstand:false, zustand:false, tuev_faelligkeit:false,
-  fin:false, marktwert:false,
-  pub_logbook:false, pub_events:true,
+  fin:false, marktwert:false, pub_logbook:false, pub_events:true,
 };
 
 // ─── QR Code (Canvas) ─────────────────────────────────────────────────────────
@@ -35,39 +36,38 @@ function QRCodeCanvas({value, size=140}) {
   useEffect(()=>{
     if(!ref.current) return;
     const ctx = ref.current.getContext("2d");
-    const s = size; ctx.fillStyle="#fff"; ctx.fillRect(0,0,s,s);
-    // Finder patterns
-    const cell = Math.floor(s/25);
+    const cell = Math.floor(size/25);
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,size,size);
     const drawFinder = (ox,oy) => {
-      [[0,0,7,7,C.black],[1,1,5,5,"#fff"],[2,2,3,3,C.black]].forEach(([x,y,w,h,col])=>{
+      [[0,0,7,7,"#111"],[1,1,5,5,"#fff"],[2,2,3,3,"#111"]].forEach(([x,y,w,h,col])=>{
         ctx.fillStyle=col; ctx.fillRect((ox+x)*cell,(oy+y)*cell,w*cell,h*cell);
       });
     };
     drawFinder(0,0); drawFinder(18,0); drawFinder(0,18);
-    // Data modules (deterministic from value)
-    ctx.fillStyle=C.black;
+    ctx.fillStyle="#111";
     let hash=0; for(let i=0;i<value.length;i++) hash=((hash<<5)-hash+value.charCodeAt(i))|0;
     for(let r=0;r<25;r++) for(let c=0;c<25;c++) {
       if((r<8&&(c<8||c>16))||(r>16&&c<8)) continue;
-      const bit=(Math.abs(hash^(r*25+c)*2654435761))%3===0;
-      if(bit) ctx.fillRect(c*cell,r*cell,cell,cell);
+      if((Math.abs(hash^(r*25+c)*2654435761))%3===0) ctx.fillRect(c*cell,r*cell,cell,cell);
     }
     ctx.fillStyle=C.red; ctx.fillRect(10*cell,10*cell,5*cell,5*cell);
   },[value,size]);
   return <canvas ref={ref} width={size} height={size} style={{borderRadius:4,display:"block"}}/>;
 }
 
-// ─── Club data ────────────────────────────────────────────────────────────────
+// ─── Demo Data ────────────────────────────────────────────────────────────────
 const CLUB_CODE = "PCN2026";
-const d = days => new Date(Date.now()+days*86400000).toISOString().split("T")[0];
-const past = days => new Date(Date.now()-days*86400000).toISOString().split("T")[0];
+const dPlus = days => new Date(Date.now()+days*86400000).toISOString().split("T")[0];
+const dMinus = days => new Date(Date.now()-days*86400000).toISOString().split("T")[0];
 
-const DEMO_USER = {id:"u1",name:"Max Mustermann",email:"max@pcn.de",role:"member",memberNr:"PCN-0847"};
-const DEMO_USER2 = {id:"u2",name:"Thomas Weber",email:"thomas@pcn.de",role:"member",memberNr:"PCN-0312"};
-const DEMO_USER3 = {id:"u3",name:"Anna Fischer",email:"anna@pcn.de",role:"member",memberNr:"PCN-0561"};
+const DEMO_USERS = {
+  "u1":{id:"u1",name:"Max Mustermann",email:"max@pcn.de",role:"member",memberNr:"PCN-0847"},
+  "u2":{id:"u2",name:"Thomas Weber",email:"thomas@pcn.de",role:"member",memberNr:"PCN-0312"},
+  "u3":{id:"u3",name:"Anna Fischer",email:"anna@pcn.de",role:"member",memberNr:"PCN-0561"},
+};
 
 const DEMO_VEHICLES = {
-  "V001":{id:"V001",qarId:"QAR-R4T8W3NX",owner:"max@pcn.de",
+  "V001":{id:"V001",qarId:"QAR-R4T8W3NX",userId:"u1",owner:"max@pcn.de",
     hersteller:"Porsche",modell:"911 Carrera 4S",baujahr:"2021",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"GT-Silbermetallic",
     kennzeichen:"AW-PC 911",fin:"WP0ZZZ99ZLS100001",
@@ -75,7 +75,7 @@ const DEMO_VEHICLES = {
     besonderheiten:"Sport-Chrono, PASM, Sportabgasanlage, PCCB",
     image:"https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
     privacy:{...DEF_PRIVACY}},
-  "V002":{id:"V002",qarId:"QAR-K9P2M7RW",owner:"max@pcn.de",
+  "V002":{id:"V002",qarId:"QAR-K9P2M7RW",userId:"u1",owner:"max@pcn.de",
     hersteller:"Porsche",modell:"Boxster 718 GTS 4.0",baujahr:"2022",
     kraftstoff:"Benzin",getriebe:"6-Gang manuell",farbe:"Pythongrün",
     kennzeichen:"AW-PC 718",fin:"WP0ZZZ98ZNS200042",
@@ -83,7 +83,7 @@ const DEMO_VEHICLES = {
     besonderheiten:"Manuelles Getriebe, Alcantara-Paket, Sportabgas",
     image:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
     privacy:{...DEF_PRIVACY}},
-  "V003":{id:"V003",qarId:"QAR-T7M3N9PX",owner:"thomas@pcn.de",
+  "V003":{id:"V003",qarId:"QAR-T7M3N9PX",userId:"u2",owner:"thomas@pcn.de",
     hersteller:"Porsche",modell:"992 GT3",baujahr:"2022",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"Riviera Blau",
     kennzeichen:"MYK-PC 992",fin:"WP0AC2A92NS230001",
@@ -95,34 +95,36 @@ const DEMO_VEHICLES = {
 
 const DEMO_EVENTS = {
   "E001":{id:"E001",name:"PCN TrackDay Nürburgring",subtitle:"Nordschleife · Touristenfahrten",
-    date:d(12),location:"Nürburgring, Nordschleife",category:"Trackday",
+    date:dPlus(12),location:"Nürburgring, Nordschleife",category:"Trackday",
     maxParticipants:40,entryFee:"€ 380 / Fahrzeug",
     description:"Jährlicher PCN TrackDay auf der Nordschleife. Touristenfahrten, optional mit Instruktor. Technische Abnahme vor Ort.",
     classes:["Street","Sport","Race"]},
   "E002":{id:"E002",name:"After Work Classics",subtitle:"Abendausfahrt Grand-Prix-Strecke",
-    date:d(22),location:"Grand-Prix-Strecke, Nürburgring",category:"Ausfahrt",
+    date:dPlus(22),location:"Grand-Prix-Strecke, Nürburgring",category:"Ausfahrt",
     maxParticipants:60,entryFee:"kostenlos für Mitglieder",
     description:"Entspannte Abendausfahrt. Alle Porsche-Modelle willkommen.",
     classes:["Alle Modelle"]},
   "E003":{id:"E003",name:"BELMOT Oldtimer-Grand-Prix",subtitle:"53. Auflage — Clubbesuch",
-    date:d(41),location:"Nürburgring",category:"Rennsport",
+    date:dPlus(41),location:"Nürburgring",category:"Rennsport",
     maxParticipants:200,entryFee:"Eintritt ab € 29",
-    description:"Gemeinsamer Besuch. PCN-Treffpunkt am Historischen Fahrerlager.",
+    description:"Gemeinsamer Besuch des BELMOT Grand Prix. PCN-Treffpunkt am Historischen Fahrerlager.",
     classes:["Besucher","Aktive Fahrer"]},
   "E004":{id:"E004",name:"PCN Clubabend",subtitle:"CHRSN x PCN im Kesselchen",
-    date:d(51),location:"Historisches Fahrerlager",category:"Clubabend",
+    date:dPlus(51),location:"Historisches Fahrerlager",category:"Clubabend",
     maxParticipants:80,entryFee:"kostenlos",
-    description:"Monatlicher Clubabend. Austausch, Neuigkeiten, Gemeinschaft.",
+    description:"Monatlicher Clubabend im Kesselchen. Austausch und Neuigkeiten.",
     classes:["Alle Mitglieder"]},
 };
 
 const DEMO_LOGBOOK = {
   "V001":[
-    {id:"L1",date:past(60),type:"Ölwechsel",km:"31200",notes:"Mobil 1 5W-50",workshop:"Porsche Zentrum Koblenz"},
-    {id:"L2",date:past(120),type:"Inspektion",km:"27800",notes:"Großer Service — Bremsflüssigkeit, Luftfilter",workshop:"Porsche Zentrum Koblenz"},
-    {id:"L3",date:past(200),type:"Reifenwechsel",km:"24100",notes:"Pirelli P Zero Sommer",workshop:"Eigene Werkstatt"},
+    {id:"L1",vehicleId:"V001",date:dMinus(60),type:"Ölwechsel",km:"31200",notes:"Mobil 1 5W-50",workshop:"Porsche Zentrum Koblenz"},
+    {id:"L2",vehicleId:"V001",date:dMinus(120),type:"Inspektion",km:"27800",notes:"Großer Service — Bremsflüssigkeit, Luftfilter",workshop:"Porsche Zentrum Koblenz"},
+    {id:"L3",vehicleId:"V001",date:dMinus(200),type:"Reifenwechsel",km:"24100",notes:"Pirelli P Zero Sommer",workshop:"Eigene Werkstatt"},
   ],
-  "V002":[{id:"L4",date:past(90),type:"Inspektion",km:"18200",notes:"Jahresinspektion",workshop:"Porsche Zentrum Koblenz"}],
+  "V002":[
+    {id:"L4",vehicleId:"V002",date:dMinus(90),type:"Inspektion",km:"18200",notes:"Jahresinspektion i.O.",workshop:"Porsche Zentrum Koblenz"},
+  ],
 };
 
 const DEMO_PARTICIPANTS = {
@@ -130,29 +132,26 @@ const DEMO_PARTICIPANTS = {
     {id:"P1",eventId:"E001",vehicleId:"V001",userId:"u1",class:"Sport",startNr:"07",status:"confirmed"},
     {id:"P2",eventId:"E001",vehicleId:"V003",userId:"u2",class:"Race",startNr:"03",status:"confirmed"},
   ],
-  "E002":[{id:"P3",eventId:"E002",vehicleId:"V002",userId:"u1",class:"Alle Modelle",startNr:"12",status:"confirmed"}],
+  "E002":[
+    {id:"P3",eventId:"E002",vehicleId:"V002",userId:"u1",class:"Alle Modelle",startNr:"12",status:"confirmed"},
+  ],
 };
 
-const EVENT_HISTORY = [
-  {id:"H1",vehicleId:"V001",eventId:"E_HIST1",eventName:"PCN TrackDay 2025",date:past(280),startNr:"05",class:"Sport",result:"Finisher",note:"Bestzeit 9:43 min Nordschleife"},
-  {id:"H2",vehicleId:"V001",eventId:"E_HIST2",eventName:"After Work Classics Sep 2025",date:past(310),startNr:"11",class:"Alle Modelle",result:"Teilnahme",note:""},
-  {id:"H3",vehicleId:"V003",eventId:"E_HIST1",eventName:"PCN TrackDay 2025",date:past(280),startNr:"02",class:"Race",result:"Schnellste Zeit",note:"7:58 min — neuer Clubrekord"},
+const DEMO_HISTORY = [
+  {id:"H1",vehicleId:"V001",eventName:"PCN TrackDay 2025",date:dMinus(280),startNr:"05",class:"Sport",result:"Finisher",note:"Bestzeit 9:43 min Nordschleife"},
+  {id:"H2",vehicleId:"V001",eventName:"After Work Classics Sep 2025",date:dMinus(310),startNr:"11",class:"Alle Modelle",result:"Teilnahme",note:""},
+  {id:"H3",vehicleId:"V003",eventName:"PCN TrackDay 2025",date:dMinus(280),startNr:"02",class:"Race",result:"Schnellste Zeit",note:"7:58 min — Clubrekord"},
 ];
 
-// Demo threads (anonymous messenger)
 const DEMO_THREADS = {
-  "T001":{
-    id:"T001",participants:["u1","u2"],
-    vehicleId:"V003",vehicleName:"Porsche 992 GT3 (V003)",
+  "T001":{id:"T001",participants:["u1","u2"],vehicleId:"V003",vehicleName:"Porsche 992 GT3",anonymous:true,
     messages:[
-      {id:"M1",from:"u2",text:"Hallo! Ich habe deinen GT3 auf dem TrackDay bewundert — welche Reifengröße fährst du hinten?",ts:"Gestern 18:32",read:false},
-      {id:"M2",from:"system",text:"Kontakt über QAR-ID: QAR-T7M3N9PX",ts:"Gestern 18:31",isSystem:true},
-    ],
-    anonymous:true,
-  }
+      {id:"M0",from:"system",text:"Kontakt über QAR-ID: QAR-T7M3N9PX",ts:"Gestern 18:31",isSystem:true,read:true},
+      {id:"M1",from:"u2",text:"Hallo! Welche Reifengröße fährst du hinten beim GT3?",ts:"Gestern 18:32",read:false},
+    ]},
 };
 
-// ─── Milestone System ─────────────────────────────────────────────────────────
+// ─── Milestones ───────────────────────────────────────────────────────────────
 const MILESTONES = [
   {id:"logbook3",label:"3 Logbuch-Einträge",
     check:s=>Object.values(s.logbook).flat().length>=3,unlocks:["marktwert"]},
@@ -164,234 +163,187 @@ const MILESTONES = [
 
 const LOCKED_FEATURES = [
   {id:"marktwert",icon:"💶",label:"KI-Marktwertanalyse",milestone:"3 Logbuch-Einträge",desc:"Claude bewertet deinen Porsche anhand der Servicehistorie"},
-  {id:"history",icon:"⏱️",label:"Rundenzeiten",milestone:"Erste Event-Teilnahme",desc:"Nordschleife-Bestzeiten und Sektorzeiten tracken"},
-  {id:"fleet",icon:"📊",label:"Fuhrpark-Analyse",milestone:"2 Fahrzeuge",desc:"Kosten/km und Wertverlauf über alle Fahrzeuge"},
-  {id:"workshop",icon:"🔧",label:"Werkstatt-Zugang",milestone:"Partnerschaft aktiv",desc:"PCN-Partnerwerkstätten greifen direkt auf die Akte zu"},
-  {id:"insurer",icon:"🛡️",label:"Versicherer-Zugang",milestone:"Club-Partner",desc:"Allianz Classic sieht deine vollständige Dokumentation"},
-  {id:"token",icon:"🪙",label:"Digitaler Fahrzeugpass",milestone:"Beta-Programm",desc:"Blockchain-Eigentumsnachweis für Wettbewerbe & Verkauf"},
+  {id:"history",icon:"⏱️",label:"Rundenzeiten",milestone:"Erste Event-Teilnahme",desc:"Nordschleife-Bestzeiten tracken"},
+  {id:"fleet",icon:"📊",label:"Fuhrpark-Analyse",milestone:"2 Fahrzeuge",desc:"Kosten/km und Wertverlauf"},
+  {id:"workshop",icon:"🔧",label:"Werkstatt-Zugang",milestone:"Partnerschaft aktiv",desc:"PCN-Partnerwerkstätten greifen auf die Akte zu"},
+  {id:"insurer",icon:"🛡️",label:"Versicherer-Zugang",milestone:"Club-Partner",desc:"Allianz Classic sieht deine Dokumentation"},
+  {id:"token",icon:"🪙",label:"Digitaler Fahrzeugpass",milestone:"Beta-Programm",desc:"Blockchain-Eigentumsnachweis"},
 ];
+
+// ─── Sub-components (proper React components — no hooks-in-render) ─────────────
+
+function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin, onViewVehicle}) {
+  const [selV, setSelV] = useState(myVehicles[0]?.id||"");
+  const [selC, setSelC] = useState(ev.classes[0]);
+  const evParts = participants[ev.id]||[];
+  const myReg = evParts.find(p=>p.userId===me?.id);
+  const days = daysUntil(ev.date);
+
+  return (
+    <div style={{minHeight:"100vh",background:C.black,paddingBottom:40,animation:"fadeIn .2s"}}>
+      <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"14px 16px"}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,padding:0,marginBottom:10}}>← Events</button>
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:6}}>
+          <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>{ev.category}</span>
+          <span style={{background:days<=7?`${C.amber}22`:`${C.border}22`,color:days<=7?C.amber:C.muted,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>
+            {days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}
+          </span>
+        </div>
+        <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1.1}}>{ev.name}</h1>
+        <p style={{fontSize:11,color:C.muted,marginTop:3}}>{ev.subtitle}</p>
+      </div>
+      <div style={{padding:"16px",maxWidth:520,margin:"0 auto"}}>
+        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:14}}>
+          {[["📅",fmtDate(ev.date),"Datum"],["📍",ev.location,"Ort"],["💶",ev.entryFee,"Nenngeld"],["👥",`${evParts.length} / ${ev.maxParticipants}`,"Plätze"]].map(([icon,val,label])=>(
+            <div key={label} style={{display:"flex",gap:10,marginBottom:8,alignItems:"center"}}>
+              <span style={{width:20,textAlign:"center"}}>{icon}</span>
+              <span style={{fontSize:11,color:C.muted,minWidth:56}}>{label}</span>
+              <span style={{fontSize:13,color:C.white,fontWeight:600}}>{val}</span>
+            </div>
+          ))}
+          <p style={{fontSize:12,color:C.muted,lineHeight:1.7,marginTop:8,paddingTop:8,borderTop:`1px solid ${C.border}`}}>{ev.description}</p>
+        </div>
+
+        {myReg?(
+          <div style={{background:`${C.green}11`,border:`1px solid ${C.green}44`,borderRadius:12,padding:"14px 16px",textAlign:"center",marginBottom:14}}>
+            <div style={{color:C.green,fontWeight:700,fontSize:15,marginBottom:3}}>✓ Angemeldet — #{myReg.startNr}</div>
+            <div style={{fontSize:12,color:C.muted}}>{myReg.class} · {fmtDate(ev.date)}</div>
+          </div>
+        ):me&&myVehicles.length>0?(
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:14}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:800,color:C.white,marginBottom:12}}>Jetzt anmelden</div>
+            <select value={selV} onChange={e=>setSelV(e.target.value)}
+              style={{width:"100%",background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",marginBottom:8}}>
+              {myVehicles.map(v=><option key={v.id} value={v.id}>{v.hersteller} {v.modell} · {v.kennzeichen}</option>)}
+            </select>
+            <select value={selC} onChange={e=>setSelC(e.target.value)}
+              style={{width:"100%",background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",marginBottom:14}}>
+              {ev.classes.map(c=><option key={c}>{c}</option>)}
+            </select>
+            <button className="btn" onClick={()=>onJoin(ev.id,selV,selC)} style={{width:"100%"}}>Anmelden ✓</button>
+          </div>
+        ):me?(
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14,textAlign:"center",color:C.muted,fontSize:13}}>
+            Zuerst ein Fahrzeug hinzufügen um dich anzumelden.
+          </div>
+        ):null}
+
+        {evParts.length>0&&(
+          <div>
+            <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Teilnehmer ({evParts.length})</div>
+            {evParts.map(p=>{
+              const pv=vehicles[p.vehicleId];
+              return (
+                <div key={p.id} style={{display:"flex",gap:10,alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.border}`,cursor:pv?"pointer":"default"}}
+                  onClick={()=>pv&&onViewVehicle(pv)}>
+                  <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:7,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.red,flexShrink:0}}>#{p.startNr}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {pv?`${pv.hersteller} ${pv.modell}`:"Fahrzeug"}
+                    </div>
+                    <div style={{fontSize:11,color:C.muted}}>{p.class}{pv?.kennzeichen?" · "+fmtKz(pv.kennzeichen,pv.baujahr):""}</div>
+                  </div>
+                  {pv&&<span style={{color:C.muted,fontSize:16}}>›</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onViewVehicle}) {
+  const [msg, setMsg] = useState("");
+  const endRef = useRef(null);
+  const other = Object.values(allUsers).find(u=>thread.participants.includes(u.id)&&u.id!==me?.id)||{name:"Mitglied"};
+  const v = vehicles[thread.vehicleId];
+
+  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[thread.messages]);
+
+  return (
+    <div style={{height:"100vh",background:C.black,display:"flex",flexDirection:"column"}}>
+      <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",display:"flex",gap:12,alignItems:"center",flexShrink:0}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:0,lineHeight:1}}>←</button>
+        <div style={{width:36,height:36,borderRadius:"50%",background:`${C.red}22`,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,flexShrink:0}}>
+          {thread.anonymous?"🔒":other.name[0]}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontWeight:700,fontSize:14,color:C.white}}>{thread.anonymous?"🔒 Anonym":other.name}</div>
+          {v&&<div style={{fontSize:10,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>Re: {v.hersteller} {v.modell}</div>}
+        </div>
+        {v&&<button className="btn sm ghost" onClick={()=>onViewVehicle(v)} style={{fontSize:11,flexShrink:0}}>Akte →</button>}
+      </div>
+      <div style={{flex:1,overflowY:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:8}}>
+        {thread.messages.map(m=>{
+          if(m.isSystem) return (
+            <div key={m.id} style={{textAlign:"center",fontSize:10,color:"#444",margin:"4px 0"}}>— {m.text} —</div>
+          );
+          const mine = m.from===me?.id;
+          return (
+            <div key={m.id} style={{display:"flex",justifyContent:mine?"flex-end":"flex-start"}}>
+              <div style={{maxWidth:"80%",background:mine?C.red:"#1e1e1e",border:mine?"none":`1px solid ${C.border}`,
+                borderRadius:mine?"16px 16px 4px 16px":"16px 16px 16px 4px",padding:"10px 14px"}}>
+                <div style={{fontSize:14,color:"#fff",lineHeight:1.5}}>{m.text}</div>
+                <div style={{fontSize:9,color:mine?"rgba(255,255,255,.5)":C.muted,marginTop:3,textAlign:"right"}}>{m.ts}</div>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={endRef}/>
+      </div>
+      <div style={{padding:"10px 12px",background:C.dark,borderTop:`1px solid ${C.border}`,display:"flex",gap:8,flexShrink:0,paddingBottom:"calc(10px + env(safe-area-inset-bottom,0))"}}>
+        <input placeholder="Nachricht…" value={msg} onChange={e=>setMsg(e.target.value)}
+          onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&msg.trim()){e.preventDefault();onSend(thread.id,msg);setMsg("");}}}
+          style={{flex:1,background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"10px 14px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif"}}/>
+        <button className="btn" style={{padding:"10px 18px",flexShrink:0}}
+          onClick={()=>{if(msg.trim()){onSend(thread.id,msg);setMsg("");}}} >↑</button>
+      </div>
+    </div>
+  );
+}
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function PCN() {
-  const [screen, setScreen]         = useState("splash");
-  const [tab, setTab]               = useState("dashboard");
-  const [me, setMe]                 = useState(null);
-  const [allUsers, setAllUsers]     = useState({u1:DEMO_USER,u2:DEMO_USER2,u3:DEMO_USER3});
-  const [vehicles, setVehicles]     = useState({});
-  const [logbook, setLogbook]       = useState({});
-  const [reminders, setReminders]   = useState([]);
+  // ── Core state ──────────────────────────────────────────────────────────────
+  const [screen, setScreen]       = useState("splash");
+  const [tab, setTab]             = useState("dashboard");
+  const [me, setMe]               = useState(null);
+  const [allUsers, setAllUsers]   = useState({...DEMO_USERS});
+  const [vehicles, setVehicles]   = useState({});
+  const [logbook, setLogbook]     = useState({});
+  const [reminders, setReminders] = useState([]);
   const [participants, setParticipants] = useState({});
-  const [events]                    = useState(DEMO_EVENTS);
-  const [eventHistory]              = useState(EVENT_HISTORY);
-  const [threads, setThreads]       = useState({});
+  const [events, setEvents]       = useState(DEMO_EVENTS);
+  const [eventHistory]            = useState(DEMO_HISTORY);
+  const [threads, setThreads]     = useState({});
   const [activeThread, setActiveThread] = useState(null);
-  const [msgInput, setMsgInput]     = useState("");
-  const [viewV, setViewV]           = useState(null);
-  const [viewEv, setViewEv]         = useState(null);
-  const [publicV, setPublicV]       = useState(null); // QR public view
-  const [loginForm, setLoginForm]   = useState({code:"",email:"",name:"",mode:"register"});
-  const [toast, setToast]           = useState(null);
-  const [showAddV, setShowAddV]     = useState(false);
+  const [viewV, setViewV]         = useState(null);
+  const [viewEv, setViewEv]       = useState(null);
+  const [publicV, setPublicV]     = useState(null);
+
+  // ── Form state ──────────────────────────────────────────────────────────────
+  const [loginForm, setLoginForm] = useState({mode:"register",code:"",email:"",name:""});
+  const [addVForm, setAddVForm]   = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:""});
+  const [addLogForm, setAddLogForm] = useState({type:"Ölwechsel",km:"",notes:"",workshop:""});
+  const [remForm, setRemForm]     = useState({vehicleId:"",title:"",date:""});
+
+  // ── UI state ─────────────────────────────────────────────────────────────────
+  const [toast, setToast]         = useState(null);
+  const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(null); // vehicleId
-  const [addVForm, setAddVForm]     = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",image:""});
+  const [showPrivacy, setShowPrivacy] = useState(null);
   const [imgUploading, setImgUploading] = useState(false);
-  const [addLogForm, setAddLogForm] = useState({type:"Ölwechsel",km:"",notes:"",workshop:""});
-  const [remForm, setRemForm]       = useState({vehicleId:"",title:"",date:""});
-  const msgEndRef     = useRef(null);
-  const videoRef      = useRef(null);
-  const canvasRef     = useRef(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState(null);
-  const [scannerStatus, setScannerStatus] = useState("idle"); // idle|loading|scanning|found
+  const [scannerStatus, setScannerStatus] = useState("idle");
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
-  const toast_ = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3500); };
-
-  // ── Image upload — converts to base64 dataURL ─────────────────────────────
-  const handleImageUpload = (file, onDone) => {
-    if(!file) return;
-    setImgUploading(true); // No size limit — downsampling handles everything
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      // Resize to max 800px wide via canvas
-      const img = new Image();
-      img.onload = () => {
-        // Downsampling: max 600px, 72% JPEG quality → ~80-120KB
-        const MAX = 600;
-        const scale = Math.min(1, MAX/img.width, MAX/img.height);
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width*scale);
-        canvas.height = Math.round(img.height*scale);
-        const ctx2 = canvas.getContext("2d");
-        ctx2.imageSmoothingEnabled = true;
-        ctx2.imageSmoothingQuality = "high";
-        ctx2.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
-        onDone(dataUrl);
-        setImgUploading(false);
-        const kb = Math.round(dataUrl.length * 0.75 / 1024);
-        toast_(`Bild geladen ✓ (${kb} KB)`);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // ── Update vehicle image ──────────────────────────────────────────────────
-  const updateVehicleImage = async (vehicleId, dataUrl) => {
-    const v = vehicles[vehicleId];
-    if(!v) return;
-    const updated = {...v, image: dataUrl};
-    setVehicles(prev=>({...prev,[vehicleId]:updated}));
-    if(viewV?.id===vehicleId) setViewV(updated);
-    const DB = window.PCN_DB;
-    if(DB) await DB.vehicles.save(updated);
-  };
-
-  // ── DB refresh — loads all data for a user from storage layer ──────────────
-  const refreshAll = async (user) => {
-    if(!user) return;
-    const DB = window.PCN_DB;
-    const [vRes, remRes, evRes, thRes] = await Promise.all([
-      DB.vehicles.list(user.id||user.email),
-      DB.reminders.list(user.id),
-      DB.events.list(),
-      DB.threads.list(user.id),
-    ]);
-    // Vehicles
-    const vMap = {};
-    (vRes.data||[]).forEach(v => vMap[v.id]=v);
-    setVehicles(vMap);
-    // Logbook (load per vehicle)
-    const lMap = {};
-    await Promise.all((vRes.data||[]).map(async v => {
-      const r = await DB.logbook.list(v.id);
-      lMap[v.id] = r.data||[];
-    }));
-    setLogbook(lMap);
-    // Reminders
-    setReminders(remRes.data||[]);
-    // Events (keep demo events always)
-    // Participants (load per event)
-    const pMap = {};
-    await Promise.all((evRes.data||[]).map(async ev => {
-      const r = await DB.events.participants(ev.id);
-      pMap[ev.id] = r.data||[];
-    }));
-    setParticipants(pMap);
-    // Threads
-    const tMap = {};
-    (thRes.data||[]).forEach(t => tMap[t.id]=t);
-    setThreads(tMap);
-    // Set user
-    setMe(user);
-  };
-
-  // ── Session restore + QR URL param handling ───────────────────────────────
-  useEffect(()=>{
-    (async()=>{
-      // Check for QR-Code URL param: ?v=QAR-XXXXXXXX
-      const urlParams = new URLSearchParams(window.location.search);
-      const qarId = urlParams.get('v');
-      if(qarId && qarId.match(/^QAR-[A-Z2-9]{8}$/)){
-        // Find vehicle by QAR-ID (public lookup, no auth needed)
-        const v = Object.values(DEMO_VEHICLES).find(v=>v.qarId===qarId);
-        if(v){ setPublicV({...v,privacy:{...DEF_PRIVACY,...(v.privacy||{})}}); setScreen("public"); return; }
-      }
-      // Normal session restore
-      const DB = window.PCN_DB;
-      if(!DB){ return; }
-      const {data:session} = await DB.auth.session();
-      if(session){ await refreshAll(session); setScreen("app"); }
-    })();
-  },[]);
-
-  // ── QR Scanner ──────────────────────────────────────────────────────────────
-  const openScanner = () => { setScannerOpen(true); setScannerError(null); setScannerStatus("loading"); };
-
-  const closeScanner = () => {
-    setScannerOpen(false); setScannerStatus("idle"); setScannerError(null);
-    if(window.QRScannerModule) window.QRScannerModule.stop();
-  };
-
-  const handleScanResult = (data) => {
-    // Parse QAR-ID from URL: https://.../pcn/#/v/QAR-XXXXXXXX or plain QAR-XXXXXXXX
-    const match = data.match(/QAR-[A-Z2-9]{8}/);
-    if(match) {
-      const qarId = match[0];
-      const v = Object.values(vehicles).find(veh => veh.qarId === qarId);
-      setScannerStatus("found");
-      if(window.QRScannerModule) window.QRScannerModule.stop();
-      setTimeout(() => {
-        closeScanner();
-        if(v) { setPublicV({...v, privacy: v.privacy || DEF_PRIVACY}); setScreen("public"); }
-        else { toast_("Fahrzeug nicht in dieser Demo bekannt: "+qarId, "err"); }
-      }, 600);
-    }
-  };
-
-  const handleScanError = (e) => {
-    setScannerError(
-      e.message && e.message.includes("jsQR")
-        ? "HTTPS erforderlich für den Scanner. Bitte öffne: https://gpk2026.github.io/qar-gallery/pcn/ — oder warte bis qar.gallery HTTPS-Zertifikat erhält (heute Nacht)."
-        : e.name === "NotAllowedError"
-        ? "Kamera-Zugriff verweigert. Einstellungen → Safari → Kamera → Erlauben."
-        : e.name === "NotFoundError"
-        ? "Keine Kamera gefunden."
-        : "Kamera-Fehler: " + e.message
-    );
-    setScannerStatus("error");
-  };
-
-  useEffect(() => {
-    if(scannerOpen && scannerStatus === "loading" && videoRef.current && canvasRef.current) {
-      const loadScript = () => new Promise((res, rej) => {
-        // jsQR is bundled in index.html — should always be available
-        if(window.jsQR) { res(); return; }
-        // Fallback: try loading from same origin
-        const s = document.createElement("script");
-        s.src = "jsQR.js";
-        s.onload = () => window.jsQR ? res() : rej(new Error("jsQR nicht verfügbar"));
-        s.onerror = () => rej(new Error("jsQR konnte nicht geladen werden"));
-        document.head.appendChild(s);
-      });
-      loadScript().then(() => {
-        setScannerStatus("scanning");
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-          .then(stream => {
-            video.srcObject = stream;
-            video.setAttribute("playsinline", true);
-            video.play();
-            const ctx = canvas.getContext("2d");
-            let last = ""; let lastT = 0;
-            const scan = () => {
-              if(!scannerOpen) return;
-              if(video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx.drawImage(video, 0, 0);
-                const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const code = window.jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
-                if(code && (code.data !== last || Date.now()-lastT > 3000)) {
-                  last = code.data; lastT = Date.now();
-                  handleScanResult(code.data);
-                }
-              }
-              requestAnimationFrame(scan);
-            };
-            requestAnimationFrame(scan);
-          })
-          .catch(handleScanError);
-      }).catch(() => setScannerError("jsQR konnte nicht geladen werden"));
-    }
-    return () => { if(!scannerOpen && window.QRScannerModule) window.QRScannerModule.stop(); };
-  }, [scannerOpen, scannerStatus]);
-
-  // Derived
-  const myVehicles = Object.values(vehicles).filter(v=>v.owner===me?.email);
+  // ── Derived ──────────────────────────────────────────────────────────────────
+  const myVehicles = Object.values(vehicles).filter(v=>v.owner===me?.email||v.userId===me?.id);
   const myReminders = reminders.filter(r=>!r.done).sort((a,b)=>new Date(a.date)-new Date(b.date));
   const myParticipations = Object.values(participants).flat().filter(p=>p.userId===me?.id);
   const myThreads = Object.values(threads).filter(t=>t.participants.includes(me?.id));
@@ -399,97 +351,233 @@ export default function PCN() {
   const appState = {logbook,participants,vehicles,me};
   const unlockedFeatures = new Set(MILESTONES.filter(m=>m.check(appState)).flatMap(m=>m.unlocks));
 
-  useEffect(()=>{ msgEndRef.current?.scrollIntoView({behavior:"smooth"}); },[activeThread,threads]);
+  // ── Toast ────────────────────────────────────────────────────────────────────
+  const toast_ = useCallback((msg,type="ok")=>{
+    setToast({msg,type}); setTimeout(()=>setToast(null),3500);
+  },[]);
 
-  const loadDemo = async () => {
-    // Seed demo data into localStorage so DB layer persists it
-    const stored = JSON.parse(localStorage.getItem("pcn_v1")||"{}");
-    stored.users = stored.users || {};
-    stored.users[DEMO_USER.email] = DEMO_USER;
-    stored.session = DEMO_USER;
-    stored.vehicles = DEMO_VEHICLES;
-    stored.logbook = DEMO_LOGBOOK;
-    stored.events = DEMO_EVENTS;
-    stored.participants = DEMO_PARTICIPANTS;
-    stored.threads = DEMO_THREADS;
-    stored.reminders = {[DEMO_USER.id]:[
-      {id:"R1",vehicleId:"V001",title:"PCN TrackDay — Fahrzeug vorbereiten",date:d(10),done:false},
-      {id:"R2",vehicleId:"V002",title:"Sommerreifenwechsel",date:d(4),done:false},
-      {id:"R3",vehicleId:"V001",title:"TÜV Termin vereinbaren",date:d(45),done:false},
-    ]};
-    stored.eventHistory = {"V001":EVENT_HISTORY.filter(h=>h.vehicleId==="V001"),"V002":[],"V003":EVENT_HISTORY.filter(h=>h.vehicleId==="V003")};
-    localStorage.setItem("pcn_v1", JSON.stringify(stored));
-    // Load from DB layer
-    await refreshAll(DEMO_USER);
-    setAllUsers({u1:DEMO_USER,u2:DEMO_USER2,u3:DEMO_USER3});
-    setScreen("app"); setTab("dashboard");
-    toast_("Willkommen, Max! 🏁");
+  // ── Image upload ─────────────────────────────────────────────────────────────
+  const handleImageUpload = (file, onDone) => {
+    if(!file) return;
+    setImgUploading(true);
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX=600, scale=Math.min(1,MAX/img.width,MAX/img.height);
+        const canvas=document.createElement("canvas");
+        canvas.width=Math.round(img.width*scale);
+        canvas.height=Math.round(img.height*scale);
+        const ctx=canvas.getContext("2d");
+        ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high";
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        const dataUrl=canvas.toDataURL("image/jpeg",0.72);
+        onDone(dataUrl); setImgUploading(false);
+        toast_(`Bild geladen ✓ (${Math.round(dataUrl.length*.75/1024)} KB)`);
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
-  const joinEvent = async (eventId, vehicleId, cls) => {
-    if(!vehicleId) return toast_("Fahrzeug wählen","err");
-    const DB = window.PCN_DB;
-    const {data:p, error} = await DB.events.join(eventId, me.id, vehicleId, cls);
-    if(error){ toast_("Fehler: "+error,"err"); return; }
-    setParticipants(prev=>({...prev,[eventId]:[...(prev[eventId]||[]),p]}));
-    toast_(`Angemeldet — Startnr. #${p.startNr} ✓`);
+  // ── DB refresh ───────────────────────────────────────────────────────────────
+  const refreshAll = async (user) => {
+    if(!user) return;
+    const DB=window.PCN_DB; if(!DB) return;
+    const [vRes,remRes,evRes,thRes] = await Promise.all([
+      DB.vehicles.list(user.id||user.email),
+      DB.reminders.list(user.id),
+      DB.events.list(),
+      DB.threads.list(user.id),
+    ]);
+    const vMap={}; (vRes.data||[]).forEach(v=>vMap[v.id]=v); setVehicles(vMap);
+    const lMap={};
+    await Promise.all((vRes.data||[]).map(async v=>{
+      const r=await DB.logbook.list(v.id); lMap[v.id]=r.data||[];
+    }));
+    setLogbook(lMap);
+    setReminders(remRes.data||[]);
+    // Merge saved events with demo events
+    const savedEvs=evRes.data||[];
+    if(savedEvs.length>0){
+      const evMap={...DEMO_EVENTS};
+      savedEvs.forEach(e=>evMap[e.id]=e);
+      setEvents(evMap);
+    }
+    const pMap={};
+    await Promise.all(Object.keys(events).map(async eid=>{
+      const r=await DB.events.participants(eid); pMap[eid]=r.data||[];
+    }));
+    setParticipants(pMap);
+    const tMap={}; (thRes.data||[]).forEach(t=>tMap[t.id]=t); setThreads(tMap);
+    setMe(user);
+  };
+
+  // ── Session restore ───────────────────────────────────────────────────────────
+  useEffect(()=>{
+    (async()=>{
+      const params=new URLSearchParams(window.location.search);
+      const qarId=params.get("v");
+      if(qarId&&/^QAR-[A-Z2-9]{8}$/.test(qarId)){
+        const v=Object.values(DEMO_VEHICLES).find(v=>v.qarId===qarId);
+        if(v){ setPublicV({...v,privacy:{...DEF_PRIVACY,...(v.privacy||{})}}); setScreen("public"); return; }
+      }
+      const DB=window.PCN_DB; if(!DB) return;
+      const {data:session}=await DB.auth.session();
+      if(session){ await refreshAll(session); setScreen("app"); }
+    })();
+  },[]);
+
+  // ── Scanner ──────────────────────────────────────────────────────────────────
+  const openScanner = () => { setScannerOpen(true); setScannerError(null); setScannerStatus("loading"); };
+  const closeScanner = () => {
+    setScannerOpen(false); setScannerStatus("idle"); setScannerError(null);
+    if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop());
+  };
+  const handleScanResult = (data) => {
+    const match=data.match(/QAR-[A-Z2-9]{8}/);
+    if(!match) return;
+    const qarId=match[0];
+    const v=Object.values(vehicles).find(v=>v.qarId===qarId)||Object.values(DEMO_VEHICLES).find(v=>v.qarId===qarId);
+    setScannerStatus("found");
+    setTimeout(()=>{
+      closeScanner();
+      if(v){ setPublicV({...v,privacy:{...DEF_PRIVACY,...(v.privacy||{})}}); setScreen("public"); }
+      else toast_("Fahrzeug nicht gefunden: "+qarId,"err");
+    },600);
+  };
+  useEffect(()=>{
+    if(!scannerOpen||scannerStatus!=="loading") return;
+    const loadjsQR=()=>new Promise((res,rej)=>{
+      if(window.jsQR){res();return;}
+      const s=document.createElement("script"); s.src="jsQR.js";
+      s.onload=()=>window.jsQR?res():rej(new Error("jsQR nicht geladen"));
+      s.onerror=()=>rej(new Error("jsQR nicht gefunden")); document.head.appendChild(s);
+    });
+    loadjsQR().then(()=>{
+      setScannerStatus("scanning");
+      navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
+        .then(stream=>{
+          const video=videoRef.current; if(!video) return;
+          video.srcObject=stream; video.setAttribute("playsinline",true); video.play();
+          const canvas=canvasRef.current; const ctx=canvas.getContext("2d");
+          let last=""; let lastT=0; let running=true;
+          const scan=()=>{
+            if(!running||!scannerOpen) return;
+            if(video.readyState===video.HAVE_ENOUGH_DATA){
+              canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+              ctx.drawImage(video,0,0);
+              const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+              const code=window.jsQR(img.data,img.width,img.height,{inversionAttempts:"dontInvert"});
+              if(code&&(code.data!==last||Date.now()-lastT>3000)){
+                last=code.data; lastT=Date.now(); handleScanResult(code.data);
+              }
+            }
+            requestAnimationFrame(scan);
+          };
+          requestAnimationFrame(scan);
+          return ()=>{ running=false; stream.getTracks().forEach(t=>t.stop()); };
+        })
+        .catch(e=>{ setScannerError(e.name==="NotAllowedError"?"Kamera-Zugriff verweigert.\n\nEinstellungen → Safari → Kamera → Erlauben":"Kamera-Fehler: "+e.message); setScannerStatus("error"); });
+    }).catch(e=>{ setScannerError(e.message); setScannerStatus("error"); });
+    return ()=>{ if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop()); };
+  },[scannerOpen,scannerStatus]);
+
+  // ── Actions ──────────────────────────────────────────────────────────────────
+  const addVehicle = async () => {
+    if(!addVForm.modell||!addVForm.kennzeichen) return toast_("Modell und Kennzeichen angeben","err");
+    const DB=window.PCN_DB;
+    const v={qarId:genQARId(),userId:me.id,owner:me.email,...addVForm,privacy:{...DEF_PRIVACY}};
+    const {data:saved,error}=await DB.vehicles.save(v);
+    if(error){toast_("Fehler: "+error,"err");return;}
+    setVehicles(prev=>({...prev,[saved.id]:saved}));
+    setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:""});
+    toast_("Fahrzeug hinzugefügt ✓");
   };
 
   const addLogEntry = async (vehicleId) => {
     if(!addLogForm.km) return toast_("Kilometerstand angeben","err");
-    const DB = window.PCN_DB;
-    const {data:e, error} = await DB.logbook.add(vehicleId, {date:today(),...addLogForm});
-    if(error){ toast_("Fehler: "+error,"err"); return; }
+    const DB=window.PCN_DB;
+    const {data:e,error}=await DB.logbook.add(vehicleId,{date:today(),...addLogForm});
+    if(error){toast_("Fehler","err");return;}
     setLogbook(prev=>({...prev,[vehicleId]:[e,...(prev[vehicleId]||[])]}));
-    setShowAddLog(null);
-    setAddLogForm({type:"Ölwechsel",km:"",notes:"",workshop:""});
+    setShowAddLog(null); setAddLogForm({type:"Ölwechsel",km:"",notes:"",workshop:""});
     toast_("Eintrag gespeichert ✓");
   };
 
-  const addVehicle = async () => {
-    if(!addVForm.modell||!addVForm.kennzeichen) return toast_("Modell und Kennzeichen angeben","err");
-    const DB = window.PCN_DB;
-    const v={qarId:genQARId(),userId:me.id,owner:me.email,...addVForm,privacy:{...DEF_PRIVACY}};
-    const {data:saved, error} = await DB.vehicles.save(v);
-    if(error){ toast_("Fehler: "+error,"err"); return; }
-    setVehicles(prev=>({...prev,[saved.id]:saved}));
-    setShowAddV(false);
-    setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:""});
-    toast_("Fahrzeug hinzugefügt ✓");
+  const joinEvent = async (eventId,vehicleId,cls) => {
+    if(!vehicleId) return toast_("Fahrzeug wählen","err");
+    const DB=window.PCN_DB;
+    const {data:p,error}=await DB.events.join(eventId,me.id,vehicleId,cls);
+    if(error){toast_("Fehler: "+error,"err");return;}
+    setParticipants(prev=>({...prev,[eventId]:[...(prev[eventId]||[]),p]}));
+    setScreen("app"); setTab("events");
+    toast_(`Angemeldet — Startnr. #${p.startNr} ✓`);
   };
 
-  const togglePrivacy = async (vehicleId, key) => {
-    const v = vehicles[vehicleId];
-    const updated = {...v, privacy:{...(v.privacy||DEF_PRIVACY),[key]:!v.privacy?.[key]}};
+  const togglePrivacy = async (vehicleId,key) => {
+    const v=vehicles[vehicleId];
+    const updated={...v,privacy:{...(v.privacy||DEF_PRIVACY),[key]:!v.privacy?.[key]}};
     setVehicles(prev=>({...prev,[vehicleId]:updated}));
-    const DB = window.PCN_DB;
-    await DB.vehicles.save(updated); // persist
+    if(viewV?.id===vehicleId) setViewV(updated);
+    const DB=window.PCN_DB; await DB.vehicles.save(updated);
   };
 
-  const sendMsg = async (threadId) => {
-    if(!msgInput.trim()) return;
-    const DB = window.PCN_DB;
-    const {data:msg, error} = await DB.threads.send(threadId, me.id, msgInput.trim());
-    if(error){ toast_("Fehler: "+error,"err"); return; }
+  const updateVehicleImage = async (vehicleId,dataUrl) => {
+    const v=vehicles[vehicleId]; if(!v) return;
+    const updated={...v,image:dataUrl};
+    setVehicles(prev=>({...prev,[vehicleId]:updated}));
+    if(viewV?.id===vehicleId) setViewV(updated);
+    const DB=window.PCN_DB; await DB.vehicles.save(updated);
+  };
+
+  const sendMsg = async (threadId,text) => {
+    if(!text.trim()) return;
+    const DB=window.PCN_DB;
+    const {data:msg,error}=await DB.threads.send(threadId,me.id,text.trim());
+    if(error){toast_("Fehler","err");return;}
     setThreads(prev=>({...prev,[threadId]:{...prev[threadId],messages:[...(prev[threadId].messages||[]),msg]}}));
-    setMsgInput("");
   };
 
   const startContact = async (vehicleId) => {
-    const v=vehicles[vehicleId]; if(!v||v.owner===me.email) return;
-    const ownerId=Object.values(allUsers).find(u=>u.email===v.owner)?.id||v.userId;
-    if(!ownerId){ toast_("Besitzer nicht gefunden","err"); return; }
+    const v=vehicles[vehicleId]||DEMO_VEHICLES[vehicleId];
+    if(!v||v.owner===me?.email) return;
+    // Find owner in allUsers or create anonymous reference
+    const ownerId=v.userId||(Object.values(allUsers).find(u=>u.email===v.owner)?.id)||("anon_"+vehicleId);
+    if(!allUsers[ownerId]){
+      setAllUsers(prev=>({...prev,[ownerId]:{id:ownerId,name:"PCN-Mitglied",email:v.owner,role:"member"}}));
+    }
+    // Check for existing thread
     const existing=Object.values(threads).find(t=>t.vehicleId===vehicleId&&t.participants.includes(me.id));
-    if(existing){ setActiveThread(existing.id); setTab("messages"); setScreen("app"); return; }
-    const DB = window.PCN_DB;
-    const {data:t, error} = await DB.threads.create([me.id, ownerId], vehicleId, `${v.hersteller} ${v.modell}`);
-    if(error){ toast_("Fehler: "+error,"err"); return; }
-    // Add system message
-    await DB.threads.send(t.id, "system", `Kontakt über QAR-ID: ${v.qarId}`);
-    const updated = {...t, messages:[{id:uid(),from:"system",text:`Kontakt über QAR-ID: ${v.qarId}`,ts:fmtTime(),isSystem:true,read:true}]};
-    setThreads(prev=>({...prev,[t.id]:updated}));
-    setActiveThread(t.id); setTab("messages"); setScreen("app");
+    if(existing){setActiveThread(existing.id);setScreen("chat");return;}
+    const DB=window.PCN_DB;
+    const {data:t,error}=await DB.threads.create([me.id,ownerId],vehicleId,`${v.hersteller} ${v.modell}`);
+    if(error){toast_("Fehler","err");return;}
+    await DB.threads.send(t.id,"system",`Kontakt über QAR-ID: ${v.qarId}`);
+    const newThread={...t,messages:[{id:uid(),from:"system",text:`Kontakt über QAR-ID: ${v.qarId}`,ts:fmtTime(),isSystem:true,read:true}]};
+    setThreads(prev=>({...prev,[t.id]:newThread}));
+    setActiveThread(t.id); setScreen("chat");
     toast_("Anonyme Nachricht gestartet 🔒");
+  };
+
+  const loadDemo = async () => {
+    const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
+    stored.users={...stored.users,...DEMO_USERS};
+    stored.session=DEMO_USERS.u1;
+    stored.vehicles=DEMO_VEHICLES;
+    stored.logbook=DEMO_LOGBOOK;
+    stored.events=DEMO_EVENTS;
+    stored.participants=DEMO_PARTICIPANTS;
+    stored.threads=DEMO_THREADS;
+    stored.reminders={"u1":[
+      {id:"R1",vehicleId:"V001",title:"PCN TrackDay — Fahrzeug vorbereiten",date:dPlus(10),done:false},
+      {id:"R2",vehicleId:"V002",title:"Sommerreifenwechsel",date:dPlus(4),done:false},
+      {id:"R3",vehicleId:"V001",title:"TÜV Termin vereinbaren",date:dPlus(45),done:false},
+    ]};
+    localStorage.setItem("pcn_v1",JSON.stringify(stored));
+    await refreshAll(DEMO_USERS.u1);
+    setAllUsers({...DEMO_USERS}); setScreen("app"); setTab("dashboard");
+    toast_("Demo geladen — Willkommen, Max! 🏁");
   };
 
   // ── CSS ────────────────────────────────────────────────────────────────────
@@ -501,17 +589,17 @@ export default function PCN() {
     input,select,textarea{font-family:'Barlow',sans-serif;outline:none;color:${C.white};background:transparent}
     input::placeholder,textarea::placeholder{color:${C.muted}}
     select option{background:#191919}
-    ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-thumb{background:${C.border};border-radius:99px}
+    ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:${C.border};border-radius:99px}
     @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-    .btn{background:${C.red};color:#fff;border:none;border-radius:9px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s}
-    .btn:active{transform:scale(.97)}
+    @keyframes scanline{0%{top:4px}50%{top:calc(100% - 6px)}100%{top:4px}}
+    .btn{background:${C.red};color:#fff;border:none;border-radius:9px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Barlow',sans-serif;transition:opacity .15s}
+    .btn:active{opacity:.8}
     .btn.ghost{background:transparent;color:${C.white};border:1px solid ${C.border}}
-    .btn.ghost:active{border-color:${C.red};color:${C.red}}
     .btn.sm{padding:7px 13px;font-size:12px}
     .inp{background:${C.card};border:1px solid ${C.border};border-radius:9px;padding:12px 14px;color:${C.white};font-size:16px;width:100%;transition:border-color .15s;font-family:'Barlow',sans-serif}
     .inp:focus{border-color:${C.red}}
-    .toast{position:fixed;bottom:80px;left:14px;right:14px;z-index:999;background:${C.dark};border:1px solid #333;border-radius:12px;padding:13px 16px;font-size:13px;font-weight:600;animation:slideUp .2s;box-shadow:0 8px 24px rgba(0,0,0,.8)}
+    .toast{position:fixed;bottom:80px;left:14px;right:14px;z-index:999;background:${C.dark};border:1px solid #333;border-radius:12px;padding:13px 16px;font-size:13px;font-weight:600;animation:slideUp .2s;box-shadow:0 8px 24px rgba(0,0,0,.8);white-space:pre-line}
     .toast.ok{border-color:${C.red}44;color:${C.white}}
     .toast.err{border-color:#ef444466;color:#ef4444}
     .tab-bar{position:fixed;bottom:0;left:0;right:0;background:${C.dark};border-top:1px solid ${C.border};display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
@@ -519,33 +607,70 @@ export default function PCN() {
     .tab-btn.on{color:${C.red}}
     .tab-btn .ico{font-size:21px;line-height:1}
     .tab-btn .lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-    .badge{position:absolute;top:6px;right:calc(50% - 16px);background:${C.red};color:#fff;border-radius:99px;padding:1px 5px;font-size:9px;font-weight:800;min-width:16px;text-align:center}
+    .badge{position:absolute;top:5px;right:calc(50% - 18px);background:${C.red};color:#fff;border-radius:99px;padding:1px 5px;font-size:9px;font-weight:800;min-width:16px;text-align:center;line-height:14px}
     .card{background:${C.card};border:1px solid ${C.border};border-radius:14px}
-    .p16{padding:16px}
-    .sec{font-size:10px;font-weight:800;color:${C.muted};text-transform:uppercase;letter-spacing:2px;margin-bottom:10px}
-    .tog{width:44px;height:24px;border-radius:99px;border:none;cursor:pointer;transition:background .2s;flex-shrink:0;position:relative}
-    .tog::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:99px;background:#fff;transition:transform .2s}
-    .tog.on{background:${C.red}} .tog.on::after{transform:translateX(20px)}
-    .tog.off{background:${C.border}}
-    .row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid ${C.border}}
-    .row:last-child{border-bottom:none}
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:flex;align-items:flex-end}
     .sheet{background:${C.dark};border-radius:20px 20px 0 0;width:100%;border-top:1px solid ${C.border};padding:24px 16px;animation:slideUp .2s;max-height:88vh;overflow-y:auto}
-    .chip{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700}
-    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-    @keyframes scanline{0%{top:4px}50%{top:calc(100% - 6px)}100%{top:4px}}
+    .tog{width:44px;height:24px;border-radius:99px;border:none;cursor:pointer;transition:background .2s;flex-shrink:0;position:relative;background:${C.border}}
+    .tog::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:99px;background:#fff;transition:transform .2s}
+    .tog.on{background:${C.red}}.tog.on::after{transform:translateX(20px)}
   `;
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════════════
+  // SCANNER OVERLAY
+  // ══════════════════════════════════════════════════════════════════════════════
+  const ScannerOverlay = scannerOpen ? (
+    <div style={{position:"fixed",inset:0,background:"#000",zIndex:300,display:"flex",flexDirection:"column"}}>
+      <div style={{position:"absolute",top:0,left:0,right:0,zIndex:10,padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"linear-gradient(to bottom,rgba(0,0,0,.8),transparent)"}}>
+        <div>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#fff"}}>QR-Code scannen</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>Halte die Kamera über den QAR-Code</div>
+        </div>
+        <button onClick={closeScanner} style={{background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"8px 14px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>✕ Schließen</button>
+      </div>
+      <video ref={videoRef} style={{width:"100%",height:"100%",objectFit:"cover"}} muted playsInline/>
+      <canvas ref={canvasRef} style={{display:"none"}}/>
+      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+        {scannerStatus==="found"?(
+          <div style={{width:220,height:220,border:"3px solid #22c55e",borderRadius:20,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(34,197,94,.15)"}}>
+            <span style={{fontSize:64,color:"#22c55e"}}>✓</span>
+          </div>
+        ):(
+          <div style={{position:"relative",width:220,height:220}}>
+            <div style={{position:"absolute",top:0,left:0,width:32,height:32,borderTop:`3px solid ${C.red}`,borderLeft:`3px solid ${C.red}`,borderRadius:"8px 0 0 0"}}/>
+            <div style={{position:"absolute",top:0,right:0,width:32,height:32,borderTop:`3px solid ${C.red}`,borderRight:`3px solid ${C.red}`,borderRadius:"0 8px 0 0"}}/>
+            <div style={{position:"absolute",bottom:0,left:0,width:32,height:32,borderBottom:`3px solid ${C.red}`,borderLeft:`3px solid ${C.red}`,borderRadius:"0 0 0 8px"}}/>
+            <div style={{position:"absolute",bottom:0,right:0,width:32,height:32,borderBottom:`3px solid ${C.red}`,borderRight:`3px solid ${C.red}`,borderRadius:"0 0 8px 0"}}/>
+            {scannerStatus==="scanning"&&<div style={{position:"absolute",left:4,right:4,height:2,background:`linear-gradient(90deg,transparent,${C.red},transparent)`,animation:"scanline 1.8s ease-in-out infinite"}}/>}
+          </div>
+        )}
+      </div>
+      {scannerError&&(
+        <div style={{position:"absolute",bottom:100,left:20,right:20,background:"rgba(0,0,0,.95)",border:"1px solid #ef4444",borderRadius:14,padding:"16px"}}>
+          <div style={{color:"#ef4444",fontWeight:700,fontSize:14,marginBottom:6}}>⚠️ Kein Kamera-Zugriff</div>
+          <div style={{color:"#999",fontSize:12,lineHeight:1.7,marginBottom:12,whiteSpace:"pre-line"}}>{scannerError}</div>
+          <button onClick={()=>{setScannerError(null);setScannerStatus("loading");}}
+            style={{background:C.red,border:"none",borderRadius:8,padding:"10px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,width:"100%",fontFamily:"'Barlow',sans-serif"}}>Erneut versuchen</button>
+        </div>
+      )}
+      <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"14px 16px",background:"linear-gradient(to top,rgba(0,0,0,.95),transparent)",paddingBottom:"calc(20px + env(safe-area-inset-bottom,0))"}}>
+        <div style={{fontSize:11,color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:8}}>Oder UID manuell eingeben</div>
+        <input placeholder="QAR-XXXXXXXX" onChange={e=>{const v=e.target.value.toUpperCase();if(/^QAR-[A-Z2-9]{8}$/.test(v))handleScanResult(v);}}
+          style={{width:"100%",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:14,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:1}}/>
+      </div>
+    </div>
+  ) : null;
+
+  // ══════════════════════════════════════════════════════════════════════════════
   // SPLASH
-  // ══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════════════
   if(screen==="splash") return (
     <div style={{minHeight:"100vh",background:C.black,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"space-between",padding:"0 20px 44px"}}>
       <style>{CSS}</style>
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-      <div style={{width:"100%",textAlign:"center",paddingTop:64}}>
+      <div style={{width:"100%",textAlign:"center",paddingTop:60}}>
         <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"}
-          style={{width:200,maxWidth:"65%",objectFit:"contain",marginBottom:20,filter:"brightness(1.1)"}}/>
+          style={{width:200,maxWidth:"65%",objectFit:"contain",marginBottom:20}}/>
         <div style={{width:32,height:2,background:C.red,margin:"0 auto 18px"}}/>
         <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:C.white,lineHeight:1,marginBottom:8}}>
           DIGITALE<br/><span style={{color:C.red}}>CLUBPLATTFORM</span>
@@ -553,11 +678,10 @@ export default function PCN() {
         <p style={{fontSize:12,color:C.muted,marginTop:8,lineHeight:1.7}}>Fahrzeugakte · Events · QR-Code<br/>für alle PCN-Mitglieder</p>
       </div>
       <div style={{width:"100%",maxWidth:360}}>
-        {/* Toggle Register / Login — prominent at top */}
-        <div style={{textAlign:"center",marginBottom:6,fontSize:12,color:C.muted}}>
-          {loginForm.mode==="register"?"Bereits Mitglied?":"Noch kein Account?"}
-          <span style={{color:C.red,fontWeight:700,marginLeft:6,cursor:"pointer"}}
-            onClick={()=>setLoginForm(p=>({...p,mode:p.mode==="register"?"login":"register"}))}>
+        {/* Mode toggle */}
+        <div style={{textAlign:"center",marginBottom:10,fontSize:12,color:C.muted}}>
+          {loginForm.mode==="register"?"Bereits Mitglied? ":"Noch kein Account? "}
+          <span style={{color:C.red,fontWeight:700,cursor:"pointer"}} onClick={()=>setLoginForm(p=>({...p,mode:p.mode==="register"?"login":"register"}))}>
             {loginForm.mode==="register"?"→ Anmelden":"→ Registrieren"}
           </span>
         </div>
@@ -565,206 +689,186 @@ export default function PCN() {
           {[["register","Registrieren"],["login","Anmelden"]].map(([m,label])=>(
             <button key={m} onClick={()=>setLoginForm(p=>({...p,mode:m}))}
               style={{flex:1,padding:"9px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:13,
-                background:loginForm.mode===m?C.red:"transparent",
-                color:loginForm.mode===m?"#fff":C.muted,transition:"all .15s"}}>
+                background:loginForm.mode===m?C.red:"transparent",color:loginForm.mode===m?"#fff":C.muted,transition:"all .15s"}}>
               {label}
             </button>
           ))}
         </div>
 
-        {/* Register */}
-        {loginForm.mode==="register"&&<>
-          <input className="inp" placeholder="Club-Code" value={loginForm.code}
-            onChange={e=>setLoginForm(p=>({...p,code:e.target.value}))}
-            style={{textTransform:"uppercase",letterSpacing:3,textAlign:"center",fontWeight:800,fontSize:18,marginBottom:8}}/>
-          {loginForm.code.toUpperCase()===CLUB_CODE&&<>
-            <input className="inp" placeholder="Dein Name" style={{marginBottom:8}}
-              value={loginForm.name} onChange={e=>setLoginForm(p=>({...p,name:e.target.value}))}/>
-            <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:10}}
+        {loginForm.mode==="register"&&(
+          <>
+            <input className="inp" placeholder="Club-Code" value={loginForm.code}
+              onChange={e=>setLoginForm(p=>({...p,code:e.target.value}))}
+              style={{textTransform:"uppercase",letterSpacing:3,textAlign:"center",fontWeight:800,fontSize:18,marginBottom:8}}/>
+            {loginForm.code.toUpperCase()===CLUB_CODE&&<>
+              <input className="inp" placeholder="Dein Name" style={{marginBottom:8}}
+                value={loginForm.name} onChange={e=>setLoginForm(p=>({...p,name:e.target.value}))}/>
+              <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:10}}
+                value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
+            </>}
+            {loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email
+              ?<button className="btn" style={{width:"100%"}} onClick={async()=>{
+                  const DB=window.PCN_DB;
+                  const {data:u,error}=await DB.auth.register(loginForm.name,loginForm.email,loginForm.code);
+                  if(error){toast_(error,"err");return;}
+                  // Seed events
+                  const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
+                  if(!stored.events||Object.keys(stored.events).length===0){
+                    stored.events=DEMO_EVENTS; localStorage.setItem("pcn_v1",JSON.stringify(stored));
+                  }
+                  setMe(u); setAllUsers(p=>({...p,[u.id]:u}));
+                  setEvents(DEMO_EVENTS); setScreen("app");
+                  toast_("Willkommen, "+u.name+"! 🏁");
+                }}>Konto erstellen →</button>
+              :<button className="btn" style={{width:"100%",opacity:.4}} disabled>
+                  {!loginForm.code?"Club-Code eingeben":loginForm.code.toUpperCase()!==CLUB_CODE?"Falscher Club-Code ✗":"Name & E-Mail eingeben"}
+                </button>
+            }
+          </>
+        )}
+
+        {loginForm.mode==="login"&&(
+          <>
+            <input className="inp" placeholder="E-Mail-Adresse" type="email" style={{marginBottom:10}}
               value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
-          </>}
-          {loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email
-            ?<button className="btn" style={{width:"100%"}} onClick={async()=>{
-                const DB = window.PCN_DB;
-                const {data:u, error} = await DB.auth.register(loginForm.name, loginForm.email, loginForm.code);
-                if(error){ toast_(error,"err"); return; }
-                const {data:evs} = await DB.events.list();
-                if(!evs||evs.length===0){
-                  Object.values(DEMO_EVENTS).forEach(e=>{ const all=JSON.parse(localStorage.getItem("pcn_v1")||"{}"); all.events=all.events||{}; all.events[e.id]=e; localStorage.setItem("pcn_v1",JSON.stringify(all)); });
-                }
-                setMe(u); setAllUsers(p=>({...p,[u.id]:u})); setScreen("app"); toast_("Willkommen, "+u.name+"! 🏁");
-              }}>Konto erstellen →</button>
-            :<button className="btn" style={{width:"100%",opacity:.4}} disabled>
-                {loginForm.code.length===0?"Club-Code eingeben":loginForm.code.toUpperCase()!==CLUB_CODE?"Falscher Club-Code":"Name & E-Mail eingeben"}
-              </button>
-          }
-        </>}
+            <button className="btn" style={{width:"100%",opacity:loginForm.email?1:.4}}
+              disabled={!loginForm.email}
+              onClick={async()=>{
+                const DB=window.PCN_DB;
+                const {data:u,error}=await DB.auth.login(loginForm.email);
+                if(error){toast_(error,"err");return;}
+                await refreshAll(u); setScreen("app");
+                toast_("Willkommen zurück, "+u.name+"! 🏁");
+              }}>Anmelden →</button>
+            <div style={{textAlign:"center",marginTop:8,fontSize:11,color:C.muted}}>Kein Passwort nötig — nur deine Club-E-Mail</div>
+          </>
+        )}
 
-        {/* Login */}
-        {loginForm.mode==="login"&&<>
-          <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:8}}
-            value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
-          <button className="btn" style={{width:"100%",opacity:loginForm.email?1:.4}}
-            disabled={!loginForm.email}
-            onClick={async()=>{
-              if(!loginForm.email) return;
-              const DB = window.PCN_DB;
-              const {data:u, error} = await DB.auth.login(loginForm.email);
-              if(error){ toast_(error,"err"); return; }
-              await refreshAll(u);
-              setScreen("app"); toast_("Willkommen zurück, "+u.name+"! 🏁");
-            }}>Anmelden →</button>
-          <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>
-            Kein Passwort nötig — nur deine Club-E-Mail
-          </div>
-        </>}
-
-        <button className="btn ghost" style={{width:"100%",marginTop:10,fontSize:12}} onClick={loadDemo}>
-          Demo ansehen
-        </button>
+        <button className="btn ghost" style={{width:"100%",marginTop:10,fontSize:12}} onClick={loadDemo}>Demo ansehen</button>
         <p style={{textAlign:"center",fontSize:10,color:"#333",marginTop:12}}>Powered by <span style={{color:C.gold}}>QAR.Gallery</span></p>
       </div>
     </div>
   );
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // PUBLIC QR VIEW
-  // ══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════════════
+  // PUBLIC VIEW
+  // ══════════════════════════════════════════════════════════════════════════════
   if(screen==="public"&&publicV) {
     const v=publicV; const priv=v.privacy||DEF_PRIVACY;
     const vHist=eventHistory.filter(h=>h.vehicleId===v.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
-    const isH=v.baujahr&&(new Date().getFullYear()-parseInt(v.baujahr)>=30);
-    const kz=isH?(v.kennzeichen||"").replace(/\s*H\s*$/,"").trim()+" H":(v.kennzeichen||"");
+    const kz=fmtKz(v.kennzeichen,v.baujahr);
     const vParts=Object.values(participants).flat().filter(p=>p.vehicleId===v.id);
     const nextEvent=vParts.map(p=>({...p,ev:events[p.eventId]})).filter(p=>p.ev&&daysUntil(p.ev.date)>0).sort((a,b)=>daysUntil(a.ev.date)-daysUntil(b.ev.date))[0];
-
     return (
-      <div style={{minHeight:"100vh",background:C.black}}>
+      <div style={{minHeight:"100vh",background:C.black,paddingBottom:40}}>
         <style>{CSS}</style>
-        {/* PCN header strip */}
-        <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"8px 16px",display:"flex",gap:10,alignItems:"center",justifyContent:"space-between"}}>
+        {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+        <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:28,objectFit:"contain"}}/>
           <span style={{fontSize:10,color:C.muted}}>Digitale Fahrzeugakte</span>
         </div>
-        {/* Hero */}
-        <div style={{height:220,position:"relative",overflow:"hidden",background:"#111"}}>
-          {v.image
-            ?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
-            :isOwn&&(
-              <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",height:"100%",color:C.muted}}>
-                <input type="file" accept="image/*" style={{display:"none"}}
-                  onChange={e=>handleImageUpload(e.target.files[0], url=>updateVehicleImage(v.id, url))}/>
-                <span style={{fontSize:36}}>📷</span>
-                <span style={{fontSize:12,fontWeight:600}}>Foto hinzufügen</span>
-              </label>
-            )
-          }
+        <div style={{height:200,position:"relative",overflow:"hidden",background:"#111"}}>
+          {v.image&&<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>}
           <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 30%,#000000f0)"}}/>
-          <div style={{position:"absolute",bottom:16,left:16,right:16}}>
-            <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:8}}>{v.hersteller} {v.modell}</h1>
+          <div style={{position:"absolute",bottom:14,left:16,right:16}}>
+            <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:8}}>{v.hersteller} {v.modell}</h1>
             <div style={{display:"inline-flex",alignItems:"center",background:"#fff",border:"2px solid #222",borderRadius:5,padding:"3px 10px"}}>
-              <span style={{fontSize:14,fontWeight:800,color:"#111",letterSpacing:2,fontFamily:"Arial,sans-serif"}}>{kz}</span>
+              <span style={{fontSize:13,fontWeight:800,color:"#111",letterSpacing:2,fontFamily:"Arial,sans-serif"}}>{kz}</span>
             </div>
           </div>
         </div>
-
-        <div style={{padding:"16px",maxWidth:520,margin:"0 auto"}}>
-          {/* Next event */}
+        <div style={{padding:"14px 16px",maxWidth:520,margin:"0 auto"}}>
           {nextEvent&&priv.pub_events&&(
             <div style={{background:`${C.red}11`,border:`1px solid ${C.red}33`,borderRadius:12,padding:"12px 14px",marginBottom:14}}>
-              <div style={{fontSize:10,color:C.red,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>🏁 Nächste Veranstaltung — in {daysUntil(nextEvent.ev.date)} Tagen</div>
+              <div style={{fontSize:9,color:C.red,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>🏁 Nächste Veranstaltung — in {daysUntil(nextEvent.ev.date)} Tagen</div>
               <div style={{fontWeight:700,fontSize:14,color:C.white}}>{nextEvent.ev.name}</div>
               <div style={{fontSize:11,color:C.muted,marginTop:2}}>Startnr. <span style={{color:C.gold,fontWeight:700}}>#{nextEvent.startNr}</span> · {nextEvent.class}</div>
             </div>
           )}
-
-          {/* Public fields */}
-          <div className="card p16" style={{marginBottom:14}}>
-            <div className="sec">Fahrzeugdaten</div>
+          <div className="card" style={{padding:16,marginBottom:14}}>
+            <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Fahrzeugdaten</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              {[["Baujahr","baujahr"],["Kraftstoff","kraftstoff"],["Getriebe","getriebe"],["Farbe","farbe"],
-                ["Kilometerstand","kilometerstand"],["TÜV","tuev_faelligkeit"],["Zustand","zustand"]
-              ].filter(([,k])=>priv[k]!==false&&v[k]).map(([label,key])=>(
+              {[["Baujahr","baujahr"],["Kraftstoff","kraftstoff"],["Getriebe","getriebe"],["Farbe","farbe"],["Kilometerstand","kilometerstand"],["TÜV","tuev_faelligkeit"]].filter(([,k])=>priv[k]!==false&&v[k]).map(([label,key])=>(
                 <div key={key}>
-                  <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:"0.5px"}}>{label}</div>
+                  <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.5}}>{label}</div>
                   <div style={{fontSize:14,fontWeight:600,color:C.white,marginTop:2}}>
-                    {key==="kilometerstand"?parseInt(v[key]).toLocaleString("de-DE")+" km":
-                     key==="zustand"?["","Sehr gut","Gut","Befriedigend","Ausreichend","Mangelhaft"][parseInt(v[key])]||v[key]:v[key]}
+                    {key==="kilometerstand"?parseInt(v[key]).toLocaleString("de-DE")+" km":v[key]}
                   </div>
                 </div>
               ))}
             </div>
             {v.besonderheiten&&<div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:12,color:C.muted,lineHeight:1.6}}>ℹ️ {v.besonderheiten}</div>}
           </div>
-
-          {/* Event history */}
           {priv.pub_events&&vHist.length>0&&(
-            <div className="card p16" style={{marginBottom:14}}>
-              <div className="sec">Veranstaltungshistorie</div>
+            <div className="card" style={{padding:16,marginBottom:14}}>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Veranstaltungshistorie</div>
               {vHist.map(h=>(
                 <div key={h.id} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
-                  <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:6,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.red,flexShrink:0}}>#{h.startNr}</div>
+                  <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:6,padding:"2px 8px",fontWeight:800,fontSize:12,color:C.red,flexShrink:0}}>#{h.startNr}</div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.eventName}</div>
-                    <div style={{fontSize:11,color:C.muted}}>{fmtDate(h.date)} · {h.class}</div>
-                    {h.note&&<div style={{fontSize:11,color:C.gold,marginTop:1}}>{h.note}</div>}
+                    <div style={{fontSize:12,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.eventName}</div>
+                    <div style={{fontSize:10,color:C.muted}}>{fmtDate(h.date)} · {h.class}</div>
+                    {h.note&&<div style={{fontSize:10,color:C.gold}}>{h.note}</div>}
                   </div>
                   <span style={{fontSize:10,fontWeight:700,color:h.result==="Teilnahme"?C.muted:C.gold,flexShrink:0}}>{h.result}</span>
                 </div>
               ))}
             </div>
           )}
-
-          {/* Contact anonymously */}
           {me&&v.owner!==me.email&&(
-            <button className="btn ghost" style={{width:"100%",marginBottom:12}} onClick={()=>startContact(v.id)}>
-              💬 Anonym kontaktieren
+            <button className="btn ghost" style={{width:"100%",marginBottom:10}} onClick={()=>startContact(v.id)}>
+              💬 Besitzer anonym kontaktieren
             </button>
           )}
-
-          {/* QAR ID */}
-          <div style={{textAlign:"center",paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-            <div style={{fontSize:9,color:C.border,letterSpacing:2,marginBottom:4}}>VERIFIZIERT DURCH QAR.GALLERY</div>
-            <div style={{fontFamily:"monospace",fontSize:11,color:"#333"}}>{v.qarId}</div>
+          <div style={{textAlign:"center",padding:"12px 0",borderTop:`1px solid ${C.border}`}}>
+            <div style={{fontSize:9,color:"#333",letterSpacing:2,marginBottom:4}}>VERIFIZIERT DURCH QAR.GALLERY</div>
+            <div style={{fontFamily:"monospace",fontSize:11,color:"#444"}}>{v.qarId}</div>
           </div>
-
-          {me&&<button className="btn sm ghost" style={{width:"100%",marginTop:12}} onClick={()=>setScreen("app")}>← Zurück zur App</button>}
+          {me&&<button className="btn sm ghost" style={{width:"100%",marginTop:10}} onClick={()=>setScreen(viewV?"vehicle":"app")}>← Zurück</button>}
         </div>
       </div>
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════════════
   // VEHICLE DETAIL
-  // ══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════════════
   if(screen==="vehicle"&&viewV) {
-    const v=viewV; const vLog=logbook[v.id]||[];
+    const v=viewV;
+    const vLog=logbook[v.id]||[];
     const vParts=Object.values(participants).flat().filter(p=>p.vehicleId===v.id);
     const vHist=eventHistory.filter(h=>h.vehicleId===v.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
-    const isOwn=v.owner===me?.email;
-    const tuev=v.tuev_faelligkeit;
-    const tuevParts=tuev?tuev.split("/"):null;
-    const tuevDate=tuevParts?new Date(parseInt(tuevParts[1]),parseInt(tuevParts[0])-1,1):null;
+    const isOwn=v.owner===me?.email||v.userId===me?.id;
+    const tuevParts=(v.tuev_faelligkeit||"").split("/");
+    const tuevDate=tuevParts.length===2?new Date(parseInt(tuevParts[1]),parseInt(tuevParts[0])-1,1):null;
     const tuevDays=tuevDate?Math.ceil((tuevDate-new Date())/86400000):null;
     const tuevColor=!tuevDays?C.muted:tuevDays<0?C.red:tuevDays<90?C.amber:C.green;
-    const isH=v.baujahr&&(new Date().getFullYear()-parseInt(v.baujahr)>=30);
-    const kz=isH?(v.kennzeichen||"").replace(/\s*H\s*$/,"").trim()+" H":(v.kennzeichen||"");
+    const kz=fmtKz(v.kennzeichen,v.baujahr);
     const priv=v.privacy||DEF_PRIVACY;
-
     return (
-      <div style={{minHeight:"100vh",background:C.black,paddingBottom:80,animation:"fadeIn .2s"}}>
+      <div style={{minHeight:"100vh",background:C.black,paddingBottom:80}}>
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+        {ScannerOverlay}
         {/* Hero */}
         <div style={{height:220,position:"relative",overflow:"hidden",background:"#111"}}>
-          {v.image&&<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>}
-          <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.3) 0%,#000000ee 100%)"}}/>
-          <div style={{position:"absolute",top:14,left:14,display:"flex",gap:8}}>
-            <button onClick={()=>setScreen("app")} style={{background:"rgba(0,0,0,.6)",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.white,cursor:"pointer",fontSize:12,fontWeight:700}}>← Zurück</button>
+          {v.image
+            ?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+            :isOwn&&(
+              <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",height:"100%",color:C.muted}}>
+                <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>updateVehicleImage(v.id,url))}/>
+                <span style={{fontSize:36}}>📷</span>
+                <span style={{fontSize:12,fontWeight:600}}>Foto hinzufügen</span>
+              </label>
+            )
+          }
+          <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.3),#000000ee)"}}/>
+          <div style={{position:"absolute",top:14,left:14}}>
+            <button onClick={()=>setScreen("app")} style={{background:"rgba(0,0,0,.6)",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.white,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>← Zurück</button>
           </div>
           <div style={{position:"absolute",top:14,right:14,display:"flex",gap:8}}>
-            {isOwn&&<button onClick={()=>setShowPrivacy(v.id)} style={{background:"rgba(0,0,0,.6)",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.white,cursor:"pointer",fontSize:12}}>🔒 QR</button>}
-            <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}} style={{background:"rgba(0,0,0,.6)",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.white,cursor:"pointer",fontSize:12}}>👁 Vorschau</button>
+            {isOwn&&<button onClick={()=>setShowPrivacy(v.id)} style={{background:"rgba(0,0,0,.6)",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.white,cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif"}}>🔒 QR</button>}
+            <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}} style={{background:"rgba(0,0,0,.6)",border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 12px",color:C.white,cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif"}}>👁 Vorschau</button>
           </div>
         </div>
 
@@ -776,16 +880,20 @@ export default function PCN() {
             </div>
             {isOwn&&(
               <label style={{display:"inline-flex",alignItems:"center",gap:6,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:12,color:C.muted,fontFamily:"'Barlow',sans-serif"}}>
-                <input type="file" accept="image/*" style={{display:"none"}}
-                  onChange={e=>handleImageUpload(e.target.files[0], url=>updateVehicleImage(v.id, url))}/>
+                <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>updateVehicleImage(v.id,url))}/>
                 {imgUploading?"⏳ Lädt…":"📷 Foto"}
               </label>
             )}
+            {!isOwn&&<button className="btn sm ghost" style={{fontSize:11}} onClick={()=>startContact(v.id)}>💬 Kontakt</button>}
           </div>
 
-          {/* Status */}
+          {/* Status strip */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-            {[[tuev||"–","TÜV",tuevColor],[parseInt(v.kilometerstand||0).toLocaleString("de-DE")+" km","Stand",C.muted],[["","Sehr gut","Gut","Befriend.","Ausreichend","Mangelhaft"][parseInt(v.zustand)]||"–","Zustand",C.gold]].map(([val,label,color],i)=>(
+            {[
+              [v.tuev_faelligkeit||"–","TÜV",tuevColor],
+              [parseInt(v.kilometerstand||0).toLocaleString("de-DE")+" km","Stand",C.muted],
+              [["","Sehr gut","Gut","Befriend.","Ausreichend","Mangelhaft"][parseInt(v.zustand)]||"–","Zustand",C.gold],
+            ].map(([val,label,color],i)=>(
               <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 8px",textAlign:"center"}}>
                 <div style={{fontSize:11,fontWeight:700,color,marginBottom:2}}>{val}</div>
                 <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.5}}>{label}</div>
@@ -796,14 +904,14 @@ export default function PCN() {
           {/* Logbuch */}
           <div style={{marginBottom:16}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-              <div className="sec" style={{margin:0}}>📋 Service-Logbuch ({vLog.length})</div>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>📋 Logbuch ({vLog.length})</div>
               {isOwn&&<button className="btn sm ghost" onClick={()=>setShowAddLog(v.id)}>+ Eintrag</button>}
             </div>
             {vLog.length===0
-              ?<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"20px",textAlign:"center",color:C.muted,fontSize:12}}>
+              ?<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"18px",textAlign:"center",color:C.muted,fontSize:12}}>
                   Noch leer — 3 Einträge schalten KI-Marktwert frei
                 </div>
-              :vLog.slice().reverse().map(e=>(
+              :vLog.slice(0,10).map(e=>(
                 <div key={e.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 14px",marginBottom:6}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
                     <div style={{fontWeight:700,fontSize:13,color:C.white}}>{e.type}</div>
@@ -819,46 +927,45 @@ export default function PCN() {
           {/* Events */}
           {(vParts.length>0||vHist.length>0)&&(
             <div style={{marginBottom:16}}>
-              <div className="sec">🏁 Veranstaltungen</div>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>🏁 Veranstaltungen</div>
               {vParts.map(p=>{const ev=events[p.eventId];if(!ev)return null;return(
-                <div key={p.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 14px",marginBottom:6,display:"flex",gap:10,alignItems:"center"}}>
+                <div key={p.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 14px",marginBottom:6,display:"flex",gap:10,alignItems:"center",cursor:"pointer"}} onClick={()=>{setViewEv(ev);setScreen("event");}}>
                   <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:7,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.red,flexShrink:0}}>#{p.startNr}</div>
-                  <div><div style={{fontWeight:600,fontSize:13,color:C.white}}>{ev.name}</div><div style={{fontSize:11,color:C.muted}}>{fmtDate(ev.date)} · {p.class}</div></div>
+                  <div>
+                    <div style={{fontWeight:600,fontSize:13,color:C.white}}>{ev.name}</div>
+                    <div style={{fontSize:11,color:C.muted}}>{fmtDate(ev.date)} · {p.class}</div>
+                  </div>
                   <div style={{marginLeft:"auto",fontSize:10,color:C.amber,fontWeight:600}}>in {daysUntil(ev.date)} T.</div>
                 </div>
               );})}
               {vHist.map(h=>(
-                <div key={h.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 14px",marginBottom:6,display:"flex",gap:10,alignItems:"center",opacity:.8}}>
+                <div key={h.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 14px",marginBottom:6,display:"flex",gap:10,alignItems:"center",opacity:.75}}>
                   <div style={{background:`${C.gold}22`,border:`1px solid ${C.gold}44`,borderRadius:7,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.gold,flexShrink:0}}>#{h.startNr}</div>
-                  <div><div style={{fontWeight:600,fontSize:13,color:C.white}}>{h.eventName}</div><div style={{fontSize:11,color:C.muted}}>{fmtDate(h.date)}{h.note?" · "+h.note:""}</div></div>
-                  <div style={{marginLeft:"auto",fontSize:10,color:h.result==="Teilnahme"?C.muted:C.gold,fontWeight:700}}>{h.result}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:600,fontSize:13,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.eventName}</div>
+                    <div style={{fontSize:11,color:C.muted}}>{fmtDate(h.date)}{h.note?" · "+h.note:""}</div>
+                  </div>
+                  <div style={{fontSize:10,color:h.result==="Teilnahme"?C.muted:C.gold,fontWeight:700,flexShrink:0}}>{h.result}</div>
                 </div>
               ))}
             </div>
           )}
 
           {/* QR Code */}
-          <div className="card p16">
-            <div className="sec">📱 QR-Code & Fahrzeug-ID</div>
+          <div className="card" style={{padding:16}}>
+            <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>📱 QR-Code</div>
             <div style={{display:"flex",gap:14,alignItems:"center"}}>
               <div style={{background:"#fff",borderRadius:10,padding:8,flexShrink:0,cursor:"pointer"}} onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}}>
-                <QRCodeCanvas value={`https://gpk2026.github.io/qar-gallery/pcn/#/v/${v.qarId}`} size={90}/>
+                <QRCodeCanvas value={`https://qar.gallery/pcn/?v=${v.qarId}`} size={90}/>
               </div>
               <div>
-                <div style={{fontSize:10,color:C.muted,marginBottom:3}}>QAR-ID (öffentlich)</div>
+                <div style={{fontSize:10,color:C.muted,marginBottom:3}}>QAR-ID</div>
                 <div style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:C.white,letterSpacing:1}}>{v.qarId}</div>
-                <div style={{fontSize:10,color:C.muted,marginTop:6}}>FIN niemals öffentlich sichtbar</div>
+                <div style={{fontSize:10,color:C.muted,marginTop:4}}>FIN niemals öffentlich</div>
                 <button className="btn sm ghost" style={{marginTop:8,fontSize:11}} onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}}>Öffentliche Seite →</button>
               </div>
             </div>
           </div>
-
-          {/* Contact (for other members) */}
-          {!isOwn&&me&&(
-            <button className="btn ghost" style={{width:"100%",marginTop:12}} onClick={()=>startContact(v.id)}>
-              💬 Besitzer anonym kontaktieren
-            </button>
-          )}
         </div>
 
         {/* Privacy Sheet */}
@@ -868,25 +975,25 @@ export default function PCN() {
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>🔒 QR-Sichtbarkeit</div>
               <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Was ist auf der öffentlichen Fahrzeugseite sichtbar?</div>
               {[
-                ["Fahrzeugdaten",[["kennzeichen","Kennzeichen"],["farbe","Farbe"],["kraftstoff","Kraftstoff"],["getriebe","Getriebe"],["baujahr","Baujahr (immer öffentlich)"]]],
-                ["Details (optional)",[["kilometerstand","Kilometerstand"],["tuev_faelligkeit","TÜV-Datum"],["zustand","Zustand"],["marktwert","Marktwert"]]],
+                ["Basis",[["kennzeichen","Kennzeichen"],["farbe","Farbe"],["kraftstoff","Kraftstoff"],["getriebe","Getriebe"],["baujahr","Baujahr"]]],
+                ["Details",[["kilometerstand","Kilometerstand"],["tuev_faelligkeit","TÜV-Datum"],["zustand","Zustand"],["marktwert","Marktwert"]]],
                 ["Abschnitte",[["pub_events","Veranstaltungsteilnahmen"],["pub_logbook","Service-Logbuch"]]],
               ].map(([group,fields])=>(
                 <div key={group} style={{marginBottom:14}}>
-                  <div className="sec">{group}</div>
+                  <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{group}</div>
                   {fields.map(([key,label])=>(
-                    <div key={key} className="row">
+                    <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
                       <span style={{fontSize:13,color:C.white}}>{label}</span>
-                      <button className={`tog ${priv[key]!==false?"on":"off"}`} onClick={()=>togglePrivacy(v.id,key)}/>
+                      <button className={`tog ${priv[key]!==false?"on":""}`} onClick={()=>togglePrivacy(v.id,key)}/>
                     </div>
                   ))}
                 </div>
               ))}
-              <button className="btn" style={{width:"100%",marginTop:8}} onClick={()=>setShowPrivacy(null)}>Speichern ✓</button>
+              <button className="btn" style={{width:"100%",marginTop:8}} onClick={()=>setShowPrivacy(null)}>Fertig ✓</button>
             </div>
           </div>
         )}
-        {/* Add log sheet */}
+        {/* Add Log Sheet */}
         {showAddLog===v.id&&(
           <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddLog(null);}}>
             <div className="sheet">
@@ -900,7 +1007,7 @@ export default function PCN() {
                 value={addLogForm.workshop} onChange={e=>setAddLogForm(p=>({...p,workshop:e.target.value}))}/>
               <input className="inp" placeholder="Notizen" style={{marginBottom:16}}
                 value={addLogForm.notes} onChange={e=>setAddLogForm(p=>({...p,notes:e.target.value}))}/>
-              <button className="btn" onClick={()=>addLogEntry(v.id)}>Speichern ✓</button>
+              <button className="btn" style={{width:"100%"}} onClick={()=>addLogEntry(v.id)}>Speichern ✓</button>
             </div>
           </div>
         )}
@@ -908,147 +1015,64 @@ export default function PCN() {
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // EVENT DETAIL
-  // ══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════════════
+  // EVENT DETAIL (proper component — no useState-in-render bug)
+  // ══════════════════════════════════════════════════════════════════════════════
   if(screen==="event"&&viewEv) {
-    const ev=viewEv; const evParts=participants[ev.id]||[];
-    const myReg=evParts.find(p=>p.userId===me?.id);
-    const [selV,setSelV]=useState(myVehicles[0]?.id||"");
-    const [selC,setSelC]=useState(ev.classes[0]);
-    const days=daysUntil(ev.date);
     return (
-      <div style={{minHeight:"100vh",background:C.black,paddingBottom:40,animation:"fadeIn .2s"}}>
+      <>
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"14px 16px"}}>
-          <button onClick={()=>setScreen("app")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,padding:0,marginBottom:10}}>← Events</button>
-          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:6}}>
-            <span className="chip" style={{background:`${C.red}22`,color:C.red}}>{ev.category}</span>
-            <span className="chip" style={{background:`${days<=7?C.amber:C.border}22`,color:days<=7?C.amber:C.muted}}>{days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}</span>
-          </div>
-          <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1.1}}>{ev.name}</h1>
-          <p style={{fontSize:11,color:C.muted,marginTop:3}}>{ev.subtitle}</p>
-        </div>
-        <div style={{padding:"16px",maxWidth:520,margin:"0 auto"}}>
-          <div className="card p16" style={{marginBottom:14}}>
-            {[["📅",fmtDate(ev.date),"Datum"],["📍",ev.location,"Ort"],["💶",ev.entryFee,"Nenngeld"],["👥",`${evParts.length} / ${ev.maxParticipants}`,"Plätze"]].map(([icon,val,label])=>(
-              <div key={label} style={{display:"flex",gap:10,marginBottom:8,alignItems:"center"}}>
-                <span style={{width:20,textAlign:"center"}}>{icon}</span>
-                <span style={{fontSize:11,color:C.muted,minWidth:56}}>{label}</span>
-                <span style={{fontSize:13,color:C.white,fontWeight:600}}>{val}</span>
-              </div>
-            ))}
-            <p style={{fontSize:12,color:C.muted,lineHeight:1.7,marginTop:8,paddingTop:8,borderTop:`1px solid ${C.border}`}}>{ev.description}</p>
-          </div>
-
-          {myReg?(
-            <div style={{background:`${C.green}11`,border:`1px solid ${C.green}44`,borderRadius:12,padding:"14px 16px",textAlign:"center",marginBottom:14}}>
-              <div style={{color:C.green,fontWeight:700,fontSize:15,marginBottom:3}}>✓ Angemeldet — #{myReg.startNr}</div>
-              <div style={{fontSize:12,color:C.muted}}>{myReg.class} · {fmtDate(ev.date)}</div>
-            </div>
-          ):me&&myVehicles.length>0?(
-            <div className="card p16" style={{marginBottom:14}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:800,color:C.white,marginBottom:12}}>Jetzt anmelden</div>
-              <select className="inp" value={selV} onChange={e=>setSelV(e.target.value)} style={{marginBottom:8}}>
-                {myVehicles.map(v=><option key={v.id} value={v.id}>{v.hersteller} {v.modell} · {v.kennzeichen}</option>)}
-              </select>
-              <select className="inp" value={selC} onChange={e=>setSelC(e.target.value)} style={{marginBottom:14}}>
-                {ev.classes.map(c=><option key={c}>{c}</option>)}
-              </select>
-              <button className="btn" onClick={()=>joinEvent(ev.id,selV,selC)} style={{width:"100%"}}>Anmelden ✓</button>
-            </div>
-          ):null}
-
-          {evParts.length>0&&(
-            <div>
-              <div className="sec">Teilnehmer ({evParts.length})</div>
-              {evParts.map(p=>{const v=vehicles[p.vehicleId];return(
-                <div key={p.id} style={{display:"flex",gap:10,alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.border}`,cursor:"pointer"}}
-                  onClick={()=>{setViewV(v);setScreen("vehicle");}}>
-                  <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:7,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.red,flexShrink:0}}>#{p.startNr}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v?`${v.hersteller} ${v.modell}`:"Fahrzeug"}</div>
-                    <div style={{fontSize:11,color:C.muted}}>{p.class}{v?.kennzeichen?" · "+v.kennzeichen:""}</div>
-                  </div>
-                  <span style={{color:C.muted,fontSize:16}}>›</span>
-                </div>
-              );})}
-            </div>
-          )}
-        </div>
-      </div>
+        <EventDetail
+          ev={viewEv} me={me} myVehicles={myVehicles} vehicles={vehicles}
+          participants={participants}
+          onBack={()=>setScreen("app")}
+          onJoin={joinEvent}
+          onViewVehicle={v=>{ setViewV(v); setScreen("vehicle"); }}
+        />
+      </>
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // CHAT (Thread view)
-  // ══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════════════
+  // CHAT (proper component — no useEffect-in-render bug)
+  // ══════════════════════════════════════════════════════════════════════════════
   if(screen==="chat"&&activeThread&&threads[activeThread]) {
+    // Mark messages as read
     const t=threads[activeThread];
-    const other=Object.values(allUsers).find(u=>t.participants.includes(u.id)&&u.id!==me?.id)||{name:"Unbekannt"};
-    const v=vehicles[t.vehicleId];
-    // Mark as read
-    useEffect(()=>{
-      setThreads(prev=>({...prev,[activeThread]:{...prev[activeThread],messages:prev[activeThread].messages.map(m=>({...m,read:true}))}}));
-    },[activeThread]);
+    if(t.messages.some(m=>m.from!==me?.id&&!m.read&&!m.isSystem)){
+      setThreads(prev=>({...prev,[activeThread]:{...t,messages:t.messages.map(m=>({...m,read:true}))}}));
+    }
     return (
-      <div style={{height:"100vh",background:C.black,display:"flex",flexDirection:"column"}}>
+      <>
         <style>{CSS}</style>
-        {/* Header */}
-        <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",display:"flex",gap:12,alignItems:"center",flexShrink:0}}>
-          <button onClick={()=>{setScreen("app");setTab("messages");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:18,padding:0}}>←</button>
-          <div style={{width:36,height:36,borderRadius:"50%",background:`${C.red}22`,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,flexShrink:0}}>{other.name[0]}</div>
-          <div>
-            <div style={{fontWeight:700,fontSize:14,color:C.white}}>{t.anonymous?"🔒 Anonym":other.name}</div>
-            {v&&<div style={{fontSize:10,color:C.muted}}>Bezüglich: {v.hersteller} {v.modell}</div>}
-          </div>
-          {v&&<button className="btn sm ghost" style={{marginLeft:"auto",fontSize:11}} onClick={()=>{setViewV(v);setScreen("vehicle");}}>Akte →</button>}
-        </div>
-        {/* Messages */}
-        <div style={{flex:1,overflowY:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:8}}>
-          {t.messages.map(m=>{
-            if(m.isSystem) return (
-              <div key={m.id} style={{textAlign:"center",fontSize:10,color:"#444",margin:"4px 0"}}>— {m.text} —</div>
-            );
-            const mine=m.from===me?.id;
-            return (
-              <div key={m.id} style={{display:"flex",justifyContent:mine?"flex-end":"flex-start"}}>
-                <div style={{maxWidth:"80%",background:mine?C.red:"#1e1e1e",border:mine?"none":`1px solid ${C.border}`,borderRadius:mine?"16px 16px 4px 16px":"16px 16px 16px 4px",padding:"10px 14px"}}>
-                  <div style={{fontSize:14,color:"#fff",lineHeight:1.5}}>{m.text}</div>
-                  <div style={{fontSize:9,color:mine?"rgba(255,255,255,.5)":C.muted,marginTop:3,textAlign:"right"}}>{m.ts}</div>
-                </div>
-              </div>
-            );
-          })}
-          <div ref={msgEndRef}/>
-        </div>
-        {/* Input */}
-        <div style={{padding:"10px 12px",background:C.dark,borderTop:`1px solid ${C.border}`,display:"flex",gap:8,flexShrink:0,paddingBottom:"calc(10px + env(safe-area-inset-bottom,0))"}}>
-          <input className="inp" placeholder="Nachricht…" value={msgInput} onChange={e=>setMsgInput(e.target.value)}
-            onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg(activeThread);}}}
-            style={{flex:1,padding:"10px 14px"}}/>
-          <button className="btn" style={{padding:"10px 18px",flexShrink:0}} onClick={()=>sendMsg(activeThread)}>↑</button>
-        </div>
-      </div>
+        {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+        <ChatScreen
+          thread={t} me={me} allUsers={allUsers} vehicles={vehicles}
+          onBack={()=>{setScreen("app");setTab("messages");}}
+          onSend={sendMsg}
+          onViewVehicle={v=>{setViewV(v);setScreen("vehicle");}}
+        />
+      </>
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // MAIN APP
-  // ══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════════════════
+  // MAIN APP TABS
+  // ══════════════════════════════════════════════════════════════════════════════
   return (
     <div style={{minHeight:"100vh",background:C.black,paddingBottom:62}}>
       <style>{CSS}</style>
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+      {ScannerOverlay}
 
       {/* Nav */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
         <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:30,objectFit:"contain"}}/>
         <button onClick={openScanner} style={{background:C.red,border:"none",borderRadius:8,padding:"7px 14px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"'Barlow',sans-serif"}}>📷 Scan</button>
-        <div style={{fontSize:11,color:C.muted,textAlign:"right"}}>
-          <div style={{color:C.white,fontWeight:700,fontSize:13}}>{me?.name}</div>
-          <div style={{fontSize:10}}>{me?.memberNr}</div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.white}}>{me?.name}</div>
+          <div style={{fontSize:10,color:C.muted}}>{me?.memberNr}</div>
         </div>
       </div>
 
@@ -1057,7 +1081,7 @@ export default function PCN() {
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
           <div style={{animation:"fadeIn .2s"}}>
-            {/* Alert: upcoming event */}
+            {/* Upcoming event alert */}
             {Object.values(events).filter(e=>daysUntil(e.date)>0&&daysUntil(e.date)<=14).slice(0,1).map(e=>(
               <div key={e.id} style={{background:`${C.red}11`,border:`1px solid ${C.red}33`,borderRadius:12,padding:"12px 14px",marginBottom:14,cursor:"pointer"}}
                 onClick={()=>{setViewEv(e);setScreen("event");}}>
@@ -1068,22 +1092,21 @@ export default function PCN() {
             ))}
             {/* Reminders */}
             {myReminders.slice(0,3).map(r=>{
-              const days=daysUntil(r.date); const v=vehicles[r.vehicleId];
+              const days=daysUntil(r.date); const rv=vehicles[r.vehicleId];
               return (
                 <div key={r.id} style={{background:C.card,border:`1px solid ${days<=3?C.amber+"44":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:7,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div>
                     <div style={{fontSize:13,fontWeight:600,color:days<=3?C.amber:C.white}}>{r.title}</div>
-                    <div style={{fontSize:10,color:C.muted,marginTop:2}}>{v?v.hersteller+" "+v.modell+" · ":""}{days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}</div>
+                    <div style={{fontSize:10,color:C.muted,marginTop:2}}>{rv?rv.hersteller+" "+rv.modell+" · ":""}{days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}</div>
                   </div>
-                  <button onClick={async()=>{
-        const DB=window.PCN_DB; if(DB) await DB.reminders.done(me.id, r.id);
-        setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x)); toast_("Erledigt ✓");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:"0 4px"}}>✓</button>
+                  <button onClick={async()=>{const DB=window.PCN_DB;if(DB)await DB.reminders.done(me.id,r.id);setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
+                    style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:"0 4px"}}>✓</button>
                 </div>
               );
             })}
             {/* Vehicles */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,marginTop:6}}>
-              <div className="sec" style={{margin:0}}>Meine Fahrzeuge</div>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>Meine Fahrzeuge</div>
               <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+</button>
             </div>
             {myVehicles.length===0
@@ -1094,16 +1117,15 @@ export default function PCN() {
               :myVehicles.map(v=>(
                 <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer"}}
                   onClick={()=>{setViewV(v);setScreen("vehicle");}}>
-                  <div style={{height:100,overflow:"hidden",position:"relative"}}>
-                    {v.image?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
-                      :<div style={{height:"100%",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32}}>🏎️</div>}
+                  <div style={{height:100,overflow:"hidden",background:"#111",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    {v.image?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:32}}>🏎️</span>}
                   </div>
                   <div style={{padding:"11px 13px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <div>
                       <div style={{fontWeight:700,fontSize:14,color:C.white}}>{v.hersteller} {v.modell}</div>
                       <div style={{display:"flex",gap:6,marginTop:4,alignItems:"center"}}>
                         <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"1px 7px",fontSize:10,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif"}}>
-                          {(new Date().getFullYear()-parseInt(v.baujahr||0)>=30)?(v.kennzeichen||"").replace(/\s*H$/,"").trim()+" H":(v.kennzeichen||"")}
+                          {fmtKz(v.kennzeichen,v.baujahr)}
                         </span>
                         <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
                       </div>
@@ -1114,17 +1136,16 @@ export default function PCN() {
               ))
             }
             {/* Locked features */}
-            <div className="sec" style={{marginTop:20}}>Features freischalten</div>
+            <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginTop:20,marginBottom:10}}>Features freischalten</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
               {LOCKED_FEATURES.map(f=>{
                 const unlocked=unlockedFeatures.has(f.id);
                 return (
-                  <div key={f.id} style={{background:unlocked?"#1a1a1a":"#111",border:`1px solid ${unlocked?C.border+"88":C.border}`,borderRadius:11,padding:"13px 12px",opacity:unlocked?1:.55,position:"relative",overflow:"hidden"}}>
+                  <div key={f.id} style={{background:unlocked?"#1a1a1a":"#111",border:`1px solid ${C.border}`,borderRadius:11,padding:"13px 12px",opacity:unlocked?1:.5,position:"relative"}}>
                     {!unlocked&&<div style={{position:"absolute",top:8,right:8,fontSize:12}}>🔒</div>}
                     <div style={{fontSize:18,marginBottom:5}}>{f.icon}</div>
                     <div style={{fontSize:11,fontWeight:700,color:unlocked?C.white:"#444",marginBottom:2}}>{f.label}</div>
-                    {!unlocked&&<div style={{fontSize:9,color:"#3a3a3a"}}>{f.milestone}</div>}
-                    {unlocked&&<div style={{fontSize:9,color:C.green}}>✓ Freigeschaltet</div>}
+                    <div style={{fontSize:9,color:unlocked?C.green:"#333"}}>{unlocked?"✓ Freigeschaltet":f.milestone}</div>
                   </div>
                 );
               })}
@@ -1135,21 +1156,22 @@ export default function PCN() {
         {/* EVENTS */}
         {tab==="events"&&(
           <div style={{animation:"fadeIn .2s"}}>
-            <div className="sec">Veranstaltungen 2026</div>
+            <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Veranstaltungen 2026</div>
             {Object.values(events).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(ev=>{
-              const days=daysUntil(ev.date); const myReg=participants[ev.id]?.find(p=>p.userId===me?.id);
+              const days=daysUntil(ev.date);
+              const myReg=(participants[ev.id]||[]).find(p=>p.userId===me?.id);
               return (
                 <div key={ev.id} style={{background:C.card,border:`1px solid ${myReg?C.red+"44":C.border}`,borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}
                   onClick={()=>{setViewEv(ev);setScreen("event");}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                    <span className="chip" style={{background:`${C.red}22`,color:C.red}}>{ev.category}</span>
+                    <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>{ev.category}</span>
                     <span style={{fontSize:11,color:days<=7?C.amber:C.muted,fontWeight:600}}>{days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}</span>
                   </div>
                   <div style={{fontWeight:700,fontSize:15,color:C.white,marginBottom:2}}>{ev.name}</div>
                   <div style={{fontSize:11,color:C.muted,marginBottom:8}}>{fmtDate(ev.date)} · {ev.location}</div>
                   <div style={{display:"flex",gap:8,alignItems:"center"}}>
                     <span style={{fontSize:11,color:C.muted}}>{ev.entryFee}</span>
-                    {myReg&&<span className="chip" style={{background:`${C.green}22`,color:C.green}}>✓ #{myReg.startNr}</span>}
+                    {myReg&&<span style={{background:`${C.green}22`,color:C.green,borderRadius:5,padding:"1px 8px",fontSize:10,fontWeight:700}}>✓ #{myReg.startNr}</span>}
                   </div>
                 </div>
               );
@@ -1160,70 +1182,71 @@ export default function PCN() {
         {/* MESSAGES */}
         {tab==="messages"&&(
           <div style={{animation:"fadeIn .2s"}}>
-            <div className="sec">💬 Anonyme Nachrichten</div>
+            <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>💬 Nachrichten</div>
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:14,fontSize:11,color:C.muted,lineHeight:1.6}}>
-              🔒 Nachrichten werden anonym über QAR-IDs vermittelt. Weder Name noch E-Mail wird ohne deine Zustimmung weitergegeben.
+              🔒 Nachrichten werden anonym vermittelt — Name und E-Mail bleiben geschützt.
             </div>
-            {myThreads.length===0
-              ?<div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}>
-                  <div style={{fontSize:32,marginBottom:8}}>💬</div>
-                  <div style={{fontSize:14,color:C.white,marginBottom:4}}>Noch keine Nachrichten</div>
-                  <div style={{fontSize:12}}>Scanne einen QR-Code am Fahrzeug um Kontakt aufzunehmen</div>
-                </div>
-              :myThreads.map(t=>{
-                  const other=Object.values(allUsers).find(u=>t.participants.includes(u.id)&&u.id!==me?.id)||{name:"?"};
-                  const last=t.messages.filter(m=>!m.isSystem).pop();
-                  const unread=t.messages.some(m=>m.from!==me?.id&&!m.read&&!m.isSystem);
-                  const v=vehicles[t.vehicleId];
-                  return (
-                    <div key={t.id} style={{background:C.card,border:`1.5px solid ${unread?C.red+"44":C.border}`,borderRadius:12,padding:"14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}
-                      onClick={()=>{setActiveThread(t.id);setScreen("chat");}}>
-                      <div style={{width:38,height:38,borderRadius:"50%",background:`${C.red}22`,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,flexShrink:0}}>
-                        {t.anonymous?"🔒":other.name[0]}
-                      </div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                          <span style={{fontWeight:unread?700:500,fontSize:14,color:C.white}}>{t.anonymous?"Anonym":other.name}</span>
-                          <span style={{fontSize:10,color:C.muted}}>{last?.ts||""}</span>
-                        </div>
-                        {v&&<div style={{fontSize:10,color:`${C.red}88`,marginBottom:2}}>{v.hersteller} {v.modell}</div>}
-                        <div style={{fontSize:12,color:unread?C.white:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{last?(last.from===me?.id?"Du: ":"")+last.text:"…"}</div>
-                      </div>
-                      {unread&&<div style={{width:8,height:8,borderRadius:"50%",background:C.red,flexShrink:0}}/>}
+            {myThreads.length===0?(
+              <div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}>
+                <div style={{fontSize:32,marginBottom:8}}>💬</div>
+                <div style={{fontSize:14,color:C.white,marginBottom:4}}>Noch keine Nachrichten</div>
+                <div style={{fontSize:12}}>Scanne einen QR-Code am Fahrzeug oder tippe auf „Kontakt" in der Fahrzeugakte</div>
+              </div>
+            ):myThreads.map(t=>{
+              const other=Object.values(allUsers).find(u=>t.participants.includes(u.id)&&u.id!==me?.id)||{name:"Mitglied"};
+              const last=t.messages.filter(m=>!m.isSystem).pop();
+              const unread=t.messages.some(m=>m.from!==me?.id&&!m.read&&!m.isSystem);
+              const tv=vehicles[t.vehicleId];
+              return (
+                <div key={t.id} style={{background:C.card,border:`1.5px solid ${unread?C.red+"44":C.border}`,borderRadius:12,padding:"14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}
+                  onClick={()=>{setActiveThread(t.id);setScreen("chat");}}>
+                  <div style={{width:38,height:38,borderRadius:"50%",background:`${C.red}22`,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,flexShrink:0}}>
+                    {t.anonymous?"🔒":other.name[0]}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                      <span style={{fontWeight:unread?700:500,fontSize:14,color:C.white}}>{t.anonymous?"Anonym":other.name}</span>
+                      <span style={{fontSize:10,color:C.muted}}>{last?.ts||""}</span>
                     </div>
-                  );
-                })
-            }
+                    {tv&&<div style={{fontSize:10,color:`${C.red}88`,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tv.hersteller} {tv.modell}</div>}
+                    <div style={{fontSize:12,color:unread?C.white:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {last?(last.from===me?.id?"Du: ":"")+last.text:"Neuer Chat"}
+                    </div>
+                  </div>
+                  {unread&&<div style={{width:8,height:8,borderRadius:"50%",background:C.red,flexShrink:0}}/>}
+                </div>
+              );
+            })}
           </div>
         )}
 
         {/* REMINDERS */}
         {tab==="reminders"&&(
           <div style={{animation:"fadeIn .2s"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-              <div className="sec" style={{margin:0}}>Erinnerungen</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>Erinnerungen</div>
               <button className="btn sm ghost" onClick={()=>setShowAddRem(true)}>+ Neu</button>
             </div>
             {myReminders.length===0
               ?<div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}><div style={{fontSize:32,marginBottom:8}}>🎉</div><div style={{color:C.white}}>Alles erledigt!</div></div>
               :myReminders.map(r=>{
-                  const days=daysUntil(r.date); const v=vehicles[r.vehicleId];
-                  return (
-                    <div key={r.id} style={{background:C.card,border:`1px solid ${days<=3?C.amber+"55":C.border}`,borderRadius:11,padding:"13px",marginBottom:8}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontWeight:700,fontSize:14,color:days<=3?C.amber:C.white,marginBottom:2}}>{r.title}</div>
-                          {v&&<div style={{fontSize:10,color:C.muted}}>{v.hersteller} {v.modell}</div>}
-                          <div style={{fontSize:10,color:days<0?C.red:days<=3?C.amber:C.muted,marginTop:2}}>
-                            {days<0?"⚠️ Überfällig":days===0?"Heute":days===1?"Morgen":`in ${days} Tagen`} · {fmtDate(r.date)}
-                          </div>
+                const days=daysUntil(r.date); const rv=vehicles[r.vehicleId];
+                return (
+                  <div key={r.id} style={{background:C.card,border:`1px solid ${days<=3?C.amber+"55":C.border}`,borderRadius:11,padding:"13px",marginBottom:8}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontWeight:700,fontSize:14,color:days<=3?C.amber:C.white,marginBottom:2}}>{r.title}</div>
+                        {rv&&<div style={{fontSize:10,color:C.muted}}>{rv.hersteller} {rv.modell}</div>}
+                        <div style={{fontSize:10,color:days<0?C.red:days<=3?C.amber:C.muted,marginTop:2}}>
+                          {days<0?"⚠️ Überfällig":days===0?"Heute":days===1?"Morgen":`in ${days} Tagen`} · {fmtDate(r.date)}
                         </div>
-                        <button onClick={()=>{setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
-                          style={{background:C.red,border:"none",borderRadius:8,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,flexShrink:0,marginLeft:10}}>✓</button>
                       </div>
+                      <button onClick={async()=>{const DB=window.PCN_DB;if(DB)await DB.reminders.done(me.id,r.id);setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
+                        style={{background:C.red,border:"none",borderRadius:8,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,flexShrink:0,marginLeft:10,fontFamily:"'Barlow',sans-serif"}}>✓</button>
                     </div>
-                  );
-                })
+                  </div>
+                );
+              })
             }
           </div>
         )}
@@ -1231,136 +1254,51 @@ export default function PCN() {
         {/* PROFILE */}
         {tab==="profile"&&(
           <div style={{animation:"fadeIn .2s"}}>
-            <div className="card p16" style={{textAlign:"center",marginBottom:14}}>
+            <div className="card" style={{padding:20,textAlign:"center",marginBottom:14}}>
               <div style={{width:56,height:56,background:C.red,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,margin:"0 auto 10px"}}>🏎️</div>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>{me?.name}</div>
               <div style={{fontSize:11,color:C.muted,marginTop:2}}>Mitglied · {me?.memberNr}</div>
             </div>
-            <div className="card p16" style={{marginBottom:12}}>
-              <div className="sec">Statistiken</div>
-              {[["🚗","Fahrzeuge",myVehicles.length],["📋","Logbuch-Einträge",Object.values(logbook).flat().length],["🏁","Events",myParticipations.length],["💬","Nachrichten",myThreads.length]].map(([icon,label,val])=>(
-                <div key={label} className="row">
+            <div className="card" style={{padding:16,marginBottom:12}}>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Statistiken</div>
+              {[["🚗","Fahrzeuge",myVehicles.length],["📋","Logbuch-Einträge",Object.values(logbook).flat().length],["🏁","Event-Teilnahmen",myParticipations.length],["💬","Nachrichten",myThreads.length]].map(([icon,label,val])=>(
+                <div key={label} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
                   <span style={{fontSize:13,color:C.muted}}>{icon} {label}</span>
                   <span style={{fontSize:13,fontWeight:700,color:C.white}}>{val}</span>
                 </div>
               ))}
             </div>
-            <div className="card p16" style={{marginBottom:14}}>
-              <div className="sec">Milestones</div>
+            <div className="card" style={{padding:16,marginBottom:14}}>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Milestones</div>
               {MILESTONES.map(m=>{const done=m.check(appState);return(
-                <div key={m.id} className="row">
-                  <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                    <div style={{width:20,height:20,borderRadius:"50%",background:done?C.green:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:done?"#fff":C.muted,flexShrink:0}}>{done?"✓":""}</div>
-                    <span style={{fontSize:13,color:done?C.white:C.muted}}>{m.label}</span>
-                  </div>
-                  {done&&<span style={{fontSize:9,color:C.green,fontWeight:700}}>✓ AKTIV</span>}
+                <div key={m.id} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{width:20,height:20,borderRadius:"50%",background:done?C.green:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:done?"#fff":C.muted,flexShrink:0,fontWeight:700}}>{done?"✓":""}</div>
+                  <span style={{fontSize:13,color:done?C.white:C.muted}}>{m.label}</span>
+                  {done&&<span style={{marginLeft:"auto",fontSize:9,color:C.green,fontWeight:700}}>AKTIV</span>}
                 </div>
               );})}
             </div>
             <button className="btn ghost" style={{width:"100%"}} onClick={async()=>{
-      const DB=window.PCN_DB; if(DB) await DB.auth.logout();
-      setMe(null);setVehicles({});setLogbook({});setReminders([]);setParticipants({});setThreads({});setScreen("splash");
-    }}>Abmelden</button>
+              const DB=window.PCN_DB; if(DB) await DB.auth.logout();
+              setMe(null);setVehicles({});setLogbook({});setReminders([]);setParticipants({});setThreads({});
+              setScreen("splash"); setTab("dashboard");
+            }}>Abmelden</button>
           </div>
         )}
       </div>
-
-      {/* ── QR SCANNER ── */}
-      {scannerOpen&&(
-        <div style={{position:"fixed",inset:0,background:"#000",zIndex:300,display:"flex",flexDirection:"column"}}>
-          {/* Header */}
-          <div style={{position:"absolute",top:0,left:0,right:0,zIndex:10,padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"linear-gradient(to bottom,rgba(0,0,0,.8),transparent)"}}>
-            <div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#fff"}}>QR-Code scannen</div>
-              <div style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>Halte die Kamera über den QAR-Code</div>
-            </div>
-            <button onClick={closeScanner} style={{background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"8px 14px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>✕ Schließen</button>
-          </div>
-
-          {/* Video feed */}
-          <video ref={videoRef} style={{width:"100%",height:"100%",objectFit:"cover"}} muted playsInline/>
-          <canvas ref={canvasRef} style={{display:"none"}}/>
-
-          {/* Viewfinder overlay */}
-          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-            {scannerStatus==="found"?(
-              <div style={{width:220,height:220,border:"3px solid #22c55e",borderRadius:20,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(34,197,94,.1)"}}>
-                <div style={{fontSize:48}}>✓</div>
-              </div>
-            ):(
-              <div style={{position:"relative",width:220,height:220}}>
-                {/* Corner markers */}
-                {/* Top-left */}
-                <div style={{position:"absolute",top:0,left:0,width:32,height:32,borderTop:"3px solid #e30613",borderLeft:"3px solid #e30613",borderRadius:"8px 0 0 0"}}/>
-                {/* Top-right */}
-                <div style={{position:"absolute",top:0,right:0,width:32,height:32,borderTop:"3px solid #e30613",borderRight:"3px solid #e30613",borderRadius:"0 8px 0 0"}}/>
-                {/* Bottom-left */}
-                <div style={{position:"absolute",bottom:0,left:0,width:32,height:32,borderBottom:"3px solid #e30613",borderLeft:"3px solid #e30613",borderRadius:"0 0 0 8px"}}/>
-                {/* Bottom-right */}
-                <div style={{position:"absolute",bottom:0,right:0,width:32,height:32,borderBottom:"3px solid #e30613",borderRight:"3px solid #e30613",borderRadius:"0 0 8px 0"}}/>
-                {/* Scan line */}
-                {scannerStatus==="scanning"&&(
-                  <div style={{position:"absolute",left:4,right:4,height:2,background:"linear-gradient(90deg,transparent,#e30613,transparent)",animation:"scanline 1.8s ease-in-out infinite"}}/>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Error */}
-          {scannerError&&(
-            <div style={{position:"absolute",bottom:40,left:20,right:20,background:"rgba(0,0,0,.9)",border:"1px solid #ef4444",borderRadius:14,padding:"16px"}}>
-              <div style={{color:"#ef4444",fontWeight:700,fontSize:14,marginBottom:6}}>⚠️ Kein Kamera-Zugriff</div>
-              <div style={{color:"#999",fontSize:12,lineHeight:1.6,marginBottom:12}}>{scannerError}</div>
-              <button onClick={()=>{setScannerError(null);setScannerStatus("loading");}}
-                style={{background:C.red,border:"none",borderRadius:8,padding:"10px 18px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,width:"100%"}}>
-                Erneut versuchen
-              </button>
-            </div>
-          )}
-
-          {/* Status */}
-          {!scannerError&&scannerStatus==="loading"&&(
-            <div style={{position:"absolute",bottom:60,left:0,right:0,textAlign:"center",color:"rgba(255,255,255,.6)",fontSize:13}}>
-              Kamera wird gestartet…
-            </div>
-          )}
-
-          {/* Manual UID input */}
-          {!scannerError&&(
-            <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"14px 16px",background:"linear-gradient(to top,rgba(0,0,0,.95),transparent)",paddingBottom:"calc(14px + env(safe-area-inset-bottom,0))"}}>
-              <div style={{fontSize:11,color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:8}}>Oder UID manuell eingeben</div>
-              <div style={{display:"flex",gap:8}}>
-                <input
-                  placeholder="QAR-XXXXXXXX"
-                  style={{flex:1,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:14,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:1}}
-                  onChange={e=>{ const v=e.target.value.toUpperCase(); if(v.match(/^QAR-[A-Z2-9]{8}$/)) handleScanResult(v); }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Add Vehicle Sheet */}
       {showAddV&&(
         <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddV(false);}}>
           <div className="sheet">
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:14}}>Fahrzeug hinzufügen</div>
-            {/* Image upload */}
-            <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1px dashed ${C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",marginBottom:10,overflow:"hidden"}}>
-              <input type="file" accept="image/*" style={{display:"none"}}
-                onChange={e=>handleImageUpload(e.target.files[0], url=>setAddVForm(p=>({...p,image:url})))}/>
+            <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1px dashed ${C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",marginBottom:10}}>
+              <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>setAddVForm(p=>({...p,image:url})))}/>
               {addVForm.image
                 ?<><img src={addVForm.image} alt="" style={{width:52,height:52,objectFit:"cover",borderRadius:7,flexShrink:0}}/>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:600,color:C.white}}>Foto geladen ✓</div>
-                    <div style={{fontSize:11,color:C.muted}}>Erneut tippen zum Ändern</div>
-                  </div></>
+                    <div><div style={{fontSize:13,fontWeight:600,color:C.white}}>Foto geladen ✓</div><div style={{fontSize:11,color:C.muted}}>Tippen zum Ändern</div></div></>
                 :<><span style={{fontSize:28}}>📷</span>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:600,color:C.white}}>Fahrzeugfoto hinzufügen</div>
-                    <div style={{fontSize:11,color:C.muted}}>Kamera oder Bibliothek — alle Größen</div>
-                  </div></>
+                    <div><div style={{fontSize:13,fontWeight:600,color:C.white}}>Fahrzeugfoto hinzufügen</div><div style={{fontSize:11,color:C.muted}}>Kamera oder Bibliothek — alle Größen</div></div></>
               }
             </label>
             {[["Modell *","modell","Cayman GT4"],["Kennzeichen *","kennzeichen","AW-PC 718"],["Baujahr","baujahr","2023"],["Farbe","farbe","Pythongrün"]].map(([ph,key,ex])=>(
@@ -1369,6 +1307,9 @@ export default function PCN() {
             ))}
             <select className="inp" value={addVForm.kraftstoff} onChange={e=>setAddVForm(p=>({...p,kraftstoff:e.target.value}))} style={{marginBottom:10}}>
               {["Benzin","Diesel","Elektro","Hybrid"].map(k=><option key={k}>{k}</option>)}
+            </select>
+            <select className="inp" value={addVForm.getriebe||"PDK"} onChange={e=>setAddVForm(p=>({...p,getriebe:e.target.value}))} style={{marginBottom:14}}>
+              {["PDK","7-Gang PDK","6-Gang manuell","8-Gang Automatik","Stufenlos"].map(k=><option key={k}>{k}</option>)}
             </select>
             <button className="btn" style={{width:"100%"}} onClick={addVehicle}>Hinzufügen ✓</button>
           </div>
@@ -1387,20 +1328,21 @@ export default function PCN() {
               {myVehicles.map(v=><option key={v.id} value={v.id}>{v.hersteller} {v.modell}</option>)}
             </select>
             <button className="btn" style={{width:"100%"}} onClick={async()=>{
-      if(!remForm.title||!remForm.date) return toast_("Titel und Datum angeben","err");
-      const DB=window.PCN_DB;
-      const {data:r,error}=await DB.reminders.save(me.id,{...remForm,done:false});
-      if(error){ toast_("Fehler","err"); return; }
-      setReminders(prev=>[...prev,r]); setShowAddRem(false); setRemForm({vehicleId:"",title:"",date:""}); toast_("Gespeichert ✓");
-    }}>Speichern ✓</button>
+              if(!remForm.title||!remForm.date){toast_("Titel und Datum angeben","err");return;}
+              const DB=window.PCN_DB;
+              const {data:r,error}=await DB.reminders.save(me.id,{...remForm,done:false});
+              if(error){toast_("Fehler","err");return;}
+              setReminders(prev=>[...prev,r]); setShowAddRem(false); setRemForm({vehicleId:"",title:"",date:""});
+              toast_("Gespeichert ✓");
+            }}>Speichern ✓</button>
           </div>
         </div>
       )}
 
       {/* Tab Bar */}
       <div className="tab-bar">
-        {[["dashboard","🏠","Start"],["events","🏁","Events"],["messages","💬","Nachrichten"],["reminders","🔔","Erinnerungen"],["profile","👤","Profil"]].map(([id,icon,label])=>(
-          <button key={id} className={`tab-btn ${tab===id?"on":"inactive"}`} onClick={()=>{setTab(id);setScreen("app");}}>
+        {[["dashboard","🏠","Start"],["events","🏁","Events"],["messages","💬","Chat"],["reminders","🔔","Termine"],["profile","👤","Profil"]].map(([id,icon,label])=>(
+          <button key={id} className={`tab-btn ${tab===id?"on":""}`} onClick={()=>setTab(id)}>
             {id==="messages"&&unreadCount>0&&<div className="badge">{unreadCount}</div>}
             <span className="ico">{icon}</span>
             <span className="lbl">{label}</span>
