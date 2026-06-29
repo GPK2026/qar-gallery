@@ -440,6 +440,29 @@
     desc: "Blockchain-Eigentumsnachweis"
   }];
 
+  // ─── Status Presets ──────────────────────────────────────────────────────────
+  const STATUS_PRESETS = [{
+    icon: "🏁",
+    text: "Komme gleich zurück",
+    mins: 15
+  }, {
+    icon: "⏱️",
+    text: "Bin in 5 Min zurück",
+    mins: 5
+  }, {
+    icon: "⏱️",
+    text: "Bin in 10 Min zurück",
+    mins: 10
+  }, {
+    icon: "⏱️",
+    text: "Bin in 15 Min zurück",
+    mins: 15
+  }, {
+    icon: "⏱️",
+    text: "Bin in 30 Min zurück",
+    mins: 30
+  }];
+
   // ─── Sub-components (proper React components — no hooks-in-render) ─────────────
 
   function EventDetail({
@@ -958,6 +981,9 @@
     const [showPrivacy, setShowPrivacy] = (0, _react.useState)(null);
     const [imgUploading, setImgUploading] = (0, _react.useState)(false);
     const [lightbox, setLightbox] = (0, _react.useState)(null); // {images:[], index:0}
+    const [vehicleStatus, setVehicleStatus] = (0, _react.useState)({}); // {vehicleId: {text, icon, expiresAt}}
+    const [showStatusPicker, setShowStatusPicker] = (0, _react.useState)(null); // vehicleId
+    const [statusCustom, setStatusCustom] = (0, _react.useState)("");
     const [gallerySwipe, setGallerySwipe] = (0, _react.useState)({}); // {vehicleId: currentIndex}
     const [scannerOpen, setScannerOpen] = (0, _react.useState)(false);
     const [scannerError, setScannerError] = (0, _react.useState)(null);
@@ -980,6 +1006,50 @@
     const unlockedFeatures = new Set(MILESTONES.filter(m => m.check(appState)).flatMap(m => m.unlocks));
 
     // ── Toast ────────────────────────────────────────────────────────────────────
+    // ── Status helpers ────────────────────────────────────────────────────────────
+    const setStatus = (vehicleId, preset, customText = "") => {
+      const text = customText || preset.text;
+      const expiresAt = preset.mins ? Date.now() + preset.mins * 60 * 1000 : null;
+      const status = {
+        text,
+        icon: preset.icon || "💬",
+        expiresAt,
+        setAt: Date.now()
+      };
+      setVehicleStatus(prev => ({
+        ...prev,
+        [vehicleId]: status
+      }));
+      // Save to localStorage
+      const stored = JSON.parse(localStorage.getItem("pcn_v1") || "{}");
+      stored.vehicleStatus = stored.vehicleStatus || {};
+      stored.vehicleStatus[vehicleId] = status;
+      localStorage.setItem("pcn_v1", JSON.stringify(stored));
+      setShowStatusPicker(null);
+      setStatusCustom("");
+      toast_(`Status gesetzt: "${text}"`);
+    };
+    const clearStatus = vehicleId => {
+      setVehicleStatus(prev => {
+        const n = {
+          ...prev
+        };
+        delete n[vehicleId];
+        return n;
+      });
+      const stored = JSON.parse(localStorage.getItem("pcn_v1") || "{}");
+      if (stored.vehicleStatus) delete stored.vehicleStatus[vehicleId];
+      localStorage.setItem("pcn_v1", JSON.stringify(stored));
+    };
+    const getActiveStatus = vehicleId => {
+      const s = vehicleStatus[vehicleId];
+      if (!s) return null;
+      if (s.expiresAt && Date.now() > s.expiresAt) {
+        clearStatus(vehicleId);
+        return null;
+      }
+      return s;
+    };
     const toast_ = (0, _react.useCallback)((msg, type = "ok") => {
       setToast({
         msg,
@@ -1059,6 +1129,9 @@
     // ── DB refresh ───────────────────────────────────────────────────────────────
     const refreshAll = async user => {
       if (!user) return;
+      // Load saved statuses
+      const stored = JSON.parse(localStorage.getItem("pcn_v1") || "{}");
+      if (stored.vehicleStatus) setVehicleStatus(stored.vehicleStatus);
       const DB = window.PCN_DB;
       if (!DB) return;
       const [vRes, remRes, evRes, thRes] = await Promise.all([DB.vehicles.list(user.id || user.email), DB.reminders.list(user.id), DB.events.list(), DB.threads.list(user.id)]);
@@ -2066,7 +2139,49 @@
           maxWidth: 520,
           margin: "0 auto"
         }
-      }, nextEvent && priv.pub_events && /*#__PURE__*/React.createElement("div", {
+      }, (() => {
+        const s = getActiveStatus(v.id);
+        if (!s) return null;
+        const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : null;
+        return /*#__PURE__*/React.createElement("div", {
+          style: {
+            background: `${C.amber}18`,
+            border: `2px solid ${C.amber}66`,
+            borderRadius: 14,
+            padding: "14px 16px",
+            marginBottom: 14,
+            animation: "fadeIn .3s ease"
+          }
+        }, /*#__PURE__*/React.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 10,
+            alignItems: "center"
+          }
+        }, /*#__PURE__*/React.createElement("span", {
+          style: {
+            fontSize: 28,
+            flexShrink: 0
+          }
+        }, s.icon), /*#__PURE__*/React.createElement("div", {
+          style: {
+            flex: 1
+          }
+        }, /*#__PURE__*/React.createElement("div", {
+          style: {
+            fontWeight: 800,
+            fontSize: 16,
+            color: C.amber,
+            lineHeight: 1.2
+          }
+        }, s.text), minsLeft && minsLeft > 0 && /*#__PURE__*/React.createElement("div", {
+          style: {
+            fontSize: 11,
+            color: C.muted,
+            marginTop: 3
+          }
+        }, "Noch ca. ", minsLeft, " Min"))));
+      })(), nextEvent && priv.pub_events && /*#__PURE__*/React.createElement("div", {
         style: {
           background: `${C.red}11`,
           border: `1px solid ${C.red}33`,
@@ -2212,14 +2327,25 @@
           color: h.result === "Teilnahme" ? C.muted : C.gold,
           flexShrink: 0
         }
-      }, h.result)))), me && v.owner !== me.email && /*#__PURE__*/React.createElement("button", {
-        className: "btn ghost",
+      }, h.result)))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginBottom: 14
+        }
+      }, (!me || v.owner !== me.email) && /*#__PURE__*/React.createElement("button", {
+        className: "btn",
         style: {
           width: "100%",
-          marginBottom: 10
+          marginBottom: 8,
+          fontSize: 15
         },
-        onClick: () => startContact(v.id)
-      }, "💬 Besitzer anonym kontaktieren"), /*#__PURE__*/React.createElement("div", {
+        onClick: () => me ? startContact(v.id) : toast_("Bitte zuerst anmelden", "err")
+      }, "💬 Nachricht an Besitzer schreiben"), me && v.owner === me.email && /*#__PURE__*/React.createElement("button", {
+        className: "btn ghost",
+        style: {
+          width: "100%"
+        },
+        onClick: () => setShowStatusPicker(v.id)
+      }, getActiveStatus(v.id) ? `${getActiveStatus(v.id).icon} Status ändern` : "📍 Status setzen")), /*#__PURE__*/React.createElement("div", {
         style: {
           textAlign: "center",
           padding: "12px 0",
@@ -2555,13 +2681,63 @@
           display: "none"
         },
         onChange: e => handleImageUpload(e.target.files[0], url => updateVehicleImage(v.id, url))
-      }), imgUploading ? "⏳ Lädt…" : "📷 Foto"), !isOwn && /*#__PURE__*/React.createElement("button", {
+      }), imgUploading ? "⏳ Lädt…" : "📷 Foto"), isOwn && /*#__PURE__*/React.createElement("button", {
+        className: "btn sm ghost",
+        style: {
+          fontSize: 11
+        },
+        onClick: () => setShowStatusPicker(v.id)
+      }, getActiveStatus(v.id) ? `${getActiveStatus(v.id).icon} Status` : "📍 Status"), !isOwn && /*#__PURE__*/React.createElement("button", {
         className: "btn sm ghost",
         style: {
           fontSize: 11
         },
         onClick: () => startContact(v.id)
       }, "💬 Kontakt")), (() => {
+        const s = getActiveStatus(v.id);
+        if (!s || !isOwn) return null;
+        return /*#__PURE__*/React.createElement("div", {
+          style: {
+            background: `${C.amber}18`,
+            border: `1px solid ${C.amber}44`,
+            borderRadius: 10,
+            padding: "10px 14px",
+            marginBottom: 12,
+            display: "flex",
+            gap: 10,
+            alignItems: "center"
+          }
+        }, /*#__PURE__*/React.createElement("span", {
+          style: {
+            fontSize: 20
+          }
+        }, s.icon), /*#__PURE__*/React.createElement("div", {
+          style: {
+            flex: 1
+          }
+        }, /*#__PURE__*/React.createElement("div", {
+          style: {
+            fontSize: 13,
+            fontWeight: 700,
+            color: C.amber
+          }
+        }, s.text), s.expiresAt && /*#__PURE__*/React.createElement("div", {
+          style: {
+            fontSize: 10,
+            color: C.muted
+          }
+        }, "Läuft ab in ", Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 60000)), " Min")), /*#__PURE__*/React.createElement("button", {
+          onClick: () => clearStatus(v.id),
+          style: {
+            background: "none",
+            border: "none",
+            color: C.muted,
+            cursor: "pointer",
+            fontSize: 16,
+            padding: 4
+          }
+        }, "✕"));
+      })(), (() => {
         const imgs = getImages(v);
         if (imgs.length <= 1) return null;
         return /*#__PURE__*/React.createElement("div", {
@@ -3864,7 +4040,124 @@
         setScreen("splash");
         setTab("dashboard");
       }
-    }, "Abmelden"))), lightbox && /*#__PURE__*/React.createElement("div", {
+    }, "Abmelden"))), showStatusPicker && /*#__PURE__*/React.createElement("div", {
+      className: "overlay",
+      onClick: e => {
+        if (e.target === e.currentTarget) setShowStatusPicker(null);
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "sheet"
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 20,
+        fontWeight: 800,
+        color: C.white,
+        marginBottom: 4
+      }
+    }, "📍 Status setzen"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginBottom: 16
+      }
+    }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        marginBottom: 16
+      }
+    }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/React.createElement("button", {
+      key: i,
+      onClick: () => setStatus(showStatusPicker, p),
+      style: {
+        display: "flex",
+        gap: 12,
+        alignItems: "center",
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 12,
+        padding: "12px 14px",
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        textAlign: "left",
+        transition: "border-color .15s"
+      },
+      onTouchStart: e => e.currentTarget.style.borderColor = C.amber,
+      onTouchEnd: e => e.currentTarget.style.borderColor = C.border
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 22,
+        flexShrink: 0
+      }
+    }, p.icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 700,
+        color: C.white
+      }
+    }, p.text), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted
+      }
+    }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        borderTop: `1px solid ${C.border}`,
+        paddingTop: 14,
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginBottom: 8
+      }
+    }, "Eigener Text"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      className: "inp",
+      placeholder: "z.B. Bin gleich beim Einlass...",
+      value: statusCustom,
+      onChange: e => setStatusCustom(e.target.value),
+      onKeyDown: e => {
+        if (e.key === "Enter" && statusCustom.trim()) setStatus(showStatusPicker, {
+          icon: "💬",
+          mins: 30
+        }, statusCustom);
+      },
+      style: {
+        flex: 1
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      className: "btn",
+      disabled: !statusCustom.trim(),
+      onClick: () => setStatus(showStatusPicker, {
+        icon: "💬",
+        mins: 30
+      }, statusCustom),
+      style: {
+        flexShrink: 0,
+        opacity: statusCustom.trim() ? 1 : .4
+      }
+    }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/React.createElement("button", {
+      className: "btn ghost",
+      style: {
+        width: "100%",
+        marginTop: 4,
+        color: "#ef4444",
+        borderColor: "#ef444444"
+      },
+      onClick: () => {
+        clearStatus(showStatusPicker);
+        setShowStatusPicker(null);
+        toast_("Status gelöscht");
+      }
+    }, "Status löschen"))), lightbox && /*#__PURE__*/React.createElement("div", {
       style: {
         position: "fixed",
         inset: 0,
