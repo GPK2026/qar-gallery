@@ -1036,7 +1036,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     const vLog=logbook[v.id]||[];
     const vParts=Object.values(participants).flat().filter(p=>p.vehicleId===v.id);
     const vHist=eventHistory.filter(h=>h.vehicleId===v.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
-    const isOwn=v.owner===me?.email||v.userId===me?.id;
+    const isOwn = v.owner===me?.email || v.userId===me?.id || v.userId===me?.email;
     const tuevParts=(v.tuev_faelligkeit||"").split("/");
     const tuevDate=tuevParts.length===2?new Date(parseInt(tuevParts[1]),parseInt(tuevParts[0])-1,1):null;
     const tuevDays=tuevDate?Math.ceil((tuevDate-new Date())/86400000):null;
@@ -1051,63 +1051,81 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {/* ── Photo Gallery Hero ── */}
         {(()=>{
           const imgs = getImages(v);
-          const curIdx = gallerySwipe[v.id]||0;
+          const curIdx = Math.min(gallerySwipe[v.id]||0, Math.max(0,imgs.length-1));
           const curImg = imgs[curIdx];
+          const goTo = (i) => setGallerySwipe(p=>({...p,[v.id]:Math.max(0,Math.min(imgs.length-1,i))}));
+          // Touch swipe state
+          let touchStartX = 0;
+          const onTouchStart = e => { touchStartX = e.touches[0].clientX; };
+          const onTouchEnd = e => {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            if(Math.abs(dx) > 40) goTo(curIdx + (dx < 0 ? 1 : -1));
+          };
           return (
-            <div style={{height:260,position:"relative",overflow:"hidden",background:"#111",touchAction:"pan-y"}}>
-              {/* Main image — tap for lightbox */}
+            <div style={{height:280,position:"relative",overflow:"hidden",background:"#111"}}
+              onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+
+              {/* Image */}
               {curImg
-                ?<img src={curImg} alt="" style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in"}}
+                ? <img src={curImg} alt="" draggable={false}
+                    style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in",userSelect:"none",WebkitUserSelect:"none"}}
                     onClick={()=>setLightbox({images:imgs,index:curIdx})}
                     onError={e=>e.target.style.display="none"}/>
-                :isOwn&&(
-                  <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",height:"100%",color:C.muted}}>
+                : isOwn && (
+                  <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",height:"100%",color:C.muted}}>
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
-                    <span style={{fontSize:36}}>📷</span>
-                    <span style={{fontSize:12,fontWeight:600}}>Foto hinzufügen</span>
+                    <span style={{fontSize:40}}>📷</span>
+                    <span style={{fontSize:13,fontWeight:600,color:C.white}}>Erstes Foto hinzufügen</span>
+                    <span style={{fontSize:11,color:C.muted}}>Tippe um Foto oder Bibliothek zu öffnen</span>
                   </label>
                 )
               }
-              <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.35) 0%,transparent 40%,transparent 55%,rgba(0,0,0,.85) 100%)",pointerEvents:"none"}}/>
 
-              {/* Dots indicator */}
-              {imgs.length>1&&(
-                <div style={{position:"absolute",bottom:14,left:"50%",transform:"translateX(-50%)",display:"flex",gap:5,zIndex:3}}>
+              {/* Gradient overlay */}
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.45) 0%,transparent 35%,transparent 50%,rgba(0,0,0,.75) 100%)",pointerEvents:"none"}}/>
+
+              {/* Bottom: dots + counter */}
+              {imgs.length > 1 && (
+                <div style={{position:"absolute",bottom:14,left:0,right:0,display:"flex",alignItems:"center",justifyContent:"center",gap:6,zIndex:3}}>
                   {imgs.map((_,i)=>(
-                    <div key={i} onClick={()=>setGallerySwipe(p=>({...p,[v.id]:i}))}
-                      style={{width:i===curIdx?18:6,height:6,borderRadius:99,background:i===curIdx?"#fff":"rgba(255,255,255,.4)",transition:"all .2s",cursor:"pointer"}}/>
+                    <div key={i} onClick={e=>{e.stopPropagation();goTo(i);}}
+                      style={{width:i===curIdx?20:6,height:6,borderRadius:99,background:i===curIdx?"#fff":"rgba(255,255,255,.35)",transition:"width .2s, background .2s",cursor:"pointer"}}/>
                   ))}
                 </div>
               )}
 
-              {/* Prev/Next arrows */}
-              {imgs.length>1&&<>
-                <button onClick={()=>setGallerySwipe(p=>({...p,[v.id]:Math.max(0,(p[v.id]||0)-1)}))}
-                  style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.5)",border:"none",color:"#fff",fontSize:20,width:36,height:36,borderRadius:"50%",cursor:"pointer",display:(gallerySwipe[v.id]||0)===0?"none":"flex",alignItems:"center",justifyContent:"center",zIndex:3}}>‹</button>
-                <button onClick={()=>setGallerySwipe(p=>({...p,[v.id]:Math.min(imgs.length-1,(p[v.id]||0)+1)}))}
-                  style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.5)",border:"none",color:"#fff",fontSize:20,width:36,height:36,borderRadius:"50%",cursor:"pointer",display:(gallerySwipe[v.id]||0)===imgs.length-1?"none":"flex",alignItems:"center",justifyContent:"center",zIndex:3}}>›</button>
-              </>}
-
-              {/* Photo count badge */}
-              {imgs.length>0&&(
-                <div style={{position:"absolute",bottom:14,right:14,background:"rgba(0,0,0,.6)",borderRadius:6,padding:"2px 8px",fontSize:10,color:"rgba(255,255,255,.8)",zIndex:3}}>
-                  {imgs.length>1?`${(gallerySwipe[v.id]||0)+1}/${imgs.length}`:"📷"}
+              {/* Counter badge */}
+              {imgs.length > 1 && (
+                <div style={{position:"absolute",bottom:14,right:14,background:"rgba(0,0,0,.6)",backdropFilter:"blur(4px)",borderRadius:6,padding:"3px 9px",fontSize:11,fontWeight:700,color:"rgba(255,255,255,.9)",zIndex:3,letterSpacing:.5}}>
+                  {curIdx+1}/{imgs.length}
                 </div>
               )}
 
-              {/* Top controls */}
-              <div style={{position:"absolute",top:14,left:14,zIndex:3}}>
-                <button onClick={()=>setScreen("app")} style={{background:"rgba(0,0,0,.6)",border:`1px solid rgba(255,255,255,.2)`,borderRadius:8,padding:"7px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>← Zurück</button>
+              {/* Top-left: back */}
+              <div style={{position:"absolute",top:16,left:14,zIndex:5}}>
+                <button onClick={()=>setScreen("app")}
+                  style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"8px 14px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:6}}>
+                  ← Zurück
+                </button>
               </div>
-              <div style={{position:"absolute",top:14,right:14,display:"flex",gap:8,zIndex:3}}>
-                {isOwn&&<>
-                  <label style={{background:"rgba(0,0,0,.6)",border:`1px solid rgba(255,255,255,.2)`,borderRadius:8,padding:"7px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
+
+              {/* Top-right: controls */}
+              <div style={{position:"absolute",top:16,right:14,display:"flex",gap:8,zIndex:5}}>
+                {isOwn && <>
+                  <label title="Foto hinzufügen"
+                    style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",minWidth:38}}>
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
-                    {imgUploading?"⏳":"📷+"}
+                    {imgUploading ? "⏳" : "📷"}
                   </label>
-                  <button onClick={()=>setShowPrivacy(v.id)} style={{background:"rgba(0,0,0,.6)",border:`1px solid rgba(255,255,255,.2)`,borderRadius:8,padding:"7px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif"}}>🔒</button>
+                  <button title="QR-Sichtbarkeit" onClick={()=>setShowPrivacy(v.id)}
+                    style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:14,minWidth:38}}>
+                    🔒
+                  </button>
                 </>}
-                <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}} style={{background:"rgba(0,0,0,.6)",border:`1px solid rgba(255,255,255,.2)`,borderRadius:8,padding:"7px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif"}}>👁</button>
+                <button title="Öffentliche Ansicht" onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}}
+                  style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:14,minWidth:38}}>
+                  👁
+                </button>
               </div>
             </div>
           );
@@ -1119,12 +1137,6 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             <div style={{display:"inline-flex",alignItems:"center",background:"#fff",border:"2px solid #222",borderRadius:5,padding:"3px 10px"}}>
               <span style={{fontSize:14,fontWeight:800,color:"#111",letterSpacing:2,fontFamily:"Arial,sans-serif"}}>{kz}</span>
             </div>
-            {isOwn&&(
-              <label style={{display:"inline-flex",alignItems:"center",gap:6,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:12,color:C.muted,fontFamily:"'Barlow',sans-serif"}}>
-                <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>updateVehicleImage(v.id,url))}/>
-                {imgUploading?"⏳ Lädt…":"📷 Foto"}
-              </label>
-            )}
             {isOwn&&(
               <button className="btn sm ghost" style={{fontSize:11}}
                 onClick={()=>setShowStatusPicker(v.id)}>
@@ -1154,19 +1166,42 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           {/* Thumbnail strip */}
           {(()=>{
             const imgs = getImages(v);
-            if(imgs.length<=1) return null;
+            if(imgs.length <= 1) return null;
+            const curIdx = Math.min(gallerySwipe[v.id]||0, imgs.length-1);
             return (
-              <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:14,paddingBottom:4}}>
-                {imgs.map((img,i)=>(
-                  <div key={i} style={{position:"relative",flexShrink:0}}>
-                    <img src={img} alt="" onClick={()=>setGallerySwipe(p=>({...p,[v.id]:i}))}
-                      style={{width:64,height:64,objectFit:"cover",borderRadius:8,cursor:"pointer",border:`2px solid ${(gallerySwipe[v.id]||0)===i?C.red:"transparent"}`}}/>
-                    {isOwn&&(
-                      <button onClick={()=>removeImageFromVehicle(v.id,i)}
-                        style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,.7)",border:"none",color:"#fff",fontSize:10,width:18,height:18,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>✕</button>
-                    )}
-                  </div>
-                ))}
+              <div style={{display:"flex",gap:8,overflowX:"auto",marginBottom:14,padding:"2px 0 6px",
+                scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
+                {imgs.map((img,i)=>{
+                  const active = i === curIdx;
+                  return (
+                    <div key={i} style={{position:"relative",flexShrink:0,transition:"transform .15s",transform:active?"scale(1.05)":"scale(1)"}}>
+                      <img src={img} alt=""
+                        onClick={()=>setGallerySwipe(p=>({...p,[v.id]:i}))}
+                        style={{
+                          width:68, height:68, objectFit:"cover", borderRadius:9, cursor:"pointer", display:"block",
+                          border:`2.5px solid ${active?C.red:"transparent"}`,
+                          boxShadow:active?`0 0 0 1px ${C.red}`:"none",
+                          transition:"border-color .15s",
+                        }}
+                        onError={e=>e.target.style.display="none"}/>
+                      {isOwn && (
+                        <button
+                          onClick={e=>{e.stopPropagation();removeImageFromVehicle(v.id,i);}}
+                          style={{position:"absolute",top:-4,right:-4,background:C.red,border:"2px solid #0a0a0a",color:"#fff",fontSize:9,fontWeight:700,width:18,height:18,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1,fontFamily:"'Barlow',sans-serif"}}>
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+                {/* Add more photos button */}
+                {isOwn && (
+                  <label style={{width:68,height:68,background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:9,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,gap:2}}>
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
+                    <span style={{fontSize:18}}>📷</span>
+                    <span style={{fontSize:8,color:C.muted,textAlign:"center"}}>Hinzufügen</span>
+                  </label>
+                )}
               </div>
             );
           })()}
@@ -1242,11 +1277,16 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
                 <input className="inp" placeholder="Telefonnummer" type="tel"
                   value={viewV.phone||""}
-                  onChange={async e=>{
-                    const updated={...viewV,phone:e.target.value};
+                  onChange={e=>{
+                    const val=e.target.value;
+                    const updated={...viewV,phone:val};
                     setViewV(updated);
                     setVehicles(prev=>({...prev,[viewV.id]:updated}));
-                    const DB=window.PCN_DB; await DB.vehicles.save(updated);
+                    // Debounced save
+                    clearTimeout(window._phoneSaveTimer);
+                    window._phoneSaveTimer=setTimeout(async()=>{
+                      const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
+                    }, 800);
                   }}
                   style={{flex:1,fontSize:14}}/>
                 <div style={{fontSize:10,color:C.muted,flexShrink:0,lineHeight:1.4,maxWidth:100}}>
