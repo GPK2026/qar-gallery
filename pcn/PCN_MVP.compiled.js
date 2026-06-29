@@ -72,7 +72,8 @@
     fin: false,
     marktwert: false,
     pub_logbook: false,
-    pub_events: true
+    pub_events: true,
+    pub_phone: false
   };
 
   // ─── QR Code (Canvas) ─────────────────────────────────────────────────────────
@@ -158,6 +159,7 @@
       farbe: "GT-Silbermetallic",
       kennzeichen: "AW-PC 911",
       fin: "WP0ZZZ99ZLS100001",
+      phone: "+49 171 9110911",
       kilometerstand: "32400",
       tuev_faelligkeit: "02/2027",
       marktwert: "138000",
@@ -959,7 +961,8 @@
       farbe: "",
       kraftstoff: "Benzin",
       getriebe: "",
-      images: []
+      images: [],
+      phone: ""
     });
     const [addLogForm, setAddLogForm] = (0, _react.useState)({
       type: "Ölwechsel",
@@ -2331,7 +2334,42 @@
         style: {
           marginBottom: 14
         }
-      }, (!me || v.owner !== me.email) && /*#__PURE__*/React.createElement("button", {
+      }, priv.pub_phone && v.phone && (!me || v.owner !== me.email) && /*#__PURE__*/React.createElement("a", {
+        href: `tel:${v.phone.replace(/\s/g, "")}`,
+        style: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 10,
+          background: `${C.green}18`,
+          border: `1px solid ${C.green}44`,
+          borderRadius: 12,
+          padding: "14px",
+          marginBottom: 8,
+          textDecoration: "none",
+          color: C.green,
+          fontWeight: 700,
+          fontSize: 15
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 20
+        }
+      }, "📞"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          textAlign: "left"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontWeight: 800
+        }
+      }, "Direkt anrufen"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: `${C.green}aa`,
+          fontWeight: 400
+        }
+      }, v.phone))), (!me || v.owner !== me.email) && /*#__PURE__*/React.createElement("button", {
         className: "btn",
         style: {
           width: "100%",
@@ -3001,7 +3039,56 @@
           fontWeight: 700,
           flexShrink: 0
         }
-      }, h.result)))), /*#__PURE__*/React.createElement("div", {
+      }, h.result)))), isOwn && /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginBottom: 16
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
+          color: C.muted,
+          textTransform: "uppercase",
+          letterSpacing: 2,
+          marginBottom: 8
+        }
+      }, "📞 Kontakt"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 8,
+          alignItems: "center"
+        }
+      }, /*#__PURE__*/React.createElement("input", {
+        className: "inp",
+        placeholder: "Telefonnummer",
+        type: "tel",
+        value: viewV.phone || "",
+        onChange: async e => {
+          const updated = {
+            ...viewV,
+            phone: e.target.value
+          };
+          setViewV(updated);
+          setVehicles(prev => ({
+            ...prev,
+            [viewV.id]: updated
+          }));
+          const DB = window.PCN_DB;
+          await DB.vehicles.save(updated);
+        },
+        style: {
+          flex: 1,
+          fontSize: 14
+        }
+      }), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted,
+          flexShrink: 0,
+          lineHeight: 1.4,
+          maxWidth: 100
+        }
+      }, priv.pub_phone ? "🔓 Öffentlich" : "🔒 Privat"))), /*#__PURE__*/React.createElement("div", {
         className: "card",
         style: {
           padding: 16
@@ -3093,7 +3180,7 @@
           color: C.muted,
           marginBottom: 16
         }
-      }, "Was ist auf der öffentlichen Fahrzeugseite sichtbar?"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"]]], ["Abschnitte", [["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]]].map(([group, fields]) => /*#__PURE__*/React.createElement("div", {
+      }, "Was ist auf der öffentlichen Fahrzeugseite sichtbar?"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"]]], ["Abschnitte", [["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/React.createElement("div", {
         key: group,
         style: {
           marginBottom: 14
@@ -4410,11 +4497,29 @@
         getriebe: e.target.value
       })),
       style: {
-        marginBottom: 14
+        marginBottom: 8
       }
     }, ["PDK", "7-Gang PDK", "6-Gang manuell", "8-Gang Automatik", "Stufenlos"].map(k => /*#__PURE__*/React.createElement("option", {
       key: k
-    }, k))), /*#__PURE__*/React.createElement("button", {
+    }, k))), /*#__PURE__*/React.createElement("input", {
+      className: "inp",
+      placeholder: "Telefon (optional, für Direktanruf)",
+      type: "tel",
+      value: addVForm.phone || "",
+      onChange: e => setAddVForm(p => ({
+        ...p,
+        phone: e.target.value
+      })),
+      style: {
+        marginBottom: 6
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.muted,
+        marginBottom: 14
+      }
+    }, "🔒 Standardmäßig privat — Sichtbarkeit in QR-Einstellungen"), /*#__PURE__*/React.createElement("button", {
       className: "btn",
       style: {
         width: "100%"
