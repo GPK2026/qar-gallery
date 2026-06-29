@@ -189,7 +189,7 @@ export default function PCN() {
   const [viewV, setViewV]           = useState(null);
   const [viewEv, setViewEv]         = useState(null);
   const [publicV, setPublicV]       = useState(null); // QR public view
-  const [loginForm, setLoginForm]   = useState({code:"",email:"",name:""});
+  const [loginForm, setLoginForm]   = useState({code:"",email:"",name:"",mode:"register"});
   const [toast, setToast]           = useState(null);
   const [showAddV, setShowAddV]     = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
@@ -549,30 +549,69 @@ export default function PCN() {
         <p style={{fontSize:12,color:C.muted,marginTop:8,lineHeight:1.7}}>Fahrzeugakte · Events · QR-Code<br/>für alle PCN-Mitglieder</p>
       </div>
       <div style={{width:"100%",maxWidth:360}}>
-        <input className="inp" placeholder="Club-Code" value={loginForm.code}
-          onChange={e=>setLoginForm(p=>({...p,code:e.target.value}))}
-          style={{textTransform:"uppercase",letterSpacing:3,textAlign:"center",fontWeight:800,fontSize:20,marginBottom:8}}/>
-        {loginForm.code.toUpperCase()===CLUB_CODE&&<>
-          <input className="inp" placeholder="Dein Name" style={{marginBottom:8}}
-            value={loginForm.name} onChange={e=>setLoginForm(p=>({...p,name:e.target.value}))}/>
-          <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:10}}
-            value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
+        {/* Toggle Register / Login */}
+        <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:14}}>
+          {[["register","Registrieren"],["login","Anmelden"]].map(([m,label])=>(
+            <button key={m} onClick={()=>setLoginForm(p=>({...p,mode:m}))}
+              style={{flex:1,padding:"9px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:13,
+                background:loginForm.mode===m?C.red:"transparent",
+                color:loginForm.mode===m?"#fff":C.muted,transition:"all .15s"}}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Register */}
+        {loginForm.mode==="register"&&<>
+          <input className="inp" placeholder="Club-Code" value={loginForm.code}
+            onChange={e=>setLoginForm(p=>({...p,code:e.target.value}))}
+            style={{textTransform:"uppercase",letterSpacing:3,textAlign:"center",fontWeight:800,fontSize:18,marginBottom:8}}/>
+          {loginForm.code.toUpperCase()===CLUB_CODE&&<>
+            <input className="inp" placeholder="Dein Name" style={{marginBottom:8}}
+              value={loginForm.name} onChange={e=>setLoginForm(p=>({...p,name:e.target.value}))}/>
+            <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:10}}
+              value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
+          </>}
+          {loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email
+            ?<button className="btn" style={{width:"100%"}} onClick={async()=>{
+                const DB = window.PCN_DB;
+                const {data:u, error} = await DB.auth.register(loginForm.name, loginForm.email, loginForm.code);
+                if(error){ toast_(error,"err"); return; }
+                const {data:evs} = await DB.events.list();
+                if(!evs||evs.length===0){
+                  Object.values(DEMO_EVENTS).forEach(e=>{ const all=JSON.parse(localStorage.getItem("pcn_v1")||"{}"); all.events=all.events||{}; all.events[e.id]=e; localStorage.setItem("pcn_v1",JSON.stringify(all)); });
+                }
+                setMe(u); setAllUsers(p=>({...p,[u.id]:u})); setScreen("app"); toast_("Willkommen, "+u.name+"! 🏁");
+              }}>Konto erstellen →</button>
+            :<button className="btn" style={{width:"100%",opacity:.4}} disabled>
+                {loginForm.code.length===0?"Club-Code eingeben":loginForm.code.toUpperCase()!==CLUB_CODE?"Falscher Club-Code":"Name & E-Mail eingeben"}
+              </button>
+          }
         </>}
-        {loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email
-          ?<button className="btn" style={{width:"100%"}} onClick={async()=>{
+
+        {/* Login */}
+        {loginForm.mode==="login"&&<>
+          <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:8}}
+            value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
+          <button className="btn" style={{width:"100%",opacity:loginForm.email?1:.4}}
+            disabled={!loginForm.email}
+            onClick={async()=>{
+              if(!loginForm.email) return;
               const DB = window.PCN_DB;
-              const {data:u, error} = await DB.auth.register(loginForm.name, loginForm.email, loginForm.code);
-              if(error){ toast_(error, "err"); return; }
-              // Seed demo events into storage on first register
-              const {data:evs} = await DB.events.list();
-              if(!evs||evs.length===0){
-                Object.values(DEMO_EVENTS).forEach(e=>{ const all=JSON.parse(localStorage.getItem("pcn_v1")||"{}"); all.events=all.events||{}; all.events[e.id]=e; localStorage.setItem("pcn_v1",JSON.stringify(all)); });
-              }
-              setMe(u); setAllUsers(p=>({...p,[u.id]:u})); setScreen("app"); toast_("Willkommen, "+u.name+"! 🏁");
-            }}>Beitreten →</button>
-          :<button className="btn ghost" style={{width:"100%",marginTop:4}} onClick={loadDemo}>Demo ansehen</button>
-        }
-        <p style={{textAlign:"center",fontSize:10,color:"#333",marginTop:14}}>Powered by <span style={{color:C.gold}}>QAR.Gallery</span></p>
+              const {data:u, error} = await DB.auth.login(loginForm.email);
+              if(error){ toast_(error,"err"); return; }
+              await refreshAll(u);
+              setScreen("app"); toast_("Willkommen zurück, "+u.name+"! 🏁");
+            }}>Anmelden →</button>
+          <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>
+            Kein Passwort nötig — nur deine Club-E-Mail
+          </div>
+        </>}
+
+        <button className="btn ghost" style={{width:"100%",marginTop:10,fontSize:12}} onClick={loadDemo}>
+          Demo ansehen
+        </button>
+        <p style={{textAlign:"center",fontSize:10,color:"#333",marginTop:12}}>Powered by <span style={{color:C.gold}}>QAR.Gallery</span></p>
       </div>
     </div>
   );
