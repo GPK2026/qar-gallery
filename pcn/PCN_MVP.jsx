@@ -74,6 +74,12 @@ const DEMO_VEHICLES = {
     kilometerstand:"32400",tuev_faelligkeit:"02/2027",marktwert:"138000",zustand:"1",
     besonderheiten:"Sport-Chrono, PASM, Sportabgasanlage, PCCB",
     image:"https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
+    images:[
+      "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
+      "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=800&q=80",
+      "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80",
+      "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=800&q=80",
+    ],
     privacy:{...DEF_PRIVACY}},
   "V002":{id:"V002",qarId:"QAR-K9P2M7RW",userId:"u1",owner:"max@pcn.de",
     hersteller:"Porsche",modell:"Boxster 718 GTS 4.0",baujahr:"2022",
@@ -82,6 +88,11 @@ const DEMO_VEHICLES = {
     kilometerstand:"18700",tuev_faelligkeit:"09/2027",marktwert:"89000",zustand:"1",
     besonderheiten:"Manuelles Getriebe, Alcantara-Paket, Sportabgas",
     image:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
+    images:[
+      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
+      "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80",
+      "https://images.unsplash.com/photo-1547744152-14d985cb937f?w=800&q=80",
+    ],
     privacy:{...DEF_PRIVACY}},
   "V003":{id:"V003",qarId:"QAR-T7M3N9PX",userId:"u2",owner:"thomas@pcn.de",
     hersteller:"Porsche",modell:"992 GT3",baujahr:"2022",
@@ -90,6 +101,12 @@ const DEMO_VEHICLES = {
     kilometerstand:"8200",tuev_faelligkeit:"06/2027",marktwert:"195000",zustand:"1",
     besonderheiten:"Clubsport-Paket, Liftsystem, Carbon-Dach",
     image:"https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
+    images:[
+      "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
+      "https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=800&q=80",
+      "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=800&q=80",
+      "https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?w=800&q=80",
+    ],
     privacy:{...DEF_PRIVACY,pub_events:true}},
 };
 
