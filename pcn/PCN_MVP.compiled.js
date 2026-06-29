@@ -168,7 +168,8 @@
       image: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
       images: ["https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80", "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=800&q=80", "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80", "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=800&q=80"],
       privacy: {
-        ...DEF_PRIVACY
+        ...DEF_PRIVACY,
+        pub_phone: true
       }
     },
     "V002": {
@@ -748,6 +749,7 @@
     vehicles,
     onBack,
     onSend,
+    onMarkRead,
     onViewVehicle
   }) {
     const [msg, setMsg] = (0, _react.useState)("");
@@ -761,6 +763,9 @@
         behavior: "smooth"
       });
     }, [thread.messages]);
+    (0, _react.useEffect)(() => {
+      if (onMarkRead) onMarkRead(thread.id);
+    }, [thread.id]);
     return /*#__PURE__*/React.createElement("div", {
       style: {
         height: "100vh",
@@ -2376,7 +2381,9 @@
           marginBottom: 8,
           fontSize: 15
         },
-        onClick: () => me ? startContact(v.id) : toast_("Bitte zuerst anmelden", "err")
+        onClick: () => {
+          if (me && v.owner !== me.email) startContact(v.id);else if (!me) toast_("App öffnen um Kontakt aufzunehmen", "err");
+        }
       }, "💬 Nachricht an Besitzer schreiben"), me && v.owner === me.email && /*#__PURE__*/React.createElement("button", {
         className: "btn ghost",
         style: {
@@ -3449,7 +3456,7 @@
           color: C.white
         }
       }, label), /*#__PURE__*/React.createElement("button", {
-        className: `tog ${priv[key] !== false ? "on" : ""}`,
+        className: `tog ${priv[key] === true || priv[key] === undefined && DEF_PRIVACY[key] ? "on" : ""}`,
         onClick: () => togglePrivacy(v.id, key)
       }))))), /*#__PURE__*/React.createElement("button", {
         className: "btn",
@@ -3794,20 +3801,7 @@
     // CHAT (proper component — no useEffect-in-render bug)
     // ══════════════════════════════════════════════════════════════════════════════
     if (screen === "chat" && activeThread && threads[activeThread]) {
-      // Mark messages as read
       const t = threads[activeThread];
-      if (t.messages.some(m => m.from !== me?.id && !m.read && !m.isSystem)) {
-        setThreads(prev => ({
-          ...prev,
-          [activeThread]: {
-            ...t,
-            messages: t.messages.map(m => ({
-              ...m,
-              read: true
-            }))
-          }
-        }));
-      }
       return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
         className: `toast ${toast.type}`
       }, toast.msg), /*#__PURE__*/React.createElement(ChatScreen, {
@@ -3820,6 +3814,16 @@
           setTab("messages");
         },
         onSend: sendMsg,
+        onMarkRead: tid => setThreads(prev => ({
+          ...prev,
+          [tid]: {
+            ...prev[tid],
+            messages: (prev[tid]?.messages || []).map(m => ({
+              ...m,
+              read: true
+            }))
+          }
+        })),
         onViewVehicle: v => {
           setViewV(v);
           setScreen("vehicle");
