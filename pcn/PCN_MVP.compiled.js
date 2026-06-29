@@ -460,7 +460,8 @@
     const [loginForm, setLoginForm] = (0, _react.useState)({
       code: "",
       email: "",
-      name: ""
+      name: "",
+      mode: "register"
     });
     const [toast, setToast] = (0, _react.useState)(null);
     const [showAddV, setShowAddV] = (0, _react.useState)(false);
@@ -1053,7 +1054,34 @@
         width: "100%",
         maxWidth: 360
       }
-    }, /*#__PURE__*/React.createElement("input", {
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        background: "#111",
+        borderRadius: 10,
+        padding: 3,
+        marginBottom: 14
+      }
+    }, [["register", "Registrieren"], ["login", "Anmelden"]].map(([m, label]) => /*#__PURE__*/React.createElement("button", {
+      key: m,
+      onClick: () => setLoginForm(p => ({
+        ...p,
+        mode: m
+      })),
+      style: {
+        flex: 1,
+        padding: "9px",
+        border: "none",
+        borderRadius: 8,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        fontWeight: 700,
+        fontSize: 13,
+        background: loginForm.mode === m ? C.red : "transparent",
+        color: loginForm.mode === m ? "#fff" : C.muted,
+        transition: "all .15s"
+      }
+    }, label))), loginForm.mode === "register" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Club-Code",
       value: loginForm.code,
@@ -1066,7 +1094,7 @@
         letterSpacing: 3,
         textAlign: "center",
         fontWeight: 800,
-        fontSize: 20,
+        fontSize: 18,
         marginBottom: 8
       }
     }), loginForm.code.toUpperCase() === CLUB_CODE && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
@@ -1107,7 +1135,6 @@
           toast_(error, "err");
           return;
         }
-        // Seed demo events into storage on first register
         const {
           data: evs
         } = await DB.events.list();
@@ -1127,11 +1154,60 @@
         setScreen("app");
         toast_("Willkommen, " + u.name + "! 🏁");
       }
-    }, "Beitreten →") : /*#__PURE__*/React.createElement("button", {
+    }, "Konto erstellen →") : /*#__PURE__*/React.createElement("button", {
+      className: "btn",
+      style: {
+        width: "100%",
+        opacity: .4
+      },
+      disabled: true
+    }, loginForm.code.length === 0 ? "Club-Code eingeben" : loginForm.code.toUpperCase() !== CLUB_CODE ? "Falscher Club-Code" : "Name & E-Mail eingeben")), loginForm.mode === "login" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
+      className: "inp",
+      placeholder: "E-Mail",
+      type: "email",
+      style: {
+        marginBottom: 8
+      },
+      value: loginForm.email,
+      onChange: e => setLoginForm(p => ({
+        ...p,
+        email: e.target.value
+      }))
+    }), /*#__PURE__*/React.createElement("button", {
+      className: "btn",
+      style: {
+        width: "100%",
+        opacity: loginForm.email ? 1 : .4
+      },
+      disabled: !loginForm.email,
+      onClick: async () => {
+        if (!loginForm.email) return;
+        const DB = window.PCN_DB;
+        const {
+          data: u,
+          error
+        } = await DB.auth.login(loginForm.email);
+        if (error) {
+          toast_(error, "err");
+          return;
+        }
+        await refreshAll(u);
+        setScreen("app");
+        toast_("Willkommen zurück, " + u.name + "! 🏁");
+      }
+    }, "Anmelden →"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        marginTop: 10,
+        fontSize: 11,
+        color: C.muted
+      }
+    }, "Kein Passwort nötig — nur deine Club-E-Mail")), /*#__PURE__*/React.createElement("button", {
       className: "btn ghost",
       style: {
         width: "100%",
-        marginTop: 4
+        marginTop: 10,
+        fontSize: 12
       },
       onClick: loadDemo
     }, "Demo ansehen"), /*#__PURE__*/React.createElement("p", {
@@ -1139,7 +1215,7 @@
         textAlign: "center",
         fontSize: 10,
         color: "#333",
-        marginTop: 14
+        marginTop: 12
       }
     }, "Powered by ", /*#__PURE__*/React.createElement("span", {
       style: {
