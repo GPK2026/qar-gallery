@@ -1313,7 +1313,6 @@
       }, /*#__PURE__*/React.createElement("input", {
         type: "file",
         accept: "image/*",
-        capture: "environment",
         style: {
           display: "none"
         },
@@ -1700,7 +1699,6 @@
       }, /*#__PURE__*/React.createElement("input", {
         type: "file",
         accept: "image/*",
-        capture: "environment",
         style: {
           display: "none"
         },
@@ -3471,7 +3469,6 @@
     }, /*#__PURE__*/React.createElement("input", {
       type: "file",
       accept: "image/*",
-      capture: "environment",
       style: {
         display: "none"
       },
