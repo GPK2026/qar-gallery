@@ -508,11 +508,7 @@
     // ── Image upload — converts to base64 dataURL ─────────────────────────────
     const handleImageUpload = (file, onDone) => {
       if (!file) return;
-      if (file.size > 5 * 1024 * 1024) {
-        toast_("Bild zu groß — max. 5MB", "err");
-        return;
-      }
-      setImgUploading(true);
+      setImgUploading(true); // No size limit — downsampling handles everything
       const reader = new FileReader();
       reader.onload = e => {
         // Resize to max 800px wide via canvas
