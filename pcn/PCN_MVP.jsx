@@ -198,9 +198,92 @@ export default function PCN() {
   const [addVForm, setAddVForm]     = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:""});
   const [addLogForm, setAddLogForm] = useState({type:"Ölwechsel",km:"",notes:"",workshop:""});
   const [remForm, setRemForm]       = useState({vehicleId:"",title:"",date:""});
-  const msgEndRef = useRef(null);
+  const msgEndRef     = useRef(null);
+  const videoRef      = useRef(null);
+  const canvasRef     = useRef(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerError, setScannerError] = useState(null);
+  const [scannerStatus, setScannerStatus] = useState("idle"); // idle|loading|scanning|found
 
   const toast_ = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3500); };
+
+  // ── QR Scanner ──────────────────────────────────────────────────────────────
+  const openScanner = () => { setScannerOpen(true); setScannerError(null); setScannerStatus("loading"); };
+
+  const closeScanner = () => {
+    setScannerOpen(false); setScannerStatus("idle"); setScannerError(null);
+    if(window.QRScannerModule) window.QRScannerModule.stop();
+  };
+
+  const handleScanResult = (data) => {
+    // Parse QAR-ID from URL: https://.../pcn/#/v/QAR-XXXXXXXX or plain QAR-XXXXXXXX
+    const match = data.match(/QAR-[A-Z2-9]{8}/);
+    if(match) {
+      const qarId = match[0];
+      const v = Object.values(vehicles).find(veh => veh.qarId === qarId);
+      setScannerStatus("found");
+      if(window.QRScannerModule) window.QRScannerModule.stop();
+      setTimeout(() => {
+        closeScanner();
+        if(v) { setPublicV({...v, privacy: v.privacy || DEF_PRIVACY}); setScreen("public"); }
+        else { toast_("Fahrzeug nicht in dieser Demo bekannt: "+qarId, "err"); }
+      }, 600);
+    }
+  };
+
+  const handleScanError = (e) => {
+    setScannerError(
+      e.name === "NotAllowedError"
+        ? "Kamera-Zugriff verweigert. Bitte in den iPhone-Einstellungen erlauben: Einstellungen → Safari → Kamera → Erlauben."
+        : e.name === "NotFoundError"
+        ? "Keine Kamera gefunden."
+        : "Kamera-Fehler: " + e.message
+    );
+    setScannerStatus("error");
+  };
+
+  useEffect(() => {
+    if(scannerOpen && scannerStatus === "loading" && videoRef.current && canvasRef.current) {
+      const loadScript = () => new Promise((res, rej) => {
+        if(window.jsQR) { res(); return; }
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+      loadScript().then(() => {
+        setScannerStatus("scanning");
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+          .then(stream => {
+            video.srcObject = stream;
+            video.setAttribute("playsinline", true);
+            video.play();
+            const ctx = canvas.getContext("2d");
+            let last = ""; let lastT = 0;
+            const scan = () => {
+              if(!scannerOpen) return;
+              if(video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = window.jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+                if(code && (code.data !== last || Date.now()-lastT > 3000)) {
+                  last = code.data; lastT = Date.now();
+                  handleScanResult(code.data);
+                }
+              }
+              requestAnimationFrame(scan);
+            };
+            requestAnimationFrame(scan);
+          })
+          .catch(handleScanError);
+      }).catch(() => setScannerError("jsQR konnte nicht geladen werden"));
+    }
+    return () => { if(!scannerOpen && window.QRScannerModule) window.QRScannerModule.stop(); };
+  }, [scannerOpen, scannerStatus]);
 
   // Derived
   const myVehicles = Object.values(vehicles).filter(v=>v.owner===me?.email);
@@ -315,6 +398,7 @@ export default function PCN() {
     .sheet{background:${C.dark};border-radius:20px 20px 0 0;width:100%;border-top:1px solid ${C.border};padding:24px 16px;animation:slideUp .2s;max-height:88vh;overflow-y:auto}
     .chip{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700}
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+    @keyframes scanline{0%{top:4px}50%{top:calc(100% - 6px)}100%{top:4px}}
   `;
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -754,6 +838,7 @@ export default function PCN() {
       {/* Nav */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
         <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:30,objectFit:"contain"}}/>
+        <button onClick={openScanner} style={{background:C.red,border:"none",borderRadius:8,padding:"7px 14px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"'Barlow',sans-serif"}}>📷 Scan</button>
         <div style={{fontSize:11,color:C.muted,textAlign:"right"}}>
           <div style={{color:C.white,fontWeight:700,fontSize:13}}>{me?.name}</div>
           <div style={{fontSize:10}}>{me?.memberNr}</div>
@@ -967,6 +1052,83 @@ export default function PCN() {
           </div>
         )}
       </div>
+
+      {/* ── QR SCANNER ── */}
+      {scannerOpen&&(
+        <div style={{position:"fixed",inset:0,background:"#000",zIndex:300,display:"flex",flexDirection:"column"}}>
+          {/* Header */}
+          <div style={{position:"absolute",top:0,left:0,right:0,zIndex:10,padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"linear-gradient(to bottom,rgba(0,0,0,.8),transparent)"}}>
+            <div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#fff"}}>QR-Code scannen</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>Halte die Kamera über den QAR-Code</div>
+            </div>
+            <button onClick={closeScanner} style={{background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"8px 14px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>✕ Schließen</button>
+          </div>
+
+          {/* Video feed */}
+          <video ref={videoRef} style={{width:"100%",height:"100%",objectFit:"cover"}} muted playsInline/>
+          <canvas ref={canvasRef} style={{display:"none"}}/>
+
+          {/* Viewfinder overlay */}
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+            {scannerStatus==="found"?(
+              <div style={{width:220,height:220,border:"3px solid #22c55e",borderRadius:20,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(34,197,94,.1)"}}>
+                <div style={{fontSize:48}}>✓</div>
+              </div>
+            ):(
+              <div style={{position:"relative",width:220,height:220}}>
+                {/* Corner markers */}
+                {[["0%","0%","top","left"],["0%","auto","top","right"],["auto","0%","bottom","left"],["auto","auto","bottom","right"]].map(([t,r,vp,hp],i)=>(
+                  <div key={i} style={{position:"absolute",top:t,right:r==="auto"?undefined:0,bottom:vp==="bottom"?0:undefined,left:hp==="left"?0:undefined,
+                    width:32,height:32,
+                    borderTop:vp==="top"?"3px solid #e30613":"none",
+                    borderBottom:vp==="bottom"?"3px solid #e30613":"none",
+                    borderLeft:hp==="left"?"3px solid #e30613":"none",
+                    borderRight:hp==="right"?"3px solid #e30613":"none",
+                    borderRadius:hp==="left"&&vp==="top"?"8px 0 0 0":hp==="right"&&vp==="top"?"0 8px 0 0":hp==="left"&&vp==="bottom"?"0 0 0 8px":"0 0 8px 0"}}/>
+                ))}
+                {/* Scan line */}
+                {scannerStatus==="scanning"&&(
+                  <div style={{position:"absolute",left:4,right:4,height:2,background:"linear-gradient(90deg,transparent,#e30613,transparent)",animation:"scanline 1.8s ease-in-out infinite"}}/>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Error */}
+          {scannerError&&(
+            <div style={{position:"absolute",bottom:40,left:20,right:20,background:"rgba(0,0,0,.9)",border:"1px solid #ef4444",borderRadius:14,padding:"16px"}}>
+              <div style={{color:"#ef4444",fontWeight:700,fontSize:14,marginBottom:6}}>⚠️ Kein Kamera-Zugriff</div>
+              <div style={{color:"#999",fontSize:12,lineHeight:1.6,marginBottom:12}}>{scannerError}</div>
+              <button onClick={()=>{setScannerError(null);setScannerStatus("loading");}}
+                style={{background:C.red,border:"none",borderRadius:8,padding:"10px 18px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,width:"100%"}}>
+                Erneut versuchen
+              </button>
+            </div>
+          )}
+
+          {/* Status */}
+          {!scannerError&&scannerStatus==="loading"&&(
+            <div style={{position:"absolute",bottom:60,left:0,right:0,textAlign:"center",color:"rgba(255,255,255,.6)",fontSize:13}}>
+              Kamera wird gestartet…
+            </div>
+          )}
+
+          {/* Manual UID input */}
+          {!scannerError&&(
+            <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"14px 16px",background:"linear-gradient(to top,rgba(0,0,0,.95),transparent)",paddingBottom:"calc(14px + env(safe-area-inset-bottom,0))"}}>
+              <div style={{fontSize:11,color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:8}}>Oder UID manuell eingeben</div>
+              <div style={{display:"flex",gap:8}}>
+                <input
+                  placeholder="QAR-XXXXXXXX"
+                  style={{flex:1,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:14,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:1}}
+                  onChange={e=>{ const v=e.target.value.toUpperCase(); if(v.match(/^QAR-[A-Z2-9]{8}$/)) handleScanResult(v); }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add Vehicle Sheet */}
       {showAddV&&(
