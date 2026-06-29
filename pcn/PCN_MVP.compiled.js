@@ -474,8 +474,10 @@
       kennzeichen: "",
       farbe: "",
       kraftstoff: "Benzin",
-      getriebe: ""
+      getriebe: "",
+      image: ""
     });
+    const [imgUploading, setImgUploading] = (0, _react.useState)(false);
     const [addLogForm, setAddLogForm] = (0, _react.useState)({
       type: "Ölwechsel",
       km: "",
@@ -500,6 +502,52 @@
         type
       });
       setTimeout(() => setToast(null), 3500);
+    };
+
+    // ── Image upload — converts to base64 dataURL ─────────────────────────────
+    const handleImageUpload = (file, onDone) => {
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        toast_("Bild zu groß — max. 5MB", "err");
+        return;
+      }
+      setImgUploading(true);
+      const reader = new FileReader();
+      reader.onload = e => {
+        // Resize to max 800px wide via canvas
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 800;
+          const scale = Math.min(1, MAX / img.width, MAX / img.height);
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+          onDone(dataUrl);
+          setImgUploading(false);
+          toast_("Bild geladen ✓");
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // ── Update vehicle image ──────────────────────────────────────────────────
+    const updateVehicleImage = async (vehicleId, dataUrl) => {
+      const v = vehicles[vehicleId];
+      if (!v) return;
+      const updated = {
+        ...v,
+        image: dataUrl
+      };
+      setVehicles(prev => ({
+        ...prev,
+        [vehicleId]: updated
+      }));
+      if (viewV?.id === vehicleId) setViewV(updated);
+      const DB = window.PCN_DB;
+      if (DB) await DB.vehicles.save(updated);
     };
 
     // ── DB refresh — loads all data for a user from storage layer ──────────────
@@ -1148,7 +1196,7 @@
           overflow: "hidden",
           background: "#111"
         }
-      }, v.image && /*#__PURE__*/React.createElement("img", {
+      }, v.image ? /*#__PURE__*/React.createElement("img", {
         src: v.image,
         alt: "",
         style: {
@@ -1157,7 +1205,35 @@
           objectFit: "cover"
         },
         onError: e => e.target.style.display = "none"
-      }), /*#__PURE__*/React.createElement("div", {
+      }) : isOwn && /*#__PURE__*/React.createElement("label", {
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          cursor: "pointer",
+          height: "100%",
+          color: C.muted
+        }
+      }, /*#__PURE__*/React.createElement("input", {
+        type: "file",
+        accept: "image/*",
+        capture: "environment",
+        style: {
+          display: "none"
+        },
+        onChange: e => handleImageUpload(e.target.files[0], url => updateVehicleImage(v.id, url))
+      }), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 36
+        }
+      }, "📷"), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 12,
+          fontWeight: 600
+        }
+      }, "Foto hinzufügen")), /*#__PURE__*/React.createElement("div", {
         style: {
           position: "absolute",
           inset: 0,
@@ -1490,13 +1566,20 @@
         }
       }, v.hersteller, " ", v.modell), /*#__PURE__*/React.createElement("div", {
         style: {
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+          marginBottom: 14,
+          flexWrap: "wrap"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
           display: "inline-flex",
           alignItems: "center",
           background: "#fff",
           border: "2px solid #222",
           borderRadius: 5,
-          padding: "3px 10px",
-          marginBottom: 14
+          padding: "3px 10px"
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
@@ -1506,7 +1589,29 @@
           letterSpacing: 2,
           fontFamily: "Arial,sans-serif"
         }
-      }, kz)), /*#__PURE__*/React.createElement("div", {
+      }, kz)), isOwn && /*#__PURE__*/React.createElement("label", {
+        style: {
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          background: "transparent",
+          border: `1px solid ${C.border}`,
+          borderRadius: 8,
+          padding: "6px 12px",
+          cursor: "pointer",
+          fontSize: 12,
+          color: C.muted,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, /*#__PURE__*/React.createElement("input", {
+        type: "file",
+        accept: "image/*",
+        capture: "environment",
+        style: {
+          display: "none"
+        },
+        onChange: e => handleImageUpload(e.target.files[0], url => updateVehicleImage(v.id, url))
+      }), imgUploading ? "⏳ Lädt…" : "📷 Foto")), /*#__PURE__*/React.createElement("div", {
         style: {
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
@@ -3256,7 +3361,67 @@
         color: C.white,
         marginBottom: 14
       }
-    }, "Fahrzeug hinzufügen"), [["Modell *", "modell", "Cayman GT4"], ["Kennzeichen *", "kennzeichen", "AW-PC 718"], ["Baujahr", "baujahr", "2023"], ["Farbe", "farbe", "Pythongrün"]].map(([ph, key, ex]) => /*#__PURE__*/React.createElement("input", {
+    }, "Fahrzeug hinzufügen"), /*#__PURE__*/React.createElement("label", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        background: C.card,
+        border: `1px dashed ${C.border}`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        cursor: "pointer",
+        marginBottom: 10,
+        overflow: "hidden"
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "file",
+      accept: "image/*",
+      capture: "environment",
+      style: {
+        display: "none"
+      },
+      onChange: e => handleImageUpload(e.target.files[0], url => setAddVForm(p => ({
+        ...p,
+        image: url
+      })))
+    }), addVForm.image ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
+      src: addVForm.image,
+      alt: "",
+      style: {
+        width: 52,
+        height: 52,
+        objectFit: "cover",
+        borderRadius: 7,
+        flexShrink: 0
+      }
+    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: C.white
+      }
+    }, "Foto geladen ✓"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted
+      }
+    }, "Erneut tippen zum Ändern"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 28
+      }
+    }, "📷"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: C.white
+      }
+    }, "Fahrzeugfoto hinzufügen"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted
+      }
+    }, "Kamera oder Bibliothek · max. 5MB")))), [["Modell *", "modell", "Cayman GT4"], ["Kennzeichen *", "kennzeichen", "AW-PC 718"], ["Baujahr", "baujahr", "2023"], ["Farbe", "farbe", "Pythongrün"]].map(([ph, key, ex]) => /*#__PURE__*/React.createElement("input", {
       key: key,
       className: "inp",
       placeholder: `${ph} (z.B. ${ex})`,
