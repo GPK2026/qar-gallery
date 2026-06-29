@@ -648,7 +648,7 @@ export default function PCN() {
             ?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
             :isOwn&&(
               <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",height:"100%",color:C.muted}}>
-                <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
+                <input type="file" accept="image/*" style={{display:"none"}}
                   onChange={e=>handleImageUpload(e.target.files[0], url=>updateVehicleImage(v.id, url))}/>
                 <span style={{fontSize:36}}>📷</span>
                 <span style={{fontSize:12,fontWeight:600}}>Foto hinzufügen</span>
@@ -772,7 +772,7 @@ export default function PCN() {
             </div>
             {isOwn&&(
               <label style={{display:"inline-flex",alignItems:"center",gap:6,background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:12,color:C.muted,fontFamily:"'Barlow',sans-serif"}}>
-                <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
+                <input type="file" accept="image/*" style={{display:"none"}}
                   onChange={e=>handleImageUpload(e.target.files[0], url=>updateVehicleImage(v.id, url))}/>
                 {imgUploading?"⏳ Lädt…":"📷 Foto"}
               </label>
@@ -1344,7 +1344,7 @@ export default function PCN() {
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:14}}>Fahrzeug hinzufügen</div>
             {/* Image upload */}
             <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1px dashed ${C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",marginBottom:10,overflow:"hidden"}}>
-              <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
+              <input type="file" accept="image/*" style={{display:"none"}}
                 onChange={e=>handleImageUpload(e.target.files[0], url=>setAddVForm(p=>({...p,image:url})))}/>
               {addVForm.image
                 ?<><img src={addVForm.image} alt="" style={{width:52,height:52,objectFit:"cover",borderRadius:7,flexShrink:0}}/>
