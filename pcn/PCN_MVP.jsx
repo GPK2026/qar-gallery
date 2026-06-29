@@ -80,7 +80,7 @@ const DEMO_VEHICLES = {
       "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80",
       "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=800&q=80",
     ],
-    privacy:{...DEF_PRIVACY}},
+    privacy:{...DEF_PRIVACY, pub_phone:true}},
   "V002":{id:"V002",qarId:"QAR-K9P2M7RW",userId:"u1",owner:"max@pcn.de",
     hersteller:"Porsche",modell:"Boxster 718 GTS 4.0",baujahr:"2022",
     kraftstoff:"Benzin",getriebe:"6-Gang manuell",farbe:"Pythongrün",
@@ -280,13 +280,14 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
   );
 }
 
-function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onViewVehicle}) {
+function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead, onViewVehicle}) {
   const [msg, setMsg] = useState("");
   const endRef = useRef(null);
   const other = Object.values(allUsers).find(u=>thread.participants.includes(u.id)&&u.id!==me?.id)||{name:"Mitglied"};
   const v = vehicles[thread.vehicleId];
 
   useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[thread.messages]);
+  useEffect(()=>{ if(onMarkRead) onMarkRead(thread.id); },[thread.id]);
 
   return (
     <div style={{height:"100vh",background:C.black,display:"flex",flexDirection:"column"}}>
@@ -939,7 +940,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             {/* Contact button — always visible to non-owners */}
             {(!me||v.owner!==me.email)&&(
               <button className="btn" style={{width:"100%",marginBottom:8,fontSize:15}}
-                onClick={()=>me?startContact(v.id):(toast_("Bitte zuerst anmelden","err"))}>
+                onClick={()=>{ if(me&&v.owner!==me.email) startContact(v.id); else if(!me) toast_("App öffnen um Kontakt aufzunehmen","err"); }}>
                 💬 Nachricht an Besitzer schreiben
               </button>
             )}
@@ -1289,7 +1290,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                   {fields.map(([key,label])=>(
                     <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
                       <span style={{fontSize:13,color:C.white}}>{label}</span>
-                      <button className={`tog ${priv[key]!==false?"on":""}`} onClick={()=>togglePrivacy(v.id,key)}/>
+                      <button className={`tog ${(priv[key]===true||priv[key]===undefined&&DEF_PRIVACY[key])?"on":""}`} onClick={()=>togglePrivacy(v.id,key)}/>
                     </div>
                   ))}
                 </div>
@@ -1299,89 +1300,89 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           </div>
         )}
 
-      {/* ── OVERLAYS (rendered in every screen) ── */}
-      {showStatusPicker&&(
-        <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
-          <div className="sheet">
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Status setzen</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
-              {STATUS_PRESETS.map((p,i)=>(
-                <button key={i} onClick={()=>setStatus(showStatusPicker,p)}
-                  style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
-                  <span style={{fontSize:24,flexShrink:0}}>{p.icon}</span>
-                  <div>
-                    <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.text}</div>
-                    <div style={{fontSize:11,color:C.muted}}>Läuft ab nach {p.mins} Min</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginBottom:10}}>
-              <div style={{fontSize:11,color:C.muted,marginBottom:8}}>Eigener Text</div>
-              <div style={{display:"flex",gap:8}}>
-                <input className="inp" placeholder="z.B. Bin gleich beim Einlass..." value={statusCustom}
-                  onChange={e=>setStatusCustom(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
-                  style={{flex:1}}/>
-                <button className="btn" disabled={!statusCustom.trim()}
-                  onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
-                  style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
-              </div>
-            </div>
-            {getActiveStatus(showStatusPicker)&&(
-              <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
-                onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Status gelöscht");}}>
-                Status löschen
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-      {lightbox&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:600,display:"flex",flexDirection:"column"}}
-          onClick={()=>setLightbox(null)}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
-            <button onClick={()=>setLightbox(null)} style={{background:"rgba(255,255,255,.1)",border:"none",color:"#fff",fontSize:20,width:40,height:40,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-          </div>
-          <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 16px",position:"relative"}} onClick={e=>e.stopPropagation()}>
-            <img src={lightbox.images[lightbox.index]} alt="" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8}}/>
-            {lightbox.images.length>1&&<>
-              <button onClick={()=>setLightbox(p=>({...p,index:Math.max(0,p.index-1)}))}
-                style={{position:"absolute",left:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===0?"none":"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
-              <button onClick={()=>setLightbox(p=>({...p,index:Math.min(p.images.length-1,p.index+1)}))}
-                style={{position:"absolute",right:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===lightbox.images.length-1?"none":"flex",alignItems:"center",justifyContent:"center"}}>›</button>
-            </>}
-          </div>
-          {lightbox.images.length>1&&(
-            <div style={{display:"flex",gap:6,justifyContent:"center",padding:"16px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
-              {lightbox.images.map((_,i)=>(
-                <div key={i} onClick={()=>setLightbox(p=>({...p,index:i}))}
-                  style={{width:i===lightbox.index?20:6,height:6,borderRadius:99,background:i===lightbox.index?"#fff":"rgba(255,255,255,.3)",transition:"all .2s",cursor:"pointer"}}/>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-        {/* Add Log Sheet */}
-        {showAddLog===v.id&&(
-          <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddLog(null);}}>
+        {/* ── OVERLAYS (rendered in every screen) ── */}
+        {showStatusPicker&&(
+          <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
             <div className="sheet">
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:16}}>Logbuch-Eintrag</div>
-              <select className="inp" value={addLogForm.type} onChange={e=>setAddLogForm(p=>({...p,type:e.target.value}))} style={{marginBottom:8}}>
-                {["Ölwechsel","Inspektion","Reifenwechsel","Bremsenwechsel","Hauptuntersuchung","Trackday","Sonstiges"].map(t=><option key={t}>{t}</option>)}
-              </select>
-              <input className="inp" type="number" inputMode="numeric" placeholder="Kilometerstand *" style={{marginBottom:8}}
-                value={addLogForm.km} onChange={e=>setAddLogForm(p=>({...p,km:e.target.value}))}/>
-              <input className="inp" placeholder="Werkstatt" style={{marginBottom:8}}
-                value={addLogForm.workshop} onChange={e=>setAddLogForm(p=>({...p,workshop:e.target.value}))}/>
-              <input className="inp" placeholder="Notizen" style={{marginBottom:16}}
-                value={addLogForm.notes} onChange={e=>setAddLogForm(p=>({...p,notes:e.target.value}))}/>
-              <button className="btn" style={{width:"100%"}} onClick={()=>addLogEntry(v.id)}>Speichern ✓</button>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Status setzen</div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+                {STATUS_PRESETS.map((p,i)=>(
+                  <button key={i} onClick={()=>setStatus(showStatusPicker,p)}
+                    style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                    <span style={{fontSize:24,flexShrink:0}}>{p.icon}</span>
+                    <div>
+                      <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.text}</div>
+                      <div style={{fontSize:11,color:C.muted}}>Läuft ab nach {p.mins} Min</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginBottom:10}}>
+                <div style={{fontSize:11,color:C.muted,marginBottom:8}}>Eigener Text</div>
+                <div style={{display:"flex",gap:8}}>
+                  <input className="inp" placeholder="z.B. Bin gleich beim Einlass..." value={statusCustom}
+                    onChange={e=>setStatusCustom(e.target.value)}
+                    onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
+                    style={{flex:1}}/>
+                  <button className="btn" disabled={!statusCustom.trim()}
+                    onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
+                    style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
+                </div>
+              </div>
+              {getActiveStatus(showStatusPicker)&&(
+                <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
+                  onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Status gelöscht");}}>
+                  Status löschen
+                </button>
+              )}
             </div>
           </div>
         )}
+        {lightbox&&(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:600,display:"flex",flexDirection:"column"}}
+            onClick={()=>setLightbox(null)}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
+              <div style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
+              <button onClick={()=>setLightbox(null)} style={{background:"rgba(255,255,255,.1)",border:"none",color:"#fff",fontSize:20,width:40,height:40,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+            </div>
+            <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 16px",position:"relative"}} onClick={e=>e.stopPropagation()}>
+              <img src={lightbox.images[lightbox.index]} alt="" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8}}/>
+              {lightbox.images.length>1&&<>
+                <button onClick={()=>setLightbox(p=>({...p,index:Math.max(0,p.index-1)}))}
+                  style={{position:"absolute",left:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===0?"none":"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+                <button onClick={()=>setLightbox(p=>({...p,index:Math.min(p.images.length-1,p.index+1)}))}
+                  style={{position:"absolute",right:8,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",fontSize:28,width:44,height:44,borderRadius:"50%",cursor:"pointer",display:lightbox.index===lightbox.images.length-1?"none":"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+              </>}
+            </div>
+            {lightbox.images.length>1&&(
+              <div style={{display:"flex",gap:6,justifyContent:"center",padding:"16px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
+                {lightbox.images.map((_,i)=>(
+                  <div key={i} onClick={()=>setLightbox(p=>({...p,index:i}))}
+                    style={{width:i===lightbox.index?20:6,height:6,borderRadius:99,background:i===lightbox.index?"#fff":"rgba(255,255,255,.3)",transition:"all .2s",cursor:"pointer"}}/>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+          {/* Add Log Sheet */}
+          {showAddLog===v.id&&(
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddLog(null);}}>
+              <div className="sheet">
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:16}}>Logbuch-Eintrag</div>
+                <select className="inp" value={addLogForm.type} onChange={e=>setAddLogForm(p=>({...p,type:e.target.value}))} style={{marginBottom:8}}>
+                  {["Ölwechsel","Inspektion","Reifenwechsel","Bremsenwechsel","Hauptuntersuchung","Trackday","Sonstiges"].map(t=><option key={t}>{t}</option>)}
+                </select>
+                <input className="inp" type="number" inputMode="numeric" placeholder="Kilometerstand *" style={{marginBottom:8}}
+                  value={addLogForm.km} onChange={e=>setAddLogForm(p=>({...p,km:e.target.value}))}/>
+                <input className="inp" placeholder="Werkstatt" style={{marginBottom:8}}
+                  value={addLogForm.workshop} onChange={e=>setAddLogForm(p=>({...p,workshop:e.target.value}))}/>
+                <input className="inp" placeholder="Notizen" style={{marginBottom:16}}
+                  value={addLogForm.notes} onChange={e=>setAddLogForm(p=>({...p,notes:e.target.value}))}/>
+                <button className="btn" style={{width:"100%"}} onClick={()=>addLogEntry(v.id)}>Speichern ✓</button>
+              </div>
+            </div>
+          )}
       </div>
     );
   }
@@ -1409,11 +1410,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
   // CHAT (proper component — no useEffect-in-render bug)
   // ══════════════════════════════════════════════════════════════════════════════
   if(screen==="chat"&&activeThread&&threads[activeThread]) {
-    // Mark messages as read
     const t=threads[activeThread];
-    if(t.messages.some(m=>m.from!==me?.id&&!m.read&&!m.isSystem)){
-      setThreads(prev=>({...prev,[activeThread]:{...t,messages:t.messages.map(m=>({...m,read:true}))}}));
-    }
     return (
       <>
         <style>{CSS}</style>
@@ -1422,6 +1419,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           thread={t} me={me} allUsers={allUsers} vehicles={vehicles}
           onBack={()=>{setScreen("app");setTab("messages");}}
           onSend={sendMsg}
+          onMarkRead={(tid)=>setThreads(prev=>({...prev,[tid]:{...prev[tid],messages:(prev[tid]?.messages||[]).map(m=>({...m,read:true}))}}))}
           onViewVehicle={v=>{setViewV(v);setScreen("vehicle");}}
         />
       </>
