@@ -7,38 +7,162 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
   <meta name="apple-mobile-web-app-title" content="PCN"/>
-  <title>Porsche Club Nürburgring</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='.85em' x='10' font-size='80'>🏎️</text></svg>"/>
+  <meta name="description" content="Porsche Club Nürburgring — Digitale Clubplattform"/>
+  <title>PCN — Digitale Clubplattform</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="pcn_manifest.json"/>
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" href="https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0a'/><text y='.85em' x='10' font-size='80'>🏎️</text></svg>"/>
+
   <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body,#root{height:100%}
-    body{background:#0a0a0a}
-    #loading{position:fixed;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
-    .l-logo{width:200px;max-width:70%;object-fit:contain;filter:brightness(1.1)}
-    .l-bar{width:120px;height:2px;background:#1a1a1a;border-radius:99px;overflow:hidden}
-    .l-fill{height:100%;background:#e30613;border-radius:99px;animation:fill 2.5s ease forwards}
-    @keyframes fill{0%{width:5%}50%{width:70%}100%{width:95%}}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; }
+    body {
+      background: #0a0a0a;
+      font-family: 'Barlow', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+
+    /* ── Loading Screen ── */
+    #loading {
+      position: fixed; inset: 0;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      z-index: 9999;
+      transition: opacity .5s ease;
+    }
+    /* Top red stripe — mirrors PCN website */
+    #loading::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: #e30613;
+    }
+    .l-logo {
+      width: 220px;
+      max-width: 68%;
+      object-fit: contain;
+      margin-bottom: 32px;
+      filter: brightness(1.05);
+    }
+    .l-divider {
+      width: 36px;
+      height: 2px;
+      background: #e30613;
+      margin-bottom: 18px;
+    }
+    .l-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      color: #333;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .l-bar {
+      width: 140px;
+      height: 2px;
+      background: #1a1a1a;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .l-fill {
+      height: 100%;
+      background: #e30613;
+      border-radius: 99px;
+      animation: lfill 2.5s ease-in-out forwards;
+    }
+    @keyframes lfill {
+      0%   { width: 5%; }
+      30%  { width: 45%; }
+      70%  { width: 78%; }
+      100% { width: 96%; }
+    }
+
+    /* ── Error state ── */
+    .error-box {
+      padding: 32px 24px;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    .error-icon { font-size: 48px; margin-bottom: 16px; }
+    .error-title { font-size: 18px; font-weight: 700; color: #e30613; margin-bottom: 8px; }
+    .error-msg { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; max-width: 300px; }
+    .error-btn {
+      background: #e30613; color: #fff; border: none;
+      padding: 12px 28px; border-radius: 8px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+    }
   </style>
+
+  <!-- Google Fonts (same as PCN website uses Barlow) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
 <body>
+
+  <!-- Loading screen -->
   <div id="loading">
-    <img class="l-logo" src="https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg" alt="PCN" onerror="this.style.display='none'"/>
+    <img class="l-logo"
+      src="https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg"
+      alt="Porsche Club Nürburgring"
+      onerror="this.style.opacity='.2'"/>
+    <div class="l-divider"></div>
+    <div class="l-title">Digitale Clubplattform</div>
     <div class="l-bar"><div class="l-fill"></div></div>
   </div>
+
   <div id="root"></div>
+
+  <!-- React -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- App -->
   <script src="PCN_MVP.compiled.js"></script>
+
   <script>
-    try {
-      const App=(window.PCN_MVP&&window.PCN_MVP.default?window.PCN_MVP.default:window.PCN_MVP;
-      if(!App) throw new Error("App nicht geladen");
-      ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
-      const el=document.getElementById('loading');
-      if(el){el.style.opacity='0';setTimeout(()=>el.remove(),500);}
-    } catch(e) {
-      document.getElementById('loading').innerHTML='<div style="color:#e30613;font-family:sans-serif;padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div>'+e.message+'</div><button onclick="location.reload()" style="margin-top:16px;background:#e30613;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px">Neu laden</button></div>';
-    }
+    (function() {
+      try {
+        var App = (window.PCN_MVP && window.PCN_MVP.default)
+          ? window.PCN_MVP.default
+          : window.PCN_MVP;
+
+        if (!App) throw new Error('App konnte nicht geladen werden.');
+
+        var root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+
+        // Fade out loading screen after first render
+        setTimeout(function() {
+          var el = document.getElementById('loading');
+          if (el) {
+            el.style.opacity = '0';
+            setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 500);
+          }
+        }, 300);
+
+      } catch(e) {
+        document.getElementById('loading').innerHTML = [
+          '<div class="error-box">',
+          '<div class="error-icon">⚠️</div>',
+          '<div class="error-title">Ladefehler</div>',
+          '<div class="error-msg">' + (e.message || 'Unbekannter Fehler') + '</div>',
+          '<button class="error-btn" onclick="location.reload()">Neu laden</button>',
+          '</div>'
+        ].join('');
+      }
+    })();
   </script>
 </body>
 </html>
