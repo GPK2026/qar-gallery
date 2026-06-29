@@ -2334,7 +2334,7 @@
         style: {
           marginBottom: 14
         }
-      }, priv.pub_phone && v.phone && (!me || v.owner !== me.email) && /*#__PURE__*/React.createElement("a", {
+      }, priv.pub_phone === true && v.phone && v.phone.trim() && (!me || v.owner !== me.email) && /*#__PURE__*/React.createElement("a", {
         href: `tel:${v.phone.replace(/\s/g, "")}`,
         style: {
           display: "flex",
@@ -2409,7 +2409,247 @@
           marginTop: 10
         },
         onClick: () => setScreen(viewV ? "vehicle" : "app")
-      }, "← Zurück")));
+      }, "← Zurück")), showStatusPicker && /*#__PURE__*/React.createElement("div", {
+        className: "overlay",
+        style: {
+          zIndex: 500
+        },
+        onClick: e => {
+          if (e.target === e.currentTarget) setShowStatusPicker(null);
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "sheet"
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontFamily: "'Barlow Condensed',sans-serif",
+          fontSize: 20,
+          fontWeight: 800,
+          color: C.white,
+          marginBottom: 4
+        }
+      }, "📍 Status setzen"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 16
+        }
+      }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          marginBottom: 16
+        }
+      }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/React.createElement("button", {
+        key: i,
+        onClick: () => setStatus(showStatusPicker, p),
+        style: {
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          padding: "14px",
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          textAlign: "left"
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 24,
+          flexShrink: 0
+        }
+      }, p.icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 15,
+          fontWeight: 700,
+          color: C.white
+        }
+      }, p.text), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted
+        }
+      }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          borderTop: `1px solid ${C.border}`,
+          paddingTop: 14,
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 8
+        }
+      }, "Eigener Text"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 8
+        }
+      }, /*#__PURE__*/React.createElement("input", {
+        className: "inp",
+        placeholder: "z.B. Bin gleich beim Einlass...",
+        value: statusCustom,
+        onChange: e => setStatusCustom(e.target.value),
+        onKeyDown: e => {
+          if (e.key === "Enter" && statusCustom.trim()) setStatus(showStatusPicker, {
+            icon: "💬",
+            mins: 30
+          }, statusCustom);
+        },
+        style: {
+          flex: 1
+        }
+      }), /*#__PURE__*/React.createElement("button", {
+        className: "btn",
+        disabled: !statusCustom.trim(),
+        onClick: () => {
+          if (statusCustom.trim()) setStatus(showStatusPicker, {
+            icon: "💬",
+            mins: 30
+          }, statusCustom);
+        },
+        style: {
+          flexShrink: 0,
+          opacity: statusCustom.trim() ? 1 : .4
+        }
+      }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/React.createElement("button", {
+        className: "btn ghost",
+        style: {
+          width: "100%",
+          marginTop: 4,
+          color: "#ef4444",
+          borderColor: "#ef444444"
+        },
+        onClick: () => {
+          clearStatus(showStatusPicker);
+          setShowStatusPicker(null);
+          toast_("Status gelöscht");
+        }
+      }, "Status löschen"))), lightbox && /*#__PURE__*/React.createElement("div", {
+        style: {
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,.97)",
+          zIndex: 600,
+          display: "flex",
+          flexDirection: "column"
+        },
+        onClick: () => setLightbox(null)
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "16px 20px",
+          flexShrink: 0
+        },
+        onClick: e => e.stopPropagation()
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 13,
+          color: "rgba(255,255,255,.6)"
+        }
+      }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/React.createElement("button", {
+        onClick: () => setLightbox(null),
+        style: {
+          background: "rgba(255,255,255,.1)",
+          border: "none",
+          color: "#fff",
+          fontSize: 20,
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }
+      }, "✕")), /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "0 16px",
+          position: "relative"
+        },
+        onClick: e => e.stopPropagation()
+      }, /*#__PURE__*/React.createElement("img", {
+        src: lightbox.images[lightbox.index],
+        alt: "",
+        style: {
+          maxWidth: "100%",
+          maxHeight: "100%",
+          objectFit: "contain",
+          borderRadius: 8
+        }
+      }), lightbox.images.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+        onClick: () => setLightbox(p => ({
+          ...p,
+          index: Math.max(0, p.index - 1)
+        })),
+        style: {
+          position: "absolute",
+          left: 8,
+          background: "rgba(255,255,255,.15)",
+          border: "none",
+          color: "#fff",
+          fontSize: 28,
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          cursor: "pointer",
+          display: lightbox.index === 0 ? "none" : "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }
+      }, "‹"), /*#__PURE__*/React.createElement("button", {
+        onClick: () => setLightbox(p => ({
+          ...p,
+          index: Math.min(p.images.length - 1, p.index + 1)
+        })),
+        style: {
+          position: "absolute",
+          right: 8,
+          background: "rgba(255,255,255,.15)",
+          border: "none",
+          color: "#fff",
+          fontSize: 28,
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          cursor: "pointer",
+          display: lightbox.index === lightbox.images.length - 1 ? "none" : "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }
+      }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 6,
+          justifyContent: "center",
+          padding: "16px",
+          flexShrink: 0
+        },
+        onClick: e => e.stopPropagation()
+      }, lightbox.images.map((_, i) => /*#__PURE__*/React.createElement("div", {
+        key: i,
+        onClick: () => setLightbox(p => ({
+          ...p,
+          index: i
+        })),
+        style: {
+          width: i === lightbox.index ? 20 : 6,
+          height: 6,
+          borderRadius: 99,
+          background: i === lightbox.index ? "#fff" : "rgba(255,255,255,.3)",
+          transition: "all .2s",
+          cursor: "pointer"
+        }
+      })))));
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -3218,7 +3458,247 @@
           marginTop: 8
         },
         onClick: () => setShowPrivacy(null)
-      }, "Fertig ✓"))), showAddLog === v.id && /*#__PURE__*/React.createElement("div", {
+      }, "Fertig ✓"))), showStatusPicker && /*#__PURE__*/React.createElement("div", {
+        className: "overlay",
+        style: {
+          zIndex: 500
+        },
+        onClick: e => {
+          if (e.target === e.currentTarget) setShowStatusPicker(null);
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "sheet"
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontFamily: "'Barlow Condensed',sans-serif",
+          fontSize: 20,
+          fontWeight: 800,
+          color: C.white,
+          marginBottom: 4
+        }
+      }, "📍 Status setzen"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 16
+        }
+      }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          marginBottom: 16
+        }
+      }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/React.createElement("button", {
+        key: i,
+        onClick: () => setStatus(showStatusPicker, p),
+        style: {
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          padding: "14px",
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          textAlign: "left"
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 24,
+          flexShrink: 0
+        }
+      }, p.icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 15,
+          fontWeight: 700,
+          color: C.white
+        }
+      }, p.text), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted
+        }
+      }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          borderTop: `1px solid ${C.border}`,
+          paddingTop: 14,
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 8
+        }
+      }, "Eigener Text"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 8
+        }
+      }, /*#__PURE__*/React.createElement("input", {
+        className: "inp",
+        placeholder: "z.B. Bin gleich beim Einlass...",
+        value: statusCustom,
+        onChange: e => setStatusCustom(e.target.value),
+        onKeyDown: e => {
+          if (e.key === "Enter" && statusCustom.trim()) setStatus(showStatusPicker, {
+            icon: "💬",
+            mins: 30
+          }, statusCustom);
+        },
+        style: {
+          flex: 1
+        }
+      }), /*#__PURE__*/React.createElement("button", {
+        className: "btn",
+        disabled: !statusCustom.trim(),
+        onClick: () => {
+          if (statusCustom.trim()) setStatus(showStatusPicker, {
+            icon: "💬",
+            mins: 30
+          }, statusCustom);
+        },
+        style: {
+          flexShrink: 0,
+          opacity: statusCustom.trim() ? 1 : .4
+        }
+      }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/React.createElement("button", {
+        className: "btn ghost",
+        style: {
+          width: "100%",
+          marginTop: 4,
+          color: "#ef4444",
+          borderColor: "#ef444444"
+        },
+        onClick: () => {
+          clearStatus(showStatusPicker);
+          setShowStatusPicker(null);
+          toast_("Status gelöscht");
+        }
+      }, "Status löschen"))), lightbox && /*#__PURE__*/React.createElement("div", {
+        style: {
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,.97)",
+          zIndex: 600,
+          display: "flex",
+          flexDirection: "column"
+        },
+        onClick: () => setLightbox(null)
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "16px 20px",
+          flexShrink: 0
+        },
+        onClick: e => e.stopPropagation()
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 13,
+          color: "rgba(255,255,255,.6)"
+        }
+      }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/React.createElement("button", {
+        onClick: () => setLightbox(null),
+        style: {
+          background: "rgba(255,255,255,.1)",
+          border: "none",
+          color: "#fff",
+          fontSize: 20,
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }
+      }, "✕")), /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "0 16px",
+          position: "relative"
+        },
+        onClick: e => e.stopPropagation()
+      }, /*#__PURE__*/React.createElement("img", {
+        src: lightbox.images[lightbox.index],
+        alt: "",
+        style: {
+          maxWidth: "100%",
+          maxHeight: "100%",
+          objectFit: "contain",
+          borderRadius: 8
+        }
+      }), lightbox.images.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+        onClick: () => setLightbox(p => ({
+          ...p,
+          index: Math.max(0, p.index - 1)
+        })),
+        style: {
+          position: "absolute",
+          left: 8,
+          background: "rgba(255,255,255,.15)",
+          border: "none",
+          color: "#fff",
+          fontSize: 28,
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          cursor: "pointer",
+          display: lightbox.index === 0 ? "none" : "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }
+      }, "‹"), /*#__PURE__*/React.createElement("button", {
+        onClick: () => setLightbox(p => ({
+          ...p,
+          index: Math.min(p.images.length - 1, p.index + 1)
+        })),
+        style: {
+          position: "absolute",
+          right: 8,
+          background: "rgba(255,255,255,.15)",
+          border: "none",
+          color: "#fff",
+          fontSize: 28,
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          cursor: "pointer",
+          display: lightbox.index === lightbox.images.length - 1 ? "none" : "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }
+      }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 6,
+          justifyContent: "center",
+          padding: "16px",
+          flexShrink: 0
+        },
+        onClick: e => e.stopPropagation()
+      }, lightbox.images.map((_, i) => /*#__PURE__*/React.createElement("div", {
+        key: i,
+        onClick: () => setLightbox(p => ({
+          ...p,
+          index: i
+        })),
+        style: {
+          width: i === lightbox.index ? 20 : 6,
+          height: 6,
+          borderRadius: 99,
+          background: i === lightbox.index ? "#fff" : "rgba(255,255,255,.3)",
+          transition: "all .2s",
+          cursor: "pointer"
+        }
+      })))), showAddLog === v.id && /*#__PURE__*/React.createElement("div", {
         className: "overlay",
         onClick: e => {
           if (e.target === e.currentTarget) setShowAddLog(null);
@@ -4127,246 +4607,7 @@
         setScreen("splash");
         setTab("dashboard");
       }
-    }, "Abmelden"))), showStatusPicker && /*#__PURE__*/React.createElement("div", {
-      className: "overlay",
-      onClick: e => {
-        if (e.target === e.currentTarget) setShowStatusPicker(null);
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "sheet"
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: "'Barlow Condensed',sans-serif",
-        fontSize: 20,
-        fontWeight: 800,
-        color: C.white,
-        marginBottom: 4
-      }
-    }, "📍 Status setzen"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.muted,
-        marginBottom: 16
-      }
-    }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        marginBottom: 16
-      }
-    }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/React.createElement("button", {
-      key: i,
-      onClick: () => setStatus(showStatusPicker, p),
-      style: {
-        display: "flex",
-        gap: 12,
-        alignItems: "center",
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 12,
-        padding: "12px 14px",
-        cursor: "pointer",
-        fontFamily: "'Barlow',sans-serif",
-        textAlign: "left",
-        transition: "border-color .15s"
-      },
-      onTouchStart: e => e.currentTarget.style.borderColor = C.amber,
-      onTouchEnd: e => e.currentTarget.style.borderColor = C.border
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 22,
-        flexShrink: 0
-      }
-    }, p.icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 14,
-        fontWeight: 700,
-        color: C.white
-      }
-    }, p.text), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.muted
-      }
-    }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        borderTop: `1px solid ${C.border}`,
-        paddingTop: 14,
-        marginBottom: 10
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.muted,
-        marginBottom: 8
-      }
-    }, "Eigener Text"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 8
-      }
-    }, /*#__PURE__*/React.createElement("input", {
-      className: "inp",
-      placeholder: "z.B. Bin gleich beim Einlass...",
-      value: statusCustom,
-      onChange: e => setStatusCustom(e.target.value),
-      onKeyDown: e => {
-        if (e.key === "Enter" && statusCustom.trim()) setStatus(showStatusPicker, {
-          icon: "💬",
-          mins: 30
-        }, statusCustom);
-      },
-      style: {
-        flex: 1
-      }
-    }), /*#__PURE__*/React.createElement("button", {
-      className: "btn",
-      disabled: !statusCustom.trim(),
-      onClick: () => setStatus(showStatusPicker, {
-        icon: "💬",
-        mins: 30
-      }, statusCustom),
-      style: {
-        flexShrink: 0,
-        opacity: statusCustom.trim() ? 1 : .4
-      }
-    }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/React.createElement("button", {
-      className: "btn ghost",
-      style: {
-        width: "100%",
-        marginTop: 4,
-        color: "#ef4444",
-        borderColor: "#ef444444"
-      },
-      onClick: () => {
-        clearStatus(showStatusPicker);
-        setShowStatusPicker(null);
-        toast_("Status gelöscht");
-      }
-    }, "Status löschen"))), lightbox && /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,.97)",
-        zIndex: 400,
-        display: "flex",
-        flexDirection: "column"
-      },
-      onClick: () => setLightbox(null)
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "16px 20px",
-        flexShrink: 0
-      },
-      onClick: e => e.stopPropagation()
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        color: "rgba(255,255,255,.6)"
-      }
-    }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setLightbox(null),
-      style: {
-        background: "rgba(255,255,255,.1)",
-        border: "none",
-        color: "#fff",
-        fontSize: 20,
-        width: 40,
-        height: 40,
-        borderRadius: "50%",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
-      }
-    }, "✕")), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "0 16px",
-        position: "relative"
-      },
-      onClick: e => e.stopPropagation()
-    }, /*#__PURE__*/React.createElement("img", {
-      src: lightbox.images[lightbox.index],
-      alt: "",
-      style: {
-        maxWidth: "100%",
-        maxHeight: "100%",
-        objectFit: "contain",
-        borderRadius: 8,
-        userSelect: "none"
-      }
-    }), lightbox.images.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setLightbox(p => ({
-        ...p,
-        index: Math.max(0, p.index - 1)
-      })),
-      style: {
-        position: "absolute",
-        left: 8,
-        background: "rgba(255,255,255,.15)",
-        border: "none",
-        color: "#fff",
-        fontSize: 28,
-        width: 44,
-        height: 44,
-        borderRadius: "50%",
-        cursor: "pointer",
-        display: lightbox.index === 0 ? "none" : "flex",
-        alignItems: "center",
-        justifyContent: "center"
-      }
-    }, "‹"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setLightbox(p => ({
-        ...p,
-        index: Math.min(p.images.length - 1, p.index + 1)
-      })),
-      style: {
-        position: "absolute",
-        right: 8,
-        background: "rgba(255,255,255,.15)",
-        border: "none",
-        color: "#fff",
-        fontSize: 28,
-        width: 44,
-        height: 44,
-        borderRadius: "50%",
-        cursor: "pointer",
-        display: lightbox.index === lightbox.images.length - 1 ? "none" : "flex",
-        alignItems: "center",
-        justifyContent: "center"
-      }
-    }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 6,
-        justifyContent: "center",
-        padding: "16px",
-        flexShrink: 0
-      },
-      onClick: e => e.stopPropagation()
-    }, lightbox.images.map((_, i) => /*#__PURE__*/React.createElement("div", {
-      key: i,
-      onClick: () => setLightbox(p => ({
-        ...p,
-        index: i
-      })),
-      style: {
-        width: i === lightbox.index ? 20 : 6,
-        height: 6,
-        borderRadius: 99,
-        background: i === lightbox.index ? "#fff" : "rgba(255,255,255,.3)",
-        transition: "all .2s",
-        cursor: "pointer"
-      }
-    })))), showAddV && /*#__PURE__*/React.createElement("div", {
+    }, "Abmelden"))), showAddV && /*#__PURE__*/React.createElement("div", {
       className: "overlay",
       onClick: e => {
         if (e.target === e.currentTarget) setShowAddV(false);
