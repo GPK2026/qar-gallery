@@ -549,7 +549,14 @@ export default function PCN() {
         <p style={{fontSize:12,color:C.muted,marginTop:8,lineHeight:1.7}}>Fahrzeugakte · Events · QR-Code<br/>für alle PCN-Mitglieder</p>
       </div>
       <div style={{width:"100%",maxWidth:360}}>
-        {/* Toggle Register / Login */}
+        {/* Toggle Register / Login — prominent at top */}
+        <div style={{textAlign:"center",marginBottom:6,fontSize:12,color:C.muted}}>
+          {loginForm.mode==="register"?"Bereits Mitglied?":"Noch kein Account?"}
+          <span style={{color:C.red,fontWeight:700,marginLeft:6,cursor:"pointer"}}
+            onClick={()=>setLoginForm(p=>({...p,mode:p.mode==="register"?"login":"register"}))}>
+            {loginForm.mode==="register"?"→ Anmelden":"→ Registrieren"}
+          </span>
+        </div>
         <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:14}}>
           {[["register","Registrieren"],["login","Anmelden"]].map(([m,label])=>(
             <button key={m} onClick={()=>setLoginForm(p=>({...p,mode:m}))}
