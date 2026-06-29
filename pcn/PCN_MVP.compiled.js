@@ -1056,6 +1056,24 @@
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
+        textAlign: "center",
+        marginBottom: 6,
+        fontSize: 12,
+        color: C.muted
+      }
+    }, loginForm.mode === "register" ? "Bereits Mitglied?" : "Noch kein Account?", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.red,
+        fontWeight: 700,
+        marginLeft: 6,
+        cursor: "pointer"
+      },
+      onClick: () => setLoginForm(p => ({
+        ...p,
+        mode: p.mode === "register" ? "login" : "register"
+      }))
+    }, loginForm.mode === "register" ? "→ Anmelden" : "→ Registrieren")), /*#__PURE__*/React.createElement("div", {
+      style: {
         display: "flex",
         background: "#111",
         borderRadius: 10,
