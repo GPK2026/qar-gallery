@@ -30,29 +30,37 @@ const DEF_PRIVACY = {
   fin:false, marktwert:false, pub_logbook:false, pub_events:true, pub_phone:false,
 };
 
-// ─── QR Code (Canvas) ─────────────────────────────────────────────────────────
+// ─── QR Code (Real, scannable — uses bundled qrcode.js library) ──────────────
 function QRCodeCanvas({value, size=140}) {
   const ref = useRef(null);
+  const [ready, setReady] = useState(!!window.QRBundle);
+
   useEffect(()=>{
-    if(!ref.current) return;
-    const ctx = ref.current.getContext("2d");
-    const cell = Math.floor(size/25);
-    ctx.fillStyle="#fff"; ctx.fillRect(0,0,size,size);
-    const drawFinder = (ox,oy) => {
-      [[0,0,7,7,"#111"],[1,1,5,5,"#fff"],[2,2,3,3,"#111"]].forEach(([x,y,w,h,col])=>{
-        ctx.fillStyle=col; ctx.fillRect((ox+x)*cell,(oy+y)*cell,w*cell,h*cell);
-      });
-    };
-    drawFinder(0,0); drawFinder(18,0); drawFinder(0,18);
-    ctx.fillStyle="#111";
-    let hash=0; for(let i=0;i<value.length;i++) hash=((hash<<5)-hash+value.charCodeAt(i))|0;
-    for(let r=0;r<25;r++) for(let c=0;c<25;c++) {
-      if((r<8&&(c<8||c>16))||(r>16&&c<8)) continue;
-      if((Math.abs(hash^(r*25+c)*2654435761))%3===0) ctx.fillRect(c*cell,r*cell,cell,cell);
-    }
-    ctx.fillStyle=C.red; ctx.fillRect(10*cell,10*cell,5*cell,5*cell);
-  },[value,size]);
-  return <canvas ref={ref} width={size} height={size} style={{borderRadius:4,display:"block"}}/>;
+    if(window.QRBundle){ setReady(true); return; }
+    const s = document.createElement("script");
+    s.src = "qrcode_bundle.js";
+    s.onload = () => setReady(true);
+    document.head.appendChild(s);
+  },[]);
+
+  useEffect(()=>{
+    if(!ready || !ref.current || !window.QRBundle) return;
+    const QR = window.QRBundle.QRCodeLib;
+    QR.toCanvas(ref.current, value, {
+      width: size,
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: "#111111", light: "#ffffff" },
+    }, (err) => { if(err) console.error("QR render error:", err); });
+  },[ready, value, size]);
+
+  if(!ready) return (
+    <div style={{width:size,height:size,background:"#fff",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <span style={{fontSize:11,color:"#999",fontFamily:"sans-serif"}}>Lädt…</span>
+    </div>
+  );
+
+  return <canvas ref={ref} style={{borderRadius:4,display:"block",width:size,height:size}}/>;
 }
 
 // ─── Demo Data ────────────────────────────────────────────────────────────────
