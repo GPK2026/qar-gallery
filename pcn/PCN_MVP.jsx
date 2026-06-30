@@ -415,6 +415,9 @@ function PCNInner() {
   const [showAddRem, setShowAddRem] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(null);
   const [showEditVehicle, setShowEditVehicle] = useState(null); // vehicleId
+  const [showContactAuth, setShowContactAuth] = useState(null); // vehicleId — triggers login/register/guest sheet
+  const [contactAuthMode, setContactAuthMode] = useState("guest"); // "guest" | "login" | "register"
+  const [contactAuthForm, setContactAuthForm] = useState({name:"",email:"",code:""});
   const [editForm, setEditForm] = useState({});
   const [imgUploading, setImgUploading] = useState(false);
   const [lightbox, setLightbox]       = useState(null); // {images:[], index:0}
@@ -758,6 +761,34 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     toast_("Anonyme Nachricht gestartet 🔒");
   };
 
+  // ── Triggered from the public-view "Nachricht senden" sheet ──
+  // Logs in / registers / creates guest, then immediately opens the chat
+  const handleContactAuth = async () => {
+    const DB = window.PCN_DB;
+    const { name, email, code } = contactAuthForm;
+    if(!email) { toast_("E-Mail angeben","err"); return; }
+    let result;
+    if(contactAuthMode === "guest"){
+      if(!name) { toast_("Name angeben","err"); return; }
+      result = await DB.auth.registerGuest(name, email);
+    } else if(contactAuthMode === "register"){
+      if(!name) { toast_("Name angeben","err"); return; }
+      if(code.toUpperCase() !== CLUB_CODE) { toast_("Falscher Club-Code","err"); return; }
+      result = await DB.auth.register(name, email, code);
+    } else {
+      result = await DB.auth.login(email);
+    }
+    if(result.error){ toast_(result.error,"err"); return; }
+    const u = result.data;
+    setMe(u);
+    setAllUsers(prev=>({...prev,[u.id]:u}));
+    const vehicleId = showContactAuth;
+    setShowContactAuth(null);
+    setContactAuthForm({name:"",email:"",code:""});
+    toast_(`Willkommen, ${u.name}! 🏁`);
+    await startContact(vehicleId);
+  };
+
   const loadDemo = async () => {
     const DB = window.PCN_DB;
     if(DB && DB.backend === "local"){
@@ -1017,7 +1048,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             {/* CHAT — always visible for visitors (non-owners), opens anonymous chat */}
             {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
               <button
-                onClick={()=>{ if(me){ startContact(v.id); } else { toast_("App öffnen um Nachrichten zu senden","err"); }}}
+                onClick={()=>{ if(me){ startContact(v.id); } else { setContactAuthMode("guest"); setShowContactAuth(v.id); }}}
                 style={{display:"flex",alignItems:"center",gap:12,background:C.red,border:"none",
                   borderRadius:12,padding:"14px 16px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#fff",width:"100%"}}>
                 <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>💬</div>
@@ -1095,6 +1126,54 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           </div>
           {me&&<button className="btn sm ghost" style={{width:"100%",marginTop:10}} onClick={()=>setScreen(viewV?"vehicle":"app")}>← Zurück</button>}
         </div>
+
+        {/* ── CONTACT AUTH SHEET — Login/Register/Guest before sending message ── */}
+        {showContactAuth&&(
+          <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}}>
+            <div className="sheet">
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>💬 Nachricht senden</div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:18}}>Um eine Nachricht zu senden, identifiziere dich kurz</div>
+
+              <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:16}}>
+                {[["guest","Als Gast"],["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
+                  <button key={m} onClick={()=>setContactAuthMode(m)}
+                    style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:12,
+                      background:contactAuthMode===m?C.red:"transparent",color:contactAuthMode===m?"#fff":C.muted,transition:"all .15s"}}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {contactAuthMode==="guest"&&(
+                <div style={{fontSize:11,color:C.muted,marginBottom:14,lineHeight:1.6}}>
+                  Kein Club-Account nötig — nur Name und E-Mail für die Nachrichten-Zustellung.
+                </div>
+              )}
+
+              {(contactAuthMode==="guest"||contactAuthMode==="register")&&(
+                <input className="inp" placeholder="Dein Name" style={{marginBottom:8}}
+                  value={contactAuthForm.name} onChange={e=>setContactAuthForm(p=>({...p,name:e.target.value}))}/>
+              )}
+
+              {contactAuthMode==="register"&&(
+                <input className="inp" placeholder="Club-Code" style={{marginBottom:8,textTransform:"uppercase",letterSpacing:2,textAlign:"center",fontWeight:700}}
+                  value={contactAuthForm.code} onChange={e=>setContactAuthForm(p=>({...p,code:e.target.value}))}/>
+              )}
+
+              <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:16}}
+                value={contactAuthForm.email} onChange={e=>setContactAuthForm(p=>({...p,email:e.target.value}))}
+                onKeyDown={e=>{if(e.key==="Enter")handleContactAuth();}}/>
+
+              <button className="btn" style={{width:"100%"}} onClick={handleContactAuth}>
+                {contactAuthMode==="guest"?"Weiter zur Nachricht →":contactAuthMode==="login"?"Anmelden →":"Konto erstellen →"}
+              </button>
+
+              {contactAuthMode==="login"&&(
+                <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>Kein Passwort nötig — nur deine E-Mail</div>
+              )}
+            </div>
+          </div>
+        )}
 
       {/* ── OVERLAYS (rendered in every screen) ── */}
       {showStatusPicker&&(
@@ -1555,7 +1634,55 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           </div>
         )}
 
-        {/* ── OVERLAYS (rendered in every screen) ── */}
+          {/* ── CONTACT AUTH SHEET — Login/Register/Guest before sending message ── */}
+        {showContactAuth&&(
+          <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}}>
+            <div className="sheet">
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>💬 Nachricht senden</div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:18}}>Um eine Nachricht zu senden, identifiziere dich kurz</div>
+
+              <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:16}}>
+                {[["guest","Als Gast"],["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
+                  <button key={m} onClick={()=>setContactAuthMode(m)}
+                    style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:12,
+                      background:contactAuthMode===m?C.red:"transparent",color:contactAuthMode===m?"#fff":C.muted,transition:"all .15s"}}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {contactAuthMode==="guest"&&(
+                <div style={{fontSize:11,color:C.muted,marginBottom:14,lineHeight:1.6}}>
+                  Kein Club-Account nötig — nur Name und E-Mail für die Nachrichten-Zustellung.
+                </div>
+              )}
+
+              {(contactAuthMode==="guest"||contactAuthMode==="register")&&(
+                <input className="inp" placeholder="Dein Name" style={{marginBottom:8}}
+                  value={contactAuthForm.name} onChange={e=>setContactAuthForm(p=>({...p,name:e.target.value}))}/>
+              )}
+
+              {contactAuthMode==="register"&&(
+                <input className="inp" placeholder="Club-Code" style={{marginBottom:8,textTransform:"uppercase",letterSpacing:2,textAlign:"center",fontWeight:700}}
+                  value={contactAuthForm.code} onChange={e=>setContactAuthForm(p=>({...p,code:e.target.value}))}/>
+              )}
+
+              <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:16}}
+                value={contactAuthForm.email} onChange={e=>setContactAuthForm(p=>({...p,email:e.target.value}))}
+                onKeyDown={e=>{if(e.key==="Enter")handleContactAuth();}}/>
+
+              <button className="btn" style={{width:"100%"}} onClick={handleContactAuth}>
+                {contactAuthMode==="guest"?"Weiter zur Nachricht →":contactAuthMode==="login"?"Anmelden →":"Konto erstellen →"}
+              </button>
+
+              {contactAuthMode==="login"&&(
+                <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>Kein Passwort nötig — nur deine E-Mail</div>
+              )}
+            </div>
+          </div>
+        )}
+
+      {/* ── OVERLAYS (rendered in every screen) ── */}
         {showStatusPicker&&(
           <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
             <div className="sheet">
