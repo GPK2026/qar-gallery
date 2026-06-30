@@ -58,25 +58,25 @@ const DEF_PRIVACY = {
 // Fully defensive: never throws, always falls back gracefully
 function QRCodeCanvas({value, size=140}) {
   const ref = useRef(null);
-  const [status, setStatus] = useState(window.QRBundle ? "ready" : "loading");
+  const [status, setStatus] = useState(window.QRCodeLib ? "ready" : "loading");
 
   useEffect(()=>{
-    if(window.QRBundle){ setStatus("ready"); return; }
+    if(window.QRCodeLib){ setStatus("ready"); return; }
     let cancelled = false;
     const s = document.createElement("script");
     s.src = "qrcode_bundle.js";
-    s.onload = () => { if(!cancelled) setStatus(window.QRBundle ? "ready" : "error"); };
+    s.onload = () => { if(!cancelled) setStatus(window.QRCodeLib ? "ready" : "error"); };
     s.onerror = () => { if(!cancelled) setStatus("error"); };
     document.head.appendChild(s);
     // Fallback timeout — if script never loads, show fallback after 3s
-    const timer = setTimeout(()=>{ if(!cancelled && !window.QRBundle) setStatus("error"); }, 3000);
+    const timer = setTimeout(()=>{ if(!cancelled && !window.QRCodeLib) setStatus("error"); }, 3000);
     return () => { cancelled = true; clearTimeout(timer); };
   },[]);
 
   useEffect(()=>{
-    if(status !== "ready" || !ref.current || !window.QRBundle) return;
+    if(status !== "ready" || !ref.current || !window.QRCodeLib) return;
     try {
-      const QR = window.QRBundle.QRCodeLib;
+      const QR = window.QRCodeLib;
       QR.toCanvas(ref.current, value, {
         width: size, margin: 1, errorCorrectionLevel: "M",
         color: { dark: "#111111", light: "#ffffff" },
