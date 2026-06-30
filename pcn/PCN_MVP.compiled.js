@@ -902,7 +902,8 @@
     onBack,
     onSend,
     onMarkRead,
-    onViewVehicle
+    onViewVehicle,
+    onUpgrade
   }) {
     const [msg, setMsg] = (0, _react.useState)("");
     const endRef = (0, _react.useRef)(null);
@@ -910,6 +911,7 @@
       name: "Mitglied"
     };
     const v = vehicles[thread.vehicleId];
+    const isGuest = me?.role === "guest";
     (0, _react.useEffect)(() => {
       endRef.current?.scrollIntoView({
         behavior: "smooth"
@@ -986,7 +988,43 @@
         fontSize: 11,
         flexShrink: 0
       }
-    }, "Akte →")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Akte →")), isGuest && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: `${C.gold}14`,
+        borderBottom: `1px solid ${C.gold}33`,
+        padding: "10px 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 16,
+        flexShrink: 0
+      }
+    }, "👋"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        flex: 1,
+        fontSize: 11,
+        color: C.white,
+        lineHeight: 1.4
+      }
+    }, "Du schreibst als ", /*#__PURE__*/_react.default.createElement("strong", null, "Gast"), ". Mitglieder bekommen eigene Fahrzeugakte & Event-Zugang."), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: onUpgrade,
+      style: {
+        background: C.gold,
+        border: "none",
+        borderRadius: 7,
+        padding: "6px 11px",
+        color: "#0a0a0a",
+        fontWeight: 800,
+        fontSize: 11,
+        cursor: "pointer",
+        flexShrink: 0,
+        fontFamily: "'Barlow',sans-serif"
+      }
+    }, "Mitglied werden")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         flex: 1,
         overflowY: "auto",
@@ -2923,12 +2961,57 @@
         }
       }, label))), contactAuthMode === "guest" && /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 11,
-          color: C.muted,
-          marginBottom: 14,
-          lineHeight: 1.6
+          background: "#141414",
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          padding: "14px",
+          marginBottom: 16
         }
-      }, "Kein Club-Account nötig — nur Name und E-Mail für die Nachrichten-Zustellung."), (contactAuthMode === "guest" || contactAuthMode === "register") && /*#__PURE__*/_react.default.createElement("input", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: C.muted,
+          lineHeight: 1.6,
+          marginBottom: 10
+        }
+      }, "Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht."), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
+          color: C.gold,
+          textTransform: "uppercase",
+          letterSpacing: 1,
+          marginBottom: 8
+        }
+      }, "Als PCN-Mitglied bekommst du zusätzlich"), [["🚗", "Eigene digitale Fahrzeugakte"], ["📱", "QR-Code fürs eigene Auto"], ["🏁", "Direkte Anmeldung zu Club-Events"]].map(([icon, text]) => /*#__PURE__*/_react.default.createElement("div", {
+        key: text,
+        style: {
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          fontSize: 12,
+          color: C.white,
+          marginBottom: 5
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 13,
+          flexShrink: 0
+        }
+      }, icon), /*#__PURE__*/_react.default.createElement("span", null, text))), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => setContactAuthMode("register"),
+        style: {
+          background: "none",
+          border: "none",
+          color: C.red,
+          fontWeight: 700,
+          fontSize: 12,
+          cursor: "pointer",
+          padding: 0,
+          marginTop: 8,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "Stattdessen Mitglied werden →")), (contactAuthMode === "guest" || contactAuthMode === "register") && /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
         placeholder: "Dein Name",
         style: {
@@ -4356,12 +4439,57 @@
         }
       }, label))), contactAuthMode === "guest" && /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 11,
-          color: C.muted,
-          marginBottom: 14,
-          lineHeight: 1.6
+          background: "#141414",
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          padding: "14px",
+          marginBottom: 16
         }
-      }, "Kein Club-Account nötig — nur Name und E-Mail für die Nachrichten-Zustellung."), (contactAuthMode === "guest" || contactAuthMode === "register") && /*#__PURE__*/_react.default.createElement("input", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: C.muted,
+          lineHeight: 1.6,
+          marginBottom: 10
+        }
+      }, "Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht."), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
+          color: C.gold,
+          textTransform: "uppercase",
+          letterSpacing: 1,
+          marginBottom: 8
+        }
+      }, "Als PCN-Mitglied bekommst du zusätzlich"), [["🚗", "Eigene digitale Fahrzeugakte"], ["📱", "QR-Code fürs eigene Auto"], ["🏁", "Direkte Anmeldung zu Club-Events"]].map(([icon, text]) => /*#__PURE__*/_react.default.createElement("div", {
+        key: text,
+        style: {
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          fontSize: 12,
+          color: C.white,
+          marginBottom: 5
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 13,
+          flexShrink: 0
+        }
+      }, icon), /*#__PURE__*/_react.default.createElement("span", null, text))), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => setContactAuthMode("register"),
+        style: {
+          background: "none",
+          border: "none",
+          color: C.red,
+          fontWeight: 700,
+          fontSize: 12,
+          cursor: "pointer",
+          padding: 0,
+          marginTop: 8,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "Stattdessen Mitglied werden →")), (contactAuthMode === "guest" || contactAuthMode === "register") && /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
         placeholder: "Dein Name",
         style: {
@@ -4777,6 +4905,17 @@
         onViewVehicle: v => {
           setViewV(v);
           setScreen("vehicle");
+        },
+        onUpgrade: () => {
+          // Pre-fill registration form with the guest's existing name/email — frictionless upgrade
+          setLoginForm({
+            mode: "register",
+            code: "",
+            name: me?.name || "",
+            email: me?.email || ""
+          });
+          setScreen("splash");
+          toast_("Fast geschafft — gib nur noch den Club-Code ein 🏁");
         }
       }));
     }
