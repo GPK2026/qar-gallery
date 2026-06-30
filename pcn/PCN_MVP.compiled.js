@@ -168,9 +168,9 @@
     size = 140
   }) {
     const ref = (0, _react.useRef)(null);
-    const [status, setStatus] = (0, _react.useState)(window.QRBundle ? "ready" : "loading");
+    const [status, setStatus] = (0, _react.useState)(window.QRCodeLib ? "ready" : "loading");
     (0, _react.useEffect)(() => {
-      if (window.QRBundle) {
+      if (window.QRCodeLib) {
         setStatus("ready");
         return;
       }
@@ -178,7 +178,7 @@
       const s = document.createElement("script");
       s.src = "qrcode_bundle.js";
       s.onload = () => {
-        if (!cancelled) setStatus(window.QRBundle ? "ready" : "error");
+        if (!cancelled) setStatus(window.QRCodeLib ? "ready" : "error");
       };
       s.onerror = () => {
         if (!cancelled) setStatus("error");
@@ -186,7 +186,7 @@
       document.head.appendChild(s);
       // Fallback timeout — if script never loads, show fallback after 3s
       const timer = setTimeout(() => {
-        if (!cancelled && !window.QRBundle) setStatus("error");
+        if (!cancelled && !window.QRCodeLib) setStatus("error");
       }, 3000);
       return () => {
         cancelled = true;
@@ -194,9 +194,9 @@
       };
     }, []);
     (0, _react.useEffect)(() => {
-      if (status !== "ready" || !ref.current || !window.QRBundle) return;
+      if (status !== "ready" || !ref.current || !window.QRCodeLib) return;
       try {
-        const QR = window.QRBundle.QRCodeLib;
+        const QR = window.QRCodeLib;
         QR.toCanvas(ref.current, value, {
           width: size,
           margin: 1,
