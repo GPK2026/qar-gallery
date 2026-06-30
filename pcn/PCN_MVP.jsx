@@ -884,7 +884,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               </a>
             )}
 
-            {/* CHAT — prominent red message button, always show for non-owners */}
+            {/* CHAT — always visible for visitors (non-owners), opens anonymous chat */}
             {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
               <button
                 onClick={()=>{ if(me){ startContact(v.id); } else { toast_("App öffnen um Nachrichten zu senden","err"); }}}
@@ -892,31 +892,10 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                   borderRadius:12,padding:"14px 16px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#fff",width:"100%"}}>
                 <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>💬</div>
                 <div style={{flex:1,textAlign:"left"}}>
-                  <div style={{fontWeight:800,fontSize:15}}>Nachricht an Fahrer(in)</div>
+                  <div style={{fontWeight:800,fontSize:15}}>Nachricht an Fahrer(in) senden</div>
                   <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:1}}>Anonym · Besitzer antwortet per App</div>
                 </div>
                 <span style={{fontSize:20,color:"rgba(255,255,255,.7)"}}>›</span>
-              </button>
-            )}
-
-            {/* STATUS — for owner only */}
-            {me&&(v.owner===me.email||v.userId===me.id)&&(
-              <button onClick={()=>setShowStatusPicker(v.id)}
-                style={{display:"flex",alignItems:"center",gap:12,
-                  background:getActiveStatus(v.id)?`${C.amber}22`:"transparent",
-                  border:`1.5px solid ${getActiveStatus(v.id)?C.amber+"66":C.border}`,
-                  borderRadius:12,padding:"12px 16px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",width:"100%"}}>
-                <div style={{width:36,height:36,borderRadius:"50%",background:`${C.amber}22`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
-                  {getActiveStatus(v.id)?getActiveStatus(v.id).icon:"📍"}
-                </div>
-                <div style={{flex:1,textAlign:"left"}}>
-                  <div style={{fontWeight:700,fontSize:14,color:getActiveStatus(v.id)?C.amber:C.white}}>
-                    {getActiveStatus(v.id)?getActiveStatus(v.id).text:"Status für Besucher setzen"}
-                  </div>
-                  <div style={{fontSize:11,color:C.muted,marginTop:1}}>
-                    {getActiveStatus(v.id)?`Noch ca. ${Math.max(0,Math.ceil((getActiveStatus(v.id).expiresAt-Date.now())/60000))} Min`:"Wird beim Scannen angezeigt"}
-                  </div>
-                </div>
               </button>
             )}
 
@@ -924,7 +903,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         </div>
 
         <div style={{padding:"14px 16px",maxWidth:520,margin:"0 auto"}}>
-          {/* ── Status Banner ── */}
+          {/* ── Status Banner — READ ONLY, set via Akte only ── */}
           {(()=>{
             const s = getActiveStatus(v.id);
             if(!s) return null;
