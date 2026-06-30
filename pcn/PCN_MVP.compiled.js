@@ -1400,6 +1400,31 @@
       })();
     }, []);
 
+    // ── Live message polling — checks for new messages every 5s while logged in ──
+    // (No real-time websockets in this MVP, so we poll. Cheap on Supabase free tier.)
+    (0, _react.useEffect)(() => {
+      if (!me) return;
+      const DB = window.PCN_DB;
+      if (!DB) return;
+      const poll = async () => {
+        const {
+          data: liveThreads
+        } = await DB.threads.list(me.id);
+        if (!liveThreads) return;
+        setThreads(prev => {
+          const next = {
+            ...prev
+          };
+          liveThreads.forEach(t => {
+            next[t.id] = t;
+          });
+          return next;
+        });
+      };
+      const interval = setInterval(poll, 5000);
+      return () => clearInterval(interval);
+    }, [me?.id]);
+
     // ── Scanner ──────────────────────────────────────────────────────────────────
     const openScanner = () => {
       setScannerOpen(true);
@@ -1685,10 +1710,33 @@
       }));
     };
     const startContact = async vehicleId => {
-      const v = vehicles[vehicleId] || DEMO_VEHICLES[vehicleId];
-      if (!v || v.owner === me?.email) return;
-      // Find owner in allUsers or create anonymous reference
-      const ownerId = v.userId || Object.values(allUsers).find(u => u.email === v.owner)?.id || "anon_" + vehicleId;
+      const DB = window.PCN_DB;
+      // Always fetch the authoritative vehicle record from the DB first —
+      // local `vehicles` state is empty for guests, and DEMO_VEHICLES is stale/static.
+      let v = vehicles[vehicleId];
+      if (!v && DB) {
+        const qarGuess = Object.values(DEMO_VEHICLES).find(dv => dv.id === vehicleId)?.qarId;
+        if (qarGuess) {
+          const {
+            data: realV
+          } = await DB.vehicles.getPublic(qarGuess);
+          if (realV) v = realV;
+        }
+      }
+      if (!v) v = DEMO_VEHICLES[vehicleId]; // last-resort fallback for pure offline demo
+      if (!v) {
+        toast_("Fahrzeug nicht gefunden", "err");
+        return;
+      }
+      if (v.owner === me?.email || v.userId === me?.id) {
+        toast_("Das ist dein eigenes Fahrzeug", "err");
+        return;
+      }
+      const ownerId = v.userId || v.owner; // v.userId is the real Supabase UUID after _mapVehicle
+      if (!ownerId) {
+        toast_("Besitzer nicht gefunden", "err");
+        return;
+      }
       if (!allUsers[ownerId]) {
         setAllUsers(prev => ({
           ...prev,
@@ -1700,20 +1748,28 @@
           }
         }));
       }
-      // Check for existing thread
-      const existing = Object.values(threads).find(t => t.vehicleId === vehicleId && t.participants.includes(me.id));
+      // Check for existing thread (re-check from DB in case state is stale)
+      const {
+        data: myThreadsLive
+      } = DB ? await DB.threads.list(me.id) : {
+        data: []
+      };
+      const existing = (myThreadsLive || Object.values(threads)).find(t => t.vehicleId === vehicleId && t.participants.includes(me.id));
       if (existing) {
+        setThreads(prev => ({
+          ...prev,
+          [existing.id]: existing
+        }));
         setActiveThread(existing.id);
         setScreen("chat");
         return;
       }
-      const DB = window.PCN_DB;
       const {
         data: t,
         error
       } = await DB.threads.create([me.id, ownerId], vehicleId, `${v.hersteller} ${v.modell}`);
       if (error) {
-        toast_("Fehler", "err");
+        toast_("Fehler: " + error, "err");
         return;
       }
       await DB.threads.send(t.id, "system", `Kontakt über QAR-ID: ${v.qarId}`);
