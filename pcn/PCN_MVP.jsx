@@ -1,7 +1,31 @@
 // PCN — Porsche Club Nürburgring · Digitale Clubplattform v3
 // Vollständig neu geschrieben — alle Bugs behoben
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+
+// ─── Error Boundary — catches crashes, shows message instead of black screen ──
+class ErrorBoundary extends React.Component {
+  constructor(props){ super(props); this.state={hasError:false,error:null}; }
+  static getDerivedStateFromError(error){ return {hasError:true,error}; }
+  componentDidCatch(error,info){ console.error("[PCN]",error,info); }
+  render(){
+    if(!this.state.hasError) return this.props.children;
+    return (
+      <div style={{minHeight:"100vh",background:"#0a0a0a",display:"flex",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"sans-serif"}}>
+        <div style={{background:"#191919",border:"1px solid #e3061344",borderRadius:18,padding:"28px 24px",maxWidth:380,textAlign:"center"}}>
+          <div style={{fontSize:44,marginBottom:14}}>⚠️</div>
+          <div style={{fontSize:17,fontWeight:800,color:"#fff",marginBottom:8}}>Etwas ist schiefgelaufen</div>
+          <div style={{fontSize:12,color:"#999",marginBottom:6,lineHeight:1.6,fontFamily:"monospace",wordBreak:"break-word"}}>{this.state.error?.message||"Unbekannter Fehler"}</div>
+          <div style={{fontSize:11,color:"#666",marginBottom:20}}>Deine Daten sind sicher gespeichert.</div>
+          <button onClick={()=>window.location.reload()}
+            style={{background:"#e30613",color:"#fff",border:"none",borderRadius:10,padding:"12px 28px",fontWeight:800,fontSize:14,cursor:"pointer",width:"100%"}}>
+            🔄 Neu laden
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2,9).toUpperCase();
@@ -31,32 +55,48 @@ const DEF_PRIVACY = {
 };
 
 // ─── QR Code (Real, scannable — uses bundled qrcode.js library) ──────────────
+// Fully defensive: never throws, always falls back gracefully
 function QRCodeCanvas({value, size=140}) {
   const ref = useRef(null);
-  const [ready, setReady] = useState(!!window.QRBundle);
+  const [status, setStatus] = useState(window.QRBundle ? "ready" : "loading");
 
   useEffect(()=>{
-    if(window.QRBundle){ setReady(true); return; }
+    if(window.QRBundle){ setStatus("ready"); return; }
+    let cancelled = false;
     const s = document.createElement("script");
     s.src = "qrcode_bundle.js";
-    s.onload = () => setReady(true);
+    s.onload = () => { if(!cancelled) setStatus(window.QRBundle ? "ready" : "error"); };
+    s.onerror = () => { if(!cancelled) setStatus("error"); };
     document.head.appendChild(s);
+    // Fallback timeout — if script never loads, show fallback after 3s
+    const timer = setTimeout(()=>{ if(!cancelled && !window.QRBundle) setStatus("error"); }, 3000);
+    return () => { cancelled = true; clearTimeout(timer); };
   },[]);
 
   useEffect(()=>{
-    if(!ready || !ref.current || !window.QRBundle) return;
-    const QR = window.QRBundle.QRCodeLib;
-    QR.toCanvas(ref.current, value, {
-      width: size,
-      margin: 1,
-      errorCorrectionLevel: "M",
-      color: { dark: "#111111", light: "#ffffff" },
-    }, (err) => { if(err) console.error("QR render error:", err); });
-  },[ready, value, size]);
+    if(status !== "ready" || !ref.current || !window.QRBundle) return;
+    try {
+      const QR = window.QRBundle.QRCodeLib;
+      QR.toCanvas(ref.current, value, {
+        width: size, margin: 1, errorCorrectionLevel: "M",
+        color: { dark: "#111111", light: "#ffffff" },
+      }, (err) => { if(err){ console.error("QR render error:", err); setStatus("error"); } });
+    } catch(e) {
+      console.error("QR exception:", e);
+      setStatus("error");
+    }
+  },[status, value, size]);
 
-  if(!ready) return (
+  if(status === "loading") return (
     <div style={{width:size,height:size,background:"#fff",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <span style={{fontSize:11,color:"#999",fontFamily:"sans-serif"}}>Lädt…</span>
+      <span style={{fontSize:10,color:"#999",fontFamily:"sans-serif"}}>Lädt…</span>
+    </div>
+  );
+
+  if(status === "error") return (
+    <div style={{width:size,height:size,background:"#fff",borderRadius:4,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:8,gap:4}}>
+      <span style={{fontSize:20}}>📱</span>
+      <span style={{fontSize:9,color:"#666",fontFamily:"sans-serif",textAlign:"center",wordBreak:"break-all"}}>{value}</span>
     </div>
   );
 
@@ -341,6 +381,10 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function PCN() {
+  return <ErrorBoundary><PCNInner/></ErrorBoundary>;
+}
+
+function PCNInner() {
   // ── Core state ──────────────────────────────────────────────────────────────
   const [screen, setScreen]       = useState("splash");
   const [tab, setTab]             = useState("dashboard");
