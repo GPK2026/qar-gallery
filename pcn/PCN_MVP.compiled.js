@@ -907,6 +907,7 @@
   }) {
     const [msg, setMsg] = (0, _react.useState)("");
     const endRef = (0, _react.useRef)(null);
+    const rootRef = (0, _react.useRef)(null);
     const other = Object.values(allUsers).find(u => thread.participants.includes(u.id) && u.id !== me?.id) || {
       name: "Mitglied"
     };
@@ -920,12 +921,32 @@
     (0, _react.useEffect)(() => {
       if (onMarkRead) onMarkRead(thread.id);
     }, [thread.id]);
+
+    // ── iOS keyboard fix: resize root to visualViewport height ─────────────────
+    (0, _react.useEffect)(() => {
+      if (!window.visualViewport) return;
+      const onResize = () => {
+        if (rootRef.current) {
+          rootRef.current.style.height = window.visualViewport.height + "px";
+        }
+      };
+      window.visualViewport.addEventListener("resize", onResize);
+      window.visualViewport.addEventListener("scroll", onResize);
+      onResize();
+      return () => {
+        window.visualViewport.removeEventListener("resize", onResize);
+        window.visualViewport.removeEventListener("scroll", onResize);
+      };
+    }, []);
     return /*#__PURE__*/_react.default.createElement("div", {
+      ref: rootRef,
       style: {
         height: "100vh",
         background: C.black,
         display: "flex",
-        flexDirection: "column"
+        flexDirection: "column",
+        position: "fixed",
+        inset: 0
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
@@ -1747,7 +1768,13 @@
         }
       }));
     };
-    const startContact = async vehicleId => {
+    const startContact = async (vehicleId, asUser) => {
+      // asUser: pass fresh user object directly to avoid stale React state closure (e.g. after guest login)
+      const currentMe = asUser || me;
+      if (!currentMe) {
+        toast_("Bitte zuerst anmelden", "err");
+        return;
+      }
       const DB = window.PCN_DB;
       // Always fetch the authoritative vehicle record from the DB first —
       // local `vehicles` state is empty for guests, and DEMO_VEHICLES is stale/static.
@@ -1766,11 +1793,11 @@
         toast_("Fahrzeug nicht gefunden", "err");
         return;
       }
-      if (v.owner === me?.email || v.userId === me?.id) {
+      if (v.owner === currentMe.email || v.userId === currentMe.id) {
         toast_("Das ist dein eigenes Fahrzeug", "err");
         return;
       }
-      const ownerId = v.userId || v.owner; // v.userId is the real Supabase UUID after _mapVehicle
+      const ownerId = v.userId || v.owner;
       if (!ownerId) {
         toast_("Besitzer nicht gefunden", "err");
         return;
@@ -1789,10 +1816,10 @@
       // Check for existing thread (re-check from DB in case state is stale)
       const {
         data: myThreadsLive
-      } = DB ? await DB.threads.list(me.id) : {
+      } = DB ? await DB.threads.list(currentMe.id) : {
         data: []
       };
-      const existing = (myThreadsLive || Object.values(threads)).find(t => t.vehicleId === vehicleId && t.participants.includes(me.id));
+      const existing = (myThreadsLive || Object.values(threads)).find(t => t.vehicleId === vehicleId && t.participants.includes(currentMe.id));
       if (existing) {
         setThreads(prev => ({
           ...prev,
@@ -1805,7 +1832,7 @@
       const {
         data: t,
         error
-      } = await DB.threads.create([me.id, ownerId], vehicleId, `${v.hersteller} ${v.modell}`);
+      } = await DB.threads.create([currentMe.id, ownerId], vehicleId, `${v.hersteller} ${v.modell}`);
       if (error) {
         toast_("Fehler: " + error, "err");
         return;
@@ -1882,7 +1909,8 @@
         code: ""
       });
       toast_(`Willkommen, ${u.name}! 🏁`);
-      await startContact(vehicleId);
+      // Pass u directly — don't rely on setMe() React state which hasn't updated yet
+      await startContact(vehicleId, u);
     };
     const loadDemo = async () => {
       const DB = window.PCN_DB;
