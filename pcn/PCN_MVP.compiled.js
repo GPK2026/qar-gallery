@@ -2245,7 +2245,7 @@
           fontWeight: 800,
           fontSize: 15
         }
-      }, "Nachricht an Fahrer(in)"), /*#__PURE__*/React.createElement("div", {
+      }, "Nachricht an Fahrer(in) senden"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 12,
           color: "rgba(255,255,255,.7)",
@@ -2256,50 +2256,7 @@
           fontSize: 20,
           color: "rgba(255,255,255,.7)"
         }
-      }, "›")), me && (v.owner === me.email || v.userId === me.id) && /*#__PURE__*/React.createElement("button", {
-        onClick: () => setShowStatusPicker(v.id),
-        style: {
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          background: getActiveStatus(v.id) ? `${C.amber}22` : "transparent",
-          border: `1.5px solid ${getActiveStatus(v.id) ? C.amber + "66" : C.border}`,
-          borderRadius: 12,
-          padding: "12px 16px",
-          cursor: "pointer",
-          fontFamily: "'Barlow',sans-serif",
-          width: "100%"
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          width: 36,
-          height: 36,
-          borderRadius: "50%",
-          background: `${C.amber}22`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 16,
-          flexShrink: 0
-        }
-      }, getActiveStatus(v.id) ? getActiveStatus(v.id).icon : "📍"), /*#__PURE__*/React.createElement("div", {
-        style: {
-          flex: 1,
-          textAlign: "left"
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontWeight: 700,
-          fontSize: 14,
-          color: getActiveStatus(v.id) ? C.amber : C.white
-        }
-      }, getActiveStatus(v.id) ? getActiveStatus(v.id).text : "Status für Besucher setzen"), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 11,
-          color: C.muted,
-          marginTop: 1
-        }
-      }, getActiveStatus(v.id) ? `Noch ca. ${Math.max(0, Math.ceil((getActiveStatus(v.id).expiresAt - Date.now()) / 60000))} Min` : "Wird beim Scannen angezeigt"))))), /*#__PURE__*/React.createElement("div", {
+      }, "›")))), /*#__PURE__*/React.createElement("div", {
         style: {
           padding: "14px 16px",
           maxWidth: 520,
