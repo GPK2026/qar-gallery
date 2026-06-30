@@ -1143,6 +1143,13 @@
     const [showAddRem, setShowAddRem] = (0, _react.useState)(false);
     const [showPrivacy, setShowPrivacy] = (0, _react.useState)(null);
     const [showEditVehicle, setShowEditVehicle] = (0, _react.useState)(null); // vehicleId
+    const [showContactAuth, setShowContactAuth] = (0, _react.useState)(null); // vehicleId — triggers login/register/guest sheet
+    const [contactAuthMode, setContactAuthMode] = (0, _react.useState)("guest"); // "guest" | "login" | "register"
+    const [contactAuthForm, setContactAuthForm] = (0, _react.useState)({
+      name: "",
+      email: "",
+      code: ""
+    });
     const [editForm, setEditForm] = (0, _react.useState)({});
     const [imgUploading, setImgUploading] = (0, _react.useState)(false);
     const [lightbox, setLightbox] = (0, _react.useState)(null); // {images:[], index:0}
@@ -1728,6 +1735,60 @@
       setActiveThread(t.id);
       setScreen("chat");
       toast_("Anonyme Nachricht gestartet 🔒");
+    };
+
+    // ── Triggered from the public-view "Nachricht senden" sheet ──
+    // Logs in / registers / creates guest, then immediately opens the chat
+    const handleContactAuth = async () => {
+      const DB = window.PCN_DB;
+      const {
+        name,
+        email,
+        code
+      } = contactAuthForm;
+      if (!email) {
+        toast_("E-Mail angeben", "err");
+        return;
+      }
+      let result;
+      if (contactAuthMode === "guest") {
+        if (!name) {
+          toast_("Name angeben", "err");
+          return;
+        }
+        result = await DB.auth.registerGuest(name, email);
+      } else if (contactAuthMode === "register") {
+        if (!name) {
+          toast_("Name angeben", "err");
+          return;
+        }
+        if (code.toUpperCase() !== CLUB_CODE) {
+          toast_("Falscher Club-Code", "err");
+          return;
+        }
+        result = await DB.auth.register(name, email, code);
+      } else {
+        result = await DB.auth.login(email);
+      }
+      if (result.error) {
+        toast_(result.error, "err");
+        return;
+      }
+      const u = result.data;
+      setMe(u);
+      setAllUsers(prev => ({
+        ...prev,
+        [u.id]: u
+      }));
+      const vehicleId = showContactAuth;
+      setShowContactAuth(null);
+      setContactAuthForm({
+        name: "",
+        email: "",
+        code: ""
+      });
+      toast_(`Willkommen, ${u.name}! 🏁`);
+      await startContact(vehicleId);
     };
     const loadDemo = async () => {
       const DB = window.PCN_DB;
@@ -2479,7 +2540,8 @@
           if (me) {
             startContact(v.id);
           } else {
-            toast_("App öffnen um Nachrichten zu senden", "err");
+            setContactAuthMode("guest");
+            setShowContactAuth(v.id);
           }
         },
         style: {
@@ -2748,7 +2810,123 @@
           marginTop: 10
         },
         onClick: () => setScreen(viewV ? "vehicle" : "app")
-      }, "← Zurück")), showStatusPicker && /*#__PURE__*/_react.default.createElement("div", {
+      }, "← Zurück")), showContactAuth && /*#__PURE__*/_react.default.createElement("div", {
+        className: "overlay",
+        style: {
+          zIndex: 550
+        },
+        onClick: e => {
+          if (e.target === e.currentTarget) {
+            setShowContactAuth(null);
+            setContactAuthForm({
+              name: "",
+              email: "",
+              code: ""
+            });
+          }
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        className: "sheet"
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontFamily: "'Barlow Condensed',sans-serif",
+          fontSize: 20,
+          fontWeight: 800,
+          color: C.white,
+          marginBottom: 4
+        }
+      }, "💬 Nachricht senden"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 18
+        }
+      }, "Um eine Nachricht zu senden, identifiziere dich kurz"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          background: "#111",
+          borderRadius: 10,
+          padding: 3,
+          marginBottom: 16
+        }
+      }, [["guest", "Als Gast"], ["login", "Anmelden"], ["register", "Registrieren"]].map(([m, label]) => /*#__PURE__*/_react.default.createElement("button", {
+        key: m,
+        onClick: () => setContactAuthMode(m),
+        style: {
+          flex: 1,
+          padding: "9px 4px",
+          border: "none",
+          borderRadius: 8,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          fontWeight: 700,
+          fontSize: 12,
+          background: contactAuthMode === m ? C.red : "transparent",
+          color: contactAuthMode === m ? "#fff" : C.muted,
+          transition: "all .15s"
+        }
+      }, label))), contactAuthMode === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 14,
+          lineHeight: 1.6
+        }
+      }, "Kein Club-Account nötig — nur Name und E-Mail für die Nachrichten-Zustellung."), (contactAuthMode === "guest" || contactAuthMode === "register") && /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "Dein Name",
+        style: {
+          marginBottom: 8
+        },
+        value: contactAuthForm.name,
+        onChange: e => setContactAuthForm(p => ({
+          ...p,
+          name: e.target.value
+        }))
+      }), contactAuthMode === "register" && /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "Club-Code",
+        style: {
+          marginBottom: 8,
+          textTransform: "uppercase",
+          letterSpacing: 2,
+          textAlign: "center",
+          fontWeight: 700
+        },
+        value: contactAuthForm.code,
+        onChange: e => setContactAuthForm(p => ({
+          ...p,
+          code: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "E-Mail",
+        type: "email",
+        style: {
+          marginBottom: 16
+        },
+        value: contactAuthForm.email,
+        onChange: e => setContactAuthForm(p => ({
+          ...p,
+          email: e.target.value
+        })),
+        onKeyDown: e => {
+          if (e.key === "Enter") handleContactAuth();
+        }
+      }), /*#__PURE__*/_react.default.createElement("button", {
+        className: "btn",
+        style: {
+          width: "100%"
+        },
+        onClick: handleContactAuth
+      }, contactAuthMode === "guest" ? "Weiter zur Nachricht →" : contactAuthMode === "login" ? "Anmelden →" : "Konto erstellen →"), contactAuthMode === "login" && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          textAlign: "center",
+          marginTop: 10,
+          fontSize: 11,
+          color: C.muted
+        }
+      }, "Kein Passwort nötig — nur deine E-Mail"))), showStatusPicker && /*#__PURE__*/_react.default.createElement("div", {
         className: "overlay",
         style: {
           zIndex: 500
@@ -4065,7 +4243,123 @@
           flex: 1
         },
         onClick: saveVehicleEdit
-      }, "Speichern ✓")))), showStatusPicker && /*#__PURE__*/_react.default.createElement("div", {
+      }, "Speichern ✓")))), showContactAuth && /*#__PURE__*/_react.default.createElement("div", {
+        className: "overlay",
+        style: {
+          zIndex: 550
+        },
+        onClick: e => {
+          if (e.target === e.currentTarget) {
+            setShowContactAuth(null);
+            setContactAuthForm({
+              name: "",
+              email: "",
+              code: ""
+            });
+          }
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        className: "sheet"
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontFamily: "'Barlow Condensed',sans-serif",
+          fontSize: 20,
+          fontWeight: 800,
+          color: C.white,
+          marginBottom: 4
+        }
+      }, "💬 Nachricht senden"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 18
+        }
+      }, "Um eine Nachricht zu senden, identifiziere dich kurz"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          background: "#111",
+          borderRadius: 10,
+          padding: 3,
+          marginBottom: 16
+        }
+      }, [["guest", "Als Gast"], ["login", "Anmelden"], ["register", "Registrieren"]].map(([m, label]) => /*#__PURE__*/_react.default.createElement("button", {
+        key: m,
+        onClick: () => setContactAuthMode(m),
+        style: {
+          flex: 1,
+          padding: "9px 4px",
+          border: "none",
+          borderRadius: 8,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          fontWeight: 700,
+          fontSize: 12,
+          background: contactAuthMode === m ? C.red : "transparent",
+          color: contactAuthMode === m ? "#fff" : C.muted,
+          transition: "all .15s"
+        }
+      }, label))), contactAuthMode === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 14,
+          lineHeight: 1.6
+        }
+      }, "Kein Club-Account nötig — nur Name und E-Mail für die Nachrichten-Zustellung."), (contactAuthMode === "guest" || contactAuthMode === "register") && /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "Dein Name",
+        style: {
+          marginBottom: 8
+        },
+        value: contactAuthForm.name,
+        onChange: e => setContactAuthForm(p => ({
+          ...p,
+          name: e.target.value
+        }))
+      }), contactAuthMode === "register" && /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "Club-Code",
+        style: {
+          marginBottom: 8,
+          textTransform: "uppercase",
+          letterSpacing: 2,
+          textAlign: "center",
+          fontWeight: 700
+        },
+        value: contactAuthForm.code,
+        onChange: e => setContactAuthForm(p => ({
+          ...p,
+          code: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "E-Mail",
+        type: "email",
+        style: {
+          marginBottom: 16
+        },
+        value: contactAuthForm.email,
+        onChange: e => setContactAuthForm(p => ({
+          ...p,
+          email: e.target.value
+        })),
+        onKeyDown: e => {
+          if (e.key === "Enter") handleContactAuth();
+        }
+      }), /*#__PURE__*/_react.default.createElement("button", {
+        className: "btn",
+        style: {
+          width: "100%"
+        },
+        onClick: handleContactAuth
+      }, contactAuthMode === "guest" ? "Weiter zur Nachricht →" : contactAuthMode === "login" ? "Anmelden →" : "Konto erstellen →"), contactAuthMode === "login" && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          textAlign: "center",
+          marginTop: 10,
+          fontSize: 11,
+          color: C.muted
+        }
+      }, "Kein Passwort nötig — nur deine E-Mail"))), showStatusPicker && /*#__PURE__*/_react.default.createElement("div", {
         className: "overlay",
         style: {
           zIndex: 500
