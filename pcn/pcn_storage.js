@@ -469,12 +469,37 @@ const PCN_STORAGE = (() => {
 
     // ── Threads ──
     async getThreads(userId) {
-      // Supabase array contains filter
-      return await supabase._q("threads","?participants=cs.{"+userId+"}&order=created_at.desc");
+      // Supabase array contains filter — embed messages via PostgREST resource embedding
+      const res = await supabase._q("threads","?participants=cs.{"+userId+"}&select=*,messages(*)&order=created_at.desc");
+      if(res.error) return res;
+      // Normalize: messages table uses from_id/created_at — map to app shape {from,text,ts,read,isSystem}
+      const mapped = (res.data||[]).map(t => ({
+        ...t,
+        messages: (t.messages||[])
+          .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))
+          .map(m=>({
+            id: m.id, from: m.from_id, text: m.text,
+            ts: new Date(m.created_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}),
+            read: m.read, isSystem: m.is_system,
+          })),
+      }));
+      return { data: mapped };
     },
     async getThread(threadId) {
-      const {data:rows,error} = await supabase._q("threads","?id=eq."+threadId);
-      return { data:rows&&rows[0]||null, error };
+      const {data:rows,error} = await supabase._q("threads","?id=eq."+threadId+"&select=*,messages(*)");
+      if(error) return { error };
+      const t = rows&&rows[0];
+      if(!t) return { data: null };
+      return { data: {
+        ...t,
+        messages: (t.messages||[])
+          .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))
+          .map(m=>({
+            id: m.id, from: m.from_id, text: m.text,
+            ts: new Date(m.created_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}),
+            read: m.read, isSystem: m.is_system,
+          })),
+      }};
     },
     async createThread(participants, vehicleId, vehicleName) {
       const res = await supabase._post("threads",{
