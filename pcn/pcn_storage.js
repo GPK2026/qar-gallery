@@ -19,7 +19,7 @@ const PCN_STORAGE = (() => {
 
   // ── CONFIG ─────────────────────────────────────────────────────────────────
   // Change this to switch backends
-  const BACKEND = "local"; // "local" | "supabase" | "api"  ← Switch to "supabase" when ready
+  const BACKEND = "supabase"; // "local" | "supabase" | "api"  ← active: Supabase
 
   // Supabase credentials (fill in when ready)
   const SUPABASE_URL  = "https://xsyuhfleesstrchcwspg.supabase.co"; // e.g. "https://xxxx.supabase.co"
@@ -235,6 +235,24 @@ const PCN_STORAGE = (() => {
       return { data: (all[vehicleId] || []).sort((a,b) => new Date(b.date)-new Date(a.date)) };
     },
 
+    // ── Vehicle Status ──
+    async getStatus(vehicleId) {
+      const all = local._get("vehicleStatus") || {};
+      return { data: all[vehicleId] || null };
+    },
+    async setStatus(vehicleId, status) {
+      const all = local._get("vehicleStatus") || {};
+      all[vehicleId] = status;
+      local._set("vehicleStatus", all);
+      return { data: status };
+    },
+    async clearStatus(vehicleId) {
+      const all = local._get("vehicleStatus") || {};
+      delete all[vehicleId];
+      local._set("vehicleStatus", all);
+      return { data: true };
+    },
+
     // ── Stats ──
     async getStats(userId) {
       const [v, r] = await Promise.all([local.getVehicles(userId), local.getReminders(userId)]);
@@ -319,9 +337,24 @@ const PCN_STORAGE = (() => {
       localStorage.removeItem("pcn_session"); return { data: true };
     },
 
+    // ── Field mapping: Supabase snake_case → App camelCase ──
+    _mapVehicle: (row) => row ? ({
+      id: row.id, qarId: row.qar_id, userId: row.user_id, owner: row.user_id,
+      hersteller: row.hersteller, modell: row.modell, baujahr: row.baujahr,
+      kraftstoff: row.kraftstoff, getriebe: row.getriebe, farbe: row.farbe,
+      kennzeichen: row.kennzeichen, fin: row.fin,
+      kilometerstand: row.kilometerstand, tuev_faelligkeit: row.tuev_faelligkeit,
+      marktwert: row.marktwert, zustand: row.zustand,
+      besonderheiten: row.besonderheiten, image: row.image,
+      images: row.images||[], phone: row.phone,
+      privacy: row.privacy||{}, createdAt: row.created_at, updatedAt: row.updated_at,
+    }) : null,
+
     // ── Vehicles ──
     async getVehicles(userId) {
-      return await supabase._q("vehicles","?user_id=eq."+userId+"&order=created_at.asc");
+      const res = await supabase._q("vehicles","?user_id=eq."+userId+"&order=created_at.asc");
+      if(res.error) return res;
+      return { data: (res.data||[]).map(supabase._mapVehicle) };
     },
     async saveVehicle(vehicle) {
       const row = {
@@ -333,21 +366,24 @@ const PCN_STORAGE = (() => {
         kilometerstand:vehicle.kilometerstand, tuev_faelligkeit:vehicle.tuev_faelligkeit,
         marktwert:vehicle.marktwert, zustand:vehicle.zustand,
         besonderheiten:vehicle.besonderheiten, image:vehicle.image,
+        images: vehicle.images||[], phone: vehicle.phone||null,
         privacy:vehicle.privacy||{}, updated_at:now(),
       };
       if(vehicle.id) {
         const res = await supabase._patch("vehicles","id=eq."+vehicle.id, row);
-        return { data: {...vehicle,...row,id:vehicle.id,qarId:row.qar_id} };
+        if(res.error) return res;
+        return { data: supabase._mapVehicle(res.data) };
       }
       row.created_at = now();
       const res = await supabase._post("vehicles", row);
       if(res.error) return res;
-      return { data: {...vehicle,...row,id:res.data.id,qarId:res.data.qar_id} };
+      return { data: supabase._mapVehicle(res.data) };
     },
     async deleteVehicle(id) { return await supabase._delete("vehicles","id=eq."+id); },
     async getPublicVehicle(qarId) {
       const {data:rows,error} = await supabase._q("vehicles","?qar_id=eq."+encodeURIComponent(qarId));
-      return { data: rows&&rows[0]||null, error };
+      if(error) return { error };
+      return { data: rows&&rows[0]?supabase._mapVehicle(rows[0]):null };
     },
 
     // ── Logbook ──
@@ -435,6 +471,28 @@ const PCN_STORAGE = (() => {
         events:(p.data||[]).length, threads:(t.data||[]).length,
       }};
     },
+    // ── Vehicle Status ("Komme in 5 Min zurück") ──
+    async getStatus(vehicleId) {
+      const {data:rows,error} = await supabase._q("vehicle_status","?vehicle_id=eq."+vehicleId);
+      if(error) return { error };
+      const row = rows&&rows[0];
+      if(!row) return { data: null };
+      return { data: { text:row.text, icon:row.icon, expiresAt: row.expires_at?new Date(row.expires_at).getTime():null, setAt: row.set_at?new Date(row.set_at).getTime():null } };
+    },
+    async setStatus(vehicleId, status) {
+      const row = { vehicle_id:vehicleId, icon:status.icon, text:status.text,
+        expires_at: status.expiresAt?new Date(status.expiresAt).toISOString():null,
+        set_at: now() };
+      // Upsert: try patch first, fallback to insert
+      const existing = await supabase._q("vehicle_status","?vehicle_id=eq."+vehicleId);
+      if(existing.data&&existing.data.length>0){
+        return await supabase._patch("vehicle_status","vehicle_id=eq."+vehicleId, row);
+      }
+      return await supabase._post("vehicle_status", row);
+    },
+    async clearStatus(vehicleId) {
+      return await supabase._delete("vehicle_status","vehicle_id=eq."+vehicleId);
+    },
   };
 
   // ── API BACKEND ─────────────────────────────────────────────────────────────
@@ -479,6 +537,9 @@ const PCN_STORAGE = (() => {
       save:       (v)      => db.saveVehicle(v),
       delete:     (id)     => db.deleteVehicle(id),
       getPublic:  (qarId)  => db.getPublicVehicle(qarId),
+      getStatus:  (vid)    => db.getStatus(vid),
+      setStatus:  (vid, s) => db.setStatus(vid, s),
+      clearStatus:(vid)    => db.clearStatus(vid),
     },
     logbook: {
       list:  (vid)         => db.getLogbook(vid),
