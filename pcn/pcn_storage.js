@@ -55,12 +55,15 @@ const PCN_STORAGE = (() => {
     // ── Auth ──
     async register(name, email, clubCode) {
       const users = local._get("users") || {};
-      if(users[email]) return { error: "E-Mail bereits registriert" };
+      const existing = users[email];
+      if(existing && existing.role !== "guest") return { error: "E-Mail bereits registriert" };
+      // Guest upgrade: keep same id (preserves their chat history), become full member
       const user = {
-        id: uid(), name, email, clubCode,
+        id: existing?.id || uid(), name, email, clubCode,
         role: "member",
-        memberNr: "PCN-" + Math.floor(1000 + Math.random()*8999),
-        createdAt: now(), lastSeen: now(),
+        memberNr: existing?.memberNr || ("PCN-" + Math.floor(1000 + Math.random()*8999)),
+        createdAt: existing?.createdAt || now(), lastSeen: now(),
+        convertedFromGuest: !!existing,
       };
       users[email] = user;
       local._set("users", users);
@@ -327,7 +330,18 @@ const PCN_STORAGE = (() => {
     async register(name, email, clubCode) {
       // Check existing
       const {data:existing} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
-      if(existing&&existing.length>0) return { error: "E-Mail bereits registriert" };
+      if(existing&&existing.length>0){
+        const ex = existing[0];
+        if(ex.role !== "guest") return { error: "E-Mail bereits registriert" };
+        // Guest upgrade: same row, same id (preserves chat history) — just patch role/club_code/member_nr
+        const memberNr = "PCN-"+Math.floor(1000+Math.random()*8999);
+        const upd = await supabase._patch("users","email=eq."+encodeURIComponent(email),
+          { name, club_code: clubCode, role:"member", member_nr: memberNr, converted_from_guest: true });
+        if(upd.error) return upd;
+        const u = { id: ex.id, name, email, role:"member", memberNr };
+        localStorage.setItem("pcn_session", JSON.stringify(u));
+        return { data: u };
+      }
       const user = { name, email, club_code:clubCode, role:"member",
         member_nr:"PCN-"+Math.floor(1000+Math.random()*8999) };
       const res = await supabase._post("users", user);
@@ -347,7 +361,7 @@ const PCN_STORAGE = (() => {
         localStorage.setItem("pcn_session", JSON.stringify(session));
         return { data: session };
       }
-      const user = { name, email, role:"guest", member_nr:null };
+      const user = { name, email, role:"guest", member_nr:null, guest_created_at: now() };
       const res = await supabase._post("users", user);
       if(res.error) return res;
       const u = { id:res.data.id, name, email, role:"guest", memberNr:null };
