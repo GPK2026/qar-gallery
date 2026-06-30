@@ -1142,6 +1142,8 @@
     const [showAddLog, setShowAddLog] = (0, _react.useState)(null);
     const [showAddRem, setShowAddRem] = (0, _react.useState)(false);
     const [showPrivacy, setShowPrivacy] = (0, _react.useState)(null);
+    const [showEditVehicle, setShowEditVehicle] = (0, _react.useState)(null); // vehicleId
+    const [editForm, setEditForm] = (0, _react.useState)({});
     const [imgUploading, setImgUploading] = (0, _react.useState)(false);
     const [lightbox, setLightbox] = (0, _react.useState)(null); // {images:[], index:0}
     const [vehicleStatus, setVehicleStatus] = (0, _react.useState)({}); // {vehicleId: {text, icon, expiresAt}}
@@ -1543,6 +1545,44 @@
       setScreen("app");
       setTab("events");
       toast_(`Angemeldet — Startnr. #${p.startNr} ✓`);
+    };
+    const openEditVehicle = v => {
+      setEditForm({
+        hersteller: v.hersteller || "",
+        modell: v.modell || "",
+        baujahr: v.baujahr || "",
+        kennzeichen: v.kennzeichen || "",
+        farbe: v.farbe || "",
+        kraftstoff: v.kraftstoff || "Benzin",
+        getriebe: v.getriebe || "PDK",
+        kilometerstand: v.kilometerstand || "",
+        tuev_faelligkeit: v.tuev_faelligkeit || "",
+        zustand: v.zustand || "",
+        besonderheiten: v.besonderheiten || "",
+        phone: v.phone || ""
+      });
+      setShowEditVehicle(v.id);
+    };
+    const saveVehicleEdit = async () => {
+      const v = vehicles[showEditVehicle];
+      if (!v) return;
+      if (!editForm.modell || !editForm.kennzeichen) {
+        toast_("Modell und Kennzeichen angeben", "err");
+        return;
+      }
+      const updated = {
+        ...v,
+        ...editForm
+      };
+      setVehicles(prev => ({
+        ...prev,
+        [v.id]: updated
+      }));
+      if (viewV?.id === v.id) setViewV(updated);
+      const DB = window.PCN_DB;
+      if (DB) await DB.vehicles.save(updated);
+      setShowEditVehicle(null);
+      toast_("Fahrzeugdaten gespeichert ✓");
     };
     const togglePrivacy = async (vehicleId, key) => {
       const v = vehicles[vehicleId];
@@ -3158,7 +3198,13 @@
           fontSize: 11
         },
         onClick: () => setShowStatusPicker(v.id)
-      }, getActiveStatus(v.id) ? `${getActiveStatus(v.id).icon} Status` : "📍 Status"), !isOwn && /*#__PURE__*/_react.default.createElement("button", {
+      }, getActiveStatus(v.id) ? `${getActiveStatus(v.id).icon} Status` : "📍 Status"), isOwn && /*#__PURE__*/_react.default.createElement("button", {
+        className: "btn sm ghost",
+        style: {
+          fontSize: 11
+        },
+        onClick: () => openEditVehicle(v)
+      }, "✏️ Bearbeiten"), !isOwn && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn sm ghost",
         style: {
           fontSize: 11
@@ -3705,7 +3751,241 @@
           marginTop: 8
         },
         onClick: () => setShowPrivacy(null)
-      }, "Fertig ✓"))), showStatusPicker && /*#__PURE__*/_react.default.createElement("div", {
+      }, "Fertig ✓"))), showEditVehicle === v.id && /*#__PURE__*/_react.default.createElement("div", {
+        className: "overlay",
+        style: {
+          zIndex: 500
+        },
+        onClick: e => {
+          if (e.target === e.currentTarget) setShowEditVehicle(null);
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        className: "sheet"
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontFamily: "'Barlow Condensed',sans-serif",
+          fontSize: 20,
+          fontWeight: 800,
+          color: C.white,
+          marginBottom: 4
+        }
+      }, "✏️ Fahrzeugdaten bearbeiten"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 18
+        }
+      }, "Alle Angaben jederzeit änderbar"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          marginBottom: 16
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
+          color: C.muted,
+          textTransform: "uppercase",
+          letterSpacing: 2,
+          marginBottom: 8
+        }
+      }, "Basis"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8
+        }
+      }, /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "Hersteller",
+        value: editForm.hersteller || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          hersteller: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "Modell *",
+        value: editForm.modell || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          modell: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "Baujahr",
+        value: editForm.baujahr || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          baujahr: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "Kennzeichen *",
+        value: editForm.kennzeichen || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          kennzeichen: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "Farbe",
+        value: editForm.farbe || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          farbe: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("select", {
+        className: "inp",
+        value: editForm.kraftstoff || "Benzin",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          kraftstoff: e.target.value
+        }))
+      }, ["Benzin", "Diesel", "Elektro", "Hybrid"].map(k => /*#__PURE__*/_react.default.createElement("option", {
+        key: k
+      }, k))), /*#__PURE__*/_react.default.createElement("select", {
+        className: "inp",
+        style: {
+          gridColumn: "1/-1"
+        },
+        value: editForm.getriebe || "PDK",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          getriebe: e.target.value
+        }))
+      }, ["PDK", "7-Gang PDK", "6-Gang manuell", "8-Gang Automatik", "Stufenlos"].map(k => /*#__PURE__*/_react.default.createElement("option", {
+        key: k
+      }, k))))), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          marginBottom: 16
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
+          color: C.muted,
+          textTransform: "uppercase",
+          letterSpacing: 2,
+          marginBottom: 8
+        }
+      }, "Status & Technik"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8
+        }
+      }, /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        type: "number",
+        inputMode: "numeric",
+        placeholder: "Kilometerstand",
+        value: editForm.kilometerstand || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          kilometerstand: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "TÜV (MM/JJJJ)",
+        value: editForm.tuev_faelligkeit || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          tuev_faelligkeit: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("select", {
+        className: "inp",
+        style: {
+          gridColumn: "1/-1"
+        },
+        value: editForm.zustand || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          zustand: e.target.value
+        }))
+      }, /*#__PURE__*/_react.default.createElement("option", {
+        value: ""
+      }, "Zustand wählen…"), /*#__PURE__*/_react.default.createElement("option", {
+        value: "1"
+      }, "1 — Sehr gut"), /*#__PURE__*/_react.default.createElement("option", {
+        value: "2"
+      }, "2 — Gut"), /*#__PURE__*/_react.default.createElement("option", {
+        value: "3"
+      }, "3 — Befriedigend"), /*#__PURE__*/_react.default.createElement("option", {
+        value: "4"
+      }, "4 — Ausreichend"), /*#__PURE__*/_react.default.createElement("option", {
+        value: "5"
+      }, "5 — Mangelhaft")))), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          marginBottom: 16
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
+          color: C.muted,
+          textTransform: "uppercase",
+          letterSpacing: 2,
+          marginBottom: 8
+        }
+      }, "Kontakt"), /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        type: "tel",
+        placeholder: "Telefonnummer (optional)",
+        value: editForm.phone || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          phone: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted,
+          marginTop: 6
+        }
+      }, "🔒 Sichtbarkeit über QR-Einstellungen steuerbar")), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          marginBottom: 18
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
+          color: C.muted,
+          textTransform: "uppercase",
+          letterSpacing: 2,
+          marginBottom: 8
+        }
+      }, "Besonderheiten"), /*#__PURE__*/_react.default.createElement("textarea", {
+        className: "inp",
+        placeholder: "Ausstattung, Extras, Hinweise...",
+        rows: 3,
+        value: editForm.besonderheiten || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          besonderheiten: e.target.value
+        })),
+        style: {
+          resize: "vertical",
+          fontFamily: "'Barlow',sans-serif"
+        }
+      })), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 8
+        }
+      }, /*#__PURE__*/_react.default.createElement("button", {
+        className: "btn ghost",
+        style: {
+          flex: 1
+        },
+        onClick: () => setShowEditVehicle(null)
+      }, "Abbrechen"), /*#__PURE__*/_react.default.createElement("button", {
+        className: "btn",
+        style: {
+          flex: 1
+        },
+        onClick: saveVehicleEdit
+      }, "Speichern ✓")))), showStatusPicker && /*#__PURE__*/_react.default.createElement("div", {
         className: "overlay",
         style: {
           zIndex: 500
