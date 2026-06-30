@@ -414,6 +414,8 @@ function PCNInner() {
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(null);
+  const [showEditVehicle, setShowEditVehicle] = useState(null); // vehicleId
+  const [editForm, setEditForm] = useState({});
   const [imgUploading, setImgUploading] = useState(false);
   const [lightbox, setLightbox]       = useState(null); // {images:[], index:0}
   const [vehicleStatus, setVehicleStatus] = useState({}); // {vehicleId: {text, icon, expiresAt}}
@@ -654,6 +656,29 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     setParticipants(prev=>({...prev,[eventId]:[...(prev[eventId]||[]),p]}));
     setScreen("app"); setTab("events");
     toast_(`Angemeldet — Startnr. #${p.startNr} ✓`);
+  };
+
+  const openEditVehicle = (v) => {
+    setEditForm({
+      hersteller:v.hersteller||"", modell:v.modell||"", baujahr:v.baujahr||"",
+      kennzeichen:v.kennzeichen||"", farbe:v.farbe||"", kraftstoff:v.kraftstoff||"Benzin",
+      getriebe:v.getriebe||"PDK", kilometerstand:v.kilometerstand||"",
+      tuev_faelligkeit:v.tuev_faelligkeit||"", zustand:v.zustand||"",
+      besonderheiten:v.besonderheiten||"", phone:v.phone||"",
+    });
+    setShowEditVehicle(v.id);
+  };
+
+  const saveVehicleEdit = async () => {
+    const v = vehicles[showEditVehicle]; if(!v) return;
+    if(!editForm.modell || !editForm.kennzeichen) { toast_("Modell und Kennzeichen angeben","err"); return; }
+    const updated = {...v, ...editForm};
+    setVehicles(prev=>({...prev,[v.id]:updated}));
+    if(viewV?.id===v.id) setViewV(updated);
+    const DB = window.PCN_DB;
+    if(DB) await DB.vehicles.save(updated);
+    setShowEditVehicle(null);
+    toast_("Fahrzeugdaten gespeichert ✓");
   };
 
   const togglePrivacy = async (vehicleId,key) => {
@@ -1202,6 +1227,12 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                 {getActiveStatus(v.id)?`${getActiveStatus(v.id).icon} Status`:"📍 Status"}
               </button>
             )}
+            {isOwn&&(
+              <button className="btn sm ghost" style={{fontSize:11}}
+                onClick={()=>openEditVehicle(v)}>
+                ✏️ Bearbeiten
+              </button>
+            )}
             {!isOwn&&<button className="btn sm ghost" style={{fontSize:11}} onClick={()=>startContact(v.id)}>💬 Kontakt</button>}
           </div>
 
@@ -1395,6 +1426,78 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                 </div>
               ))}
               <button className="btn" style={{width:"100%",marginTop:8}} onClick={()=>setShowPrivacy(null)}>Fertig ✓</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── EDIT VEHICLE SHEET ── */}
+        {showEditVehicle===v.id&&(
+          <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowEditVehicle(null);}}>
+            <div className="sheet">
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>✏️ Fahrzeugdaten bearbeiten</div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:18}}>Alle Angaben jederzeit änderbar</div>
+
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>Basis</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  <input className="inp" placeholder="Hersteller" value={editForm.hersteller||""}
+                    onChange={e=>setEditForm(p=>({...p,hersteller:e.target.value}))}/>
+                  <input className="inp" placeholder="Modell *" value={editForm.modell||""}
+                    onChange={e=>setEditForm(p=>({...p,modell:e.target.value}))}/>
+                  <input className="inp" placeholder="Baujahr" value={editForm.baujahr||""}
+                    onChange={e=>setEditForm(p=>({...p,baujahr:e.target.value}))}/>
+                  <input className="inp" placeholder="Kennzeichen *" value={editForm.kennzeichen||""}
+                    onChange={e=>setEditForm(p=>({...p,kennzeichen:e.target.value}))}/>
+                  <input className="inp" placeholder="Farbe" value={editForm.farbe||""}
+                    onChange={e=>setEditForm(p=>({...p,farbe:e.target.value}))}/>
+                  <select className="inp" value={editForm.kraftstoff||"Benzin"}
+                    onChange={e=>setEditForm(p=>({...p,kraftstoff:e.target.value}))}>
+                    {["Benzin","Diesel","Elektro","Hybrid"].map(k=><option key={k}>{k}</option>)}
+                  </select>
+                  <select className="inp" style={{gridColumn:"1/-1"}} value={editForm.getriebe||"PDK"}
+                    onChange={e=>setEditForm(p=>({...p,getriebe:e.target.value}))}>
+                    {["PDK","7-Gang PDK","6-Gang manuell","8-Gang Automatik","Stufenlos"].map(k=><option key={k}>{k}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>Status & Technik</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  <input className="inp" type="number" inputMode="numeric" placeholder="Kilometerstand" value={editForm.kilometerstand||""}
+                    onChange={e=>setEditForm(p=>({...p,kilometerstand:e.target.value}))}/>
+                  <input className="inp" placeholder="TÜV (MM/JJJJ)" value={editForm.tuev_faelligkeit||""}
+                    onChange={e=>setEditForm(p=>({...p,tuev_faelligkeit:e.target.value}))}/>
+                  <select className="inp" style={{gridColumn:"1/-1"}} value={editForm.zustand||""}
+                    onChange={e=>setEditForm(p=>({...p,zustand:e.target.value}))}>
+                    <option value="">Zustand wählen…</option>
+                    <option value="1">1 — Sehr gut</option>
+                    <option value="2">2 — Gut</option>
+                    <option value="3">3 — Befriedigend</option>
+                    <option value="4">4 — Ausreichend</option>
+                    <option value="5">5 — Mangelhaft</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>Kontakt</div>
+                <input className="inp" type="tel" placeholder="Telefonnummer (optional)" value={editForm.phone||""}
+                  onChange={e=>setEditForm(p=>({...p,phone:e.target.value}))}/>
+                <div style={{fontSize:10,color:C.muted,marginTop:6}}>🔒 Sichtbarkeit über QR-Einstellungen steuerbar</div>
+              </div>
+
+              <div style={{marginBottom:18}}>
+                <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>Besonderheiten</div>
+                <textarea className="inp" placeholder="Ausstattung, Extras, Hinweise..." rows={3}
+                  value={editForm.besonderheiten||""} onChange={e=>setEditForm(p=>({...p,besonderheiten:e.target.value}))}
+                  style={{resize:"vertical",fontFamily:"'Barlow',sans-serif"}}/>
+              </div>
+
+              <div style={{display:"flex",gap:8}}>
+                <button className="btn ghost" style={{flex:1}} onClick={()=>setShowEditVehicle(null)}>Abbrechen</button>
+                <button className="btn" style={{flex:1}} onClick={saveVehicleEdit}>Speichern ✓</button>
+              </div>
             </div>
           </div>
         )}
