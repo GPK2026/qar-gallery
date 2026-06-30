@@ -328,11 +328,12 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
   );
 }
 
-function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead, onViewVehicle}) {
+function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead, onViewVehicle, onUpgrade}) {
   const [msg, setMsg] = useState("");
   const endRef = useRef(null);
   const other = Object.values(allUsers).find(u=>thread.participants.includes(u.id)&&u.id!==me?.id)||{name:"Mitglied"};
   const v = vehicles[thread.vehicleId];
+  const isGuest = me?.role === "guest";
 
   useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[thread.messages]);
   useEffect(()=>{ if(onMarkRead) onMarkRead(thread.id); },[thread.id]);
@@ -350,6 +351,20 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
         </div>
         {v&&<button className="btn sm ghost" onClick={()=>onViewVehicle(v)} style={{fontSize:11,flexShrink:0}}>Akte →</button>}
       </div>
+
+      {isGuest && (
+        <div style={{background:`${C.gold}14`,borderBottom:`1px solid ${C.gold}33`,padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+          <span style={{fontSize:16,flexShrink:0}}>👋</span>
+          <div style={{flex:1,fontSize:11,color:C.white,lineHeight:1.4}}>
+            Du schreibst als <strong>Gast</strong>. Mitglieder bekommen eigene Fahrzeugakte & Event-Zugang.
+          </div>
+          <button onClick={onUpgrade}
+            style={{background:C.gold,border:"none",borderRadius:7,padding:"6px 11px",color:"#0a0a0a",fontWeight:800,fontSize:11,cursor:"pointer",flexShrink:0,fontFamily:"'Barlow',sans-serif"}}>
+            Mitglied werden
+          </button>
+        </div>
+      )}
+
       <div style={{flex:1,overflowY:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:8}}>
         {thread.messages.map(m=>{
           if(m.isSystem) return (
@@ -1180,8 +1195,25 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               </div>
 
               {contactAuthMode==="guest"&&(
-                <div style={{fontSize:11,color:C.muted,marginBottom:14,lineHeight:1.6}}>
-                  Kein Club-Account nötig — nur Name und E-Mail für die Nachrichten-Zustellung.
+                <div style={{background:"#141414",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:16}}>
+                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:10}}>
+                    Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht.
+                  </div>
+                  <div style={{fontSize:10,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
+                  {[
+                    ["🚗","Eigene digitale Fahrzeugakte"],
+                    ["📱","QR-Code fürs eigene Auto"],
+                    ["🏁","Direkte Anmeldung zu Club-Events"],
+                  ].map(([icon,text])=>(
+                    <div key={text} style={{display:"flex",gap:8,alignItems:"center",fontSize:12,color:C.white,marginBottom:5}}>
+                      <span style={{fontSize:13,flexShrink:0}}>{icon}</span>
+                      <span>{text}</span>
+                    </div>
+                  ))}
+                  <button onClick={()=>setContactAuthMode("register")}
+                    style={{background:"none",border:"none",color:C.red,fontWeight:700,fontSize:12,cursor:"pointer",padding:0,marginTop:8,fontFamily:"'Barlow',sans-serif"}}>
+                    Stattdessen Mitglied werden →
+                  </button>
                 </div>
               )}
 
@@ -1687,8 +1719,25 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               </div>
 
               {contactAuthMode==="guest"&&(
-                <div style={{fontSize:11,color:C.muted,marginBottom:14,lineHeight:1.6}}>
-                  Kein Club-Account nötig — nur Name und E-Mail für die Nachrichten-Zustellung.
+                <div style={{background:"#141414",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:16}}>
+                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:10}}>
+                    Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht.
+                  </div>
+                  <div style={{fontSize:10,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
+                  {[
+                    ["🚗","Eigene digitale Fahrzeugakte"],
+                    ["📱","QR-Code fürs eigene Auto"],
+                    ["🏁","Direkte Anmeldung zu Club-Events"],
+                  ].map(([icon,text])=>(
+                    <div key={text} style={{display:"flex",gap:8,alignItems:"center",fontSize:12,color:C.white,marginBottom:5}}>
+                      <span style={{fontSize:13,flexShrink:0}}>{icon}</span>
+                      <span>{text}</span>
+                    </div>
+                  ))}
+                  <button onClick={()=>setContactAuthMode("register")}
+                    style={{background:"none",border:"none",color:C.red,fontWeight:700,fontSize:12,cursor:"pointer",padding:0,marginTop:8,fontFamily:"'Barlow',sans-serif"}}>
+                    Stattdessen Mitglied werden →
+                  </button>
                 </div>
               )}
 
@@ -1838,6 +1887,12 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           onSend={sendMsg}
           onMarkRead={(tid)=>setThreads(prev=>({...prev,[tid]:{...prev[tid],messages:(prev[tid]?.messages||[]).map(m=>({...m,read:true}))}}))}
           onViewVehicle={v=>{setViewV(v);setScreen("vehicle");}}
+          onUpgrade={()=>{
+            // Pre-fill registration form with the guest's existing name/email — frictionless upgrade
+            setLoginForm({mode:"register",code:"",name:me?.name||"",email:me?.email||""});
+            setScreen("splash");
+            toast_("Fast geschafft — gib nur noch den Club-Code ein 🏁");
+          }}
         />
       </>
     );
