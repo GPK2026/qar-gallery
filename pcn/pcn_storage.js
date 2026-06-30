@@ -68,6 +68,23 @@ const PCN_STORAGE = (() => {
       return { data: user };
     },
 
+    async registerGuest(name, email) {
+      const users = local._get("users") || {};
+      // Guests can reuse an existing email if it was also a guest (no error)
+      const existing = users[email];
+      if(existing && existing.role !== "guest") return { error: "E-Mail bereits als Mitglied registriert" };
+      const user = existing || {
+        id: uid(), name, email, role: "guest",
+        memberNr: null,
+        createdAt: now(), lastSeen: now(),
+      };
+      user.lastSeen = now();
+      users[email] = user;
+      local._set("users", users);
+      local._set("session", user);
+      return { data: user };
+    },
+
     async login(email) {
       const users = local._get("users") || {};
       const user = users[email];
@@ -319,6 +336,24 @@ const PCN_STORAGE = (() => {
       localStorage.setItem("pcn_session", JSON.stringify(u));
       return { data: u };
     },
+
+    async registerGuest(name, email) {
+      const {data:existing} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
+      if(existing&&existing.length>0){
+        const u = existing[0];
+        if(u.role !== "guest") return { error: "E-Mail bereits als Mitglied registriert" };
+        // Re-login as existing guest
+        const session = { id:u.id, name:u.name, email:u.email, role:"guest", memberNr:null };
+        localStorage.setItem("pcn_session", JSON.stringify(session));
+        return { data: session };
+      }
+      const user = { name, email, role:"guest", member_nr:null };
+      const res = await supabase._post("users", user);
+      if(res.error) return res;
+      const u = { id:res.data.id, name, email, role:"guest", memberNr:null };
+      localStorage.setItem("pcn_session", JSON.stringify(u));
+      return { data: u };
+    },
     async login(email) {
       const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
       if(error) return { error };
@@ -528,6 +563,7 @@ const PCN_STORAGE = (() => {
     // Proxy all methods to selected backend
     auth: {
       register: (name, email, code) => db.register(name, email, code),
+      registerGuest: (name, email)  => db.registerGuest(name, email),
       login:    (email)             => db.login(email),
       session:  ()                  => db.getSession(),
       logout:   ()                  => db.logout(),
