@@ -17,8 +17,93 @@
     value: true
   });
   _exports.default = PCN;
+  _react = _interopRequireWildcard(_react);
+  function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
   // PCN — Porsche Club Nürburgring · Digitale Clubplattform v3
   // Vollständig neu geschrieben — alle Bugs behoben
+
+  // ─── Error Boundary — catches crashes, shows message instead of black screen ──
+  class ErrorBoundary extends _react.default.Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        hasError: false,
+        error: null
+      };
+    }
+    static getDerivedStateFromError(error) {
+      return {
+        hasError: true,
+        error
+      };
+    }
+    componentDidCatch(error, info) {
+      console.error("[PCN]", error, info);
+    }
+    render() {
+      if (!this.state.hasError) return this.props.children;
+      return /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          minHeight: "100vh",
+          background: "#0a0a0a",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+          fontFamily: "sans-serif"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: "#191919",
+          border: "1px solid #e3061344",
+          borderRadius: 18,
+          padding: "28px 24px",
+          maxWidth: 380,
+          textAlign: "center"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 44,
+          marginBottom: 14
+        }
+      }, "⚠️"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 17,
+          fontWeight: 800,
+          color: "#fff",
+          marginBottom: 8
+        }
+      }, "Etwas ist schiefgelaufen"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: "#999",
+          marginBottom: 6,
+          lineHeight: 1.6,
+          fontFamily: "monospace",
+          wordBreak: "break-word"
+        }
+      }, this.state.error?.message || "Unbekannter Fehler"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: "#666",
+          marginBottom: 20
+        }
+      }, "Deine Daten sind sicher gespeichert."), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => window.location.reload(),
+        style: {
+          background: "#e30613",
+          color: "#fff",
+          border: "none",
+          borderRadius: 10,
+          padding: "12px 28px",
+          fontWeight: 800,
+          fontSize: 14,
+          cursor: "pointer",
+          width: "100%"
+        }
+      }, "🔄 Neu laden")));
+    }
+  }
 
   // ─── Utils ────────────────────────────────────────────────────────────────────
   const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -77,38 +162,61 @@
   };
 
   // ─── QR Code (Real, scannable — uses bundled qrcode.js library) ──────────────
+  // Fully defensive: never throws, always falls back gracefully
   function QRCodeCanvas({
     value,
     size = 140
   }) {
     const ref = (0, _react.useRef)(null);
-    const [ready, setReady] = (0, _react.useState)(!!window.QRBundle);
+    const [status, setStatus] = (0, _react.useState)(window.QRBundle ? "ready" : "loading");
     (0, _react.useEffect)(() => {
       if (window.QRBundle) {
-        setReady(true);
+        setStatus("ready");
         return;
       }
+      let cancelled = false;
       const s = document.createElement("script");
       s.src = "qrcode_bundle.js";
-      s.onload = () => setReady(true);
+      s.onload = () => {
+        if (!cancelled) setStatus(window.QRBundle ? "ready" : "error");
+      };
+      s.onerror = () => {
+        if (!cancelled) setStatus("error");
+      };
       document.head.appendChild(s);
+      // Fallback timeout — if script never loads, show fallback after 3s
+      const timer = setTimeout(() => {
+        if (!cancelled && !window.QRBundle) setStatus("error");
+      }, 3000);
+      return () => {
+        cancelled = true;
+        clearTimeout(timer);
+      };
     }, []);
     (0, _react.useEffect)(() => {
-      if (!ready || !ref.current || !window.QRBundle) return;
-      const QR = window.QRBundle.QRCodeLib;
-      QR.toCanvas(ref.current, value, {
-        width: size,
-        margin: 1,
-        errorCorrectionLevel: "M",
-        color: {
-          dark: "#111111",
-          light: "#ffffff"
-        }
-      }, err => {
-        if (err) console.error("QR render error:", err);
-      });
-    }, [ready, value, size]);
-    if (!ready) return /*#__PURE__*/React.createElement("div", {
+      if (status !== "ready" || !ref.current || !window.QRBundle) return;
+      try {
+        const QR = window.QRBundle.QRCodeLib;
+        QR.toCanvas(ref.current, value, {
+          width: size,
+          margin: 1,
+          errorCorrectionLevel: "M",
+          color: {
+            dark: "#111111",
+            light: "#ffffff"
+          }
+        }, err => {
+          if (err) {
+            console.error("QR render error:", err);
+            setStatus("error");
+          }
+        });
+      } catch (e) {
+        console.error("QR exception:", e);
+        setStatus("error");
+      }
+    }, [status, value, size]);
+    if (status === "loading") return /*#__PURE__*/_react.default.createElement("div", {
       style: {
         width: size,
         height: size,
@@ -118,14 +226,40 @@
         alignItems: "center",
         justifyContent: "center"
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        fontSize: 11,
+        fontSize: 10,
         color: "#999",
         fontFamily: "sans-serif"
       }
     }, "Lädt…"));
-    return /*#__PURE__*/React.createElement("canvas", {
+    if (status === "error") return /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        width: size,
+        height: size,
+        background: "#fff",
+        borderRadius: 4,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 8,
+        gap: 4
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 20
+      }
+    }, "📱"), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 9,
+        color: "#666",
+        fontFamily: "sans-serif",
+        textAlign: "center",
+        wordBreak: "break-all"
+      }
+    }, value));
+    return /*#__PURE__*/_react.default.createElement("canvas", {
       ref: ref,
       style: {
         borderRadius: 4,
@@ -501,20 +635,20 @@
     const evParts = participants[ev.id] || [];
     const myReg = evParts.find(p => p.userId === me?.id);
     const days = daysUntil(ev.date);
-    return /*#__PURE__*/React.createElement("div", {
+    return /*#__PURE__*/_react.default.createElement("div", {
       style: {
         minHeight: "100vh",
         background: C.black,
         paddingBottom: 40,
         animation: "fadeIn .2s"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.dark,
         borderBottom: `1px solid ${C.border}`,
         padding: "14px 16px"
       }
-    }, /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/_react.default.createElement("button", {
       onClick: onBack,
       style: {
         background: "none",
@@ -525,7 +659,7 @@
         padding: 0,
         marginBottom: 10
       }
-    }, "← Events"), /*#__PURE__*/React.createElement("div", {
+    }, "← Events"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
@@ -533,7 +667,7 @@
         flexWrap: "wrap",
         marginBottom: 6
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
         background: `${C.red}22`,
         color: C.red,
@@ -542,7 +676,7 @@
         fontSize: 10,
         fontWeight: 700
       }
-    }, ev.category), /*#__PURE__*/React.createElement("span", {
+    }, ev.category), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         background: days <= 7 ? `${C.amber}22` : `${C.border}22`,
         color: days <= 7 ? C.amber : C.muted,
@@ -551,7 +685,7 @@
         fontSize: 10,
         fontWeight: 700
       }
-    }, days <= 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} T.`)), /*#__PURE__*/React.createElement("h1", {
+    }, days <= 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} T.`)), /*#__PURE__*/_react.default.createElement("h1", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 24,
@@ -559,19 +693,19 @@
         color: C.white,
         lineHeight: 1.1
       }
-    }, ev.name), /*#__PURE__*/React.createElement("p", {
+    }, ev.name), /*#__PURE__*/_react.default.createElement("p", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginTop: 3
       }
-    }, ev.subtitle)), /*#__PURE__*/React.createElement("div", {
+    }, ev.subtitle)), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         padding: "16px",
         maxWidth: 520,
         margin: "0 auto"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -579,7 +713,7 @@
         padding: 16,
         marginBottom: 14
       }
-    }, [["📅", fmtDate(ev.date), "Datum"], ["📍", ev.location, "Ort"], ["💶", ev.entryFee, "Nenngeld"], ["👥", `${evParts.length} / ${ev.maxParticipants}`, "Plätze"]].map(([icon, val, label]) => /*#__PURE__*/React.createElement("div", {
+    }, [["📅", fmtDate(ev.date), "Datum"], ["📍", ev.location, "Ort"], ["💶", ev.entryFee, "Nenngeld"], ["👥", `${evParts.length} / ${ev.maxParticipants}`, "Plätze"]].map(([icon, val, label]) => /*#__PURE__*/_react.default.createElement("div", {
       key: label,
       style: {
         display: "flex",
@@ -587,24 +721,24 @@
         marginBottom: 8,
         alignItems: "center"
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
         width: 20,
         textAlign: "center"
       }
-    }, icon), /*#__PURE__*/React.createElement("span", {
+    }, icon), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 11,
         color: C.muted,
         minWidth: 56
       }
-    }, label), /*#__PURE__*/React.createElement("span", {
+    }, label), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 13,
         color: C.white,
         fontWeight: 600
       }
-    }, val))), /*#__PURE__*/React.createElement("p", {
+    }, val))), /*#__PURE__*/_react.default.createElement("p", {
       style: {
         fontSize: 12,
         color: C.muted,
@@ -613,7 +747,7 @@
         paddingTop: 8,
         borderTop: `1px solid ${C.border}`
       }
-    }, ev.description)), myReg ? /*#__PURE__*/React.createElement("div", {
+    }, ev.description)), myReg ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: `${C.green}11`,
         border: `1px solid ${C.green}44`,
@@ -622,19 +756,19 @@
         textAlign: "center",
         marginBottom: 14
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         color: C.green,
         fontWeight: 700,
         fontSize: 15,
         marginBottom: 3
       }
-    }, "✓ Angemeldet — #", myReg.startNr), /*#__PURE__*/React.createElement("div", {
+    }, "✓ Angemeldet — #", myReg.startNr), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted
       }
-    }, myReg.class, " · ", fmtDate(ev.date))) : me && myVehicles.length > 0 ? /*#__PURE__*/React.createElement("div", {
+    }, myReg.class, " · ", fmtDate(ev.date))) : me && myVehicles.length > 0 ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -642,7 +776,7 @@
         padding: 16,
         marginBottom: 14
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 17,
@@ -650,7 +784,7 @@
         color: C.white,
         marginBottom: 12
       }
-    }, "Jetzt anmelden"), /*#__PURE__*/React.createElement("select", {
+    }, "Jetzt anmelden"), /*#__PURE__*/_react.default.createElement("select", {
       value: selV,
       onChange: e => setSelV(e.target.value),
       style: {
@@ -664,10 +798,10 @@
         fontFamily: "'Barlow',sans-serif",
         marginBottom: 8
       }
-    }, myVehicles.map(v => /*#__PURE__*/React.createElement("option", {
+    }, myVehicles.map(v => /*#__PURE__*/_react.default.createElement("option", {
       key: v.id,
       value: v.id
-    }, v.hersteller, " ", v.modell, " · ", v.kennzeichen))), /*#__PURE__*/React.createElement("select", {
+    }, v.hersteller, " ", v.modell, " · ", v.kennzeichen))), /*#__PURE__*/_react.default.createElement("select", {
       value: selC,
       onChange: e => setSelC(e.target.value),
       style: {
@@ -681,15 +815,15 @@
         fontFamily: "'Barlow',sans-serif",
         marginBottom: 14
       }
-    }, ev.classes.map(c => /*#__PURE__*/React.createElement("option", {
+    }, ev.classes.map(c => /*#__PURE__*/_react.default.createElement("option", {
       key: c
-    }, c))), /*#__PURE__*/React.createElement("button", {
+    }, c))), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       onClick: () => onJoin(ev.id, selV, selC),
       style: {
         width: "100%"
       }
-    }, "Anmelden ✓")) : me ? /*#__PURE__*/React.createElement("div", {
+    }, "Anmelden ✓")) : me ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -700,7 +834,7 @@
         color: C.muted,
         fontSize: 13
       }
-    }, "Zuerst ein Fahrzeug hinzufügen um dich anzumelden.") : null, evParts.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, "Zuerst ein Fahrzeug hinzufügen um dich anzumelden.") : null, evParts.length > 0 && /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 800,
@@ -711,7 +845,7 @@
       }
     }, "Teilnehmer (", evParts.length, ")"), evParts.map(p => {
       const pv = vehicles[p.vehicleId];
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement("div", {
         key: p.id,
         style: {
           display: "flex",
@@ -722,7 +856,7 @@
           cursor: pv ? "pointer" : "default"
         },
         onClick: () => pv && onViewVehicle(pv)
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: `${C.red}22`,
           border: `1px solid ${C.red}44`,
@@ -733,12 +867,12 @@
           color: C.red,
           flexShrink: 0
         }
-      }, "#", p.startNr), /*#__PURE__*/React.createElement("div", {
+      }, "#", p.startNr), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           flex: 1,
           minWidth: 0
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 13,
           fontWeight: 600,
@@ -747,12 +881,12 @@
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, pv ? `${pv.hersteller} ${pv.modell}` : "Fahrzeug"), /*#__PURE__*/React.createElement("div", {
+      }, pv ? `${pv.hersteller} ${pv.modell}` : "Fahrzeug"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted
         }
-      }, p.class, pv?.kennzeichen ? " · " + fmtKz(pv.kennzeichen, pv.baujahr) : "")), pv && /*#__PURE__*/React.createElement("span", {
+      }, p.class, pv?.kennzeichen ? " · " + fmtKz(pv.kennzeichen, pv.baujahr) : "")), pv && /*#__PURE__*/_react.default.createElement("span", {
         style: {
           color: C.muted,
           fontSize: 16
@@ -784,14 +918,14 @@
     (0, _react.useEffect)(() => {
       if (onMarkRead) onMarkRead(thread.id);
     }, [thread.id]);
-    return /*#__PURE__*/React.createElement("div", {
+    return /*#__PURE__*/_react.default.createElement("div", {
       style: {
         height: "100vh",
         background: C.black,
         display: "flex",
         flexDirection: "column"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.dark,
         borderBottom: `1px solid ${C.border}`,
@@ -801,7 +935,7 @@
         alignItems: "center",
         flexShrink: 0
       }
-    }, /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/_react.default.createElement("button", {
       onClick: onBack,
       style: {
         background: "none",
@@ -812,7 +946,7 @@
         padding: 0,
         lineHeight: 1
       }
-    }, "←"), /*#__PURE__*/React.createElement("div", {
+    }, "←"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         width: 36,
         height: 36,
@@ -826,18 +960,18 @@
         fontSize: 16,
         flexShrink: 0
       }
-    }, thread.anonymous ? "🔒" : other.name[0]), /*#__PURE__*/React.createElement("div", {
+    }, thread.anonymous ? "🔒" : other.name[0]), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontWeight: 700,
         fontSize: 14,
         color: C.white
       }
-    }, thread.anonymous ? "🔒 Anonym" : other.name), v && /*#__PURE__*/React.createElement("div", {
+    }, thread.anonymous ? "🔒 Anonym" : other.name), v && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted,
@@ -845,14 +979,14 @@
         textOverflow: "ellipsis",
         whiteSpace: "nowrap"
       }
-    }, "Re: ", v.hersteller, " ", v.modell)), v && /*#__PURE__*/React.createElement("button", {
+    }, "Re: ", v.hersteller, " ", v.modell)), v && /*#__PURE__*/_react.default.createElement("button", {
       className: "btn sm ghost",
       onClick: () => onViewVehicle(v),
       style: {
         fontSize: 11,
         flexShrink: 0
       }
-    }, "Akte →")), /*#__PURE__*/React.createElement("div", {
+    }, "Akte →")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         flex: 1,
         overflowY: "auto",
@@ -862,7 +996,7 @@
         gap: 8
       }
     }, thread.messages.map(m => {
-      if (m.isSystem) return /*#__PURE__*/React.createElement("div", {
+      if (m.isSystem) return /*#__PURE__*/_react.default.createElement("div", {
         key: m.id,
         style: {
           textAlign: "center",
@@ -872,13 +1006,13 @@
         }
       }, "— ", m.text, " —");
       const mine = m.from === me?.id;
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement("div", {
         key: m.id,
         style: {
           display: "flex",
           justifyContent: mine ? "flex-end" : "flex-start"
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           maxWidth: "80%",
           background: mine ? C.red : "#1e1e1e",
@@ -886,13 +1020,13 @@
           borderRadius: mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
           padding: "10px 14px"
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 14,
           color: "#fff",
           lineHeight: 1.5
         }
-      }, m.text), /*#__PURE__*/React.createElement("div", {
+      }, m.text), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 9,
           color: mine ? "rgba(255,255,255,.5)" : C.muted,
@@ -900,9 +1034,9 @@
           textAlign: "right"
         }
       }, m.ts)));
-    }), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
       ref: endRef
-    })), /*#__PURE__*/React.createElement("div", {
+    })), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         padding: "10px 12px",
         background: C.dark,
@@ -912,7 +1046,7 @@
         flexShrink: 0,
         paddingBottom: "calc(10px + env(safe-area-inset-bottom,0))"
       }
-    }, /*#__PURE__*/React.createElement("input", {
+    }, /*#__PURE__*/_react.default.createElement("input", {
       placeholder: "Nachricht…",
       value: msg,
       onChange: e => setMsg(e.target.value),
@@ -933,7 +1067,7 @@
         fontSize: 14,
         fontFamily: "'Barlow',sans-serif"
       }
-    }), /*#__PURE__*/React.createElement("button", {
+    }), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         padding: "10px 18px",
@@ -950,6 +1084,9 @@
 
   // ─── MAIN APP ─────────────────────────────────────────────────────────────────
   function PCN() {
+    return /*#__PURE__*/_react.default.createElement(ErrorBoundary, null, /*#__PURE__*/_react.default.createElement(PCNInner, null));
+  }
+  function PCNInner() {
     // ── Core state ──────────────────────────────────────────────────────────────
     const [screen, setScreen] = (0, _react.useState)("splash");
     const [tab, setTab] = (0, _react.useState)("dashboard");
@@ -1592,7 +1729,7 @@
     // ══════════════════════════════════════════════════════════════════════════════
     // SCANNER OVERLAY
     // ══════════════════════════════════════════════════════════════════════════════
-    const ScannerOverlay = scannerOpen ? /*#__PURE__*/React.createElement("div", {
+    const ScannerOverlay = scannerOpen ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "fixed",
         inset: 0,
@@ -1601,7 +1738,7 @@
         display: "flex",
         flexDirection: "column"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "absolute",
         top: 0,
@@ -1614,19 +1751,19 @@
         alignItems: "center",
         background: "linear-gradient(to bottom,rgba(0,0,0,.8),transparent)"
       }
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 18,
         fontWeight: 800,
         color: "#fff"
       }
-    }, "QR-Code scannen"), /*#__PURE__*/React.createElement("div", {
+    }, "QR-Code scannen"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: "rgba(255,255,255,.5)"
       }
-    }, "Halte die Kamera über den QAR-Code")), /*#__PURE__*/React.createElement("button", {
+    }, "Halte die Kamera über den QAR-Code")), /*#__PURE__*/_react.default.createElement("button", {
       onClick: closeScanner,
       style: {
         background: "rgba(0,0,0,.6)",
@@ -1639,7 +1776,7 @@
         fontWeight: 700,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "✕ Schließen")), /*#__PURE__*/React.createElement("video", {
+    }, "✕ Schließen")), /*#__PURE__*/_react.default.createElement("video", {
       ref: videoRef,
       style: {
         width: "100%",
@@ -1648,12 +1785,12 @@
       },
       muted: true,
       playsInline: true
-    }), /*#__PURE__*/React.createElement("canvas", {
+    }), /*#__PURE__*/_react.default.createElement("canvas", {
       ref: canvasRef,
       style: {
         display: "none"
       }
-    }), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "absolute",
         inset: 0,
@@ -1662,7 +1799,7 @@
         justifyContent: "center",
         pointerEvents: "none"
       }
-    }, scannerStatus === "found" ? /*#__PURE__*/React.createElement("div", {
+    }, scannerStatus === "found" ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
         width: 220,
         height: 220,
@@ -1673,18 +1810,18 @@
         justifyContent: "center",
         background: "rgba(34,197,94,.15)"
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 64,
         color: "#22c55e"
       }
-    }, "✓")) : /*#__PURE__*/React.createElement("div", {
+    }, "✓")) : /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "relative",
         width: 220,
         height: 220
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "absolute",
         top: 0,
@@ -1695,7 +1832,7 @@
         borderLeft: `3px solid ${C.red}`,
         borderRadius: "8px 0 0 0"
       }
-    }), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "absolute",
         top: 0,
@@ -1706,7 +1843,7 @@
         borderRight: `3px solid ${C.red}`,
         borderRadius: "0 8px 0 0"
       }
-    }), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "absolute",
         bottom: 0,
@@ -1717,7 +1854,7 @@
         borderLeft: `3px solid ${C.red}`,
         borderRadius: "0 0 0 8px"
       }
-    }), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "absolute",
         bottom: 0,
@@ -1728,7 +1865,7 @@
         borderRight: `3px solid ${C.red}`,
         borderRadius: "0 0 8px 0"
       }
-    }), scannerStatus === "scanning" && /*#__PURE__*/React.createElement("div", {
+    }), scannerStatus === "scanning" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "absolute",
         left: 4,
@@ -1737,7 +1874,7 @@
         background: `linear-gradient(90deg,transparent,${C.red},transparent)`,
         animation: "scanline 1.8s ease-in-out infinite"
       }
-    }))), scannerError && /*#__PURE__*/React.createElement("div", {
+    }))), scannerError && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "absolute",
         bottom: 100,
@@ -1748,14 +1885,14 @@
         borderRadius: 14,
         padding: "16px"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         color: "#ef4444",
         fontWeight: 700,
         fontSize: 14,
         marginBottom: 6
       }
-    }, "⚠️ Kein Kamera-Zugriff"), /*#__PURE__*/React.createElement("div", {
+    }, "⚠️ Kein Kamera-Zugriff"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         color: "#999",
         fontSize: 12,
@@ -1763,7 +1900,7 @@
         marginBottom: 12,
         whiteSpace: "pre-line"
       }
-    }, scannerError), /*#__PURE__*/React.createElement("button", {
+    }, scannerError), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => {
         setScannerError(null);
         setScannerStatus("loading");
@@ -1780,7 +1917,7 @@
         width: "100%",
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "Erneut versuchen")), /*#__PURE__*/React.createElement("div", {
+    }, "Erneut versuchen")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "absolute",
         bottom: 0,
@@ -1790,14 +1927,14 @@
         background: "linear-gradient(to top,rgba(0,0,0,.95),transparent)",
         paddingBottom: "calc(20px + env(safe-area-inset-bottom,0))"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: "rgba(255,255,255,.4)",
         textAlign: "center",
         marginBottom: 8
       }
-    }, "Oder UID manuell eingeben"), /*#__PURE__*/React.createElement("input", {
+    }, "Oder UID manuell eingeben"), /*#__PURE__*/_react.default.createElement("input", {
       placeholder: "QAR-XXXXXXXX",
       onChange: e => {
         const v = e.target.value.toUpperCase();
@@ -1820,7 +1957,7 @@
     // ══════════════════════════════════════════════════════════════════════════════
     // SPLASH
     // ══════════════════════════════════════════════════════════════════════════════
-    if (screen === "splash") return /*#__PURE__*/React.createElement("div", {
+    if (screen === "splash") return /*#__PURE__*/_react.default.createElement("div", {
       style: {
         minHeight: "100vh",
         background: C.black,
@@ -1830,15 +1967,15 @@
         justifyContent: "space-between",
         padding: "0 20px 44px"
       }
-    }, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
       className: `toast ${toast.type}`
-    }, toast.msg), /*#__PURE__*/React.createElement("div", {
+    }, toast.msg), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         width: "100%",
         textAlign: "center",
         paddingTop: 60
       }
-    }, /*#__PURE__*/React.createElement("img", {
+    }, /*#__PURE__*/_react.default.createElement("img", {
       src: LOGO_URL,
       alt: "PCN",
       onError: e => e.target.style.display = "none",
@@ -1848,14 +1985,14 @@
         objectFit: "contain",
         marginBottom: 20
       }
-    }), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         width: 32,
         height: 2,
         background: C.red,
         margin: "0 auto 18px"
       }
-    }), /*#__PURE__*/React.createElement("h1", {
+    }), /*#__PURE__*/_react.default.createElement("h1", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 30,
@@ -1864,30 +2001,30 @@
         lineHeight: 1,
         marginBottom: 8
       }
-    }, "DIGITALE", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+    }, "DIGITALE", /*#__PURE__*/_react.default.createElement("br", null), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         color: C.red
       }
-    }, "CLUBPLATTFORM")), /*#__PURE__*/React.createElement("p", {
+    }, "CLUBPLATTFORM")), /*#__PURE__*/_react.default.createElement("p", {
       style: {
         fontSize: 12,
         color: C.muted,
         marginTop: 8,
         lineHeight: 1.7
       }
-    }, "Fahrzeugakte · Events · QR-Code", /*#__PURE__*/React.createElement("br", null), "für alle PCN-Mitglieder")), /*#__PURE__*/React.createElement("div", {
+    }, "Fahrzeugakte · Events · QR-Code", /*#__PURE__*/_react.default.createElement("br", null), "für alle PCN-Mitglieder")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         width: "100%",
         maxWidth: 360
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         textAlign: "center",
         marginBottom: 10,
         fontSize: 12,
         color: C.muted
       }
-    }, loginForm.mode === "register" ? "Bereits Mitglied? " : "Noch kein Account? ", /*#__PURE__*/React.createElement("span", {
+    }, loginForm.mode === "register" ? "Bereits Mitglied? " : "Noch kein Account? ", /*#__PURE__*/_react.default.createElement("span", {
       style: {
         color: C.red,
         fontWeight: 700,
@@ -1897,7 +2034,7 @@
         ...p,
         mode: p.mode === "register" ? "login" : "register"
       }))
-    }, loginForm.mode === "register" ? "→ Anmelden" : "→ Registrieren")), /*#__PURE__*/React.createElement("div", {
+    }, loginForm.mode === "register" ? "→ Anmelden" : "→ Registrieren")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         background: "#111",
@@ -1905,7 +2042,7 @@
         padding: 3,
         marginBottom: 14
       }
-    }, [["register", "Registrieren"], ["login", "Anmelden"]].map(([m, label]) => /*#__PURE__*/React.createElement("button", {
+    }, [["register", "Registrieren"], ["login", "Anmelden"]].map(([m, label]) => /*#__PURE__*/_react.default.createElement("button", {
       key: m,
       onClick: () => setLoginForm(p => ({
         ...p,
@@ -1924,7 +2061,7 @@
         color: loginForm.mode === m ? "#fff" : C.muted,
         transition: "all .15s"
       }
-    }, label))), loginForm.mode === "register" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
+    }, label))), loginForm.mode === "register" && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("input", {
       className: "inp",
       placeholder: "Club-Code",
       value: loginForm.code,
@@ -1940,7 +2077,7 @@
         fontSize: 18,
         marginBottom: 8
       }
-    }), loginForm.code.toUpperCase() === CLUB_CODE && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
+    }), loginForm.code.toUpperCase() === CLUB_CODE && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("input", {
       className: "inp",
       placeholder: "Dein Name",
       style: {
@@ -1951,7 +2088,7 @@
         ...p,
         name: e.target.value
       }))
-    }), /*#__PURE__*/React.createElement("input", {
+    }), /*#__PURE__*/_react.default.createElement("input", {
       className: "inp",
       placeholder: "E-Mail",
       type: "email",
@@ -1963,7 +2100,7 @@
         ...p,
         email: e.target.value
       }))
-    })), loginForm.code.toUpperCase() === CLUB_CODE && loginForm.name && loginForm.email ? /*#__PURE__*/React.createElement("button", {
+    })), loginForm.code.toUpperCase() === CLUB_CODE && loginForm.name && loginForm.email ? /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         width: "100%"
@@ -1993,14 +2130,14 @@
         setScreen("app");
         toast_("Willkommen, " + u.name + "! 🏁");
       }
-    }, "Konto erstellen →") : /*#__PURE__*/React.createElement("button", {
+    }, "Konto erstellen →") : /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         width: "100%",
         opacity: .4
       },
       disabled: true
-    }, !loginForm.code ? "Club-Code eingeben" : loginForm.code.toUpperCase() !== CLUB_CODE ? "Falscher Club-Code ✗" : "Name & E-Mail eingeben")), loginForm.mode === "login" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
+    }, !loginForm.code ? "Club-Code eingeben" : loginForm.code.toUpperCase() !== CLUB_CODE ? "Falscher Club-Code ✗" : "Name & E-Mail eingeben")), loginForm.mode === "login" && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("input", {
       className: "inp",
       placeholder: "E-Mail-Adresse",
       type: "email",
@@ -2012,7 +2149,7 @@
         ...p,
         email: e.target.value
       }))
-    }), /*#__PURE__*/React.createElement("button", {
+    }), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         width: "100%",
@@ -2033,14 +2170,14 @@
         setScreen("app");
         toast_("Willkommen zurück, " + u.name + "! 🏁");
       }
-    }, "Anmelden →"), /*#__PURE__*/React.createElement("div", {
+    }, "Anmelden →"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         textAlign: "center",
         marginTop: 8,
         fontSize: 11,
         color: C.muted
       }
-    }, "Kein Passwort nötig — nur deine Club-E-Mail")), /*#__PURE__*/React.createElement("button", {
+    }, "Kein Passwort nötig — nur deine Club-E-Mail")), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn ghost",
       style: {
         width: "100%",
@@ -2048,14 +2185,14 @@
         fontSize: 12
       },
       onClick: loadDemo
-    }, "Demo ansehen"), /*#__PURE__*/React.createElement("p", {
+    }, "Demo ansehen"), /*#__PURE__*/_react.default.createElement("p", {
       style: {
         textAlign: "center",
         fontSize: 10,
         color: "#333",
         marginTop: 12
       }
-    }, "Powered by ", /*#__PURE__*/React.createElement("span", {
+    }, "Powered by ", /*#__PURE__*/_react.default.createElement("span", {
       style: {
         color: C.gold
       }
@@ -2074,15 +2211,15 @@
         ...p,
         ev: events[p.eventId]
       })).filter(p => p.ev && daysUntil(p.ev.date) > 0).sort((a, b) => daysUntil(a.ev.date) - daysUntil(b.ev.date))[0];
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement("div", {
         style: {
           minHeight: "100vh",
           background: C.black,
           paddingBottom: 40
         }
-      }, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
         className: `toast ${toast.type}`
-      }, toast.msg), /*#__PURE__*/React.createElement("div", {
+      }, toast.msg), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: C.dark,
           borderBottom: `1px solid ${C.border}`,
@@ -2091,7 +2228,7 @@
           alignItems: "center",
           justifyContent: "space-between"
         }
-      }, /*#__PURE__*/React.createElement("img", {
+      }, /*#__PURE__*/_react.default.createElement("img", {
         src: LOGO_URL,
         alt: "PCN",
         onError: e => e.target.style.display = "none",
@@ -2099,19 +2236,19 @@
           height: 28,
           objectFit: "contain"
         }
-      }), /*#__PURE__*/React.createElement("span", {
+      }), /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 10,
           color: C.muted
         }
-      }, "Digitale Fahrzeugakte")), /*#__PURE__*/React.createElement("div", {
+      }, "Digitale Fahrzeugakte")), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           height: 200,
           position: "relative",
           overflow: "hidden",
           background: "#111"
         }
-      }, v.image && /*#__PURE__*/React.createElement("img", {
+      }, v.image && /*#__PURE__*/_react.default.createElement("img", {
         src: v.image,
         alt: "",
         style: {
@@ -2120,20 +2257,20 @@
           objectFit: "cover"
         },
         onError: e => e.target.style.display = "none"
-      }), /*#__PURE__*/React.createElement("div", {
+      }), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           position: "absolute",
           inset: 0,
           background: "linear-gradient(to bottom,transparent 30%,#000000f0)"
         }
-      }), /*#__PURE__*/React.createElement("div", {
+      }), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           position: "absolute",
           bottom: 14,
           left: 16,
           right: 16
         }
-      }, /*#__PURE__*/React.createElement("h1", {
+      }, /*#__PURE__*/_react.default.createElement("h1", {
         style: {
           fontFamily: "'Barlow Condensed',sans-serif",
           fontSize: 24,
@@ -2142,7 +2279,7 @@
           lineHeight: 1,
           marginBottom: 8
         }
-      }, v.hersteller, " ", v.modell), /*#__PURE__*/React.createElement("div", {
+      }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "inline-flex",
           alignItems: "center",
@@ -2151,7 +2288,7 @@
           borderRadius: 5,
           padding: "3px 10px"
         }
-      }, /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 13,
           fontWeight: 800,
@@ -2159,13 +2296,13 @@
           letterSpacing: 2,
           fontFamily: "Arial,sans-serif"
         }
-      }, kz)))), /*#__PURE__*/React.createElement("div", {
+      }, kz)))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           padding: "12px 14px",
           background: C.dark,
           borderBottom: `1px solid ${C.border}`
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           flexDirection: "column",
@@ -2173,7 +2310,7 @@
           maxWidth: 520,
           margin: "0 auto"
         }
-      }, priv.pub_phone === true && v.phone && v.phone.trim() && /*#__PURE__*/React.createElement("a", {
+      }, priv.pub_phone === true && v.phone && v.phone.trim() && /*#__PURE__*/_react.default.createElement("a", {
         href: `tel:${(v.phone || "").replace(/[^+\d]/g, "")}`,
         style: {
           display: "flex",
@@ -2187,7 +2324,7 @@
           color: "#fff",
           cursor: "pointer"
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           width: 40,
           height: 40,
@@ -2199,28 +2336,28 @@
           fontSize: 18,
           flexShrink: 0
         }
-      }, "📞"), /*#__PURE__*/React.createElement("div", {
+      }, "📞"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           flex: 1
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontWeight: 800,
           fontSize: 15,
           color: "#fff"
         }
-      }, "Direkt anrufen"), /*#__PURE__*/React.createElement("div", {
+      }, "Direkt anrufen"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 12,
           color: "rgba(255,255,255,.7)",
           marginTop: 1
         }
-      }, v.phone)), /*#__PURE__*/React.createElement("span", {
+      }, v.phone)), /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 20,
           color: "rgba(255,255,255,.7)"
         }
-      }, "›")), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/React.createElement("button", {
+      }, "›")), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => {
           if (me) {
             startContact(v.id);
@@ -2241,7 +2378,7 @@
           color: "#fff",
           width: "100%"
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           width: 40,
           height: 40,
@@ -2253,28 +2390,28 @@
           fontSize: 18,
           flexShrink: 0
         }
-      }, "💬"), /*#__PURE__*/React.createElement("div", {
+      }, "💬"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           flex: 1,
           textAlign: "left"
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontWeight: 800,
           fontSize: 15
         }
-      }, "Nachricht an Fahrer(in) senden"), /*#__PURE__*/React.createElement("div", {
+      }, "Nachricht an Fahrer(in) senden"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 12,
           color: "rgba(255,255,255,.7)",
           marginTop: 1
         }
-      }, "Anonym · Besitzer antwortet per App")), /*#__PURE__*/React.createElement("span", {
+      }, "Anonym · Besitzer antwortet per App")), /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 20,
           color: "rgba(255,255,255,.7)"
         }
-      }, "›")))), /*#__PURE__*/React.createElement("div", {
+      }, "›")))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           padding: "14px 16px",
           maxWidth: 520,
@@ -2284,7 +2421,7 @@
         const s = getActiveStatus(v.id);
         if (!s) return null;
         const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : null;
-        return /*#__PURE__*/React.createElement("div", {
+        return /*#__PURE__*/_react.default.createElement("div", {
           style: {
             background: `${C.amber}18`,
             border: `2px solid ${C.amber}66`,
@@ -2293,36 +2430,36 @@
             marginBottom: 14,
             animation: "fadeIn .3s ease"
           }
-        }, /*#__PURE__*/React.createElement("div", {
+        }, /*#__PURE__*/_react.default.createElement("div", {
           style: {
             display: "flex",
             gap: 10,
             alignItems: "center"
           }
-        }, /*#__PURE__*/React.createElement("span", {
+        }, /*#__PURE__*/_react.default.createElement("span", {
           style: {
             fontSize: 28,
             flexShrink: 0
           }
-        }, s.icon), /*#__PURE__*/React.createElement("div", {
+        }, s.icon), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             flex: 1
           }
-        }, /*#__PURE__*/React.createElement("div", {
+        }, /*#__PURE__*/_react.default.createElement("div", {
           style: {
             fontWeight: 800,
             fontSize: 16,
             color: C.amber,
             lineHeight: 1.2
           }
-        }, s.text), minsLeft && minsLeft > 0 && /*#__PURE__*/React.createElement("div", {
+        }, s.text), minsLeft && minsLeft > 0 && /*#__PURE__*/_react.default.createElement("div", {
           style: {
             fontSize: 11,
             color: C.muted,
             marginTop: 3
           }
         }, "Noch ca. ", minsLeft, " Min"))));
-      })(), nextEvent && priv.pub_events && /*#__PURE__*/React.createElement("div", {
+      })(), nextEvent && priv.pub_events && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: `${C.red}11`,
           border: `1px solid ${C.red}33`,
@@ -2330,7 +2467,7 @@
           padding: "12px 14px",
           marginBottom: 14
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 9,
           color: C.red,
@@ -2339,30 +2476,30 @@
           letterSpacing: 1,
           marginBottom: 3
         }
-      }, "🏁 Nächste Veranstaltung — in ", daysUntil(nextEvent.ev.date), " Tagen"), /*#__PURE__*/React.createElement("div", {
+      }, "🏁 Nächste Veranstaltung — in ", daysUntil(nextEvent.ev.date), " Tagen"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontWeight: 700,
           fontSize: 14,
           color: C.white
         }
-      }, nextEvent.ev.name), /*#__PURE__*/React.createElement("div", {
+      }, nextEvent.ev.name), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
           marginTop: 2
         }
-      }, "Startnr. ", /*#__PURE__*/React.createElement("span", {
+      }, "Startnr. ", /*#__PURE__*/_react.default.createElement("span", {
         style: {
           color: C.gold,
           fontWeight: 700
         }
-      }, "#", nextEvent.startNr), " · ", nextEvent.class)), /*#__PURE__*/React.createElement("div", {
+      }, "#", nextEvent.startNr), " · ", nextEvent.class)), /*#__PURE__*/_react.default.createElement("div", {
         className: "card",
         style: {
           padding: 16,
           marginBottom: 14
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           fontWeight: 800,
@@ -2371,29 +2508,29 @@
           letterSpacing: 2,
           marginBottom: 10
         }
-      }, "Fahrzeugdaten"), /*#__PURE__*/React.createElement("div", {
+      }, "Fahrzeugdaten"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: 10
         }
-      }, [["Baujahr", "baujahr"], ["Kraftstoff", "kraftstoff"], ["Getriebe", "getriebe"], ["Farbe", "farbe"], ["Kilometerstand", "kilometerstand"], ["TÜV", "tuev_faelligkeit"]].filter(([, k]) => priv[k] !== false && v[k]).map(([label, key]) => /*#__PURE__*/React.createElement("div", {
+      }, [["Baujahr", "baujahr"], ["Kraftstoff", "kraftstoff"], ["Getriebe", "getriebe"], ["Farbe", "farbe"], ["Kilometerstand", "kilometerstand"], ["TÜV", "tuev_faelligkeit"]].filter(([, k]) => priv[k] !== false && v[k]).map(([label, key]) => /*#__PURE__*/_react.default.createElement("div", {
         key: key
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 9,
           color: C.muted,
           textTransform: "uppercase",
           letterSpacing: .5
         }
-      }, label), /*#__PURE__*/React.createElement("div", {
+      }, label), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 14,
           fontWeight: 600,
           color: C.white,
           marginTop: 2
         }
-      }, key === "kilometerstand" ? parseInt(v[key]).toLocaleString("de-DE") + " km" : v[key])))), v.besonderheiten && /*#__PURE__*/React.createElement("div", {
+      }, key === "kilometerstand" ? parseInt(v[key]).toLocaleString("de-DE") + " km" : v[key])))), v.besonderheiten && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           marginTop: 12,
           paddingTop: 10,
@@ -2402,13 +2539,13 @@
           color: C.muted,
           lineHeight: 1.6
         }
-      }, "ℹ️ ", v.besonderheiten)), priv.pub_events && vHist.length > 0 && /*#__PURE__*/React.createElement("div", {
+      }, "ℹ️ ", v.besonderheiten)), priv.pub_events && vHist.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
         className: "card",
         style: {
           padding: 16,
           marginBottom: 14
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           fontWeight: 800,
@@ -2417,7 +2554,7 @@
           letterSpacing: 2,
           marginBottom: 10
         }
-      }, "Veranstaltungshistorie"), vHist.map(h => /*#__PURE__*/React.createElement("div", {
+      }, "Veranstaltungshistorie"), vHist.map(h => /*#__PURE__*/_react.default.createElement("div", {
         key: h.id,
         style: {
           display: "flex",
@@ -2426,7 +2563,7 @@
           padding: "8px 0",
           borderBottom: `1px solid ${C.border}`
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: `${C.red}22`,
           border: `1px solid ${C.red}44`,
@@ -2437,12 +2574,12 @@
           color: C.red,
           flexShrink: 0
         }
-      }, "#", h.startNr), /*#__PURE__*/React.createElement("div", {
+      }, "#", h.startNr), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           flex: 1,
           minWidth: 0
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 12,
           fontWeight: 600,
@@ -2451,50 +2588,50 @@
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, h.eventName), /*#__PURE__*/React.createElement("div", {
+      }, h.eventName), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted
         }
-      }, fmtDate(h.date), " · ", h.class), h.note && /*#__PURE__*/React.createElement("div", {
+      }, fmtDate(h.date), " · ", h.class), h.note && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.gold
         }
-      }, h.note)), /*#__PURE__*/React.createElement("span", {
+      }, h.note)), /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 10,
           fontWeight: 700,
           color: h.result === "Teilnahme" ? C.muted : C.gold,
           flexShrink: 0
         }
-      }, h.result)))), /*#__PURE__*/React.createElement("div", {
+      }, h.result)))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           textAlign: "center",
           padding: "12px 0",
           borderTop: `1px solid ${C.border}`
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 9,
           color: "#333",
           letterSpacing: 2,
           marginBottom: 4
         }
-      }, "VERIFIZIERT DURCH QAR.GALLERY"), /*#__PURE__*/React.createElement("div", {
+      }, "VERIFIZIERT DURCH QAR.GALLERY"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontFamily: "monospace",
           fontSize: 11,
           color: "#444"
         }
-      }, v.qarId)), me && /*#__PURE__*/React.createElement("button", {
+      }, v.qarId)), me && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn sm ghost",
         style: {
           width: "100%",
           marginTop: 10
         },
         onClick: () => setScreen(viewV ? "vehicle" : "app")
-      }, "← Zurück")), showStatusPicker && /*#__PURE__*/React.createElement("div", {
+      }, "← Zurück")), showStatusPicker && /*#__PURE__*/_react.default.createElement("div", {
         className: "overlay",
         style: {
           zIndex: 500
@@ -2502,9 +2639,9 @@
         onClick: e => {
           if (e.target === e.currentTarget) setShowStatusPicker(null);
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         className: "sheet"
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontFamily: "'Barlow Condensed',sans-serif",
           fontSize: 20,
@@ -2512,20 +2649,20 @@
           color: C.white,
           marginBottom: 4
         }
-      }, "📍 Status setzen"), /*#__PURE__*/React.createElement("div", {
+      }, "📍 Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
           marginBottom: 16
         }
-      }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/React.createElement("div", {
+      }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           flexDirection: "column",
           gap: 8,
           marginBottom: 16
         }
-      }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/React.createElement("button", {
+      }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/_react.default.createElement("button", {
         key: i,
         onClick: () => setStatus(showStatusPicker, p),
         style: {
@@ -2540,40 +2677,40 @@
           fontFamily: "'Barlow',sans-serif",
           textAlign: "left"
         }
-      }, /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 24,
           flexShrink: 0
         }
-      }, p.icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      }, p.icon), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 15,
           fontWeight: 700,
           color: C.white
         }
-      }, p.text), /*#__PURE__*/React.createElement("div", {
+      }, p.text), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted
         }
-      }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/React.createElement("div", {
+      }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           borderTop: `1px solid ${C.border}`,
           paddingTop: 14,
           marginBottom: 10
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
           marginBottom: 8
         }
-      }, "Eigener Text"), /*#__PURE__*/React.createElement("div", {
+      }, "Eigener Text"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           gap: 8
         }
-      }, /*#__PURE__*/React.createElement("input", {
+      }, /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
         placeholder: "z.B. Bin gleich beim Einlass...",
         value: statusCustom,
@@ -2587,7 +2724,7 @@
         style: {
           flex: 1
         }
-      }), /*#__PURE__*/React.createElement("button", {
+      }), /*#__PURE__*/_react.default.createElement("button", {
         className: "btn",
         disabled: !statusCustom.trim(),
         onClick: () => {
@@ -2600,7 +2737,7 @@
           flexShrink: 0,
           opacity: statusCustom.trim() ? 1 : .4
         }
-      }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/React.createElement("button", {
+      }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn ghost",
         style: {
           width: "100%",
@@ -2613,7 +2750,7 @@
           setShowStatusPicker(null);
           toast_("Status gelöscht");
         }
-      }, "Status löschen"))), lightbox && /*#__PURE__*/React.createElement("div", {
+      }, "Status löschen"))), lightbox && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           position: "fixed",
           inset: 0,
@@ -2623,7 +2760,7 @@
           flexDirection: "column"
         },
         onClick: () => setLightbox(null)
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
@@ -2632,12 +2769,12 @@
           flexShrink: 0
         },
         onClick: e => e.stopPropagation()
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 13,
           color: "rgba(255,255,255,.6)"
         }
-      }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/React.createElement("button", {
+      }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => setLightbox(null),
         style: {
           background: "rgba(255,255,255,.1)",
@@ -2652,7 +2789,7 @@
           alignItems: "center",
           justifyContent: "center"
         }
-      }, "✕")), /*#__PURE__*/React.createElement("div", {
+      }, "✕")), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           flex: 1,
           display: "flex",
@@ -2662,7 +2799,7 @@
           position: "relative"
         },
         onClick: e => e.stopPropagation()
-      }, /*#__PURE__*/React.createElement("img", {
+      }, /*#__PURE__*/_react.default.createElement("img", {
         src: lightbox.images[lightbox.index],
         alt: "",
         style: {
@@ -2671,7 +2808,7 @@
           objectFit: "contain",
           borderRadius: 8
         }
-      }), lightbox.images.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+      }), lightbox.images.length > 1 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => setLightbox(p => ({
           ...p,
           index: Math.max(0, p.index - 1)
@@ -2691,7 +2828,7 @@
           alignItems: "center",
           justifyContent: "center"
         }
-      }, "‹"), /*#__PURE__*/React.createElement("button", {
+      }, "‹"), /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => setLightbox(p => ({
           ...p,
           index: Math.min(p.images.length - 1, p.index + 1)
@@ -2711,7 +2848,7 @@
           alignItems: "center",
           justifyContent: "center"
         }
-      }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/React.createElement("div", {
+      }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           gap: 6,
@@ -2720,7 +2857,7 @@
           flexShrink: 0
         },
         onClick: e => e.stopPropagation()
-      }, lightbox.images.map((_, i) => /*#__PURE__*/React.createElement("div", {
+      }, lightbox.images.map((_, i) => /*#__PURE__*/_react.default.createElement("div", {
         key: i,
         onClick: () => setLightbox(p => ({
           ...p,
@@ -2752,13 +2889,13 @@
       const tuevColor = !tuevDays ? C.muted : tuevDays < 0 ? C.red : tuevDays < 90 ? C.amber : C.green;
       const kz = fmtKz(v.kennzeichen, v.baujahr);
       const priv = v.privacy || DEF_PRIVACY;
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement("div", {
         style: {
           minHeight: "100vh",
           background: C.black,
           paddingBottom: 80
         }
-      }, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
         className: `toast ${toast.type}`
       }, toast.msg), ScannerOverlay, (() => {
         const imgs = getImages(v);
@@ -2777,7 +2914,7 @@
           const dx = e.changedTouches[0].clientX - touchStartX;
           if (Math.abs(dx) > 40) goTo(curIdx + (dx < 0 ? 1 : -1));
         };
-        return /*#__PURE__*/React.createElement("div", {
+        return /*#__PURE__*/_react.default.createElement("div", {
           style: {
             height: 280,
             position: "relative",
@@ -2786,7 +2923,7 @@
           },
           onTouchStart: onTouchStart,
           onTouchEnd: onTouchEnd
-        }, curImg ? /*#__PURE__*/React.createElement("img", {
+        }, curImg ? /*#__PURE__*/_react.default.createElement("img", {
           src: curImg,
           alt: "",
           draggable: false,
@@ -2803,7 +2940,7 @@
             index: curIdx
           }),
           onError: e => e.target.style.display = "none"
-        }) : isOwn && /*#__PURE__*/React.createElement("label", {
+        }) : isOwn && /*#__PURE__*/_react.default.createElement("label", {
           style: {
             display: "flex",
             flexDirection: "column",
@@ -2814,36 +2951,36 @@
             height: "100%",
             color: C.muted
           }
-        }, /*#__PURE__*/React.createElement("input", {
+        }, /*#__PURE__*/_react.default.createElement("input", {
           type: "file",
           accept: "image/*",
           style: {
             display: "none"
           },
           onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
-        }), /*#__PURE__*/React.createElement("span", {
+        }), /*#__PURE__*/_react.default.createElement("span", {
           style: {
             fontSize: 40
           }
-        }, "📷"), /*#__PURE__*/React.createElement("span", {
+        }, "📷"), /*#__PURE__*/_react.default.createElement("span", {
           style: {
             fontSize: 13,
             fontWeight: 600,
             color: C.white
           }
-        }, "Erstes Foto hinzufügen"), /*#__PURE__*/React.createElement("span", {
+        }, "Erstes Foto hinzufügen"), /*#__PURE__*/_react.default.createElement("span", {
           style: {
             fontSize: 11,
             color: C.muted
           }
-        }, "Tippe um Foto oder Bibliothek zu öffnen")), /*#__PURE__*/React.createElement("div", {
+        }, "Tippe um Foto oder Bibliothek zu öffnen")), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             position: "absolute",
             inset: 0,
             background: "linear-gradient(to bottom,rgba(0,0,0,.45) 0%,transparent 35%,transparent 50%,rgba(0,0,0,.75) 100%)",
             pointerEvents: "none"
           }
-        }), imgs.length > 1 && /*#__PURE__*/React.createElement("div", {
+        }), imgs.length > 1 && /*#__PURE__*/_react.default.createElement("div", {
           style: {
             position: "absolute",
             bottom: 14,
@@ -2855,7 +2992,7 @@
             gap: 6,
             zIndex: 3
           }
-        }, imgs.map((_, i) => /*#__PURE__*/React.createElement("div", {
+        }, imgs.map((_, i) => /*#__PURE__*/_react.default.createElement("div", {
           key: i,
           onClick: e => {
             e.stopPropagation();
@@ -2869,7 +3006,7 @@
             transition: "width .2s, background .2s",
             cursor: "pointer"
           }
-        }))), imgs.length > 1 && /*#__PURE__*/React.createElement("div", {
+        }))), imgs.length > 1 && /*#__PURE__*/_react.default.createElement("div", {
           style: {
             position: "absolute",
             bottom: 14,
@@ -2884,14 +3021,14 @@
             zIndex: 3,
             letterSpacing: .5
           }
-        }, curIdx + 1, "/", imgs.length), /*#__PURE__*/React.createElement("div", {
+        }, curIdx + 1, "/", imgs.length), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             position: "absolute",
             top: 16,
             left: 14,
             zIndex: 5
           }
-        }, /*#__PURE__*/React.createElement("button", {
+        }, /*#__PURE__*/_react.default.createElement("button", {
           onClick: () => setScreen("app"),
           style: {
             background: "rgba(0,0,0,.55)",
@@ -2908,7 +3045,7 @@
             alignItems: "center",
             gap: 6
           }
-        }, "← Zurück")), /*#__PURE__*/React.createElement("div", {
+        }, "← Zurück")), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             position: "absolute",
             top: 16,
@@ -2917,7 +3054,7 @@
             gap: 8,
             zIndex: 5
           }
-        }, isOwn && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
+        }, isOwn && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("label", {
           title: "Foto hinzufügen",
           style: {
             background: "rgba(0,0,0,.55)",
@@ -2933,14 +3070,14 @@
             justifyContent: "center",
             minWidth: 38
           }
-        }, /*#__PURE__*/React.createElement("input", {
+        }, /*#__PURE__*/_react.default.createElement("input", {
           type: "file",
           accept: "image/*",
           style: {
             display: "none"
           },
           onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
-        }), imgUploading ? "⏳" : "📷"), /*#__PURE__*/React.createElement("button", {
+        }), imgUploading ? "⏳" : "📷"), /*#__PURE__*/_react.default.createElement("button", {
           title: "QR-Sichtbarkeit",
           onClick: () => setShowPrivacy(v.id),
           style: {
@@ -2954,7 +3091,7 @@
             fontSize: 14,
             minWidth: 38
           }
-        }, "🔒")), /*#__PURE__*/React.createElement("button", {
+        }, "🔒")), /*#__PURE__*/_react.default.createElement("button", {
           title: "Öffentliche Ansicht",
           onClick: () => {
             setPublicV({
@@ -2975,13 +3112,13 @@
             minWidth: 38
           }
         }, "👁")));
-      })(), /*#__PURE__*/React.createElement("div", {
+      })(), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           padding: "16px",
           maxWidth: 520,
           margin: "0 auto"
         }
-      }, /*#__PURE__*/React.createElement("h1", {
+      }, /*#__PURE__*/_react.default.createElement("h1", {
         style: {
           fontFamily: "'Barlow Condensed',sans-serif",
           fontSize: 26,
@@ -2990,7 +3127,7 @@
           lineHeight: 1,
           marginBottom: 8
         }
-      }, v.hersteller, " ", v.modell), /*#__PURE__*/React.createElement("div", {
+      }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           gap: 10,
@@ -2998,7 +3135,7 @@
           marginBottom: 14,
           flexWrap: "wrap"
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "inline-flex",
           alignItems: "center",
@@ -3007,7 +3144,7 @@
           borderRadius: 5,
           padding: "3px 10px"
         }
-      }, /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 14,
           fontWeight: 800,
@@ -3015,13 +3152,13 @@
           letterSpacing: 2,
           fontFamily: "Arial,sans-serif"
         }
-      }, kz)), isOwn && /*#__PURE__*/React.createElement("button", {
+      }, kz)), isOwn && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn sm ghost",
         style: {
           fontSize: 11
         },
         onClick: () => setShowStatusPicker(v.id)
-      }, getActiveStatus(v.id) ? `${getActiveStatus(v.id).icon} Status` : "📍 Status"), !isOwn && /*#__PURE__*/React.createElement("button", {
+      }, getActiveStatus(v.id) ? `${getActiveStatus(v.id).icon} Status` : "📍 Status"), !isOwn && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn sm ghost",
         style: {
           fontSize: 11
@@ -3030,7 +3167,7 @@
       }, "💬 Kontakt")), (() => {
         const s = getActiveStatus(v.id);
         if (!s || !isOwn) return null;
-        return /*#__PURE__*/React.createElement("div", {
+        return /*#__PURE__*/_react.default.createElement("div", {
           style: {
             background: `${C.amber}18`,
             border: `1px solid ${C.amber}44`,
@@ -3041,26 +3178,26 @@
             gap: 10,
             alignItems: "center"
           }
-        }, /*#__PURE__*/React.createElement("span", {
+        }, /*#__PURE__*/_react.default.createElement("span", {
           style: {
             fontSize: 20
           }
-        }, s.icon), /*#__PURE__*/React.createElement("div", {
+        }, s.icon), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             flex: 1
           }
-        }, /*#__PURE__*/React.createElement("div", {
+        }, /*#__PURE__*/_react.default.createElement("div", {
           style: {
             fontSize: 13,
             fontWeight: 700,
             color: C.amber
           }
-        }, s.text), s.expiresAt && /*#__PURE__*/React.createElement("div", {
+        }, s.text), s.expiresAt && /*#__PURE__*/_react.default.createElement("div", {
           style: {
             fontSize: 10,
             color: C.muted
           }
-        }, "Läuft ab in ", Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 60000)), " Min")), /*#__PURE__*/React.createElement("button", {
+        }, "Läuft ab in ", Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 60000)), " Min")), /*#__PURE__*/_react.default.createElement("button", {
           onClick: () => clearStatus(v.id),
           style: {
             background: "none",
@@ -3075,7 +3212,7 @@
         const imgs = getImages(v);
         if (imgs.length <= 1) return null;
         const curIdx = Math.min(gallerySwipe[v.id] || 0, imgs.length - 1);
-        return /*#__PURE__*/React.createElement("div", {
+        return /*#__PURE__*/_react.default.createElement("div", {
           style: {
             display: "flex",
             gap: 8,
@@ -3087,7 +3224,7 @@
           }
         }, imgs.map((img, i) => {
           const active = i === curIdx;
-          return /*#__PURE__*/React.createElement("div", {
+          return /*#__PURE__*/_react.default.createElement("div", {
             key: i,
             style: {
               position: "relative",
@@ -3095,7 +3232,7 @@
               transition: "transform .15s",
               transform: active ? "scale(1.05)" : "scale(1)"
             }
-          }, /*#__PURE__*/React.createElement("img", {
+          }, /*#__PURE__*/_react.default.createElement("img", {
             src: img,
             alt: "",
             onClick: () => setGallerySwipe(p => ({
@@ -3114,7 +3251,7 @@
               transition: "border-color .15s"
             },
             onError: e => e.target.style.display = "none"
-          }), isOwn && /*#__PURE__*/React.createElement("button", {
+          }), isOwn && /*#__PURE__*/_react.default.createElement("button", {
             onClick: e => {
               e.stopPropagation();
               removeImageFromVehicle(v.id, i);
@@ -3139,7 +3276,7 @@
               fontFamily: "'Barlow',sans-serif"
             }
           }, "✕"));
-        }), isOwn && /*#__PURE__*/React.createElement("label", {
+        }), isOwn && /*#__PURE__*/_react.default.createElement("label", {
           style: {
             width: 68,
             height: 68,
@@ -3154,32 +3291,32 @@
             flexShrink: 0,
             gap: 2
           }
-        }, /*#__PURE__*/React.createElement("input", {
+        }, /*#__PURE__*/_react.default.createElement("input", {
           type: "file",
           accept: "image/*",
           style: {
             display: "none"
           },
           onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
-        }), /*#__PURE__*/React.createElement("span", {
+        }), /*#__PURE__*/_react.default.createElement("span", {
           style: {
             fontSize: 18
           }
-        }, "📷"), /*#__PURE__*/React.createElement("span", {
+        }, "📷"), /*#__PURE__*/_react.default.createElement("span", {
           style: {
             fontSize: 8,
             color: C.muted,
             textAlign: "center"
           }
         }, "Hinzufügen")));
-      })(), /*#__PURE__*/React.createElement("div", {
+      })(), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
           gap: 8,
           marginBottom: 16
         }
-      }, [[v.tuev_faelligkeit || "–", "TÜV", tuevColor], [parseInt(v.kilometerstand || 0).toLocaleString("de-DE") + " km", "Stand", C.muted], [["", "Sehr gut", "Gut", "Befriend.", "Ausreichend", "Mangelhaft"][parseInt(v.zustand)] || "–", "Zustand", C.gold]].map(([val, label, color], i) => /*#__PURE__*/React.createElement("div", {
+      }, [[v.tuev_faelligkeit || "–", "TÜV", tuevColor], [parseInt(v.kilometerstand || 0).toLocaleString("de-DE") + " km", "Stand", C.muted], [["", "Sehr gut", "Gut", "Befriend.", "Ausreichend", "Mangelhaft"][parseInt(v.zustand)] || "–", "Zustand", C.gold]].map(([val, label, color], i) => /*#__PURE__*/_react.default.createElement("div", {
         key: i,
         style: {
           background: C.card,
@@ -3188,32 +3325,32 @@
           padding: "10px 8px",
           textAlign: "center"
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           fontWeight: 700,
           color,
           marginBottom: 2
         }
-      }, val), /*#__PURE__*/React.createElement("div", {
+      }, val), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 9,
           color: C.muted,
           textTransform: "uppercase",
           letterSpacing: .5
         }
-      }, label)))), /*#__PURE__*/React.createElement("div", {
+      }, label)))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           marginBottom: 16
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 8
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           fontWeight: 800,
@@ -3221,10 +3358,10 @@
           textTransform: "uppercase",
           letterSpacing: 2
         }
-      }, "📋 Logbuch (", vLog.length, ")"), isOwn && /*#__PURE__*/React.createElement("button", {
+      }, "📋 Logbuch (", vLog.length, ")"), isOwn && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn sm ghost",
         onClick: () => setShowAddLog(v.id)
-      }, "+ Eintrag")), vLog.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      }, "+ Eintrag")), vLog.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: C.card,
           border: `1px solid ${C.border}`,
@@ -3234,7 +3371,7 @@
           color: C.muted,
           fontSize: 12
         }
-      }, "Noch leer — 3 Einträge schalten KI-Marktwert frei") : vLog.slice(0, 10).map(e => /*#__PURE__*/React.createElement("div", {
+      }, "Noch leer — 3 Einträge schalten KI-Marktwert frei") : vLog.slice(0, 10).map(e => /*#__PURE__*/_react.default.createElement("div", {
         key: e.id,
         style: {
           background: C.card,
@@ -3243,39 +3380,39 @@
           padding: "11px 14px",
           marginBottom: 6
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
           marginBottom: 2
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontWeight: 700,
           fontSize: 13,
           color: C.white
         }
-      }, e.type), /*#__PURE__*/React.createElement("div", {
+      }, e.type), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted
         }
-      }, fmtDate(e.date))), /*#__PURE__*/React.createElement("div", {
+      }, fmtDate(e.date))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted
         }
-      }, e.km ? parseInt(e.km).toLocaleString("de-DE") + " km" : "", e.workshop ? " · " + e.workshop : ""), e.notes && /*#__PURE__*/React.createElement("div", {
+      }, e.km ? parseInt(e.km).toLocaleString("de-DE") + " km" : "", e.workshop ? " · " + e.workshop : ""), e.notes && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: "#555",
           marginTop: 3
         }
-      }, e.notes)))), (vParts.length > 0 || vHist.length > 0) && /*#__PURE__*/React.createElement("div", {
+      }, e.notes)))), (vParts.length > 0 || vHist.length > 0) && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           marginBottom: 16
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           fontWeight: 800,
@@ -3287,7 +3424,7 @@
       }, "🏁 Veranstaltungen"), vParts.map(p => {
         const ev = events[p.eventId];
         if (!ev) return null;
-        return /*#__PURE__*/React.createElement("div", {
+        return /*#__PURE__*/_react.default.createElement("div", {
           key: p.id,
           style: {
             background: C.card,
@@ -3304,7 +3441,7 @@
             setViewEv(ev);
             setScreen("event");
           }
-        }, /*#__PURE__*/React.createElement("div", {
+        }, /*#__PURE__*/_react.default.createElement("div", {
           style: {
             background: `${C.red}22`,
             border: `1px solid ${C.red}44`,
@@ -3315,18 +3452,18 @@
             color: C.red,
             flexShrink: 0
           }
-        }, "#", p.startNr), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+        }, "#", p.startNr), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
           style: {
             fontWeight: 600,
             fontSize: 13,
             color: C.white
           }
-        }, ev.name), /*#__PURE__*/React.createElement("div", {
+        }, ev.name), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             fontSize: 11,
             color: C.muted
           }
-        }, fmtDate(ev.date), " · ", p.class)), /*#__PURE__*/React.createElement("div", {
+        }, fmtDate(ev.date), " · ", p.class)), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             marginLeft: "auto",
             fontSize: 10,
@@ -3334,7 +3471,7 @@
             fontWeight: 600
           }
         }, "in ", daysUntil(ev.date), " T."));
-      }), vHist.map(h => /*#__PURE__*/React.createElement("div", {
+      }), vHist.map(h => /*#__PURE__*/_react.default.createElement("div", {
         key: h.id,
         style: {
           background: C.card,
@@ -3347,7 +3484,7 @@
           alignItems: "center",
           opacity: .75
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: `${C.gold}22`,
           border: `1px solid ${C.gold}44`,
@@ -3358,12 +3495,12 @@
           color: C.gold,
           flexShrink: 0
         }
-      }, "#", h.startNr), /*#__PURE__*/React.createElement("div", {
+      }, "#", h.startNr), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           flex: 1,
           minWidth: 0
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontWeight: 600,
           fontSize: 13,
@@ -3372,23 +3509,23 @@
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, h.eventName), /*#__PURE__*/React.createElement("div", {
+      }, h.eventName), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted
         }
-      }, fmtDate(h.date), h.note ? " · " + h.note : "")), /*#__PURE__*/React.createElement("div", {
+      }, fmtDate(h.date), h.note ? " · " + h.note : "")), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: h.result === "Teilnahme" ? C.muted : C.gold,
           fontWeight: 700,
           flexShrink: 0
         }
-      }, h.result)))), isOwn && /*#__PURE__*/React.createElement("div", {
+      }, h.result)))), isOwn && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           marginBottom: 16
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           fontWeight: 800,
@@ -3397,13 +3534,13 @@
           letterSpacing: 2,
           marginBottom: 8
         }
-      }, "📞 Kontakt"), /*#__PURE__*/React.createElement("div", {
+      }, "📞 Kontakt"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           gap: 8,
           alignItems: "center"
         }
-      }, /*#__PURE__*/React.createElement("input", {
+      }, /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
         placeholder: "Telefonnummer",
         type: "tel",
@@ -3430,7 +3567,7 @@
           flex: 1,
           fontSize: 14
         }
-      }), /*#__PURE__*/React.createElement("div", {
+      }), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted,
@@ -3438,12 +3575,12 @@
           lineHeight: 1.4,
           maxWidth: 100
         }
-      }, priv.pub_phone ? "🔓 Öffentlich" : "🔒 Privat"))), /*#__PURE__*/React.createElement("div", {
+      }, priv.pub_phone ? "🔓 Öffentlich" : "🔒 Privat"))), /*#__PURE__*/_react.default.createElement("div", {
         className: "card",
         style: {
           padding: 16
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           fontWeight: 800,
@@ -3452,13 +3589,13 @@
           letterSpacing: 2,
           marginBottom: 12
         }
-      }, "📱 QR-Code"), /*#__PURE__*/React.createElement("div", {
+      }, "📱 QR-Code"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           gap: 14,
           alignItems: "center"
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: "#fff",
           borderRadius: 10,
@@ -3473,16 +3610,16 @@
           });
           setScreen("public");
         }
-      }, /*#__PURE__*/React.createElement(QRCodeCanvas, {
+      }, /*#__PURE__*/_react.default.createElement(QRCodeCanvas, {
         value: `https://qar.gallery/pcn/?v=${v.qarId}`,
         size: 90
-      })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      })), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted,
           marginBottom: 3
         }
-      }, "QAR-ID"), /*#__PURE__*/React.createElement("div", {
+      }, "QAR-ID"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontFamily: "monospace",
           fontSize: 13,
@@ -3490,13 +3627,13 @@
           color: C.white,
           letterSpacing: 1
         }
-      }, v.qarId), /*#__PURE__*/React.createElement("div", {
+      }, v.qarId), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted,
           marginTop: 4
         }
-      }, "FIN niemals öffentlich"), /*#__PURE__*/React.createElement("button", {
+      }, "FIN niemals öffentlich"), /*#__PURE__*/_react.default.createElement("button", {
         className: "btn sm ghost",
         style: {
           marginTop: 8,
@@ -3509,14 +3646,14 @@
           });
           setScreen("public");
         }
-      }, "Öffentliche Seite →"))))), showPrivacy === v.id && /*#__PURE__*/React.createElement("div", {
+      }, "Öffentliche Seite →"))))), showPrivacy === v.id && /*#__PURE__*/_react.default.createElement("div", {
         className: "overlay",
         onClick: e => {
           if (e.target === e.currentTarget) setShowPrivacy(null);
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         className: "sheet"
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontFamily: "'Barlow Condensed',sans-serif",
           fontSize: 20,
@@ -3524,18 +3661,18 @@
           color: C.white,
           marginBottom: 4
         }
-      }, "🔒 QR-Sichtbarkeit"), /*#__PURE__*/React.createElement("div", {
+      }, "🔒 QR-Sichtbarkeit"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
           marginBottom: 16
         }
-      }, "Was ist auf der öffentlichen Fahrzeugseite sichtbar?"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"]]], ["Abschnitte", [["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/React.createElement("div", {
+      }, "Was ist auf der öffentlichen Fahrzeugseite sichtbar?"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"]]], ["Abschnitte", [["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/_react.default.createElement("div", {
         key: group,
         style: {
           marginBottom: 14
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           fontWeight: 800,
@@ -3544,7 +3681,7 @@
           letterSpacing: 2,
           marginBottom: 8
         }
-      }, group), fields.map(([key, label]) => /*#__PURE__*/React.createElement("div", {
+      }, group), fields.map(([key, label]) => /*#__PURE__*/_react.default.createElement("div", {
         key: key,
         style: {
           display: "flex",
@@ -3553,22 +3690,22 @@
           padding: "10px 0",
           borderBottom: `1px solid ${C.border}`
         }
-      }, /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 13,
           color: C.white
         }
-      }, label), /*#__PURE__*/React.createElement("button", {
+      }, label), /*#__PURE__*/_react.default.createElement("button", {
         className: `tog ${priv[key] === true || priv[key] === undefined && DEF_PRIVACY[key] ? "on" : ""}`,
         onClick: () => togglePrivacy(v.id, key)
-      }))))), /*#__PURE__*/React.createElement("button", {
+      }))))), /*#__PURE__*/_react.default.createElement("button", {
         className: "btn",
         style: {
           width: "100%",
           marginTop: 8
         },
         onClick: () => setShowPrivacy(null)
-      }, "Fertig ✓"))), showStatusPicker && /*#__PURE__*/React.createElement("div", {
+      }, "Fertig ✓"))), showStatusPicker && /*#__PURE__*/_react.default.createElement("div", {
         className: "overlay",
         style: {
           zIndex: 500
@@ -3576,9 +3713,9 @@
         onClick: e => {
           if (e.target === e.currentTarget) setShowStatusPicker(null);
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         className: "sheet"
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontFamily: "'Barlow Condensed',sans-serif",
           fontSize: 20,
@@ -3586,20 +3723,20 @@
           color: C.white,
           marginBottom: 4
         }
-      }, "📍 Status setzen"), /*#__PURE__*/React.createElement("div", {
+      }, "📍 Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
           marginBottom: 16
         }
-      }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/React.createElement("div", {
+      }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           flexDirection: "column",
           gap: 8,
           marginBottom: 16
         }
-      }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/React.createElement("button", {
+      }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/_react.default.createElement("button", {
         key: i,
         onClick: () => setStatus(showStatusPicker, p),
         style: {
@@ -3614,40 +3751,40 @@
           fontFamily: "'Barlow',sans-serif",
           textAlign: "left"
         }
-      }, /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 24,
           flexShrink: 0
         }
-      }, p.icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      }, p.icon), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 15,
           fontWeight: 700,
           color: C.white
         }
-      }, p.text), /*#__PURE__*/React.createElement("div", {
+      }, p.text), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted
         }
-      }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/React.createElement("div", {
+      }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           borderTop: `1px solid ${C.border}`,
           paddingTop: 14,
           marginBottom: 10
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
           marginBottom: 8
         }
-      }, "Eigener Text"), /*#__PURE__*/React.createElement("div", {
+      }, "Eigener Text"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           gap: 8
         }
-      }, /*#__PURE__*/React.createElement("input", {
+      }, /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
         placeholder: "z.B. Bin gleich beim Einlass...",
         value: statusCustom,
@@ -3661,7 +3798,7 @@
         style: {
           flex: 1
         }
-      }), /*#__PURE__*/React.createElement("button", {
+      }), /*#__PURE__*/_react.default.createElement("button", {
         className: "btn",
         disabled: !statusCustom.trim(),
         onClick: () => {
@@ -3674,7 +3811,7 @@
           flexShrink: 0,
           opacity: statusCustom.trim() ? 1 : .4
         }
-      }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/React.createElement("button", {
+      }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn ghost",
         style: {
           width: "100%",
@@ -3687,7 +3824,7 @@
           setShowStatusPicker(null);
           toast_("Status gelöscht");
         }
-      }, "Status löschen"))), lightbox && /*#__PURE__*/React.createElement("div", {
+      }, "Status löschen"))), lightbox && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           position: "fixed",
           inset: 0,
@@ -3697,7 +3834,7 @@
           flexDirection: "column"
         },
         onClick: () => setLightbox(null)
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
@@ -3706,12 +3843,12 @@
           flexShrink: 0
         },
         onClick: e => e.stopPropagation()
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 13,
           color: "rgba(255,255,255,.6)"
         }
-      }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/React.createElement("button", {
+      }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => setLightbox(null),
         style: {
           background: "rgba(255,255,255,.1)",
@@ -3726,7 +3863,7 @@
           alignItems: "center",
           justifyContent: "center"
         }
-      }, "✕")), /*#__PURE__*/React.createElement("div", {
+      }, "✕")), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           flex: 1,
           display: "flex",
@@ -3736,7 +3873,7 @@
           position: "relative"
         },
         onClick: e => e.stopPropagation()
-      }, /*#__PURE__*/React.createElement("img", {
+      }, /*#__PURE__*/_react.default.createElement("img", {
         src: lightbox.images[lightbox.index],
         alt: "",
         style: {
@@ -3745,7 +3882,7 @@
           objectFit: "contain",
           borderRadius: 8
         }
-      }), lightbox.images.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+      }), lightbox.images.length > 1 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => setLightbox(p => ({
           ...p,
           index: Math.max(0, p.index - 1)
@@ -3765,7 +3902,7 @@
           alignItems: "center",
           justifyContent: "center"
         }
-      }, "‹"), /*#__PURE__*/React.createElement("button", {
+      }, "‹"), /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => setLightbox(p => ({
           ...p,
           index: Math.min(p.images.length - 1, p.index + 1)
@@ -3785,7 +3922,7 @@
           alignItems: "center",
           justifyContent: "center"
         }
-      }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/React.createElement("div", {
+      }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           gap: 6,
@@ -3794,7 +3931,7 @@
           flexShrink: 0
         },
         onClick: e => e.stopPropagation()
-      }, lightbox.images.map((_, i) => /*#__PURE__*/React.createElement("div", {
+      }, lightbox.images.map((_, i) => /*#__PURE__*/_react.default.createElement("div", {
         key: i,
         onClick: () => setLightbox(p => ({
           ...p,
@@ -3808,14 +3945,14 @@
           transition: "all .2s",
           cursor: "pointer"
         }
-      })))), showAddLog === v.id && /*#__PURE__*/React.createElement("div", {
+      })))), showAddLog === v.id && /*#__PURE__*/_react.default.createElement("div", {
         className: "overlay",
         onClick: e => {
           if (e.target === e.currentTarget) setShowAddLog(null);
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         className: "sheet"
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontFamily: "'Barlow Condensed',sans-serif",
           fontSize: 20,
@@ -3823,7 +3960,7 @@
           color: C.white,
           marginBottom: 16
         }
-      }, "Logbuch-Eintrag"), /*#__PURE__*/React.createElement("select", {
+      }, "Logbuch-Eintrag"), /*#__PURE__*/_react.default.createElement("select", {
         className: "inp",
         value: addLogForm.type,
         onChange: e => setAddLogForm(p => ({
@@ -3833,9 +3970,9 @@
         style: {
           marginBottom: 8
         }
-      }, ["Ölwechsel", "Inspektion", "Reifenwechsel", "Bremsenwechsel", "Hauptuntersuchung", "Trackday", "Sonstiges"].map(t => /*#__PURE__*/React.createElement("option", {
+      }, ["Ölwechsel", "Inspektion", "Reifenwechsel", "Bremsenwechsel", "Hauptuntersuchung", "Trackday", "Sonstiges"].map(t => /*#__PURE__*/_react.default.createElement("option", {
         key: t
-      }, t))), /*#__PURE__*/React.createElement("input", {
+      }, t))), /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
         type: "number",
         inputMode: "numeric",
@@ -3848,7 +3985,7 @@
           ...p,
           km: e.target.value
         }))
-      }), /*#__PURE__*/React.createElement("input", {
+      }), /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
         placeholder: "Werkstatt",
         style: {
@@ -3859,7 +3996,7 @@
           ...p,
           workshop: e.target.value
         }))
-      }), /*#__PURE__*/React.createElement("input", {
+      }), /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
         placeholder: "Notizen",
         style: {
@@ -3870,7 +4007,7 @@
           ...p,
           notes: e.target.value
         }))
-      }), /*#__PURE__*/React.createElement("button", {
+      }), /*#__PURE__*/_react.default.createElement("button", {
         className: "btn",
         style: {
           width: "100%"
@@ -3883,9 +4020,9 @@
     // EVENT DETAIL (proper component — no useState-in-render bug)
     // ══════════════════════════════════════════════════════════════════════════════
     if (screen === "event" && viewEv) {
-      return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
         className: `toast ${toast.type}`
-      }, toast.msg), /*#__PURE__*/React.createElement(EventDetail, {
+      }, toast.msg), /*#__PURE__*/_react.default.createElement(EventDetail, {
         ev: viewEv,
         me: me,
         myVehicles: myVehicles,
@@ -3905,9 +4042,9 @@
     // ══════════════════════════════════════════════════════════════════════════════
     if (screen === "chat" && activeThread && threads[activeThread]) {
       const t = threads[activeThread];
-      return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
         className: `toast ${toast.type}`
-      }, toast.msg), /*#__PURE__*/React.createElement(ChatScreen, {
+      }, toast.msg), /*#__PURE__*/_react.default.createElement(ChatScreen, {
         thread: t,
         me: me,
         allUsers: allUsers,
@@ -3937,15 +4074,15 @@
     // ══════════════════════════════════════════════════════════════════════════════
     // MAIN APP TABS
     // ══════════════════════════════════════════════════════════════════════════════
-    return /*#__PURE__*/React.createElement("div", {
+    return /*#__PURE__*/_react.default.createElement("div", {
       style: {
         minHeight: "100vh",
         background: C.black,
         paddingBottom: 62
       }
-    }, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
       className: `toast ${toast.type}`
-    }, toast.msg), ScannerOverlay, /*#__PURE__*/React.createElement("div", {
+    }, toast.msg), ScannerOverlay, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.dark,
         borderBottom: `1px solid ${C.border}`,
@@ -3957,7 +4094,7 @@
         top: 0,
         zIndex: 100
       }
-    }, /*#__PURE__*/React.createElement("img", {
+    }, /*#__PURE__*/_react.default.createElement("img", {
       src: LOGO_URL,
       alt: "PCN",
       onError: e => e.target.style.display = "none",
@@ -3965,7 +4102,7 @@
         height: 30,
         objectFit: "contain"
       }
-    }), /*#__PURE__*/React.createElement("button", {
+    }), /*#__PURE__*/_react.default.createElement("button", {
       onClick: openScanner,
       style: {
         background: C.red,
@@ -3978,32 +4115,32 @@
         fontSize: 13,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "📷 Scan"), /*#__PURE__*/React.createElement("div", {
+    }, "📷 Scan"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         textAlign: "right"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 700,
         color: C.white
       }
-    }, me?.name), /*#__PURE__*/React.createElement("div", {
+    }, me?.name), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, me?.memberNr))), /*#__PURE__*/React.createElement("div", {
+    }, me?.memberNr))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         padding: "14px 14px 0",
         maxWidth: 560,
         margin: "0 auto"
       }
-    }, tab === "dashboard" && /*#__PURE__*/React.createElement("div", {
+    }, tab === "dashboard" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
-    }, Object.values(events).filter(e => daysUntil(e.date) > 0 && daysUntil(e.date) <= 14).slice(0, 1).map(e => /*#__PURE__*/React.createElement("div", {
+    }, Object.values(events).filter(e => daysUntil(e.date) > 0 && daysUntil(e.date) <= 14).slice(0, 1).map(e => /*#__PURE__*/_react.default.createElement("div", {
       key: e.id,
       style: {
         background: `${C.red}11`,
@@ -4017,7 +4154,7 @@
         setViewEv(e);
         setScreen("event");
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 9,
         color: C.red,
@@ -4026,13 +4163,13 @@
         letterSpacing: 1,
         marginBottom: 3
       }
-    }, "🏁 In ", daysUntil(e.date), " Tagen"), /*#__PURE__*/React.createElement("div", {
+    }, "🏁 In ", daysUntil(e.date), " Tagen"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontWeight: 700,
         fontSize: 14,
         color: C.white
       }
-    }, e.name), /*#__PURE__*/React.createElement("div", {
+    }, e.name), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
@@ -4041,7 +4178,7 @@
     }, fmtDate(e.date), " · ", e.location))), myReminders.slice(0, 3).map(r => {
       const days = daysUntil(r.date);
       const rv = vehicles[r.vehicleId];
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement("div", {
         key: r.id,
         style: {
           background: C.card,
@@ -4053,19 +4190,19 @@
           justifyContent: "space-between",
           alignItems: "center"
         }
-      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 13,
           fontWeight: 600,
           color: days <= 3 ? C.amber : C.white
         }
-      }, r.title), /*#__PURE__*/React.createElement("div", {
+      }, r.title), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted,
           marginTop: 2
         }
-      }, rv ? rv.hersteller + " " + rv.modell + " · " : "", days <= 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} T.`)), /*#__PURE__*/React.createElement("button", {
+      }, rv ? rv.hersteller + " " + rv.modell + " · " : "", days <= 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} T.`)), /*#__PURE__*/_react.default.createElement("button", {
         onClick: async () => {
           const DB = window.PCN_DB;
           if (DB) await DB.reminders.done(me.id, r.id);
@@ -4084,7 +4221,7 @@
           padding: "0 4px"
         }
       }, "✓"));
-    }), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
@@ -4092,7 +4229,7 @@
         marginBottom: 8,
         marginTop: 6
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 800,
@@ -4100,10 +4237,10 @@
         textTransform: "uppercase",
         letterSpacing: 2
       }
-    }, "Meine Fahrzeuge"), /*#__PURE__*/React.createElement("button", {
+    }, "Meine Fahrzeuge"), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn sm ghost",
       onClick: () => setShowAddV(true)
-    }, "+")), myVehicles.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    }, "+")), myVehicles.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px dashed ${C.border}`,
@@ -4113,18 +4250,18 @@
         cursor: "pointer"
       },
       onClick: () => setShowAddV(true)
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 28,
         marginBottom: 6
       }
-    }, "🏎️"), /*#__PURE__*/React.createElement("div", {
+    }, "🏎️"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 13,
         color: C.white,
         fontWeight: 600
       }
-    }, "Erstes Fahrzeug hinzufügen")) : myVehicles.map(v => /*#__PURE__*/React.createElement("div", {
+    }, "Erstes Fahrzeug hinzufügen")) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
       key: v.id,
       style: {
         background: C.card,
@@ -4138,7 +4275,7 @@
         setViewV(v);
         setScreen("vehicle");
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         height: 100,
         overflow: "hidden",
@@ -4147,7 +4284,7 @@
         alignItems: "center",
         justifyContent: "center"
       }
-    }, v.image ? /*#__PURE__*/React.createElement("img", {
+    }, v.image ? /*#__PURE__*/_react.default.createElement("img", {
       src: v.image,
       alt: "",
       style: {
@@ -4156,31 +4293,31 @@
         objectFit: "cover"
       },
       onError: e => e.target.style.display = "none"
-    }) : /*#__PURE__*/React.createElement("span", {
+    }) : /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 32
       }
-    }, "🏎️")), /*#__PURE__*/React.createElement("div", {
+    }, "🏎️")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         padding: "11px 13px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center"
       }
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontWeight: 700,
         fontSize: 14,
         color: C.white
       }
-    }, v.hersteller, " ", v.modell), /*#__PURE__*/React.createElement("div", {
+    }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         gap: 6,
         marginTop: 4,
         alignItems: "center"
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
         background: "#fff",
         border: "1.5px solid #222",
@@ -4192,17 +4329,17 @@
         letterSpacing: 1,
         fontFamily: "Arial,sans-serif"
       }
-    }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/React.createElement("span", {
+    }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, v.baujahr))), /*#__PURE__*/React.createElement("span", {
+    }, v.baujahr))), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         color: C.muted,
         fontSize: 18
       }
-    }, "›")))), /*#__PURE__*/React.createElement("div", {
+    }, "›")))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 800,
@@ -4212,7 +4349,7 @@
         marginTop: 20,
         marginBottom: 10
       }
-    }, "Features freischalten"), /*#__PURE__*/React.createElement("div", {
+    }, "Features freischalten"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
@@ -4221,7 +4358,7 @@
       }
     }, LOCKED_FEATURES.map(f => {
       const unlocked = unlockedFeatures.has(f.id);
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement("div", {
         key: f.id,
         style: {
           background: unlocked ? "#1a1a1a" : "#111",
@@ -4231,36 +4368,36 @@
           opacity: unlocked ? 1 : .5,
           position: "relative"
         }
-      }, !unlocked && /*#__PURE__*/React.createElement("div", {
+      }, !unlocked && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           position: "absolute",
           top: 8,
           right: 8,
           fontSize: 12
         }
-      }, "🔒"), /*#__PURE__*/React.createElement("div", {
+      }, "🔒"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 18,
           marginBottom: 5
         }
-      }, f.icon), /*#__PURE__*/React.createElement("div", {
+      }, f.icon), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           fontWeight: 700,
           color: unlocked ? C.white : "#444",
           marginBottom: 2
         }
-      }, f.label), /*#__PURE__*/React.createElement("div", {
+      }, f.label), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 9,
           color: unlocked ? C.green : "#333"
         }
       }, unlocked ? "✓ Freigeschaltet" : f.milestone));
-    }))), tab === "events" && /*#__PURE__*/React.createElement("div", {
+    }))), tab === "events" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 800,
@@ -4272,7 +4409,7 @@
     }, "Veranstaltungen 2026"), Object.values(events).sort((a, b) => new Date(a.date) - new Date(b.date)).map(ev => {
       const days = daysUntil(ev.date);
       const myReg = (participants[ev.id] || []).find(p => p.userId === me?.id);
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement("div", {
         key: ev.id,
         style: {
           background: C.card,
@@ -4286,13 +4423,13 @@
           setViewEv(ev);
           setScreen("event");
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
           marginBottom: 5
         }
-      }, /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
           background: `${C.red}22`,
           color: C.red,
@@ -4301,37 +4438,37 @@
           fontSize: 10,
           fontWeight: 700
         }
-      }, ev.category), /*#__PURE__*/React.createElement("span", {
+      }, ev.category), /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 11,
           color: days <= 7 ? C.amber : C.muted,
           fontWeight: 600
         }
-      }, days <= 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} T.`)), /*#__PURE__*/React.createElement("div", {
+      }, days <= 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} T.`)), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontWeight: 700,
           fontSize: 15,
           color: C.white,
           marginBottom: 2
         }
-      }, ev.name), /*#__PURE__*/React.createElement("div", {
+      }, ev.name), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
           marginBottom: 8
         }
-      }, fmtDate(ev.date), " · ", ev.location), /*#__PURE__*/React.createElement("div", {
+      }, fmtDate(ev.date), " · ", ev.location), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           gap: 8,
           alignItems: "center"
         }
-      }, /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 11,
           color: C.muted
         }
-      }, ev.entryFee), myReg && /*#__PURE__*/React.createElement("span", {
+      }, ev.entryFee), myReg && /*#__PURE__*/_react.default.createElement("span", {
         style: {
           background: `${C.green}22`,
           color: C.green,
@@ -4341,11 +4478,11 @@
           fontWeight: 700
         }
       }, "✓ #", myReg.startNr)));
-    })), tab === "messages" && /*#__PURE__*/React.createElement("div", {
+    })), tab === "messages" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 800,
@@ -4354,7 +4491,7 @@
         letterSpacing: 2,
         marginBottom: 10
       }
-    }, "💬 Nachrichten"), /*#__PURE__*/React.createElement("div", {
+    }, "💬 Nachrichten"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -4365,24 +4502,24 @@
         color: C.muted,
         lineHeight: 1.6
       }
-    }, "🔒 Nachrichten werden anonym vermittelt — Name und E-Mail bleiben geschützt."), myThreads.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    }, "🔒 Nachrichten werden anonym vermittelt — Name und E-Mail bleiben geschützt."), myThreads.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
         textAlign: "center",
         padding: "40px 20px",
         color: C.muted
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 32,
         marginBottom: 8
       }
-    }, "💬"), /*#__PURE__*/React.createElement("div", {
+    }, "💬"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 14,
         color: C.white,
         marginBottom: 4
       }
-    }, "Noch keine Nachrichten"), /*#__PURE__*/React.createElement("div", {
+    }, "Noch keine Nachrichten"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 12
       }
@@ -4393,7 +4530,7 @@
       const last = t.messages.filter(m => !m.isSystem).pop();
       const unread = t.messages.some(m => m.from !== me?.id && !m.read && !m.isSystem);
       const tv = vehicles[t.vehicleId];
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement("div", {
         key: t.id,
         style: {
           background: C.card,
@@ -4410,7 +4547,7 @@
           setActiveThread(t.id);
           setScreen("chat");
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           width: 38,
           height: 38,
@@ -4424,29 +4561,29 @@
           fontSize: 16,
           flexShrink: 0
         }
-      }, t.anonymous ? "🔒" : other.name[0]), /*#__PURE__*/React.createElement("div", {
+      }, t.anonymous ? "🔒" : other.name[0]), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           flex: 1,
           minWidth: 0
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
           marginBottom: 2
         }
-      }, /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontWeight: unread ? 700 : 500,
           fontSize: 14,
           color: C.white
         }
-      }, t.anonymous ? "Anonym" : other.name), /*#__PURE__*/React.createElement("span", {
+      }, t.anonymous ? "Anonym" : other.name), /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 10,
           color: C.muted
         }
-      }, last?.ts || "")), tv && /*#__PURE__*/React.createElement("div", {
+      }, last?.ts || "")), tv && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: `${C.red}88`,
@@ -4455,7 +4592,7 @@
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, tv.hersteller, " ", tv.modell), /*#__PURE__*/React.createElement("div", {
+      }, tv.hersteller, " ", tv.modell), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 12,
           color: unread ? C.white : C.muted,
@@ -4463,7 +4600,7 @@
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, last ? (last.from === me?.id ? "Du: " : "") + last.text : "Neuer Chat")), unread && /*#__PURE__*/React.createElement("div", {
+      }, last ? (last.from === me?.id ? "Du: " : "") + last.text : "Neuer Chat")), unread && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           width: 8,
           height: 8,
@@ -4472,18 +4609,18 @@
           flexShrink: 0
         }
       }));
-    })), tab === "reminders" && /*#__PURE__*/React.createElement("div", {
+    })), tab === "reminders" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         marginBottom: 12
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 800,
@@ -4491,28 +4628,28 @@
         textTransform: "uppercase",
         letterSpacing: 2
       }
-    }, "Erinnerungen"), /*#__PURE__*/React.createElement("button", {
+    }, "Erinnerungen"), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn sm ghost",
       onClick: () => setShowAddRem(true)
-    }, "+ Neu")), myReminders.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    }, "+ Neu")), myReminders.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
         textAlign: "center",
         padding: "40px 20px",
         color: C.muted
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 32,
         marginBottom: 8
       }
-    }, "🎉"), /*#__PURE__*/React.createElement("div", {
+    }, "🎉"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         color: C.white
       }
     }, "Alles erledigt!")) : myReminders.map(r => {
       const days = daysUntil(r.date);
       const rv = vehicles[r.vehicleId];
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement("div", {
         key: r.id,
         style: {
           background: C.card,
@@ -4521,36 +4658,36 @@
           padding: "13px",
           marginBottom: 8
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start"
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           flex: 1,
           minWidth: 0
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontWeight: 700,
           fontSize: 14,
           color: days <= 3 ? C.amber : C.white,
           marginBottom: 2
         }
-      }, r.title), rv && /*#__PURE__*/React.createElement("div", {
+      }, r.title), rv && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted
         }
-      }, rv.hersteller, " ", rv.modell), /*#__PURE__*/React.createElement("div", {
+      }, rv.hersteller, " ", rv.modell), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: days < 0 ? C.red : days <= 3 ? C.amber : C.muted,
           marginTop: 2
         }
-      }, days < 0 ? "⚠️ Überfällig" : days === 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} Tagen`, " · ", fmtDate(r.date))), /*#__PURE__*/React.createElement("button", {
+      }, days < 0 ? "⚠️ Überfällig" : days === 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} Tagen`, " · ", fmtDate(r.date))), /*#__PURE__*/_react.default.createElement("button", {
         onClick: async () => {
           const DB = window.PCN_DB;
           if (DB) await DB.reminders.done(me.id, r.id);
@@ -4574,18 +4711,18 @@
           fontFamily: "'Barlow',sans-serif"
         }
       }, "✓")));
-    })), tab === "profile" && /*#__PURE__*/React.createElement("div", {
+    })), tab === "profile" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       className: "card",
       style: {
         padding: 20,
         textAlign: "center",
         marginBottom: 14
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         width: 56,
         height: 56,
@@ -4597,26 +4734,26 @@
         fontSize: 22,
         margin: "0 auto 10px"
       }
-    }, "🏎️"), /*#__PURE__*/React.createElement("div", {
+    }, "🏎️"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 22,
         fontWeight: 800,
         color: C.white
       }
-    }, me?.name), /*#__PURE__*/React.createElement("div", {
+    }, me?.name), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginTop: 2
       }
-    }, "Mitglied · ", me?.memberNr)), /*#__PURE__*/React.createElement("div", {
+    }, "Mitglied · ", me?.memberNr)), /*#__PURE__*/_react.default.createElement("div", {
       className: "card",
       style: {
         padding: 16,
         marginBottom: 12
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 800,
@@ -4625,7 +4762,7 @@
         letterSpacing: 2,
         marginBottom: 10
       }
-    }, "Statistiken"), [["🚗", "Fahrzeuge", myVehicles.length], ["📋", "Logbuch-Einträge", Object.values(logbook).flat().length], ["🏁", "Event-Teilnahmen", myParticipations.length], ["💬", "Nachrichten", myThreads.length]].map(([icon, label, val]) => /*#__PURE__*/React.createElement("div", {
+    }, "Statistiken"), [["🚗", "Fahrzeuge", myVehicles.length], ["📋", "Logbuch-Einträge", Object.values(logbook).flat().length], ["🏁", "Event-Teilnahmen", myParticipations.length], ["💬", "Nachrichten", myThreads.length]].map(([icon, label, val]) => /*#__PURE__*/_react.default.createElement("div", {
       key: label,
       style: {
         display: "flex",
@@ -4633,24 +4770,24 @@
         padding: "8px 0",
         borderBottom: `1px solid ${C.border}`
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 13,
         color: C.muted
       }
-    }, icon, " ", label), /*#__PURE__*/React.createElement("span", {
+    }, icon, " ", label), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 13,
         fontWeight: 700,
         color: C.white
       }
-    }, val)))), /*#__PURE__*/React.createElement("div", {
+    }, val)))), /*#__PURE__*/_react.default.createElement("div", {
       className: "card",
       style: {
         padding: 16,
         marginBottom: 14
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 800,
@@ -4661,7 +4798,7 @@
       }
     }, "Milestones"), MILESTONES.map(m => {
       const done = m.check(appState);
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/_react.default.createElement("div", {
         key: m.id,
         style: {
           display: "flex",
@@ -4670,7 +4807,7 @@
           padding: "8px 0",
           borderBottom: `1px solid ${C.border}`
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           width: 20,
           height: 20,
@@ -4684,12 +4821,12 @@
           flexShrink: 0,
           fontWeight: 700
         }
-      }, done ? "✓" : ""), /*#__PURE__*/React.createElement("span", {
+      }, done ? "✓" : ""), /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 13,
           color: done ? C.white : C.muted
         }
-      }, m.label), done && /*#__PURE__*/React.createElement("span", {
+      }, m.label), done && /*#__PURE__*/_react.default.createElement("span", {
         style: {
           marginLeft: "auto",
           fontSize: 9,
@@ -4697,7 +4834,7 @@
           fontWeight: 700
         }
       }, "AKTIV"));
-    })), /*#__PURE__*/React.createElement("button", {
+    })), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn ghost",
       style: {
         width: "100%"
@@ -4714,14 +4851,14 @@
         setScreen("splash");
         setTab("dashboard");
       }
-    }, "Abmelden"))), showAddV && /*#__PURE__*/React.createElement("div", {
+    }, "Abmelden"))), showAddV && /*#__PURE__*/_react.default.createElement("div", {
       className: "overlay",
       onClick: e => {
         if (e.target === e.currentTarget) setShowAddV(false);
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       className: "sheet"
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 20,
@@ -4729,24 +4866,24 @@
         color: C.white,
         marginBottom: 14
       }
-    }, "Fahrzeug hinzufügen"), /*#__PURE__*/React.createElement("div", {
+    }, "Fahrzeug hinzufügen"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 10
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         gap: 6,
         overflowX: "auto",
         marginBottom: 6
       }
-    }, (addVForm.images || []).map((img, i) => /*#__PURE__*/React.createElement("div", {
+    }, (addVForm.images || []).map((img, i) => /*#__PURE__*/_react.default.createElement("div", {
       key: i,
       style: {
         position: "relative",
         flexShrink: 0
       }
-    }, /*#__PURE__*/React.createElement("img", {
+    }, /*#__PURE__*/_react.default.createElement("img", {
       src: img,
       alt: "",
       style: {
@@ -4756,7 +4893,7 @@
         borderRadius: 8,
         border: `2px solid ${C.border}`
       }
-    }), /*#__PURE__*/React.createElement("button", {
+    }), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => setAddVForm(p => ({
         ...p,
         images: p.images.filter((_, j) => j !== i)
@@ -4774,7 +4911,7 @@
         borderRadius: "50%",
         cursor: "pointer"
       }
-    }, "✕"))), /*#__PURE__*/React.createElement("label", {
+    }, "✕"))), /*#__PURE__*/_react.default.createElement("label", {
       style: {
         width: 70,
         height: 70,
@@ -4789,7 +4926,7 @@
         flexShrink: 0,
         gap: 2
       }
-    }, /*#__PURE__*/React.createElement("input", {
+    }, /*#__PURE__*/_react.default.createElement("input", {
       type: "file",
       accept: "image/*",
       style: {
@@ -4799,21 +4936,21 @@
         ...p,
         images: [...(p.images || []), url]
       })))
-    }), /*#__PURE__*/React.createElement("span", {
+    }), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 20
       }
-    }, "📷"), /*#__PURE__*/React.createElement("span", {
+    }, "📷"), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 9,
         color: C.muted
       }
-    }, "Foto"))), /*#__PURE__*/React.createElement("div", {
+    }, "Foto"))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted
       }
-    }, "Mehrere Fotos möglich — erstes Foto = Titelbild")), [["Modell *", "modell", "Cayman GT4"], ["Kennzeichen *", "kennzeichen", "AW-PC 718"], ["Baujahr", "baujahr", "2023"], ["Farbe", "farbe", "Pythongrün"]].map(([ph, key, ex]) => /*#__PURE__*/React.createElement("input", {
+    }, "Mehrere Fotos möglich — erstes Foto = Titelbild")), [["Modell *", "modell", "Cayman GT4"], ["Kennzeichen *", "kennzeichen", "AW-PC 718"], ["Baujahr", "baujahr", "2023"], ["Farbe", "farbe", "Pythongrün"]].map(([ph, key, ex]) => /*#__PURE__*/_react.default.createElement("input", {
       key: key,
       className: "inp",
       placeholder: `${ph} (z.B. ${ex})`,
@@ -4825,7 +4962,7 @@
         ...p,
         [key]: e.target.value
       }))
-    })), /*#__PURE__*/React.createElement("select", {
+    })), /*#__PURE__*/_react.default.createElement("select", {
       className: "inp",
       value: addVForm.kraftstoff,
       onChange: e => setAddVForm(p => ({
@@ -4835,9 +4972,9 @@
       style: {
         marginBottom: 10
       }
-    }, ["Benzin", "Diesel", "Elektro", "Hybrid"].map(k => /*#__PURE__*/React.createElement("option", {
+    }, ["Benzin", "Diesel", "Elektro", "Hybrid"].map(k => /*#__PURE__*/_react.default.createElement("option", {
       key: k
-    }, k))), /*#__PURE__*/React.createElement("select", {
+    }, k))), /*#__PURE__*/_react.default.createElement("select", {
       className: "inp",
       value: addVForm.getriebe || "PDK",
       onChange: e => setAddVForm(p => ({
@@ -4847,9 +4984,9 @@
       style: {
         marginBottom: 8
       }
-    }, ["PDK", "7-Gang PDK", "6-Gang manuell", "8-Gang Automatik", "Stufenlos"].map(k => /*#__PURE__*/React.createElement("option", {
+    }, ["PDK", "7-Gang PDK", "6-Gang manuell", "8-Gang Automatik", "Stufenlos"].map(k => /*#__PURE__*/_react.default.createElement("option", {
       key: k
-    }, k))), /*#__PURE__*/React.createElement("input", {
+    }, k))), /*#__PURE__*/_react.default.createElement("input", {
       className: "inp",
       placeholder: "Telefon (optional, für Direktanruf)",
       type: "tel",
@@ -4861,26 +4998,26 @@
       style: {
         marginBottom: 6
       }
-    }), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted,
         marginBottom: 14
       }
-    }, "🔒 Standardmäßig privat — Sichtbarkeit in QR-Einstellungen"), /*#__PURE__*/React.createElement("button", {
+    }, "🔒 Standardmäßig privat — Sichtbarkeit in QR-Einstellungen"), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         width: "100%"
       },
       onClick: addVehicle
-    }, "Hinzufügen ✓"))), showAddRem && /*#__PURE__*/React.createElement("div", {
+    }, "Hinzufügen ✓"))), showAddRem && /*#__PURE__*/_react.default.createElement("div", {
       className: "overlay",
       onClick: e => {
         if (e.target === e.currentTarget) setShowAddRem(false);
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       className: "sheet"
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 20,
@@ -4888,7 +5025,7 @@
         color: C.white,
         marginBottom: 14
       }
-    }, "Erinnerung"), /*#__PURE__*/React.createElement("input", {
+    }, "Erinnerung"), /*#__PURE__*/_react.default.createElement("input", {
       className: "inp",
       placeholder: "Titel *",
       style: {
@@ -4899,7 +5036,7 @@
         ...p,
         title: e.target.value
       }))
-    }), /*#__PURE__*/React.createElement("input", {
+    }), /*#__PURE__*/_react.default.createElement("input", {
       className: "inp",
       type: "date",
       style: {
@@ -4910,7 +5047,7 @@
         ...p,
         date: e.target.value
       }))
-    }), /*#__PURE__*/React.createElement("select", {
+    }), /*#__PURE__*/_react.default.createElement("select", {
       className: "inp",
       style: {
         marginBottom: 14
@@ -4920,12 +5057,12 @@
         ...p,
         vehicleId: e.target.value
       }))
-    }, /*#__PURE__*/React.createElement("option", {
+    }, /*#__PURE__*/_react.default.createElement("option", {
       value: ""
-    }, "Kein Fahrzeug"), myVehicles.map(v => /*#__PURE__*/React.createElement("option", {
+    }, "Kein Fahrzeug"), myVehicles.map(v => /*#__PURE__*/_react.default.createElement("option", {
       key: v.id,
       value: v.id
-    }, v.hersteller, " ", v.modell))), /*#__PURE__*/React.createElement("button", {
+    }, v.hersteller, " ", v.modell))), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         width: "100%"
@@ -4956,17 +5093,17 @@
         });
         toast_("Gespeichert ✓");
       }
-    }, "Speichern ✓"))), /*#__PURE__*/React.createElement("div", {
+    }, "Speichern ✓"))), /*#__PURE__*/_react.default.createElement("div", {
       className: "tab-bar"
-    }, [["dashboard", "🏠", "Start"], ["events", "🏁", "Events"], ["messages", "💬", "Chat"], ["reminders", "🔔", "Termine"], ["profile", "👤", "Profil"]].map(([id, icon, label]) => /*#__PURE__*/React.createElement("button", {
+    }, [["dashboard", "🏠", "Start"], ["events", "🏁", "Events"], ["messages", "💬", "Chat"], ["reminders", "🔔", "Termine"], ["profile", "👤", "Profil"]].map(([id, icon, label]) => /*#__PURE__*/_react.default.createElement("button", {
       key: id,
       className: `tab-btn ${tab === id ? "on" : ""}`,
       onClick: () => setTab(id)
-    }, id === "messages" && unreadCount > 0 && /*#__PURE__*/React.createElement("div", {
+    }, id === "messages" && unreadCount > 0 && /*#__PURE__*/_react.default.createElement("div", {
       className: "badge"
-    }, unreadCount), /*#__PURE__*/React.createElement("span", {
+    }, unreadCount), /*#__PURE__*/_react.default.createElement("span", {
       className: "ico"
-    }, icon), /*#__PURE__*/React.createElement("span", {
+    }, icon), /*#__PURE__*/_react.default.createElement("span", {
       className: "lbl"
     }, label)))));
   }
