@@ -438,26 +438,22 @@ function PCNInner() {
   const unlockedFeatures = new Set(MILESTONES.filter(m=>m.check(appState)).flatMap(m=>m.unlocks));
 
   // ── Toast ────────────────────────────────────────────────────────────────────
-  // ── Status helpers ────────────────────────────────────────────────────────────
-  const setStatus = (vehicleId, preset, customText="") => {
+  // ── Status helpers — now wired to DB layer (works across devices via Supabase) ──
+  const setStatus = async (vehicleId, preset, customText="") => {
     const text = customText || preset.text;
     const expiresAt = preset.mins ? Date.now() + preset.mins*60*1000 : null;
     const status = {text, icon:preset.icon||"💬", expiresAt, setAt:Date.now()};
     setVehicleStatus(prev=>({...prev,[vehicleId]:status}));
-    // Save to localStorage
-    const stored = JSON.parse(localStorage.getItem("pcn_v1")||"{}");
-    stored.vehicleStatus = stored.vehicleStatus||{};
-    stored.vehicleStatus[vehicleId] = status;
-    localStorage.setItem("pcn_v1", JSON.stringify(stored));
+    const DB = window.PCN_DB;
+    if(DB) await DB.vehicles.setStatus(vehicleId, status);
     setShowStatusPicker(null); setStatusCustom("");
     toast_(`Status gesetzt: "${text}"`);
   };
 
-  const clearStatus = (vehicleId) => {
+  const clearStatus = async (vehicleId) => {
     setVehicleStatus(prev=>{const n={...prev};delete n[vehicleId];return n;});
-    const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
-    if(stored.vehicleStatus) delete stored.vehicleStatus[vehicleId];
-    localStorage.setItem("pcn_v1",JSON.stringify(stored));
+    const DB = window.PCN_DB;
+    if(DB) await DB.vehicles.clearStatus(vehicleId);
   };
 
   const getActiveStatus = (vehicleId) => {
@@ -465,6 +461,15 @@ function PCNInner() {
     if(!s) return null;
     if(s.expiresAt && Date.now() > s.expiresAt) { clearStatus(vehicleId); return null; }
     return s;
+  };
+
+  // Load status fresh when viewing a vehicle (public or detail) — ensures cross-device sync
+  const loadStatusFor = async (vehicleId) => {
+    const DB = window.PCN_DB;
+    if(!DB) return;
+    const {data} = await DB.vehicles.getStatus(vehicleId);
+    if(data) setVehicleStatus(prev=>({...prev,[vehicleId]:data}));
+    else setVehicleStatus(prev=>{const n={...prev};delete n[vehicleId];return n;});
   };
 
   const toast_ = useCallback((msg,type="ok")=>{
@@ -523,9 +528,6 @@ function PCNInner() {
   // ── DB refresh ───────────────────────────────────────────────────────────────
   const refreshAll = async (user) => {
     if(!user) return;
-    // Load saved statuses
-    const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
-    if(stored.vehicleStatus) setVehicleStatus(stored.vehicleStatus);
     const DB=window.PCN_DB; if(!DB) return;
     const [vRes,remRes,evRes,thRes] = await Promise.all([
       DB.vehicles.list(user.id||user.email),
@@ -553,6 +555,13 @@ function PCNInner() {
     }));
     setParticipants(pMap);
     const tMap={}; (thRes.data||[]).forEach(t=>tMap[t.id]=t); setThreads(tMap);
+    // Load each vehicle's live status from DB
+    const sMap={};
+    await Promise.all((vRes.data||[]).map(async v=>{
+      const r=await DB.vehicles.getStatus(v.id);
+      if(r.data) sMap[v.id]=r.data;
+    }));
+    setVehicleStatus(sMap);
     setMe(user);
   };
 
@@ -562,8 +571,22 @@ function PCNInner() {
       const params=new URLSearchParams(window.location.search);
       const qarId=params.get("v");
       if(qarId&&/^QAR-[A-Z2-9]{8}$/.test(qarId)){
-        const v=Object.values(DEMO_VEHICLES).find(v=>v.qarId===qarId);
-        if(v){ setPublicV({...v,privacy:{...DEF_PRIVACY,...(v.privacy||{})}}); setScreen("public"); return; }
+        const DB=window.PCN_DB;
+        // First check demo data (works offline / before DB configured)
+        let v=Object.values(DEMO_VEHICLES).find(v=>v.qarId===qarId);
+        // Then check real database — this is the real QR scan path for user-created vehicles
+        if(!v&&DB){
+          const {data:realV}=await DB.vehicles.getPublic(qarId);
+          if(realV) v=realV;
+        }
+        if(v){
+          setPublicV({...v,privacy:{...DEF_PRIVACY,...(v.privacy||{})}});
+          setScreen("public");
+          if(DB) loadStatusFor(v.id);
+          return;
+        } else {
+          toast_("Fahrzeug nicht gefunden: "+qarId,"err");
+        }
       }
       const DB=window.PCN_DB; if(!DB) return;
       const {data:session}=await DB.auth.session();
@@ -577,15 +600,24 @@ function PCNInner() {
     setScannerOpen(false); setScannerStatus("idle"); setScannerError(null);
     if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop());
   };
-  const handleScanResult = (data) => {
+  const handleScanResult = async (data) => {
     const match=data.match(/QAR-[A-Z2-9]{8}/);
     if(!match) return;
     const qarId=match[0];
-    const v=Object.values(vehicles).find(v=>v.qarId===qarId)||Object.values(DEMO_VEHICLES).find(v=>v.qarId===qarId);
+    let v=Object.values(vehicles).find(v=>v.qarId===qarId)||Object.values(DEMO_VEHICLES).find(v=>v.qarId===qarId);
+    // Also check real DB in case the scanned vehicle isn't in local state (e.g. someone else's car)
+    if(!v){
+      const DB=window.PCN_DB;
+      if(DB){ const {data:realV}=await DB.vehicles.getPublic(qarId); if(realV) v=realV; }
+    }
     setScannerStatus("found");
-    setTimeout(()=>{
+    setTimeout(async()=>{
       closeScanner();
-      if(v){ setPublicV({...v,privacy:{...DEF_PRIVACY,...(v.privacy||{})}}); setScreen("public"); }
+      if(v){
+        setPublicV({...v,privacy:{...DEF_PRIVACY,...(v.privacy||{})}});
+        setScreen("public");
+        await loadStatusFor(v.id);
+      }
       else toast_("Fahrzeug nicht gefunden: "+qarId,"err");
     },600);
   };
@@ -727,23 +759,40 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
   };
 
   const loadDemo = async () => {
-    const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
-    stored.users={...stored.users,...DEMO_USERS};
-    stored.session=DEMO_USERS.u1;
-    stored.vehicles=DEMO_VEHICLES;
-    stored.logbook=DEMO_LOGBOOK;
-    stored.events=DEMO_EVENTS;
-    stored.participants=DEMO_PARTICIPANTS;
-    stored.threads=DEMO_THREADS;
-    stored.reminders={"u1":[
-      {id:"R1",vehicleId:"V001",title:"PCN TrackDay — Fahrzeug vorbereiten",date:dPlus(10),done:false},
-      {id:"R2",vehicleId:"V002",title:"Sommerreifenwechsel",date:dPlus(4),done:false},
-      {id:"R3",vehicleId:"V001",title:"TÜV Termin vereinbaren",date:dPlus(45),done:false},
-    ]};
-    localStorage.setItem("pcn_v1",JSON.stringify(stored));
-    await refreshAll(DEMO_USERS.u1);
+    const DB = window.PCN_DB;
+    if(DB && DB.backend === "local"){
+      // Local backend: seed via localStorage directly (fast path)
+      const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
+      stored.users={...stored.users,...DEMO_USERS};
+      stored.session=DEMO_USERS.u1;
+      stored.vehicles=DEMO_VEHICLES;
+      stored.logbook=DEMO_LOGBOOK;
+      stored.events=DEMO_EVENTS;
+      stored.participants=DEMO_PARTICIPANTS;
+      stored.threads=DEMO_THREADS;
+      stored.reminders={"u1":[
+        {id:"R1",vehicleId:"V001",title:"PCN TrackDay — Fahrzeug vorbereiten",date:dPlus(10),done:false},
+        {id:"R2",vehicleId:"V002",title:"Sommerreifenwechsel",date:dPlus(4),done:false},
+        {id:"R3",vehicleId:"V001",title:"TÜV Termin vereinbaren",date:dPlus(45),done:false},
+      ]};
+      localStorage.setItem("pcn_v1",JSON.stringify(stored));
+      await refreshAll(DEMO_USERS.u1);
+    } else {
+      // Supabase/API backend: demo runs purely in-memory, not persisted to DB
+      // (avoids polluting the real database with fake demo data)
+      setMe(DEMO_USERS.u1);
+      setVehicles(DEMO_VEHICLES);
+      setLogbook(DEMO_LOGBOOK);
+      setParticipants(DEMO_PARTICIPANTS);
+      setThreads(DEMO_THREADS);
+      setReminders([
+        {id:"R1",vehicleId:"V001",title:"PCN TrackDay — Fahrzeug vorbereiten",date:dPlus(10),done:false},
+        {id:"R2",vehicleId:"V002",title:"Sommerreifenwechsel",date:dPlus(4),done:false},
+        {id:"R3",vehicleId:"V001",title:"TÜV Termin vereinbaren",date:dPlus(45),done:false},
+      ]);
+    }
     setAllUsers({...DEMO_USERS}); setScreen("app"); setTab("dashboard");
-    toast_("Demo geladen — Willkommen, Max! 🏁");
+    toast_("Demo geladen — Willkommen, Max! 🏁 (nicht in echter DB gespeichert)");
   };
 
   // ── CSS ────────────────────────────────────────────────────────────────────
@@ -775,8 +824,12 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     .tab-btn .lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
     .badge{position:absolute;top:5px;right:calc(50% - 18px);background:${C.red};color:#fff;border-radius:99px;padding:1px 5px;font-size:9px;font-weight:800;min-width:16px;text-align:center;line-height:14px}
     .card{background:${C.card};border:1px solid ${C.border};border-radius:14px}
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:flex;align-items:flex-end}
-    .sheet{background:${C.dark};border-radius:20px 20px 0 0;width:100%;border-top:1px solid ${C.border};padding:24px 16px;animation:slideUp .2s;max-height:88vh;overflow-y:auto}
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+    .sheet{background:${C.dark};border-radius:20px 20px 0 0;width:100%;max-width:480px;border-top:1px solid ${C.border};padding:24px 16px;animation:slideUp .2s;max-height:88vh;overflow-y:auto}
+    @media(min-width:640px){
+      .overlay{align-items:center}
+      .sheet{border-radius:20px;max-height:80vh}
+    }
     .tog{width:44px;height:24px;border-radius:99px;border:none;cursor:pointer;transition:background .2s;flex-shrink:0;position:relative;background:${C.border}}
     .tog::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:99px;background:#fff;transition:transform .2s}
     .tog.on{background:${C.red}}.tog.on::after{transform:translateX(20px)}
@@ -1206,7 +1259,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                     🔒
                   </button>
                 </>}
-                <button title="Öffentliche Ansicht" onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}}
+                <button title="Öffentliche Ansicht" onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
                   style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:14,minWidth:38}}>
                   👁
                 </button>
@@ -1390,14 +1443,14 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           <div className="card" style={{padding:16}}>
             <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>📱 QR-Code</div>
             <div style={{display:"flex",gap:14,alignItems:"center"}}>
-              <div style={{background:"#fff",borderRadius:10,padding:8,flexShrink:0,cursor:"pointer"}} onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}}>
+              <div style={{background:"#fff",borderRadius:10,padding:8,flexShrink:0,cursor:"pointer"}} onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}>
                 <QRCodeCanvas value={`https://qar.gallery/pcn/?v=${v.qarId}`} size={90}/>
               </div>
               <div>
                 <div style={{fontSize:10,color:C.muted,marginBottom:3}}>QAR-ID</div>
                 <div style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:C.white,letterSpacing:1}}>{v.qarId}</div>
                 <div style={{fontSize:10,color:C.muted,marginTop:4}}>FIN niemals öffentlich</div>
-                <button className="btn sm ghost" style={{marginTop:8,fontSize:11}} onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");}}>Öffentliche Seite →</button>
+                <button className="btn sm ghost" style={{marginTop:8,fontSize:11}} onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}>Öffentliche Seite →</button>
               </div>
             </div>
           </div>
