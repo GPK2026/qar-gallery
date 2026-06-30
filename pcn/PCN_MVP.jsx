@@ -331,6 +331,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
 function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead, onViewVehicle, onUpgrade}) {
   const [msg, setMsg] = useState("");
   const endRef = useRef(null);
+  const rootRef = useRef(null);
   const other = Object.values(allUsers).find(u=>thread.participants.includes(u.id)&&u.id!==me?.id)||{name:"Mitglied"};
   const v = vehicles[thread.vehicleId];
   const isGuest = me?.role === "guest";
@@ -338,8 +339,25 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
   useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[thread.messages]);
   useEffect(()=>{ if(onMarkRead) onMarkRead(thread.id); },[thread.id]);
 
+  // ── iOS keyboard fix: resize root to visualViewport height ─────────────────
+  useEffect(()=>{
+    if(!window.visualViewport) return;
+    const onResize = () => {
+      if(rootRef.current){
+        rootRef.current.style.height = window.visualViewport.height + "px";
+      }
+    };
+    window.visualViewport.addEventListener("resize", onResize);
+    window.visualViewport.addEventListener("scroll", onResize);
+    onResize();
+    return ()=>{
+      window.visualViewport.removeEventListener("resize", onResize);
+      window.visualViewport.removeEventListener("scroll", onResize);
+    };
+  },[]);
+
   return (
-    <div style={{height:"100vh",background:C.black,display:"flex",flexDirection:"column"}}>
+    <div ref={rootRef} style={{height:"100vh",background:C.black,display:"flex",flexDirection:"column",position:"fixed",inset:0}}>
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",display:"flex",gap:12,alignItems:"center",flexShrink:0}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:0,lineHeight:1}}>←</button>
         <div style={{width:36,height:36,borderRadius:"50%",background:`${C.red}22`,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,flexShrink:0}}>
@@ -774,7 +792,10 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     setThreads(prev=>({...prev,[threadId]:{...prev[threadId],messages:[...(prev[threadId].messages||[]),msg]}}));
   };
 
-  const startContact = async (vehicleId) => {
+  const startContact = async (vehicleId, asUser) => {
+    // asUser: pass fresh user object directly to avoid stale React state closure (e.g. after guest login)
+    const currentMe = asUser || me;
+    if(!currentMe){ toast_("Bitte zuerst anmelden","err"); return; }
     const DB=window.PCN_DB;
     // Always fetch the authoritative vehicle record from the DB first —
     // local `vehicles` state is empty for guests, and DEMO_VEHICLES is stale/static.
@@ -788,21 +809,21 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     }
     if(!v) v = DEMO_VEHICLES[vehicleId]; // last-resort fallback for pure offline demo
     if(!v){ toast_("Fahrzeug nicht gefunden","err"); return; }
-    if(v.owner===me?.email || v.userId===me?.id){ toast_("Das ist dein eigenes Fahrzeug","err"); return; }
+    if(v.owner===currentMe.email || v.userId===currentMe.id){ toast_("Das ist dein eigenes Fahrzeug","err"); return; }
 
-    const ownerId = v.userId || v.owner; // v.userId is the real Supabase UUID after _mapVehicle
+    const ownerId = v.userId || v.owner;
     if(!ownerId){ toast_("Besitzer nicht gefunden","err"); return; }
     if(!allUsers[ownerId]){
       setAllUsers(prev=>({...prev,[ownerId]:{id:ownerId,name:"PCN-Mitglied",email:v.owner,role:"member"}}));
     }
     // Check for existing thread (re-check from DB in case state is stale)
-    const {data:myThreadsLive} = DB ? await DB.threads.list(me.id) : {data:[]};
-    const existing = (myThreadsLive||Object.values(threads)).find(t=>t.vehicleId===vehicleId&&t.participants.includes(me.id));
+    const {data:myThreadsLive} = DB ? await DB.threads.list(currentMe.id) : {data:[]};
+    const existing = (myThreadsLive||Object.values(threads)).find(t=>t.vehicleId===vehicleId&&t.participants.includes(currentMe.id));
     if(existing){
       setThreads(prev=>({...prev,[existing.id]:existing}));
       setActiveThread(existing.id); setScreen("chat"); return;
     }
-    const {data:t,error}=await DB.threads.create([me.id,ownerId],vehicleId,`${v.hersteller} ${v.modell}`);
+    const {data:t,error}=await DB.threads.create([currentMe.id,ownerId],vehicleId,`${v.hersteller} ${v.modell}`);
     if(error){toast_("Fehler: "+error,"err");return;}
     await DB.threads.send(t.id,"system",`Kontakt über QAR-ID: ${v.qarId}`);
     const newThread={...t,messages:[{id:uid(),from:"system",text:`Kontakt über QAR-ID: ${v.qarId}`,ts:fmtTime(),isSystem:true,read:true}]};
@@ -836,7 +857,8 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     setShowContactAuth(null);
     setContactAuthForm({name:"",email:"",code:""});
     toast_(`Willkommen, ${u.name}! 🏁`);
-    await startContact(vehicleId);
+    // Pass u directly — don't rely on setMe() React state which hasn't updated yet
+    await startContact(vehicleId, u);
   };
 
   const loadDemo = async () => {
