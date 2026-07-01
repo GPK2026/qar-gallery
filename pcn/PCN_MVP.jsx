@@ -448,6 +448,8 @@ function PCNInner() {
   const [showAddRem, setShowAddRem] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(null);
   const [showEditVehicle, setShowEditVehicle] = useState(null); // vehicleId
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [profileForm, setProfileForm]         = useState({});
   const [showContactAuth, setShowContactAuth] = useState(null); // vehicleId — triggers login/register/guest sheet
   const [contactAuthMode, setContactAuthMode] = useState("guest"); // "guest" | "login" | "register"
   const [contactAuthForm, setContactAuthForm] = useState({name:"",email:"",code:""});
@@ -743,6 +745,56 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     setParticipants(prev=>({...prev,[eventId]:[...(prev[eventId]||[]),p]}));
     setScreen("app"); setTab("events");
     toast_(`Angemeldet — Startnr. #${p.startNr} ✓`);
+  };
+
+  const openEditProfile = () => {
+    setProfileForm({
+      name: me?.name||"",
+      phone: me?.phone||"",
+      city: me?.city||"",
+      bio: me?.bio||"",
+      notifications_events: me?.notifications?.events!==false,
+      notifications_messages: me?.notifications?.messages!==false,
+    });
+    setShowEditProfile(true);
+  };
+
+  const saveProfile = async () => {
+    if(!profileForm.name.trim()){ toast_("Name darf nicht leer sein","err"); return; }
+    const updated = {
+      ...me,
+      name: profileForm.name.trim(),
+      phone: profileForm.phone.trim(),
+      city: profileForm.city.trim(),
+      bio: profileForm.bio.trim(),
+      notifications: {
+        events: profileForm.notifications_events,
+        messages: profileForm.notifications_messages,
+      },
+    };
+    setMe(updated);
+    // Persist session locally (always)
+    localStorage.setItem("pcn_session", JSON.stringify(updated));
+    // Patch in Supabase if active
+    const DB = window.PCN_DB;
+    if(DB && me?.id){
+      try {
+        await fetch(
+          `https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/users?id=eq.${me.id}`,
+          { method:"PATCH",
+            headers:{
+              "apikey":"sb_publishable_tX_a5f1ncF32XY5sfr1Zww_ZeJrMTux",
+              "Authorization":"Bearer sb_publishable_tX_a5f1ncF32XY5sfr1Zww_ZeJrMTux",
+              "Content-Type":"application/json",
+              "Prefer":"return=minimal",
+            },
+            body: JSON.stringify({ name: updated.name }),
+          }
+        );
+      } catch(e){ console.warn("Supabase patch skipped:", e); }
+    }
+    setShowEditProfile(false);
+    toast_("Profil gespeichert ✓");
   };
 
   const openEditVehicle = (v) => {
@@ -2117,10 +2169,32 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {/* PROFILE */}
         {tab==="profile"&&(
           <div style={{animation:"fadeIn .2s"}}>
-            <div className="card" style={{padding:20,textAlign:"center",marginBottom:14}}>
-              <div style={{width:56,height:56,background:C.red,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,margin:"0 auto 10px"}}>🏎️</div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>{me?.name}</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Mitglied · {me?.memberNr}</div>
+            {/* Profile card */}
+            <div className="card" style={{padding:20,marginBottom:14}}>
+              <div style={{display:"flex",gap:14,alignItems:"center"}}>
+                <div style={{width:60,height:60,background:C.red,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0,fontWeight:800,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif"}}>
+                  {(me?.name||"?")[0].toUpperCase()}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:C.white,lineHeight:1}}>{me?.name}</div>
+                  <div style={{fontSize:11,color:C.muted,marginTop:3}}>
+                    {me?.role==="guest"?"Gast-Account":"Mitglied"}{me?.memberNr?" · "+me.memberNr:""}
+                  </div>
+                  {me?.city&&<div style={{fontSize:11,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
+                  {me?.bio&&<div style={{fontSize:12,color:"#777",marginTop:5,lineHeight:1.5}}>{me.bio}</div>}
+                </div>
+                <button className="btn sm ghost" style={{flexShrink:0}} onClick={openEditProfile}>✏️</button>
+              </div>
+              {me?.role==="guest"&&(
+                <div style={{marginTop:14,paddingTop:12,borderTop:`1px solid ${C.border}`,display:"flex",gap:10,alignItems:"center"}}>
+                  <span style={{fontSize:20}}>🏎️</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:12,fontWeight:700,color:C.white}}>Jetzt Vollmitglied werden</div>
+                    <div style={{fontSize:11,color:C.muted}}>Fahrzeugakte, QR-Code, Events</div>
+                  </div>
+                  <button className="btn sm" onClick={()=>{ setLoginForm({mode:"register",code:"",name:me?.name||"",email:me?.email||""}); setScreen("splash"); }}>Upgrade →</button>
+                </div>
+              )}
             </div>
             <div className="card" style={{padding:16,marginBottom:12}}>
               <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Statistiken</div>
@@ -2151,6 +2225,55 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
       </div>
 
       {/* overlays moved to each screen */}
+
+      {/* ── PROFILE EDIT SHEET ── */}
+      {showEditProfile&&(
+        <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowEditProfile(false);}}>
+          <div className="sheet">
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>✏️ Profil bearbeiten</div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:18}}>Deine persönlichen Angaben</div>
+
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>Persönlich</div>
+              <input className="inp" placeholder="Name *" value={profileForm.name||""}
+                onChange={e=>setProfileForm(p=>({...p,name:e.target.value}))} style={{marginBottom:8}}/>
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:14,color:C.muted}}>{me?.email}</span>
+                <span style={{fontSize:10,color:"#444"}}>E-Mail (nicht änderbar)</span>
+              </div>
+              <input className="inp" placeholder="Telefon (optional)" type="tel" value={profileForm.phone||""}
+                onChange={e=>setProfileForm(p=>({...p,phone:e.target.value}))} style={{marginBottom:8}}/>
+              <input className="inp" placeholder="Wohnort (z.B. Koblenz)" value={profileForm.city||""}
+                onChange={e=>setProfileForm(p=>({...p,city:e.target.value}))} style={{marginBottom:8}}/>
+              <textarea className="inp" placeholder="Kurzbeschreibung (optional, z.B. Porsche-Fan seit 2010, Nordschleife-Enthusiast)"
+                rows={2} value={profileForm.bio||""} onChange={e=>setProfileForm(p=>({...p,bio:e.target.value}))}
+                style={{resize:"none",fontFamily:"'Barlow',sans-serif"}}/>
+            </div>
+
+            <div style={{marginBottom:18}}>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Benachrichtigungen</div>
+              {[
+                ["notifications_events","🏁  Event-Erinnerungen","Neue Events und Anmeldungsbestätigungen"],
+                ["notifications_messages","💬  Neue Nachrichten","Eingehende Nachrichten im Chat"],
+              ].map(([key,label,sub])=>(
+                <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <div>
+                    <div style={{fontSize:13,color:C.white}}>{label}</div>
+                    <div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>
+                  </div>
+                  <button className={`tog ${profileForm[key]?"on":"off"}`}
+                    onClick={()=>setProfileForm(p=>({...p,[key]:!p[key]}))}/>
+                </div>
+              ))}
+            </div>
+
+            <div style={{display:"flex",gap:8}}>
+              <button className="btn ghost" style={{flex:1}} onClick={()=>setShowEditProfile(false)}>Abbrechen</button>
+              <button className="btn" style={{flex:1}} onClick={saveProfile}>Speichern ✓</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Vehicle Sheet */}
       {showAddV&&(
