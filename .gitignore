@@ -1,0 +1,7 @@
+# Supabase / API credentials
+pcn/pcn_config.js
+
+# Local test files
+pcn_local_test.html
+*.env
+.env.*
