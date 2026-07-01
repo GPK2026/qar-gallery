@@ -1474,14 +1474,17 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
                     {imgUploading ? "⏳" : "📷"}
                   </label>
-                  <button title="QR-Sichtbarkeit" onClick={()=>setShowPrivacy(v.id)}
-                    style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:14,minWidth:38}}>
-                    🔒
+                  <button title="QR-Sichtbarkeit einstellen" onClick={()=>setShowPrivacy(v.id)}
+                    style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.25)",borderRadius:10,padding:"7px 11px",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:4,fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:11}}>
+                    <span style={{fontSize:13}}>▪︎</span>
+                    <span>QR</span>
+                    <span style={{fontSize:13}}>🔒</span>
                   </button>
                 </>}
-                <button title="Öffentliche Ansicht" onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
-                  style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:14,minWidth:38}}>
-                  👁
+                <button title="Öffentliche QR-Ansicht" onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
+                  style={{background:"rgba(0,0,0,.55)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"7px 11px",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:4,fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:11}}>
+                  <span style={{fontSize:13}}>👁</span>
+                  <span>Vorschau</span>
                 </button>
               </div>
             </div>
@@ -1633,27 +1636,48 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             </div>
           )}
 
-          {/* Phone — owner edit */}
+          {/* Phone — pulled from profile, with inline public/private toggle */}
           {isOwn&&(
             <div style={{marginBottom:16}}>
               <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>📞 Kontakt</div>
-              <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                <input className="inp" placeholder="Telefonnummer" type="tel"
-                  value={viewV.phone||""}
-                  onChange={e=>{
-                    const val=e.target.value;
-                    const updated={...viewV,phone:val};
-                    setViewV(updated);
-                    setVehicles(prev=>({...prev,[viewV.id]:updated}));
-                    // Debounced save
-                    clearTimeout(window._phoneSaveTimer);
-                    window._phoneSaveTimer=setTimeout(async()=>{
-                      const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
-                    }, 800);
-                  }}
-                  style={{flex:1,fontSize:14}}/>
-                <div style={{fontSize:10,color:C.muted,flexShrink:0,lineHeight:1.4,maxWidth:100}}>
-                  {priv.pub_phone?"🔓 Öffentlich":"🔒 Privat"}
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+                <div style={{padding:"12px 14px",display:"flex",gap:10,alignItems:"center"}}>
+                  <input className="inp" placeholder="Telefonnummer (aus Profil übernehmen)" type="tel"
+                    value={viewV.phone||me?.phone||""}
+                    onChange={e=>{
+                      const val=e.target.value;
+                      const updated={...viewV,phone:val};
+                      setViewV(updated);
+                      setVehicles(prev=>({...prev,[viewV.id]:updated}));
+                      clearTimeout(window._phoneSaveTimer);
+                      window._phoneSaveTimer=setTimeout(async()=>{
+                        const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
+                      }, 800);
+                    }}
+                    style={{flex:1,fontSize:14,border:"none",background:"transparent",padding:0}}/>
+                  {!viewV.phone&&me?.phone&&(
+                    <button onClick={()=>{
+                      const updated={...viewV,phone:me.phone};
+                      setViewV(updated);
+                      setVehicles(prev=>({...prev,[viewV.id]:updated}));
+                      const DB=window.PCN_DB; if(DB) DB.vehicles.save(updated);
+                      toast_("Aus Profil übernommen ✓");
+                    }} style={{background:C.red,border:"none",borderRadius:7,padding:"5px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>
+                      Übernehmen
+                    </button>
+                  )}
+                </div>
+                <div style={{borderTop:`1px solid ${C.border}`,padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:600,color:priv.pub_phone?C.green:C.white}}>
+                      {priv.pub_phone?"🔓 Öffentlich sichtbar":"🔒 Nur privat"}
+                    </div>
+                    <div style={{fontSize:10,color:C.muted,marginTop:2}}>
+                      {priv.pub_phone?"Besucher sehen Direktanruf-Button":"Nummer nicht im QR-Profil sichtbar"}
+                    </div>
+                  </div>
+                  <button className={`tog ${priv.pub_phone?"on":"off"}`}
+                    onClick={()=>togglePrivacy(v.id,"pub_phone")}/>
                 </div>
               </div>
             </div>
@@ -1680,8 +1704,16 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {showPrivacy===v.id&&(
           <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowPrivacy(null);}}>
             <div className="sheet">
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>🔒 QR-Sichtbarkeit</div>
-              <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Was ist auf der öffentlichen Fahrzeugseite sichtbar?</div>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+                <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,padding:"6px 10px",display:"flex",alignItems:"center",gap:5}}>
+                  <span style={{fontSize:16}}>▪︎</span>
+                  <span style={{fontWeight:800,fontSize:13,color:C.red}}>QR</span>
+                  <span style={{fontSize:16}}>🔒</span>
+                </div>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>Öffentliche Sichtbarkeit</div>
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Was sehen Besucher wenn sie deinen QR-Code scannen?</div>
+              <div style={{fontSize:10,color:"#444",marginBottom:16,lineHeight:1.6}}>Tippe einen Toggle um die Sichtbarkeit zu ändern. 🔓 = sichtbar · 🔒 = versteckt</div>
               {[
                 ["Basis",[["kennzeichen","Kennzeichen"],["farbe","Farbe"],["kraftstoff","Kraftstoff"],["getriebe","Getriebe"],["baujahr","Baujahr"]]],
                 ["Details",[["kilometerstand","Kilometerstand"],["tuev_faelligkeit","TÜV-Datum"],["zustand","Zustand"],["marktwert","Marktwert"]]],
