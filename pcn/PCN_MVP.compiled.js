@@ -1202,6 +1202,8 @@
     const [showAddRem, setShowAddRem] = (0, _react.useState)(false);
     const [showPrivacy, setShowPrivacy] = (0, _react.useState)(null);
     const [showEditVehicle, setShowEditVehicle] = (0, _react.useState)(null); // vehicleId
+    const [showEditProfile, setShowEditProfile] = (0, _react.useState)(false);
+    const [profileForm, setProfileForm] = (0, _react.useState)({});
     const [showContactAuth, setShowContactAuth] = (0, _react.useState)(null); // vehicleId — triggers login/register/guest sheet
     const [contactAuthMode, setContactAuthMode] = (0, _react.useState)("guest"); // "guest" | "login" | "register"
     const [contactAuthForm, setContactAuthForm] = (0, _react.useState)({
@@ -1678,6 +1680,59 @@
       setScreen("app");
       setTab("events");
       toast_(`Angemeldet — Startnr. #${p.startNr} ✓`);
+    };
+    const openEditProfile = () => {
+      setProfileForm({
+        name: me?.name || "",
+        phone: me?.phone || "",
+        city: me?.city || "",
+        bio: me?.bio || "",
+        notifications_events: me?.notifications?.events !== false,
+        notifications_messages: me?.notifications?.messages !== false
+      });
+      setShowEditProfile(true);
+    };
+    const saveProfile = async () => {
+      if (!profileForm.name.trim()) {
+        toast_("Name darf nicht leer sein", "err");
+        return;
+      }
+      const updated = {
+        ...me,
+        name: profileForm.name.trim(),
+        phone: profileForm.phone.trim(),
+        city: profileForm.city.trim(),
+        bio: profileForm.bio.trim(),
+        notifications: {
+          events: profileForm.notifications_events,
+          messages: profileForm.notifications_messages
+        }
+      };
+      setMe(updated);
+      // Persist session locally (always)
+      localStorage.setItem("pcn_session", JSON.stringify(updated));
+      // Patch in Supabase if active
+      const DB = window.PCN_DB;
+      if (DB && me?.id) {
+        try {
+          await fetch(`https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/users?id=eq.${me.id}`, {
+            method: "PATCH",
+            headers: {
+              "apikey": "sb_publishable_tX_a5f1ncF32XY5sfr1Zww_ZeJrMTux",
+              "Authorization": "Bearer sb_publishable_tX_a5f1ncF32XY5sfr1Zww_ZeJrMTux",
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({
+              name: updated.name
+            })
+          });
+        } catch (e) {
+          console.warn("Supabase patch skipped:", e);
+        }
+      }
+      setShowEditProfile(false);
+      toast_("Profil gespeichert ✓");
     };
     const openEditVehicle = v => {
       setEditForm({
@@ -5596,35 +5651,107 @@
       className: "card",
       style: {
         padding: 20,
-        textAlign: "center",
         marginBottom: 14
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        width: 56,
-        height: 56,
+        display: "flex",
+        gap: 14,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        width: 60,
+        height: 60,
         background: C.red,
         borderRadius: "50%",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 22,
-        margin: "0 auto 10px"
+        fontSize: 24,
+        flexShrink: 0,
+        fontWeight: 800,
+        color: "#fff",
+        fontFamily: "'Barlow Condensed',sans-serif"
       }
-    }, "🏎️"), /*#__PURE__*/_react.default.createElement("div", {
+    }, (me?.name || "?")[0].toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 22,
         fontWeight: 800,
-        color: C.white
+        color: C.white,
+        lineHeight: 1
       }
     }, me?.name), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
+        marginTop: 3
+      }
+    }, me?.role === "guest" ? "Gast-Account" : "Mitglied", me?.memberNr ? " · " + me.memberNr : ""), me?.city && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
         marginTop: 2
       }
-    }, "Mitglied · ", me?.memberNr)), /*#__PURE__*/_react.default.createElement("div", {
+    }, "📍 ", me.city), me?.bio && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#777",
+        marginTop: 5,
+        lineHeight: 1.5
+      }
+    }, me.bio)), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn sm ghost",
+      style: {
+        flexShrink: 0
+      },
+      onClick: openEditProfile
+    }, "✏️")), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginTop: 14,
+        paddingTop: 12,
+        borderTop: `1px solid ${C.border}`,
+        display: "flex",
+        gap: 10,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 20
+      }
+    }, "🏎️"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: C.white
+      }
+    }, "Jetzt Vollmitglied werden"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted
+      }
+    }, "Fahrzeugakte, QR-Code, Events")), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn sm",
+      onClick: () => {
+        setLoginForm({
+          mode: "register",
+          code: "",
+          name: me?.name || "",
+          email: me?.email || ""
+        });
+        setScreen("splash");
+      }
+    }, "Upgrade →"))), /*#__PURE__*/_react.default.createElement("div", {
       className: "card",
       style: {
         padding: 16,
@@ -5728,7 +5855,168 @@
         setScreen("splash");
         setTab("dashboard");
       }
-    }, "Abmelden"))), showAddV && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Abmelden"))), showEditProfile && /*#__PURE__*/_react.default.createElement("div", {
+      className: "overlay",
+      style: {
+        zIndex: 500
+      },
+      onClick: e => {
+        if (e.target === e.currentTarget) setShowEditProfile(false);
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      className: "sheet"
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 20,
+        fontWeight: 800,
+        color: C.white,
+        marginBottom: 4
+      }
+    }, "✏️ Profil bearbeiten"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginBottom: 18
+      }
+    }, "Deine persönlichen Angaben"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginBottom: 16
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 800,
+        color: C.muted,
+        textTransform: "uppercase",
+        letterSpacing: 2,
+        marginBottom: 8
+      }
+    }, "Persönlich"), /*#__PURE__*/_react.default.createElement("input", {
+      className: "inp",
+      placeholder: "Name *",
+      value: profileForm.name || "",
+      onChange: e => setProfileForm(p => ({
+        ...p,
+        name: e.target.value
+      })),
+      style: {
+        marginBottom: 8
+      }
+    }), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 9,
+        padding: "12px 14px",
+        marginBottom: 8,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 14,
+        color: C.muted
+      }
+    }, me?.email), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: "#444"
+      }
+    }, "E-Mail (nicht änderbar)")), /*#__PURE__*/_react.default.createElement("input", {
+      className: "inp",
+      placeholder: "Telefon (optional)",
+      type: "tel",
+      value: profileForm.phone || "",
+      onChange: e => setProfileForm(p => ({
+        ...p,
+        phone: e.target.value
+      })),
+      style: {
+        marginBottom: 8
+      }
+    }), /*#__PURE__*/_react.default.createElement("input", {
+      className: "inp",
+      placeholder: "Wohnort (z.B. Koblenz)",
+      value: profileForm.city || "",
+      onChange: e => setProfileForm(p => ({
+        ...p,
+        city: e.target.value
+      })),
+      style: {
+        marginBottom: 8
+      }
+    }), /*#__PURE__*/_react.default.createElement("textarea", {
+      className: "inp",
+      placeholder: "Kurzbeschreibung (optional, z.B. Porsche-Fan seit 2010, Nordschleife-Enthusiast)",
+      rows: 2,
+      value: profileForm.bio || "",
+      onChange: e => setProfileForm(p => ({
+        ...p,
+        bio: e.target.value
+      })),
+      style: {
+        resize: "none",
+        fontFamily: "'Barlow',sans-serif"
+      }
+    })), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginBottom: 18
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 800,
+        color: C.muted,
+        textTransform: "uppercase",
+        letterSpacing: 2,
+        marginBottom: 10
+      }
+    }, "Benachrichtigungen"), [["notifications_events", "🏁  Event-Erinnerungen", "Neue Events und Anmeldungsbestätigungen"], ["notifications_messages", "💬  Neue Nachrichten", "Eingehende Nachrichten im Chat"]].map(([key, label, sub]) => /*#__PURE__*/_react.default.createElement("div", {
+      key: key,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "11px 0",
+        borderBottom: `1px solid ${C.border}`
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.white
+      }
+    }, label), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.muted,
+        marginTop: 2
+      }
+    }, sub)), /*#__PURE__*/_react.default.createElement("button", {
+      className: `tog ${profileForm[key] ? "on" : "off"}`,
+      onClick: () => setProfileForm(p => ({
+        ...p,
+        [key]: !p[key]
+      }))
+    })))), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn ghost",
+      style: {
+        flex: 1
+      },
+      onClick: () => setShowEditProfile(false)
+    }, "Abbrechen"), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn",
+      style: {
+        flex: 1
+      },
+      onClick: saveProfile
+    }, "Speichern ✓")))), showAddV && /*#__PURE__*/_react.default.createElement("div", {
       className: "overlay",
       onClick: e => {
         if (e.target === e.currentTarget) setShowAddV(false);
