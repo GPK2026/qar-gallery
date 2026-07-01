@@ -128,14 +128,16 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
+  <!-- Config (credentials, not in git) — must load before storage -->
+  <script src="pcn_config.js"></script>
   <!-- jsQR — bundled locally, no CDN needed -->
-  <script src="jsQR.js?v=1782889361"></script>
+  <script src="jsQR.js?v=1782891775"></script>
   <!-- QR Code generator — bundled locally -->
-  <script src="qrcode_bundle.js?v=1782889361"></script>
+  <script src="qrcode_bundle.js?v=1782891775"></script>
   <!-- Storage layer (load before app) -->
-  <script src="pcn_storage.js?v=1782889361"></script>
+  <script src="pcn_storage.js?v=1782891775"></script>
   <!-- App -->
-  <script src="PCN_MVP.compiled.js?v=1782889361"></script>
+  <script src="PCN_MVP.compiled.js?v=1782891775"></script>
 
   <script>
     (function() {
