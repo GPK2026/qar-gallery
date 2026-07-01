@@ -1715,11 +1715,12 @@
       const DB = window.PCN_DB;
       if (DB && me?.id) {
         try {
-          await fetch(`https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/users?id=eq.${me.id}`, {
+          const cfg = window.PCN_CONFIG || {};
+          await fetch(`${cfg.supabaseUrl}/rest/v1/users?id=eq.${me.id}`, {
             method: "PATCH",
             headers: {
-              "apikey": "sb_publishable_tX_a5f1ncF32XY5sfr1Zww_ZeJrMTux",
-              "Authorization": "Bearer sb_publishable_tX_a5f1ncF32XY5sfr1Zww_ZeJrMTux",
+              "apikey": cfg.supabaseKey,
+              "Authorization": "Bearer " + cfg.supabaseKey,
               "Content-Type": "application/json",
               "Prefer": "return=minimal"
             },
