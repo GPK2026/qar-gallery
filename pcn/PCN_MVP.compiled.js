@@ -3595,21 +3595,33 @@
           },
           onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
         }), imgUploading ? "⏳" : "📷"), /*#__PURE__*/_react.default.createElement("button", {
-          title: "QR-Sichtbarkeit",
+          title: "QR-Sichtbarkeit einstellen",
           onClick: () => setShowPrivacy(v.id),
           style: {
             background: "rgba(0,0,0,.55)",
             backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255,255,255,.15)",
+            border: "1px solid rgba(255,255,255,.25)",
             borderRadius: 10,
-            padding: "8px 12px",
+            padding: "7px 11px",
             color: "#fff",
             cursor: "pointer",
-            fontSize: 14,
-            minWidth: 38
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            fontFamily: "'Barlow',sans-serif",
+            fontWeight: 700,
+            fontSize: 11
           }
-        }, "🔒")), /*#__PURE__*/_react.default.createElement("button", {
-          title: "Öffentliche Ansicht",
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 13
+          }
+        }, "▪︎"), /*#__PURE__*/_react.default.createElement("span", null, "QR"), /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 13
+          }
+        }, "🔒"))), /*#__PURE__*/_react.default.createElement("button", {
+          title: "Öffentliche QR-Ansicht",
           onClick: () => {
             setPublicV({
               ...v,
@@ -3623,13 +3635,21 @@
             backdropFilter: "blur(8px)",
             border: "1px solid rgba(255,255,255,.15)",
             borderRadius: 10,
-            padding: "8px 12px",
+            padding: "7px 11px",
             color: "#fff",
             cursor: "pointer",
-            fontSize: 14,
-            minWidth: 38
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            fontFamily: "'Barlow',sans-serif",
+            fontWeight: 700,
+            fontSize: 11
           }
-        }, "👁")));
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 13
+          }
+        }, "👁"), /*#__PURE__*/_react.default.createElement("span", null, "Vorschau"))));
       })(), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           padding: "16px",
@@ -4060,15 +4080,23 @@
         }
       }, "📞 Kontakt"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          overflow: "hidden"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          padding: "12px 14px",
           display: "flex",
-          gap: 8,
+          gap: 10,
           alignItems: "center"
         }
       }, /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
-        placeholder: "Telefonnummer",
+        placeholder: "Telefonnummer (aus Profil übernehmen)",
         type: "tel",
-        value: viewV.phone || "",
+        value: viewV.phone || me?.phone || "",
         onChange: e => {
           const val = e.target.value;
           const updated = {
@@ -4080,7 +4108,6 @@
             ...prev,
             [viewV.id]: updated
           }));
-          // Debounced save
           clearTimeout(window._phoneSaveTimer);
           window._phoneSaveTimer = setTimeout(async () => {
             const DB = window.PCN_DB;
@@ -4089,17 +4116,62 @@
         },
         style: {
           flex: 1,
-          fontSize: 14
+          fontSize: 14,
+          border: "none",
+          background: "transparent",
+          padding: 0
         }
-      }), /*#__PURE__*/_react.default.createElement("div", {
+      }), !viewV.phone && me?.phone && /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => {
+          const updated = {
+            ...viewV,
+            phone: me.phone
+          };
+          setViewV(updated);
+          setVehicles(prev => ({
+            ...prev,
+            [viewV.id]: updated
+          }));
+          const DB = window.PCN_DB;
+          if (DB) DB.vehicles.save(updated);
+          toast_("Aus Profil übernommen ✓");
+        },
+        style: {
+          background: C.red,
+          border: "none",
+          borderRadius: 7,
+          padding: "5px 10px",
+          color: "#fff",
+          fontSize: 11,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          flexShrink: 0
+        }
+      }, "Übernehmen")), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          borderTop: `1px solid ${C.border}`,
+          padding: "11px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          fontWeight: 600,
+          color: priv.pub_phone ? C.green : C.white
+        }
+      }, priv.pub_phone ? "🔓 Öffentlich sichtbar" : "🔒 Nur privat"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted,
-          flexShrink: 0,
-          lineHeight: 1.4,
-          maxWidth: 100
+          marginTop: 2
         }
-      }, priv.pub_phone ? "🔓 Öffentlich" : "🔒 Privat"))), /*#__PURE__*/_react.default.createElement("div", {
+      }, priv.pub_phone ? "Besucher sehen Direktanruf-Button" : "Nummer nicht im QR-Profil sichtbar")), /*#__PURE__*/_react.default.createElement("button", {
+        className: `tog ${priv.pub_phone ? "on" : "off"}`,
+        onClick: () => togglePrivacy(v.id, "pub_phone")
+      })))), /*#__PURE__*/_react.default.createElement("div", {
         className: "card",
         style: {
           padding: 16
@@ -4181,19 +4253,56 @@
         className: "sheet"
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 4
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: `${C.red}22`,
+          border: `1px solid ${C.red}44`,
+          borderRadius: 8,
+          padding: "6px 10px",
+          display: "flex",
+          alignItems: "center",
+          gap: 5
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 16
+        }
+      }, "▪︎"), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontWeight: 800,
+          fontSize: 13,
+          color: C.red
+        }
+      }, "QR"), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 16
+        }
+      }, "🔒")), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
           fontFamily: "'Barlow Condensed',sans-serif",
           fontSize: 20,
           fontWeight: 800,
-          color: C.white,
-          marginBottom: 4
+          color: C.white
         }
-      }, "🔒 QR-Sichtbarkeit"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "Öffentliche Sichtbarkeit")), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
-          marginBottom: 16
+          marginBottom: 4
         }
-      }, "Was ist auf der öffentlichen Fahrzeugseite sichtbar?"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"]]], ["Abschnitte", [["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/_react.default.createElement("div", {
+      }, "Was sehen Besucher wenn sie deinen QR-Code scannen?"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: "#444",
+          marginBottom: 16,
+          lineHeight: 1.6
+        }
+      }, "Tippe einen Toggle um die Sichtbarkeit zu ändern. 🔓 = sichtbar · 🔒 = versteckt"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"]]], ["Abschnitte", [["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/_react.default.createElement("div", {
         key: group,
         style: {
           marginBottom: 14
