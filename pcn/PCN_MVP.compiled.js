@@ -280,8 +280,10 @@
   const DEMO_GROUP = {
     id: "GROUP_PCN",
     name: "PCN Mitglieder",
+    vehicleName: "PCN Club-Kanal",
     icon: "🏎️",
     isGroup: true,
+    anonymous: false,
     participants: ["u1", "u2", "u3"],
     messages: [{
       id: "GM1",
@@ -390,7 +392,7 @@
       zustand: "1",
       besonderheiten: "Sport-Chrono, PASM, Sportabgasanlage, PCCB",
       image: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
-      images: ["https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80", "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=800&q=80", "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80", "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80", "https://images.unsplash.com/photo-1547744152-14d985cb937f?w=800&q=80"],
+      images: ["https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80", "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80", "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80", "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=800&q=80", "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80"],
       privacy: {
         ...DEF_PRIVACY,
         pub_phone: true,
@@ -441,7 +443,7 @@
       zustand: "1",
       besonderheiten: "Clubsport-Paket, Liftsystem, Carbon-Dach",
       image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
-      images: ["https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=800&q=80", "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=800&q=80", "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&q=80", "https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=800&q=80", "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&q=80"],
+      images: ["https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80", "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80", "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&q=80", "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80", "https://images.unsplash.com/photo-1547744152-14d985cb937f?w=800&q=80"],
       privacy: {
         ...DEF_PRIVACY,
         pub_events: true,
@@ -983,8 +985,9 @@
     const [msg, setMsg] = (0, _react.useState)("");
     const endRef = (0, _react.useRef)(null);
     const rootRef = (0, _react.useRef)(null);
-    const other = Object.values(allUsers).find(u => thread.participants.includes(u.id) && u.id !== me?.id) || {
-      name: "Mitglied"
+    const threadParticipants = thread.participants || [];
+    const other = Object.values(allUsers).find(u => threadParticipants.includes(u.id) && u.id !== me?.id) || {
+      name: thread.isGroup ? thread.name : "Mitglied"
     };
     const v = vehicles[thread.vehicleId];
     const isGuest = me?.role === "guest";
@@ -1307,7 +1310,7 @@
     const myVehicles = Object.values(vehicles).filter(v => v.owner === me?.email || v.userId === me?.id);
     const myReminders = reminders.filter(r => !r.done).sort((a, b) => new Date(a.date) - new Date(b.date));
     const myParticipations = Object.values(participants).flat().filter(p => p.userId === me?.id);
-    const myThreads = Object.values(threads).filter(t => t.participants.includes(me?.id));
+    const myThreads = Object.values(threads).filter(t => (t.participants || []).includes(me?.id));
     const unreadCount = myThreads.filter(t => t.messages.some(m => m.from !== me?.id && !m.read && !m.isSystem)).length;
     const appState = {
       logbook,
@@ -1967,7 +1970,7 @@
       } = DB ? await DB.threads.list(currentMe.id) : {
         data: []
       };
-      const existing = (myThreadsLive || Object.values(threads)).find(t => t.vehicleId === vehicleId && t.participants.includes(currentMe.id));
+      const existing = (myThreadsLive || Object.values(threads)).find(t => t.vehicleId === vehicleId && (t.participants || []).includes(currentMe.id));
       if (existing) {
         setThreads(prev => ({
           ...prev,
@@ -6349,7 +6352,7 @@
         fontSize: 12
       }
     }, "Scanne einen QR-Code am Fahrzeug oder tippe auf „Kontakt\" in der Fahrzeugakte")) : myThreads.map(t => {
-      const other = Object.values(allUsers).find(u => t.participants.includes(u.id) && u.id !== me?.id) || {
+      const other = Object.values(allUsers).find(u => (t.participants || []).includes(u.id) && u.id !== me?.id) || {
         name: "Mitglied"
       };
       const last = t.messages.filter(m => !m.isSystem).pop();
