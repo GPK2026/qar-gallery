@@ -53,7 +53,7 @@ const DEF_PRIVACY = {
   hersteller:true, modell:true, baujahr:true, farbe:true,
   kraftstoff:true, getriebe:true, kennzeichen:true,
   kilometerstand:false, zustand:false, tuev_faelligkeit:false,
-  fin:false, marktwert:false, pub_logbook:false, pub_events:true, pub_phone:false,
+  fin:false, marktwert:false, pub_logbook:false, pub_events:true, pub_phone:false, pub_gallery:true,
 };
 
 // ─── QR Code (Real, scannable — uses bundled qrcode.js library) ──────────────
@@ -155,10 +155,11 @@ const DEMO_VEHICLES = {
     images:[
       "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
       "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=800&q=80",
-      "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80",
-      "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=800&q=80",
+      "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80",
+      "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
+      "https://images.unsplash.com/photo-1547744152-14d985cb937f?w=800&q=80",
     ],
-    privacy:{...DEF_PRIVACY, pub_phone:true}},
+    privacy:{...DEF_PRIVACY, pub_phone:true, pub_gallery:true}},
   "V002":{id:"V002",qarId:"QAR-K9P2M7RW",userId:"u1",owner:"max@pcn.de",
     hersteller:"Porsche",modell:"Boxster 718 GTS 4.0",baujahr:"2022",
     kraftstoff:"Benzin",getriebe:"6-Gang manuell",farbe:"Pythongrün",
@@ -168,10 +169,11 @@ const DEMO_VEHICLES = {
     image:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
     images:[
       "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
-      "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80",
-      "https://images.unsplash.com/photo-1547744152-14d985cb937f?w=800&q=80",
+      "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80",
+      "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=800&q=80",
+      "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80",
     ],
-    privacy:{...DEF_PRIVACY}},
+    privacy:{...DEF_PRIVACY, pub_gallery:true}},
   "V003":{id:"V003",qarId:"QAR-T7M3N9PX",userId:"u2",owner:"thomas@pcn.de",
     hersteller:"Porsche",modell:"992 GT3",baujahr:"2022",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"Riviera Blau",
@@ -180,12 +182,13 @@ const DEMO_VEHICLES = {
     besonderheiten:"Clubsport-Paket, Liftsystem, Carbon-Dach",
     image:"https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
     images:[
-      "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
       "https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=800&q=80",
       "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=800&q=80",
-      "https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?w=800&q=80",
+      "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&q=80",
+      "https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=800&q=80",
+      "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&q=80",
     ],
-    privacy:{...DEF_PRIVACY,pub_events:true}},
+    privacy:{...DEF_PRIVACY, pub_events:true, pub_gallery:true}},
 };
 
 const DEMO_EVENTS = {
@@ -1215,7 +1218,16 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           <span style={{fontSize:10,color:C.muted}}>Digitale Fahrzeugakte</span>
         </div>
         <div style={{height:200,position:"relative",overflow:"hidden",background:"#111"}}>
-          {v.image&&<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>}
+          {/* Only show image in public view if pub_gallery is on */}
+          {(priv.pub_gallery!==false) && v.image && (
+            <img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+          )}
+          {(priv.pub_gallery===false) && (
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.muted,flexDirection:"column",gap:8}}>
+              <span style={{fontSize:32}}>🔒</span>
+              <span style={{fontSize:12}}>Galerie nicht öffentlich</span>
+            </div>
+          )}
           <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 30%,#000000f0)"}}/>
           <div style={{position:"absolute",bottom:14,left:16,right:16}}>
             <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:8}}>{v.hersteller} {v.modell}</h1>
@@ -1618,11 +1630,35 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                         onClick={()=>setGallerySwipe(p=>({...p,[v.id]:i}))}
                         style={{
                           width:68, height:68, objectFit:"cover", borderRadius:9, cursor:"pointer", display:"block",
-                          border:`2.5px solid ${active?C.red:"transparent"}`,
-                          boxShadow:active?`0 0 0 1px ${C.red}`:"none",
+                          border:`2.5px solid ${active?C.red:i===0?"#c8a96e44":"transparent"}`,
+                          boxShadow:active?`0 0 0 1px ${C.red}`:i===0?"0 0 0 1px #c8a96e44":"none",
                           transition:"border-color .15s",
                         }}
                         onError={e=>e.target.style.display="none"}/>
+                      {/* Crown for main image (index 0) */}
+                      {i===0 && <div style={{position:"absolute",top:-6,left:"50%",transform:"translateX(-50%)",fontSize:12,lineHeight:1}}>👑</div>}
+                      {/* Set as main + delete buttons when active */}
+                      {isOwn && active && i!==0 && (
+                        <button
+                          onClick={async e=>{
+                            e.stopPropagation();
+                            // Move this image to index 0 (main image)
+                            const imgs2 = [...imgs];
+                            imgs2.splice(i,1); imgs2.unshift(img);
+                            const updated={...v,images:imgs2,image:img};
+                            setVehicles(prev=>({...prev,[v.id]:updated}));
+                            if(viewV?.id===v.id) setViewV(updated);
+                            setGallerySwipe(p=>({...p,[v.id]:0}));
+                            const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
+                            toast_("Titelbild gesetzt 👑");
+                          }}
+                          style={{position:"absolute",bottom:-2,left:"50%",transform:"translateX(-50%)",
+                            background:C.gold,border:"none",borderRadius:6,padding:"2px 6px",
+                            color:"#000",fontSize:8,fontWeight:800,cursor:"pointer",
+                            whiteSpace:"nowrap",fontFamily:"'Barlow',sans-serif"}}>
+                          👑 Titelbild
+                        </button>
+                      )}
                       {isOwn && (
                         <button
                           onClick={e=>{e.stopPropagation();removeImageFromVehicle(v.id,i);}}
@@ -1641,6 +1677,13 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                     <span style={{fontSize:8,color:C.muted,textAlign:"center"}}>Hinzufügen</span>
                   </label>
                 )}
+              </div>
+              {/* Set main image hint */}
+              {isOwn && imgs.length > 1 && (
+                <div style={{fontSize:11,color:C.muted,marginBottom:4,textAlign:"center"}}>
+                  👑 Tippe auf ein Thumbnail und dann „Als Titelbild" um das Hauptbild zu ändern
+                </div>
+              )}
               </div>
             );
           })()}
@@ -1790,7 +1833,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               {[
                 ["Basis",[["kennzeichen","Kennzeichen"],["farbe","Farbe"],["kraftstoff","Kraftstoff"],["getriebe","Getriebe"],["baujahr","Baujahr"]]],
                 ["Details",[["kilometerstand","Kilometerstand"],["tuev_faelligkeit","TÜV-Datum"],["zustand","Zustand"],["marktwert","Marktwert"]]],
-                ["Abschnitte",[["pub_events","Veranstaltungsteilnahmen"],["pub_logbook","Service-Logbuch"]]],
+                ["Abschnitte",[["pub_gallery","Fotogalerie 📸"],["pub_events","Veranstaltungsteilnahmen"],["pub_logbook","Service-Logbuch"]]],
                 ["Kontakt",[["pub_phone","Telefonnummer (Direktanruf)"]]],
               ].map(([group,fields])=>(
                 <div key={group} style={{marginBottom:14}}>
