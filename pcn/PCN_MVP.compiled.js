@@ -372,6 +372,8 @@
     }
   };
   const DEMO_VEHICLES = {
+    // ── Max: Porsche 911 Carrera 4S, GT-Silbermetallic ──────────────────────────
+    // Alle Bilder zeigen denselben silbernen 911 aus verschiedenen Perspektiven
     "V001": {
       id: "V001",
       qarId: "QAR-R4T8W3NX",
@@ -386,44 +388,49 @@
       kennzeichen: "AW-PC 911",
       fin: "WP0ZZZ99ZLS100001",
       phone: "+49 171 9110911",
-      kilometerstand: "32400",
+      kilometerstand: "32.400",
       tuev_faelligkeit: "02/2027",
-      marktwert: "138000",
+      marktwert: "138.000",
       zustand: "1",
       besonderheiten: "Sport-Chrono, PASM, Sportabgasanlage, PCCB",
-      image: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
-      images: ["https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80", "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80", "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80", "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=800&q=80", "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80"],
+      image: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=900&q=85",
+      images: ["https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=900&q=85", "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=900&q=85", "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=900&q=85", "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=900&q=85"],
       privacy: {
         ...DEF_PRIVACY,
         pub_phone: true,
-        pub_gallery: true
+        pub_gallery: true,
+        pub_events: true
       }
     },
+    // ── Max: Porsche 718 Boxster GTS 4.0, Pythongrün ────────────────────────────
+    // Alle Bilder: grüner Roadster, offen fahrend, Sommer
     "V002": {
       id: "V002",
       qarId: "QAR-K9P2M7RW",
       userId: "u1",
       owner: "max@pcn.de",
       hersteller: "Porsche",
-      modell: "Boxster 718 GTS 4.0",
+      modell: "718 Boxster GTS 4.0",
       baujahr: "2022",
       kraftstoff: "Benzin",
       getriebe: "6-Gang manuell",
       farbe: "Pythongrün",
       kennzeichen: "AW-PC 718",
       fin: "WP0ZZZ98ZNS200042",
-      kilometerstand: "18700",
+      kilometerstand: "18.700",
       tuev_faelligkeit: "09/2027",
-      marktwert: "89000",
+      marktwert: "89.000",
       zustand: "1",
-      besonderheiten: "Manuelles Getriebe, Alcantara-Paket, Sportabgas",
-      image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
-      images: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80", "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80", "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=800&q=80", "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80"],
+      besonderheiten: "Manuelles Getriebe, Alcantara-Paket, Sportabgas, Windschott",
+      image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=85",
+      images: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=85", "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=900&q=85", "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=900&q=85", "https://images.unsplash.com/photo-1547744152-14d985cb937f?w=900&q=85"],
       privacy: {
         ...DEF_PRIVACY,
         pub_gallery: true
       }
     },
+    // ── Thomas: Porsche 992 GT3, Riviera Blau ────────────────────────────────────
+    // Alle Bilder: blauer/sportlicher GT3 auf der Rennstrecke
     "V003": {
       id: "V003",
       qarId: "QAR-T7M3N9PX",
@@ -437,17 +444,19 @@
       farbe: "Riviera Blau",
       kennzeichen: "MYK-PC 992",
       fin: "WP0AC2A92NS230001",
-      kilometerstand: "8200",
+      phone: "+49 172 5550992",
+      kilometerstand: "8.200",
       tuev_faelligkeit: "06/2027",
-      marktwert: "195000",
+      marktwert: "195.000",
       zustand: "1",
-      besonderheiten: "Clubsport-Paket, Liftsystem, Carbon-Dach",
-      image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
-      images: ["https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80", "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80", "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&q=80", "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80", "https://images.unsplash.com/photo-1547744152-14d985cb937f?w=800&q=80"],
+      besonderheiten: "Clubsport-Paket, Liftsystem, Carbon-Dach, PDK",
+      image: "https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=900&q=85",
+      images: ["https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=900&q=85", "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=900&q=85", "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=900&q=85", "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=900&q=85"],
       privacy: {
         ...DEF_PRIVACY,
         pub_events: true,
-        pub_gallery: true
+        pub_gallery: true,
+        pub_phone: true
       }
     }
   };
@@ -1031,10 +1040,14 @@
         background: C.dark,
         borderBottom: `1px solid ${C.border}`,
         padding: "12px 16px",
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
         display: "flex",
         gap: 12,
         alignItems: "center",
-        flexShrink: 0
+        marginBottom: thread.isGroup ? 6 : 0
       }
     }, /*#__PURE__*/_react.default.createElement("button", {
       onClick: onBack,
@@ -1043,51 +1056,83 @@
         border: "none",
         color: C.muted,
         cursor: "pointer",
-        fontSize: 20,
+        fontSize: 22,
         padding: 0,
-        lineHeight: 1
+        lineHeight: 1,
+        flexShrink: 0
       }
     }, "←"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        width: 36,
-        height: 36,
-        borderRadius: "50%",
-        background: `${C.red}22`,
-        color: C.red,
+        width: 44,
+        height: 44,
+        borderRadius: thread.isGroup ? "12px" : "50%",
+        background: thread.isGroup ? C.red : thread.anonymous ? "#1a1a2e" : `${C.red}22`,
+        color: "#fff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontWeight: 800,
-        fontSize: 16,
+        fontSize: thread.isGroup ? 22 : 17,
         flexShrink: 0
       }
-    }, thread.anonymous ? "🔒" : other.name[0]), /*#__PURE__*/_react.default.createElement("div", {
+    }, thread.isGroup ? "🏎️" : thread.anonymous ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontWeight: 700,
-        fontSize: 14,
-        color: C.white
+        fontWeight: 800,
+        fontSize: 16,
+        color: C.white,
+        lineHeight: 1.2
       }
-    }, thread.anonymous ? "🔒 Anonym" : other.name), v && /*#__PURE__*/_react.default.createElement("div", {
+    }, thread.isGroup ? thread.name : thread.anonymous ? "🔒 Anonyme Nachricht" : other.name), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 10,
+        fontSize: 12,
         color: C.muted,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap"
+        marginTop: 2
       }
-    }, "Re: ", v.hersteller, " ", v.modell)), v && /*#__PURE__*/_react.default.createElement("button", {
+    }, thread.isGroup ? `${threadParticipants.length} Mitglieder` : v ? `Re: ${v.hersteller} ${v.modell}` : "Direktnachricht")), !thread.isGroup && v && /*#__PURE__*/_react.default.createElement("button", {
       className: "btn sm ghost",
       onClick: () => onViewVehicle(v),
       style: {
-        fontSize: 11,
+        fontSize: 12,
         flexShrink: 0
       }
-    }, "Akte →")), isGuest && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Akte →")), thread.isGroup && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        paddingLeft: 56,
+        alignItems: "center"
+      }
+    }, threadParticipants.slice(0, 5).map(uid => {
+      const u = allUsers[uid] || {
+        name: "?"
+      };
+      return /*#__PURE__*/_react.default.createElement("div", {
+        key: uid,
+        style: {
+          width: 26,
+          height: 26,
+          borderRadius: "50%",
+          background: `${C.red}33`,
+          border: `1.5px solid ${C.border}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 11,
+          fontWeight: 800,
+          color: C.white
+        }
+      }, u.name[0]?.toUpperCase());
+    }), threadParticipants.length > 5 && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.muted
+      }
+    }, "+", threadParticipants.length - 5))), isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: `${C.gold}14`,
         borderBottom: `1px solid ${C.gold}33`,
@@ -1143,34 +1188,45 @@
         }
       }, "— ", m.text, " —");
       const mine = m.from === me?.id;
+      const senderUser = !mine ? Object.values(allUsers).find(u => u.id === m.from) : null;
+      const senderName = thread.isGroup ? mine ? "Du" : senderUser?.name || "Mitglied" : null;
       return /*#__PURE__*/_react.default.createElement("div", {
         key: m.id,
         style: {
           display: "flex",
-          justifyContent: mine ? "flex-end" : "flex-start"
+          flexDirection: "column",
+          alignItems: mine ? "flex-end" : "flex-start",
+          marginBottom: 2
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, senderName && /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          maxWidth: "80%",
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 2,
+          paddingLeft: 4
+        }
+      }, senderName), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          maxWidth: "82%",
           background: mine ? C.red : "#1e1e1e",
           border: mine ? "none" : `1px solid ${C.border}`,
-          borderRadius: mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-          padding: "10px 14px"
+          borderRadius: mine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+          padding: "11px 15px"
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 14,
+          fontSize: 15,
           color: "#fff",
           lineHeight: 1.5
         }
       }, m.text), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 9,
+          fontSize: 10,
           color: mine ? "rgba(255,255,255,.5)" : C.muted,
-          marginTop: 3,
+          marginTop: 4,
           textAlign: "right"
         }
-      }, m.ts)));
+      }, m.date && m.date !== new Date().toLocaleDateString("de-DE") ? m.date + " · " : "", m.ts)));
     }), /*#__PURE__*/_react.default.createElement("div", {
       ref: endRef
     })), /*#__PURE__*/_react.default.createElement("div", {
@@ -1282,7 +1338,7 @@
     const [showEditVehicle, setShowEditVehicle] = (0, _react.useState)(null); // vehicleId
     const [showEditProfile, setShowEditProfile] = (0, _react.useState)(false);
     const [newsState, setNewsState] = (0, _react.useState)({}); // {id: "read"|"remind"}
-    const [showInfoModal, setShowInfoModal] = (0, _react.useState)(false);
+    const [showInfoModal, setShowInfoModal] = (0, _react.useState)(false); // false | 'features' | 'points'
     const [eventsView, setEventsView] = (0, _react.useState)("list"); // "list" | "calendar"
     const [calMonth, setCalMonth] = (0, _react.useState)(new Date());
     const [profileForm, setProfileForm] = (0, _react.useState)({});
@@ -3555,496 +3611,157 @@
         }
       }, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
         className: `toast ${toast.type}`
-      }, toast.msg), ScannerOverlay, (() => {
-        const imgs = getImages(v);
-        const curIdx = Math.min(gallerySwipe[v.id] || 0, Math.max(0, imgs.length - 1));
-        const curImg = imgs[curIdx];
-        const goTo = i => setGallerySwipe(p => ({
+      }, toast.msg), ScannerOverlay, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          position: "relative"
+        }
+      }, /*#__PURE__*/_react.default.createElement(VehicleGallery, {
+        imgs: getImages(v),
+        curIdx: Math.min(gallerySwipe[v.id] || 0, Math.max(0, getImages(v).length - 1)),
+        vehicleId: v.id,
+        isOwn: isOwn,
+        imgUploading: imgUploading,
+        onGoTo: i => setGallerySwipe(p => ({
           ...p,
-          [v.id]: Math.max(0, Math.min(imgs.length - 1, i))
-        }));
-        // Touch swipe state
-        let touchStartX = 0;
-        const onTouchStart = e => {
-          touchStartX = e.touches[0].clientX;
-        };
-        const onTouchEnd = e => {
-          const dx = e.changedTouches[0].clientX - touchStartX;
-          if (Math.abs(dx) > 40) goTo(curIdx + (dx < 0 ? 1 : -1));
-        };
-        return /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            height: 280,
-            position: "relative",
-            overflow: "hidden",
-            background: "#111"
-          },
-          onTouchStart: onTouchStart,
-          onTouchEnd: onTouchEnd
-        }, curImg ? /*#__PURE__*/_react.default.createElement("img", {
-          src: curImg,
-          alt: "",
-          draggable: false,
-          style: {
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            cursor: "zoom-in",
-            userSelect: "none",
-            WebkitUserSelect: "none"
-          },
-          onClick: () => setLightbox({
-            images: imgs,
-            index: curIdx
-          }),
-          onError: e => e.target.style.display = "none"
-        }) : isOwn && /*#__PURE__*/_react.default.createElement("label", {
-          style: {
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 10,
-            cursor: "pointer",
-            height: "100%",
-            color: C.muted
-          }
-        }, /*#__PURE__*/_react.default.createElement("input", {
-          type: "file",
-          accept: "image/*",
-          style: {
-            display: "none"
-          },
-          onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
-        }), /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 40
-          }
-        }, "📷"), /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 13,
-            fontWeight: 600,
-            color: C.white
-          }
-        }, "Erstes Foto hinzufügen"), /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 11,
-            color: C.muted
-          }
-        }, "Tippe um Foto oder Bibliothek zu öffnen")), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(to bottom,rgba(0,0,0,.45) 0%,transparent 35%,transparent 50%,rgba(0,0,0,.75) 100%)",
-            pointerEvents: "none"
-          }
-        }), imgs.length > 1 && /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            position: "absolute",
-            bottom: 14,
-            left: 0,
-            right: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-            zIndex: 3
-          }
-        }, imgs.map((_, i) => /*#__PURE__*/_react.default.createElement("div", {
-          key: i,
-          onClick: e => {
-            e.stopPropagation();
-            goTo(i);
-          },
-          style: {
-            width: i === curIdx ? 20 : 6,
-            height: 6,
-            borderRadius: 99,
-            background: i === curIdx ? "#fff" : "rgba(255,255,255,.35)",
-            transition: "width .2s, background .2s",
-            cursor: "pointer"
-          }
-        }))), imgs.length > 1 && /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            position: "absolute",
-            bottom: 14,
-            right: 14,
-            background: "rgba(0,0,0,.6)",
-            backdropFilter: "blur(4px)",
-            borderRadius: 6,
-            padding: "3px 9px",
-            fontSize: 11,
-            fontWeight: 700,
-            color: "rgba(255,255,255,.9)",
-            zIndex: 3,
-            letterSpacing: .5
-          }
-        }, curIdx + 1, "/", imgs.length), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            position: "absolute",
-            top: 16,
-            left: 14,
-            zIndex: 5
-          }
-        }, /*#__PURE__*/_react.default.createElement("button", {
-          onClick: () => setScreen("app"),
-          style: {
-            background: "rgba(0,0,0,.55)",
-            backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255,255,255,.15)",
-            borderRadius: 10,
-            padding: "8px 14px",
-            color: "#fff",
-            cursor: "pointer",
-            fontSize: 12,
-            fontWeight: 700,
-            fontFamily: "'Barlow',sans-serif",
-            display: "flex",
-            alignItems: "center",
-            gap: 6
-          }
-        }, "← Zurück")), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            position: "absolute",
-            top: 16,
-            right: 14,
-            display: "flex",
-            gap: 8,
-            zIndex: 5
-          }
-        }, isOwn && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("label", {
-          title: "Foto hinzufügen",
-          style: {
-            background: "rgba(0,0,0,.55)",
-            backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255,255,255,.15)",
-            borderRadius: 10,
-            padding: "8px 12px",
-            color: "#fff",
-            cursor: "pointer",
-            fontSize: 14,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: 38
-          }
-        }, /*#__PURE__*/_react.default.createElement("input", {
-          type: "file",
-          accept: "image/*",
-          style: {
-            display: "none"
-          },
-          onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
-        }), imgUploading ? "⏳" : "📷"), /*#__PURE__*/_react.default.createElement("button", {
-          title: "QR-Sichtbarkeit einstellen",
-          onClick: () => setShowPrivacy(v.id),
-          style: {
-            background: "rgba(0,0,0,.55)",
-            backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255,255,255,.25)",
-            borderRadius: 10,
-            padding: "7px 11px",
-            color: "#fff",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            fontFamily: "'Barlow',sans-serif",
-            fontWeight: 700,
-            fontSize: 11
-          }
-        }, /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 13
-          }
-        }, "▪︎"), /*#__PURE__*/_react.default.createElement("span", null, "QR"), /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 13
-          }
-        }, "🔒"))), /*#__PURE__*/_react.default.createElement("button", {
-          title: "Öffentliche QR-Ansicht",
-          onClick: () => {
-            setPublicV({
-              ...v,
-              privacy: priv
-            });
-            setScreen("public");
-            loadStatusFor(v.id);
-          },
-          style: {
-            background: "rgba(0,0,0,.55)",
-            backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255,255,255,.15)",
-            borderRadius: 10,
-            padding: "7px 11px",
-            color: "#fff",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            fontFamily: "'Barlow',sans-serif",
-            fontWeight: 700,
-            fontSize: 11
-          }
-        }, /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 13
-          }
-        }, "👁"), /*#__PURE__*/_react.default.createElement("span", null, "Vorschau"))));
-      })(), /*#__PURE__*/_react.default.createElement("div", {
+          [v.id]: Math.max(0, Math.min(getImages(v).length - 1, i))
+        })),
+        onLightbox: i => setLightbox({
+          images: getImages(v),
+          index: i
+        }),
+        onUpload: file => handleImageUpload(file, url => addImageToVehicle(v.id, url)),
+        onDelete: i => removeImageFromVehicle(v.id, i),
+        onSetMain: async i => {
+          const imgs2 = [...getImages(v)];
+          const img = imgs2[i];
+          imgs2.splice(i, 1);
+          imgs2.unshift(img);
+          const updated = {
+            ...v,
+            images: imgs2,
+            image: img
+          };
+          setVehicles(prev => ({
+            ...prev,
+            [v.id]: updated
+          }));
+          if (viewV?.id === v.id) setViewV(updated);
+          setGallerySwipe(p => ({
+            ...p,
+            [v.id]: 0
+          }));
+          const DB = window.PCN_DB;
+          if (DB) await DB.vehicles.save(updated);
+          toast_("Titelbild gesetzt 👑");
+        }
+      }), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          position: "absolute",
+          top: 16,
+          left: 14,
+          zIndex: 5
+        }
+      }, /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => setScreen("app"),
+        style: {
+          background: "rgba(0,0,0,.6)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255,255,255,.2)",
+          borderRadius: 10,
+          padding: "9px 14px",
+          color: "#fff",
+          cursor: "pointer",
+          fontSize: 13,
+          fontWeight: 700,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "← Zurück")), isOwn && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          position: "absolute",
+          top: 16,
+          right: 14,
+          display: "flex",
+          gap: 8,
+          zIndex: 5
+        }
+      }, /*#__PURE__*/_react.default.createElement("button", {
+        title: "QR-Sichtbarkeit einstellen",
+        onClick: () => setShowPrivacy(v.id),
+        style: {
+          background: "rgba(0,0,0,.6)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255,255,255,.2)",
+          borderRadius: 10,
+          padding: "8px 12px",
+          color: "#fff",
+          cursor: "pointer",
+          fontSize: 12,
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "QR 🔒"), /*#__PURE__*/_react.default.createElement("button", {
+        title: "Öffentliche QR-Ansicht",
+        onClick: () => {
+          setPublicV({
+            ...v,
+            privacy: priv
+          });
+          setScreen("public");
+          loadStatusFor(v.id);
+        },
+        style: {
+          background: "rgba(0,0,0,.6)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255,255,255,.2)",
+          borderRadius: 10,
+          padding: "8px 12px",
+          color: "#fff",
+          cursor: "pointer",
+          fontSize: 12,
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "👁 Vorschau")), !isOwn && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          position: "absolute",
+          top: 16,
+          right: 14,
+          zIndex: 5
+        }
+      }, /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => {
+          setPublicV({
+            ...v,
+            privacy: priv
+          });
+          setScreen("public");
+          loadStatusFor(v.id);
+        },
+        style: {
+          background: "rgba(0,0,0,.6)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255,255,255,.2)",
+          borderRadius: 10,
+          padding: "8px 12px",
+          color: "#fff",
+          cursor: "pointer",
+          fontSize: 12,
+          fontWeight: 700,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "👁 Ansicht"))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           padding: "16px",
-          maxWidth: 520,
+          maxWidth: 560,
           margin: "0 auto"
         }
-      }, /*#__PURE__*/_react.default.createElement("h1", {
-        style: {
-          fontFamily: "'Barlow Condensed',sans-serif",
-          fontSize: 26,
-          fontWeight: 900,
-          color: C.white,
-          lineHeight: 1,
-          marginBottom: 8
-        }
-      }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          gap: 10,
-          alignItems: "center",
-          marginBottom: 14,
-          flexWrap: "wrap"
-        }
       }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "inline-flex",
-          alignItems: "center",
-          background: "#fff",
-          border: "2px solid #222",
-          borderRadius: 5,
-          padding: "3px 10px"
-        }
-      }, /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 14,
-          fontWeight: 800,
-          color: "#111",
-          letterSpacing: 2,
-          fontFamily: "Arial,sans-serif"
-        }
-      }, kz)), isOwn && /*#__PURE__*/_react.default.createElement("button", {
-        className: "btn sm ghost",
-        style: {
-          fontSize: 11
-        },
-        onClick: () => setShowStatusPicker(v.id)
-      }, getActiveStatus(v.id) ? `${getActiveStatus(v.id).icon} Status` : "📍 Status"), isOwn && /*#__PURE__*/_react.default.createElement("button", {
-        className: "btn sm ghost",
-        style: {
-          fontSize: 11
-        },
-        onClick: () => openEditVehicle(v)
-      }, "✏️ Bearbeiten"), !isOwn && /*#__PURE__*/_react.default.createElement("button", {
-        className: "btn sm ghost",
-        style: {
-          fontSize: 11
-        },
-        onClick: () => startContact(v.id)
-      }, "💬 Kontakt")), (() => {
-        const s = getActiveStatus(v.id);
-        if (!s || !isOwn) return null;
-        return /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            background: `${C.amber}18`,
-            border: `1px solid ${C.amber}44`,
-            borderRadius: 10,
-            padding: "10px 14px",
-            marginBottom: 12,
-            display: "flex",
-            gap: 10,
-            alignItems: "center"
-          }
-        }, /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 20
-          }
-        }, s.icon), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            flex: 1
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontSize: 13,
-            fontWeight: 700,
-            color: C.amber
-          }
-        }, s.text), s.expiresAt && /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontSize: 10,
-            color: C.muted
-          }
-        }, "Läuft ab in ", Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 60000)), " Min")), /*#__PURE__*/_react.default.createElement("button", {
-          onClick: () => clearStatus(v.id),
-          style: {
-            background: "none",
-            border: "none",
-            color: C.muted,
-            cursor: "pointer",
-            fontSize: 16,
-            padding: 4
-          }
-        }, "✕"));
-      })(), (() => {
-        const imgs = getImages(v);
-        if (imgs.length <= 1) return null;
-        const curIdx = Math.min(gallerySwipe[v.id] || 0, imgs.length - 1);
-        return /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            display: "flex",
-            gap: 8,
-            overflowX: "auto",
-            marginBottom: 14,
-            padding: "2px 0 6px",
-            scrollbarWidth: "none",
-            WebkitOverflowScrolling: "touch"
-          }
-        }, imgs.map((img, i) => {
-          const active = i === curIdx;
-          return /*#__PURE__*/_react.default.createElement("div", {
-            key: i,
-            style: {
-              position: "relative",
-              flexShrink: 0,
-              transition: "transform .15s",
-              transform: active ? "scale(1.05)" : "scale(1)"
-            }
-          }, /*#__PURE__*/_react.default.createElement("img", {
-            src: img,
-            alt: "",
-            onClick: () => setGallerySwipe(p => ({
-              ...p,
-              [v.id]: i
-            })),
-            style: {
-              width: 68,
-              height: 68,
-              objectFit: "cover",
-              borderRadius: 9,
-              cursor: "pointer",
-              display: "block",
-              border: `2.5px solid ${active ? C.red : i === 0 ? "#c8a96e44" : "transparent"}`,
-              boxShadow: active ? `0 0 0 1px ${C.red}` : i === 0 ? "0 0 0 1px #c8a96e44" : "none",
-              transition: "border-color .15s"
-            },
-            onError: e => e.target.style.display = "none"
-          }), i === 0 && /*#__PURE__*/_react.default.createElement("div", {
-            style: {
-              position: "absolute",
-              top: -6,
-              left: "50%",
-              transform: "translateX(-50%)",
-              fontSize: 12,
-              lineHeight: 1
-            }
-          }, "👑"), isOwn && active && i !== 0 && /*#__PURE__*/_react.default.createElement("button", {
-            onClick: async e => {
-              e.stopPropagation();
-              // Move this image to index 0 (main image)
-              const imgs2 = [...imgs];
-              imgs2.splice(i, 1);
-              imgs2.unshift(img);
-              const updated = {
-                ...v,
-                images: imgs2,
-                image: img
-              };
-              setVehicles(prev => ({
-                ...prev,
-                [v.id]: updated
-              }));
-              if (viewV?.id === v.id) setViewV(updated);
-              setGallerySwipe(p => ({
-                ...p,
-                [v.id]: 0
-              }));
-              const DB = window.PCN_DB;
-              if (DB) await DB.vehicles.save(updated);
-              toast_("Titelbild gesetzt 👑");
-            },
-            style: {
-              position: "absolute",
-              bottom: -2,
-              left: "50%",
-              transform: "translateX(-50%)",
-              background: C.gold,
-              border: "none",
-              borderRadius: 6,
-              padding: "2px 6px",
-              color: "#000",
-              fontSize: 8,
-              fontWeight: 800,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              fontFamily: "'Barlow',sans-serif"
-            }
-          }, "👑 Titelbild"), isOwn && /*#__PURE__*/_react.default.createElement("button", {
-            onClick: e => {
-              e.stopPropagation();
-              removeImageFromVehicle(v.id, i);
-            },
-            style: {
-              position: "absolute",
-              top: -4,
-              right: -4,
-              background: C.red,
-              border: "2px solid #0a0a0a",
-              color: "#fff",
-              fontSize: 9,
-              fontWeight: 700,
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              lineHeight: 1,
-              fontFamily: "'Barlow',sans-serif"
-            }
-          }, "✕"));
-        }), isOwn && /*#__PURE__*/_react.default.createElement("label", {
-          style: {
-            width: 68,
-            height: 68,
-            background: C.card,
-            border: `1.5px dashed ${C.border}`,
-            borderRadius: 9,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            flexShrink: 0,
-            gap: 2
-          }
-        }, /*#__PURE__*/_react.default.createElement("input", {
-          type: "file",
-          accept: "image/*",
-          style: {
-            display: "none"
-          },
-          onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
-        }), /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 18
-          }
-        }, "📷"), /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 8,
-            color: C.muted,
-            textAlign: "center"
-          }
-        }, "Hinzufügen")));
-      })(), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
@@ -6655,20 +6372,36 @@
         alignItems: "baseline",
         marginBottom: 8
       }
-    }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "baseline",
+        gap: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
-        fontSize: 36,
+        fontSize: 40,
         fontWeight: 900,
         color: C.gold
       }
     }, myPoints), /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        fontSize: 14,
-        color: C.muted,
-        marginLeft: 4
+        fontSize: 15,
+        color: C.muted
       }
-    }, "Punkte")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Punkte"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setShowInfoModal("points"),
+      style: {
+        background: "none",
+        border: "none",
+        color: C.muted,
+        cursor: "pointer",
+        fontSize: 16,
+        padding: 0,
+        lineHeight: 1
+      }
+    }, "ℹ️")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         textAlign: "right"
       }
@@ -6679,7 +6412,7 @@
       }
     }, "Nächste Stufe"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: 700,
         color: C.gold
       }
@@ -6830,7 +6563,116 @@
           fontWeight: 700
         }
       }, "AKTIV"));
-    })), /*#__PURE__*/_react.default.createElement("button", {
+    })), /*#__PURE__*/_react.default.createElement("div", {
+      className: "card",
+      style: {
+        padding: 16,
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 800,
+        color: C.muted,
+        textTransform: "uppercase",
+        letterSpacing: 2
+      }
+    }, "💳 Wallet & Mitgliedschaft")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 8,
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.black,
+        borderRadius: 10,
+        padding: "12px"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginBottom: 4
+      }
+    }, "Mitglied seit"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 700,
+        color: C.white
+      }
+    }, me?.createdAt ? new Date(me.createdAt).toLocaleDateString("de-DE", {
+      month: "short",
+      year: "numeric"
+    }) : "2026")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.black,
+        borderRadius: 10,
+        padding: "12px"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginBottom: 4
+      }
+    }, "Jahresbeitrag"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 700,
+        color: C.green
+      }
+    }, "✓ Bezahlt"))), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: `${C.border}44`,
+        borderRadius: 12,
+        padding: "14px",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 700,
+        color: C.white
+      }
+    }, "PCN Mitgliedschaft"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted,
+        marginTop: 2
+      }
+    }, "Gültig bis: 31.12.2026")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.green,
+        borderRadius: 6,
+        padding: "4px 10px",
+        fontSize: 12,
+        fontWeight: 800,
+        color: "#fff"
+      }
+    }, "AKTIV"))), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn ghost",
+      style: {
+        width: "100%",
+        fontSize: 14,
+        padding: "12px"
+      },
+      onClick: () => toast_("Zahlung über Clubverwaltung — kommt in nächster Version 💳")
+    }, "💳 Beitrag erneuern / bezahlen")), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn ghost",
       style: {
         width: "100%",
@@ -6849,7 +6691,7 @@
         setScreen("splash");
         setTab("dashboard");
       }
-    }, "Abmelden"))), showInfoModal && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Abmelden"))), showInfoModal && showInfoModal !== 'points' && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "fixed",
         inset: 0,
@@ -6932,6 +6774,96 @@
         padding: "14px",
         fontSize: 15,
         marginTop: 4
+      },
+      onClick: () => setShowInfoModal(false)
+    }, "Verstanden ✓"))), showInfoModal === "points" && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.85)",
+        zIndex: 600,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px"
+      },
+      onClick: () => setShowInfoModal(false)
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.dark,
+        border: `1px solid ${C.border}`,
+        borderRadius: 20,
+        padding: "28px 24px",
+        maxWidth: 380,
+        width: "100%",
+        animation: "fadeIn .2s"
+      },
+      onClick: e => e.stopPropagation()
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 26,
+        fontWeight: 900,
+        color: C.white,
+        marginBottom: 6
+      }
+    }, "🏆 Punktesystem"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 14,
+        color: C.muted,
+        lineHeight: 1.7,
+        marginBottom: 20
+      }
+    }, "Sammle Punkte durch Aktivitäten und schalte neue Funktionen frei:"), [["🚗", "Fahrzeug anlegen", "50 Punkte pro Fahrzeug"], ["📋", "Logbuch-Eintrag", "10 Punkte pro Eintrag"], ["🏁", "Event-Teilnahme", "100 Punkte pro Veranstaltung"], ["💬", "Nachricht senden", "5 Punkte pro Nachricht"], ["👥", "Mitglied werben", "200 Punkte pro Neumitglied"]].map(([icon, label, pts]) => /*#__PURE__*/_react.default.createElement("div", {
+      key: label,
+      style: {
+        display: "flex",
+        gap: 12,
+        alignItems: "center",
+        padding: "10px 0",
+        borderBottom: `1px solid ${C.border}`
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 22,
+        flexShrink: 0,
+        width: 32,
+        textAlign: "center"
+      }
+    }, icon), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 600,
+        color: C.white
+      }
+    }, label)), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 800,
+        color: C.gold,
+        flexShrink: 0
+      }
+    }, pts))), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginTop: 16,
+        padding: "12px",
+        background: `${C.gold}11`,
+        borderRadius: 10,
+        fontSize: 12,
+        color: C.muted,
+        lineHeight: 1.7
+      }
+    }, "💡 Stufen: 100 Pkt = Bronze · 300 Pkt = Silber · 500 Pkt = Gold · 1000 Pkt = Platin"), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn",
+      style: {
+        width: "100%",
+        padding: "14px",
+        fontSize: 15,
+        marginTop: 16
       },
       onClick: () => setShowInfoModal(false)
     }, "Verstanden ✓"))), showEditProfile && /*#__PURE__*/_react.default.createElement("div", {
@@ -7264,37 +7196,90 @@
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 800,
         color: C.white,
+        marginBottom: 4
+      }
+    }, "🔔 Erinnerung"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted,
         marginBottom: 14
       }
-    }, "Erinnerung"), /*#__PURE__*/_react.default.createElement("input", {
-      className: "inp",
-      placeholder: "Titel *",
+    }, "Neue Aufgabe oder Termin anlegen"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
+        fontSize: 10,
+        fontWeight: 800,
+        color: C.muted,
+        textTransform: "uppercase",
+        letterSpacing: 1,
         marginBottom: 8
+      }
+    }, "Schnellauswahl"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        flexWrap: "wrap",
+        marginBottom: 14
+      }
+    }, [["🔧", "TÜV vereinbaren"], ["🛢️", "Ölwechsel"], ["🏎️", "Reifenwechsel"], ["📋", "Inspektion"], ["🏁", "Event vorbereiten"]].map(([icon, label]) => /*#__PURE__*/_react.default.createElement("button", {
+      key: label,
+      onClick: () => setRemForm(p => ({
+        ...p,
+        title: label
+      })),
+      style: {
+        background: remForm.title === label ? C.red : C.card,
+        border: `1px solid ${remForm.title === label ? C.red : C.border}`,
+        borderRadius: 8,
+        padding: "8px 10px",
+        color: remForm.title === label ? "#fff" : C.muted,
+        cursor: "pointer",
+        fontSize: 12,
+        fontFamily: "'Barlow',sans-serif",
+        display: "flex",
+        gap: 4,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", null, icon), /*#__PURE__*/_react.default.createElement("span", null, label)))), /*#__PURE__*/_react.default.createElement("input", {
+      className: "inp",
+      placeholder: "Eigener Titel...",
+      style: {
+        marginBottom: 10
       },
       value: remForm.title,
       onChange: e => setRemForm(p => ({
         ...p,
         title: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginBottom: 6
+      }
+    }, "Fälligkeitsdatum *"), /*#__PURE__*/_react.default.createElement("input", {
       className: "inp",
       type: "date",
       style: {
-        marginBottom: 8
+        marginBottom: 10
       },
       value: remForm.date,
       onChange: e => setRemForm(p => ({
         ...p,
         date: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("select", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginBottom: 6
+      }
+    }, "Fahrzeug (optional)"), /*#__PURE__*/_react.default.createElement("select", {
       className: "inp",
       style: {
-        marginBottom: 14
+        marginBottom: 16
       },
       value: remForm.vehicleId,
       onChange: e => setRemForm(p => ({
@@ -7309,33 +7294,61 @@
     }, v.hersteller, " ", v.modell))), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
-        width: "100%"
+        width: "100%",
+        padding: "14px",
+        fontSize: 15
       },
       onClick: async () => {
-        if (!remForm.title || !remForm.date) {
-          toast_("Titel und Datum angeben", "err");
+        if (!remForm.title.trim()) {
+          toast_("Titel angeben", "err");
           return;
         }
-        const DB = window.PCN_DB;
-        const {
-          data: r,
-          error
-        } = await DB.reminders.save(me.id, {
-          ...remForm,
+        if (!remForm.date) {
+          toast_("Datum angeben", "err");
+          return;
+        }
+        const newR = {
+          id: "R" + Date.now(),
+          title: remForm.title.trim(),
+          date: remForm.date,
+          vehicleId: remForm.vehicleId || null,
           done: false
-        });
-        if (error) {
-          toast_("Fehler", "err");
-          return;
+        };
+        // Try to persist to DB — but always update local state regardless
+        try {
+          const DB = window.PCN_DB;
+          if (DB) {
+            const {
+              data,
+              error
+            } = await DB.reminders.save(me.id, {
+              ...newR,
+              vehicle_id: newR.vehicleId,
+              user_id: me.id
+            });
+            if (data && data.id) {
+              const saved = {
+                ...data,
+                vehicleId: data.vehicle_id || newR.vehicleId
+              };
+              setReminders(prev => [...prev, saved]);
+            } else {
+              setReminders(prev => [...prev, newR]);
+            }
+          } else {
+            setReminders(prev => [...prev, newR]);
+          }
+        } catch (e) {
+          console.warn("Reminder save error:", e);
+          setReminders(prev => [...prev, newR]); // still add locally
         }
-        setReminders(prev => [...prev, r]);
         setShowAddRem(false);
         setRemForm({
           vehicleId: "",
           title: "",
           date: ""
         });
-        toast_("Gespeichert ✓");
+        toast_("Erinnerung gespeichert ✓");
       }
     }, "Speichern ✓"))), /*#__PURE__*/_react.default.createElement("div", {
       className: "tab-bar"
