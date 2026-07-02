@@ -1590,7 +1590,8 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           )}
         </div>
 
-
+        {/* ── Vehicle detail content ── */}
+        <div style={{padding:"16px",maxWidth:560,margin:"0 auto"}}>
 
           {/* Status strip */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
