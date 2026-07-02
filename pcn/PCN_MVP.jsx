@@ -1677,12 +1677,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                     <span style={{fontSize:8,color:C.muted,textAlign:"center"}}>Hinzufügen</span>
                   </label>
                 )}
-              </div>
-              {isOwn && imgs.length > 1 && (
-                <div style={{fontSize:11,color:C.muted,marginBottom:4,textAlign:"center"}}>
-                  👑 Tippe auf ein Bild und wähle „Titelbild" um das Hauptbild zu ändern
-                </div>
-              )}
+            </div>
             );
           })()}
 
