@@ -108,6 +108,22 @@ function QRCodeCanvas({value, size=140}) {
 // ─── Demo Data ────────────────────────────────────────────────────────────────
 const CLUB_CODE = "PCN2026";
 
+// Demo group channel messages
+const DEMO_GROUP = {
+  id:"GROUP_PCN",
+  name:"PCN Mitglieder",
+  icon:"🏎️",
+  isGroup:true,
+  participants:["u1","u2","u3"],
+  messages:[
+    {id:"GM1",from:"u2",text:"Hat jemand schon Startnummern für den TrackDay bekommen?",ts:"09:14",read:true,isSystem:false},
+    {id:"GM2",from:"u3",text:"Ja! Ich bin #03 in der Race-Klasse 🏁",ts:"09:22",read:true,isSystem:false},
+    {id:"GM3",from:"u1",text:"Ich fahre #07 Sport — freue mich schon!",ts:"09:31",read:true,isSystem:false},
+    {id:"GM4",from:"u2",text:"Wer fährt mit dem Anhänger? Kann jemanden mitnehmen",ts:"10:05",read:false,isSystem:false},
+    {id:"GM5",from:"system",text:"PCN TrackDay Nürburgring — in 12 Tagen 🏁",ts:"10:00",read:true,isSystem:true},
+  ]
+};
+
 const DEMO_NEWS = [
   { id:"N1", type:"news", icon:"📰", title:"Neue Kooperation: PCN × Porsche Zentrum Koblenz",
     body:"Mitglieder erhalten ab sofort 10% Rabatt auf alle Serviceleistungen beim Porsche Zentrum Koblenz. Einfach die PCN-Mitgliedsnummer angeben.",
@@ -465,6 +481,8 @@ function PCNInner() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [newsState, setNewsState] = useState({}); // {id: "read"|"remind"}
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [eventsView, setEventsView] = useState("list"); // "list" | "calendar"
+  const [calMonth, setCalMonth] = useState(new Date());
   const [profileForm, setProfileForm]         = useState({});
   const [showContactAuth, setShowContactAuth] = useState(null); // vehicleId — triggers login/register/guest sheet
   const [contactAuthMode, setContactAuthMode] = useState("guest"); // "guest" | "login" | "register"
@@ -2036,8 +2054,8 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
   // ══════════════════════════════════════════════════════════════════════════════
   // CHAT (proper component — no useEffect-in-render bug)
   // ══════════════════════════════════════════════════════════════════════════════
-  if(screen==="chat"&&activeThread&&threads[activeThread]) {
-    const t=threads[activeThread];
+  if(screen==="chat"&&activeThread&&(threads[activeThread]||activeThread==="GROUP_PCN")) {
+    const t = activeThread==="GROUP_PCN" ? DEMO_GROUP : threads[activeThread];
     return (
       <>
         <style>{CSS}</style>
@@ -2226,35 +2244,197 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {/* EVENTS */}
         {tab==="events"&&(
           <div style={{animation:"fadeIn .2s"}}>
-            <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Veranstaltungen 2026</div>
-            {Object.values(events).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(ev=>{
+
+            {/* View toggle */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontSize:13,fontWeight:800,color:C.white}}>Veranstaltungen 2026</div>
+              <div style={{display:"flex",background:"#1a1a1a",borderRadius:8,padding:2}}>
+                {[["list","☰ Liste"],["calendar","📅 Kalender"]].map(([v,label])=>(
+                  <button key={v} onClick={()=>setEventsView(v)}
+                    style={{padding:"7px 12px",border:"none",borderRadius:6,cursor:"pointer",
+                      fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:12,
+                      background:eventsView===v?C.red:"transparent",
+                      color:eventsView===v?"#fff":C.muted,transition:"all .15s"}}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* LIST VIEW */}
+            {eventsView==="list"&&Object.values(events).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(ev=>{
               const days=daysUntil(ev.date);
               const myReg=(participants[ev.id]||[]).find(p=>p.userId===me?.id);
               return (
-                <div key={ev.id} style={{background:C.card,border:`1px solid ${myReg?C.red+"44":C.border}`,borderRadius:12,padding:"14px",marginBottom:10,cursor:"pointer"}}
+                <div key={ev.id}
+                  style={{background:C.card,borderRadius:14,marginBottom:12,overflow:"hidden",cursor:"pointer",
+                    border:`2px solid ${myReg?C.green+"66":days<=7?C.amber+"44":C.border}`}}
                   onClick={()=>{setViewEv(ev);setScreen("event");}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                    <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>{ev.category}</span>
-                    <span style={{fontSize:11,color:days<=7?C.amber:C.muted,fontWeight:600}}>{days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}</span>
-                  </div>
-                  <div style={{fontWeight:700,fontSize:15,color:C.white,marginBottom:2}}>{ev.name}</div>
-                  <div style={{fontSize:11,color:C.muted,marginBottom:8}}>{fmtDate(ev.date)} · {ev.location}</div>
-                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                    <span style={{fontSize:11,color:C.muted}}>{ev.entryFee}</span>
-                    {myReg&&<span style={{background:`${C.green}22`,color:C.green,borderRadius:5,padding:"1px 8px",fontSize:10,fontWeight:700}}>✓ #{myReg.startNr}</span>}
+                  {/* Color bar top */}
+                  <div style={{height:4,background:myReg?C.green:days<=7?C.amber:C.red}}/>
+                  <div style={{padding:"14px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
+                          <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:700}}>{ev.category}</span>
+                          {myReg
+                            ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>✓ Angemeldet #{myReg.startNr}</span>
+                            : <span style={{background:`${C.border}44`,color:C.muted,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:600}}>Nicht angemeldet</span>
+                          }
+                        </div>
+                        <div style={{fontWeight:800,fontSize:17,color:C.white,marginBottom:3}}>{ev.name}</div>
+                        <div style={{fontSize:13,color:C.muted}}>{fmtDate(ev.date)} · {ev.location}</div>
+                      </div>
+                      <div style={{textAlign:"center",background:days<=0?"#1a1a1a":days<=7?`${C.amber}22`:`${C.border}33`,borderRadius:10,padding:"8px 10px",marginLeft:10,flexShrink:0}}>
+                        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:days<=0?C.red:days<=7?C.amber:C.white,lineHeight:1}}>
+                          {days<=0?"Heute":days}
+                        </div>
+                        {days>0&&<div style={{fontSize:10,color:C.muted}}>Tage</div>}
+                      </div>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontSize:12,color:C.muted}}>💶 {ev.entryFee}</span>
+                      <span style={{fontSize:12,color:C.muted}}>
+                        {(participants[ev.id]||[]).length}/{ev.maxParticipants} Plätze
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
             })}
+
+            {/* CALENDAR VIEW */}
+            {eventsView==="calendar"&&(()=>{
+              const year = calMonth.getFullYear();
+              const month = calMonth.getMonth();
+              const firstDay = new Date(year, month, 1).getDay();
+              const daysInMonth = new Date(year, month+1, 0).getDate();
+              const startOffset = (firstDay+6)%7; // Mon=0
+              const eventsThisMonth = Object.values(events).filter(ev=>{
+                const d=new Date(ev.date); return d.getFullYear()===year && d.getMonth()===month;
+              });
+              const eventsByDay = {};
+              eventsThisMonth.forEach(ev=>{ const d=new Date(ev.date).getDate(); (eventsByDay[d]=eventsByDay[d]||[]).push(ev); });
+              const today = new Date().getDate();
+              const todayMonth = new Date().getMonth();
+              const todayYear = new Date().getFullYear();
+              const isToday = (d) => d===today && month===todayMonth && year===todayYear;
+
+              return (
+                <div>
+                  {/* Month nav */}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                    <button onClick={()=>setCalMonth(new Date(year,month-1,1))}
+                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 14px",color:C.white,cursor:"pointer",fontSize:16,fontFamily:"'Barlow',sans-serif"}}>‹</button>
+                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>
+                      {new Date(year,month).toLocaleDateString("de-DE",{month:"long",year:"numeric"})}
+                    </div>
+                    <button onClick={()=>setCalMonth(new Date(year,month+1,1))}
+                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 14px",color:C.white,cursor:"pointer",fontSize:16,fontFamily:"'Barlow',sans-serif"}}>›</button>
+                  </div>
+
+                  {/* Day headers */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",marginBottom:4}}>
+                    {["Mo","Di","Mi","Do","Fr","Sa","So"].map(d=>(
+                      <div key={d} style={{textAlign:"center",fontSize:12,fontWeight:700,color:C.muted,padding:"4px 0"}}>{d}</div>
+                    ))}
+                  </div>
+
+                  {/* Calendar grid */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:16}}>
+                    {Array.from({length:startOffset}).map((_,i)=><div key={"e"+i}/>)}
+                    {Array.from({length:daysInMonth},(_,i)=>i+1).map(day=>{
+                      const dayEvents=eventsByDay[day]||[];
+                      const hasReg=dayEvents.some(ev=>(participants[ev.id]||[]).find(p=>p.userId===me?.id));
+                      return (
+                        <div key={day}
+                          style={{minHeight:44,borderRadius:8,padding:"4px",cursor:dayEvents.length?"pointer":"default",
+                            background:isToday(day)?C.red:dayEvents.length?C.card:"transparent",
+                            border:dayEvents.length?`1px solid ${hasReg?C.green+"66":C.border}`:"none",
+                            position:"relative"}}
+                          onClick={()=>{if(dayEvents.length===1){setViewEv(dayEvents[0]);setScreen("event");}}}>
+                          <div style={{fontSize:13,fontWeight:isToday(day)?800:400,color:isToday(day)?"#fff":dayEvents.length?C.white:C.muted,textAlign:"center",lineHeight:1.8}}>{day}</div>
+                          {dayEvents.map((ev,i)=>(
+                            <div key={ev.id} style={{fontSize:8,fontWeight:700,color:"#fff",
+                              background:hasReg?C.green:C.red,borderRadius:3,padding:"1px 3px",
+                              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:1}}
+                              onClick={e=>{e.stopPropagation();setViewEv(ev);setScreen("event");}}>
+                              {ev.name.split(" ")[0]}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Events this month */}
+                  {eventsThisMonth.length>0&&(
+                    <>
+                      <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>
+                        Events im {new Date(year,month).toLocaleDateString("de-DE",{month:"long"})}
+                      </div>
+                      {eventsThisMonth.map(ev=>{
+                        const myReg=(participants[ev.id]||[]).find(p=>p.userId===me?.id);
+                        return (
+                          <div key={ev.id} style={{background:C.card,border:`1px solid ${myReg?C.green+"44":C.border}`,borderRadius:12,padding:"13px",marginBottom:8,cursor:"pointer",display:"flex",gap:12,alignItems:"center"}}
+                            onClick={()=>{setViewEv(ev);setScreen("event");}}>
+                            <div style={{width:44,height:44,borderRadius:10,background:myReg?`${C.green}22`:`${C.red}22`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <div style={{fontSize:16,fontWeight:800,color:myReg?C.green:C.red,lineHeight:1}}>{new Date(ev.date).getDate()}</div>
+                              <div style={{fontSize:9,color:C.muted,textTransform:"uppercase"}}>{new Date(ev.date).toLocaleDateString("de-DE",{month:"short"})}</div>
+                            </div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:15,fontWeight:700,color:C.white,marginBottom:2}}>{ev.name}</div>
+                              <div style={{fontSize:12,color:C.muted}}>{ev.location}</div>
+                            </div>
+                            {myReg
+                              ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"4px 8px",fontSize:12,fontWeight:800,flexShrink:0}}>✓ #{myReg.startNr}</span>
+                              : <span style={{background:`${C.border}44`,color:C.muted,borderRadius:6,padding:"4px 8px",fontSize:11,flexShrink:0}}>Anmelden</span>
+                            }
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                  {eventsThisMonth.length===0&&(
+                    <div style={{textAlign:"center",padding:"30px 20px",color:C.muted}}>
+                      <div style={{fontSize:32,marginBottom:8}}>📅</div>
+                      <div style={{fontSize:15,color:C.white}}>Keine Events in diesem Monat</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 
         {/* MESSAGES */}
         {tab==="messages"&&(
           <div style={{animation:"fadeIn .2s"}}>
-            <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>💬 Nachrichten</div>
-            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:14,fontSize:11,color:C.muted,lineHeight:1.6}}>
-              🔒 Nachrichten werden anonym vermittelt — Name und E-Mail bleiben geschützt.
+
+            {/* ── Group Channel — PCN Mitglieder ── */}
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>📡 Club-Kanal</div>
+              <div style={{background:`linear-gradient(135deg, #1a0a0a, #200808)`,border:`2px solid ${C.red}44`,borderRadius:14,padding:"14px",cursor:"pointer",display:"flex",gap:14,alignItems:"center"}}
+                onClick={()=>{ setActiveThread("GROUP_PCN"); setScreen("chat"); }}>
+                <div style={{width:52,height:52,borderRadius:14,background:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>🏎️</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                    <span style={{fontWeight:800,fontSize:16,color:C.white}}>PCN Mitglieder</span>
+                    <span style={{background:C.red,color:"#fff",borderRadius:99,padding:"2px 8px",fontSize:11,fontWeight:800}}>1</span>
+                  </div>
+                  <div style={{fontSize:12,color:`${C.red}99`,marginBottom:2}}>Gruppen-Kanal · {DEMO_GROUP.participants.length} Mitglieder</div>
+                  <div style={{fontSize:13,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    Thomas: Wer fährt mit dem Anhänger?
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Direktnachrichten ── */}
+            <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>💬 Direktnachrichten</div>
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}>
+              <span style={{fontSize:16}}>🔒</span>
+              <span style={{fontSize:13,color:C.muted,lineHeight:1.5}}>Direktnachrichten sind anonym — Name und E-Mail bleiben geschützt.</span>
             </div>
             {myThreads.length===0?(
               <div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}>
