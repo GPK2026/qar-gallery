@@ -42,8 +42,10 @@ const fmtKz = (kz, baujahr) => isH(baujahr) ? (kz||"").replace(/\s*H\s*$/,"").tr
 const LOGO_URL = "https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg";
 const C = {
   black:"#0a0a0a", dark:"#111111", card:"#191919", border:"#272727",
-  red:"#e30613", gold:"#c8a96e", white:"#f0f0f0", muted:"#666",
+  red:"#D5001C",   // Authentic Porsche Guards Red
+  gold:"#c8a96e", white:"#f0f0f0", muted:"#666",
   green:"#22c55e", amber:"#f59e0b",
+  surface:"#ffffff", // white surface for logo areas
 };
 
 // ─── Privacy defaults ─────────────────────────────────────────────────────────
@@ -105,6 +107,18 @@ function QRCodeCanvas({value, size=140}) {
 
 // ─── Demo Data ────────────────────────────────────────────────────────────────
 const CLUB_CODE = "PCN2026";
+
+const DEMO_NEWS = [
+  { id:"N1", type:"news", icon:"📰", title:"Neue Kooperation: PCN × Porsche Zentrum Koblenz",
+    body:"Mitglieder erhalten ab sofort 10% Rabatt auf alle Serviceleistungen beim Porsche Zentrum Koblenz. Einfach die PCN-Mitgliedsnummer angeben.",
+    date:"2026-06-28", pinned:true },
+  { id:"N2", type:"tip", icon:"🏁", title:"Nordschleife-Tipp: Touristenfahrten im Juli",
+    body:"Die Nordschleife ist an folgenden Terminen für Touristenfahrten geöffnet: 5., 12., 19. und 26. Juli. Früh buchen — Plätze sind begrenzt.",
+    date:"2026-06-25" },
+  { id:"N3", type:"welcome", icon:"🎉", title:"Willkommen im PCN",
+    body:"Leg deine Fahrzeugakte an und lass andere Mitglieder dein Fahrzeug per QR-Code entdecken. Je mehr du einträgst, desto mehr Funktionen werden freigeschaltet.",
+    date:"2026-06-01" },
+];
 const dPlus = days => new Date(Date.now()+days*86400000).toISOString().split("T")[0];
 const dMinus = days => new Date(Date.now()-days*86400000).toISOString().split("T")[0];
 
@@ -1040,73 +1054,43 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
   // SPLASH
   // ══════════════════════════════════════════════════════════════════════════════
   if(screen==="splash") return (
-    <div style={{minHeight:"100vh",background:C.black,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"space-between",padding:"0 20px 44px"}}>
+    <div style={{minHeight:"100vh",background:C.black,display:"flex",flexDirection:"column"}}>
       <style>{CSS}</style>
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-      <div style={{width:"100%",textAlign:"center",paddingTop:60}}>
+
+      {/* ── White logo area ── */}
+      <div style={{background:"#ffffff",padding:"36px 24px 28px",textAlign:"center",borderBottom:"3px solid "+C.red}}>
         <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"}
-          style={{width:200,maxWidth:"65%",objectFit:"contain",marginBottom:20}}/>
-        <div style={{width:32,height:2,background:C.red,margin:"0 auto 18px"}}/>
-        <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:C.white,lineHeight:1,marginBottom:8}}>
-          DIGITALE<br/><span style={{color:C.red}}>CLUBPLATTFORM</span>
+          style={{width:220,maxWidth:"75%",objectFit:"contain",marginBottom:16}}/>
+        <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#1a1a1a",letterSpacing:1,lineHeight:1}}>
+          DIGITALE <span style={{color:C.red}}>CLUBPLATTFORM</span>
         </h1>
-        <p style={{fontSize:12,color:C.muted,marginTop:8,lineHeight:1.7}}>Fahrzeugakte · Events · QR-Code<br/>für alle PCN-Mitglieder</p>
+        <p style={{fontSize:11,color:"#888",marginTop:6}}>Fahrzeugakte · Events · QR-Code · Messenger</p>
       </div>
-      <div style={{width:"100%",maxWidth:360}}>
-        {/* Mode toggle */}
-        <div style={{textAlign:"center",marginBottom:10,fontSize:12,color:C.muted}}>
-          {loginForm.mode==="register"?"Bereits Mitglied? ":"Noch kein Account? "}
-          <span style={{color:C.red,fontWeight:700,cursor:"pointer"}} onClick={()=>setLoginForm(p=>({...p,mode:p.mode==="register"?"login":"register"}))}>
-            {loginForm.mode==="register"?"→ Anmelden":"→ Registrieren"}
-          </span>
-        </div>
-        <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:14}}>
-          {[["register","Registrieren"],["login","Anmelden"]].map(([m,label])=>(
+
+      {/* ── Login area ── */}
+      <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"28px 20px 44px",maxWidth:400,margin:"0 auto",width:"100%"}}>
+
+        {/* Tab toggle */}
+        <div style={{display:"flex",background:"#1a1a1a",borderRadius:12,padding:3,marginBottom:20}}>
+          {[["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
             <button key={m} onClick={()=>setLoginForm(p=>({...p,mode:m}))}
-              style={{flex:1,padding:"9px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:13,
-                background:loginForm.mode===m?C.red:"transparent",color:loginForm.mode===m?"#fff":C.muted,transition:"all .15s"}}>
+              style={{flex:1,padding:"11px",border:"none",borderRadius:10,cursor:"pointer",
+                fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14,transition:"all .15s",
+                background:loginForm.mode===m?C.red:"transparent",
+                color:loginForm.mode===m?"#fff":C.muted}}>
               {label}
             </button>
           ))}
         </div>
 
-        {loginForm.mode==="register"&&(
-          <>
-            <input className="inp" placeholder="Club-Code" value={loginForm.code}
-              onChange={e=>setLoginForm(p=>({...p,code:e.target.value}))}
-              style={{textTransform:"uppercase",letterSpacing:3,textAlign:"center",fontWeight:800,fontSize:18,marginBottom:8}}/>
-            {loginForm.code.toUpperCase()===CLUB_CODE&&<>
-              <input className="inp" placeholder="Dein Name" style={{marginBottom:8}}
-                value={loginForm.name} onChange={e=>setLoginForm(p=>({...p,name:e.target.value}))}/>
-              <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:10}}
-                value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
-            </>}
-            {loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email
-              ?<button className="btn" style={{width:"100%"}} onClick={async()=>{
-                  const DB=window.PCN_DB;
-                  const {data:u,error}=await DB.auth.register(loginForm.name,loginForm.email,loginForm.code);
-                  if(error){toast_(error,"err");return;}
-                  // Seed events
-                  const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
-                  if(!stored.events||Object.keys(stored.events).length===0){
-                    stored.events=DEMO_EVENTS; localStorage.setItem("pcn_v1",JSON.stringify(stored));
-                  }
-                  setMe(u); setAllUsers(p=>({...p,[u.id]:u}));
-                  setEvents(DEMO_EVENTS); setScreen("app");
-                  toast_("Willkommen, "+u.name+"! 🏁");
-                }}>Konto erstellen →</button>
-              :<button className="btn" style={{width:"100%",opacity:.4}} disabled>
-                  {!loginForm.code?"Club-Code eingeben":loginForm.code.toUpperCase()!==CLUB_CODE?"Falscher Club-Code ✗":"Name & E-Mail eingeben"}
-                </button>
-            }
-          </>
-        )}
-
+        {/* Login */}
         {loginForm.mode==="login"&&(
           <>
-            <input className="inp" placeholder="E-Mail-Adresse" type="email" style={{marginBottom:10}}
-              value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
-            <button className="btn" style={{width:"100%",opacity:loginForm.email?1:.4}}
+            <input className="inp" placeholder="E-Mail-Adresse" type="email"
+              value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}
+              style={{marginBottom:12,fontSize:16}}/>
+            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,opacity:loginForm.email?1:.4}}
               disabled={!loginForm.email}
               onClick={async()=>{
                 const DB=window.PCN_DB;
@@ -1115,12 +1099,67 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                 await refreshAll(u); setScreen("app");
                 toast_("Willkommen zurück, "+u.name+"! 🏁");
               }}>Anmelden →</button>
-            <div style={{textAlign:"center",marginTop:8,fontSize:11,color:C.muted}}>Kein Passwort nötig — nur deine Club-E-Mail</div>
+            <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>Kein Passwort nötig — nur deine Club-E-Mail</div>
           </>
         )}
 
-        <button className="btn ghost" style={{width:"100%",marginTop:10,fontSize:12}} onClick={loadDemo}>Demo ansehen</button>
-        <p style={{textAlign:"center",fontSize:10,color:"#333",marginTop:12}}>Powered by <span style={{color:C.gold}}>QAR.Gallery</span></p>
+        {/* Register */}
+        {loginForm.mode==="register"&&(
+          <>
+            {/* Single Club-Code field */}
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:11,color:C.muted,marginBottom:6,fontWeight:600}}>CLUB-CODE</div>
+              <input className="inp" placeholder="PCN2026" value={loginForm.code}
+                onChange={e=>setLoginForm(p=>({...p,code:e.target.value}))}
+                style={{textTransform:"uppercase",letterSpacing:4,textAlign:"center",fontWeight:800,fontSize:20,
+                  border:`2px solid ${loginForm.code.toUpperCase()===CLUB_CODE?C.green:loginForm.code.length>0?"#ef4444":C.border}`}}/>
+              {loginForm.code.length>0&&loginForm.code.toUpperCase()!==CLUB_CODE&&(
+                <div style={{fontSize:10,color:"#ef4444",marginTop:4,textAlign:"center"}}>Falscher Club-Code</div>
+              )}
+              {loginForm.code.toUpperCase()===CLUB_CODE&&(
+                <div style={{fontSize:10,color:C.green,marginTop:4,textAlign:"center"}}>✓ Club-Code korrekt</div>
+              )}
+            </div>
+
+            {loginForm.code.toUpperCase()===CLUB_CODE&&(
+              <>
+                <input className="inp" placeholder="Dein Name" style={{marginBottom:10}}
+                  value={loginForm.name} onChange={e=>setLoginForm(p=>({...p,name:e.target.value}))}/>
+                <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:14}}
+                  value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
+              </>
+            )}
+
+            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,
+              opacity:loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email?1:.35}}
+              disabled={!(loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email)}
+              onClick={async()=>{
+                const DB=window.PCN_DB;
+                const {data:u,error}=await DB.auth.register(loginForm.name,loginForm.email,loginForm.code);
+                if(error){toast_(error,"err");return;}
+                const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
+                if(!stored.events||Object.keys(stored.events).length===0){
+                  stored.events=DEMO_EVENTS; localStorage.setItem("pcn_v1",JSON.stringify(stored));
+                }
+                setMe(u); setAllUsers(p=>({...p,[u.id]:u}));
+                setEvents(DEMO_EVENTS); setScreen("app");
+                toast_("Willkommen, "+u.name+"! 🏁");
+              }}>Konto erstellen →</button>
+          </>
+        )}
+
+        <div style={{display:"flex",alignItems:"center",gap:10,margin:"18px 0"}}>
+          <div style={{flex:1,height:1,background:C.border}}/>
+          <span style={{fontSize:11,color:"#444"}}>oder</span>
+          <div style={{flex:1,height:1,background:C.border}}/>
+        </div>
+
+        <button className="btn ghost" style={{width:"100%",padding:"13px",fontSize:14}} onClick={loadDemo}>
+          Demo ansehen
+        </button>
+        <p style={{textAlign:"center",fontSize:10,color:"#333",marginTop:16}}>
+          Powered by <span style={{color:C.gold}}>QAR.Gallery</span>
+        </p>
       </div>
     </div>
   );
@@ -2029,74 +2068,107 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
           <div style={{animation:"fadeIn .2s"}}>
-            {/* Upcoming event alert */}
-            {Object.values(events).filter(e=>daysUntil(e.date)>0&&daysUntil(e.date)<=14).slice(0,1).map(e=>(
-              <div key={e.id} style={{background:`${C.red}11`,border:`1px solid ${C.red}33`,borderRadius:12,padding:"12px 14px",marginBottom:14,cursor:"pointer"}}
-                onClick={()=>{setViewEv(e);setScreen("event");}}>
-                <div style={{fontSize:9,color:C.red,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>🏁 In {daysUntil(e.date)} Tagen</div>
-                <div style={{fontWeight:700,fontSize:14,color:C.white}}>{e.name}</div>
-                <div style={{fontSize:11,color:C.muted,marginTop:2}}>{fmtDate(e.date)} · {e.location}</div>
+
+            {/* ── White logo header ── */}
+            <div style={{background:"#ffffff",margin:"-14px -14px 16px",padding:"20px 18px 16px",borderBottom:`3px solid ${C.red}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:14}}>
+                <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"}
+                  style={{height:52,objectFit:"contain"}}/>
+                <div>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#1a1a1a",lineHeight:1}}>PORSCHE CLUB NÜRBURGRING</div>
+                  <div style={{fontSize:11,color:"#777",marginTop:3}}>{me?.name} · {me?.memberNr||"Gast"}</div>
+                </div>
               </div>
-            ))}
-            {/* Reminders */}
-            {myReminders.slice(0,3).map(r=>{
-              const days=daysUntil(r.date); const rv=vehicles[r.vehicleId];
-              return (
-                <div key={r.id} style={{background:C.card,border:`1px solid ${days<=3?C.amber+"44":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:7,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:600,color:days<=3?C.amber:C.white}}>{r.title}</div>
-                    <div style={{fontSize:10,color:C.muted,marginTop:2}}>{rv?rv.hersteller+" "+rv.modell+" · ":""}{days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}</div>
-                  </div>
-                  <button onClick={async()=>{const DB=window.PCN_DB;if(DB)await DB.reminders.done(me.id,r.id);setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
-                    style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:"0 4px"}}>✓</button>
-                </div>
-              );
-            })}
-            {/* Vehicles */}
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,marginTop:6}}>
-              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>Meine Fahrzeuge</div>
-              <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+</button>
             </div>
-            {myVehicles.length===0
-              ?<div style={{background:C.card,border:`1px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center",cursor:"pointer"}} onClick={()=>setShowAddV(true)}>
-                  <div style={{fontSize:28,marginBottom:6}}>🏎️</div>
-                  <div style={{fontSize:13,color:C.white,fontWeight:600}}>Erstes Fahrzeug hinzufügen</div>
-                </div>
-              :myVehicles.map(v=>(
-                <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer"}}
-                  onClick={()=>{setViewV(v);setScreen("vehicle");}}>
-                  <div style={{height:100,overflow:"hidden",background:"#111",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    {v.image?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:32}}>🏎️</span>}
+
+            {/* ── 1. Infos & Neuigkeiten ── */}
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>📰 Infos & Neuigkeiten</div>
+              {DEMO_NEWS.map(n=>(
+                <div key={n.id} style={{background:n.pinned?`${C.red}0d`:C.card,border:`1px solid ${n.pinned?C.red+"33":C.border}`,borderRadius:12,padding:"13px 14px",marginBottom:8}}>
+                  <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                    <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:3}}>{n.title}</div>
+                      <div style={{fontSize:11,color:C.muted,lineHeight:1.6}}>{n.body}</div>
+                      <div style={{fontSize:9,color:"#444",marginTop:5}}>{fmtDate(n.date)}</div>
+                    </div>
+                    {n.pinned&&<span style={{background:C.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>NEU</span>}
                   </div>
-                  <div style={{padding:"11px 13px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div>
-                      <div style={{fontWeight:700,fontSize:14,color:C.white}}>{v.hersteller} {v.modell}</div>
-                      <div style={{display:"flex",gap:6,marginTop:4,alignItems:"center"}}>
-                        <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"1px 7px",fontSize:10,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif"}}>
-                          {fmtKz(v.kennzeichen,v.baujahr)}
-                        </span>
-                        <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* ── 2. Meine Fahrzeuge ── */}
+            <div style={{marginBottom:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>🚗 Meine Fahrzeuge</div>
+                <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>
+              </div>
+              {myVehicles.length===0?(
+                <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center",cursor:"pointer"}} onClick={()=>setShowAddV(true)}>
+                  <div style={{fontSize:32,marginBottom:8}}>🏎️</div>
+                  <div style={{fontSize:13,color:C.white,fontWeight:600,marginBottom:4}}>Erstes Fahrzeug hinzufügen</div>
+                  <div style={{fontSize:11,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei</div>
+                </div>
+              ):myVehicles.map(v=>(
+                <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer",display:"flex"}}
+                  onClick={()=>{setViewV(v);setScreen("vehicle");}}>
+                  <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    {v.image?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:28}}>🏎️</span>}
+                  </div>
+                  <div style={{padding:"12px 13px",flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                    <div style={{fontWeight:700,fontSize:14,color:C.white}}>{v.hersteller} {v.modell}</div>
+                    <div style={{display:"flex",gap:6,marginTop:5,alignItems:"center",flexWrap:"wrap"}}>
+                      <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"1px 7px",fontSize:10,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif"}}>
+                        {fmtKz(v.kennzeichen,v.baujahr)}
+                      </span>
+                      <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
+                      {(logbook[v.id]||[]).length>0&&<span style={{fontSize:9,color:C.green,fontWeight:700}}>{(logbook[v.id]||[]).length} Einträge</span>}
+                    </div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",paddingRight:12,color:C.muted,fontSize:20}}>›</div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── 3. Plattform-Funktionen ── */}
+            <div style={{marginBottom:8}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>⚙️ Plattform-Funktionen</div>
+                <button onClick={()=>toast_("Funktionen werden durch Nutzung freigeschaltet: Fahrzeug anlegen, Events besuchen, Logbuch führen.")}
+                  style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
+              </div>
+
+              {/* Active functions */}
+              {LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).length>0&&(
+                <div style={{marginBottom:10}}>
+                  {LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).map(f=>(
+                    <div key={f.id} style={{background:`${C.green}0d`,border:`1px solid ${C.green}33`,borderRadius:11,padding:"12px 14px",marginBottom:7,display:"flex",gap:12,alignItems:"center"}}>
+                      <span style={{fontSize:22,flexShrink:0}}>{f.icon}</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:700,color:C.white}}>{f.label}</div>
+                        <div style={{fontSize:10,color:C.green,marginTop:2}}>✓ Freigeschaltet · {f.desc}</div>
                       </div>
                     </div>
-                    <span style={{color:C.muted,fontSize:18}}>›</span>
-                  </div>
+                  ))}
                 </div>
-              ))
-            }
-            {/* Locked features */}
-            <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginTop:20,marginBottom:10}}>Features freischalten</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-              {LOCKED_FEATURES.map(f=>{
-                const unlocked=unlockedFeatures.has(f.id);
-                return (
-                  <div key={f.id} style={{background:unlocked?"#1a1a1a":"#111",border:`1px solid ${C.border}`,borderRadius:11,padding:"13px 12px",opacity:unlocked?1:.5,position:"relative"}}>
-                    {!unlocked&&<div style={{position:"absolute",top:8,right:8,fontSize:12}}>🔒</div>}
-                    <div style={{fontSize:18,marginBottom:5}}>{f.icon}</div>
-                    <div style={{fontSize:11,fontWeight:700,color:unlocked?C.white:"#444",marginBottom:2}}>{f.label}</div>
-                    <div style={{fontSize:9,color:unlocked?C.green:"#333"}}>{unlocked?"✓ Freigeschaltet":f.milestone}</div>
+              )}
+
+              {/* Locked functions — greyed out grid */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {LOCKED_FEATURES.filter(f=>!unlockedFeatures.has(f.id)).map(f=>(
+                  <div key={f.id} style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:11,padding:"12px 11px",opacity:.45,position:"relative"}}>
+                    <div style={{position:"absolute",top:7,right:8,fontSize:11}}>🔒</div>
+                    <div style={{fontSize:20,marginBottom:5}}>{f.icon}</div>
+                    <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:2}}>{f.label}</div>
+                    <div style={{fontSize:9,color:"#333",lineHeight:1.4}}>{f.milestone}</div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              <div style={{fontSize:10,color:"#444",marginTop:10,textAlign:"center",lineHeight:1.6}}>
+                Mehr Funktionen freischalten: Fahrzeug anlegen · Logbuch führen · Events besuchen
+              </div>
             </div>
           </div>
         )}
