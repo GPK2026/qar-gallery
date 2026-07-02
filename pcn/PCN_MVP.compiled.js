@@ -288,7 +288,8 @@
     icon: "🏁",
     title: "Nordschleife-Tipp: Touristenfahrten im Juli",
     body: "Die Nordschleife ist an folgenden Terminen für Touristenfahrten geöffnet: 5., 12., 19. und 26. Juli. Früh buchen — Plätze sind begrenzt.",
-    date: "2026-06-25"
+    date: "2026-06-25",
+    eventId: "E001"
   }, {
     id: "N3",
     type: "welcome",
@@ -1228,6 +1229,7 @@
     const [showPrivacy, setShowPrivacy] = (0, _react.useState)(null);
     const [showEditVehicle, setShowEditVehicle] = (0, _react.useState)(null); // vehicleId
     const [showEditProfile, setShowEditProfile] = (0, _react.useState)(false);
+    const [newsState, setNewsState] = (0, _react.useState)({}); // {id: "read"|"remind"}
     const [profileForm, setProfileForm] = (0, _react.useState)({});
     const [showContactAuth, setShowContactAuth] = (0, _react.useState)(null); // vehicleId — triggers login/register/guest sheet
     const [contactAuthMode, setContactAuthMode] = (0, _react.useState)("guest"); // "guest" | "login" | "register"
@@ -5180,7 +5182,7 @@
       style: {
         background: "#ffffff",
         borderBottom: `3px solid ${C.red}`,
-        padding: "10px 14px",
+        padding: "10px 16px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -5196,20 +5198,7 @@
         height: 32,
         objectFit: "contain"
       }
-    }), /*#__PURE__*/_react.default.createElement("button", {
-      onClick: openScanner,
-      style: {
-        background: C.red,
-        border: "none",
-        borderRadius: 8,
-        padding: "7px 14px",
-        color: "#fff",
-        cursor: "pointer",
-        fontWeight: 700,
-        fontSize: 13,
-        fontFamily: "'Barlow',sans-serif"
-      }
-    }, "📷 Scan"), /*#__PURE__*/_react.default.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         textAlign: "right"
       }
@@ -5247,62 +5236,183 @@
         letterSpacing: 2,
         marginBottom: 10
       }
-    }, "📰 Infos & Neuigkeiten"), DEMO_NEWS.map(n => /*#__PURE__*/_react.default.createElement("div", {
-      key: n.id,
-      style: {
-        background: n.pinned ? `${C.red}0d` : C.card,
-        border: `1px solid ${n.pinned ? C.red + "33" : C.border}`,
-        borderRadius: 12,
-        padding: "13px 14px",
-        marginBottom: 8
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 10,
-        alignItems: "flex-start"
-      }
-    }, /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 20,
-        flexShrink: 0,
-        marginTop: 1
-      }
-    }, n.icon), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        flex: 1,
-        minWidth: 0
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 13,
-        fontWeight: 700,
-        color: C.white,
-        marginBottom: 3
-      }
-    }, n.title), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.muted,
-        lineHeight: 1.6
-      }
-    }, n.body), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 9,
-        color: "#444",
-        marginTop: 5
-      }
-    }, fmtDate(n.date))), n.pinned && /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        background: C.red,
-        color: "#fff",
-        fontSize: 8,
-        fontWeight: 800,
-        padding: "2px 6px",
-        borderRadius: 4,
-        flexShrink: 0
-      }
-    }, "NEU"))))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "📰 Infos & Neuigkeiten"), (() => {
+      const welcome = DEMO_NEWS.find(n => n.type === "welcome");
+      if (!welcome) return null;
+      return /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: `${C.gold}12`,
+          border: `1px solid ${C.gold}33`,
+          borderRadius: 12,
+          padding: "13px 14px",
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 10,
+          alignItems: "flex-start"
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 20,
+          flexShrink: 0
+        }
+      }, "🎉"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          flex: 1
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 13,
+          fontWeight: 700,
+          color: C.white,
+          marginBottom: 3
+        }
+      }, welcome.title), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          lineHeight: 1.6
+        }
+      }, welcome.body))));
+    })(), DEMO_NEWS.filter(n => n.type !== "welcome").map(n => {
+      const state = newsState[n.id];
+      if (state === "read") return null; // ausgeblendet wenn gelesen
+      const isRemind = state === "remind";
+      return /*#__PURE__*/_react.default.createElement("div", {
+        key: n.id,
+        style: {
+          background: isRemind ? `${C.amber}10` : n.pinned ? `${C.red}0d` : C.card,
+          border: `1px solid ${isRemind ? C.amber + "44" : n.pinned ? C.red + "33" : C.border}`,
+          borderRadius: 12,
+          padding: "13px 14px",
+          marginBottom: 8
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 10,
+          alignItems: "flex-start"
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 20,
+          flexShrink: 0,
+          marginTop: 1
+        }
+      }, n.icon), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          flex: 1,
+          minWidth: 0
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 6,
+          alignItems: "center",
+          marginBottom: 3
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 13,
+          fontWeight: 700,
+          color: C.white,
+          flex: 1
+        }
+      }, n.title), n.pinned && /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          background: C.red,
+          color: "#fff",
+          fontSize: 8,
+          fontWeight: 800,
+          padding: "2px 6px",
+          borderRadius: 4,
+          flexShrink: 0
+        }
+      }, "NEU"), isRemind && /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          background: `${C.amber}33`,
+          color: C.amber,
+          fontSize: 8,
+          fontWeight: 800,
+          padding: "2px 6px",
+          borderRadius: 4,
+          flexShrink: 0
+        }
+      }, "🔔 ERINNERT")), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          lineHeight: 1.6,
+          marginBottom: 8
+        }
+      }, n.body), n.eventId && /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => {
+          const ev = events[n.eventId];
+          if (ev) {
+            setViewEv(ev);
+            setScreen("event");
+          }
+        },
+        style: {
+          background: "none",
+          border: `1px solid ${C.red}44`,
+          borderRadius: 7,
+          padding: "5px 10px",
+          color: C.red,
+          fontSize: 11,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          marginBottom: 8
+        }
+      }, "🏁 Zum Event →"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 6
+        }
+      }, /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => setNewsState(p => ({
+          ...p,
+          [n.id]: "read"
+        })),
+        style: {
+          background: "none",
+          border: `1px solid ${C.border}`,
+          borderRadius: 7,
+          padding: "5px 10px",
+          color: C.muted,
+          fontSize: 10,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "✓ Gelesen"), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => setNewsState(p => ({
+          ...p,
+          [n.id]: isRemind ? undefined : "remind"
+        })),
+        style: {
+          background: isRemind ? `${C.amber}22` : "none",
+          border: `1px solid ${isRemind ? C.amber + "44" : C.border}`,
+          borderRadius: 7,
+          padding: "5px 10px",
+          color: isRemind ? C.amber : C.muted,
+          fontSize: 10,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "🔔 ", isRemind ? "Erinnerung aktiv" : "Erinnern"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 9,
+          color: "#444",
+          alignSelf: "center",
+          marginLeft: "auto"
+        }
+      }, fmtDate(n.date))))));
+    })), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
       }
@@ -5464,7 +5574,7 @@
         letterSpacing: 2
       }
     }, "⚙️ Plattform-Funktionen"), /*#__PURE__*/_react.default.createElement("button", {
-      onClick: () => toast_("Funktionen werden durch Nutzung freigeschaltet: Fahrzeug anlegen, Events besuchen, Logbuch führen."),
+      onClick: () => toast_("Funktionen freischalten:\n\n💳 Bezahlung — Premium-Mitgliedschaft aktivieren\n🏆 Punkte — durch Veranstaltungsteilnahmen sammeln\n👥 Werben — neue Mitglieder einladen und Bonus erhalten"),
       style: {
         background: "none",
         border: "none",
@@ -6494,7 +6604,17 @@
       }
     }, "Speichern ✓"))), /*#__PURE__*/_react.default.createElement("div", {
       className: "tab-bar"
-    }, [["dashboard", "🏠", "Start"], ["events", "🏁", "Events"], ["messages", "💬", "Chat"], ["reminders", "🔔", "Termine"], ["profile", "👤", "Profil"]].map(([id, icon, label]) => /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      className: "tab-btn",
+      onClick: openScanner,
+      style: {
+        color: C.red
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: "ico"
+    }, "📷"), /*#__PURE__*/_react.default.createElement("span", {
+      className: "lbl"
+    }, "Scan")), [["dashboard", "🏠", "Start"], ["events", "🏁", "Events"], ["messages", "💬", "Chat"], ["reminders", "🔔", "Termine"], ["profile", "👤", "Profil"]].map(([id, icon, label]) => /*#__PURE__*/_react.default.createElement("button", {
       key: id,
       className: `tab-btn ${tab === id ? "on" : ""}`,
       onClick: () => setTab(id)
