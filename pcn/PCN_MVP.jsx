@@ -1678,13 +1678,11 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                   </label>
                 )}
               </div>
-              {/* Set main image hint */}
               {isOwn && imgs.length > 1 && (
                 <div style={{fontSize:11,color:C.muted,marginBottom:4,textAlign:"center"}}>
-                  👑 Tippe auf ein Thumbnail und dann „Als Titelbild" um das Hauptbild zu ändern
+                  👑 Tippe auf ein Bild und wähle „Titelbild" um das Hauptbild zu ändern
                 </div>
               )}
-              </div>
             );
           })()}
 
