@@ -2054,12 +2054,12 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
       {ScannerOverlay}
 
       {/* Nav */}
-      <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
-        <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:30,objectFit:"contain"}}/>
+      <div style={{background:"#ffffff",borderBottom:`3px solid ${C.red}`,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
+        <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:32,objectFit:"contain"}}/>
         <button onClick={openScanner} style={{background:C.red,border:"none",borderRadius:8,padding:"7px 14px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"'Barlow',sans-serif"}}>📷 Scan</button>
         <div style={{textAlign:"right"}}>
-          <div style={{fontSize:13,fontWeight:700,color:C.white}}>{me?.name}</div>
-          <div style={{fontSize:10,color:C.muted}}>{me?.memberNr}</div>
+          <div style={{fontSize:13,fontWeight:700,color:"#1a1a1a"}}>{me?.name}</div>
+          <div style={{fontSize:10,color:"#888"}}>{me?.memberNr}</div>
         </div>
       </div>
 
@@ -2068,18 +2068,6 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
           <div style={{animation:"fadeIn .2s"}}>
-
-            {/* ── White logo header ── */}
-            <div style={{background:"#ffffff",margin:"-14px -14px 16px",padding:"20px 18px 16px",borderBottom:`3px solid ${C.red}`}}>
-              <div style={{display:"flex",alignItems:"center",gap:14}}>
-                <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"}
-                  style={{height:52,objectFit:"contain"}}/>
-                <div>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#1a1a1a",lineHeight:1}}>PORSCHE CLUB NÜRBURGRING</div>
-                  <div style={{fontSize:11,color:"#777",marginTop:3}}>{me?.name} · {me?.memberNr||"Gast"}</div>
-                </div>
-              </div>
-            </div>
 
             {/* ── 1. Infos & Neuigkeiten ── */}
             <div style={{marginBottom:20}}>
