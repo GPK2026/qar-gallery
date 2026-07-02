@@ -464,6 +464,7 @@ function PCNInner() {
   const [showEditVehicle, setShowEditVehicle] = useState(null); // vehicleId
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [newsState, setNewsState] = useState({}); // {id: "read"|"remind"}
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [profileForm, setProfileForm]         = useState({});
   const [showContactAuth, setShowContactAuth] = useState(null); // vehicleId — triggers login/register/guest sheet
   const [contactAuthMode, setContactAuthMode] = useState("guest"); // "guest" | "login" | "register"
@@ -489,6 +490,19 @@ function PCNInner() {
   const unreadCount = myThreads.filter(t=>t.messages.some(m=>m.from!==me?.id&&!m.read&&!m.isSystem)).length;
   const appState = {logbook,participants,vehicles,me};
   const unlockedFeatures = new Set(MILESTONES.filter(m=>m.check(appState)).flatMap(m=>m.unlocks));
+
+  // Punkte-Berechnung: Basis-Aktivitäten + Events
+  const calcPoints = () => {
+    let pts = 0;
+    pts += myVehicles.length * 50;             // 50 Punkte pro Fahrzeug
+    pts += Object.values(logbook).flat().length * 10; // 10 Punkte pro Logbuch-Eintrag
+    pts += myParticipations.length * 100;      // 100 Punkte pro Event-Teilnahme
+    pts += myThreads.length * 5;               // 5 Punkte pro Nachricht
+    return pts;
+  };
+  const myPoints = calcPoints();
+  const pointsToNext = myPoints < 100 ? 100 : myPoints < 300 ? 300 : myPoints < 500 ? 500 : 1000;
+  const pointsProgress = Math.min(100, Math.round((myPoints / pointsToNext) * 100));
 
   // ── Toast ────────────────────────────────────────────────────────────────────
   // ── Status helpers — now wired to DB layer (works across devices via Supabase) ──
@@ -979,11 +993,11 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
     @keyframes scanline{0%{top:4px}50%{top:calc(100% - 6px)}100%{top:4px}}
-    .btn{background:${C.red};color:#fff;border:none;border-radius:9px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Barlow',sans-serif;transition:opacity .15s}
+    .btn{background:${C.red};color:#fff;border:none;border-radius:10px;padding:14px 18px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Barlow',sans-serif;transition:opacity .15s}
     .btn:active{opacity:.8}
     .btn.ghost{background:transparent;color:${C.white};border:1px solid ${C.border}}
     .btn.sm{padding:7px 13px;font-size:12px}
-    .inp{background:${C.card};border:1px solid ${C.border};border-radius:9px;padding:12px 14px;color:${C.white};font-size:16px;width:100%;transition:border-color .15s;font-family:'Barlow',sans-serif}
+    .inp{background:${C.card};border:1px solid ${C.border};border-radius:10px;padding:14px 16px;color:${C.white};font-size:17px;width:100%;transition:border-color .15s;font-family:'Barlow',sans-serif}
     .inp:focus{border-color:${C.red}}
     .toast{position:fixed;bottom:80px;left:14px;right:14px;z-index:999;background:${C.dark};border:1px solid #333;border-radius:12px;padding:13px 16px;font-size:13px;font-weight:600;animation:slideUp .2s;box-shadow:0 8px 24px rgba(0,0,0,.8);white-space:pre-line}
     .toast.ok{border-color:${C.red}44;color:${C.white}}
@@ -991,8 +1005,8 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     .tab-bar{position:fixed;bottom:0;left:0;right:0;background:${C.dark};border-top:1px solid ${C.border};display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
     .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 2px;border:none;background:transparent;cursor:pointer;gap:2px;font-family:'Barlow',sans-serif;color:${C.muted};transition:color .15s;position:relative}
     .tab-btn.on{color:${C.red}}
-    .tab-btn .ico{font-size:21px;line-height:1}
-    .tab-btn .lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    .tab-btn .ico{font-size:23px;line-height:1}
+    .tab-btn .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
     .badge{position:absolute;top:5px;right:calc(50% - 18px);background:${C.red};color:#fff;border-radius:99px;padding:1px 5px;font-size:9px;font-weight:800;min-width:16px;text-align:center;line-height:14px}
     .card{background:${C.card};border:1px solid ${C.border};border-radius:14px}
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:flex;align-items:flex-end;justify-content:center}
@@ -2172,7 +2186,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             <div style={{marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>⚙️ Plattform-Funktionen</div>
-                <button onClick={()=>toast_("Funktionen freischalten:\n\n💳 Bezahlung — Premium-Mitgliedschaft aktivieren\n🏆 Punkte — durch Veranstaltungsteilnahmen sammeln\n👥 Werben — neue Mitglieder einladen und Bonus erhalten")}
+                <button onClick={()=>setShowInfoModal(true)}
                   style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
               </div>
 
@@ -2253,23 +2267,32 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               const last=t.messages.filter(m=>!m.isSystem).pop();
               const unread=t.messages.some(m=>m.from!==me?.id&&!m.read&&!m.isSystem);
               const tv=vehicles[t.vehicleId];
+              const isAnon = t.anonymous;
               return (
-                <div key={t.id} style={{background:C.card,border:`1.5px solid ${unread?C.red+"44":C.border}`,borderRadius:12,padding:"14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}
+                <div key={t.id} style={{background:C.card,border:`1.5px solid ${unread?C.red+"55":C.border}`,borderRadius:14,padding:"14px 14px",marginBottom:10,display:"flex",gap:14,alignItems:"center",cursor:"pointer"}}
                   onClick={()=>{setActiveThread(t.id);setScreen("chat");}}>
-                  <div style={{width:38,height:38,borderRadius:"50%",background:`${C.red}22`,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,flexShrink:0}}>
-                    {t.anonymous?"🔒":other.name[0]}
+                  {/* Avatar: Schloss für anonym, farbige Initiale für Mitglied */}
+                  <div style={{width:48,height:48,borderRadius:"50%",
+                    background:isAnon?"#1a1a2e":`${C.red}22`,
+                    border:`2px solid ${isAnon?"#3a3a5e":C.red+"44"}`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontWeight:800,fontSize:isAnon?22:18,flexShrink:0,
+                    color:isAnon?"#6b7fff":C.red}}>
+                    {isAnon?"🔒":other.name[0]?.toUpperCase()}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                      <span style={{fontWeight:unread?700:500,fontSize:14,color:C.white}}>{t.anonymous?"Anonym":other.name}</span>
-                      <span style={{fontSize:10,color:C.muted}}>{last?.ts||""}</span>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,alignItems:"center"}}>
+                      <span style={{fontWeight:unread?800:600,fontSize:15,color:C.white}}>
+                        {isAnon?"🔒 Anonyme Nachricht":other.name}
+                      </span>
+                      <span style={{fontSize:11,color:C.muted,flexShrink:0,marginLeft:6}}>{last?.ts||""}</span>
                     </div>
-                    {tv&&<div style={{fontSize:10,color:`${C.red}88`,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tv.hersteller} {tv.modell}</div>}
-                    <div style={{fontSize:12,color:unread?C.white:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    {tv&&<div style={{fontSize:12,color:`${C.red}99`,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>Re: {tv.hersteller} {tv.modell}</div>}
+                    <div style={{fontSize:13,color:unread?C.white:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                       {last?(last.from===me?.id?"Du: ":"")+last.text:"Neuer Chat"}
                     </div>
                   </div>
-                  {unread&&<div style={{width:8,height:8,borderRadius:"50%",background:C.red,flexShrink:0}}/>}
+                  {unread&&<div style={{width:10,height:10,borderRadius:"50%",background:C.red,flexShrink:0}}/>}
                 </div>
               );
             })}
@@ -2284,21 +2307,37 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               <button className="btn sm ghost" onClick={()=>setShowAddRem(true)}>+ Neu</button>
             </div>
             {myReminders.length===0
-              ?<div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}><div style={{fontSize:32,marginBottom:8}}>🎉</div><div style={{color:C.white}}>Alles erledigt!</div></div>
+              ?<div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}>
+                  <div style={{fontSize:40,marginBottom:10}}>🎉</div>
+                  <div style={{fontSize:16,color:C.white,marginBottom:4}}>Alles erledigt!</div>
+                  <div style={{fontSize:13,color:C.muted}}>Keine offenen Erinnerungen</div>
+                </div>
               :myReminders.map(r=>{
                 const days=daysUntil(r.date); const rv=vehicles[r.vehicleId];
+                const urgent = days <= 3;
+                const overdue = days < 0;
                 return (
-                  <div key={r.id} style={{background:C.card,border:`1px solid ${days<=3?C.amber+"55":C.border}`,borderRadius:11,padding:"13px",marginBottom:8}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                  <div key={r.id} style={{background:C.card,border:`1.5px solid ${overdue?C.red+"66":urgent?C.amber+"55":C.border}`,borderRadius:12,padding:"14px",marginBottom:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontWeight:700,fontSize:14,color:days<=3?C.amber:C.white,marginBottom:2}}>{r.title}</div>
-                        {rv&&<div style={{fontSize:10,color:C.muted}}>{rv.hersteller} {rv.modell}</div>}
-                        <div style={{fontSize:10,color:days<0?C.red:days<=3?C.amber:C.muted,marginTop:2}}>
-                          {days<0?"⚠️ Überfällig":days===0?"Heute":days===1?"Morgen":`in ${days} Tagen`} · {fmtDate(r.date)}
+                        <div style={{fontWeight:700,fontSize:16,color:overdue?C.red:urgent?C.amber:C.white,marginBottom:4}}>{r.title}</div>
+                        {/* Link zur Fahrzeugakte */}
+                        {rv&&(
+                          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,cursor:"pointer"}}
+                            onClick={()=>{setViewV(rv);setScreen("vehicle");}}>
+                            <span style={{fontSize:13,color:C.muted}}>{rv.hersteller} {rv.modell}</span>
+                            <span style={{fontSize:11,color:C.red,fontWeight:700}}>→ Zur Akte</span>
+                          </div>
+                        )}
+                        <div style={{fontSize:13,fontWeight:600,color:overdue?C.red:urgent?C.amber:C.muted}}>
+                          {overdue?"⚠️ Überfällig":days===0?"📅 Heute fällig":days===1?"📅 Morgen fällig":`📅 In ${days} Tagen`}
+                          <span style={{fontWeight:400,color:C.muted}}> · {fmtDate(r.date)}</span>
                         </div>
                       </div>
                       <button onClick={async()=>{const DB=window.PCN_DB;if(DB)await DB.reminders.done(me.id,r.id);setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
-                        style={{background:C.red,border:"none",borderRadius:8,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,flexShrink:0,marginLeft:10,fontFamily:"'Barlow',sans-serif"}}>✓</button>
+                        style={{background:C.red,border:"none",borderRadius:10,padding:"10px 16px",color:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,flexShrink:0,fontFamily:"'Barlow',sans-serif"}}>
+                        ✓
+                      </button>
                     </div>
                   </div>
                 );
@@ -2310,53 +2349,77 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {/* PROFILE */}
         {tab==="profile"&&(
           <div style={{animation:"fadeIn .2s"}}>
-            {/* Profile card */}
-            <div className="card" style={{padding:20,marginBottom:14}}>
-              <div style={{display:"flex",gap:14,alignItems:"center"}}>
-                <div style={{width:60,height:60,background:C.red,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0,fontWeight:800,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif"}}>
+
+            {/* ── Punkte-Score — prominent ganz oben ── */}
+            <div style={{background:`linear-gradient(135deg, #1a0a0a 0%, #2a0808 100%)`,border:`1px solid ${C.red}44`,borderRadius:16,padding:"20px",marginBottom:14}}>
+              <div style={{display:"flex",gap:16,alignItems:"center"}}>
+                <div style={{width:64,height:64,background:C.red,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0,fontWeight:900,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif"}}>
                   {(me?.name||"?")[0].toUpperCase()}
                 </div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:C.white,lineHeight:1}}>{me?.name}</div>
-                  <div style={{fontSize:11,color:C.muted,marginTop:3}}>
-                    {me?.role==="guest"?"Gast-Account":"Mitglied"}{me?.memberNr?" · "+me.memberNr:""}
-                  </div>
-                  {me?.city&&<div style={{fontSize:11,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
-                  {me?.bio&&<div style={{fontSize:12,color:"#777",marginTop:5,lineHeight:1.5}}>{me.bio}</div>}
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1}}>{me?.name}</div>
+                  <div style={{fontSize:13,color:C.muted,marginTop:3}}>{me?.role==="guest"?"Gast-Account":"PCN-Mitglied"}{me?.memberNr?" · "+me.memberNr:""}</div>
+                  {me?.city&&<div style={{fontSize:13,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
                 </div>
-                <button className="btn sm ghost" style={{flexShrink:0}} onClick={openEditProfile}>✏️</button>
+                <button className="btn sm ghost" style={{flexShrink:0,borderColor:"rgba(255,255,255,.2)",color:"#fff"}} onClick={openEditProfile}>✏️</button>
               </div>
-              {me?.role==="guest"&&(
-                <div style={{marginTop:14,paddingTop:12,borderTop:`1px solid ${C.border}`,display:"flex",gap:10,alignItems:"center"}}>
-                  <span style={{fontSize:20}}>🏎️</span>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.white}}>Jetzt Vollmitglied werden</div>
-                    <div style={{fontSize:11,color:C.muted}}>Fahrzeugakte, QR-Code, Events</div>
+
+              {/* Punkte-Anzeige */}
+              <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid rgba(255,255,255,.1)`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8}}>
+                  <div>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:36,fontWeight:900,color:C.gold}}>{myPoints}</span>
+                    <span style={{fontSize:14,color:C.muted,marginLeft:4}}>Punkte</span>
                   </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:12,color:C.muted}}>Nächste Stufe</div>
+                    <div style={{fontSize:14,fontWeight:700,color:C.gold}}>{pointsToNext} Pkt</div>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                <div style={{height:8,background:"rgba(255,255,255,.1)",borderRadius:99,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${pointsProgress}%`,background:`linear-gradient(90deg, ${C.red}, ${C.gold})`,borderRadius:99,transition:"width .6s ease"}}/>
+                </div>
+                <div style={{fontSize:11,color:C.muted,marginTop:6}}>
+                  🏁 {myParticipations.length} Events · 🚗 {myVehicles.length} Fahrzeuge · 📋 {Object.values(logbook).flat().length} Logbuch-Einträge
+                </div>
+              </div>
+
+              {me?.role==="guest"&&(
+                <div style={{marginTop:14,paddingTop:12,borderTop:`1px solid rgba(255,255,255,.1)`,display:"flex",gap:10,alignItems:"center"}}>
+                  <div style={{flex:1,fontSize:13,color:C.muted}}>Vollmitglied werden — Fahrzeugakte, QR-Code & Events</div>
                   <button className="btn sm" onClick={()=>{ setLoginForm({mode:"register",code:"",name:me?.name||"",email:me?.email||""}); setScreen("splash"); }}>Upgrade →</button>
                 </div>
               )}
             </div>
+
+            {/* ── Statistiken ── */}
             <div className="card" style={{padding:16,marginBottom:12}}>
-              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Statistiken</div>
-              {[["🚗","Fahrzeuge",myVehicles.length],["📋","Logbuch-Einträge",Object.values(logbook).flat().length],["🏁","Event-Teilnahmen",myParticipations.length],["💬","Nachrichten",myThreads.length]].map(([icon,label,val])=>(
-                <div key={label} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
-                  <span style={{fontSize:13,color:C.muted}}>{icon} {label}</span>
-                  <span style={{fontSize:13,fontWeight:700,color:C.white}}>{val}</span>
-                </div>
-              ))}
+              <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Statistiken</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                {[["🚗","Fahrzeuge",myVehicles.length],["📋","Logbuch",Object.values(logbook).flat().length],["🏁","Events",myParticipations.length],["💬","Nachrichten",myThreads.length]].map(([icon,label,val])=>(
+                  <div key={label} style={{background:C.black,borderRadius:10,padding:"12px",textAlign:"center"}}>
+                    <div style={{fontSize:22,marginBottom:4}}>{icon}</div>
+                    <div style={{fontSize:22,fontWeight:800,color:C.white,fontFamily:"'Barlow Condensed',sans-serif"}}>{val}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:2}}>{label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* ── Milestones ── */}
             <div className="card" style={{padding:16,marginBottom:14}}>
-              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Milestones</div>
+              <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Milestones</div>
               {MILESTONES.map(m=>{const done=m.check(appState);return(
-                <div key={m.id} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
-                  <div style={{width:20,height:20,borderRadius:"50%",background:done?C.green:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:done?"#fff":C.muted,flexShrink:0,fontWeight:700}}>{done?"✓":""}</div>
-                  <span style={{fontSize:13,color:done?C.white:C.muted}}>{m.label}</span>
-                  {done&&<span style={{marginLeft:"auto",fontSize:9,color:C.green,fontWeight:700}}>AKTIV</span>}
+                <div key={m.id} style={{display:"flex",gap:12,alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:done?C.green:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:done?"#fff":C.muted,flexShrink:0,fontWeight:700}}>{done?"✓":"○"}</div>
+                  <span style={{fontSize:14,color:done?C.white:C.muted,flex:1}}>{m.label}</span>
+                  {done&&<span style={{fontSize:11,color:C.green,fontWeight:700}}>AKTIV</span>}
                 </div>
               );})}
             </div>
-            <button className="btn ghost" style={{width:"100%"}} onClick={async()=>{
+
+            <button className="btn ghost" style={{width:"100%",fontSize:15,padding:"14px"}} onClick={async()=>{
               const DB=window.PCN_DB; if(DB) await DB.auth.logout();
               setMe(null);setVehicles({});setLogbook({});setReminders([]);setParticipants({});setThreads({});
               setScreen("splash"); setTab("dashboard");
@@ -2366,6 +2429,37 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
       </div>
 
       {/* overlays moved to each screen */}
+
+      {/* ── INFO MODAL ── */}
+      {showInfoModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}
+          onClick={()=>setShowInfoModal(false)}>
+          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"28px 24px",maxWidth:380,width:"100%",animation:"fadeIn .2s"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:6}}>
+              ⚙️ Funktionen freischalten
+            </div>
+            <div style={{fontSize:14,color:C.muted,lineHeight:1.7,marginBottom:20}}>
+              Zusätzliche Plattform-Funktionen werden auf drei Wegen freigeschaltet:
+            </div>
+            {[
+              [C.gold,"💳","Bezahlung","Aktiviere die Premium-Mitgliedschaft und erhalte sofortigen Zugang zu allen Funktionen — KI-Marktwert, Werkstatt-Zugang, digitaler Fahrzeugpass und mehr."],
+              [C.green,"🏆","Punkte sammeln","Jede Veranstaltungsteilnahme bringt Punkte. Ab bestimmten Schwellenwerten schalten sich neue Funktionen automatisch frei — Belohnung für aktive Mitglieder."],
+              [C.red,"👥","Mitglieder werben","Lade neue Mitglieder in den Club ein. Pro erfolgreich geworbenes Mitglied erhältst du Bonus-Punkte und schaltest exklusive Funktionen frei."],
+            ].map(([color,icon,title,text])=>(
+              <div key={title} style={{display:"flex",gap:14,marginBottom:18,alignItems:"flex-start"}}>
+                <div style={{width:44,height:44,borderRadius:12,background:`${color}22`,border:`1px solid ${color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{icon}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:16,fontWeight:700,color:C.white,marginBottom:4}}>{title}</div>
+                  <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>{text}</div>
+                </div>
+              </div>
+            ))}
+            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,marginTop:4}}
+              onClick={()=>setShowInfoModal(false)}>Verstanden ✓</button>
+          </div>
+        </div>
+      )}
 
       {/* ── PROFILE EDIT SHEET ── */}
       {showEditProfile&&(
