@@ -5178,8 +5178,8 @@
       className: `toast ${toast.type}`
     }, toast.msg), ScannerOverlay, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        background: C.dark,
-        borderBottom: `1px solid ${C.border}`,
+        background: "#ffffff",
+        borderBottom: `3px solid ${C.red}`,
         padding: "10px 14px",
         display: "flex",
         alignItems: "center",
@@ -5193,7 +5193,7 @@
       alt: "PCN",
       onError: e => e.target.style.display = "none",
       style: {
-        height: 30,
+        height: 32,
         objectFit: "contain"
       }
     }), /*#__PURE__*/_react.default.createElement("button", {
@@ -5217,12 +5217,12 @@
       style: {
         fontSize: 13,
         fontWeight: 700,
-        color: C.white
+        color: "#1a1a1a"
       }
     }, me?.name), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 10,
-        color: C.muted
+        color: "#888"
       }
     }, me?.memberNr))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
@@ -5235,41 +5235,6 @@
         animation: "fadeIn .2s"
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        background: "#ffffff",
-        margin: "-14px -14px 16px",
-        padding: "20px 18px 16px",
-        borderBottom: `3px solid ${C.red}`
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 14
-      }
-    }, /*#__PURE__*/_react.default.createElement("img", {
-      src: LOGO_URL,
-      alt: "PCN",
-      onError: e => e.target.style.display = "none",
-      style: {
-        height: 52,
-        objectFit: "contain"
-      }
-    }), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontFamily: "'Barlow Condensed',sans-serif",
-        fontSize: 18,
-        fontWeight: 900,
-        color: "#1a1a1a",
-        lineHeight: 1
-      }
-    }, "PORSCHE CLUB NÜRBURGRING"), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: "#777",
-        marginTop: 3
-      }
-    }, me?.name, " · ", me?.memberNr || "Gast")))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
       }
