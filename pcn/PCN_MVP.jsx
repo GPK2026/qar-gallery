@@ -147,50 +147,56 @@ const DEMO_USERS = {
 };
 
 const DEMO_VEHICLES = {
+  // ── Max: Porsche 911 Carrera 4S, GT-Silbermetallic ──────────────────────────
+  // Alle Bilder zeigen denselben silbernen 911 aus verschiedenen Perspektiven
   "V001":{id:"V001",qarId:"QAR-R4T8W3NX",userId:"u1",owner:"max@pcn.de",
     hersteller:"Porsche",modell:"911 Carrera 4S",baujahr:"2021",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"GT-Silbermetallic",
     kennzeichen:"AW-PC 911",fin:"WP0ZZZ99ZLS100001",phone:"+49 171 9110911",
-    kilometerstand:"32400",tuev_faelligkeit:"02/2027",marktwert:"138000",zustand:"1",
+    kilometerstand:"32.400",tuev_faelligkeit:"02/2027",marktwert:"138.000",zustand:"1",
     besonderheiten:"Sport-Chrono, PASM, Sportabgasanlage, PCCB",
-    image:"https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
+    image:"https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=900&q=85",
     images:[
-      "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
-      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
-      "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80",
-      "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=800&q=80",
-      "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80",
+      "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=900&q=85",
+      "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=900&q=85",
+      "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=900&q=85",
+      "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=900&q=85",
     ],
-    privacy:{...DEF_PRIVACY, pub_phone:true, pub_gallery:true}},
+    privacy:{...DEF_PRIVACY, pub_phone:true, pub_gallery:true, pub_events:true}},
+
+  // ── Max: Porsche 718 Boxster GTS 4.0, Pythongrün ────────────────────────────
+  // Alle Bilder: grüner Roadster, offen fahrend, Sommer
   "V002":{id:"V002",qarId:"QAR-K9P2M7RW",userId:"u1",owner:"max@pcn.de",
-    hersteller:"Porsche",modell:"Boxster 718 GTS 4.0",baujahr:"2022",
+    hersteller:"Porsche",modell:"718 Boxster GTS 4.0",baujahr:"2022",
     kraftstoff:"Benzin",getriebe:"6-Gang manuell",farbe:"Pythongrün",
     kennzeichen:"AW-PC 718",fin:"WP0ZZZ98ZNS200042",
-    kilometerstand:"18700",tuev_faelligkeit:"09/2027",marktwert:"89000",zustand:"1",
-    besonderheiten:"Manuelles Getriebe, Alcantara-Paket, Sportabgas",
-    image:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
+    kilometerstand:"18.700",tuev_faelligkeit:"09/2027",marktwert:"89.000",zustand:"1",
+    besonderheiten:"Manuelles Getriebe, Alcantara-Paket, Sportabgas, Windschott",
+    image:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=85",
     images:[
-      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
-      "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80",
-      "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=800&q=80",
-      "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80",
+      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=85",
+      "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=900&q=85",
+      "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=900&q=85",
+      "https://images.unsplash.com/photo-1547744152-14d985cb937f?w=900&q=85",
     ],
     privacy:{...DEF_PRIVACY, pub_gallery:true}},
+
+  // ── Thomas: Porsche 992 GT3, Riviera Blau ────────────────────────────────────
+  // Alle Bilder: blauer/sportlicher GT3 auf der Rennstrecke
   "V003":{id:"V003",qarId:"QAR-T7M3N9PX",userId:"u2",owner:"thomas@pcn.de",
     hersteller:"Porsche",modell:"992 GT3",baujahr:"2022",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"Riviera Blau",
-    kennzeichen:"MYK-PC 992",fin:"WP0AC2A92NS230001",
-    kilometerstand:"8200",tuev_faelligkeit:"06/2027",marktwert:"195000",zustand:"1",
-    besonderheiten:"Clubsport-Paket, Liftsystem, Carbon-Dach",
-    image:"https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
+    kennzeichen:"MYK-PC 992",fin:"WP0AC2A92NS230001",phone:"+49 172 5550992",
+    kilometerstand:"8.200",tuev_faelligkeit:"06/2027",marktwert:"195.000",zustand:"1",
+    besonderheiten:"Clubsport-Paket, Liftsystem, Carbon-Dach, PDK",
+    image:"https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=900&q=85",
     images:[
-      "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
-      "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
-      "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&q=80",
-      "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80",
-      "https://images.unsplash.com/photo-1547744152-14d985cb937f?w=800&q=80",
+      "https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=900&q=85",
+      "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=900&q=85",
+      "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=900&q=85",
+      "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=900&q=85",
     ],
-    privacy:{...DEF_PRIVACY, pub_events:true, pub_gallery:true}},
+    privacy:{...DEF_PRIVACY, pub_events:true, pub_gallery:true, pub_phone:true}},
 };
 
 const DEMO_EVENTS = {
@@ -394,16 +400,50 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
 
   return (
     <div ref={rootRef} style={{height:"100vh",background:C.black,display:"flex",flexDirection:"column",position:"fixed",inset:0}}>
-      <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",display:"flex",gap:12,alignItems:"center",flexShrink:0}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:0,lineHeight:1}}>←</button>
-        <div style={{width:36,height:36,borderRadius:"50%",background:`${C.red}22`,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,flexShrink:0}}>
-          {thread.anonymous?"🔒":other.name[0]}
+      {/* ── Chat Header ── */}
+      <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",flexShrink:0}}>
+        <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:thread.isGroup?6:0}}>
+          <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:22,padding:0,lineHeight:1,flexShrink:0}}>←</button>
+          {/* Avatar */}
+          <div style={{width:44,height:44,borderRadius:thread.isGroup?"12px":"50%",
+            background:thread.isGroup?C.red:thread.anonymous?"#1a1a2e":`${C.red}22`,
+            color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",
+            fontWeight:800,fontSize:thread.isGroup?22:17,flexShrink:0}}>
+            {thread.isGroup?"🏎️":thread.anonymous?"🔒":other.name[0]?.toUpperCase()}
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontWeight:800,fontSize:16,color:C.white,lineHeight:1.2}}>
+              {thread.isGroup?thread.name:thread.anonymous?"🔒 Anonyme Nachricht":other.name}
+            </div>
+            <div style={{fontSize:12,color:C.muted,marginTop:2}}>
+              {thread.isGroup
+                ? `${threadParticipants.length} Mitglieder`
+                : v?`Re: ${v.hersteller} ${v.modell}`:"Direktnachricht"}
+            </div>
+          </div>
+          {!thread.isGroup&&v&&(
+            <button className="btn sm ghost" onClick={()=>onViewVehicle(v)} style={{fontSize:12,flexShrink:0}}>Akte →</button>
+          )}
         </div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontWeight:700,fontSize:14,color:C.white}}>{thread.anonymous?"🔒 Anonym":other.name}</div>
-          {v&&<div style={{fontSize:10,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>Re: {v.hersteller} {v.modell}</div>}
-        </div>
-        {v&&<button className="btn sm ghost" onClick={()=>onViewVehicle(v)} style={{fontSize:11,flexShrink:0}}>Akte →</button>}
+        {/* Group member avatars */}
+        {thread.isGroup&&(
+          <div style={{display:"flex",gap:6,paddingLeft:56,alignItems:"center"}}>
+            {threadParticipants.slice(0,5).map(uid=>{
+              const u=allUsers[uid]||{name:"?"};
+              return (
+                <div key={uid} style={{width:26,height:26,borderRadius:"50%",
+                  background:`${C.red}33`,border:`1.5px solid ${C.border}`,
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  fontSize:11,fontWeight:800,color:C.white}}>
+                  {u.name[0]?.toUpperCase()}
+                </div>
+              );
+            })}
+            {threadParticipants.length>5&&(
+              <div style={{fontSize:10,color:C.muted}}>+{threadParticipants.length-5}</div>
+            )}
+          </div>
+        )}
       </div>
 
       {isGuest && (
@@ -2735,24 +2775,37 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               <option value="">Kein Fahrzeug</option>
               {myVehicles.map(v=><option key={v.id} value={v.id}>{v.hersteller} {v.modell}</option>)}
             </select>
-            <button className="btn" style={{width:"100%"}} onClick={async()=>{
-              if(!remForm.title||!remForm.date){toast_("Titel und Datum angeben","err");return;}
-              const DB=window.PCN_DB;
+            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15}} onClick={async()=>{
+              if(!remForm.title.trim()){toast_("Titel angeben","err");return;}
+              if(!remForm.date){toast_("Datum angeben","err");return;}
               const newR = {
-                id: "R"+Date.now(), user_id: me.id,
+                id: "R"+Date.now(),
                 title: remForm.title.trim(),
                 date: remForm.date,
-                vehicle_id: remForm.vehicleId||null,
                 vehicleId: remForm.vehicleId||null,
                 done: false,
               };
-              const {data,error}=await DB.reminders.save(me.id, newR);
-              if(error){toast_(error||"Fehler beim Speichern","err");return;}
-              const saved = data||newR;
-              if(!saved.vehicleId&&saved.vehicle_id) saved.vehicleId=saved.vehicle_id;
-              setReminders(prev=>[...prev,saved]);
-              setShowAddRem(false); setRemForm({vehicleId:"",title:"",date:""});
-              toast_("Gespeichert ✓");
+              // Try to persist to DB — but always update local state regardless
+              try {
+                const DB=window.PCN_DB;
+                if(DB){
+                  const {data,error}=await DB.reminders.save(me.id, {...newR, vehicle_id:newR.vehicleId, user_id:me.id});
+                  if(data && data.id) {
+                    const saved={...data, vehicleId:data.vehicle_id||newR.vehicleId};
+                    setReminders(prev=>[...prev,saved]);
+                  } else {
+                    setReminders(prev=>[...prev,newR]);
+                  }
+                } else {
+                  setReminders(prev=>[...prev,newR]);
+                }
+              } catch(e) {
+                console.warn("Reminder save error:",e);
+                setReminders(prev=>[...prev,newR]); // still add locally
+              }
+              setShowAddRem(false);
+              setRemForm({vehicleId:"",title:"",date:""});
+              toast_("Erinnerung gespeichert ✓");
             }}>Speichern ✓</button>
           </div>
         </div>
