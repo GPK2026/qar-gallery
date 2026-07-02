@@ -114,7 +114,7 @@ const DEMO_NEWS = [
     date:"2026-06-28", pinned:true },
   { id:"N2", type:"tip", icon:"🏁", title:"Nordschleife-Tipp: Touristenfahrten im Juli",
     body:"Die Nordschleife ist an folgenden Terminen für Touristenfahrten geöffnet: 5., 12., 19. und 26. Juli. Früh buchen — Plätze sind begrenzt.",
-    date:"2026-06-25" },
+    date:"2026-06-25", eventId:"E001" },
   { id:"N3", type:"welcome", icon:"🎉", title:"Willkommen im PCN",
     body:"Leg deine Fahrzeugakte an und lass andere Mitglieder dein Fahrzeug per QR-Code entdecken. Je mehr du einträgst, desto mehr Funktionen werden freigeschaltet.",
     date:"2026-06-01" },
@@ -463,6 +463,7 @@ function PCNInner() {
   const [showPrivacy, setShowPrivacy] = useState(null);
   const [showEditVehicle, setShowEditVehicle] = useState(null); // vehicleId
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [newsState, setNewsState] = useState({}); // {id: "read"|"remind"}
   const [profileForm, setProfileForm]         = useState({});
   const [showContactAuth, setShowContactAuth] = useState(null); // vehicleId — triggers login/register/guest sheet
   const [contactAuthMode, setContactAuthMode] = useState("guest"); // "guest" | "login" | "register"
@@ -2054,9 +2055,8 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
       {ScannerOverlay}
 
       {/* Nav */}
-      <div style={{background:"#ffffff",borderBottom:`3px solid ${C.red}`,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
+      <div style={{background:"#ffffff",borderBottom:`3px solid ${C.red}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
         <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:32,objectFit:"contain"}}/>
-        <button onClick={openScanner} style={{background:C.red,border:"none",borderRadius:8,padding:"7px 14px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"'Barlow',sans-serif"}}>📷 Scan</button>
         <div style={{textAlign:"right"}}>
           <div style={{fontSize:13,fontWeight:700,color:"#1a1a1a"}}>{me?.name}</div>
           <div style={{fontSize:10,color:"#888"}}>{me?.memberNr}</div>
@@ -2072,19 +2072,67 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             {/* ── 1. Infos & Neuigkeiten ── */}
             <div style={{marginBottom:20}}>
               <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>📰 Infos & Neuigkeiten</div>
-              {DEMO_NEWS.map(n=>(
-                <div key={n.id} style={{background:n.pinned?`${C.red}0d`:C.card,border:`1px solid ${n.pinned?C.red+"33":C.border}`,borderRadius:12,padding:"13px 14px",marginBottom:8}}>
-                  <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                    <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:3}}>{n.title}</div>
-                      <div style={{fontSize:11,color:C.muted,lineHeight:1.6}}>{n.body}</div>
-                      <div style={{fontSize:9,color:"#444",marginTop:5}}>{fmtDate(n.date)}</div>
+
+              {/* Willkommen — immer oben, nicht ausblendbar */}
+              {(()=>{
+                const welcome = DEMO_NEWS.find(n=>n.type==="welcome");
+                if(!welcome) return null;
+                return (
+                  <div style={{background:`${C.gold}12`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:"13px 14px",marginBottom:10}}>
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                      <span style={{fontSize:20,flexShrink:0}}>🎉</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:3}}>{welcome.title}</div>
+                        <div style={{fontSize:11,color:C.muted,lineHeight:1.6}}>{welcome.body}</div>
+                      </div>
                     </div>
-                    {n.pinned&&<span style={{background:C.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>NEU</span>}
                   </div>
-                </div>
-              ))}
+                );
+              })()}
+
+              {/* Neuigkeiten mit Lesen/Erinnern-Aktionen */}
+              {DEMO_NEWS.filter(n=>n.type!=="welcome").map(n=>{
+                const state = newsState[n.id];
+                if(state==="read") return null; // ausgeblendet wenn gelesen
+                const isRemind = state==="remind";
+                return (
+                  <div key={n.id} style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}0d`:C.card,
+                    border:`1px solid ${isRemind?C.amber+"44":n.pinned?C.red+"33":C.border}`,
+                    borderRadius:12,padding:"13px 14px",marginBottom:8}}>
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                      <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
+                          <div style={{fontSize:13,fontWeight:700,color:C.white,flex:1}}>{n.title}</div>
+                          {n.pinned&&<span style={{background:C.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>NEU</span>}
+                          {isRemind&&<span style={{background:`${C.amber}33`,color:C.amber,fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>🔔 ERINNERT</span>}
+                        </div>
+                        <div style={{fontSize:11,color:C.muted,lineHeight:1.6,marginBottom:8}}>{n.body}</div>
+                        {/* Event-Link falls vorhanden */}
+                        {n.eventId&&(
+                          <button onClick={()=>{const ev=events[n.eventId];if(ev){setViewEv(ev);setScreen("event");}}}
+                            style={{background:"none",border:`1px solid ${C.red}44`,borderRadius:7,padding:"5px 10px",color:C.red,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",marginBottom:8}}>
+                            🏁 Zum Event →
+                          </button>
+                        )}
+                        {/* Aktionen */}
+                        <div style={{display:"flex",gap:6}}>
+                          <button onClick={()=>setNewsState(p=>({...p,[n.id]:"read"}))}
+                            style={{background:"none",border:`1px solid ${C.border}`,borderRadius:7,padding:"5px 10px",color:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                            ✓ Gelesen
+                          </button>
+                          <button onClick={()=>setNewsState(p=>({...p,[n.id]:isRemind?undefined:"remind"}))}
+                            style={{background:isRemind?`${C.amber}22`:"none",border:`1px solid ${isRemind?C.amber+"44":C.border}`,borderRadius:7,padding:"5px 10px",
+                              color:isRemind?C.amber:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                            🔔 {isRemind?"Erinnerung aktiv":"Erinnern"}
+                          </button>
+                          <div style={{fontSize:9,color:"#444",alignSelf:"center",marginLeft:"auto"}}>{fmtDate(n.date)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* ── 2. Meine Fahrzeuge ── */}
@@ -2124,7 +2172,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             <div style={{marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>⚙️ Plattform-Funktionen</div>
-                <button onClick={()=>toast_("Funktionen werden durch Nutzung freigeschaltet: Fahrzeug anlegen, Events besuchen, Logbuch führen.")}
+                <button onClick={()=>toast_("Funktionen freischalten:\n\n💳 Bezahlung — Premium-Mitgliedschaft aktivieren\n🏆 Punkte — durch Veranstaltungsteilnahmen sammeln\n👥 Werben — neue Mitglieder einladen und Bonus erhalten")}
                   style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
               </div>
 
@@ -2435,6 +2483,11 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
 
       {/* Tab Bar */}
       <div className="tab-bar">
+        {/* Scan button — far left, always visible */}
+        <button className="tab-btn" onClick={openScanner} style={{color:C.red}}>
+          <span className="ico">📷</span>
+          <span className="lbl">Scan</span>
+        </button>
         {[["dashboard","🏠","Start"],["events","🏁","Events"],["messages","💬","Chat"],["reminders","🔔","Termine"],["profile","👤","Profil"]].map(([id,icon,label])=>(
           <button key={id} className={`tab-btn ${tab===id?"on":""}`} onClick={()=>setTab(id)}>
             {id==="messages"&&unreadCount>0&&<div className="badge">{unreadCount}</div>}
