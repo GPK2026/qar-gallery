@@ -54,13 +54,14 @@ const PCN_STORAGE = (() => {
     },
 
     // ── Auth ──
-    async register(name, email, clubCode) {
+    async register(name, email, clubCode, password) {
       const users = local._get("users") || {};
       const existing = users[email];
       if(existing && existing.role !== "guest") return { error: "E-Mail bereits registriert" };
       // Guest upgrade: keep same id (preserves their chat history), become full member
       const user = {
         id: existing?.id || uid(), name, email, clubCode,
+        password: password || "",
         role: "member",
         memberNr: existing?.memberNr || ("PCN-" + Math.floor(1000 + Math.random()*8999)),
         createdAt: existing?.createdAt || now(), lastSeen: now(),
@@ -98,6 +99,25 @@ const PCN_STORAGE = (() => {
       local._set("users", users);
       local._set("session", user);
       return { data: user };
+    },
+
+    async loginWithPassword(email, password) {
+      const users = local._get("users") || {};
+      const user = users[email];
+      if(!user) return { error: "Kein Account mit dieser E-Mail gefunden" };
+      // In local mode: accept any password for demo accounts (no real hashing)
+      // In Supabase mode: real bcrypt check
+      if(user.password && user.password !== password) return { error: "Falsches Passwort" };
+      user.lastSeen = now();
+      users[email] = user;
+      local._set("users", users);
+      local._set("session", user);
+      return { data: user };
+    },
+
+    async resetPassword(email) {
+      // In local mode: just acknowledge — no real email
+      return { data: { sent: true } };
     },
 
     async getSession() {
@@ -422,7 +442,21 @@ const PCN_STORAGE = (() => {
     },
 
     // Register: create/update user profile row after Supabase Auth creates the account
-    async register(name, email, clubCode) {
+    async register(name, email, clubCode, password) {
+      // First: create Supabase Auth user with password
+      if(password) {
+        const base = SUPABASE_URL.replace("/rest/v1","");
+        const r = await fetch(base + "/auth/v1/signup", {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
+          body: JSON.stringify({ email, password }),
+        });
+        // Ignore "already registered" errors — just continue to create/update profile
+        const rd = await r.json().catch(()=>({}));
+        if(!r.ok && !rd.code?.includes("already")) {
+          return { error: rd.error_description || rd.msg || "Registrierung fehlgeschlagen" };
+        }
+      }
       const {data:existing} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
       if(existing&&existing.length>0){
         const ex = existing[0];
@@ -462,7 +496,6 @@ const PCN_STORAGE = (() => {
     },
 
     async login(email) {
-      // For demo/backward compat: direct lookup. In production: sendMagicLink() first.
       const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
       if(error) return { error };
       if(!users||users.length===0) return { error: "Kein Account mit dieser E-Mail" };
@@ -472,6 +505,37 @@ const PCN_STORAGE = (() => {
       localStorage.setItem("pcn_session", JSON.stringify(session));
       await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
       return { data: session };
+
+    },
+
+    async loginWithPassword(email, password) {
+      // Use Supabase Auth password login
+      const base = SUPABASE_URL.replace("/rest/v1","");
+      const r = await fetch(base + "/auth/v1/token?grant_type=password", {
+        method: "POST",
+        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
+        body: JSON.stringify({ email, password }),
+      });
+      const d = await r.json().catch(()=>({}));
+      if(!r.ok) return { error: d.error_description || d.msg || "Falsches Passwort oder E-Mail" };
+      // Get user profile from our users table
+      const supaUser = d.user || {};
+      const {data:profiles} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
+      const profile = profiles&&profiles[0];
+      const session = supabase._saveSession({...supaUser, access_token: d.access_token}, profile);
+      return { data: session };
+    },
+
+    async resetPassword(email) {
+      const base = SUPABASE_URL.replace("/rest/v1","");
+      const redirectTo = window.location.origin + window.location.pathname;
+      const r = await fetch(base + "/auth/v1/recover", {
+        method: "POST",
+        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
+        body: JSON.stringify({ email, options: { emailRedirectTo: redirectTo } }),
+      });
+      if(r.status===200||r.status===204) return { data: { sent: true } };
+      return { error: "Reset-Link konnte nicht gesendet werden" };
     },
     async getSession() {
       try { return { data: JSON.parse(localStorage.getItem("pcn_session")) }; }
@@ -710,12 +774,14 @@ const PCN_STORAGE = (() => {
 
     // Proxy all methods to selected backend
     auth: {
-      register:      (name, email, code) => db.register(name, email, code),
-      registerGuest: (name, email)       => db.registerGuest(name, email),
-      login:         (email)             => db.login(email),
-      sendMagicLink: (email, redirect)   => db.sendMagicLink ? db.sendMagicLink(email, redirect) : { error:"Not supported in local mode" },
-      verifyOtp:     (email, token)      => db.verifyOtp     ? db.verifyOtp(email, token)         : { error:"Not supported in local mode" },
-      exchangeToken: (token)             => db.exchangeToken ? db.exchangeToken(token)             : { error:"Not supported in local mode" },
+      register:          (name, email, code, pw) => db.register(name, email, code, pw),
+      registerGuest:     (name, email)            => db.registerGuest(name, email),
+      login:             (email)                  => db.login(email),
+      loginWithPassword: (email, pw)              => db.loginWithPassword ? db.loginWithPassword(email, pw) : db.login(email),
+      resetPassword:     (email)                  => db.resetPassword     ? db.resetPassword(email)         : { data: { sent: true } },
+      sendMagicLink:     (email, redirect)        => db.sendMagicLink     ? db.sendMagicLink(email, redirect) : { error:"Not supported" },
+      verifyOtp:         (email, token)           => db.verifyOtp         ? db.verifyOtp(email, token)       : { error:"Not supported" },
+      exchangeToken:     (token)                  => db.exchangeToken     ? db.exchangeToken(token)          : { error:"Not supported" },
       session:  ()   => db.getSession(),
       logout:   ()   => db.logout(),
     },
