@@ -1298,6 +1298,21 @@
       const mine = m.from === me?.id;
       const senderUser = !mine ? Object.values(allUsers).find(u => u.id === m.from) : null;
       const senderName = thread.isGroup ? mine ? "Du" : senderUser?.name || "Mitglied" : null;
+      // Format timestamp — use created_at from DB or ts field
+      const rawTs = m.created_at || m.createdAt || "";
+      const tsDate = rawTs ? new Date(rawTs) : null;
+      const today = new Date();
+      const isToday = tsDate && tsDate.toDateString() === today.toDateString();
+      const isYesterday = tsDate && new Date(today - 86400000).toDateString() === tsDate.toDateString();
+      const timeStr = tsDate ? tsDate.toLocaleTimeString("de-DE", {
+        hour: "2-digit",
+        minute: "2-digit"
+      }) : m.ts || "";
+      const dateStr = tsDate ? isToday ? "Heute" : isYesterday ? "Gestern" : tsDate.toLocaleDateString("de-DE", {
+        day: "2-digit",
+        month: "short"
+      }) : "";
+      const fullTs = dateStr ? `${dateStr} · ${timeStr}` : timeStr;
       return /*#__PURE__*/_react.default.createElement("div", {
         key: m.id,
         style: {
@@ -1334,7 +1349,7 @@
           marginTop: 4,
           textAlign: "right"
         }
-      }, m.date && m.date !== new Date().toLocaleDateString("de-DE") ? m.date + " · " : "", m.ts)));
+      }, fullTs)));
     }), /*#__PURE__*/_react.default.createElement("div", {
       ref: endRef
     })), /*#__PURE__*/_react.default.createElement("div", {
@@ -7505,12 +7520,33 @@
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, lastMsg ? lastMsg.text : "Noch keine Nachricht")), /*#__PURE__*/_react.default.createElement("span", {
+      }, lastMsg ? lastMsg.text : "Noch keine Nachricht")), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: e => {
+          e.stopPropagation();
+          if (!window.confirm("Chat löschen?")) return;
+          setGuestThreads(prev => {
+            const updated = prev.filter(x => x.id !== gt.id);
+            localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
+            return updated;
+          });
+          setThreads(prev => {
+            const n = {
+              ...prev
+            };
+            delete n[gt.id];
+            return n;
+          });
+        },
         style: {
-          fontSize: 20,
-          color: C.muted
+          background: "none",
+          border: "none",
+          color: "#444",
+          cursor: "pointer",
+          fontSize: 18,
+          padding: "4px 6px",
+          flexShrink: 0
         }
-      }, "›"));
+      }, "🗑"));
     })), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 16
@@ -7662,6 +7698,14 @@
           display: "flex",
           gap: 14,
           alignItems: "center",
+          position: "relative"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          flex: 1,
+          display: "flex",
+          gap: 14,
+          alignItems: "center",
           cursor: "pointer"
         },
         onClick: () => {
@@ -7733,7 +7777,38 @@
           background: C.red,
           flexShrink: 0
         }
-      }));
+      })), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: async e => {
+          e.stopPropagation();
+          if (!window.confirm("Chat löschen?")) return;
+          const DB = window.PCN_DB;
+          if (DB) await DB.threads.delete(t.id).catch(() => {});
+          setThreads(prev => {
+            const n = {
+              ...prev
+            };
+            delete n[t.id];
+            return n;
+          });
+          // Also remove from guest threads
+          setGuestThreads(prev => {
+            const updated = prev.filter(x => x.id !== t.id);
+            localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
+            return updated;
+          });
+        },
+        style: {
+          background: "none",
+          border: "none",
+          color: "#444",
+          cursor: "pointer",
+          fontSize: 18,
+          padding: "4px 6px",
+          flexShrink: 0,
+          lineHeight: 1
+        },
+        title: "Chat löschen"
+      }, "🗑"));
     })), tab === "reminders" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
