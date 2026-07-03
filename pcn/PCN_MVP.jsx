@@ -1422,6 +1422,16 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               </button>
             )}
 
+            {/* INFO BOX — explains the anonymous messaging system */}
+            {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
+              <div style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"11px 13px",display:"flex",gap:10,alignItems:"flex-start"}}>
+                <span style={{fontSize:16,flexShrink:0,marginTop:1}}>🔒</span>
+                <div style={{fontSize:12,color:"#888",lineHeight:1.6}}>
+                  <strong style={{color:"#aaa"}}>Anonymer Kontakt:</strong> Deine Nachricht wird anonym übermittelt — Name und E-Mail bleiben geschützt. Der Fahrzeughalter antwortet direkt über die QAR-App. Daten werden nicht gespeichert oder weitergegeben.
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
 
