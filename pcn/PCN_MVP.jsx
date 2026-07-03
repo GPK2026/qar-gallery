@@ -1614,29 +1614,85 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {ScannerOverlay}
-        {/* ── Photo Gallery ── */}
+        {/* ── Photo Gallery — inline ── */}
         <div style={{position:"relative"}}>
-          <VehicleGallery
-            imgs={getImages(v)}
-            curIdx={Math.min(gallerySwipe[v.id]||0, Math.max(0,getImages(v).length-1))}
-            vehicleId={v.id}
-            isOwn={isOwn}
-            imgUploading={imgUploading}
-            onGoTo={i=>setGallerySwipe(p=>({...p,[v.id]:Math.max(0,Math.min(getImages(v).length-1,i))}))}
-            onLightbox={i=>setLightbox({images:getImages(v),index:i})}
-            onUpload={file=>handleImageUpload(file,url=>addImageToVehicle(v.id,url))}
-            onDelete={i=>removeImageFromVehicle(v.id,i)}
-            onSetMain={async i=>{
-              const imgs2=[...getImages(v)]; const img=imgs2[i];
-              imgs2.splice(i,1); imgs2.unshift(img);
-              const updated={...v,images:imgs2,image:img};
-              setVehicles(prev=>({...prev,[v.id]:updated}));
-              if(viewV?.id===v.id) setViewV(updated);
-              setGallerySwipe(p=>({...p,[v.id]:0}));
-              const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
-              toast_("Titelbild gesetzt 👑");
-            }}
-          />
+          {(()=>{
+            const imgs=getImages(v);
+            const cur=Math.min(gallerySwipe[v.id]||0, Math.max(0,imgs.length-1));
+            const goTo=i=>setGallerySwipe(p=>({...p,[v.id]:Math.max(0,Math.min(imgs.length-1,i))}));
+            let touchX=0;
+            if(imgs.length===0) return isOwn?(
+              <label style={{height:260,background:"#111",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer"}}>
+                <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
+                <span style={{fontSize:44}}>📷</span>
+                <span style={{fontSize:15,fontWeight:700,color:"#fff"}}>Erstes Foto hinzufügen</span>
+              </label>
+            ):(<div style={{height:220,background:"#111",display:"flex",alignItems:"center",justifyContent:"center",color:"#333",fontSize:40}}>📷</div>);
+            return (
+              <div>
+                {/* Hero image */}
+                <div style={{height:280,position:"relative",overflow:"hidden",background:"#111"}}
+                  onTouchStart={e=>{touchX=e.touches[0].clientX;}}
+                  onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchX;if(Math.abs(dx)>40)goTo(cur+(dx<0?1:-1));}}>
+                  <img src={imgs[cur]} alt="" draggable={false}
+                    style={{width:"100%",height:"100%",objectFit:"cover",cursor:"zoom-in",userSelect:"none"}}
+                    onClick={()=>setLightbox({images:imgs,index:cur})}
+                    onError={e=>e.target.style.display="none"}/>
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.45) 0%,transparent 40%,transparent 55%,rgba(0,0,0,.7) 100%)",pointerEvents:"none"}}/>
+                  {imgs.length>1&&(<>
+                    <div style={{position:"absolute",bottom:14,left:0,right:0,display:"flex",justifyContent:"center",gap:6,zIndex:3}}>
+                      {imgs.map((_,i)=>(
+                        <div key={i} onClick={e=>{e.stopPropagation();goTo(i);}}
+                          style={{width:i===cur?20:7,height:7,borderRadius:99,background:i===cur?"#fff":"rgba(255,255,255,.4)",transition:"all .2s",cursor:"pointer"}}/>
+                      ))}
+                    </div>
+                    <div style={{position:"absolute",bottom:14,right:14,background:"rgba(0,0,0,.6)",borderRadius:8,padding:"3px 9px",fontSize:11,fontWeight:700,color:"rgba(255,255,255,.9)",zIndex:3}}>
+                      {cur+1}/{imgs.length}
+                    </div>
+                  </>)}
+                </div>
+                {/* Thumbnail strip */}
+                {imgs.length>1&&(
+                  <div style={{display:"flex",gap:8,overflowX:"auto",padding:"10px 14px 4px",scrollbarWidth:"none"}}>
+                    {imgs.map((img,i)=>(
+                      <div key={i} style={{position:"relative",flexShrink:0}}>
+                        <img src={img} alt="" onClick={()=>goTo(i)}
+                          style={{width:70,height:70,objectFit:"cover",borderRadius:9,cursor:"pointer",display:"block",
+                            border:`3px solid ${i===cur?C.red:i===0?"#c8a96e55":"transparent"}`,transition:"border-color .15s"}}
+                          onError={e=>e.target.style.display="none"}/>
+                        {i===0&&<div style={{position:"absolute",top:-7,left:"50%",transform:"translateX(-50%)",fontSize:13}}>👑</div>}
+                        {isOwn&&i===cur&&i!==0&&(
+                          <button onClick={async()=>{
+                            const imgs2=[...imgs]; const img2=imgs2[i];
+                            imgs2.splice(i,1); imgs2.unshift(img2);
+                            const updated={...v,images:imgs2,image:img2};
+                            setVehicles(prev=>({...prev,[v.id]:updated}));
+                            if(viewV?.id===v.id) setViewV(updated);
+                            goTo(0);
+                            const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
+                            toast_("Titelbild gesetzt 👑");
+                          }} style={{position:"absolute",bottom:-1,left:0,right:0,background:C.gold,border:"none",borderRadius:"0 0 7px 7px",padding:"2px",color:"#000",fontSize:8,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                            👑 Titelbild
+                          </button>
+                        )}
+                        {isOwn&&(
+                          <button onClick={()=>removeImageFromVehicle(v.id,i)}
+                            style={{position:"absolute",top:-5,right:-5,background:C.red,border:"2px solid #0a0a0a",color:"#fff",fontSize:9,width:18,height:18,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</button>
+                        )}
+                      </div>
+                    ))}
+                    {isOwn&&(
+                      <label style={{width:70,height:70,background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:9,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,gap:2}}>
+                        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
+                        <span style={{fontSize:20}}>{imgUploading?"⏳":"📷"}</span>
+                        <span style={{fontSize:9,color:C.muted}}>Hinzufügen</span>
+                      </label>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           {/* Overlay buttons on hero */}
           <div style={{position:"absolute",top:16,left:14,zIndex:5}}>
             <button onClick={()=>setScreen("app")}
