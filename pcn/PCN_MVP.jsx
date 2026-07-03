@@ -1899,6 +1899,25 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                       <div style={{fontSize:10,color:C.muted}}>Einstellen was Besucher sehen</div>
                     </div>
                   </button>
+
+                  {/* QR-Code — kompakt, zwischen Status-Buttons und Vorschau */}
+                  {v.qarId&&(
+                    <div style={{background:C.black,borderRadius:10,padding:"12px",
+                      display:"flex",gap:14,alignItems:"center",border:`1px solid ${C.border}`,
+                      cursor:"pointer"}}
+                      onClick={()=>setLightbox({images:["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v="+v.qarId],index:0})}>
+                      <div style={{background:"#fff",borderRadius:8,padding:6,flexShrink:0}}>
+                        <QRCodeCanvas value={"https://qar.gallery/pcn/?v="+v.qarId} size={72}/>
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:10,color:C.muted,marginBottom:2,textTransform:"uppercase",letterSpacing:1}}>QAR-ID</div>
+                        <div style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:C.white,letterSpacing:1,marginBottom:4}}>{v.qarId}</div>
+                        <div style={{fontSize:10,color:C.muted}}>Tippen zum Vergrößern · FIN wird niemals geteilt</div>
+                      </div>
+                      <span style={{fontSize:18,color:C.muted,flexShrink:0}}>⤢</span>
+                    </div>
+                  )}
+
                   <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
                     style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
                     <span style={{fontSize:18}}>👁</span>
@@ -2137,21 +2156,6 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             </div>
           )}
 
-          {/* QR Code */}
-          <div className="card" style={{padding:16}}>
-            <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>📱 QR-Code</div>
-            <div style={{display:"flex",gap:14,alignItems:"center"}}>
-              <div style={{background:"#fff",borderRadius:10,padding:8,flexShrink:0,cursor:"pointer"}} onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}>
-                <QRCodeCanvas value={`https://qar.gallery/pcn/?v=${v.qarId}`} size={90}/>
-              </div>
-              <div>
-                <div style={{fontSize:10,color:C.muted,marginBottom:3}}>QAR-ID</div>
-                <div style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:C.white,letterSpacing:1}}>{v.qarId}</div>
-                <div style={{fontSize:10,color:C.muted,marginTop:4}}>FIN niemals öffentlich</div>
-                <button className="btn sm ghost" style={{marginTop:8,fontSize:11}} onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}>Öffentliche Seite →</button>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Privacy Sheet */}
