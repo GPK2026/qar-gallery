@@ -1929,7 +1929,17 @@ function PCNInner() {
 
           {/* ── Eckdaten auf einen Blick ── */}
           <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:C.white,marginBottom:2}}>{v.hersteller} {v.modell}</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:C.white}}>{v.hersteller} {v.modell}</div>
+              {isOwn&&(
+                <button onClick={()=>openEditVehicle(v)}
+                  style={{background:C.red,border:"none",borderRadius:8,padding:"6px 14px",
+                    color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,
+                    fontFamily:"'Barlow',sans-serif",flexShrink:0,marginLeft:10}}>
+                  ✏️ Bearbeiten
+                </button>
+              )}
+            </div>
             <div style={{fontSize:12,color:C.muted,marginBottom:12}}>{v.baujahr} · {v.farbe} · {v.getriebe}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
               {[
