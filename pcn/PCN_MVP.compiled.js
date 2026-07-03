@@ -3090,19 +3090,22 @@
         className: `toast ${toast.type}`
       }, toast.msg), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          background: C.dark,
-          borderBottom: `1px solid ${C.border}`,
+          background: "#ffffff",
+          borderBottom: `3px solid ${C.red}`,
           padding: "10px 16px",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between"
+          justifyContent: "space-between",
+          position: "sticky",
+          top: 0,
+          zIndex: 50
         }
       }, /*#__PURE__*/_react.default.createElement("img", {
         src: LOGO_URL,
         alt: "PCN",
         onError: e => e.target.style.display = "none",
         style: {
-          height: 28,
+          height: 36,
           objectFit: "contain"
         }
       }), /*#__PURE__*/_react.default.createElement("div", {
@@ -3113,14 +3116,14 @@
         }
       }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
-          fontSize: 10,
-          color: C.muted
+          fontSize: 11,
+          color: "#888",
+          fontWeight: 600
         }
       }, "Digitale Fahrzeugakte"), /*#__PURE__*/_react.default.createElement("button", {
         onClick: async () => {
           const shareUrl = "https://qar.gallery/pcn/?v=" + v.qarId;
           const shareTitle = v.hersteller + " " + v.modell + " — Digitale Fahrzeugakte";
-          // Use native share sheet if available (iOS/Android)
           if (navigator.share) {
             try {
               await navigator.share({
@@ -3128,9 +3131,8 @@
                 url: shareUrl
               });
               return;
-            } catch (e) {/* user cancelled or not supported */}
+            } catch (e) {}
           }
-          // Fallback: copy to clipboard
           try {
             await navigator.clipboard.writeText(shareUrl);
             toast_("Link kopiert ✓");
@@ -3139,74 +3141,92 @@
           }
         },
         style: {
-          background: `${C.red}22`,
-          border: `1px solid ${C.red}44`,
+          background: C.red,
+          border: "none",
           borderRadius: 8,
-          padding: "6px 12px",
-          color: C.red,
+          padding: "8px 14px",
+          color: "#fff",
           cursor: "pointer",
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: 700,
           fontFamily: "'Barlow',sans-serif",
           display: "flex",
           alignItems: "center",
           gap: 5
         }
-      }, /*#__PURE__*/_react.default.createElement("span", null, "↑"), " Teilen"))), /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
-          height: 200,
+          fontSize: 15
+        }
+      }, "↑"), " Teilen"))), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          height: 260,
           position: "relative",
           overflow: "hidden",
           background: "#111"
         }
-      }, priv.pub_gallery !== false && v.image && /*#__PURE__*/_react.default.createElement("img", {
-        src: v.image,
-        alt: "",
-        style: {
-          width: "100%",
-          height: "100%",
-          objectFit: "cover"
-        },
-        onError: e => e.target.style.display = "none"
-      }), priv.pub_gallery === false && /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-          color: C.muted,
-          flexDirection: "column",
-          gap: 8
-        }
-      }, /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 32
-        }
-      }, "🔒"), /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 12
-        }
-      }, "Galerie nicht öffentlich")), /*#__PURE__*/_react.default.createElement("div", {
+      }, (() => {
+        // Try all image sources in priority order
+        const img = priv.pub_gallery !== false && (v.image || v.images && v.images[0] || DEMO_VEHICLES[v.id]?.images?.[0] || DEMO_VEHICLES[v.id]?.image);
+        if (img) return /*#__PURE__*/_react.default.createElement("img", {
+          src: img,
+          alt: "",
+          style: {
+            width: "100%",
+            height: "100%",
+            objectFit: "cover"
+          },
+          onError: e => {
+            e.target.style.display = "none";
+          }
+        });
+        if (priv.pub_gallery === false) return /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            color: C.muted,
+            flexDirection: "column",
+            gap: 8
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 32
+          }
+        }, "🔒"), /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 12
+          }
+        }, "Galerie nicht öffentlich"));
+        return /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            height: "100%",
+            background: "linear-gradient(135deg,#1a1a1a,#111)"
+          }
+        });
+      })(), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(to bottom,transparent 30%,#000000f0)"
+          background: "linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 40%,rgba(0,0,0,.85) 100%)"
         }
       }), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           position: "absolute",
-          bottom: 14,
+          bottom: 16,
           left: 16,
           right: 16
         }
       }, /*#__PURE__*/_react.default.createElement("h1", {
         style: {
           fontFamily: "'Barlow Condensed',sans-serif",
-          fontSize: 24,
+          fontSize: 30,
           fontWeight: 900,
           color: "#fff",
           lineHeight: 1,
-          marginBottom: 8
+          marginBottom: 10,
+          textShadow: "0 2px 8px rgba(0,0,0,.5)"
         }
       }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
         style: {
@@ -3215,11 +3235,11 @@
           background: "#fff",
           border: "2px solid #222",
           borderRadius: 5,
-          padding: "3px 10px"
+          padding: "3px 12px"
         }
       }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
-          fontSize: 13,
+          fontSize: 14,
           fontWeight: 800,
           color: "#111",
           letterSpacing: 2,
