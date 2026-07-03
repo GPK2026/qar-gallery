@@ -501,6 +501,19 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           const mine = m.from===me?.id;
           const senderUser = !mine ? Object.values(allUsers).find(u=>u.id===m.from) : null;
           const senderName = thread.isGroup ? (mine?"Du":senderUser?.name||"Mitglied") : null;
+          // Format timestamp — use created_at from DB or ts field
+          const rawTs = m.created_at||m.createdAt||"";
+          const tsDate = rawTs ? new Date(rawTs) : null;
+          const today = new Date();
+          const isToday = tsDate && tsDate.toDateString()===today.toDateString();
+          const isYesterday = tsDate && new Date(today-86400000).toDateString()===tsDate.toDateString();
+          const timeStr = tsDate
+            ? tsDate.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})
+            : m.ts||"";
+          const dateStr = tsDate
+            ? (isToday?"Heute":isYesterday?"Gestern":tsDate.toLocaleDateString("de-DE",{day:"2-digit",month:"short"}))
+            : "";
+          const fullTs = dateStr ? `${dateStr} · ${timeStr}` : timeStr;
           return (
             <div key={m.id} style={{display:"flex",flexDirection:"column",alignItems:mine?"flex-end":"flex-start",marginBottom:2}}>
               {senderName&&<div style={{fontSize:11,color:C.muted,marginBottom:2,paddingLeft:4}}>{senderName}</div>}
@@ -508,7 +521,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                 borderRadius:mine?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:"11px 15px"}}>
                 <div style={{fontSize:15,color:"#fff",lineHeight:1.5}}>{m.text}</div>
                 <div style={{fontSize:10,color:mine?"rgba(255,255,255,.5)":C.muted,marginTop:4,textAlign:"right"}}>
-                  {m.date&&m.date!==new Date().toLocaleDateString("de-DE")?m.date+" · ":""}{m.ts}
+                  {fullTs}
                 </div>
               </div>
             </div>
@@ -3031,7 +3044,20 @@ function PCNInner() {
                           {lastMsg?lastMsg.text:"Noch keine Nachricht"}
                         </div>
                       </div>
-                      <span style={{fontSize:20,color:C.muted}}>›</span>
+                      <button
+                        onClick={e=>{
+                          e.stopPropagation();
+                          if(!window.confirm("Chat löschen?")) return;
+                          setGuestThreads(prev=>{
+                            const updated=prev.filter(x=>x.id!==gt.id);
+                            localStorage.setItem("pcn_guest_threads",JSON.stringify(updated));
+                            return updated;
+                          });
+                          setThreads(prev=>{const n={...prev};delete n[gt.id];return n;});
+                        }}
+                        style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontSize:18,padding:"4px 6px",flexShrink:0}}>
+                        🗑
+                      </button>
                     </div>
                   );
                 })}
@@ -3076,8 +3102,9 @@ function PCNInner() {
               const tv=vehicles[t.vehicleId];
               const isAnon = t.anonymous;
               return (
-                <div key={t.id} style={{background:C.card,border:`1.5px solid ${unread?C.red+"55":C.border}`,borderRadius:14,padding:"14px 14px",marginBottom:10,display:"flex",gap:14,alignItems:"center",cursor:"pointer"}}
-                  onClick={()=>{setActiveThread(t.id);setScreen("chat");}}>
+                <div key={t.id} style={{background:C.card,border:`1.5px solid ${unread?C.red+"55":C.border}`,borderRadius:14,padding:"14px 14px",marginBottom:10,display:"flex",gap:14,alignItems:"center",position:"relative"}}>
+                  <div style={{flex:1,display:"flex",gap:14,alignItems:"center",cursor:"pointer"}}
+                    onClick={()=>{setActiveThread(t.id);setScreen("chat");}}>
                   {/* Avatar: Schloss für anonym, farbige Initiale für Mitglied */}
                   <div style={{width:48,height:48,borderRadius:"50%",
                     background:isAnon?"#1a1a2e":`${C.red}22`,
@@ -3100,6 +3127,26 @@ function PCNInner() {
                     </div>
                   </div>
                   {unread&&<div style={{width:10,height:10,borderRadius:"50%",background:C.red,flexShrink:0}}/>}
+                  </div>
+                  <button
+                    onClick={async e=>{
+                      e.stopPropagation();
+                      if(!window.confirm("Chat löschen?")) return;
+                      const DB=window.PCN_DB;
+                      if(DB) await DB.threads.delete(t.id).catch(()=>{});
+                      setThreads(prev=>{const n={...prev};delete n[t.id];return n;});
+                      // Also remove from guest threads
+                      setGuestThreads(prev=>{
+                        const updated=prev.filter(x=>x.id!==t.id);
+                        localStorage.setItem("pcn_guest_threads",JSON.stringify(updated));
+                        return updated;
+                      });
+                    }}
+                    style={{background:"none",border:"none",color:"#444",cursor:"pointer",
+                      fontSize:18,padding:"4px 6px",flexShrink:0,lineHeight:1}}
+                    title="Chat löschen">
+                    🗑
+                  </button>
                 </div>
               );
             })}
