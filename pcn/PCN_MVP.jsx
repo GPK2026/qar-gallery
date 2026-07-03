@@ -249,6 +249,32 @@ const DEMO_HISTORY = [
   {id:"H3",vehicleId:"V003",eventName:"PCN TrackDay 2025",date:dMinus(280),startNr:"02",class:"Race",result:"Schnellste Zeit",note:"7:58 min — Clubrekord"},
 ];
 
+// Demo insurance data per vehicle
+const DEMO_INSURANCE = {
+  "V001":[
+    {id:"I1",type:"Vollkasko",provider:"Allianz Classic",nr:"KFZ-ALZ-2024-881234",since:"2024-01-15",until:"2025-01-14",premium:"€ 1.240/Jahr",note:"Vereinbartes Entschädigungswert: € 142.000",status:"aktiv"},
+    {id:"I2",type:"Haftpflicht",provider:"Allianz Classic",nr:"KFZ-ALZ-2024-881234",since:"2024-01-15",until:"2025-01-14",premium:"im Vollkasko enthalten",note:"SF-Klasse 10",status:"aktiv"},
+    {id:"I3",type:"Teilkasko",provider:"Allianz Classic",nr:"KFZ-ALZ-2024-881234",since:"2024-01-15",until:"2025-01-14",premium:"inklusive",note:"Naturgefahren, Diebstahl, Wildschaden",status:"aktiv"},
+  ],
+  "V002":[
+    {id:"I4",type:"Oldtimer-Vollkasko",provider:"Zurich Classic Cars",nr:"ZCC-2023-001882",since:"2023-06-01",until:"2024-05-31",premium:"€ 680/Jahr",note:"Saisonkennzeichen 03–11, Wiederbeschaffungswert: € 91.000",status:"abgelaufen"},
+  ],
+  "V003":[
+    {id:"I5",type:"Vollkasko Sport",provider:"HDI Motorsport",nr:"HDI-MS-2024-449871",since:"2024-03-01",until:"2025-02-28",premium:"€ 2.890/Jahr",note:"Track-Day mitversichert bis 150 km/h. Fahrzeugwert: € 198.000",status:"aktiv"},
+  ],
+};
+
+// Demo expert opinions / Gutachten
+const DEMO_GUTACHTEN = {
+  "V001":[
+    {id:"G1",vehicleId:"V001",date:dMinus(45),type:"Wertgutachten",gutachter:"DEKRA Koblenz — Dipl.-Ing. Martin Kraft",wert:"€ 138.000",km:"32.100",zustand:"1–2 (sehr gut)",note:"Keine Vorschäden. Servicehistorie lückenlos. Originalzustand bis auf Sport-Chrono-Nachrüstung (wertsteigernd).",signiert:true},
+    {id:"G2",vehicleId:"V001",date:dMinus(380),type:"Schadensgutachten",gutachter:"KFZ-Sachverständigenbüro Müller",wert:"Reparaturkosten: € 4.300",km:"28.400",zustand:"Heckschaden links",note:"Parkrempler auf dem PCN-Herbstausfahrt Parkplatz. Lackschaden Stossfänger hinten links + Nebelleuchte. Vollständig repariert, keine Wertminderung.",signiert:true},
+  ],
+  "V003":[
+    {id:"G3",vehicleId:"V003",date:dMinus(15),type:"Wertgutachten",gutachter:"TÜV Rheinland — Dr. Stefan Berger",wert:"€ 195.000",km:"8.100",zustand:"1 (neuwertig)",note:"Fahrzeug in absolutem Neuzustand. Alle Originalteile. Seltene Konfiguration (Riviera Blau mit Weissach-Paket). Wertsteigerungspotential vorhanden.",signiert:true},
+  ],
+};
+
 const DEMO_THREADS = {
   "T001":{id:"T001",participants:["u1","u2"],vehicleId:"V003",vehicleName:"Porsche 992 GT3",anonymous:true,
     messages:[
@@ -533,6 +559,9 @@ function PCNInner() {
   const [showPrivacy, setShowPrivacy] = useState(null);
   const [showEditVehicle, setShowEditVehicle] = useState(null); // vehicleId
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [openSections, setOpenSections] = useState({}); // {vehicleId_section: bool}
+  const toggleSection = (vid, section) => setOpenSections(p=>({...p,[vid+"_"+section]:!p[vid+"_"+section]}));
+  const isOpen = (vid, section) => !!openSections[vid+"_"+section];
   const [profileImgUploading, setProfileImgUploading] = useState(false);
   const [newsState, setNewsState] = useState({}); // {id: "read"|"remind"}
   const [showInfoModal, setShowInfoModal] = useState(false); // false | 'features' | 'points'
@@ -1725,69 +1754,222 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {/* ── Vehicle detail content ── */}
         <div style={{padding:"16px",maxWidth:560,margin:"0 auto"}}>
 
-          {/* Status strip */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-            {[
-              [v.tuev_faelligkeit||"–","TÜV",tuevColor],
-              [parseInt(v.kilometerstand||0).toLocaleString("de-DE")+" km","Stand",C.muted],
-              [["","Sehr gut","Gut","Befriend.","Ausreichend","Mangelhaft"][parseInt(v.zustand)]||"–","Zustand",C.gold],
-            ].map(([val,label,color],i)=>(
-              <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 8px",textAlign:"center"}}>
-                <div style={{fontSize:11,fontWeight:700,color,marginBottom:2}}>{val}</div>
-                <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.5}}>{label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Logbuch */}
-          <div style={{marginBottom:16}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>📋 Logbuch ({vLog.length})</div>
-              {isOwn&&<button className="btn sm ghost" onClick={()=>setShowAddLog(v.id)}>+ Eintrag</button>}
-            </div>
-            {vLog.length===0
-              ?<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"18px",textAlign:"center",color:C.muted,fontSize:12}}>
-                  Noch leer — 3 Einträge schalten KI-Marktwert frei
-                </div>
-              :vLog.slice(0,10).map(e=>(
-                <div key={e.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 14px",marginBottom:6}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>{e.type}</div>
-                    <div style={{fontSize:10,color:C.muted}}>{fmtDate(e.date)}</div>
-                  </div>
-                  <div style={{fontSize:11,color:C.muted}}>{e.km?parseInt(e.km).toLocaleString("de-DE")+" km":""}{e.workshop?" · "+e.workshop:""}</div>
-                  {e.notes&&<div style={{fontSize:11,color:"#555",marginTop:3}}>{e.notes}</div>}
-                </div>
-              ))
-            }
-          </div>
-
-          {/* Events */}
-          {(vParts.length>0||vHist.length>0)&&(
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>🏁 Veranstaltungen</div>
-              {vParts.map(p=>{const ev=events[p.eventId];if(!ev)return null;return(
-                <div key={p.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 14px",marginBottom:6,display:"flex",gap:10,alignItems:"center",cursor:"pointer"}} onClick={()=>{setViewEv(ev);setScreen("event");}}>
-                  <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:7,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.red,flexShrink:0}}>#{p.startNr}</div>
-                  <div>
-                    <div style={{fontWeight:600,fontSize:13,color:C.white}}>{ev.name}</div>
-                    <div style={{fontSize:11,color:C.muted}}>{fmtDate(ev.date)} · {p.class}</div>
-                  </div>
-                  <div style={{marginLeft:"auto",fontSize:10,color:C.amber,fontWeight:600}}>in {daysUntil(ev.date)} T.</div>
-                </div>
-              );})}
-              {vHist.map(h=>(
-                <div key={h.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 14px",marginBottom:6,display:"flex",gap:10,alignItems:"center",opacity:.75}}>
-                  <div style={{background:`${C.gold}22`,border:`1px solid ${C.gold}44`,borderRadius:7,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.gold,flexShrink:0}}>#{h.startNr}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontWeight:600,fontSize:13,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.eventName}</div>
-                    <div style={{fontSize:11,color:C.muted}}>{fmtDate(h.date)}{h.note?" · "+h.note:""}</div>
-                  </div>
-                  <div style={{fontSize:10,color:h.result==="Teilnahme"?C.muted:C.gold,fontWeight:700,flexShrink:0}}>{h.result}</div>
+          {/* ── Eckdaten auf einen Blick ── */}
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:C.white,marginBottom:2}}>{v.hersteller} {v.modell}</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:12}}>{v.baujahr} · {v.farbe} · {v.getriebe}</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
+              {[
+                [v.tuev_faelligkeit||"–","TÜV",tuevColor],
+                [(v.kilometerstand||"–")+" km","Kilometerstand",C.white],
+                [["","Sehr gut","Gut","Befriend.","Ausreichend","Mangelhaft"][parseInt(v.zustand)]||"–","Zustand",C.gold],
+              ].map(([val,label,color],i)=>(
+                <div key={i} style={{background:C.black,borderRadius:8,padding:"9px 8px",textAlign:"center"}}>
+                  <div style={{fontSize:12,fontWeight:700,color,marginBottom:2,lineHeight:1.2}}>{val}</div>
+                  <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.5}}>{label}</div>
                 </div>
               ))}
             </div>
-          )}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {[
+                ["🔑","Kennzeichen",v.kennzeichen||"–"],
+                ["⛽","Kraftstoff",v.kraftstoff||"–"],
+                ["💶","Marktwert",v.marktwert?(v.marktwert.toLocaleString?v.marktwert.toLocaleString("de-DE"):v.marktwert)+" €":"–"],
+                ["🔩","FIN",v.fin?"••• "+v.fin.slice(-6):"–"],
+              ].map(([icon,label,val])=>(
+                <div key={label} style={{display:"flex",gap:8,alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <span style={{fontSize:14,flexShrink:0}}>{icon}</span>
+                  <div style={{minWidth:0}}>
+                    <div style={{fontSize:10,color:C.muted}}>{label}</div>
+                    <div style={{fontSize:13,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{val}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {v.besonderheiten&&(
+              <div style={{marginTop:10,padding:"8px 10px",background:C.black,borderRadius:8,fontSize:11,color:C.muted,lineHeight:1.5}}>
+                ✨ {v.besonderheiten}
+              </div>
+            )}
+          </div>
+
+          {/* ── Fahrzeugspezifische Termine & Erinnerungen ── */}
+          {(()=>{
+            const vRems = myReminders.filter(r=>r.vehicleId===v.id||r.vehicle_id===v.id);
+            if(vRems.length===0) return null;
+            return (
+              <div style={{marginBottom:14}}>
+                <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>🔔 Termine & Erinnerungen</div>
+                {vRems.map(r=>{
+                  const days=daysUntil(r.date);
+                  const overdue=days<0, urgent=days<=7;
+                  return (
+                    <div key={r.id} style={{background:C.card,border:`1.5px solid ${overdue?C.red+"55":urgent?C.amber+"44":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:6,display:"flex",gap:10,alignItems:"center"}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:700,fontSize:14,color:overdue?C.red:urgent?C.amber:C.white}}>{r.title}</div>
+                        <div style={{fontSize:11,color:overdue?C.red:urgent?C.amber:C.muted,marginTop:2}}>
+                          {overdue?"⚠️ Überfällig":days===0?"📅 Heute":days===1?"📅 Morgen":`📅 In ${days} Tagen`} · {fmtDate(r.date)}
+                        </div>
+                      </div>
+                      {r.title.toLowerCase().includes("tüv")&&(
+                        <button onClick={()=>{
+                          const ds=r.date?r.date.replace(/-/g,""):"";
+                          const t=encodeURIComponent(`TÜV ${v.hersteller} ${v.modell}`);
+                          window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${ds}/${ds}`,"_blank");
+                        }} style={{background:`${C.amber}22`,border:`1px solid ${C.amber}44`,borderRadius:7,padding:"5px 9px",color:C.amber,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>
+                          📅 Eintragen
+                        </button>
+                      )}
+                      <button onClick={async()=>{const DB=window.PCN_DB;if(DB)await DB.reminders.done(me.id,r.id);setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
+                        style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:7,padding:"6px 10px",color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>✓</button>
+                    </div>
+                  );
+                })}
+                {isOwn&&<button className="btn sm ghost" style={{marginTop:4}} onClick={()=>{setRemForm({vehicleId:v.id,title:"",date:""});setShowAddRem(true);}}>+ Erinnerung</button>}
+              </div>
+            );
+          })()}
+
+          {/* ── ACCORDION SECTIONS ── */}
+          {(()=>{
+            const vInsurance = (DEMO_INSURANCE[v.id]||[]);
+            const vGutachten = (DEMO_GUTACHTEN[v.id]||[]);
+            const sections = [
+              {
+                id:"logbook", icon:"📋", label:"Service-Logbuch", count:vLog.length,
+                action:isOwn?()=>setShowAddLog(v.id):null, actionLabel:"+ Eintrag",
+                content:(
+                  <div>
+                    {vLog.length===0
+                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:13}}>
+                          Noch leer — 3 Einträge schalten KI-Marktwert frei
+                        </div>
+                      :vLog.map(e=>(
+                        <div key={e.id} style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
+                            <div>
+                              <span style={{fontWeight:700,fontSize:14,color:C.white}}>{e.type}</span>
+                              {e.workshop&&<span style={{fontSize:11,color:C.muted,marginLeft:8}}>· {e.workshop}</span>}
+                            </div>
+                            <span style={{fontSize:11,color:C.muted,flexShrink:0}}>{fmtDate(e.date)}</span>
+                          </div>
+                          {e.km&&<div style={{fontSize:11,color:C.muted,marginBottom:2}}>{parseInt(e.km).toLocaleString("de-DE")} km</div>}
+                          {e.notes&&<div style={{fontSize:12,color:"#888",lineHeight:1.5}}>{e.notes}</div>}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )
+              },
+              {
+                id:"events", icon:"🏁", label:"Veranstaltungshistorie", count:vParts.length+vHist.length,
+                content:(
+                  <div>
+                    {vParts.map(p=>{const ev=events[p.eventId];if(!ev)return null;return(
+                      <div key={p.id} style={{display:"flex",gap:10,alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${C.border}`,cursor:"pointer"}} onClick={()=>{setViewEv(ev);setScreen("event");}}>
+                        <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:6,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.red,flexShrink:0}}>#{p.startNr}</div>
+                        <div style={{flex:1}}>
+                          <div style={{fontWeight:600,fontSize:14,color:C.white}}>{ev.name}</div>
+                          <div style={{fontSize:11,color:C.muted}}>{fmtDate(ev.date)} · {p.class}</div>
+                        </div>
+                        <div style={{fontSize:11,color:C.amber,fontWeight:600,flexShrink:0}}>in {daysUntil(ev.date)} T. →</div>
+                      </div>
+                    );})}
+                    {vHist.map(h=>(
+                      <div key={h.id} style={{display:"flex",gap:10,alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${C.border}`}}>
+                        <div style={{background:`${C.gold}22`,border:`1px solid ${C.gold}44`,borderRadius:6,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.gold,flexShrink:0}}>#{h.startNr}</div>
+                        <div style={{flex:1}}>
+                          <div style={{fontWeight:600,fontSize:14,color:C.white}}>{h.eventName}</div>
+                          <div style={{fontSize:11,color:C.muted}}>{fmtDate(h.date)}{h.note?" · "+h.note:""}</div>
+                        </div>
+                        <div style={{fontSize:11,color:h.result==="Teilnahme"?C.muted:C.gold,fontWeight:700,flexShrink:0}}>{h.result}</div>
+                      </div>
+                    ))}
+                    {vParts.length===0&&vHist.length===0&&(
+                      <div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:13}}>Noch keine Veranstaltungsteilnahmen</div>
+                    )}
+                  </div>
+                )
+              },
+              {
+                id:"insurance", icon:"🛡️", label:"Versicherungen", count:vInsurance.length,
+                content:(
+                  <div>
+                    {vInsurance.length===0
+                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:13}}>Noch keine Versicherungsdaten hinterlegt</div>
+                      :vInsurance.map(ins=>(
+                        <div key={ins.id} style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                            <div style={{fontWeight:700,fontSize:14,color:C.white}}>{ins.type}</div>
+                            <span style={{background:ins.status==="aktiv"?`${C.green}22`:`${C.red}22`,color:ins.status==="aktiv"?C.green:C.red,fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:4,border:`1px solid ${ins.status==="aktiv"?C.green+"44":C.red+"44"}`}}>
+                              {ins.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <div style={{fontSize:12,color:C.muted,marginBottom:2}}>{ins.provider} · Nr: {ins.nr}</div>
+                          <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Gültig: {fmtDate(ins.since)} – {fmtDate(ins.until)} · {ins.premium}</div>
+                          {ins.note&&<div style={{fontSize:11,color:"#777",background:C.black,borderRadius:6,padding:"6px 8px"}}>{ins.note}</div>}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )
+              },
+              {
+                id:"gutachten", icon:"📄", label:"Gutachten", count:vGutachten.length,
+                content:(
+                  <div>
+                    {vGutachten.length===0
+                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:13}}>Noch keine Gutachten hinterlegt</div>
+                      :vGutachten.map(g=>(
+                        <div key={g.id} style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                            <div style={{fontWeight:700,fontSize:14,color:C.white}}>{g.type}</div>
+                            <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                              {g.signiert&&<span style={{background:`${C.green}22`,color:C.green,fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:4}}>✓ SIGNIERT</span>}
+                              <span style={{fontSize:11,color:C.muted}}>{fmtDate(g.date)}</span>
+                            </div>
+                          </div>
+                          <div style={{fontSize:12,color:C.muted,marginBottom:2}}>{g.gutachter}</div>
+                          <div style={{display:"flex",gap:12,marginBottom:6,flexWrap:"wrap"}}>
+                            <div><span style={{fontSize:10,color:C.muted}}>Bewertung: </span><span style={{fontSize:13,fontWeight:700,color:C.gold}}>{g.wert}</span></div>
+                            <div><span style={{fontSize:10,color:C.muted}}>Zustand: </span><span style={{fontSize:12,color:C.white}}>{g.zustand}</span></div>
+                            {g.km&&<div><span style={{fontSize:10,color:C.muted}}>KM: </span><span style={{fontSize:12,color:C.white}}>{parseInt(g.km).toLocaleString("de-DE")}</span></div>}
+                          </div>
+                          {g.note&&<div style={{fontSize:11,color:"#777",background:C.black,borderRadius:6,padding:"8px 10px",lineHeight:1.6}}>{g.note}</div>}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )
+              },
+            ];
+
+            return sections.map(sec=>(
+              <div key={sec.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}>
+                {/* Accordion header */}
+                <button onClick={()=>toggleSection(v.id, sec.id)}
+                  style={{width:"100%",background:"none",border:"none",padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Barlow',sans-serif"}}>
+                  <span style={{fontSize:18,flexShrink:0}}>{sec.icon}</span>
+                  <span style={{fontWeight:700,fontSize:15,color:C.white,flex:1,textAlign:"left"}}>{sec.label}</span>
+                  {sec.count>0&&<span style={{background:C.black,borderRadius:99,padding:"2px 8px",fontSize:11,fontWeight:700,color:C.muted,flexShrink:0}}>{sec.count}</span>}
+                  {sec.action&&isOpen(v.id,sec.id)&&(
+                    <button onClick={e=>{e.stopPropagation();sec.action();}}
+                      style={{background:C.red,border:"none",borderRadius:6,padding:"4px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0,fontFamily:"'Barlow',sans-serif"}}>
+                      {sec.actionLabel}
+                    </button>
+                  )}
+                  <span style={{fontSize:16,color:C.muted,flexShrink:0,transition:"transform .2s",
+                    transform:isOpen(v.id,sec.id)?"rotate(180deg)":"rotate(0deg)"}}>▾</span>
+                </button>
+                {/* Accordion body */}
+                {isOpen(v.id,sec.id)&&(
+                  <div style={{padding:"0 16px 14px",borderTop:`1px solid ${C.border}`}}>
+                    {sec.content}
+                  </div>
+                )}
+              </div>
+            ));
+          })()}
 
           {/* Phone — pulled from profile, with inline public/private toggle */}
           {isOwn&&(
