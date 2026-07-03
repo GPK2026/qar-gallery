@@ -1956,7 +1956,7 @@
     const addVehicle = async () => {
       if (!addVForm.modell || !addVForm.kennzeichen) return toast_("Modell und Kennzeichen angeben", "err");
       const DB = window.PCN_DB;
-      const v = {
+      const newV = {
         qarId: genQARId(),
         userId: me.id,
         owner: me.email,
@@ -1970,14 +1970,23 @@
       const {
         data: saved,
         error
-      } = await DB.vehicles.save(v);
+      } = await DB.vehicles.save(newV);
       if (error) {
-        toast_("Fehler: " + error, "err");
+        toast_("Fehler beim Speichern: " + error, "err");
         return;
       }
+      // Merge saved data (from DB) with local data — DB may not return all fields
+      const vehicle = saved && saved.id ? {
+        ...newV,
+        ...saved
+      } // DB returned full object
+      : {
+        ...newV,
+        id: "V" + Date.now()
+      }; // Fallback: local ID
       setVehicles(prev => ({
         ...prev,
-        [saved.id]: saved
+        [vehicle.id]: vehicle
       }));
       setShowAddV(false);
       setAddVForm({
@@ -1990,7 +1999,7 @@
         getriebe: "",
         images: []
       });
-      toast_("Fahrzeug hinzugefügt ✓");
+      toast_("Fahrzeug hinzugefügt ✓ · QAR-ID: " + vehicle.qarId);
     };
     const addLogEntry = async vehicleId => {
       if (!addLogForm.km) return toast_("Kilometerstand angeben", "err");
