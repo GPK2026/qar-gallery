@@ -2132,6 +2132,8 @@
         kilometerstand: v.kilometerstand || "",
         tuev_faelligkeit: v.tuev_faelligkeit || "",
         zustand: v.zustand || "",
+        marktwert: v.marktwert || "",
+        fin: v.fin || "",
         besonderheiten: v.besonderheiten || "",
         phone: v.phone || ""
       });
@@ -5726,6 +5728,22 @@
         onChange: e => setEditForm(p => ({
           ...p,
           tuev_faelligkeit: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "Marktwert (€)",
+        value: editForm.marktwert || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          marktwert: e.target.value
+        }))
+      }), /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "FIN (Fahrgestellnummer)",
+        value: editForm.fin || "",
+        onChange: e => setEditForm(p => ({
+          ...p,
+          fin: e.target.value
         }))
       }), /*#__PURE__*/_react.default.createElement("select", {
         className: "inp",
