@@ -1691,9 +1691,11 @@
         setEvents(evMap);
       }
       const pMap = {};
-      await Promise.all(Object.keys(events).map(async eid => {
+      // Load participants for all known events (from DB + demo)
+      const allEventIds = [...new Set([...Object.keys(evMap), ...Object.keys(DEMO_EVENTS)])];
+      await Promise.all(allEventIds.map(async eid => {
         const r = await DB.events.participants(eid);
-        pMap[eid] = r.data || [];
+        if (r.data && r.data.length > 0) pMap[eid] = r.data;
       }));
       setParticipants(pMap);
       const tMap = {};
