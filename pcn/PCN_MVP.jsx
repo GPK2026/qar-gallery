@@ -949,7 +949,6 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     toast_(`Angemeldet — Startnr. #${reg.startNr} ✓`);
     setTimeout(()=>{ setScreen("app"); setTab("events"); }, 150);
   };
-  };
 
   const openEditProfile = () => {
     setProfileForm({
