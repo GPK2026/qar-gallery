@@ -4555,7 +4555,65 @@
           fontSize: 10,
           color: C.muted
         }
-      }, "Einstellen was Besucher sehen"))), /*#__PURE__*/_react.default.createElement("button", {
+      }, "Einstellen was Besucher sehen"))), v.qarId && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: C.black,
+          borderRadius: 10,
+          padding: "12px",
+          display: "flex",
+          gap: 14,
+          alignItems: "center",
+          border: `1px solid ${C.border}`,
+          cursor: "pointer"
+        },
+        onClick: () => setLightbox({
+          images: ["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v=" + v.qarId],
+          index: 0
+        })
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: "#fff",
+          borderRadius: 8,
+          padding: 6,
+          flexShrink: 0
+        }
+      }, /*#__PURE__*/_react.default.createElement(QRCodeCanvas, {
+        value: "https://qar.gallery/pcn/?v=" + v.qarId,
+        size: 72
+      })), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          flex: 1,
+          minWidth: 0
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted,
+          marginBottom: 2,
+          textTransform: "uppercase",
+          letterSpacing: 1
+        }
+      }, "QAR-ID"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontFamily: "monospace",
+          fontSize: 13,
+          fontWeight: 700,
+          color: C.white,
+          letterSpacing: 1,
+          marginBottom: 4
+        }
+      }, v.qarId), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted
+        }
+      }, "Tippen zum Vergrößern · FIN wird niemals geteilt")), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 18,
+          color: C.muted,
+          flexShrink: 0
+        }
+      }, "⤢")), /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => {
           setPublicV({
             ...v,
@@ -5215,80 +5273,7 @@
       }, priv.pub_phone ? "Besucher sehen Direktanruf-Button" : "Nummer nicht im QR-Profil sichtbar")), /*#__PURE__*/_react.default.createElement("button", {
         className: `tog ${priv.pub_phone ? "on" : "off"}`,
         onClick: () => togglePrivacy(v.id, "pub_phone")
-      })))), /*#__PURE__*/_react.default.createElement("div", {
-        className: "card",
-        style: {
-          padding: 16
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 10,
-          fontWeight: 800,
-          color: C.muted,
-          textTransform: "uppercase",
-          letterSpacing: 2,
-          marginBottom: 12
-        }
-      }, "📱 QR-Code"), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          gap: 14,
-          alignItems: "center"
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          background: "#fff",
-          borderRadius: 10,
-          padding: 8,
-          flexShrink: 0,
-          cursor: "pointer"
-        },
-        onClick: () => {
-          setPublicV({
-            ...v,
-            privacy: priv
-          });
-          setScreen("public");
-          loadStatusFor(v.id);
-        }
-      }, /*#__PURE__*/_react.default.createElement(QRCodeCanvas, {
-        value: `https://qar.gallery/pcn/?v=${v.qarId}`,
-        size: 90
-      })), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 10,
-          color: C.muted,
-          marginBottom: 3
-        }
-      }, "QAR-ID"), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontFamily: "monospace",
-          fontSize: 13,
-          fontWeight: 700,
-          color: C.white,
-          letterSpacing: 1
-        }
-      }, v.qarId), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 10,
-          color: C.muted,
-          marginTop: 4
-        }
-      }, "FIN niemals öffentlich"), /*#__PURE__*/_react.default.createElement("button", {
-        className: "btn sm ghost",
-        style: {
-          marginTop: 8,
-          fontSize: 11
-        },
-        onClick: () => {
-          setPublicV({
-            ...v,
-            privacy: priv
-          });
-          setScreen("public");
-          loadStatusFor(v.id);
-        }
-      }, "Öffentliche Seite →"))))), showPrivacy === v.id && /*#__PURE__*/_react.default.createElement("div", {
+      }))))), showPrivacy === v.id && /*#__PURE__*/_react.default.createElement("div", {
         className: "overlay",
         onClick: e => {
           if (e.target === e.currentTarget) setShowPrivacy(null);
