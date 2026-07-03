@@ -3105,12 +3105,54 @@
           height: 28,
           objectFit: "contain"
         }
-      }), /*#__PURE__*/_react.default.createElement("span", {
+      }), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 8,
+          alignItems: "center"
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 10,
           color: C.muted
         }
-      }, "Digitale Fahrzeugakte")), /*#__PURE__*/_react.default.createElement("div", {
+      }, "Digitale Fahrzeugakte"), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: async () => {
+          const shareUrl = "https://qar.gallery/pcn/?v=" + v.qarId;
+          const shareTitle = v.hersteller + " " + v.modell + " — Digitale Fahrzeugakte";
+          // Use native share sheet if available (iOS/Android)
+          if (navigator.share) {
+            try {
+              await navigator.share({
+                title: shareTitle,
+                url: shareUrl
+              });
+              return;
+            } catch (e) {/* user cancelled or not supported */}
+          }
+          // Fallback: copy to clipboard
+          try {
+            await navigator.clipboard.writeText(shareUrl);
+            toast_("Link kopiert ✓");
+          } catch (e) {
+            toast_(shareUrl);
+          }
+        },
+        style: {
+          background: `${C.red}22`,
+          border: `1px solid ${C.red}44`,
+          borderRadius: 8,
+          padding: "6px 12px",
+          color: C.red,
+          cursor: "pointer",
+          fontSize: 12,
+          fontWeight: 700,
+          fontFamily: "'Barlow',sans-serif",
+          display: "flex",
+          alignItems: "center",
+          gap: 5
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", null, "↑"), " Teilen"))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           height: 200,
           position: "relative",
@@ -3325,7 +3367,111 @@
         style: {
           color: "#aaa"
         }
-      }, "Anonymer Kontakt:"), " Deine Nachricht wird anonym übermittelt — Name und E-Mail bleiben geschützt. Der Fahrzeughalter antwortet direkt über die QAR-App. Daten werden nicht gespeichert oder weitergegeben.")))), /*#__PURE__*/_react.default.createElement("div", {
+      }, "Anonymer Kontakt:"), " Deine Nachricht wird anonym übermittelt — Name und E-Mail bleiben geschützt. Der Fahrzeughalter antwortet direkt über die QAR-App.")), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          borderTop: `1px solid ${C.border}`,
+          paddingTop: 10
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted,
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: 1,
+          marginBottom: 8
+        }
+      }, "Fahrzeugakte teilen"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 8
+        }
+      }, (() => {
+        const shareUrl = "https://qar.gallery/pcn/?v=" + v.qarId;
+        const shareText = v.hersteller + " " + v.modell + " — Digitale Fahrzeugakte: " + shareUrl;
+        return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("a", {
+          href: "https://wa.me/?text=" + encodeURIComponent(shareText),
+          target: "_blank",
+          rel: "noopener noreferrer",
+          style: {
+            flex: 1,
+            background: "#25D366",
+            borderRadius: 9,
+            padding: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            color: "#fff",
+            fontSize: 12,
+            fontWeight: 700,
+            textDecoration: "none",
+            fontFamily: "'Barlow',sans-serif"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 16
+          }
+        }, "💬"), " WhatsApp"), /*#__PURE__*/_react.default.createElement("a", {
+          href: "mailto:?subject=" + encodeURIComponent(v.hersteller + " " + v.modell) + "&body=" + encodeURIComponent("Hier die digitale Fahrzeugakte:\n" + shareUrl),
+          style: {
+            flex: 1,
+            background: `${C.blue || "#2563EB"}22`,
+            border: `1px solid ${C.blue || "#2563EB"}44`,
+            borderRadius: 9,
+            padding: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            color: C.blue || "#2563EB",
+            fontSize: 12,
+            fontWeight: 700,
+            textDecoration: "none",
+            fontFamily: "'Barlow',sans-serif"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 16
+          }
+        }, "✉️"), " E-Mail"), /*#__PURE__*/_react.default.createElement("button", {
+          onClick: async () => {
+            try {
+              if (navigator.share) {
+                await navigator.share({
+                  title: v.hersteller + " " + v.modell,
+                  url: shareUrl
+                });
+                return;
+              }
+              await navigator.clipboard.writeText(shareUrl);
+              toast_("Link kopiert ✓");
+            } catch (e) {
+              toast_("Link: " + shareUrl);
+            }
+          },
+          style: {
+            flex: 1,
+            background: C.card,
+            border: `1px solid ${C.border}`,
+            borderRadius: 9,
+            padding: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            color: C.muted,
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+            fontFamily: "'Barlow',sans-serif"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 16
+          }
+        }, "🔗"), " Link"));
+      })())))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           padding: "14px 16px",
           maxWidth: 520,
