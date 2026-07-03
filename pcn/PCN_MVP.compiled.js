@@ -5820,7 +5820,51 @@
           flex: 1
         },
         onClick: saveVehicleEdit
-      }, "Speichern ✓")))), showContactAuth && /*#__PURE__*/_react.default.createElement("div", {
+      }, "Speichern ✓")), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          marginTop: 16,
+          paddingTop: 14,
+          borderTop: `1px solid ${C.border}`
+        }
+      }, /*#__PURE__*/_react.default.createElement("button", {
+        onClick: async () => {
+          const v = vehicles[showEditVehicle];
+          if (!v) return;
+          if (!window.confirm(`Fahrzeug "${v.hersteller} ${v.modell}" wirklich löschen?\n\nDieser Vorgang kann nicht rückgängig gemacht werden.`)) return;
+          const DB = window.PCN_DB;
+          if (DB) await DB.vehicles.delete(v.id);
+          setVehicles(prev => {
+            const n = {
+              ...prev
+            };
+            delete n[v.id];
+            return n;
+          });
+          setShowEditVehicle(null);
+          setScreen("app");
+          setTab("dashboard");
+          toast_("Fahrzeug gelöscht");
+        },
+        style: {
+          width: "100%",
+          background: "none",
+          border: `1.5px solid ${C.red}44`,
+          borderRadius: 10,
+          padding: "12px",
+          color: C.red,
+          cursor: "pointer",
+          fontSize: 14,
+          fontWeight: 700,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "🗑 Fahrzeug löschen"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: "#444",
+          textAlign: "center",
+          marginTop: 6
+        }
+      }, "Löscht Fahrzeug, Logbuch und QR-Code dauerhaft")))), showContactAuth && /*#__PURE__*/_react.default.createElement("div", {
         className: "overlay",
         style: {
           zIndex: 550
