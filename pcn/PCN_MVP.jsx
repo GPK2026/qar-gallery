@@ -838,6 +838,11 @@ function PCNInner() {
     return ()=>cleanup&&cleanup();
   },[me?.id]);
 
+  // ── Track screen changes for analytics ───────────────────────────────────────
+  useEffect(()=>{
+    if(screen==="public"&&publicV) track("qr_scan_public_view",{vehicle_id:publicV?.id,qar_id:publicV?.qarId});
+  },[screen, publicV?.id]);
+
   // ── Scanner ──────────────────────────────────────────────────────────────────
   const openScanner = () => {
     track("qr_scanner_opened"); setScannerOpen(true); setScannerError(null); setScannerStatus("loading"); };
@@ -1414,11 +1419,6 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
   // ══════════════════════════════════════════════════════════════════════════════
   // PUBLIC VIEW
   // ══════════════════════════════════════════════════════════════════════════════
-  // Track public page view (QR scan)
-  useEffect(()=>{
-    if(screen==="public"&&publicV) track("qr_scan_public_view",{vehicle_id:publicV?.id,qar_id:publicV?.qarId});
-  },[screen,publicV?.id]);
-
   if(screen==="public"&&publicV) {
     const v=publicV; const priv=v.privacy||DEF_PRIVACY;
     const vHist=eventHistory.filter(h=>h.vehicleId===v.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
