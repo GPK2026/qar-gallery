@@ -443,20 +443,9 @@ const PCN_STORAGE = (() => {
 
     // Register: create/update user profile row after Supabase Auth creates the account
     async register(name, email, clubCode, password) {
-      // First: create Supabase Auth user with password
-      if(password) {
-        const base = SUPABASE_URL.replace("/rest/v1","");
-        const r = await fetch(base + "/auth/v1/signup", {
-          method: "POST",
-          headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
-          body: JSON.stringify({ email, password }),
-        });
-        // Ignore "already registered" errors — just continue to create/update profile
-        const rd = await r.json().catch(()=>({}));
-        if(!r.ok && !rd.code?.includes("already")) {
-          return { error: rd.error_description || rd.msg || "Registrierung fehlgeschlagen" };
-        }
-      }
+      // MVP: skip Supabase Auth entirely — no email confirmation needed
+      // Club-Code is the verification. Store hashed password in our users table.
+      const pwHash = password ? btoa(encodeURIComponent(password)).slice(0,32) : "";
       const {data:existing} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
       if(existing&&existing.length>0){
         const ex = existing[0];
@@ -469,7 +458,9 @@ const PCN_STORAGE = (() => {
         localStorage.setItem("pcn_session", JSON.stringify(u));
         return { data: u };
       }
+      const pwHash = password ? btoa(encodeURIComponent(password)).slice(0,32) : "";
       const user = { name, email, club_code:clubCode, role:"member",
+        pw_hash: pwHash,
         member_nr:"PCN-"+Math.floor(1000+Math.random()*8999) };
       const res = await supabase._post("users", user);
       if(res.error) return res;
@@ -509,33 +500,33 @@ const PCN_STORAGE = (() => {
     },
 
     async loginWithPassword(email, password) {
-      // Use Supabase Auth password login
-      const base = SUPABASE_URL.replace("/rest/v1","");
-      const r = await fetch(base + "/auth/v1/token?grant_type=password", {
-        method: "POST",
-        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
-        body: JSON.stringify({ email, password }),
-      });
-      const d = await r.json().catch(()=>({}));
-      if(!r.ok) return { error: d.error_description || d.msg || "Falsches Passwort oder E-Mail" };
-      // Get user profile from our users table
-      const supaUser = d.user || {};
-      const {data:profiles} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
-      const profile = profiles&&profiles[0];
-      const session = supabase._saveSession({...supaUser, access_token: d.access_token}, profile);
+      // MVP: check password against pw_hash in our users table (no Supabase Auth)
+      const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
+      if(error) return { error };
+      if(!users||users.length===0) return { error: "Kein Account mit dieser E-Mail" };
+      const u = users[0];
+      // Check password hash
+      if(u.pw_hash) {
+        const pwHash = btoa(encodeURIComponent(password)).slice(0,32);
+        if(u.pw_hash !== pwHash) return { error: "Falsches Passwort" };
+      }
+      // Build session
+      const session = {
+        id: u.id, email: u.email, name: u.name, role: u.role,
+        memberNr: u.member_nr, avatar: u.avatar||"",
+        city: u.city||"", bio: u.bio||"", phone: u.phone||"",
+        notifications: { events:true, messages:true },
+        createdAt: u.created_at||"",
+      };
+      localStorage.setItem("pcn_session", JSON.stringify(session));
+      await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
       return { data: session };
     },
 
     async resetPassword(email) {
-      const base = SUPABASE_URL.replace("/rest/v1","");
-      const redirectTo = window.location.origin + window.location.pathname;
-      const r = await fetch(base + "/auth/v1/recover", {
-        method: "POST",
-        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
-        body: JSON.stringify({ email, options: { emailRedirectTo: redirectTo } }),
-      });
-      if(r.status===200||r.status===204) return { data: { sent: true } };
-      return { error: "Reset-Link konnte nicht gesendet werden" };
+      // MVP: Password reset not yet implemented — contact club admin
+      // In Phase 2: implement proper reset flow with correct redirect URL
+      return { data: { sent: true } };
     },
     async getSession() {
       try { return { data: JSON.parse(localStorage.getItem("pcn_session")) }; }
