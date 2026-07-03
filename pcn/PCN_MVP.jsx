@@ -1427,50 +1427,65 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
       <div style={{minHeight:"100vh",background:C.black,paddingBottom:40}}>
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:28,objectFit:"contain"}}/>
+
+        {/* ── Header — white, like app header ── */}
+        <div style={{background:"#ffffff",borderBottom:`3px solid ${C.red}`,padding:"10px 16px",
+          display:"flex",alignItems:"center",justifyContent:"space-between",
+          position:"sticky",top:0,zIndex:50}}>
+          <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"}
+            style={{height:36,objectFit:"contain"}}/>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <span style={{fontSize:10,color:C.muted}}>Digitale Fahrzeugakte</span>
+            <span style={{fontSize:11,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
             <button
               onClick={async()=>{
-                const shareUrl = "https://qar.gallery/pcn/?v="+v.qarId;
-                const shareTitle = v.hersteller+" "+v.modell+" — Digitale Fahrzeugakte";
-                // Use native share sheet if available (iOS/Android)
+                const shareUrl="https://qar.gallery/pcn/?v="+v.qarId;
+                const shareTitle=v.hersteller+" "+v.modell+" — Digitale Fahrzeugakte";
                 if(navigator.share){
-                  try {
-                    await navigator.share({ title:shareTitle, url:shareUrl });
-                    return;
-                  } catch(e) { /* user cancelled or not supported */ }
+                  try{ await navigator.share({title:shareTitle,url:shareUrl}); return; }catch(e){}
                 }
-                // Fallback: copy to clipboard
-                try {
-                  await navigator.clipboard.writeText(shareUrl);
-                  toast_("Link kopiert ✓");
-                } catch(e) { toast_(shareUrl); }
+                try{ await navigator.clipboard.writeText(shareUrl); toast_("Link kopiert ✓"); }
+                catch(e){ toast_(shareUrl); }
               }}
-              style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,
-                padding:"6px 12px",color:C.red,cursor:"pointer",fontSize:12,fontWeight:700,
+              style={{background:C.red,border:"none",borderRadius:8,
+                padding:"8px 14px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,
                 fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:5}}>
-              <span>↑</span> Teilen
+              <span style={{fontSize:15}}>↑</span> Teilen
             </button>
           </div>
         </div>
-        <div style={{height:200,position:"relative",overflow:"hidden",background:"#111"}}>
-          {/* Only show image in public view if pub_gallery is on */}
-          {(priv.pub_gallery!==false) && v.image && (
-            <img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
-          )}
-          {(priv.pub_gallery===false) && (
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.muted,flexDirection:"column",gap:8}}>
-              <span style={{fontSize:32}}>🔒</span>
-              <span style={{fontSize:12}}>Galerie nicht öffentlich</span>
-            </div>
-          )}
-          <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 30%,#000000f0)"}}/>
-          <div style={{position:"absolute",bottom:14,left:16,right:16}}>
-            <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:"#fff",lineHeight:1,marginBottom:8}}>{v.hersteller} {v.modell}</h1>
-            <div style={{display:"inline-flex",alignItems:"center",background:"#fff",border:"2px solid #222",borderRadius:5,padding:"3px 10px"}}>
-              <span style={{fontSize:13,fontWeight:800,color:"#111",letterSpacing:2,fontFamily:"Arial,sans-serif"}}>{kz}</span>
+
+        {/* ── Hero image — taller, with gallery fallback ── */}
+        <div style={{height:260,position:"relative",overflow:"hidden",background:"#111"}}>
+          {(()=>{
+            // Try all image sources in priority order
+            const img = (priv.pub_gallery!==false) && (
+              v.image ||
+              (v.images&&v.images[0]) ||
+              (DEMO_VEHICLES[v.id]?.images?.[0]) ||
+              (DEMO_VEHICLES[v.id]?.image)
+            );
+            if(img) return (
+              <img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}
+                onError={e=>{e.target.style.display="none";}}/>
+            );
+            if(priv.pub_gallery===false) return (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",
+                height:"100%",color:C.muted,flexDirection:"column",gap:8}}>
+                <span style={{fontSize:32}}>🔒</span>
+                <span style={{fontSize:12}}>Galerie nicht öffentlich</span>
+              </div>
+            );
+            return <div style={{height:"100%",background:"linear-gradient(135deg,#1a1a1a,#111)"}}/>;
+          })()}
+          <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 40%,rgba(0,0,0,.85) 100%)"}}/>
+          <div style={{position:"absolute",bottom:16,left:16,right:16}}>
+            <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,
+              color:"#fff",lineHeight:1,marginBottom:10,textShadow:"0 2px 8px rgba(0,0,0,.5)"}}>
+              {v.hersteller} {v.modell}
+            </h1>
+            <div style={{display:"inline-flex",alignItems:"center",background:"#fff",
+              border:"2px solid #222",borderRadius:5,padding:"3px 12px"}}>
+              <span style={{fontSize:14,fontWeight:800,color:"#111",letterSpacing:2,fontFamily:"Arial,sans-serif"}}>{kz}</span>
             </div>
           </div>
         </div>
