@@ -1035,16 +1035,14 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
   // Sanitize text input — strip HTML tags, limit length
   const sanitize = (t) => t.replace(/<[^>]*>/g,"").replace(/[<>]/g,"").trim().slice(0,1000);
 
-  // PostHog Analytics — track key funnel events
-  const track = (event, props={}) => {
+  // PostHog Analytics — track key funnel events (called outside render)
+  const track = useCallback((event, props={}) => {
     try {
       if(window.posthog) window.posthog.capture(event, {
         ...props, app:"pcn_mvp",
-        screen: screen||"splash",
-        has_vehicle: myVehicles?.length>0,
       });
     } catch(e){}
-  };
+  }, []);
 
   const sendMsg = async (threadId,text) => {
     const clean = sanitize(text);
