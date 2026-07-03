@@ -1834,6 +1834,14 @@
       return () => cleanup && cleanup();
     }, [me?.id]);
 
+    // ── Track screen changes for analytics ───────────────────────────────────────
+    (0, _react.useEffect)(() => {
+      if (screen === "public" && publicV) track("qr_scan_public_view", {
+        vehicle_id: publicV?.id,
+        qar_id: publicV?.qarId
+      });
+    }, [screen, publicV?.id]);
+
     // ── Scanner ──────────────────────────────────────────────────────────────────
     const openScanner = () => {
       track("qr_scanner_opened");
@@ -3064,13 +3072,6 @@
     // ══════════════════════════════════════════════════════════════════════════════
     // PUBLIC VIEW
     // ══════════════════════════════════════════════════════════════════════════════
-    // Track public page view (QR scan)
-    (0, _react.useEffect)(() => {
-      if (screen === "public" && publicV) track("qr_scan_public_view", {
-        vehicle_id: publicV?.id,
-        qar_id: publicV?.qarId
-      });
-    }, [screen, publicV?.id]);
     if (screen === "public" && publicV) {
       const v = publicV;
       const priv = v.privacy || DEF_PRIVACY;
