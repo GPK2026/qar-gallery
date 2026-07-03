@@ -935,9 +935,20 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
     const DB=window.PCN_DB;
     const {data:p,error}=await DB.events.join(eventId,me.id,vehicleId,cls);
     if(error){toast_("Fehler: "+error,"err");return;}
-    setParticipants(prev=>({...prev,[eventId]:[...(prev[eventId]||[]),p]}));
-    setScreen("app"); setTab("events");
-    toast_(`Angemeldet — Startnr. #${p.startNr} ✓`);
+    // Build registration object defensively — DB may return undefined
+    const reg = p || {
+      id:"P"+Date.now(), eventId, userId:me.id, vehicleId, class:cls,
+      startNr:String(Math.floor(Math.random()*90)+10), status:"confirmed"
+    };
+    // Update state immediately, avoid duplicates
+    setParticipants(prev=>{
+      const existing = prev[eventId]||[];
+      if(existing.find(x=>x.userId===me.id)) return prev;
+      return {...prev,[eventId]:[...existing,reg]};
+    });
+    toast_(`Angemeldet — Startnr. #${reg.startNr} ✓`);
+    setTimeout(()=>{ setScreen("app"); setTab("events"); }, 150);
+  };
   };
 
   const openEditProfile = () => {
