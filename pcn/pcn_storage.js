@@ -327,19 +327,111 @@ const PCN_STORAGE = (() => {
       return { data: true };
     },
 
-    // ── Auth (simple email-based, no JWT needed for MVP) ──
+    // ── Auth — Supabase Magic Link ──────────────────────────────────────────────
+    // Flow: user enters email → Supabase sends magic link → user clicks →
+    //       URL contains access_token → we exchange for session → user is logged in
+    // For demo/dev: falls back to direct email lookup (no real email sent)
+
+    _authUrl: () => SUPABASE_URL.replace("/rest/v1","").replace("rest/v1","") + "/auth/v1",
+
+    async _supabaseAuthFetch(path, body) {
+      const base = SUPABASE_URL.replace("/rest/v1","");
+      const r = await fetch(base + "/auth/v1" + path, {
+        method: "POST",
+        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json();
+      if(!r.ok) return { error: d.error_description || d.msg || "Auth error" };
+      return { data: d };
+    },
+
+    // Persist session — stores Supabase JWT + our user profile
+    _saveSession(supaUser, profile) {
+      const session = {
+        id: supaUser.id,
+        email: supaUser.email,
+        name: profile?.name || supaUser.email?.split("@")[0] || "Mitglied",
+        role: profile?.role || "member",
+        memberNr: profile?.member_nr || null,
+        avatar: profile?.avatar || "",
+        city: profile?.city || "",
+        bio: profile?.bio || "",
+        phone: profile?.phone || "",
+        notifications: { events: true, messages: true },
+        access_token: supaUser.access_token || "",
+        token_expiry: supaUser.token_expiry || 0,
+        createdAt: profile?.created_at || new Date().toISOString(),
+      };
+      localStorage.setItem("pcn_session", JSON.stringify(session));
+      return session;
+    },
+
+    // Send magic link — Supabase emails a login link to the user
+    async sendMagicLink(email, redirectTo) {
+      const base = SUPABASE_URL.replace("/rest/v1","");
+      const r = await fetch(base + "/auth/v1/otp", {
+        method: "POST",
+        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
+        body: JSON.stringify({
+          email,
+          create_user: true,
+          data: { source: "pcn_app" },
+          ...( redirectTo ? { options: { emailRedirectTo: redirectTo } } : {} ),
+        }),
+      });
+      if(r.status === 200 || r.status === 204) return { data: { sent: true } };
+      const d = await r.json().catch(()=>({}));
+      return { error: d.error_description || d.msg || "Magic Link konnte nicht gesendet werden" };
+    },
+
+    // Verify OTP token from magic link URL
+    async verifyOtp(email, token) {
+      const base = SUPABASE_URL.replace("/rest/v1","");
+      const r = await fetch(base + "/auth/v1/verify", {
+        method: "POST",
+        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
+        body: JSON.stringify({ email, token, type: "magiclink" }),
+      });
+      const d = await r.json().catch(()=>({}));
+      if(!r.ok) return { error: d.error_description || "Token ungültig oder abgelaufen" };
+      // Get or create user profile in our users table
+      const supaUser = d.user || {};
+      supaUser.access_token = d.access_token;
+      const {data:profiles} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
+      const profile = profiles&&profiles[0];
+      const session = supabase._saveSession(supaUser, profile);
+      return { data: session };
+    },
+
+    // Exchange hash token from magic link redirect URL
+    async exchangeToken(accessToken) {
+      // When user clicks magic link → browser gets #access_token=... in URL
+      // We store it and use it for all future requests
+      const base = SUPABASE_URL.replace("/rest/v1","");
+      const r = await fetch(base + "/auth/v1/user", {
+        headers: { "Authorization": "Bearer " + accessToken, "apikey": SUPABASE_KEY }
+      });
+      if(!r.ok) return { error: "Token ungültig" };
+      const supaUser = await r.json();
+      supaUser.access_token = accessToken;
+      const {data:profiles} = await supabase._q("users","?email=eq."+encodeURIComponent(supaUser.email));
+      const profile = profiles&&profiles[0];
+      const session = supabase._saveSession(supaUser, profile);
+      return { data: session };
+    },
+
+    // Register: create/update user profile row after Supabase Auth creates the account
     async register(name, email, clubCode) {
-      // Check existing
       const {data:existing} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
       if(existing&&existing.length>0){
         const ex = existing[0];
         if(ex.role !== "guest") return { error: "E-Mail bereits registriert" };
-        // Guest upgrade: same row, same id (preserves chat history) — just patch role/club_code/member_nr
         const memberNr = "PCN-"+Math.floor(1000+Math.random()*8999);
         const upd = await supabase._patch("users","email=eq."+encodeURIComponent(email),
-          { name, club_code: clubCode, role:"member", member_nr: memberNr, converted_from_guest: true });
+          { name, club_code:clubCode, role:"member", member_nr:memberNr, converted_from_guest:true });
         if(upd.error) return upd;
-        const u = { id: ex.id, name, email, role:"member", memberNr };
+        const u = { id:ex.id, name, email, role:"member", memberNr };
         localStorage.setItem("pcn_session", JSON.stringify(u));
         return { data: u };
       }
@@ -357,24 +449,26 @@ const PCN_STORAGE = (() => {
       if(existing&&existing.length>0){
         const u = existing[0];
         if(u.role !== "guest") return { error: "E-Mail bereits als Mitglied registriert" };
-        // Re-login as existing guest
         const session = { id:u.id, name:u.name, email:u.email, role:"guest", memberNr:null };
         localStorage.setItem("pcn_session", JSON.stringify(session));
         return { data: session };
       }
-      const user = { name, email, role:"guest", member_nr:null, guest_created_at: now() };
+      const user = { name, email, role:"guest", member_nr:null, guest_created_at:now() };
       const res = await supabase._post("users", user);
       if(res.error) return res;
       const u = { id:res.data.id, name, email, role:"guest", memberNr:null };
       localStorage.setItem("pcn_session", JSON.stringify(u));
       return { data: u };
     },
+
     async login(email) {
+      // For demo/backward compat: direct lookup. In production: sendMagicLink() first.
       const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
       if(error) return { error };
       if(!users||users.length===0) return { error: "Kein Account mit dieser E-Mail" };
       const u = users[0];
-      const session = { id:u.id, name:u.name, email:u.email, role:u.role, memberNr:u.member_nr };
+      const session = { id:u.id, name:u.name, email:u.email, role:u.role,
+        memberNr:u.member_nr, avatar:u.avatar||"", city:u.city||"", bio:u.bio||"" };
       localStorage.setItem("pcn_session", JSON.stringify(session));
       await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
       return { data: session };
@@ -449,11 +543,25 @@ const PCN_STORAGE = (() => {
       return await supabase._q("reminders","?user_id=eq."+userId+"&done=eq.false&order=date.asc");
     },
     async saveReminder(userId, reminder) {
-      if(reminder.id) {
-        await supabase._patch("reminders","id=eq."+reminder.id,reminder);
-        return { data: reminder };
+      if(reminder.id && !String(reminder.id).startsWith("R")) {
+        // Real UUID — update existing
+        const {data,error} = await supabase._patch("reminders","id=eq."+reminder.id,
+          {title:reminder.title,date:reminder.date,vehicle_id:reminder.vehicleId||reminder.vehicle_id||null});
+        return { data: Array.isArray(data)?data[0]:data, error };
       }
-      return await supabase._post("reminders",{...reminder,user_id:userId,created_at:now()});
+      // New reminder — let Supabase generate UUID
+      const row = {
+        user_id: userId,
+        vehicle_id: reminder.vehicleId||reminder.vehicle_id||null,
+        title: reminder.title,
+        date: reminder.date,
+        done: false,
+        created_at: now(),
+      };
+      const {data,error} = await supabase._post("reminders", row);
+      if(error) return {error};
+      const saved = Array.isArray(data)?data[0]:data;
+      return { data: {...saved, vehicleId: saved?.vehicle_id} };
     },
     async doneReminder(userId, id) {
       return await supabase._patch("reminders","id=eq."+id,{done:true,done_at:now()});
@@ -602,11 +710,14 @@ const PCN_STORAGE = (() => {
 
     // Proxy all methods to selected backend
     auth: {
-      register: (name, email, code) => db.register(name, email, code),
-      registerGuest: (name, email)  => db.registerGuest(name, email),
-      login:    (email)             => db.login(email),
-      session:  ()                  => db.getSession(),
-      logout:   ()                  => db.logout(),
+      register:      (name, email, code) => db.register(name, email, code),
+      registerGuest: (name, email)       => db.registerGuest(name, email),
+      login:         (email)             => db.login(email),
+      sendMagicLink: (email, redirect)   => db.sendMagicLink ? db.sendMagicLink(email, redirect) : { error:"Not supported in local mode" },
+      verifyOtp:     (email, token)      => db.verifyOtp     ? db.verifyOtp(email, token)         : { error:"Not supported in local mode" },
+      exchangeToken: (token)             => db.exchangeToken ? db.exchangeToken(token)             : { error:"Not supported in local mode" },
+      session:  ()   => db.getSession(),
+      logout:   ()   => db.logout(),
     },
     vehicles: {
       list:       (uid)    => db.getVehicles(uid),
