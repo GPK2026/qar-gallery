@@ -530,6 +530,7 @@ function PCNInner() {
   const [showPrivacy, setShowPrivacy] = useState(null);
   const [showEditVehicle, setShowEditVehicle] = useState(null); // vehicleId
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [profileImgUploading, setProfileImgUploading] = useState(false);
   const [newsState, setNewsState] = useState({}); // {id: "read"|"remind"}
   const [showInfoModal, setShowInfoModal] = useState(false); // false | 'features' | 'points'
   const [eventsView, setEventsView] = useState("list"); // "list" | "calendar"
@@ -851,6 +852,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
       phone: me?.phone||"",
       city: me?.city||"",
       bio: me?.bio||"",
+      avatar: me?.avatar||"",
       notifications_events: me?.notifications?.events!==false,
       notifications_messages: me?.notifications?.messages!==false,
     });
@@ -865,6 +867,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
       phone: profileForm.phone.trim(),
       city: profileForm.city.trim(),
       bio: profileForm.bio.trim(),
+      avatar: profileForm.avatar||me?.avatar||"",
       notifications: {
         events: profileForm.notifications_events,
         messages: profileForm.notifications_messages,
@@ -2451,10 +2454,25 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                         <div style={{fontWeight:700,fontSize:16,color:overdue?C.red:urgent?C.amber:C.white,marginBottom:4}}>{r.title}</div>
                         {/* Link zur Fahrzeugakte */}
                         {rv&&(
-                          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,cursor:"pointer"}}
-                            onClick={()=>{setViewV(rv);setScreen("vehicle");}}>
-                            <span style={{fontSize:13,color:C.muted}}>{rv.hersteller} {rv.modell}</span>
-                            <span style={{fontSize:11,color:C.red,fontWeight:700}}>→ Zur Akte</span>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}
+                              onClick={()=>{setViewV(rv);setScreen("vehicle");}}>
+                              <span style={{fontSize:13,color:C.muted}}>{rv.hersteller} {rv.modell}</span>
+                              <span style={{fontSize:11,color:C.red,fontWeight:700}}>→ Zur Akte</span>
+                            </div>
+                            {r.title.toLowerCase().includes("tüv")&&(
+                              <button
+                                onClick={()=>{
+                                  const dateStr = r.date ? r.date.replace(/-/g,"") : "";
+                                  const title = encodeURIComponent(`TÜV ${rv.hersteller} ${rv.modell} (${rv.kennzeichen||""})`);
+                                  const details = encodeURIComponent(`TÜV-Hauptuntersuchung für ${rv.hersteller} ${rv.modell}`);
+                                  const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&details=${details}`;
+                                  window.open(gcalUrl,"_blank");
+                                }}
+                                style={{background:`${C.amber}22`,border:`1px solid ${C.amber}44`,borderRadius:7,padding:"4px 9px",color:C.amber,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                                📅 Termin eintragen
+                              </button>
+                            )}
                           </div>
                         )}
                         <div style={{fontSize:13,fontWeight:600,color:overdue?C.red:urgent?C.amber:C.muted}}>
@@ -2481,8 +2499,13 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             {/* ── Punkte-Score — prominent ganz oben ── */}
             <div style={{background:`linear-gradient(135deg, #1a0a0a 0%, #2a0808 100%)`,border:`1px solid ${C.red}44`,borderRadius:16,padding:"20px",marginBottom:14}}>
               <div style={{display:"flex",gap:16,alignItems:"center"}}>
-                <div style={{width:64,height:64,background:C.red,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0,fontWeight:900,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif"}}>
-                  {(me?.name||"?")[0].toUpperCase()}
+                <div style={{width:68,height:68,borderRadius:"50%",overflow:"hidden",flexShrink:0,background:C.red,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}
+                  onClick={openEditProfile}>
+                  {me?.avatar
+                    ?<img src={me.avatar} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    :<span style={{fontSize:26,fontWeight:900,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif"}}>{(me?.name||"?")[0].toUpperCase()}</span>
+                  }
+                  <div style={{position:"absolute",bottom:0,right:0,width:22,height:22,background:C.red,borderRadius:"50%",border:"2px solid #1a0808",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>📷</div>
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1}}>{me?.name}</div>
@@ -2662,7 +2685,52 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowEditProfile(false);}}>
           <div className="sheet">
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>✏️ Profil bearbeiten</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:18}}>Deine persönlichen Angaben</div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Deine persönlichen Angaben</div>
+
+            {/* ── Profilbild ── */}
+            <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:18,padding:"14px",background:C.card,borderRadius:12,border:`1px solid ${C.border}`}}>
+              <div style={{width:72,height:72,borderRadius:"50%",overflow:"hidden",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,position:"relative"}}>
+                {profileForm.avatar
+                  ?<img src={profileForm.avatar} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  :<span style={{fontSize:28,fontWeight:900,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif"}}>{(profileForm.name||me?.name||"?")[0]?.toUpperCase()}</span>
+                }
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:6}}>Profilbild</div>
+                <div style={{display:"flex",gap:8}}>
+                  <label style={{background:C.red,borderRadius:8,padding:"8px 14px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                    <input type="file" accept="image/*" style={{display:"none"}}
+                      onChange={e=>{
+                        const file=e.target.files[0]; if(!file) return;
+                        setProfileImgUploading(true);
+                        const reader=new FileReader();
+                        reader.onload=ev=>{
+                          const img=new Image();
+                          img.onload=()=>{
+                            const SIZE=200;
+                            const canvas=document.createElement("canvas");
+                            const scale=Math.min(1,SIZE/img.width,SIZE/img.height);
+                            canvas.width=Math.round(img.width*scale);
+                            canvas.height=Math.round(img.height*scale);
+                            canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+                            setProfileForm(p=>({...p,avatar:canvas.toDataURL("image/jpeg",0.8)}));
+                            setProfileImgUploading(false);
+                          };
+                          img.src=ev.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                      }}/>
+                    {profileImgUploading?"⏳ Lädt…":"📷 Foto wählen"}
+                  </label>
+                  {profileForm.avatar&&(
+                    <button onClick={()=>setProfileForm(p=>({...p,avatar:""}))}
+                      style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 12px",color:C.muted,cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif"}}>
+                      Entfernen
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
 
             <div style={{marginBottom:16}}>
               <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>Persönlich</div>
