@@ -4533,13 +4533,34 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 2
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
           fontFamily: "'Barlow Condensed',sans-serif",
           fontSize: 18,
           fontWeight: 900,
-          color: C.white,
-          marginBottom: 2
+          color: C.white
         }
-      }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
+      }, v.hersteller, " ", v.modell), isOwn && /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => openEditVehicle(v),
+        style: {
+          background: C.red,
+          border: "none",
+          borderRadius: 8,
+          padding: "6px 14px",
+          color: "#fff",
+          cursor: "pointer",
+          fontSize: 13,
+          fontWeight: 700,
+          fontFamily: "'Barlow',sans-serif",
+          flexShrink: 0,
+          marginLeft: 10
+        }
+      }, "✏️ Bearbeiten")), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 12,
           color: C.muted,
