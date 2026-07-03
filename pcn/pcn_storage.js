@@ -269,6 +269,12 @@ const PCN_STORAGE = (() => {
       local._set("threads", all);
       return { data: true };
     },
+    async deleteThread(threadId) {
+      const all = local._get("threads") || {};
+      delete all[threadId];
+      local._set("threads", all);
+      return { data: true };
+    },
 
     // ── Event History ──
     async getEventHistory(vehicleId) {
@@ -710,6 +716,11 @@ const PCN_STORAGE = (() => {
     async markRead(threadId, userId) {
       return await supabase._patch("messages",
         "thread_id=eq."+threadId+"&from_id=neq."+userId,{read:true});
+    },
+    async deleteThread(threadId) {
+      // Delete messages first, then thread
+      await supabase._delete("messages","thread_id=eq."+threadId);
+      return await supabase._delete("threads","id=eq."+threadId);
     },
     async getStats(userId) {
       const [v,r,p,t] = await Promise.all([
