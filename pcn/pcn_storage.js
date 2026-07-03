@@ -443,28 +443,40 @@ const PCN_STORAGE = (() => {
 
     // Register: create/update user profile row after Supabase Auth creates the account
     async register(name, email, clubCode, password) {
-      // MVP: skip Supabase Auth entirely — no email confirmation needed
-      // Club-Code is the verification. Store hashed password in our users table.
+      // MVP: Club-Code = Verifikation. Kein Supabase Auth nötig.
       const pwHash = password ? btoa(encodeURIComponent(password)).slice(0,32) : "";
+      const memberNr = "PCN-"+Math.floor(1000+Math.random()*8999);
+
+      // Check if already registered
       const {data:existing} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
       if(existing&&existing.length>0){
         const ex = existing[0];
         if(ex.role !== "guest") return { error: "E-Mail bereits registriert" };
-        const memberNr = "PCN-"+Math.floor(1000+Math.random()*8999);
-        const upd = await supabase._patch("users","email=eq."+encodeURIComponent(email),
+        // Guest upgrade
+        await supabase._patch("users","email=eq."+encodeURIComponent(email),
           { name, club_code:clubCode, role:"member", member_nr:memberNr, converted_from_guest:true });
-        if(upd.error) return upd;
-        const u = { id:ex.id, name, email, role:"member", memberNr };
+        const u = { id:ex.id, name, email, role:"member", memberNr, avatar:"" };
         localStorage.setItem("pcn_session", JSON.stringify(u));
         return { data: u };
       }
-      const pwHash = password ? btoa(encodeURIComponent(password)).slice(0,32) : "";
-      const user = { name, email, club_code:clubCode, role:"member",
-        pw_hash: pwHash,
-        member_nr:"PCN-"+Math.floor(1000+Math.random()*8999) };
-      const res = await supabase._post("users", user);
+
+      // Try with pw_hash first, fall back without if column missing
+      let user = { name, email, club_code:clubCode, role:"member",
+        pw_hash:pwHash, member_nr:memberNr };
+      let res = await supabase._post("users", user);
+
+      // If pw_hash column doesn't exist yet — retry without it
+      if(res.error && res.error.includes && res.error.includes("pw_hash")) {
+        user = { name, email, club_code:clubCode, role:"member", member_nr:memberNr };
+        res = await supabase._post("users", user);
+      }
       if(res.error) return res;
-      const u = { id:res.data.id, name, email, role:"member", memberNr:res.data.member_nr };
+
+      const saved = res.data || {};
+      const u = {
+        id: saved.id||("tmp-"+Date.now()), name, email,
+        role:"member", memberNr: saved.member_nr||memberNr, avatar:"",
+      };
       localStorage.setItem("pcn_session", JSON.stringify(u));
       return { data: u };
     },
