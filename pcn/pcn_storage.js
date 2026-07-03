@@ -646,8 +646,16 @@ const PCN_STORAGE = (() => {
     async getEvents() {
       return await supabase._q("events","?order=date.asc");
     },
+    _mapParticipant: (p) => p ? ({
+      id: p.id, eventId: p.event_id, userId: p.user_id, vehicleId: p.vehicle_id,
+      class: p.class, startNr: p.start_nr||p.startNr||"01",
+      status: p.status||"confirmed", registeredAt: p.registered_at,
+    }) : null,
+
     async getParticipants(eventId) {
-      return await supabase._q("participants","?event_id=eq."+eventId+"&order=start_nr.asc");
+      const res = await supabase._q("participants","?event_id=eq."+eventId+"&order=start_nr.asc");
+      if(res.error) return res;
+      return { data: (res.data||[]).map(supabase._mapParticipant) };
     },
     async joinEvent(eventId, userId, vehicleId, cls) {
       const {data:existing} = await supabase._q("participants",
@@ -655,11 +663,13 @@ const PCN_STORAGE = (() => {
       if(existing&&existing.length>0) return { error:"Bereits angemeldet" };
       const {data:all} = await supabase._q("participants","?event_id=eq."+eventId+"&select=count");
       const count = all?all.length:0;
-      return await supabase._post("participants",{
-        event_id:eventId,user_id:userId,vehicle_id:vehicleId,
+      const res = await supabase._post("participants",{
+        event_id:eventId, user_id:userId, vehicle_id:vehicleId,
         class:cls, start_nr:String(count+1).padStart(2,"0"),
         status:"confirmed", registered_at:now()
       });
+      if(res.error) return res;
+      return { data: supabase._mapParticipant(res.data) };
     },
     async getEventHistory(vehicleId) {
       return await supabase._q("event_history","?vehicle_id=eq."+vehicleId+"&order=date.desc");
