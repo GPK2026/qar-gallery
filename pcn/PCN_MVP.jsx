@@ -1020,6 +1020,7 @@ function PCNInner() {
       kennzeichen:v.kennzeichen||"", farbe:v.farbe||"", kraftstoff:v.kraftstoff||"Benzin",
       getriebe:v.getriebe||"PDK", kilometerstand:v.kilometerstand||"",
       tuev_faelligkeit:v.tuev_faelligkeit||"", zustand:v.zustand||"",
+      marktwert:v.marktwert||"", fin:v.fin||"",
       besonderheiten:v.besonderheiten||"", phone:v.phone||"",
     });
     setShowEditVehicle(v.id);
@@ -2358,6 +2359,10 @@ function PCNInner() {
                     onChange={e=>setEditForm(p=>({...p,kilometerstand:e.target.value}))}/>
                   <input className="inp" placeholder="TÜV (MM/JJJJ)" value={editForm.tuev_faelligkeit||""}
                     onChange={e=>setEditForm(p=>({...p,tuev_faelligkeit:e.target.value}))}/>
+                  <input className="inp" placeholder="Marktwert (€)" value={editForm.marktwert||""}
+                    onChange={e=>setEditForm(p=>({...p,marktwert:e.target.value}))}/>
+                  <input className="inp" placeholder="FIN (Fahrgestellnummer)" value={editForm.fin||""}
+                    onChange={e=>setEditForm(p=>({...p,fin:e.target.value}))}/>
                   <select className="inp" style={{gridColumn:"1/-1"}} value={editForm.zustand||""}
                     onChange={e=>setEditForm(p=>({...p,zustand:e.target.value}))}>
                     <option value="">Zustand wählen…</option>
