@@ -39,6 +39,18 @@
     }
     componentDidCatch(error, info) {
       console.error("[PCN]", error, info);
+      try {
+        if (window.Sentry) window.Sentry.captureException(error, {
+          extra: info
+        });
+        // Lightweight beacon fallback
+        const p = {
+          error: error?.message,
+          url: window.location.href,
+          ts: new Date().toISOString()
+        };
+        navigator.sendBeacon && navigator.sendBeacon("/log", JSON.stringify(p));
+      } catch (e2) {}
     }
     render() {
       if (!this.state.hasError) return this.props.children;
@@ -1737,13 +1749,13 @@
       })();
     }, []);
 
-    // ── Live message polling — checks for new messages every 5s while logged in ──
-    // (No real-time websockets in this MVP, so we poll. Cheap on Supabase free tier.)
+    // ── Realtime message sync — WebSocket first, polling fallback ────────────────
     (0, _react.useEffect)(() => {
-      if (!me) return;
+      if (!me?.id) return;
       const DB = window.PCN_DB;
       if (!DB) return;
-      const poll = async () => {
+      let cleanup = null;
+      const refreshThreads = async () => {
         const {
           data: liveThreads
         } = await DB.threads.list(me.id);
@@ -1758,12 +1770,73 @@
           return next;
         });
       };
-      const interval = setInterval(poll, 5000);
-      return () => clearInterval(interval);
+      const startPolling = () => {
+        const iv = setInterval(refreshThreads, 15000);
+        cleanup = () => clearInterval(iv);
+      };
+      const tryRealtime = () => {
+        try {
+          const cfg = window.PCN_CONFIG || {};
+          if (!cfg.supabaseUrl) return false;
+          const wsUrl = cfg.supabaseUrl.replace("https://", "wss://").replace("http://", "ws://") + "/realtime/v1/websocket?apikey=" + cfg.supabaseKey + "&vsn=1.0.0";
+          const ws = new WebSocket(wsUrl);
+          let alive = true;
+          ws.onopen = () => {
+            ws.send(JSON.stringify({
+              topic: "realtime:public:messages",
+              event: "phx_join",
+              payload: {
+                config: {
+                  broadcast: {
+                    ack: false
+                  },
+                  presence: {
+                    key: ""
+                  },
+                  postgres_changes: [{
+                    event: "INSERT",
+                    schema: "public",
+                    table: "messages"
+                  }]
+                }
+              },
+              ref: "1"
+            }));
+          };
+          ws.onmessage = e => {
+            try {
+              const d = JSON.parse(e.data);
+              if (d.event === "postgres_changes") refreshThreads();
+            } catch (err) {}
+          };
+          ws.onerror = () => {
+            alive = false;
+            ws.close();
+            startPolling();
+          };
+          ws.onclose = () => {
+            if (alive) {
+              alive = false;
+              startPolling();
+            }
+          };
+          cleanup = () => {
+            alive = false;
+            ws.readyState === 1 && ws.close();
+          };
+          return true;
+        } catch (e) {
+          return false;
+        }
+      };
+      refreshThreads();
+      if (!tryRealtime()) startPolling();
+      return () => cleanup && cleanup();
     }, [me?.id]);
 
     // ── Scanner ──────────────────────────────────────────────────────────────────
     const openScanner = () => {
+      track("qr_scanner_opened");
       setScannerOpen(true);
       setScannerError(null);
       setScannerStatus("loading");
@@ -2083,17 +2156,37 @@
       const DB = window.PCN_DB;
       await DB.vehicles.save(updated);
     };
+
+    // Sanitize text input — strip HTML tags, limit length
+    const sanitize = t => t.replace(/<[^>]*>/g, "").replace(/[<>]/g, "").trim().slice(0, 1000);
+
+    // PostHog Analytics — track key funnel events
+    const track = (event, props = {}) => {
+      try {
+        if (window.posthog) window.posthog.capture(event, {
+          ...props,
+          app: "pcn_mvp",
+          screen: screen || "splash",
+          has_vehicle: myVehicles?.length > 0
+        });
+      } catch (e) {}
+    };
     const sendMsg = async (threadId, text) => {
-      if (!text.trim()) return;
+      const clean = sanitize(text);
+      if (!clean) return;
       const DB = window.PCN_DB;
       const {
         data: msg,
         error
-      } = await DB.threads.send(threadId, me.id, text.trim());
+      } = await DB.threads.send(threadId, me.id, clean);
       if (error) {
         toast_("Fehler", "err");
         return;
       }
+      track("message_sent", {
+        thread_id: threadId,
+        is_guest: me?.role === "guest"
+      });
       setThreads(prev => ({
         ...prev,
         [threadId]: {
@@ -2757,6 +2850,9 @@
           toast_(error, "err");
           return;
         }
+        track("member_login", {
+          method: "password"
+        });
         await refreshAll(u);
         setScreen("app");
         toast_("Willkommen zurück, " + u.name + "! 🏁");
@@ -2901,6 +2997,9 @@
           stored.events = DEMO_EVENTS;
           localStorage.setItem("pcn_v1", JSON.stringify(stored));
         }
+        track("member_register", {
+          club_code: loginForm.code
+        });
         setMe(u);
         setAllUsers(p => ({
           ...p,
@@ -2965,6 +3064,13 @@
     // ══════════════════════════════════════════════════════════════════════════════
     // PUBLIC VIEW
     // ══════════════════════════════════════════════════════════════════════════════
+    // Track public page view (QR scan)
+    (0, _react.useEffect)(() => {
+      if (screen === "public" && publicV) track("qr_scan_public_view", {
+        vehicle_id: publicV?.id,
+        qar_id: publicV?.qarId
+      });
+    }, [screen, publicV?.id]);
     if (screen === "public" && publicV) {
       const v = publicV;
       const priv = v.privacy || DEF_PRIVACY;
