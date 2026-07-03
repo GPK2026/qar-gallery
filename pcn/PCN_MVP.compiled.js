@@ -2168,17 +2168,15 @@
     // Sanitize text input — strip HTML tags, limit length
     const sanitize = t => t.replace(/<[^>]*>/g, "").replace(/[<>]/g, "").trim().slice(0, 1000);
 
-    // PostHog Analytics — track key funnel events
-    const track = (event, props = {}) => {
+    // PostHog Analytics — track key funnel events (called outside render)
+    const track = (0, _react.useCallback)((event, props = {}) => {
       try {
         if (window.posthog) window.posthog.capture(event, {
           ...props,
-          app: "pcn_mvp",
-          screen: screen || "splash",
-          has_vehicle: myVehicles?.length > 0
+          app: "pcn_mvp"
         });
       } catch (e) {}
-    };
+    }, []);
     const sendMsg = async (threadId, text) => {
       const clean = sanitize(text);
       if (!clean) return;
