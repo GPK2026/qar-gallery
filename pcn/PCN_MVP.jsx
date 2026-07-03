@@ -1429,7 +1429,31 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:28,objectFit:"contain"}}/>
-          <span style={{fontSize:10,color:C.muted}}>Digitale Fahrzeugakte</span>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <span style={{fontSize:10,color:C.muted}}>Digitale Fahrzeugakte</span>
+            <button
+              onClick={async()=>{
+                const shareUrl = "https://qar.gallery/pcn/?v="+v.qarId;
+                const shareTitle = v.hersteller+" "+v.modell+" — Digitale Fahrzeugakte";
+                // Use native share sheet if available (iOS/Android)
+                if(navigator.share){
+                  try {
+                    await navigator.share({ title:shareTitle, url:shareUrl });
+                    return;
+                  } catch(e) { /* user cancelled or not supported */ }
+                }
+                // Fallback: copy to clipboard
+                try {
+                  await navigator.clipboard.writeText(shareUrl);
+                  toast_("Link kopiert ✓");
+                } catch(e) { toast_(shareUrl); }
+              }}
+              style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,
+                padding:"6px 12px",color:C.red,cursor:"pointer",fontSize:12,fontWeight:700,
+                fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:5}}>
+              <span>↑</span> Teilen
+            </button>
+          </div>
         </div>
         <div style={{height:200,position:"relative",overflow:"hidden",background:"#111"}}>
           {/* Only show image in public view if pub_gallery is on */}
@@ -1488,10 +1512,51 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               <div style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"11px 13px",display:"flex",gap:10,alignItems:"flex-start"}}>
                 <span style={{fontSize:16,flexShrink:0,marginTop:1}}>🔒</span>
                 <div style={{fontSize:12,color:"#888",lineHeight:1.6}}>
-                  <strong style={{color:"#aaa"}}>Anonymer Kontakt:</strong> Deine Nachricht wird anonym übermittelt — Name und E-Mail bleiben geschützt. Der Fahrzeughalter antwortet direkt über die QAR-App. Daten werden nicht gespeichert oder weitergegeben.
+                  <strong style={{color:"#aaa"}}>Anonymer Kontakt:</strong> Deine Nachricht wird anonym übermittelt — Name und E-Mail bleiben geschützt. Der Fahrzeughalter antwortet direkt über die QAR-App.
                 </div>
               </div>
             )}
+
+            {/* SHARE — Teilen per WhatsApp, E-Mail oder Link */}
+            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:10}}>
+              <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>
+                Fahrzeugakte teilen
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                {(()=>{
+                  const shareUrl = "https://qar.gallery/pcn/?v="+v.qarId;
+                  const shareText = v.hersteller+" "+v.modell+" — Digitale Fahrzeugakte: "+shareUrl;
+                  return (<>
+                    <a href={"https://wa.me/?text="+encodeURIComponent(shareText)}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{flex:1,background:"#25D366",borderRadius:9,padding:"10px",
+                        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                        color:"#fff",fontSize:12,fontWeight:700,textDecoration:"none",fontFamily:"'Barlow',sans-serif"}}>
+                      <span style={{fontSize:16}}>💬</span> WhatsApp
+                    </a>
+                    <a href={"mailto:?subject="+encodeURIComponent(v.hersteller+" "+v.modell)+"&body="+encodeURIComponent("Hier die digitale Fahrzeugakte:\n"+shareUrl)}
+                      style={{flex:1,background:`${C.blue||"#2563EB"}22`,border:`1px solid ${C.blue||"#2563EB"}44`,borderRadius:9,padding:"10px",
+                        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                        color:C.blue||"#2563EB",fontSize:12,fontWeight:700,textDecoration:"none",fontFamily:"'Barlow',sans-serif"}}>
+                      <span style={{fontSize:16}}>✉️</span> E-Mail
+                    </a>
+                    <button
+                      onClick={async()=>{
+                        try {
+                          if(navigator.share){ await navigator.share({title:v.hersteller+" "+v.modell,url:shareUrl}); return; }
+                          await navigator.clipboard.writeText(shareUrl);
+                          toast_("Link kopiert ✓");
+                        } catch(e){ toast_("Link: "+shareUrl); }
+                      }}
+                      style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"10px",
+                        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                        color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      <span style={{fontSize:16}}>🔗</span> Link
+                    </button>
+                  </>);
+                })()}
+              </div>
+            </div>
 
           </div>
         </div>
