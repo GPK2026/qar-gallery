@@ -4328,16 +4328,100 @@
         style: {
           marginTop: 14,
           paddingTop: 12,
-          borderTop: `1px solid ${C.border}`,
+          borderTop: `1px solid ${C.border}`
+        }
+      }, (() => {
+        const active = getActiveStatus(v.id);
+        if (!active) return null;
+        return /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            background: `${C.amber}18`,
+            border: `1px solid ${C.amber}44`,
+            borderRadius: 10,
+            padding: "10px 13px",
+            marginBottom: 10,
+            display: "flex",
+            gap: 10,
+            alignItems: "center"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 20
+          }
+        }, active.icon), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            flex: 1
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 13,
+            fontWeight: 700,
+            color: C.amber
+          }
+        }, active.text), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 10,
+            color: C.muted,
+            marginTop: 1
+          }
+        }, "Aktiver Status · sichtbar für Besucher")), /*#__PURE__*/_react.default.createElement("button", {
+          onClick: () => {
+            clearStatus(v.id);
+            toast_("Status gelöscht");
+          },
+          style: {
+            background: "none",
+            border: "none",
+            color: "#ef4444",
+            cursor: "pointer",
+            fontSize: 18,
+            padding: "0 4px"
+          }
+        }, "✕"));
+      })(), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
           display: "flex",
           gap: 8,
           flexWrap: "wrap"
         }
       }, /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => setShowStatusPicker(v.id),
+        style: {
+          flex: 1,
+          background: `${C.amber}15`,
+          border: `1.5px solid ${C.amber}44`,
+          borderRadius: 10,
+          padding: "11px 12px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 18
+        }
+      }, "📍"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          textAlign: "left"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontWeight: 700,
+          fontSize: 13,
+          color: C.white
+        }
+      }, "Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted
+        }
+      }, "Sichtbar beim QR-Scan"))), /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => setShowPrivacy(v.id),
         style: {
           flex: 1,
-          background: `${C.red}18`,
+          background: `${C.red}15`,
           border: `1.5px solid ${C.red}44`,
           borderRadius: 10,
           padding: "11px 12px",
@@ -4376,11 +4460,11 @@
           loadStatusFor(v.id);
         },
         style: {
-          flex: 1,
+          width: "100%",
           background: C.black,
           border: `1.5px solid ${C.border}`,
           borderRadius: 10,
-          padding: "11px 12px",
+          padding: "10px 12px",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
@@ -4401,12 +4485,12 @@
           fontSize: 13,
           color: C.white
         }
-      }, "Vorschau"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "Vorschau öffentliche Akte"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted
         }
-      }, "So sehen Besucher die Akte"))))), (() => {
+      }, "So sehen Besucher dein Fahrzeug beim QR-Scan")))))), (() => {
         const vRems = myReminders.filter(r => r.vehicleId === v.id || r.vehicle_id === v.id);
         if (vRems.length === 0) return null;
         return /*#__PURE__*/_react.default.createElement("div", {
