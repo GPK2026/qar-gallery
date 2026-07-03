@@ -583,12 +583,14 @@ const PCN_STORAGE = (() => {
       if(vehicle.id) {
         const res = await supabase._patch("vehicles","id=eq."+vehicle.id, row);
         if(res.error) return res;
-        return { data: supabase._mapVehicle(res.data) };
+        // Return merged object if DB doesn't return full row
+        return { data: res.data ? supabase._mapVehicle(Array.isArray(res.data)?res.data[0]:res.data) : supabase._mapVehicle(row) };
       }
       row.created_at = now();
       const res = await supabase._post("vehicles", row);
       if(res.error) return res;
-      return { data: supabase._mapVehicle(res.data) };
+      const saved = Array.isArray(res.data) ? res.data[0] : res.data;
+      return { data: supabase._mapVehicle(saved||row) };
     },
     async deleteVehicle(id) { return await supabase._delete("vehicles","id=eq."+id); },
     async getPublicVehicle(qarId) {
