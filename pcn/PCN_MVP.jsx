@@ -1798,6 +1798,28 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                 ✨ {v.besonderheiten}
               </div>
             )}
+
+            {/* ── QR-Sichtbarkeit & Aktionen ── */}
+            {isOwn&&(
+              <div style={{marginTop:14,paddingTop:12,borderTop:`1px solid ${C.border}`,display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button onClick={()=>setShowPrivacy(v.id)}
+                  style={{flex:1,background:`${C.red}18`,border:`1.5px solid ${C.red}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                  <span style={{fontSize:18}}>🔒</span>
+                  <div style={{textAlign:"left"}}>
+                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>QR-Sichtbarkeit</div>
+                    <div style={{fontSize:10,color:C.muted}}>Einstellen was Besucher sehen</div>
+                  </div>
+                </button>
+                <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
+                  style={{flex:1,background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                  <span style={{fontSize:18}}>👁</span>
+                  <div style={{textAlign:"left"}}>
+                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>Vorschau</div>
+                    <div style={{fontSize:10,color:C.muted}}>So sehen Besucher die Akte</div>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ── Fahrzeugspezifische Termine & Erinnerungen ── */}
@@ -2048,14 +2070,34 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
             <div className="sheet">
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
                 <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,padding:"6px 10px",display:"flex",alignItems:"center",gap:5}}>
-                  <span style={{fontSize:16}}>▪︎</span>
                   <span style={{fontWeight:800,fontSize:13,color:C.red}}>QR</span>
                   <span style={{fontSize:16}}>🔒</span>
                 </div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>Öffentliche Sichtbarkeit</div>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>QR-Sichtbarkeit</div>
               </div>
-              <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Was sehen Besucher wenn sie deinen QR-Code scannen?</div>
-              <div style={{fontSize:10,color:"#444",marginBottom:16,lineHeight:1.6}}>Tippe einen Toggle um die Sichtbarkeit zu ändern. 🔓 = sichtbar · 🔒 = versteckt</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:4}}>Was sehen Besucher wenn sie den QR-Code scannen?</div>
+
+              {/* Live status summary */}
+              <div style={{background:C.black,borderRadius:8,padding:"10px 12px",marginBottom:14,display:"flex",gap:6,flexWrap:"wrap"}}>
+                {[
+                  [priv.pub_gallery!==false,"📸 Fotos"],
+                  [priv.pub_events,"🏁 Events"],
+                  [priv.pub_logbook,"📋 Logbuch"],
+                  [priv.pub_phone,"📞 Telefon"],
+                  [priv.kennzeichen!==false,"🔑 Kennzeichen"],
+                ].map(([on,label])=>(
+                  <span key={label} style={{fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:4,
+                    background:on?`${C.green}22`:`${C.border}44`,
+                    color:on?C.green:C.muted,
+                    border:`1px solid ${on?C.green+"44":C.border}`}}>
+                    {on?"✓":"✗"} {label}
+                  </span>
+                ))}
+              </div>
+
+              <div style={{fontSize:10,color:"#444",marginBottom:16,lineHeight:1.6}}>
+                🔓 = sichtbar für Besucher · 🔒 = nur für dich sichtbar
+              </div>
               {[
                 ["Basis",[["kennzeichen","Kennzeichen"],["farbe","Farbe"],["kraftstoff","Kraftstoff"],["getriebe","Getriebe"],["baujahr","Baujahr"]]],
                 ["Details",[["kilometerstand","Kilometerstand"],["tuev_faelligkeit","TÜV-Datum"],["zustand","Zustand"],["marktwert","Marktwert"]]],
@@ -2065,14 +2107,20 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                 <div key={group} style={{marginBottom:14}}>
                   <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>{group}</div>
                   {fields.map(([key,label])=>(
-                    <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
-                      <span style={{fontSize:13,color:C.white}}>{label}</span>
-                      <button className={`tog ${(priv[key]===true||priv[key]===undefined&&DEF_PRIVACY[key])?"on":""}`} onClick={()=>togglePrivacy(v.id,key)}/>
+                    <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`1px solid ${C.border}`}}>
+                      <div>
+                        <div style={{fontSize:14,color:C.white}}>{label}</div>
+                        <div style={{fontSize:10,color:(priv[key]===true||(priv[key]===undefined&&DEF_PRIVACY[key]))?C.green:C.muted,marginTop:1}}>
+                          {(priv[key]===true||(priv[key]===undefined&&DEF_PRIVACY[key]))?"🔓 Öffentlich sichtbar":"🔒 Nur privat"}
+                        </div>
+                      </div>
+                      <button className={`tog ${(priv[key]===true||priv[key]===undefined&&DEF_PRIVACY[key])?"on":""}`}
+                        onClick={()=>togglePrivacy(v.id,key)}/>
                     </div>
                   ))}
                 </div>
               ))}
-              <button className="btn" style={{width:"100%",marginTop:8}} onClick={()=>setShowPrivacy(null)}>Fertig ✓</button>
+              <button className="btn" style={{width:"100%",marginTop:8,padding:"14px",fontSize:15}} onClick={()=>setShowPrivacy(null)}>Fertig ✓</button>
             </div>
           </div>
         )}
