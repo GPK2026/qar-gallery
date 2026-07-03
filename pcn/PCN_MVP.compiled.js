@@ -602,6 +602,102 @@
     result: "Schnellste Zeit",
     note: "7:58 min — Clubrekord"
   }];
+
+  // Demo insurance data per vehicle
+  const DEMO_INSURANCE = {
+    "V001": [{
+      id: "I1",
+      type: "Vollkasko",
+      provider: "Allianz Classic",
+      nr: "KFZ-ALZ-2024-881234",
+      since: "2024-01-15",
+      until: "2025-01-14",
+      premium: "€ 1.240/Jahr",
+      note: "Vereinbartes Entschädigungswert: € 142.000",
+      status: "aktiv"
+    }, {
+      id: "I2",
+      type: "Haftpflicht",
+      provider: "Allianz Classic",
+      nr: "KFZ-ALZ-2024-881234",
+      since: "2024-01-15",
+      until: "2025-01-14",
+      premium: "im Vollkasko enthalten",
+      note: "SF-Klasse 10",
+      status: "aktiv"
+    }, {
+      id: "I3",
+      type: "Teilkasko",
+      provider: "Allianz Classic",
+      nr: "KFZ-ALZ-2024-881234",
+      since: "2024-01-15",
+      until: "2025-01-14",
+      premium: "inklusive",
+      note: "Naturgefahren, Diebstahl, Wildschaden",
+      status: "aktiv"
+    }],
+    "V002": [{
+      id: "I4",
+      type: "Oldtimer-Vollkasko",
+      provider: "Zurich Classic Cars",
+      nr: "ZCC-2023-001882",
+      since: "2023-06-01",
+      until: "2024-05-31",
+      premium: "€ 680/Jahr",
+      note: "Saisonkennzeichen 03–11, Wiederbeschaffungswert: € 91.000",
+      status: "abgelaufen"
+    }],
+    "V003": [{
+      id: "I5",
+      type: "Vollkasko Sport",
+      provider: "HDI Motorsport",
+      nr: "HDI-MS-2024-449871",
+      since: "2024-03-01",
+      until: "2025-02-28",
+      premium: "€ 2.890/Jahr",
+      note: "Track-Day mitversichert bis 150 km/h. Fahrzeugwert: € 198.000",
+      status: "aktiv"
+    }]
+  };
+
+  // Demo expert opinions / Gutachten
+  const DEMO_GUTACHTEN = {
+    "V001": [{
+      id: "G1",
+      vehicleId: "V001",
+      date: dMinus(45),
+      type: "Wertgutachten",
+      gutachter: "DEKRA Koblenz — Dipl.-Ing. Martin Kraft",
+      wert: "€ 138.000",
+      km: "32.100",
+      zustand: "1–2 (sehr gut)",
+      note: "Keine Vorschäden. Servicehistorie lückenlos. Originalzustand bis auf Sport-Chrono-Nachrüstung (wertsteigernd).",
+      signiert: true
+    }, {
+      id: "G2",
+      vehicleId: "V001",
+      date: dMinus(380),
+      type: "Schadensgutachten",
+      gutachter: "KFZ-Sachverständigenbüro Müller",
+      wert: "Reparaturkosten: € 4.300",
+      km: "28.400",
+      zustand: "Heckschaden links",
+      note: "Parkrempler auf dem PCN-Herbstausfahrt Parkplatz. Lackschaden Stossfänger hinten links + Nebelleuchte. Vollständig repariert, keine Wertminderung.",
+      signiert: true
+    }],
+    "V003": [{
+      id: "G3",
+      vehicleId: "V003",
+      date: dMinus(15),
+      type: "Wertgutachten",
+      gutachter: "TÜV Rheinland — Dr. Stefan Berger",
+      wert: "€ 195.000",
+      km: "8.100",
+      zustand: "1 (neuwertig)",
+      note: "Fahrzeug in absolutem Neuzustand. Alle Originalteile. Seltene Konfiguration (Riviera Blau mit Weissach-Paket). Wertsteigerungspotential vorhanden.",
+      signiert: true
+    }]
+  };
   const DEMO_THREADS = {
     "T001": {
       id: "T001",
@@ -1340,6 +1436,12 @@
     const [showPrivacy, setShowPrivacy] = (0, _react.useState)(null);
     const [showEditVehicle, setShowEditVehicle] = (0, _react.useState)(null); // vehicleId
     const [showEditProfile, setShowEditProfile] = (0, _react.useState)(false);
+    const [openSections, setOpenSections] = (0, _react.useState)({}); // {vehicleId_section: bool}
+    const toggleSection = (vid, section) => setOpenSections(p => ({
+      ...p,
+      [vid + "_" + section]: !p[vid + "_" + section]
+    }));
+    const isOpen = (vid, section) => !!openSections[vid + "_" + section];
     const [profileImgUploading, setProfileImgUploading] = (0, _react.useState)(false);
     const [newsState, setNewsState] = (0, _react.useState)({}); // {id: "read"|"remind"}
     const [showInfoModal, setShowInfoModal] = (0, _react.useState)(false); // false | 'features' | 'points'
@@ -4103,26 +4205,48 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 14,
+          padding: "14px",
+          marginBottom: 14
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontFamily: "'Barlow Condensed',sans-serif",
+          fontSize: 18,
+          fontWeight: 900,
+          color: C.white,
+          marginBottom: 2
+        }
+      }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: C.muted,
+          marginBottom: 12
+        }
+      }, v.baujahr, " · ", v.farbe, " · ", v.getriebe), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
           gap: 8,
-          marginBottom: 16
+          marginBottom: 10
         }
-      }, [[v.tuev_faelligkeit || "–", "TÜV", tuevColor], [parseInt(v.kilometerstand || 0).toLocaleString("de-DE") + " km", "Stand", C.muted], [["", "Sehr gut", "Gut", "Befriend.", "Ausreichend", "Mangelhaft"][parseInt(v.zustand)] || "–", "Zustand", C.gold]].map(([val, label, color], i) => /*#__PURE__*/_react.default.createElement("div", {
+      }, [[v.tuev_faelligkeit || "–", "TÜV", tuevColor], [(v.kilometerstand || "–") + " km", "Kilometerstand", C.white], [["", "Sehr gut", "Gut", "Befriend.", "Ausreichend", "Mangelhaft"][parseInt(v.zustand)] || "–", "Zustand", C.gold]].map(([val, label, color], i) => /*#__PURE__*/_react.default.createElement("div", {
         key: i,
         style: {
-          background: C.card,
-          border: `1px solid ${C.border}`,
-          borderRadius: 10,
-          padding: "10px 8px",
+          background: C.black,
+          borderRadius: 8,
+          padding: "9px 8px",
           textAlign: "center"
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: 700,
           color,
-          marginBottom: 2
+          marginBottom: 2,
+          lineHeight: 1.2
         }
       }, val), /*#__PURE__*/_react.default.createElement("div", {
         style: {
@@ -4133,187 +4257,567 @@
         }
       }, label)))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          marginBottom: 16
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, [["🔑", "Kennzeichen", v.kennzeichen || "–"], ["⛽", "Kraftstoff", v.kraftstoff || "–"], ["💶", "Marktwert", v.marktwert ? (v.marktwert.toLocaleString ? v.marktwert.toLocaleString("de-DE") : v.marktwert) + " €" : "–"], ["🔩", "FIN", v.fin ? "••• " + v.fin.slice(-6) : "–"]].map(([icon, label, val]) => /*#__PURE__*/_react.default.createElement("div", {
+        key: label,
         style: {
           display: "flex",
-          justifyContent: "space-between",
+          gap: 8,
           alignItems: "center",
-          marginBottom: 8
+          padding: "6px 0",
+          borderBottom: `1px solid ${C.border}`
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
-          fontSize: 10,
-          fontWeight: 800,
-          color: C.muted,
-          textTransform: "uppercase",
-          letterSpacing: 2
-        }
-      }, "📋 Logbuch (", vLog.length, ")"), isOwn && /*#__PURE__*/_react.default.createElement("button", {
-        className: "btn sm ghost",
-        onClick: () => setShowAddLog(v.id)
-      }, "+ Eintrag")), vLog.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          background: C.card,
-          border: `1px solid ${C.border}`,
-          borderRadius: 10,
-          padding: "18px",
-          textAlign: "center",
-          color: C.muted,
-          fontSize: 12
-        }
-      }, "Noch leer — 3 Einträge schalten KI-Marktwert frei") : vLog.slice(0, 10).map(e => /*#__PURE__*/_react.default.createElement("div", {
-        key: e.id,
-        style: {
-          background: C.card,
-          border: `1px solid ${C.border}`,
-          borderRadius: 10,
-          padding: "11px 14px",
-          marginBottom: 6
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 2
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontWeight: 700,
-          fontSize: 13,
-          color: C.white
-        }
-      }, e.type), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 10,
-          color: C.muted
-        }
-      }, fmtDate(e.date))), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 11,
-          color: C.muted
-        }
-      }, e.km ? parseInt(e.km).toLocaleString("de-DE") + " km" : "", e.workshop ? " · " + e.workshop : ""), e.notes && /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 11,
-          color: "#555",
-          marginTop: 3
-        }
-      }, e.notes)))), (vParts.length > 0 || vHist.length > 0) && /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          marginBottom: 16
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 10,
-          fontWeight: 800,
-          color: C.muted,
-          textTransform: "uppercase",
-          letterSpacing: 2,
-          marginBottom: 8
-        }
-      }, "🏁 Veranstaltungen"), vParts.map(p => {
-        const ev = events[p.eventId];
-        if (!ev) return null;
-        return /*#__PURE__*/_react.default.createElement("div", {
-          key: p.id,
-          style: {
-            background: C.card,
-            border: `1px solid ${C.border}`,
-            borderRadius: 10,
-            padding: "11px 14px",
-            marginBottom: 6,
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-            cursor: "pointer"
-          },
-          onClick: () => {
-            setViewEv(ev);
-            setScreen("event");
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            background: `${C.red}22`,
-            border: `1px solid ${C.red}44`,
-            borderRadius: 7,
-            padding: "3px 8px",
-            fontWeight: 800,
-            fontSize: 13,
-            color: C.red,
-            flexShrink: 0
-          }
-        }, "#", p.startNr), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontWeight: 600,
-            fontSize: 13,
-            color: C.white
-          }
-        }, ev.name), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontSize: 11,
-            color: C.muted
-          }
-        }, fmtDate(ev.date), " · ", p.class)), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            marginLeft: "auto",
-            fontSize: 10,
-            color: C.amber,
-            fontWeight: 600
-          }
-        }, "in ", daysUntil(ev.date), " T."));
-      }), vHist.map(h => /*#__PURE__*/_react.default.createElement("div", {
-        key: h.id,
-        style: {
-          background: C.card,
-          border: `1px solid ${C.border}`,
-          borderRadius: 10,
-          padding: "11px 14px",
-          marginBottom: 6,
-          display: "flex",
-          gap: 10,
-          alignItems: "center",
-          opacity: .75
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          background: `${C.gold}22`,
-          border: `1px solid ${C.gold}44`,
-          borderRadius: 7,
-          padding: "3px 8px",
-          fontWeight: 800,
-          fontSize: 13,
-          color: C.gold,
+          fontSize: 14,
           flexShrink: 0
         }
-      }, "#", h.startNr), /*#__PURE__*/_react.default.createElement("div", {
+      }, icon), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          flex: 1,
           minWidth: 0
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontWeight: 600,
+          fontSize: 10,
+          color: C.muted
+        }
+      }, label), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
           fontSize: 13,
+          fontWeight: 600,
           color: C.white,
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, h.eventName), /*#__PURE__*/_react.default.createElement("div", {
+      }, val))))), v.besonderheiten && /*#__PURE__*/_react.default.createElement("div", {
         style: {
+          marginTop: 10,
+          padding: "8px 10px",
+          background: C.black,
+          borderRadius: 8,
           fontSize: 11,
-          color: C.muted
+          color: C.muted,
+          lineHeight: 1.5
         }
-      }, fmtDate(h.date), h.note ? " · " + h.note : "")), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 10,
-          color: h.result === "Teilnahme" ? C.muted : C.gold,
-          fontWeight: 700,
-          flexShrink: 0
-        }
-      }, h.result)))), isOwn && /*#__PURE__*/_react.default.createElement("div", {
+      }, "✨ ", v.besonderheiten)), (() => {
+        const vRems = myReminders.filter(r => r.vehicleId === v.id || r.vehicle_id === v.id);
+        if (vRems.length === 0) return null;
+        return /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 10,
+            fontWeight: 800,
+            color: C.muted,
+            textTransform: "uppercase",
+            letterSpacing: 2,
+            marginBottom: 8
+          }
+        }, "🔔 Termine & Erinnerungen"), vRems.map(r => {
+          const days = daysUntil(r.date);
+          const overdue = days < 0,
+            urgent = days <= 7;
+          return /*#__PURE__*/_react.default.createElement("div", {
+            key: r.id,
+            style: {
+              background: C.card,
+              border: `1.5px solid ${overdue ? C.red + "55" : urgent ? C.amber + "44" : C.border}`,
+              borderRadius: 10,
+              padding: "11px 13px",
+              marginBottom: 6,
+              display: "flex",
+              gap: 10,
+              alignItems: "center"
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              flex: 1
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontWeight: 700,
+              fontSize: 14,
+              color: overdue ? C.red : urgent ? C.amber : C.white
+            }
+          }, r.title), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 11,
+              color: overdue ? C.red : urgent ? C.amber : C.muted,
+              marginTop: 2
+            }
+          }, overdue ? "⚠️ Überfällig" : days === 0 ? "📅 Heute" : days === 1 ? "📅 Morgen" : `📅 In ${days} Tagen`, " · ", fmtDate(r.date))), r.title.toLowerCase().includes("tüv") && /*#__PURE__*/_react.default.createElement("button", {
+            onClick: () => {
+              const ds = r.date ? r.date.replace(/-/g, "") : "";
+              const t = encodeURIComponent(`TÜV ${v.hersteller} ${v.modell}`);
+              window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${ds}/${ds}`, "_blank");
+            },
+            style: {
+              background: `${C.amber}22`,
+              border: `1px solid ${C.amber}44`,
+              borderRadius: 7,
+              padding: "5px 9px",
+              color: C.amber,
+              fontSize: 10,
+              fontWeight: 700,
+              cursor: "pointer",
+              fontFamily: "'Barlow',sans-serif",
+              flexShrink: 0
+            }
+          }, "📅 Eintragen"), /*#__PURE__*/_react.default.createElement("button", {
+            onClick: async () => {
+              const DB = window.PCN_DB;
+              if (DB) await DB.reminders.done(me.id, r.id);
+              setReminders(p => p.map(x => x.id === r.id ? {
+                ...x,
+                done: true
+              } : x));
+              toast_("Erledigt ✓");
+            },
+            style: {
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: 7,
+              padding: "6px 10px",
+              color: C.muted,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              fontFamily: "'Barlow',sans-serif",
+              flexShrink: 0
+            }
+          }, "✓"));
+        }), isOwn && /*#__PURE__*/_react.default.createElement("button", {
+          className: "btn sm ghost",
+          style: {
+            marginTop: 4
+          },
+          onClick: () => {
+            setRemForm({
+              vehicleId: v.id,
+              title: "",
+              date: ""
+            });
+            setShowAddRem(true);
+          }
+        }, "+ Erinnerung"));
+      })(), (() => {
+        const vInsurance = DEMO_INSURANCE[v.id] || [];
+        const vGutachten = DEMO_GUTACHTEN[v.id] || [];
+        const sections = [{
+          id: "logbook",
+          icon: "📋",
+          label: "Service-Logbuch",
+          count: vLog.length,
+          action: isOwn ? () => setShowAddLog(v.id) : null,
+          actionLabel: "+ Eintrag",
+          content: /*#__PURE__*/_react.default.createElement("div", null, vLog.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              padding: "16px",
+              textAlign: "center",
+              color: C.muted,
+              fontSize: 13
+            }
+          }, "Noch leer — 3 Einträge schalten KI-Marktwert frei") : vLog.map(e => /*#__PURE__*/_react.default.createElement("div", {
+            key: e.id,
+            style: {
+              padding: "12px 0",
+              borderBottom: `1px solid ${C.border}`
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: 3
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontWeight: 700,
+              fontSize: 14,
+              color: C.white
+            }
+          }, e.type), e.workshop && /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 11,
+              color: C.muted,
+              marginLeft: 8
+            }
+          }, "· ", e.workshop)), /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 11,
+              color: C.muted,
+              flexShrink: 0
+            }
+          }, fmtDate(e.date))), e.km && /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 11,
+              color: C.muted,
+              marginBottom: 2
+            }
+          }, parseInt(e.km).toLocaleString("de-DE"), " km"), e.notes && /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 12,
+              color: "#888",
+              lineHeight: 1.5
+            }
+          }, e.notes))))
+        }, {
+          id: "events",
+          icon: "🏁",
+          label: "Veranstaltungshistorie",
+          count: vParts.length + vHist.length,
+          content: /*#__PURE__*/_react.default.createElement("div", null, vParts.map(p => {
+            const ev = events[p.eventId];
+            if (!ev) return null;
+            return /*#__PURE__*/_react.default.createElement("div", {
+              key: p.id,
+              style: {
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                padding: "11px 0",
+                borderBottom: `1px solid ${C.border}`,
+                cursor: "pointer"
+              },
+              onClick: () => {
+                setViewEv(ev);
+                setScreen("event");
+              }
+            }, /*#__PURE__*/_react.default.createElement("div", {
+              style: {
+                background: `${C.red}22`,
+                border: `1px solid ${C.red}44`,
+                borderRadius: 6,
+                padding: "3px 8px",
+                fontWeight: 800,
+                fontSize: 13,
+                color: C.red,
+                flexShrink: 0
+              }
+            }, "#", p.startNr), /*#__PURE__*/_react.default.createElement("div", {
+              style: {
+                flex: 1
+              }
+            }, /*#__PURE__*/_react.default.createElement("div", {
+              style: {
+                fontWeight: 600,
+                fontSize: 14,
+                color: C.white
+              }
+            }, ev.name), /*#__PURE__*/_react.default.createElement("div", {
+              style: {
+                fontSize: 11,
+                color: C.muted
+              }
+            }, fmtDate(ev.date), " · ", p.class)), /*#__PURE__*/_react.default.createElement("div", {
+              style: {
+                fontSize: 11,
+                color: C.amber,
+                fontWeight: 600,
+                flexShrink: 0
+              }
+            }, "in ", daysUntil(ev.date), " T. →"));
+          }), vHist.map(h => /*#__PURE__*/_react.default.createElement("div", {
+            key: h.id,
+            style: {
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              padding: "11px 0",
+              borderBottom: `1px solid ${C.border}`
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              background: `${C.gold}22`,
+              border: `1px solid ${C.gold}44`,
+              borderRadius: 6,
+              padding: "3px 8px",
+              fontWeight: 800,
+              fontSize: 13,
+              color: C.gold,
+              flexShrink: 0
+            }
+          }, "#", h.startNr), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              flex: 1
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontWeight: 600,
+              fontSize: 14,
+              color: C.white
+            }
+          }, h.eventName), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 11,
+              color: C.muted
+            }
+          }, fmtDate(h.date), h.note ? " · " + h.note : "")), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 11,
+              color: h.result === "Teilnahme" ? C.muted : C.gold,
+              fontWeight: 700,
+              flexShrink: 0
+            }
+          }, h.result))), vParts.length === 0 && vHist.length === 0 && /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              padding: "16px",
+              textAlign: "center",
+              color: C.muted,
+              fontSize: 13
+            }
+          }, "Noch keine Veranstaltungsteilnahmen"))
+        }, {
+          id: "insurance",
+          icon: "🛡️",
+          label: "Versicherungen",
+          count: vInsurance.length,
+          content: /*#__PURE__*/_react.default.createElement("div", null, vInsurance.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              padding: "16px",
+              textAlign: "center",
+              color: C.muted,
+              fontSize: 13
+            }
+          }, "Noch keine Versicherungsdaten hinterlegt") : vInsurance.map(ins => /*#__PURE__*/_react.default.createElement("div", {
+            key: ins.id,
+            style: {
+              padding: "12px 0",
+              borderBottom: `1px solid ${C.border}`
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: 4
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontWeight: 700,
+              fontSize: 14,
+              color: C.white
+            }
+          }, ins.type), /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              background: ins.status === "aktiv" ? `${C.green}22` : `${C.red}22`,
+              color: ins.status === "aktiv" ? C.green : C.red,
+              fontSize: 9,
+              fontWeight: 800,
+              padding: "2px 7px",
+              borderRadius: 4,
+              border: `1px solid ${ins.status === "aktiv" ? C.green + "44" : C.red + "44"}`
+            }
+          }, ins.status.toUpperCase())), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 12,
+              color: C.muted,
+              marginBottom: 2
+            }
+          }, ins.provider, " · Nr: ", ins.nr), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 11,
+              color: C.muted,
+              marginBottom: 4
+            }
+          }, "Gültig: ", fmtDate(ins.since), " – ", fmtDate(ins.until), " · ", ins.premium), ins.note && /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 11,
+              color: "#777",
+              background: C.black,
+              borderRadius: 6,
+              padding: "6px 8px"
+            }
+          }, ins.note))))
+        }, {
+          id: "gutachten",
+          icon: "📄",
+          label: "Gutachten",
+          count: vGutachten.length,
+          content: /*#__PURE__*/_react.default.createElement("div", null, vGutachten.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              padding: "16px",
+              textAlign: "center",
+              color: C.muted,
+              fontSize: 13
+            }
+          }, "Noch keine Gutachten hinterlegt") : vGutachten.map(g => /*#__PURE__*/_react.default.createElement("div", {
+            key: g.id,
+            style: {
+              padding: "12px 0",
+              borderBottom: `1px solid ${C.border}`
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: 4
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontWeight: 700,
+              fontSize: 14,
+              color: C.white
+            }
+          }, g.type), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              display: "flex",
+              gap: 4,
+              alignItems: "center"
+            }
+          }, g.signiert && /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              background: `${C.green}22`,
+              color: C.green,
+              fontSize: 9,
+              fontWeight: 800,
+              padding: "2px 7px",
+              borderRadius: 4
+            }
+          }, "✓ SIGNIERT"), /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 11,
+              color: C.muted
+            }
+          }, fmtDate(g.date)))), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 12,
+              color: C.muted,
+              marginBottom: 2
+            }
+          }, g.gutachter), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              display: "flex",
+              gap: 12,
+              marginBottom: 6,
+              flexWrap: "wrap"
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 10,
+              color: C.muted
+            }
+          }, "Bewertung: "), /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 13,
+              fontWeight: 700,
+              color: C.gold
+            }
+          }, g.wert)), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 10,
+              color: C.muted
+            }
+          }, "Zustand: "), /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 12,
+              color: C.white
+            }
+          }, g.zustand)), g.km && /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 10,
+              color: C.muted
+            }
+          }, "KM: "), /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 12,
+              color: C.white
+            }
+          }, parseInt(g.km).toLocaleString("de-DE")))), g.note && /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 11,
+              color: "#777",
+              background: C.black,
+              borderRadius: 6,
+              padding: "8px 10px",
+              lineHeight: 1.6
+            }
+          }, g.note))))
+        }];
+        return sections.map(sec => /*#__PURE__*/_react.default.createElement("div", {
+          key: sec.id,
+          style: {
+            background: C.card,
+            border: `1px solid ${C.border}`,
+            borderRadius: 12,
+            marginBottom: 10,
+            overflow: "hidden"
+          }
+        }, /*#__PURE__*/_react.default.createElement("button", {
+          onClick: () => toggleSection(v.id, sec.id),
+          style: {
+            width: "100%",
+            background: "none",
+            border: "none",
+            padding: "14px 16px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontFamily: "'Barlow',sans-serif"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 18,
+            flexShrink: 0
+          }
+        }, sec.icon), /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontWeight: 700,
+            fontSize: 15,
+            color: C.white,
+            flex: 1,
+            textAlign: "left"
+          }
+        }, sec.label), sec.count > 0 && /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            background: C.black,
+            borderRadius: 99,
+            padding: "2px 8px",
+            fontSize: 11,
+            fontWeight: 700,
+            color: C.muted,
+            flexShrink: 0
+          }
+        }, sec.count), sec.action && isOpen(v.id, sec.id) && /*#__PURE__*/_react.default.createElement("button", {
+          onClick: e => {
+            e.stopPropagation();
+            sec.action();
+          },
+          style: {
+            background: C.red,
+            border: "none",
+            borderRadius: 6,
+            padding: "4px 10px",
+            color: "#fff",
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: "pointer",
+            flexShrink: 0,
+            fontFamily: "'Barlow',sans-serif"
+          }
+        }, sec.actionLabel), /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 16,
+            color: C.muted,
+            flexShrink: 0,
+            transition: "transform .2s",
+            transform: isOpen(v.id, sec.id) ? "rotate(180deg)" : "rotate(0deg)"
+          }
+        }, "▾")), isOpen(v.id, sec.id) && /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            padding: "0 16px 14px",
+            borderTop: `1px solid ${C.border}`
+          }
+        }, sec.content)));
+      })(), isOwn && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           marginBottom: 16
         }
