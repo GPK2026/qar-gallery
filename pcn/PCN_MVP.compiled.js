@@ -3199,7 +3199,33 @@
           fontSize: 20,
           color: "rgba(255,255,255,.7)"
         }
-      }, "›")))), /*#__PURE__*/_react.default.createElement("div", {
+      }, "›")), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: "rgba(255,255,255,.05)",
+          border: "1px solid rgba(255,255,255,.1)",
+          borderRadius: 10,
+          padding: "11px 13px",
+          display: "flex",
+          gap: 10,
+          alignItems: "flex-start"
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 16,
+          flexShrink: 0,
+          marginTop: 1
+        }
+      }, "🔒"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: "#888",
+          lineHeight: 1.6
+        }
+      }, /*#__PURE__*/_react.default.createElement("strong", {
+        style: {
+          color: "#aaa"
+        }
+      }, "Anonymer Kontakt:"), " Deine Nachricht wird anonym übermittelt — Name und E-Mail bleiben geschützt. Der Fahrzeughalter antwortet direkt über die QAR-App. Daten werden nicht gespeichert oder weitergegeben.")))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           padding: "14px 16px",
           maxWidth: 520,
