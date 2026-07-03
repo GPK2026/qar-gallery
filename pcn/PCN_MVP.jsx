@@ -546,6 +546,9 @@ function PCNInner() {
   const [eventHistory]            = useState(DEMO_HISTORY);
   const [threads, setThreads]     = useState({});
   const [activeThread, setActiveThread] = useState(null);
+  const [guestThreads, setGuestThreads] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("pcn_guest_threads")||"[]"); } catch(e){ return []; }
+  });
   const [viewV, setViewV]         = useState(null);
   const [viewEv, setViewEv]       = useState(null);
   const [publicV, setPublicV]     = useState(null);
@@ -835,8 +838,33 @@ function PCNInner() {
 
     refreshThreads();
     if(!tryRealtime()) startPolling();
-    return ()=>cleanup&&cleanup();
+
+    // Fast polling when user is actively in chat screen (3s)
+    let fastPoll = null;
+    const checkFast = () => {
+      if(fastPoll) clearInterval(fastPoll);
+      // Will be set by screen change — see below
+    };
+
+    return ()=>{ cleanup&&cleanup(); if(fastPoll) clearInterval(fastPoll); };
   },[me?.id]);
+
+  // ── Fast polling (3s) when actively viewing a chat ────────────────────────
+  useEffect(()=>{
+    if(screen!=="chat"||!activeThread||!me?.id) return;
+    const DB=window.PCN_DB; if(!DB) return;
+    const fast=setInterval(async()=>{
+      const {data:liveThreads}=await DB.threads.list(me.id);
+      if(liveThreads){
+        setThreads(prev=>{
+          const next={...prev};
+          liveThreads.forEach(t=>{next[t.id]=t;});
+          return next;
+        });
+      }
+    },3000);
+    return ()=>clearInterval(fast);
+  },[screen,activeThread,me?.id]);
 
   // ── Track screen changes for analytics ───────────────────────────────────────
   useEffect(()=>{
@@ -1117,7 +1145,17 @@ function PCNInner() {
     await DB.threads.send(t.id,"system",`Kontakt über QAR-ID: ${v.qarId}`);
     const newThread={...t,messages:[{id:uid(),from:"system",text:`Kontakt über QAR-ID: ${v.qarId}`,ts:fmtTime(),isSystem:true,read:true}]};
     setThreads(prev=>({...prev,[t.id]:newThread}));
-    setActiveThread(t.id); setScreen("chat");
+    setActiveThread(t.id);
+    // Persist guest thread so it can be reopened later
+    if(!currentMe.id || currentMe.role==="guest") {
+      const gThread = {id:t.id, vehicleId:v.id, vehicleName:`${v.hersteller} ${v.modell}`, qarId:v.qarId, createdAt:new Date().toISOString()};
+      setGuestThreads(prev=>{
+        const updated=[gThread,...prev.filter(x=>x.id!==t.id)].slice(0,10);
+        localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
+        return updated;
+      });
+    }
+    setScreen("chat");
     toast_("Anonyme Nachricht gestartet 🔒");
   };
 
@@ -2966,6 +3004,40 @@ function PCNInner() {
         {tab==="messages"&&(
           <div style={{animation:"fadeIn .2s"}}>
 
+            {/* ── Meine anonymen Chats (Gast + Mitglied) ── */}
+            {guestThreads.length>0&&(
+              <div style={{marginBottom:18}}>
+                <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>🔒 Meine anonymen Chats</div>
+                {guestThreads.map(gt=>{
+                  const t=threads[gt.id];
+                  const lastMsg=t?.messages?.filter(m=>!m.isSystem)?.slice(-1)[0];
+                  return (
+                    <div key={gt.id}
+                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 14px",marginBottom:8,cursor:"pointer",display:"flex",gap:12,alignItems:"center"}}
+                      onClick={async()=>{
+                        // Reload thread from DB if needed
+                        if(!t && window.PCN_DB) {
+                          const {data:liveThreads}=await window.PCN_DB.threads.list(me?.id||gt.id);
+                          const found=(liveThreads||[]).find(x=>x.id===gt.id);
+                          if(found) setThreads(prev=>({...prev,[gt.id]:found}));
+                        }
+                        setActiveThread(gt.id); setScreen("chat");
+                      }}>
+                      <div style={{width:44,height:44,borderRadius:"50%",background:"#1a1a2e",border:"2px solid #3a3a5e",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🔒</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontWeight:700,fontSize:15,color:C.white,marginBottom:2}}>{gt.vehicleName}</div>
+                        <div style={{fontSize:12,color:"#6b7fff",marginBottom:2}}>QAR: {gt.qarId}</div>
+                        <div style={{fontSize:12,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                          {lastMsg?lastMsg.text:"Noch keine Nachricht"}
+                        </div>
+                      </div>
+                      <span style={{fontSize:20,color:C.muted}}>›</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {/* ── Group Channel — PCN Mitglieder ── */}
             <div style={{marginBottom:16}}>
               <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>📡 Club-Kanal</div>
@@ -3507,7 +3579,7 @@ function PCNInner() {
           <span className="ico">📷</span>
           <span className="lbl">Scan</span>
         </button>
-        {[["dashboard","🏠","Start"],["events","🏁","Events"],["messages","💬","Chat"],["reminders","🔔","Termine"],["profile","👤","Profil"]].map(([id,icon,label])=>(
+        {[["dashboard","🏠","Start"],["events","🏁","Events"],["messages","💬","Chats"],["reminders","🔔","Termine"],["profile","👤","Profil"]].map(([id,icon,label])=>(
           <button key={id} className={`tab-btn ${tab===id?"on":""}`} onClick={()=>setTab(id)}>
             {id==="messages"&&unreadCount>0&&<div className="badge">{unreadCount}</div>}
             <span className="ico">{icon}</span>
