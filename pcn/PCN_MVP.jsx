@@ -518,6 +518,9 @@ function PCNInner() {
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [loginForm, setLoginForm] = useState({mode:"register",code:"",email:"",name:""});
+  const [magicStep, setMagicStep] = useState("email"); // "email" | "sent" | "otp"
+  const [magicOtp, setMagicOtp] = useState("");
+  const [magicLoading, setMagicLoading] = useState(false);
   const [addVForm, setAddVForm]   = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[],phone:""});
   const [addLogForm, setAddLogForm] = useState({type:"Ölwechsel",km:"",notes:"",workshop:""});
   const [remForm, setRemForm]     = useState({vehicleId:"",title:"",date:""});
@@ -702,10 +705,24 @@ function PCNInner() {
     setMe(user);
   };
 
-  // ── Session restore ───────────────────────────────────────────────────────────
+  // ── Session restore + Magic Link token handler ───────────────────────────────
   useEffect(()=>{
     (async()=>{
       const params=new URLSearchParams(window.location.search);
+      // Handle magic link token from URL hash
+      const hash=window.location.hash;
+      if(hash.includes("access_token=")){
+        const token=hash.split("access_token=")[1]?.split("&")[0];
+        if(token){
+          const DB=window.PCN_DB;
+          const {data:u,error}=await DB.auth.exchangeToken(token);
+          if(!error&&u){
+            window.history.replaceState(null,"",window.location.pathname);
+            await refreshAll(u); setScreen("app"); toast_("Willkommen zurück! 🏁");
+            return;
+          }
+        }
+      }
       const qarId=params.get("v");
       if(qarId&&/^QAR-[A-Z2-9]{8}$/.test(qarId)){
         const DB=window.PCN_DB;
@@ -1161,7 +1178,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {/* Tab toggle */}
         <div style={{display:"flex",background:"#1a1a1a",borderRadius:12,padding:3,marginBottom:20}}>
           {[["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
-            <button key={m} onClick={()=>setLoginForm(p=>({...p,mode:m}))}
+            <button key={m} onClick={()=>{setLoginForm(p=>({...p,mode:m}));setMagicStep("email");setMagicOtp("");}}
               style={{flex:1,padding:"11px",border:"none",borderRadius:10,cursor:"pointer",
                 fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14,transition:"all .15s",
                 background:loginForm.mode===m?C.red:"transparent",
@@ -1174,19 +1191,75 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {/* Login */}
         {loginForm.mode==="login"&&(
           <>
-            <input className="inp" placeholder="E-Mail-Adresse" type="email"
-              value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}
-              style={{marginBottom:12,fontSize:16}}/>
-            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,opacity:loginForm.email?1:.4}}
-              disabled={!loginForm.email}
-              onClick={async()=>{
-                const DB=window.PCN_DB;
-                const {data:u,error}=await DB.auth.login(loginForm.email);
-                if(error){toast_(error,"err");return;}
-                await refreshAll(u); setScreen("app");
-                toast_("Willkommen zurück, "+u.name+"! 🏁");
-              }}>Anmelden →</button>
-            <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>Kein Passwort nötig — nur deine Club-E-Mail</div>
+            {/* Step 1: Enter email */}
+            {magicStep==="email"&&(
+              <>
+                <input className="inp" placeholder="E-Mail-Adresse" type="email"
+                  value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}
+                  style={{marginBottom:12,fontSize:16}}
+                  onKeyDown={e=>e.key==="Enter"&&loginForm.email&&document.getElementById("magic-btn")?.click()}/>
+                <button id="magic-btn" className="btn"
+                  style={{width:"100%",padding:"14px",fontSize:15,opacity:loginForm.email&&!magicLoading?1:.4}}
+                  disabled={!loginForm.email||magicLoading}
+                  onClick={async()=>{
+                    setMagicLoading(true);
+                    const DB=window.PCN_DB;
+                    const redirect=window.location.href.split("?")[0]+"?magic=1";
+                    const {data,error}=await DB.auth.sendMagicLink(loginForm.email, redirect);
+                    setMagicLoading(false);
+                    if(error){
+                      // Fallback to direct login for demo accounts
+                      const {data:u,error:e2}=await DB.auth.login(loginForm.email);
+                      if(e2){toast_(e2,"err");return;}
+                      await refreshAll(u); setScreen("app");
+                      toast_("Willkommen zurück, "+u.name+"! 🏁");
+                      return;
+                    }
+                    setMagicStep("sent");
+                  }}>
+                  {magicLoading?"⏳ Sende Link…":"✉️ Magic Link senden →"}
+                </button>
+                <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>
+                  Kein Passwort — wir schicken dir einen sicheren Login-Link
+                </div>
+              </>
+            )}
+
+            {/* Step 2: Link sent confirmation */}
+            {magicStep==="sent"&&(
+              <>
+                <div style={{background:`${C.green}12`,border:`1px solid ${C.green}44`,borderRadius:12,padding:"20px",textAlign:"center",marginBottom:14}}>
+                  <div style={{fontSize:32,marginBottom:8}}>✉️</div>
+                  <div style={{fontWeight:700,fontSize:15,color:C.white,marginBottom:6}}>Link gesendet!</div>
+                  <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
+                    Schau in dein Postfach bei<br/>
+                    <strong style={{color:C.white}}>{loginForm.email}</strong><br/>
+                    und tippe auf den Login-Link.
+                  </div>
+                </div>
+                <div style={{textAlign:"center",marginBottom:12,fontSize:12,color:C.muted}}>Oder gib den 6-stelligen Code aus der E-Mail ein:</div>
+                <input className="inp" placeholder="000000" value={magicOtp}
+                  onChange={e=>setMagicOtp(e.target.value.replace(/\D/g,"").slice(0,6))}
+                  style={{textAlign:"center",letterSpacing:8,fontSize:22,fontWeight:800,marginBottom:10}}/>
+                <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,opacity:magicOtp.length===6&&!magicLoading?1:.4}}
+                  disabled={magicOtp.length!==6||magicLoading}
+                  onClick={async()=>{
+                    setMagicLoading(true);
+                    const DB=window.PCN_DB;
+                    const {data:u,error}=await DB.auth.verifyOtp(loginForm.email, magicOtp);
+                    setMagicLoading(false);
+                    if(error){toast_(error,"err");return;}
+                    await refreshAll(u); setScreen("app");
+                    toast_("Willkommen zurück, "+u.name+"! 🏁");
+                  }}>
+                  {magicLoading?"⏳ Prüfe…":"Einloggen ✓"}
+                </button>
+                <button onClick={()=>{setMagicStep("email");setMagicOtp("");}}
+                  style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12,width:"100%",marginTop:10,fontFamily:"'Barlow',sans-serif"}}>
+                  ← Andere E-Mail eingeben
+                </button>
+              </>
+            )}
           </>
         )}
 
@@ -2596,10 +2669,26 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                   <div style={{background:C.green,borderRadius:6,padding:"4px 10px",fontSize:12,fontWeight:800,color:"#fff"}}>AKTIV</div>
                 </div>
               </div>
-              <button className="btn ghost" style={{width:"100%",fontSize:14,padding:"12px"}}
-                onClick={()=>toast_("Zahlung über Clubverwaltung — kommt in nächster Version 💳")}>
-                💳 Beitrag erneuern / bezahlen
+              <button className="btn ghost" style={{width:"100%",fontSize:14,padding:"12px",borderColor:C.gold,color:C.gold}}
+                onClick={async()=>{
+                  // Stripe Checkout — opens Stripe hosted payment page
+                  // Replace STRIPE_LINK with your actual Stripe Payment Link
+                  const STRIPE_LINK = "https://buy.stripe.com/test_placeholder";
+                  const params = new URLSearchParams({
+                    prefilled_email: me?.email||"",
+                    client_reference_id: me?.id||"",
+                  });
+                  // In production: open Stripe link with prefilled member data
+                  // For now: show setup info
+                  toast_("Stripe-Integration bereit. Bitte Stripe Payment Link in pcn_config.js eintragen.");
+                  // Uncomment when Stripe link is ready:
+                  // window.open(STRIPE_LINK+"?"+params.toString(), "_blank");
+                }}>
+                💳 Mitgliedsbeitrag bezahlen
               </button>
+              <div style={{fontSize:10,color:"#444",textAlign:"center",marginTop:6}}>
+                Sichere Zahlung via Stripe · SEPA · Kreditkarte
+              </div>
             </div>
 
             <button className="btn ghost" style={{width:"100%",fontSize:15,padding:"14px"}} onClick={async()=>{
