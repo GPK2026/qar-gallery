@@ -912,12 +912,23 @@ function PCNInner() {
   const addVehicle = async () => {
     if(!addVForm.modell||!addVForm.kennzeichen) return toast_("Modell und Kennzeichen angeben","err");
     const DB=window.PCN_DB;
-    const v={qarId:genQARId(),userId:me.id,owner:me.email,...addVForm,images:addVForm.images||[],image:(addVForm.images||[])[0]||"",privacy:{...DEF_PRIVACY}};
-    const {data:saved,error}=await DB.vehicles.save(v);
-    if(error){toast_("Fehler: "+error,"err");return;}
-    setVehicles(prev=>({...prev,[saved.id]:saved}));
-setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[]});
-    toast_("Fahrzeug hinzugefügt ✓");
+    const newV={
+      qarId:genQARId(), userId:me.id, owner:me.email,
+      ...addVForm,
+      images:addVForm.images||[],
+      image:(addVForm.images||[])[0]||"",
+      privacy:{...DEF_PRIVACY},
+    };
+    const {data:saved,error}=await DB.vehicles.save(newV);
+    if(error){ toast_("Fehler beim Speichern: "+error,"err"); return; }
+    // Merge saved data (from DB) with local data — DB may not return all fields
+    const vehicle = saved && saved.id
+      ? { ...newV, ...saved }  // DB returned full object
+      : { ...newV, id:"V"+Date.now() }; // Fallback: local ID
+    setVehicles(prev=>({...prev,[vehicle.id]:vehicle}));
+    setShowAddV(false);
+    setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[]});
+    toast_("Fahrzeug hinzugefügt ✓ · QAR-ID: "+vehicle.qarId);
   };
 
   const addLogEntry = async (vehicleId) => {
