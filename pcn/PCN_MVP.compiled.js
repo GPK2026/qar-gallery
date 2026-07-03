@@ -4324,7 +4324,89 @@
           color: C.muted,
           lineHeight: 1.5
         }
-      }, "✨ ", v.besonderheiten)), (() => {
+      }, "✨ ", v.besonderheiten), isOwn && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          marginTop: 14,
+          paddingTop: 12,
+          borderTop: `1px solid ${C.border}`,
+          display: "flex",
+          gap: 8,
+          flexWrap: "wrap"
+        }
+      }, /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => setShowPrivacy(v.id),
+        style: {
+          flex: 1,
+          background: `${C.red}18`,
+          border: `1.5px solid ${C.red}44`,
+          borderRadius: 10,
+          padding: "11px 12px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 18
+        }
+      }, "🔒"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          textAlign: "left"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontWeight: 700,
+          fontSize: 13,
+          color: C.white
+        }
+      }, "QR-Sichtbarkeit"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted
+        }
+      }, "Einstellen was Besucher sehen"))), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => {
+          setPublicV({
+            ...v,
+            privacy: priv
+          });
+          setScreen("public");
+          loadStatusFor(v.id);
+        },
+        style: {
+          flex: 1,
+          background: C.black,
+          border: `1.5px solid ${C.border}`,
+          borderRadius: 10,
+          padding: "11px 12px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 18
+        }
+      }, "👁"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          textAlign: "left"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontWeight: 700,
+          fontSize: 13,
+          color: C.white
+        }
+      }, "Vorschau"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted
+        }
+      }, "So sehen Besucher die Akte"))))), (() => {
         const vRems = myReminders.filter(r => r.vehicleId === v.id || r.vehicle_id === v.id);
         if (vRems.length === 0) return null;
         return /*#__PURE__*/_react.default.createElement("div", {
@@ -5043,10 +5125,6 @@
         }
       }, /*#__PURE__*/_react.default.createElement("span", {
         style: {
-          fontSize: 16
-        }
-      }, "▪︎"), /*#__PURE__*/_react.default.createElement("span", {
-        style: {
           fontWeight: 800,
           fontSize: 13,
           color: C.red
@@ -5062,20 +5140,41 @@
           fontWeight: 800,
           color: C.white
         }
-      }, "Öffentliche Sichtbarkeit")), /*#__PURE__*/_react.default.createElement("div", {
+      }, "QR-Sichtbarkeit")), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 11,
+          fontSize: 12,
           color: C.muted,
           marginBottom: 4
         }
-      }, "Was sehen Besucher wenn sie deinen QR-Code scannen?"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "Was sehen Besucher wenn sie den QR-Code scannen?"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: C.black,
+          borderRadius: 8,
+          padding: "10px 12px",
+          marginBottom: 14,
+          display: "flex",
+          gap: 6,
+          flexWrap: "wrap"
+        }
+      }, [[priv.pub_gallery !== false, "📸 Fotos"], [priv.pub_events, "🏁 Events"], [priv.pub_logbook, "📋 Logbuch"], [priv.pub_phone, "📞 Telefon"], [priv.kennzeichen !== false, "🔑 Kennzeichen"]].map(([on, label]) => /*#__PURE__*/_react.default.createElement("span", {
+        key: label,
+        style: {
+          fontSize: 10,
+          fontWeight: 700,
+          padding: "2px 7px",
+          borderRadius: 4,
+          background: on ? `${C.green}22` : `${C.border}44`,
+          color: on ? C.green : C.muted,
+          border: `1px solid ${on ? C.green + "44" : C.border}`
+        }
+      }, on ? "✓" : "✗", " ", label))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: "#444",
           marginBottom: 16,
           lineHeight: 1.6
         }
-      }, "Tippe einen Toggle um die Sichtbarkeit zu ändern. 🔓 = sichtbar · 🔒 = versteckt"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"]]], ["Abschnitte", [["pub_gallery", "Fotogalerie 📸"], ["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/_react.default.createElement("div", {
+      }, "🔓 = sichtbar für Besucher · 🔒 = nur für dich sichtbar"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"]]], ["Abschnitte", [["pub_gallery", "Fotogalerie 📸"], ["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/_react.default.createElement("div", {
         key: group,
         style: {
           marginBottom: 14
@@ -5095,22 +5194,30 @@
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "10px 0",
+          padding: "11px 0",
           borderBottom: `1px solid ${C.border}`
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 13,
+          fontSize: 14,
           color: C.white
         }
-      }, label), /*#__PURE__*/_react.default.createElement("button", {
+      }, label), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: priv[key] === true || priv[key] === undefined && DEF_PRIVACY[key] ? C.green : C.muted,
+          marginTop: 1
+        }
+      }, priv[key] === true || priv[key] === undefined && DEF_PRIVACY[key] ? "🔓 Öffentlich sichtbar" : "🔒 Nur privat")), /*#__PURE__*/_react.default.createElement("button", {
         className: `tog ${priv[key] === true || priv[key] === undefined && DEF_PRIVACY[key] ? "on" : ""}`,
         onClick: () => togglePrivacy(v.id, key)
       }))))), /*#__PURE__*/_react.default.createElement("button", {
         className: "btn",
         style: {
           width: "100%",
-          marginTop: 8
+          marginTop: 8,
+          padding: "14px",
+          fontSize: 15
         },
         onClick: () => setShowPrivacy(null)
       }, "Fertig ✓"))), showEditVehicle === v.id && /*#__PURE__*/_react.default.createElement("div", {
