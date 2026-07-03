@@ -544,9 +544,9 @@ function PCNInner() {
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [loginForm, setLoginForm] = useState({mode:"register",code:"",email:"",name:""});
-  const [magicStep, setMagicStep] = useState("email"); // "email" | "sent" | "otp"
-  const [magicOtp, setMagicOtp] = useState("");
-  const [magicLoading, setMagicLoading] = useState(false);
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   const [addVForm, setAddVForm]   = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[],phone:""});
   const [addLogForm, setAddLogForm] = useState({type:"Ölwechsel",km:"",notes:"",workshop:""});
   const [remForm, setRemForm]     = useState({vehicleId:"",title:"",date:""});
@@ -1207,7 +1207,7 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
         {/* Tab toggle */}
         <div style={{display:"flex",background:"#1a1a1a",borderRadius:12,padding:3,marginBottom:20}}>
           {[["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
-            <button key={m} onClick={()=>{setLoginForm(p=>({...p,mode:m}));setMagicStep("email");setMagicOtp("");}}
+            <button key={m} onClick={()=>{setLoginForm(p=>({...p,mode:m}));setLoginPassword("");setShowPassword(false);}}
               style={{flex:1,padding:"11px",border:"none",borderRadius:10,cursor:"pointer",
                 fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14,transition:"all .15s",
                 background:loginForm.mode===m?C.red:"transparent",
@@ -1217,78 +1217,58 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
           ))}
         </div>
 
-        {/* Login */}
+        {/* Login — E-Mail + Passwort, sofort einloggen */}
         {loginForm.mode==="login"&&(
           <>
-            {/* Step 1: Enter email */}
-            {magicStep==="email"&&(
-              <>
-                <input className="inp" placeholder="E-Mail-Adresse" type="email"
-                  value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}
-                  style={{marginBottom:12,fontSize:16}}
-                  onKeyDown={e=>e.key==="Enter"&&loginForm.email&&document.getElementById("magic-btn")?.click()}/>
-                <button id="magic-btn" className="btn"
-                  style={{width:"100%",padding:"14px",fontSize:15,opacity:loginForm.email&&!magicLoading?1:.4}}
-                  disabled={!loginForm.email||magicLoading}
-                  onClick={async()=>{
-                    setMagicLoading(true);
-                    const DB=window.PCN_DB;
-                    const redirect=window.location.href.split("?")[0]+"?magic=1";
-                    const {data,error}=await DB.auth.sendMagicLink(loginForm.email, redirect);
-                    setMagicLoading(false);
-                    if(error){
-                      // Fallback to direct login for demo accounts
-                      const {data:u,error:e2}=await DB.auth.login(loginForm.email);
-                      if(e2){toast_(e2,"err");return;}
-                      await refreshAll(u); setScreen("app");
-                      toast_("Willkommen zurück, "+u.name+"! 🏁");
-                      return;
-                    }
-                    setMagicStep("sent");
-                  }}>
-                  {magicLoading?"⏳ Sende Link…":"✉️ Magic Link senden →"}
-                </button>
-                <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>
-                  Kein Passwort — wir schicken dir einen sicheren Login-Link
-                </div>
-              </>
-            )}
-
-            {/* Step 2: Link sent confirmation */}
-            {magicStep==="sent"&&(
-              <>
-                <div style={{background:`${C.green}12`,border:`1px solid ${C.green}44`,borderRadius:12,padding:"20px",textAlign:"center",marginBottom:14}}>
-                  <div style={{fontSize:32,marginBottom:8}}>✉️</div>
-                  <div style={{fontWeight:700,fontSize:15,color:C.white,marginBottom:6}}>Link gesendet!</div>
-                  <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
-                    Schau in dein Postfach bei<br/>
-                    <strong style={{color:C.white}}>{loginForm.email}</strong><br/>
-                    und tippe auf den Login-Link.
-                  </div>
-                </div>
-                <div style={{textAlign:"center",marginBottom:12,fontSize:12,color:C.muted}}>Oder gib den 6-stelligen Code aus der E-Mail ein:</div>
-                <input className="inp" placeholder="000000" value={magicOtp}
-                  onChange={e=>setMagicOtp(e.target.value.replace(/\D/g,"").slice(0,6))}
-                  style={{textAlign:"center",letterSpacing:8,fontSize:22,fontWeight:800,marginBottom:10}}/>
-                <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,opacity:magicOtp.length===6&&!magicLoading?1:.4}}
-                  disabled={magicOtp.length!==6||magicLoading}
-                  onClick={async()=>{
-                    setMagicLoading(true);
-                    const DB=window.PCN_DB;
-                    const {data:u,error}=await DB.auth.verifyOtp(loginForm.email, magicOtp);
-                    setMagicLoading(false);
-                    if(error){toast_(error,"err");return;}
-                    await refreshAll(u); setScreen("app");
-                    toast_("Willkommen zurück, "+u.name+"! 🏁");
-                  }}>
-                  {magicLoading?"⏳ Prüfe…":"Einloggen ✓"}
-                </button>
-                <button onClick={()=>{setMagicStep("email");setMagicOtp("");}}
-                  style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12,width:"100%",marginTop:10,fontFamily:"'Barlow',sans-serif"}}>
-                  ← Andere E-Mail eingeben
-                </button>
-              </>
-            )}
+            <input className="inp" placeholder="E-Mail-Adresse" type="email"
+              value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}
+              style={{marginBottom:10,fontSize:16}}/>
+            <div style={{position:"relative",marginBottom:14}}>
+              <input className="inp" placeholder="Passwort"
+                type={showPassword?"text":"password"}
+                value={loginPassword} onChange={e=>setLoginPassword(e.target.value)}
+                style={{fontSize:16,paddingRight:44}}
+                onKeyDown={async e=>{
+                  if(e.key!=="Enter"||!loginForm.email||!loginPassword) return;
+                  setAuthLoading(true);
+                  const DB=window.PCN_DB;
+                  const {data:u,error}=await DB.auth.loginWithPassword(loginForm.email,loginPassword);
+                  setAuthLoading(false);
+                  if(error){toast_(error,"err");return;}
+                  await refreshAll(u); setScreen("app");
+                  toast_("Willkommen zurück, "+u.name+"! 🏁");
+                }}/>
+              <button onClick={()=>setShowPassword(p=>!p)}
+                style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,color:C.muted}}>
+                {showPassword?"🙈":"👁"}
+              </button>
+            </div>
+            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,
+              opacity:loginForm.email&&loginPassword&&!authLoading?1:.4}}
+              disabled={!loginForm.email||!loginPassword||authLoading}
+              onClick={async()=>{
+                setAuthLoading(true);
+                const DB=window.PCN_DB;
+                const {data:u,error}=await DB.auth.loginWithPassword(loginForm.email,loginPassword);
+                setAuthLoading(false);
+                if(error){toast_(error,"err");return;}
+                await refreshAll(u); setScreen("app");
+                toast_("Willkommen zurück, "+u.name+"! 🏁");
+              }}>
+              {authLoading?"⏳ Anmelden…":"Anmelden →"}
+            </button>
+            <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>
+              Passwort vergessen?{" "}
+              <span style={{color:C.red,cursor:"pointer",fontWeight:700}}
+                onClick={async()=>{
+                  if(!loginForm.email){toast_("Bitte zuerst E-Mail eingeben","err");return;}
+                  const DB=window.PCN_DB;
+                  await DB.auth.resetPassword(loginForm.email);
+                  toast_("Reset-Link gesendet — schau in dein Postfach ✉️");
+                }}>
+                Reset-Link senden
+              </span>
+            </div>
           </>
         )}
 
@@ -1314,17 +1294,29 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
               <>
                 <input className="inp" placeholder="Dein Name" style={{marginBottom:10}}
                   value={loginForm.name} onChange={e=>setLoginForm(p=>({...p,name:e.target.value}))}/>
-                <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:14}}
+                <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:10}}
                   value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
+                <div style={{position:"relative",marginBottom:14}}>
+                  <input className="inp" placeholder="Passwort wählen (mind. 6 Zeichen)"
+                    type={showPassword?"text":"password"}
+                    value={loginPassword} onChange={e=>setLoginPassword(e.target.value)}
+                    style={{fontSize:16,paddingRight:44}}/>
+                  <button onClick={()=>setShowPassword(p=>!p)}
+                    style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,color:C.muted}}>
+                    {showPassword?"🙈":"👁"}
+                  </button>
+                </div>
               </>
             )}
 
             <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,
-              opacity:loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email?1:.35}}
-              disabled={!(loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email)}
+              opacity:loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email&&loginPassword.length>=6?1:.35}}
+              disabled={!(loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email&&loginPassword.length>=6)}
               onClick={async()=>{
+                setAuthLoading(true);
                 const DB=window.PCN_DB;
-                const {data:u,error}=await DB.auth.register(loginForm.name,loginForm.email,loginForm.code);
+                const {data:u,error}=await DB.auth.register(loginForm.name,loginForm.email,loginForm.code,loginPassword);
+                setAuthLoading(false);
                 if(error){toast_(error,"err");return;}
                 const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
                 if(!stored.events||Object.keys(stored.events).length===0){
@@ -1333,7 +1325,12 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
                 setMe(u); setAllUsers(p=>({...p,[u.id]:u}));
                 setEvents(DEMO_EVENTS); setScreen("app");
                 toast_("Willkommen, "+u.name+"! 🏁");
-              }}>Konto erstellen →</button>
+              }}>
+              {authLoading?"⏳ Erstelle Konto…":"Konto erstellen →"}
+            </button>
+            {loginPassword.length>0&&loginPassword.length<6&&(
+              <div style={{fontSize:11,color:"#ef4444",textAlign:"center",marginTop:6}}>Passwort muss mind. 6 Zeichen haben</div>
+            )}
           </>
         )}
 
