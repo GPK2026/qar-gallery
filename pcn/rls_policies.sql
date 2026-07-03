@@ -170,3 +170,10 @@ SELECT schemaname, tablename, policyname, cmd, qual
 FROM pg_policies
 WHERE schemaname = 'public'
 ORDER BY tablename, policyname;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- MVP AUTH: Add pw_hash column to users table (no Supabase Auth needed)
+-- Run this in Supabase SQL Editor
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pw_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ;
