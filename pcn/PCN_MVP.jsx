@@ -1801,23 +1801,49 @@ setShowAddV(false); setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennz
 
             {/* ── QR-Sichtbarkeit & Aktionen ── */}
             {isOwn&&(
-              <div style={{marginTop:14,paddingTop:12,borderTop:`1px solid ${C.border}`,display:"flex",gap:8,flexWrap:"wrap"}}>
-                <button onClick={()=>setShowPrivacy(v.id)}
-                  style={{flex:1,background:`${C.red}18`,border:`1.5px solid ${C.red}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
-                  <span style={{fontSize:18}}>🔒</span>
-                  <div style={{textAlign:"left"}}>
-                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>QR-Sichtbarkeit</div>
-                    <div style={{fontSize:10,color:C.muted}}>Einstellen was Besucher sehen</div>
-                  </div>
-                </button>
-                <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
-                  style={{flex:1,background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
-                  <span style={{fontSize:18}}>👁</span>
-                  <div style={{textAlign:"left"}}>
-                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>Vorschau</div>
-                    <div style={{fontSize:10,color:C.muted}}>So sehen Besucher die Akte</div>
-                  </div>
-                </button>
+              <div style={{marginTop:14,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
+                {/* Aktiver Status anzeigen */}
+                {(()=>{
+                  const active = getActiveStatus(v.id);
+                  if(!active) return null;
+                  return (
+                    <div style={{background:`${C.amber}18`,border:`1px solid ${C.amber}44`,borderRadius:10,padding:"10px 13px",marginBottom:10,display:"flex",gap:10,alignItems:"center"}}>
+                      <span style={{fontSize:20}}>{active.icon}</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:700,color:C.amber}}>{active.text}</div>
+                        <div style={{fontSize:10,color:C.muted,marginTop:1}}>Aktiver Status · sichtbar für Besucher</div>
+                      </div>
+                      <button onClick={()=>{clearStatus(v.id);toast_("Status gelöscht");}}
+                        style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:18,padding:"0 4px"}}>✕</button>
+                    </div>
+                  );
+                })()}
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <button onClick={()=>setShowStatusPicker(v.id)}
+                    style={{flex:1,background:`${C.amber}15`,border:`1.5px solid ${C.amber}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                    <span style={{fontSize:18}}>📍</span>
+                    <div style={{textAlign:"left"}}>
+                      <div style={{fontWeight:700,fontSize:13,color:C.white}}>Status setzen</div>
+                      <div style={{fontSize:10,color:C.muted}}>Sichtbar beim QR-Scan</div>
+                    </div>
+                  </button>
+                  <button onClick={()=>setShowPrivacy(v.id)}
+                    style={{flex:1,background:`${C.red}15`,border:`1.5px solid ${C.red}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                    <span style={{fontSize:18}}>🔒</span>
+                    <div style={{textAlign:"left"}}>
+                      <div style={{fontWeight:700,fontSize:13,color:C.white}}>QR-Sichtbarkeit</div>
+                      <div style={{fontSize:10,color:C.muted}}>Einstellen was Besucher sehen</div>
+                    </div>
+                  </button>
+                  <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
+                    style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                    <span style={{fontSize:18}}>👁</span>
+                    <div style={{textAlign:"left"}}>
+                      <div style={{fontWeight:700,fontSize:13,color:C.white}}>Vorschau öffentliche Akte</div>
+                      <div style={{fontSize:10,color:C.muted}}>So sehen Besucher dein Fahrzeug beim QR-Scan</div>
+                    </div>
+                  </button>
+                </div>
               </div>
             )}
           </div>
