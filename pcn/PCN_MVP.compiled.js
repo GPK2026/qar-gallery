@@ -2230,26 +2230,36 @@
       }));
     };
     const startContact = async (vehicleId, asUser) => {
-      // asUser: pass fresh user object directly to avoid stale React state closure (e.g. after guest login)
       const currentMe = asUser || me;
       if (!currentMe) {
         toast_("Bitte zuerst anmelden", "err");
         return;
       }
       const DB = window.PCN_DB;
-      // Always fetch the authoritative vehicle record from the DB first —
-      // local `vehicles` state is empty for guests, and DEMO_VEHICLES is stale/static.
-      let v = vehicles[vehicleId];
+
+      // Priority 1: publicV (already loaded on public page — guaranteed to have qarId)
+      // Priority 2: local vehicles state
+      // Priority 3: lookup by vehicleId in DB
+      // Priority 4: demo vehicles fallback
+      let v = publicV?.id === vehicleId || publicV?.qarId === vehicleId ? publicV : null;
+      if (!v) v = vehicles[vehicleId];
       if (!v && DB) {
-        const qarGuess = Object.values(DEMO_VEHICLES).find(dv => dv.id === vehicleId)?.qarId;
-        if (qarGuess) {
-          const {
-            data: realV
-          } = await DB.vehicles.getPublic(qarGuess);
-          if (realV) v = realV;
-        }
+        // Try direct DB lookup by vehicleId first
+        const {
+          data: rows
+        } = await DB.vehicles.getVehicles(vehicleId).catch(() => ({
+          data: null
+        }));
+        if (rows && rows[0]) v = rows[0];
       }
-      if (!v) v = DEMO_VEHICLES[vehicleId]; // last-resort fallback for pure offline demo
+      if (!v && DB && publicV?.qarId) {
+        // Fallback: lookup by QAR-ID from publicV
+        const {
+          data: realV
+        } = await DB.vehicles.getPublic(publicV.qarId);
+        if (realV) v = realV;
+      }
+      if (!v) v = DEMO_VEHICLES[vehicleId];
       if (!v) {
         toast_("Fahrzeug nicht gefunden", "err");
         return;
@@ -2274,13 +2284,12 @@
           }
         }));
       }
-      // Check for existing thread (re-check from DB in case state is stale)
       const {
         data: myThreadsLive
       } = DB ? await DB.threads.list(currentMe.id) : {
         data: []
       };
-      const existing = (myThreadsLive || Object.values(threads)).find(t => t.vehicleId === vehicleId && (t.participants || []).includes(currentMe.id));
+      const existing = (myThreadsLive || Object.values(threads)).find(t => t.vehicleId === v.id && (t.participants || []).includes(currentMe.id));
       if (existing) {
         setThreads(prev => ({
           ...prev,
@@ -2293,7 +2302,7 @@
       const {
         data: t,
         error
-      } = await DB.threads.create([currentMe.id, ownerId], vehicleId, `${v.hersteller} ${v.modell}`);
+      } = await DB.threads.create([currentMe.id, ownerId], v.id, `${v.hersteller} ${v.modell}`);
       if (error) {
         toast_("Fehler: " + error, "err");
         return;
