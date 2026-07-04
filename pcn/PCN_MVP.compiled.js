@@ -1492,6 +1492,7 @@
     const [loginPassword, setLoginPassword] = (0, _react.useState)("");
     const [showPassword, setShowPassword] = (0, _react.useState)(false);
     const [authLoading, setAuthLoading] = (0, _react.useState)(false);
+    const [authStep, setAuthStep] = (0, _react.useState)(""); // status message during auth
     const [addVForm, setAddVForm] = (0, _react.useState)({
       hersteller: "Porsche",
       modell: "",
@@ -3009,12 +3010,15 @@
       disabled: !loginForm.email || !loginPassword || authLoading,
       onClick: async () => {
         setAuthLoading(true);
+        setAuthStep("Anmelden…");
         const DB = window.PCN_DB;
+        setTimeout(() => setAuthStep("Daten werden geladen…"), 2000);
         const {
           data: u,
           error
         } = await DB.auth.loginWithPassword(loginForm.email, loginPassword);
         setAuthLoading(false);
+        setAuthStep("");
         if (error) {
           toast_(error, "err");
           return;
@@ -3026,7 +3030,7 @@
         setScreen("app");
         toast_("Willkommen zurück, " + u.name + "! 🏁");
       }
-    }, authLoading ? "⏳ Anmelden…" : "Anmelden →"), /*#__PURE__*/_react.default.createElement("div", {
+    }, authLoading ? "⏳ " + authStep || "Anmelden…" : "Anmelden →"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         textAlign: "center",
         marginTop: 10,
@@ -3151,12 +3155,20 @@
       disabled: !(loginForm.code.toUpperCase() === CLUB_CODE && loginForm.name && loginForm.email && loginPassword.length >= 6),
       onClick: async () => {
         setAuthLoading(true);
+        setAuthStep("Konto wird erstellt…");
         const DB = window.PCN_DB;
+        const t1 = setTimeout(() => setAuthStep("Verbindung zur Datenbank…"), 1500);
+        const t2 = setTimeout(() => setAuthStep("Mitgliedsnummer wird vergeben…"), 4000);
+        const t3 = setTimeout(() => setAuthStep("Fast fertig…"), 8000);
         const {
           data: u,
           error
         } = await DB.auth.register(loginForm.name, loginForm.email, loginForm.code, loginPassword);
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
         setAuthLoading(false);
+        setAuthStep("");
         if (error) {
           toast_(error, "err");
           return;
@@ -3178,7 +3190,41 @@
         setScreen("app");
         toast_("Willkommen, " + u.name + "! 🏁");
       }
-    }, authLoading ? "⏳ Erstelle Konto…" : "Konto erstellen →"), loginPassword.length > 0 && loginPassword.length < 6 && /*#__PURE__*/_react.default.createElement("div", {
+    }, authLoading ? authStep || "⏳ Erstelle Konto…" : "Konto erstellen →"), authLoading && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginTop: 12,
+        background: "rgba(255,255,255,.05)",
+        borderRadius: 10,
+        padding: "12px 14px"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        width: 16,
+        height: 16,
+        border: "2px solid #ffffff33",
+        borderTop: `2px solid ${C.red}`,
+        borderRadius: "50%",
+        animation: "spin 1s linear infinite",
+        flexShrink: 0
+      }
+    }), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 13,
+        color: "#aaa"
+      }
+    }, authStep || "Verbindung wird hergestellt…")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginTop: 8,
+        fontSize: 11,
+        color: "#555"
+      }
+    }, "Dies kann bei erster Registrierung bis zu 15 Sekunden dauern.")), !authLoading && loginPassword.length > 0 && loginPassword.length < 6 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: "#ef4444",
