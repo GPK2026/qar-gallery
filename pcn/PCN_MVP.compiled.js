@@ -947,7 +947,6 @@
         border: `1px solid ${C.green}44`,
         borderRadius: 12,
         padding: "14px 16px",
-        textAlign: "center",
         marginBottom: 14
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
@@ -960,9 +959,63 @@
     }, "✓ Angemeldet — #", myReg.startNr), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 12,
-        color: C.muted
+        color: C.muted,
+        marginBottom: 10
       }
-    }, myReg.class, " · ", fmtDate(ev.date))) : me && myVehicles.length > 0 ? /*#__PURE__*/_react.default.createElement("div", {
+    }, myReg.class, " · ", fmtDate(ev.date)), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => generateICS({
+        title: ev.name,
+        date: ev.date,
+        location: ev.location || "",
+        description: `PCN Event · Klasse: ${myReg.class} · Startnr: #${myReg.startNr}`,
+        alarmMinutes: 1440
+      }),
+      style: {
+        flex: 1,
+        background: "#fff",
+        border: "none",
+        borderRadius: 8,
+        padding: "9px",
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        color: "#111",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 5
+      }
+    }, "📅 Apple / Outlook"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => {
+        const t = encodeURIComponent(ev.name);
+        const d = (ev.date || "").replace(/-/g, "");
+        const loc = encodeURIComponent(ev.location || "");
+        const det = encodeURIComponent(`Klasse: ${myReg.class} · Startnr: #${myReg.startNr}`);
+        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${d}/${d}&location=${loc}&details=${det}`, "_blank");
+      },
+      style: {
+        flex: 1,
+        background: "#4285F4",
+        border: "none",
+        borderRadius: 8,
+        padding: "9px",
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 5
+      }
+    }, "🗓 Google"))) : me && myVehicles.length > 0 ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -7918,26 +7971,54 @@
           color: C.red,
           fontWeight: 700
         }
-      }, "→ Zur Akte")), r.title.toLowerCase().includes("tüv") && /*#__PURE__*/_react.default.createElement("button", {
-        onClick: () => {
-          const dateStr = r.date ? r.date.replace(/-/g, "") : "";
-          const title = encodeURIComponent(`TÜV ${rv.hersteller} ${rv.modell} (${rv.kennzeichen || ""})`);
-          const details = encodeURIComponent(`TÜV-Hauptuntersuchung für ${rv.hersteller} ${rv.modell}`);
-          const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&details=${details}`;
-          window.open(gcalUrl, "_blank");
-        },
+      }, "→ Zur Akte")), r.date && /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          background: `${C.amber}22`,
-          border: `1px solid ${C.amber}44`,
+          display: "flex",
+          gap: 5,
+          flexWrap: "wrap"
+        }
+      }, /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => generateICS({
+          title: r.title + (rv ? ` — ${rv.hersteller} ${rv.modell}` : ""),
+          date: r.date,
+          description: rv ? `Fahrzeug: ${rv.hersteller} ${rv.modell} (${rv.kennzeichen || ""})\nQAR.Gallery: https://qar.gallery/pcn/` : "",
+          alarmMinutes: 1440
+        }),
+        style: {
+          background: "rgba(255,255,255,.1)",
+          border: "1px solid rgba(255,255,255,.15)",
           borderRadius: 7,
           padding: "4px 9px",
-          color: C.amber,
+          color: "#fff",
           fontSize: 10,
           fontWeight: 700,
           cursor: "pointer",
-          fontFamily: "'Barlow',sans-serif"
+          fontFamily: "'Barlow',sans-serif",
+          display: "flex",
+          alignItems: "center",
+          gap: 4
         }
-      }, "📅 Termin eintragen")), /*#__PURE__*/_react.default.createElement("div", {
+      }, "📅 .ics"), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => {
+          const dateStr = r.date ? r.date.replace(/-/g, "") : "";
+          const title = encodeURIComponent(r.title + (rv ? ` — ${rv.hersteller} ${rv.modell}` : ""));
+          window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}`, "_blank");
+        },
+        style: {
+          background: "#4285F422",
+          border: "1px solid #4285F444",
+          borderRadius: 7,
+          padding: "4px 9px",
+          color: "#4285F4",
+          fontSize: 10,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          display: "flex",
+          alignItems: "center",
+          gap: 4
+        }
+      }, "🗓 Google"))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 13,
           fontWeight: 600,
