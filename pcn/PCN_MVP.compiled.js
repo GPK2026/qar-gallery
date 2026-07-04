@@ -3005,18 +3005,21 @@
         width: "100%",
         padding: "14px",
         fontSize: 15,
-        opacity: loginForm.email && loginPassword && !authLoading ? 1 : .4
+        opacity: loginForm.email && loginPassword && !authLoading ? 1 : .5
       },
-      disabled: !loginForm.email || !loginPassword || authLoading,
       onClick: async () => {
+        if (!loginForm.email) return toast_("E-Mail eingeben", "err");
+        if (!loginPassword) return toast_("Passwort eingeben", "err");
+        if (authLoading) return;
         setAuthLoading(true);
         setAuthStep("Anmelden…");
         const DB = window.PCN_DB;
-        setTimeout(() => setAuthStep("Daten werden geladen…"), 2000);
+        const t1 = setTimeout(() => setAuthStep("Daten werden geladen…"), 2000);
         const {
           data: u,
           error
         } = await DB.auth.loginWithPassword(loginForm.email, loginPassword);
+        clearTimeout(t1);
         setAuthLoading(false);
         setAuthStep("");
         if (error) {
@@ -3030,7 +3033,7 @@
         setScreen("app");
         toast_("Willkommen zurück, " + u.name + "! 🏁");
       }
-    }, authLoading ? "⏳ " + authStep || "Anmelden…" : "Anmelden →"), /*#__PURE__*/_react.default.createElement("div", {
+    }, authLoading ? authStep || "⏳ Anmelden…" : "Anmelden →"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         textAlign: "center",
         marginTop: 10,
@@ -3150,10 +3153,14 @@
         width: "100%",
         padding: "14px",
         fontSize: 15,
-        opacity: loginForm.code.toUpperCase() === CLUB_CODE && loginForm.name && loginForm.email && loginPassword.length >= 6 ? 1 : .35
+        opacity: loginForm.code.toUpperCase() === CLUB_CODE && loginForm.name && loginForm.email && loginPassword.length >= 6 && !authLoading ? 1 : .5
       },
-      disabled: !(loginForm.code.toUpperCase() === CLUB_CODE && loginForm.name && loginForm.email && loginPassword.length >= 6),
       onClick: async () => {
+        if (loginForm.code.toUpperCase() !== CLUB_CODE) return toast_("Club-Code ungültig", "err");
+        if (!loginForm.name.trim()) return toast_("Name eingeben", "err");
+        if (!loginForm.email.trim()) return toast_("E-Mail eingeben", "err");
+        if (loginPassword.length < 6) return toast_("Passwort mind. 6 Zeichen", "err");
+        if (authLoading) return;
         setAuthLoading(true);
         setAuthStep("Konto wird erstellt…");
         const DB = window.PCN_DB;
