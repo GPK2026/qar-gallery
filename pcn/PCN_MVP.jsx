@@ -597,6 +597,7 @@ function PCNInner() {
   const [loginPassword, setLoginPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+  const [authStep, setAuthStep] = useState(""); // status message during auth
   const [addVForm, setAddVForm]   = useState({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[],phone:""});
   const [addLogForm, setAddLogForm] = useState({type:"Ölwechsel",km:"",notes:"",workshop:""});
   const [remForm, setRemForm]     = useState({vehicleId:"",title:"",date:""});
@@ -1417,15 +1418,17 @@ function PCNInner() {
               disabled={!loginForm.email||!loginPassword||authLoading}
               onClick={async()=>{
                 setAuthLoading(true);
+                setAuthStep("Anmelden…");
                 const DB=window.PCN_DB;
+                setTimeout(()=>setAuthStep("Daten werden geladen…"),2000);
                 const {data:u,error}=await DB.auth.loginWithPassword(loginForm.email,loginPassword);
-                setAuthLoading(false);
+                setAuthLoading(false); setAuthStep("");
                 if(error){toast_(error,"err");return;}
                 track("member_login", {method:"password"});
                 await refreshAll(u); setScreen("app");
                 toast_("Willkommen zurück, "+u.name+"! 🏁");
               }}>
-              {authLoading?"⏳ Anmelden…":"Anmelden →"}
+              {authLoading?"⏳ "+authStep||"Anmelden…":"Anmelden →"}
             </button>
             <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>
               Passwort vergessen?{" "}
@@ -1484,9 +1487,14 @@ function PCNInner() {
               disabled={!(loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email&&loginPassword.length>=6)}
               onClick={async()=>{
                 setAuthLoading(true);
+                setAuthStep("Konto wird erstellt…");
                 const DB=window.PCN_DB;
+                const t1=setTimeout(()=>setAuthStep("Verbindung zur Datenbank…"),1500);
+                const t2=setTimeout(()=>setAuthStep("Mitgliedsnummer wird vergeben…"),4000);
+                const t3=setTimeout(()=>setAuthStep("Fast fertig…"),8000);
                 const {data:u,error}=await DB.auth.register(loginForm.name,loginForm.email,loginForm.code,loginPassword);
-                setAuthLoading(false);
+                clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+                setAuthLoading(false); setAuthStep("");
                 if(error){toast_(error,"err");return;}
                 const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
                 if(!stored.events||Object.keys(stored.events).length===0){
@@ -1497,9 +1505,18 @@ function PCNInner() {
                 setEvents(DEMO_EVENTS); setScreen("app");
                 toast_("Willkommen, "+u.name+"! 🏁");
               }}>
-              {authLoading?"⏳ Erstelle Konto…":"Konto erstellen →"}
+              {authLoading ? (authStep||"⏳ Erstelle Konto…") : "Konto erstellen →"}
             </button>
-            {loginPassword.length>0&&loginPassword.length<6&&(
+            {authLoading&&(
+              <div style={{marginTop:12,background:"rgba(255,255,255,.05)",borderRadius:10,padding:"12px 14px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:16,height:16,border:"2px solid #ffffff33",borderTop:`2px solid ${C.red}`,borderRadius:"50%",animation:"spin 1s linear infinite",flexShrink:0}}/>
+                  <span style={{fontSize:13,color:"#aaa"}}>{authStep||"Verbindung wird hergestellt…"}</span>
+                </div>
+                <div style={{marginTop:8,fontSize:11,color:"#555"}}>Dies kann bei erster Registrierung bis zu 15 Sekunden dauern.</div>
+              </div>
+            )}
+            {!authLoading&&loginPassword.length>0&&loginPassword.length<6&&(
               <div style={{fontSize:11,color:"#ef4444",textAlign:"center",marginTop:6}}>Passwort muss mind. 6 Zeichen haben</div>
             )}
           </>
