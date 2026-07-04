@@ -3011,27 +3011,38 @@
         if (!loginForm.email) return toast_("E-Mail eingeben", "err");
         if (!loginPassword) return toast_("Passwort eingeben", "err");
         if (authLoading) return;
-        setAuthLoading(true);
-        setAuthStep("Anmelden…");
         const DB = window.PCN_DB;
-        const t1 = setTimeout(() => setAuthStep("Daten werden geladen…"), 2000);
-        const {
-          data: u,
-          error
-        } = await DB.auth.loginWithPassword(loginForm.email, loginPassword);
-        clearTimeout(t1);
-        setAuthLoading(false);
-        setAuthStep("");
-        if (error) {
-          toast_(error, "err");
+        if (!DB) {
+          toast_("App nicht geladen — bitte Seite neu laden", "err");
           return;
         }
-        track("member_login", {
-          method: "password"
-        });
-        await refreshAll(u);
-        setScreen("app");
-        toast_("Willkommen zurück, " + u.name + "! 🏁");
+        setAuthLoading(true);
+        setAuthStep("Anmelden…");
+        const t1 = setTimeout(() => setAuthStep("Daten werden geladen…"), 2000);
+        try {
+          const {
+            data: u,
+            error
+          } = await DB.auth.loginWithPassword(loginForm.email, loginPassword);
+          clearTimeout(t1);
+          setAuthLoading(false);
+          setAuthStep("");
+          if (error) {
+            toast_(error, "err");
+            return;
+          }
+          track("member_login", {
+            method: "password"
+          });
+          await refreshAll(u);
+          setScreen("app");
+          toast_("Willkommen zurück, " + u.name + "! 🏁");
+        } catch (e) {
+          clearTimeout(t1);
+          setAuthLoading(false);
+          setAuthStep("");
+          toast_("Fehler: " + e.message, "err");
+        }
       }
     }, authLoading ? authStep || "⏳ Anmelden…" : "Anmelden →"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
@@ -3161,41 +3172,54 @@
         if (!loginForm.email.trim()) return toast_("E-Mail eingeben", "err");
         if (loginPassword.length < 6) return toast_("Passwort mind. 6 Zeichen", "err");
         if (authLoading) return;
+        const DB = window.PCN_DB;
+        if (!DB) {
+          toast_("App nicht geladen — bitte Seite neu laden", "err");
+          return;
+        }
         setAuthLoading(true);
         setAuthStep("Konto wird erstellt…");
-        const DB = window.PCN_DB;
         const t1 = setTimeout(() => setAuthStep("Verbindung zur Datenbank…"), 1500);
         const t2 = setTimeout(() => setAuthStep("Mitgliedsnummer wird vergeben…"), 4000);
         const t3 = setTimeout(() => setAuthStep("Fast fertig…"), 8000);
-        const {
-          data: u,
-          error
-        } = await DB.auth.register(loginForm.name, loginForm.email, loginForm.code, loginPassword);
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-        setAuthLoading(false);
-        setAuthStep("");
-        if (error) {
-          toast_(error, "err");
-          return;
+        try {
+          const {
+            data: u,
+            error
+          } = await DB.auth.register(loginForm.name, loginForm.email, loginForm.code, loginPassword);
+          clearTimeout(t1);
+          clearTimeout(t2);
+          clearTimeout(t3);
+          setAuthLoading(false);
+          setAuthStep("");
+          if (error) {
+            toast_(error, "err");
+            return;
+          }
+          const stored = JSON.parse(localStorage.getItem("pcn_v1") || "{}");
+          if (!stored.events || Object.keys(stored.events).length === 0) {
+            stored.events = DEMO_EVENTS;
+            localStorage.setItem("pcn_v1", JSON.stringify(stored));
+          }
+          track("member_register", {
+            club_code: loginForm.code
+          });
+          setMe(u);
+          setAllUsers(p => ({
+            ...p,
+            [u.id]: u
+          }));
+          setEvents(DEMO_EVENTS);
+          setScreen("app");
+          toast_("Willkommen, " + u.name + "! 🏁");
+        } catch (e) {
+          clearTimeout(t1);
+          clearTimeout(t2);
+          clearTimeout(t3);
+          setAuthLoading(false);
+          setAuthStep("");
+          toast_("Fehler: " + e.message, "err");
         }
-        const stored = JSON.parse(localStorage.getItem("pcn_v1") || "{}");
-        if (!stored.events || Object.keys(stored.events).length === 0) {
-          stored.events = DEMO_EVENTS;
-          localStorage.setItem("pcn_v1", JSON.stringify(stored));
-        }
-        track("member_register", {
-          club_code: loginForm.code
-        });
-        setMe(u);
-        setAllUsers(p => ({
-          ...p,
-          [u.id]: u
-        }));
-        setEvents(DEMO_EVENTS);
-        setScreen("app");
-        toast_("Willkommen, " + u.name + "! 🏁");
       }
     }, authLoading ? authStep || "⏳ Erstelle Konto…" : "Konto erstellen →"), authLoading && /*#__PURE__*/_react.default.createElement("div", {
       style: {
