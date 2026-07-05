@@ -1552,6 +1552,16 @@ function PCNInner() {
         <button className="btn ghost" style={{width:"100%",padding:"13px",fontSize:14}} onClick={loadDemo}>
           Demo ansehen
         </button>
+
+        {/* Back to chat — shown when guest navigates to splash from upgrade prompt */}
+        {me?.role==="guest"&&(
+          <button onClick={()=>setScreen("app")}
+            style={{background:"none",border:"none",color:C.muted,cursor:"pointer",
+              fontSize:13,fontFamily:"'Barlow',sans-serif",width:"100%",marginTop:8,padding:"8px"}}>
+            ← Zurück zum Chat
+          </button>
+        )}
+
         <p style={{textAlign:"center",fontSize:10,color:"#333",marginTop:16}}>
           Powered by <span style={{color:C.gold}}>QAR.Gallery</span>
         </p>
@@ -2782,7 +2792,9 @@ function PCNInner() {
               Für alle Club-Features benötigst du ein Mitgliedskonto.
             </div>
             <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,marginBottom:10}}
-              onClick={()=>{setScreen("splash");setLoginForm(p=>({...p,mode:"register"}));}}>
+              onClick={()=>{setScreen("splash");setLoginForm(p=>({...p,mode:"register"}));}}
+              style={{background:"none",border:`1.5px solid ${C.red}`,borderRadius:10,padding:"12px",color:C.red,cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif",width:"100%",marginBottom:10}}>
+              🏁 Jetzt Mitglied werden
               🏁 Jetzt Mitglied werden
             </button>
             <button onClick={()=>{setMe(null);setScreen("splash");}}
