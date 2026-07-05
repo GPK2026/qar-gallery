@@ -1361,6 +1361,17 @@ function PCNInner() {
       <style>{CSS}</style>
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
 
+      {/* ── Back to chat — for guests navigating to splash ── */}
+      {me?.role==="guest"&&(
+        <div style={{background:C.dark,padding:"10px 16px",display:"flex",alignItems:"center",borderBottom:`1px solid ${C.border}`}}>
+          <button onClick={()=>setScreen("app")}
+            style={{background:"none",border:"none",color:C.red,cursor:"pointer",
+              fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:6}}>
+            ← Zurück zum Chat
+          </button>
+        </div>
+      )}
+
       {/* ── White logo area ── */}
       <div style={{background:"#ffffff",padding:"36px 24px 28px",textAlign:"center",borderBottom:"3px solid "+C.red}}>
         <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"}
