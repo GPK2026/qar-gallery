@@ -1186,6 +1186,7 @@ function PCNInner() {
     await DB.threads.send(t.id,"system",`Kontakt über QAR-ID: ${v.qarId}`);
     const newThread={...t,messages:[{id:uid(),from:"system",text:`Kontakt über QAR-ID: ${v.qarId}`,ts:fmtTime(),isSystem:true,read:true}]};
     setThreads(prev=>({...prev,[t.id]:newThread}));
+    setTab("messages");
     setActiveThread(t.id);
     // Persist guest thread so it can be reopened later
     if(!currentMe.id || currentMe.role==="guest") {
@@ -2769,7 +2770,27 @@ function PCNInner() {
       <div style={{padding:"14px 14px 0",maxWidth:560,margin:"0 auto"}}>
 
         {/* DASHBOARD */}
-        {tab==="dashboard"&&(
+        {tab==="dashboard"&&isGuest&&(
+          <div style={{padding:"32px 20px",textAlign:"center",animation:"fadeIn .2s"}}>
+            <div style={{fontSize:48,marginBottom:16}}>🔒</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:"#fff",marginBottom:8}}>
+              Gast-Modus
+            </div>
+            <div style={{fontSize:14,color:C.muted,lineHeight:1.7,marginBottom:24}}>
+              Du bist als Gast angemeldet und kannst Nachrichten an Fahrzeughalter senden.<br/>
+              Für alle Club-Features benötigst du ein Mitgliedskonto.
+            </div>
+            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,marginBottom:10}}
+              onClick={()=>{setScreen("splash");setLoginForm(p=>({...p,mode:"register"}));}}>
+              🏁 Jetzt Mitglied werden
+            </button>
+            <button onClick={()=>{setMe(null);setScreen("splash");}}
+              style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,fontFamily:"'Barlow',sans-serif"}}>
+              Abmelden
+            </button>
+          </div>
+        )}
+        {tab==="dashboard"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
 
             {/* ── 1. Infos & Neuigkeiten ── */}
@@ -2913,7 +2934,7 @@ function PCNInner() {
         )}
 
         {/* EVENTS */}
-        {tab==="events"&&(
+        {tab==="events"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
 
             {/* View toggle */}
@@ -3219,7 +3240,7 @@ function PCNInner() {
         )}
 
         {/* REMINDERS */}
-        {tab==="reminders"&&(
+        {tab==="reminders"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
               <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>Erinnerungen</div>
@@ -3291,7 +3312,7 @@ function PCNInner() {
         )}
 
         {/* PROFILE */}
-        {tab==="profile"&&(
+        {tab==="profile"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
 
             {/* ── Punkte-Score — prominent ganz oben ── */}
@@ -3696,18 +3717,30 @@ function PCNInner() {
 
       {/* Tab Bar */}
       <div className="tab-bar">
-        {/* Scan button — far left, always visible */}
-        <button className="tab-btn" onClick={openScanner} style={{color:C.red}}>
-          <span className="ico">📷</span>
-          <span className="lbl">Scan</span>
-        </button>
-        {[["dashboard","🏠","Start"],["events","🏁","Events"],["messages","💬","Chats"],["reminders","🔔","Termine"],["profile","👤","Profil"]].map(([id,icon,label])=>(
+        {/* Scan button — only for members */}
+        {!isGuest&&(
+          <button className="tab-btn" onClick={openScanner} style={{color:C.red}}>
+            <span className="ico">📷</span>
+            <span className="lbl">Scan</span>
+          </button>
+        )}
+        {(isGuest
+          ? [["messages","💬","Chats"]]
+          : [["dashboard","🏠","Start"],["events","🏁","Events"],["messages","💬","Chats"],["reminders","🔔","Termine"],["profile","👤","Profil"]]
+        ).map(([id,icon,label])=>(
           <button key={id} className={`tab-btn ${tab===id?"on":""}`} onClick={()=>setTab(id)}>
             {id==="messages"&&unreadCount>0&&<div className="badge">{unreadCount}</div>}
             <span className="ico">{icon}</span>
             <span className="lbl">{label}</span>
           </button>
         ))}
+        {/* Guest: upgrade prompt */}
+        {isGuest&&(
+          <button className="tab-btn" onClick={()=>{setScreen("splash");setLoginForm(p=>({...p,mode:"register"}));}}>
+            <span className="ico">🔓</span>
+            <span className="lbl">Mitglied</span>
+          </button>
+        )}
       </div>
     </div>
   );
