@@ -3294,7 +3294,20 @@
         fontSize: 14
       },
       onClick: loadDemo
-    }, "Demo ansehen"), /*#__PURE__*/_react.default.createElement("p", {
+    }, "Demo ansehen"), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setScreen("app"),
+      style: {
+        background: "none",
+        border: "none",
+        color: C.muted,
+        cursor: "pointer",
+        fontSize: 13,
+        fontFamily: "'Barlow',sans-serif",
+        width: "100%",
+        marginTop: 8,
+        padding: "8px"
+      }
+    }, "← Zurück zum Chat"), /*#__PURE__*/_react.default.createElement("p", {
       style: {
         textAlign: "center",
         fontSize: 10,
@@ -6745,8 +6758,21 @@
           ...p,
           mode: "register"
         }));
+      },
+      style: {
+        background: "none",
+        border: `1.5px solid ${C.red}`,
+        borderRadius: 10,
+        padding: "12px",
+        color: C.red,
+        cursor: "pointer",
+        fontSize: 14,
+        fontWeight: 700,
+        fontFamily: "'Barlow',sans-serif",
+        width: "100%",
+        marginBottom: 10
       }
-    }, "🏁 Jetzt Mitglied werden"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "🏁 Jetzt Mitglied werden 🏁 Jetzt Mitglied werden"), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => {
         setMe(null);
         setScreen("splash");
