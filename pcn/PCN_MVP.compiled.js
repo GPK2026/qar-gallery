@@ -7733,7 +7733,7 @@
           flexShrink: 0
         }
       }, "🗑"));
-    })), /*#__PURE__*/_react.default.createElement("div", {
+    })), !isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 16
       }
@@ -7814,7 +7814,7 @@
         textOverflow: "ellipsis",
         whiteSpace: "nowrap"
       }
-    }, "Thomas: Wer fährt mit dem Anhänger?")))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Thomas: Wer fährt mit dem Anhänger?")))), !isGuest && /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -7995,7 +7995,7 @@
         },
         title: "Chat löschen"
       }, "🗑"));
-    })), tab === "reminders" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+    }))), tab === "reminders" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
