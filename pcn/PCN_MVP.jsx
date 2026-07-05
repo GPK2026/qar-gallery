@@ -3151,7 +3151,8 @@ function PCNInner() {
               </div>
             )}
 
-            {/* ── Group Channel — PCN Mitglieder ── */}
+            {/* ── Group Channel — nur für Mitglieder ── */}
+            {!isGuest&&(
             <div style={{marginBottom:16}}>
               <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>📡 Club-Kanal</div>
               <div style={{background:`linear-gradient(135deg, #1a0a0a, #200808)`,border:`2px solid ${C.red}44`,borderRadius:14,padding:"14px",cursor:"pointer",display:"flex",gap:14,alignItems:"center"}}
@@ -3169,8 +3170,11 @@ function PCNInner() {
                 </div>
               </div>
             </div>
+            )}
 
-            {/* ── Direktnachrichten ── */}
+            {/* ── Direktnachrichten — nur für Mitglieder ── */}
+            {!isGuest&&(
+            <div>
             <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>💬 Direktnachrichten</div>
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}>
               <span style={{fontSize:16}}>🔒</span>
@@ -3237,6 +3241,8 @@ function PCNInner() {
                 </div>
               );
             })}
+            </div>
+            )}
           </div>
         )}
 
