@@ -636,6 +636,7 @@ function PCNInner() {
   const canvasRef = useRef(null);
 
   // ── Derived ──────────────────────────────────────────────────────────────────
+  const isGuest = me?.role === "guest";
   const myVehicles = Object.values(vehicles).filter(v=>v.owner===me?.email||v.userId===me?.id);
   const myReminders = reminders.filter(r=>!r.done).sort((a,b)=>new Date(a.date)-new Date(b.date));
   const myParticipations = Object.values(participants).flat().filter(p=>p.userId===me?.id);
