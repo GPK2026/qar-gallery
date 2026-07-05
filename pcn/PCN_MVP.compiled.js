@@ -2433,6 +2433,7 @@
         ...prev,
         [t.id]: newThread
       }));
+      setTab("messages");
       setActiveThread(t.id);
       // Persist guest thread so it can be reopened later
       if (!currentMe.id || currentMe.role === "guest") {
@@ -6703,7 +6704,61 @@
         maxWidth: 560,
         margin: "0 auto"
       }
-    }, tab === "dashboard" && /*#__PURE__*/_react.default.createElement("div", {
+    }, tab === "dashboard" && isGuest && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        padding: "32px 20px",
+        textAlign: "center",
+        animation: "fadeIn .2s"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 48,
+        marginBottom: 16
+      }
+    }, "🔒"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 24,
+        fontWeight: 900,
+        color: "#fff",
+        marginBottom: 8
+      }
+    }, "Gast-Modus"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 14,
+        color: C.muted,
+        lineHeight: 1.7,
+        marginBottom: 24
+      }
+    }, "Du bist als Gast angemeldet und kannst Nachrichten an Fahrzeughalter senden.", /*#__PURE__*/_react.default.createElement("br", null), "Für alle Club-Features benötigst du ein Mitgliedskonto."), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn",
+      style: {
+        width: "100%",
+        padding: "14px",
+        fontSize: 15,
+        marginBottom: 10
+      },
+      onClick: () => {
+        setScreen("splash");
+        setLoginForm(p => ({
+          ...p,
+          mode: "register"
+        }));
+      }
+    }, "🏁 Jetzt Mitglied werden"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => {
+        setMe(null);
+        setScreen("splash");
+      },
+      style: {
+        background: "none",
+        border: "none",
+        color: C.muted,
+        cursor: "pointer",
+        fontSize: 13,
+        fontFamily: "'Barlow',sans-serif"
+      }
+    }, "Abmelden")), tab === "dashboard" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
@@ -7153,7 +7208,7 @@
         textAlign: "center",
         lineHeight: 1.6
       }
-    }, "Mehr Funktionen freischalten: Fahrzeug anlegen · Logbuch führen · Events besuchen"))), tab === "events" && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Mehr Funktionen freischalten: Fahrzeug anlegen · Logbuch führen · Events besuchen"))), tab === "events" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
@@ -7939,7 +7994,7 @@
         },
         title: "Chat löschen"
       }, "🗑"));
-    })), tab === "reminders" && /*#__PURE__*/_react.default.createElement("div", {
+    })), tab === "reminders" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
@@ -8127,7 +8182,7 @@
           fontFamily: "'Barlow',sans-serif"
         }
       }, "✓")));
-    })), tab === "profile" && /*#__PURE__*/_react.default.createElement("div", {
+    })), tab === "profile" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
@@ -9349,7 +9404,7 @@
       }
     }, "Speichern ✓"))), /*#__PURE__*/_react.default.createElement("div", {
       className: "tab-bar"
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, !isGuest && /*#__PURE__*/_react.default.createElement("button", {
       className: "tab-btn",
       onClick: openScanner,
       style: {
@@ -9359,7 +9414,7 @@
       className: "ico"
     }, "📷"), /*#__PURE__*/_react.default.createElement("span", {
       className: "lbl"
-    }, "Scan")), [["dashboard", "🏠", "Start"], ["events", "🏁", "Events"], ["messages", "💬", "Chats"], ["reminders", "🔔", "Termine"], ["profile", "👤", "Profil"]].map(([id, icon, label]) => /*#__PURE__*/_react.default.createElement("button", {
+    }, "Scan")), (isGuest ? [["messages", "💬", "Chats"]] : [["dashboard", "🏠", "Start"], ["events", "🏁", "Events"], ["messages", "💬", "Chats"], ["reminders", "🔔", "Termine"], ["profile", "👤", "Profil"]]).map(([id, icon, label]) => /*#__PURE__*/_react.default.createElement("button", {
       key: id,
       className: `tab-btn ${tab === id ? "on" : ""}`,
       onClick: () => setTab(id)
@@ -9369,7 +9424,19 @@
       className: "ico"
     }, icon), /*#__PURE__*/_react.default.createElement("span", {
       className: "lbl"
-    }, label)))));
+    }, label))), isGuest && /*#__PURE__*/_react.default.createElement("button", {
+      className: "tab-btn",
+      onClick: () => {
+        setScreen("splash");
+        setLoginForm(p => ({
+          ...p,
+          mode: "register"
+        }));
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: "ico"
+    }, "🔓"), /*#__PURE__*/_react.default.createElement("span", {
+      className: "lbl"
+    }, "Mitglied"))));
   }
 });
-// cache-bust 1783287223
