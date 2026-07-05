@@ -1737,13 +1737,11 @@
       setReminders(remRes.data || []);
       // Merge saved events with demo events
       const savedEvs = evRes.data || [];
-      if (savedEvs.length > 0) {
-        const evMap = {
-          ...DEMO_EVENTS
-        };
-        savedEvs.forEach(e => evMap[e.id] = e);
-        setEvents(evMap);
-      }
+      const evMap = {
+        ...DEMO_EVENTS
+      };
+      savedEvs.forEach(e => evMap[e.id] = e);
+      setEvents(evMap);
       const pMap = {};
       // Load participants for all known events (from DB + demo)
       const allEventIds = [...new Set([...Object.keys(evMap), ...Object.keys(DEMO_EVENTS)])];
