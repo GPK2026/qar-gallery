@@ -2863,7 +2863,29 @@
       }
     }, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
       className: `toast ${toast.type}`
-    }, toast.msg), /*#__PURE__*/_react.default.createElement("div", {
+    }, toast.msg), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.dark,
+        padding: "10px 16px",
+        display: "flex",
+        alignItems: "center",
+        borderBottom: `1px solid ${C.border}`
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setScreen("app"),
+      style: {
+        background: "none",
+        border: "none",
+        color: C.red,
+        cursor: "pointer",
+        fontSize: 14,
+        fontWeight: 700,
+        fontFamily: "'Barlow',sans-serif",
+        display: "flex",
+        alignItems: "center",
+        gap: 6
+      }
+    }, "← Zurück zum Chat")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: "#ffffff",
         padding: "36px 24px 28px",
