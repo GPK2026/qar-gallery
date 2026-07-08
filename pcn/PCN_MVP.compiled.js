@@ -287,6 +287,8 @@
 
   // ─── Demo Data ────────────────────────────────────────────────────────────────
   const CLUB_CODE = "PCN2026";
+  // Sponsor config — set in pcn_config.js: window.PCN_SPONSOR = {name:"Porschezentrum Koblenz", url:"https://...", logo:"https://..."}
+  const SPONSOR = typeof window !== "undefined" ? window.PCN_SPONSOR || null : null;
 
   // Demo group channel messages
   const DEMO_GROUP = {
@@ -1457,9 +1459,9 @@
   }
   function PCNInner() {
     // ── Core state ──────────────────────────────────────────────────────────────
-    const [screen, setScreen] = (0, _react.useState)("splash");
+    const [screen, setScreen] = (0, _react.useState)(() => window.__PCN_PRELOAD_SESSION__ ? "app" : "splash");
     const [tab, setTab] = (0, _react.useState)("dashboard");
-    const [me, setMe] = (0, _react.useState)(null);
+    const [me, setMe] = (0, _react.useState)(() => window.__PCN_PRELOAD_SESSION__ || null);
     const [allUsers, setAllUsers] = (0, _react.useState)({
       ...DEMO_USERS
     });
@@ -1951,6 +1953,26 @@
         vehicle_id: publicV?.id,
         qar_id: publicV?.qarId
       });
+    }, [screen, publicV?.id]);
+
+    // ── Auto-refresh status on public page every 10s ──────────────────────────
+    (0, _react.useEffect)(() => {
+      if (screen !== "public" || !publicV?.id) return;
+      const DB = window.PCN_DB;
+      if (!DB) return;
+      const poll = setInterval(async () => {
+        const {
+          data
+        } = await DB.vehicles.getStatus(publicV.id);
+        if (data) setVehicleStatus(prev => ({
+          ...prev,
+          [publicV.id]: data
+        }));else setVehicleStatus(prev => ({
+          ...prev,
+          [publicV.id]: null
+        }));
+      }, 10000);
+      return () => clearInterval(poll);
     }, [screen, publicV?.id]);
 
     // ── Scanner ──────────────────────────────────────────────────────────────────
@@ -3396,6 +3418,29 @@
           fontWeight: 600
         }
       }, "Digitale Fahrzeugakte"), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => setLightbox({
+          images: ["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v=" + v.qarId],
+          index: 0
+        }),
+        style: {
+          background: "#f5f5f5",
+          border: "1px solid #ddd",
+          borderRadius: 8,
+          padding: "7px 10px",
+          color: "#111",
+          cursor: "pointer",
+          fontSize: 13,
+          fontWeight: 700,
+          fontFamily: "'Barlow',sans-serif",
+          display: "flex",
+          alignItems: "center",
+          gap: 4
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 16
+        }
+      }, "▪️"), " QR"), /*#__PURE__*/_react.default.createElement("button", {
         onClick: async () => {
           const shareUrl = "https://qar.gallery/pcn/?v=" + v.qarId;
           const shareTitle = v.hersteller + " " + v.modell + " — Digitale Fahrzeugakte";
@@ -3433,7 +3478,39 @@
         style: {
           fontSize: 15
         }
-      }, "↑"), " Teilen"))), /*#__PURE__*/_react.default.createElement("div", {
+      }, "↑"), " Teilen"))), SPONSOR && /*#__PURE__*/_react.default.createElement("a", {
+        href: SPONSOR.url || "#",
+        target: "_blank",
+        rel: "noopener noreferrer",
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          background: "#fff",
+          padding: "8px 16px",
+          textDecoration: "none",
+          borderBottom: "1px solid #eee"
+        }
+      }, SPONSOR.logo && /*#__PURE__*/_react.default.createElement("img", {
+        src: SPONSOR.logo,
+        alt: SPONSOR.name,
+        style: {
+          height: 28,
+          objectFit: "contain"
+        }
+      }), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 11,
+          color: "#888",
+          fontWeight: 600
+        }
+      }, "Powered by"), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 12,
+          fontWeight: 800,
+          color: "#111"
+        }
+      }, SPONSOR.name)), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           height: 260,
           position: "relative",
