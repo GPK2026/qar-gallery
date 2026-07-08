@@ -3675,7 +3675,50 @@
           fontSize: 20,
           color: "rgba(255,255,255,.7)"
         }
-      }, "›")), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("button", {
+      }, "›")), (() => {
+        const s = vehicleStatus[v.id];
+        if (s && s.expiresAt && Date.now() > s.expiresAt) return null;
+        if (!s || !s.text) return null;
+        const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : null;
+        return /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            background: `${C.amber}18`,
+            border: `2px solid ${C.amber}66`,
+            borderRadius: 14,
+            padding: "14px 16px",
+            marginBottom: 4,
+            animation: "fadeIn .3s ease"
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 10,
+            alignItems: "center"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 28,
+            flexShrink: 0
+          }
+        }, s.icon || "💬"), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            flex: 1
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontWeight: 800,
+            fontSize: 16,
+            color: C.amber,
+            lineHeight: 1.2
+          }
+        }, s.text), minsLeft && minsLeft > 0 && /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 11,
+            color: C.muted,
+            marginTop: 3
+          }
+        }, "Noch ca. ", minsLeft, " Min"))));
+      })(), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => {
           if (me) {
             startContact(v.id);
@@ -3866,51 +3909,7 @@
           maxWidth: 520,
           margin: "0 auto"
         }
-      }, (() => {
-        const s = vehicleStatus[v.id];
-        // Check expiry
-        if (s && s.expiresAt && Date.now() > s.expiresAt) return null;
-        if (!s || !s.text) return null;
-        const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : null;
-        return /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            background: `${C.amber}18`,
-            border: `2px solid ${C.amber}66`,
-            borderRadius: 14,
-            padding: "14px 16px",
-            marginBottom: 14,
-            animation: "fadeIn .3s ease"
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            display: "flex",
-            gap: 10,
-            alignItems: "center"
-          }
-        }, /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 28,
-            flexShrink: 0
-          }
-        }, s.icon || "💬"), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            flex: 1
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontWeight: 800,
-            fontSize: 16,
-            color: C.amber,
-            lineHeight: 1.2
-          }
-        }, s.text), minsLeft && minsLeft > 0 && /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontSize: 11,
-            color: C.muted,
-            marginTop: 3
-          }
-        }, "Noch ca. ", minsLeft, " Min"))));
-      })(), nextEvent && priv.pub_events && /*#__PURE__*/_react.default.createElement("div", {
+      }, nextEvent && priv.pub_events && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: `${C.red}11`,
           border: `1px solid ${C.red}33`,
