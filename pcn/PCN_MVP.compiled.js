@@ -2422,11 +2422,17 @@
       } = DB ? await DB.threads.list(currentMe.id) : {
         data: []
       };
-      const existing = (myThreadsLive || Object.values(threads)).find(t => t.vehicleId === v.id && (t.participants || []).includes(currentMe.id));
+      const allThreads = myThreadsLive || Object.values(threads);
+      const existing = allThreads.find(t => (t.vehicleId === v.id || t.vehicle_id === v.id) && (t.participants || []).includes(currentMe.id));
       if (existing) {
+        // Merge into state with correct field names
+        const merged = {
+          ...existing,
+          vehicleId: existing.vehicleId || existing.vehicle_id
+        };
         setThreads(prev => ({
           ...prev,
-          [existing.id]: existing
+          [existing.id]: merged
         }));
         setActiveThread(existing.id);
         setScreen("chat");
