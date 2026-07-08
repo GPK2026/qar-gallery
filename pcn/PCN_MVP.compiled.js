@@ -3446,18 +3446,14 @@
           padding: "7px 10px",
           color: "#111",
           cursor: "pointer",
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: 700,
           fontFamily: "'Barlow',sans-serif",
           display: "flex",
           alignItems: "center",
           gap: 4
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 16
-        }
-      }, "▪️"), " QR"), /*#__PURE__*/_react.default.createElement("button", {
+      }, "📱 QR-Code anzeigen"), /*#__PURE__*/_react.default.createElement("button", {
         onClick: async () => {
           const shareUrl = "https://qar.gallery/pcn/?v=" + v.qarId;
           const shareTitle = v.hersteller + " " + v.modell + " — Digitale Fahrzeugakte";
@@ -3820,66 +3816,52 @@
         }
       }, (() => {
         const shareUrl = "https://qar.gallery/pcn/?v=" + v.qarId;
-        const shareText = v.hersteller + " " + v.modell + " — Digitale Fahrzeugakte: " + shareUrl;
-        return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("a", {
-          href: "https://wa.me/?text=" + encodeURIComponent(shareText),
-          target: "_blank",
-          rel: "noopener noreferrer",
+        const shareTitle = v.hersteller + " " + v.modell + " — Digitale Fahrzeugakte";
+        return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("button", {
+          onClick: async () => {
+            if (navigator.share) {
+              try {
+                await navigator.share({
+                  title: shareTitle,
+                  url: shareUrl
+                });
+                return;
+              } catch (e) {}
+            }
+            try {
+              await navigator.clipboard.writeText(shareUrl);
+              toast_("Link kopiert ✓");
+            } catch (e) {
+              toast_(shareUrl);
+            }
+          },
           style: {
-            flex: 1,
-            background: "#25D366",
+            flex: 2,
+            background: C.red,
+            border: "none",
             borderRadius: 9,
-            padding: "10px",
+            padding: "11px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
             color: "#fff",
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: 700,
-            textDecoration: "none",
+            cursor: "pointer",
             fontFamily: "'Barlow',sans-serif"
           }
         }, /*#__PURE__*/_react.default.createElement("span", {
           style: {
             fontSize: 16
           }
-        }, "💬"), " WhatsApp"), /*#__PURE__*/_react.default.createElement("a", {
-          href: "mailto:?subject=" + encodeURIComponent(v.hersteller + " " + v.modell) + "&body=" + encodeURIComponent("Hier die digitale Fahrzeugakte:\n" + shareUrl),
-          style: {
-            flex: 1,
-            background: `${C.blue || "#2563EB"}22`,
-            border: `1px solid ${C.blue || "#2563EB"}44`,
-            borderRadius: 9,
-            padding: "10px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-            color: C.blue || "#2563EB",
-            fontSize: 12,
-            fontWeight: 700,
-            textDecoration: "none",
-            fontFamily: "'Barlow',sans-serif"
-          }
-        }, /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 16
-          }
-        }, "✉️"), " E-Mail"), /*#__PURE__*/_react.default.createElement("button", {
+        }, "↑"), " Teilen"), /*#__PURE__*/_react.default.createElement("button", {
           onClick: async () => {
             try {
-              if (navigator.share) {
-                await navigator.share({
-                  title: v.hersteller + " " + v.modell,
-                  url: shareUrl
-                });
-                return;
-              }
               await navigator.clipboard.writeText(shareUrl);
               toast_("Link kopiert ✓");
             } catch (e) {
-              toast_("Link: " + shareUrl);
+              toast_(shareUrl);
             }
           },
           style: {
@@ -3887,7 +3869,7 @@
             background: C.card,
             border: `1px solid ${C.border}`,
             borderRadius: 9,
-            padding: "10px",
+            padding: "11px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
