@@ -1777,7 +1777,16 @@ function PCNInner() {
             {(()=>{
               const s = vehicleStatus[v.id];
               if(s && s.expiresAt && Date.now() > s.expiresAt) return null;
-              if(!s || !s.text) return null;
+              if(!s || !s.text) return (
+                <button onClick={()=>loadStatusFor(v.id)}
+                  style={{width:"100%",background:"rgba(255,255,255,.05)",
+                    border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 14px",
+                    cursor:"pointer",display:"flex",alignItems:"center",
+                    justifyContent:"center",gap:8,fontFamily:"'Barlow',sans-serif",
+                    color:C.muted,fontSize:13,fontWeight:600}}>
+                  <span style={{fontSize:16}}>🔄</span> Live-Status abrufen
+                </button>
+              );
               const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : null;
               return (
                 <div style={{background:`${C.amber}18`,border:`2px solid ${C.amber}66`,borderRadius:14,padding:"14px 16px",marginBottom:4,animation:"fadeIn .3s ease"}}>
