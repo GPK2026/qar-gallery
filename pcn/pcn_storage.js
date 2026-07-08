@@ -564,7 +564,9 @@ const PCN_STORAGE = (() => {
       marktwert: row.marktwert, zustand: row.zustand,
       besonderheiten: row.besonderheiten, image: row.image,
       images: row.images||[], phone: row.phone,
-      privacy: row.privacy||{}, createdAt: row.created_at, updatedAt: row.updated_at,
+      // Parse privacy if stored as JSON string in DB
+      privacy: typeof row.privacy==="string" ? JSON.parse(row.privacy||"{}") : (row.privacy||{}),
+      createdAt: row.created_at, updatedAt: row.updated_at,
     }) : null,
 
     // ── Vehicles ──
