@@ -2688,7 +2688,10 @@
         setVehicles(DEMO_VEHICLES);
         setLogbook(DEMO_LOGBOOK);
         setParticipants(DEMO_PARTICIPANTS);
-        setThreads(DEMO_THREADS);
+        // Filter out previously deleted demo threads
+        const deletedIds = JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
+        const filteredThreads = Object.fromEntries(Object.entries(DEMO_THREADS).filter(([id]) => !deletedIds.includes(id)));
+        setThreads(filteredThreads);
         setReminders([{
           id: "R1",
           vehicleId: "V001",
