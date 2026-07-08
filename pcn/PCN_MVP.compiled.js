@@ -646,6 +646,56 @@
       price: "Kostenlos"
     }
   };
+  const DEMO_INSURANCE = {
+    "V001": [{
+      id: "I1",
+      vehicleId: "V001",
+      type: "Vollkasko",
+      provider: "Allianz Classic",
+      nr: "ALZ-2024-911GTS",
+      since: "2024-01-01",
+      until: "2024-12-31",
+      premium: "€ 1.840/Jahr",
+      note: "Agreed Value € 138.000. Saisonkennzeichen 03-11.",
+      status: "aktiv"
+    }],
+    "V002": [{
+      id: "I2",
+      vehicleId: "V002",
+      type: "Vollkasko Sport",
+      provider: "Hiscox Motorsport",
+      nr: "HX-2024-718GTS",
+      since: "2024-03-01",
+      until: "2025-02-28",
+      premium: "€ 1.290/Jahr",
+      note: "Track-Day mitversichert. Fahrzeugwert: € 85.000",
+      status: "aktiv"
+    }],
+    "V003": [{
+      id: "I3",
+      vehicleId: "V003",
+      type: "Vollkasko Sport",
+      provider: "HDI Motorsport",
+      nr: "HDI-MS-2024-449871",
+      since: "2024-03-01",
+      until: "2025-02-28",
+      premium: "€ 2.890/Jahr",
+      note: "Track-Day mitversichert bis 150 km/h. Fahrzeugwert: € 198.000",
+      status: "aktiv"
+    }],
+    "V004": [{
+      id: "I4",
+      vehicleId: "V004",
+      type: "Oldtimer Vollkasko",
+      provider: "Allianz Classic",
+      nr: "ALZ-2024-904GTS",
+      since: "2024-01-01",
+      until: "2024-12-31",
+      premium: "€ 4.200/Jahr",
+      note: "Agreed Value € 1.400.000. Nur Oldtimer-Veranstaltungen mitversichert.",
+      status: "aktiv"
+    }]
+  };
   const DEMO_GUTACHTEN = {
     "V001": [{
       id: "G1",
