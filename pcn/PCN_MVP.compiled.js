@@ -394,8 +394,8 @@
       userId: "u1",
       owner: "max@pcn.de",
       hersteller: "Porsche",
-      modell: "911 Carrera 4S",
-      baujahr: "2021",
+      modell: "911 GTS",
+      baujahr: "2019",
       kraftstoff: "Benzin",
       getriebe: "PDK",
       farbe: "GT-Silbermetallic",
@@ -4614,10 +4614,12 @@
         }, cur + 1, "/", imgs.length))), imgs.length > 1 && /*#__PURE__*/_react.default.createElement("div", {
           style: {
             display: "flex",
-            gap: 8,
+            gap: 6,
             overflowX: "auto",
-            padding: "10px 14px 4px",
-            scrollbarWidth: "none"
+            padding: "8px 10px",
+            background: "#0a0a0a",
+            scrollbarWidth: "none",
+            WebkitOverflowScrolling: "touch"
           }
         }, imgs.map((img, i) => /*#__PURE__*/_react.default.createElement("div", {
           key: i,
@@ -4628,28 +4630,38 @@
         }, /*#__PURE__*/_react.default.createElement("img", {
           src: img,
           alt: "",
-          onClick: () => goTo(i),
+          onClick: () => {
+            goTo(i);
+            setLightbox({
+              images: imgs,
+              index: i
+            });
+          },
           style: {
-            width: 70,
-            height: 70,
+            width: 90,
+            height: 64,
             objectFit: "cover",
-            borderRadius: 9,
+            borderRadius: 8,
             cursor: "pointer",
             display: "block",
-            border: `3px solid ${i === cur ? C.red : i === 0 ? "#c8a96e55" : "transparent"}`,
-            transition: "border-color .15s"
+            border: `2.5px solid ${i === cur ? C.red : "transparent"}`,
+            opacity: i === cur ? 1 : 0.7,
+            transition: "all .15s"
           },
           onError: e => e.target.style.display = "none"
         }), i === 0 && /*#__PURE__*/_react.default.createElement("div", {
           style: {
             position: "absolute",
-            top: -7,
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontSize: 13
+            top: 2,
+            left: 2,
+            fontSize: 10,
+            background: "rgba(0,0,0,.6)",
+            borderRadius: 4,
+            padding: "1px 4px"
           }
         }, "👑"), isOwn && i === cur && i !== 0 && /*#__PURE__*/_react.default.createElement("button", {
-          onClick: async () => {
+          onClick: async e => {
+            e.stopPropagation();
             const imgs2 = [...imgs];
             const img2 = imgs2[i];
             imgs2.splice(i, 1);
@@ -4671,12 +4683,12 @@
           },
           style: {
             position: "absolute",
-            bottom: -1,
+            bottom: 0,
             left: 0,
             right: 0,
-            background: C.gold,
+            background: "rgba(200,169,110,.9)",
             border: "none",
-            borderRadius: "0 0 7px 7px",
+            borderRadius: "0 0 6px 6px",
             padding: "2px",
             color: "#000",
             fontSize: 8,
@@ -4685,17 +4697,20 @@
             fontFamily: "'Barlow',sans-serif"
           }
         }, "👑 Titelbild"), isOwn && /*#__PURE__*/_react.default.createElement("button", {
-          onClick: () => removeImageFromVehicle(v.id, i),
+          onClick: e => {
+            e.stopPropagation();
+            removeImageFromVehicle(v.id, i);
+          },
           style: {
             position: "absolute",
-            top: -5,
-            right: -5,
+            top: -4,
+            right: -4,
             background: C.red,
             border: "2px solid #0a0a0a",
             color: "#fff",
             fontSize: 9,
-            width: 18,
-            height: 18,
+            width: 17,
+            height: 17,
             borderRadius: "50%",
             cursor: "pointer",
             display: "flex",
@@ -4705,11 +4720,11 @@
           }
         }, "✕"))), isOwn && /*#__PURE__*/_react.default.createElement("label", {
           style: {
-            width: 70,
-            height: 70,
+            width: 90,
+            height: 64,
             background: C.card,
             border: `1.5px dashed ${C.border}`,
-            borderRadius: 9,
+            borderRadius: 8,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -4727,7 +4742,7 @@
           onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
         }), /*#__PURE__*/_react.default.createElement("span", {
           style: {
-            fontSize: 20
+            fontSize: 22
           }
         }, imgUploading ? "⏳" : "📷"), /*#__PURE__*/_react.default.createElement("span", {
           style: {
