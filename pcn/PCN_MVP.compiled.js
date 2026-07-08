@@ -2390,12 +2390,19 @@
     };
     const togglePrivacy = async (vehicleId, key) => {
       const v = vehicles[vehicleId];
+      if (!v) return;
+      const currentPrivacy = {
+        ...DEF_PRIVACY,
+        ...(v.privacy || {})
+      };
+      const currentVal = currentPrivacy[key];
+      const newPrivacy = {
+        ...currentPrivacy,
+        [key]: !currentVal
+      };
       const updated = {
         ...v,
-        privacy: {
-          ...(v.privacy || DEF_PRIVACY),
-          [key]: !v.privacy?.[key]
-        }
+        privacy: newPrivacy
       };
       setVehicles(prev => ({
         ...prev,
@@ -2403,7 +2410,8 @@
       }));
       if (viewV?.id === vehicleId) setViewV(updated);
       const DB = window.PCN_DB;
-      await DB.vehicles.save(updated);
+      if (DB) await DB.vehicles.save(updated);
+      toast_(`${key.replace("pub_", "")}: ${!currentVal ? "🔓 Öffentlich" : "🔒 Privat"}`);
     };
     const updateVehicleImage = async (vehicleId, dataUrl) => {
       const v = vehicles[vehicleId];
@@ -3708,7 +3716,30 @@
         const s = vehicleStatus[v.id];
         if (s && s.expiresAt && Date.now() > s.expiresAt) return null;
         if (!s || !s.text) return /*#__PURE__*/_react.default.createElement("button", {
-          onClick: () => loadStatusFor(v.id),
+          onClick: async () => {
+            const DB = window.PCN_DB;
+            if (!DB) return;
+            // Try by vehicle id first, fallback to qarId lookup
+            let vid = v.id;
+            if (v.qarId && (!vid || vid.startsWith("tmp-"))) {
+              const {
+                data: rv
+              } = await DB.vehicles.getPublic(v.qarId);
+              if (rv?.id) vid = rv.id;
+            }
+            const {
+              data
+            } = await DB.vehicles.getStatus(vid);
+            if (data && data.text) {
+              setVehicleStatus(prev => ({
+                ...prev,
+                [v.id]: data
+              }));
+              toast_("Status geladen ✓");
+            } else {
+              toast_("Kein aktiver Status");
+            }
+          },
           style: {
             width: "100%",
             background: "rgba(255,255,255,.05)",
