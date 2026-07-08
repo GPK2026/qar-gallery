@@ -4447,7 +4447,11 @@
           if (e.target === e.currentTarget) setShowStatusPicker(null);
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
-        className: "sheet"
+        className: "sheet",
+        style: {
+          maxHeight: "88vh",
+          overflowY: "auto"
+        }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontFamily: "'Barlow Condensed',sans-serif",
@@ -4460,97 +4464,38 @@
         style: {
           fontSize: 11,
           color: C.muted,
-          marginBottom: 16
+          marginBottom: 12
         }
       }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          marginBottom: 16
-        }
-      }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/_react.default.createElement("button", {
-        key: i,
-        onClick: () => setStatus(showStatusPicker, p),
-        style: {
-          display: "flex",
-          gap: 12,
-          alignItems: "center",
-          background: C.card,
-          border: `1px solid ${C.border}`,
+          background: `${C.red}18`,
+          border: `1.5px solid ${C.red}44`,
           borderRadius: 12,
-          padding: "14px",
-          cursor: "pointer",
-          fontFamily: "'Barlow',sans-serif",
-          textAlign: "left"
-        }
-      }, /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 24,
-          flexShrink: 0
-        }
-      }, p.icon), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 15,
-          fontWeight: 700,
-          color: C.white
-        }
-      }, p.text), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 11,
-          color: C.muted
-        }
-      }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          borderTop: `1px solid ${C.border}`,
-          paddingTop: 14,
-          marginBottom: 10
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 11,
-          color: C.muted,
-          marginBottom: 8
-        }
-      }, "Eigener Text"), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          gap: 8,
-          marginBottom: 12
-        }
-      }, /*#__PURE__*/_react.default.createElement("input", {
-        className: "inp",
-        placeholder: "z.B. Bin gleich beim Einlass...",
-        value: statusCustom,
-        onChange: e => setStatusCustom(e.target.value),
-        style: {
-          flex: 1
-        }
-      })), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          marginBottom: 12
+          padding: "13px",
+          marginBottom: 14
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 6
+          marginBottom: 8
         }
       }, /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 11,
-          color: C.muted
-        }
-      }, "⏱ Aktivierungsdauer"), /*#__PURE__*/_react.default.createElement("span", {
         style: {
           fontSize: 13,
           fontWeight: 700,
           color: C.white
         }
+      }, "⏱ Aktivierungsdauer"), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 16,
+          fontWeight: 900,
+          color: C.red
+        }
       }, (() => {
-        const m = parseInt(statusCustomMins || 30);
-        return m >= 60 ? `${Math.round(m / 60)} Std` : `${m} Min`;
+        const m = statusCustomMins || 30;
+        return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 > 0 ? " " + m % 60 + "min" : ""}` : m + " Min";
       })())), /*#__PURE__*/_react.default.createElement("input", {
         type: "range",
         min: "5",
@@ -4567,10 +4512,82 @@
           display: "flex",
           justifyContent: "space-between",
           fontSize: 9,
-          color: "#444",
-          marginTop: 2
+          color: "#555",
+          marginTop: 3
         }
-      }, /*#__PURE__*/_react.default.createElement("span", null, "5 Min"), /*#__PURE__*/_react.default.createElement("span", null, "30 Min"), /*#__PURE__*/_react.default.createElement("span", null, "1 Std"), /*#__PURE__*/_react.default.createElement("span", null, "4 Std"), /*#__PURE__*/_react.default.createElement("span", null, "8 Std"))), /*#__PURE__*/_react.default.createElement("button", {
+      }, /*#__PURE__*/_react.default.createElement("span", null, "5 Min"), /*#__PURE__*/_react.default.createElement("span", null, "30 Min"), /*#__PURE__*/_react.default.createElement("span", null, "1 Std"), /*#__PURE__*/_react.default.createElement("span", null, "4 Std"), /*#__PURE__*/_react.default.createElement("span", null, "8 Std"))), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          marginBottom: 14
+        }
+      }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/_react.default.createElement("button", {
+        key: i,
+        onClick: () => setStatus(showStatusPicker, {
+          ...p,
+          mins: statusCustomMins || p.mins
+        }),
+        style: {
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          padding: "13px",
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          textAlign: "left"
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 22,
+          flexShrink: 0
+        }
+      }, p.icon), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 14,
+          fontWeight: 700,
+          color: C.white
+        }
+      }, p.text), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted
+        }
+      }, "Läuft ab nach ", statusCustomMins || p.mins, " Min"))))), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          borderTop: `1px solid ${C.border}`,
+          paddingTop: 12,
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 8
+        }
+      }, "Eigener Text"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 8
+        }
+      }, /*#__PURE__*/_react.default.createElement("input", {
+        className: "inp",
+        placeholder: "z.B. Bin gleich beim Einlass...",
+        value: statusCustom,
+        onChange: e => setStatusCustom(e.target.value),
+        onKeyDown: e => {
+          if (e.key === "Enter" && statusCustom.trim()) setStatus(showStatusPicker, {
+            icon: "💬",
+            mins: statusCustomMins || 30
+          }, statusCustom);
+        },
+        style: {
+          flex: 1
+        }
+      }), /*#__PURE__*/_react.default.createElement("button", {
         className: "btn",
         disabled: !statusCustom.trim(),
         onClick: () => {
@@ -4580,13 +4597,10 @@
           }, statusCustom);
         },
         style: {
-          width: "100%",
+          flexShrink: 0,
           opacity: statusCustom.trim() ? 1 : .4
         }
-      }, "Status setzen · ", (() => {
-        const m = parseInt(statusCustomMins || 30);
-        return m >= 60 ? `${Math.round(m / 60)} Std` : `${m} Min`;
-      })())), getActiveStatus(showStatusPicker) && /*#__PURE__*/_react.default.createElement("button", {
+      }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn ghost",
         style: {
           width: "100%",
@@ -9912,5 +9926,3 @@
     }, "Mitglied"))));
   }
 });
-
-// updated 1783548265
