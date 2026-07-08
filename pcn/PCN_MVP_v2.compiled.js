@@ -7,7 +7,7 @@
     var mod = {
       exports: {}
     };
-    factory(mod.exports, global.React);
+    factory(mod.exports, global.react);
     global.PCN_MVP = mod.exports;
   }
 })(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : this, function (_exports, _react) {
@@ -3686,7 +3686,7 @@
           marginBottom: 10,
           textShadow: "0 2px 8px rgba(0,0,0,.5)"
         }
-      }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
+      }, v.hersteller, " ", v.modell), priv.kennzeichen !== false && kz && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "inline-flex",
           alignItems: "center",
@@ -4068,7 +4068,7 @@
           gridTemplateColumns: "1fr 1fr",
           gap: 10
         }
-      }, [["Baujahr", "baujahr"], ["Kraftstoff", "kraftstoff"], ["Getriebe", "getriebe"], ["Farbe", "farbe"], ["Kilometerstand", "kilometerstand"], ["TÜV", "tuev_faelligkeit"]].filter(([, k]) => priv[k] !== false && v[k]).map(([label, key]) => /*#__PURE__*/_react.default.createElement("div", {
+      }, [["Baujahr", "baujahr"], ["Kraftstoff", "kraftstoff"], ["Getriebe", "getriebe"], ["Farbe", "farbe"], ["Kilometerstand", "kilometerstand"], ["TÜV", "tuev_faelligkeit"], ["Marktwert", "marktwert"], ["FIN", "fin"]].filter(([, k]) => priv[k] !== false && v[k]).map(([label, key]) => /*#__PURE__*/_react.default.createElement("div", {
         key: key
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
@@ -4084,7 +4084,7 @@
           color: C.white,
           marginTop: 2
         }
-      }, key === "kilometerstand" ? parseInt(v[key]).toLocaleString("de-DE") + " km" : v[key])))), v.besonderheiten && /*#__PURE__*/_react.default.createElement("div", {
+      }, key === "kilometerstand" ? parseInt(v[key]).toLocaleString("de-DE") + " km" : key === "marktwert" ? "€ " + parseInt(v[key]).toLocaleString("de-DE") : v[key])))), v.besonderheiten && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           marginTop: 12,
           paddingTop: 10,
