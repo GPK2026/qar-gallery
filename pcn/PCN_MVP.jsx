@@ -1636,21 +1636,6 @@ function PCNInner() {
                 fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
               📱 QR-Code anzeigen
             </button>
-            <button
-              onClick={async()=>{
-                const shareUrl="https://qar.gallery/pcn/?v="+v.qarId;
-                const shareTitle=v.hersteller+" "+v.modell+" — Digitale Fahrzeugakte";
-                if(navigator.share){
-                  try{ await navigator.share({title:shareTitle,url:shareUrl}); return; }catch(e){}
-                }
-                try{ await navigator.clipboard.writeText(shareUrl); toast_("Link kopiert ✓"); }
-                catch(e){ toast_(shareUrl); }
-              }}
-              style={{background:C.red,border:"none",borderRadius:8,
-                padding:"8px 14px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,
-                fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:15}}>↑</span> Teilen
-            </button>
           </div>
         </div>
 
