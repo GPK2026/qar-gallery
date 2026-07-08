@@ -2523,15 +2523,23 @@
           }
         }));
       }
+
+      // Robust duplicate check — query DB directly by vehicle_id
       const {
         data: myThreadsLive
       } = DB ? await DB.threads.list(currentMe.id) : {
         data: []
       };
-      const allThreads = myThreadsLive || Object.values(threads);
-      const existing = allThreads.find(t => (t.vehicleId === v.id || t.vehicle_id === v.id) && (t.participants || []).includes(currentMe.id));
+      const allThreads = [...(myThreadsLive || []), ...Object.values(threads)];
+      const vId = v.id;
+      const existing = allThreads.find(t => {
+        const tid = t.vehicleId || t.vehicle_id;
+        if (tid !== vId) return false;
+        const parts = t.participants || [];
+        // Match by user ID or email
+        return parts.includes(currentMe.id) || parts.includes(currentMe.email) || parts.some(p => p === currentMe.id || p === currentMe.email);
+      });
       if (existing) {
-        // Merge into state with correct field names
         const merged = {
           ...existing,
           vehicleId: existing.vehicleId || existing.vehicle_id
@@ -2542,6 +2550,7 @@
         }));
         setActiveThread(existing.id);
         setScreen("chat");
+        toast_("Chat fortgesetzt 💬");
         return;
       }
       const {
