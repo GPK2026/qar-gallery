@@ -1480,6 +1480,7 @@
         return [];
       }
     });
+    const [confirmDeleteThread, setConfirmDeleteThread] = (0, _react.useState)(null); // thread id to confirm delete
     const [deletedThreadIds, setDeletedThreadIds] = (0, _react.useState)(() => {
       try {
         return JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
@@ -8053,31 +8054,109 @@
       }, lastMsg ? lastMsg.text : "Noch keine Nachricht")), /*#__PURE__*/_react.default.createElement("button", {
         onClick: e => {
           e.stopPropagation();
-          if (!window.confirm("Chat löschen?")) return;
-          setGuestThreads(prev => {
-            const updated = prev.filter(x => x.id !== gt.id);
-            localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
-            return updated;
-          });
-          setThreads(prev => {
-            const n = {
-              ...prev
-            };
-            delete n[gt.id];
-            return n;
-          });
+          setConfirmDeleteThread(gt.id);
         },
         style: {
           background: "none",
           border: "none",
-          color: "#444",
+          color: "#555",
           cursor: "pointer",
           fontSize: 18,
-          padding: "4px 6px",
+          padding: "4px 8px",
           flexShrink: 0
         }
       }, "🗑"));
-    })), !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+    })), confirmDeleteThread && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.7)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        padding: "0 0 40px"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.dark,
+        border: `1px solid ${C.border}`,
+        borderRadius: 16,
+        padding: "20px",
+        width: "100%",
+        maxWidth: 420,
+        margin: "0 16px"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontWeight: 700,
+        fontSize: 16,
+        color: C.white,
+        marginBottom: 8
+      }
+    }, "Chat löschen?"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.muted,
+        marginBottom: 20
+      }
+    }, "Der Chat wird dauerhaft entfernt und kann nicht wiederhergestellt werden."), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setConfirmDeleteThread(null),
+      style: {
+        flex: 1,
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        padding: "12px",
+        color: C.white,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        fontWeight: 700,
+        fontSize: 14
+      }
+    }, "Abbrechen"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: async () => {
+        const id = confirmDeleteThread;
+        setConfirmDeleteThread(null);
+        const DB = window.PCN_DB;
+        if (DB) await DB.threads.delete(id).catch(() => {});
+        setThreads(prev => {
+          const n = {
+            ...prev
+          };
+          delete n[id];
+          return n;
+        });
+        setDeletedThreadIds(prev => {
+          const updated = [...new Set([...prev, id])];
+          localStorage.setItem("pcn_deleted_threads", JSON.stringify(updated));
+          return updated;
+        });
+        setGuestThreads(prev => {
+          const updated = prev.filter(x => x.id !== id);
+          localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
+          return updated;
+        });
+        toast_("Chat gelöscht");
+      },
+      style: {
+        flex: 1,
+        background: C.red,
+        border: "none",
+        borderRadius: 10,
+        padding: "12px",
+        color: "#fff",
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        fontWeight: 700,
+        fontSize: 14
+      }
+    }, "🗑 Löschen")))), !isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 16
       }
@@ -8335,36 +8414,17 @@
             whiteSpace: "nowrap"
           }
         }, last ? (last.from === me?.id ? "Du: " : "") + last.text : "Noch keine Nachricht"))), /*#__PURE__*/_react.default.createElement("button", {
-          onClick: async e => {
+          onClick: e => {
             e.stopPropagation();
-            if (!window.confirm("Chat löschen?")) return;
-            const DB = window.PCN_DB;
-            if (DB) await DB.threads.delete(t.id).catch(() => {});
-            setThreads(prev => {
-              const n = {
-                ...prev
-              };
-              delete n[t.id];
-              return n;
-            });
-            setDeletedThreadIds(prev => {
-              const updated = [...new Set([...prev, t.id])];
-              localStorage.setItem("pcn_deleted_threads", JSON.stringify(updated));
-              return updated;
-            });
-            setGuestThreads(prev => {
-              const updated = prev.filter(x => x.id !== t.id);
-              localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
-              return updated;
-            });
+            setConfirmDeleteThread(t.id);
           },
           style: {
             background: "none",
             border: "none",
-            color: "#444",
+            color: "#555",
             cursor: "pointer",
             fontSize: 17,
-            padding: "4px 6px",
+            padding: "4px 8px",
             flexShrink: 0
           }
         }, "🗑"));
