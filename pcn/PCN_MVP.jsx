@@ -115,6 +115,8 @@ function QRCodeCanvas({value, size=140}) {
 
 // ─── Demo Data ────────────────────────────────────────────────────────────────
 const CLUB_CODE = "PCN2026";
+// Sponsor config — set in pcn_config.js: window.PCN_SPONSOR = {name:"Porschezentrum Koblenz", url:"https://...", logo:"https://..."}
+const SPONSOR = typeof window !== "undefined" ? (window.PCN_SPONSOR || null) : null;
 
 // Demo group channel messages
 const DEMO_GROUP = {
@@ -573,9 +575,9 @@ export default function PCN() {
 
 function PCNInner() {
   // ── Core state ──────────────────────────────────────────────────────────────
-  const [screen, setScreen]       = useState("splash");
+  const [screen, setScreen]       = useState(()=>window.__PCN_PRELOAD_SESSION__ ? "app" : "splash");
   const [tab, setTab]             = useState("dashboard");
-  const [me, setMe]               = useState(null);
+  const [me, setMe]               = useState(()=>window.__PCN_PRELOAD_SESSION__||null);
   const [allUsers, setAllUsers]   = useState({...DEMO_USERS});
   const [vehicles, setVehicles]   = useState({});
   const [logbook, setLogbook]     = useState({});
@@ -912,6 +914,18 @@ function PCNInner() {
   useEffect(()=>{
     if(screen==="public"&&publicV) track("qr_scan_public_view",{vehicle_id:publicV?.id,qar_id:publicV?.qarId});
   },[screen, publicV?.id]);
+
+  // ── Auto-refresh status on public page every 10s ──────────────────────────
+  useEffect(()=>{
+    if(screen!=="public"||!publicV?.id) return;
+    const DB=window.PCN_DB; if(!DB) return;
+    const poll=setInterval(async()=>{
+      const {data}=await DB.vehicles.getStatus(publicV.id);
+      if(data) setVehicleStatus(prev=>({...prev,[publicV.id]:data}));
+      else setVehicleStatus(prev=>({...prev,[publicV.id]:null}));
+    },10000);
+    return ()=>clearInterval(poll);
+  },[screen,publicV?.id]);
 
   // ── Scanner ──────────────────────────────────────────────────────────────────
   const openScanner = () => {
@@ -1602,6 +1616,14 @@ function PCNInner() {
             style={{height:36,objectFit:"contain"}}/>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             <span style={{fontSize:11,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
+            {/* QR Code button — zeigt QR zum Handy-zu-Handy scannen */}
+            <button
+              onClick={()=>setLightbox({images:["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v="+v.qarId],index:0})}
+              style={{background:"#f5f5f5",border:"1px solid #ddd",borderRadius:8,
+                padding:"7px 10px",color:"#111",cursor:"pointer",fontSize:13,fontWeight:700,
+                fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
+              <span style={{fontSize:16}}>▪️</span> QR
+            </button>
             <button
               onClick={async()=>{
                 const shareUrl="https://qar.gallery/pcn/?v="+v.qarId;
@@ -1619,6 +1641,17 @@ function PCNInner() {
             </button>
           </div>
         </div>
+
+        {/* ── Sponsor banner — shown below header if configured ── */}
+        {SPONSOR&&(
+          <a href={SPONSOR.url||"#"} target="_blank" rel="noopener noreferrer"
+            style={{display:"flex",alignItems:"center",gap:10,background:"#fff",
+              padding:"8px 16px",textDecoration:"none",borderBottom:"1px solid #eee"}}>
+            {SPONSOR.logo&&<img src={SPONSOR.logo} alt={SPONSOR.name} style={{height:28,objectFit:"contain"}}/>}
+            <span style={{fontSize:11,color:"#888",fontWeight:600}}>Powered by</span>
+            <span style={{fontSize:12,fontWeight:800,color:"#111"}}>{SPONSOR.name}</span>
+          </a>
+        )}
 
         {/* ── Hero image — taller, with gallery fallback ── */}
         <div style={{height:260,position:"relative",overflow:"hidden",background:"#111"}}>
