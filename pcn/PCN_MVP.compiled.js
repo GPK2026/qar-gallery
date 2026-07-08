@@ -407,8 +407,8 @@
       marktwert: "138.000",
       zustand: "1",
       besonderheiten: "Sport-Chrono, PASM, Sportabgasanlage, PCCB",
-      image: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=900&q=85",
-      images: ["https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=900&q=85", "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=900&q=85", "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=900&q=85", "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=900&q=85"],
+      image: "https://photos.prestigeimports.net/prestige-imports-content/uploads/2021/11/2019-Porsche-911-Carrera-GTS-WP0AB2A93KS114265-01-1024x683.jpg",
+      images: ["https://photos.prestigeimports.net/prestige-imports-content/uploads/2021/11/2019-Porsche-911-Carrera-GTS-WP0AB2A93KS114265-01-1024x683.jpg", "https://photos.prestigeimports.net/prestige-imports-content/uploads/2021/11/2019-Porsche-911-Carrera-GTS-WP0AB2A93KS114265-02-1024x683.jpg", "https://photos.prestigeimports.net/prestige-imports-content/uploads/2021/11/2019-Porsche-911-Carrera-GTS-WP0AB2A93KS114265-03-1024x683.jpg", "https://photos.prestigeimports.net/prestige-imports-content/uploads/2021/11/2019-Porsche-911-Carrera-GTS-WP0AB2A93KS114265-04-1024x683.jpg", "https://photos.prestigeimports.net/prestige-imports-content/uploads/2021/11/2019-Porsche-911-Carrera-GTS-WP0AB2A93KS114265-05-1024x683.jpg", "https://photos.prestigeimports.net/prestige-imports-content/uploads/2021/11/2019-Porsche-911-Carrera-GTS-WP0AB2A93KS114265-07-1024x683.jpg", "https://photos.prestigeimports.net/prestige-imports-content/uploads/2021/11/2019-Porsche-911-Carrera-GTS-WP0AB2A93KS114265-06-1024x683.jpg", "https://photos.prestigeimports.net/prestige-imports-content/uploads/2021/11/2019-Porsche-911-Carrera-GTS-WP0AB2A93KS114265-10-1024x683.jpg", "https://photos.prestigeimports.net/prestige-imports-content/uploads/2021/11/2019-Porsche-911-Carrera-GTS-WP0AB2A93KS114265-12-1024x683.jpg"],
       privacy: {
         ...DEF_PRIVACY,
         pub_phone: true,
@@ -3494,7 +3494,9 @@
         }
       }, (() => {
         // Try all image sources in priority order
-        const img = priv.pub_gallery !== false && (v.image || v.images && v.images[0] || DEMO_VEHICLES[v.id]?.images?.[0] || DEMO_VEHICLES[v.id]?.image);
+        // Show gallery unless explicitly disabled (undefined = show by default)
+        const galleryEnabled = priv.pub_gallery !== false;
+        const img = galleryEnabled && (v.images && v.images[0] || v.image || DEMO_VEHICLES[v.id]?.images?.[0] || DEMO_VEHICLES[v.id]?.image);
         if (img) return /*#__PURE__*/_react.default.createElement("img", {
           src: img,
           alt: "",
@@ -3633,7 +3635,38 @@
           fontSize: 20,
           color: "rgba(255,255,255,.7)"
         }
-      }, "›")), (() => {
+      }, "›")), priv.pub_gallery !== false && (() => {
+        const allImgs = v.images || DEMO_VEHICLES[v.id]?.images || [];
+        if (allImgs.length <= 1) return null;
+        return /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 6,
+            overflowX: "auto",
+            padding: "8px 14px 4px",
+            background: "#0a0a0a",
+            scrollbarWidth: "none"
+          }
+        }, allImgs.map((img, i) => /*#__PURE__*/_react.default.createElement("img", {
+          key: i,
+          src: img,
+          alt: "",
+          onClick: () => setLightbox({
+            images: allImgs,
+            index: i
+          }),
+          style: {
+            width: 80,
+            height: 56,
+            objectFit: "cover",
+            borderRadius: 7,
+            flexShrink: 0,
+            cursor: "pointer",
+            border: i === 0 ? "2px solid #D5001C" : "1px solid #222"
+          },
+          onError: e => e.target.style.display = "none"
+        })));
+      })(), (() => {
         const s = vehicleStatus[v.id];
         if (s && s.expiresAt && Date.now() > s.expiresAt) return null;
         if (!s || !s.text) return null;
