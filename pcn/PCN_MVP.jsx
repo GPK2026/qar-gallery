@@ -160,7 +160,7 @@ const DEMO_VEHICLES = {
   // ── Max: Porsche 911 Carrera 4S, GT-Silbermetallic ──────────────────────────
   // Alle Bilder zeigen denselben silbernen 911 aus verschiedenen Perspektiven
   "V001":{id:"V001",qarId:"QAR-R4T8W3NX",userId:"u1",owner:"max@pcn.de",
-    hersteller:"Porsche",modell:"911 Carrera 4S",baujahr:"2021",
+    hersteller:"Porsche",modell:"911 GTS",baujahr:"2019",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"GT-Silbermetallic",
     kennzeichen:"AW-PC 911",fin:"WP0ZZZ99ZLS100001",phone:"+49 171 9110911",
     kilometerstand:"32.400",tuev_faelligkeit:"02/2027",marktwert:"138.000",zustand:"1",
@@ -2050,18 +2050,20 @@ function PCNInner() {
                     </div>
                   </>)}
                 </div>
-                {/* Thumbnail strip */}
+                {/* Thumbnail strip — direkt unter Hero, scrollbar */}
                 {imgs.length>1&&(
-                  <div style={{display:"flex",gap:8,overflowX:"auto",padding:"10px 14px 4px",scrollbarWidth:"none"}}>
+                  <div style={{display:"flex",gap:6,overflowX:"auto",padding:"8px 10px",background:"#0a0a0a",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
                     {imgs.map((img,i)=>(
                       <div key={i} style={{position:"relative",flexShrink:0}}>
-                        <img src={img} alt="" onClick={()=>goTo(i)}
-                          style={{width:70,height:70,objectFit:"cover",borderRadius:9,cursor:"pointer",display:"block",
-                            border:`3px solid ${i===cur?C.red:i===0?"#c8a96e55":"transparent"}`,transition:"border-color .15s"}}
+                        <img src={img} alt="" onClick={()=>{goTo(i);setLightbox({images:imgs,index:i});}}
+                          style={{width:90,height:64,objectFit:"cover",borderRadius:8,cursor:"pointer",display:"block",
+                            border:`2.5px solid ${i===cur?C.red:"transparent"}`,
+                            opacity:i===cur?1:0.7,transition:"all .15s"}}
                           onError={e=>e.target.style.display="none"}/>
-                        {i===0&&<div style={{position:"absolute",top:-7,left:"50%",transform:"translateX(-50%)",fontSize:13}}>👑</div>}
+                        {i===0&&<div style={{position:"absolute",top:2,left:2,fontSize:10,background:"rgba(0,0,0,.6)",borderRadius:4,padding:"1px 4px"}}>👑</div>}
                         {isOwn&&i===cur&&i!==0&&(
-                          <button onClick={async()=>{
+                          <button onClick={async e=>{
+                            e.stopPropagation();
                             const imgs2=[...imgs]; const img2=imgs2[i];
                             imgs2.splice(i,1); imgs2.unshift(img2);
                             const updated={...v,images:imgs2,image:img2};
@@ -2070,20 +2072,20 @@ function PCNInner() {
                             goTo(0);
                             const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
                             toast_("Titelbild gesetzt 👑");
-                          }} style={{position:"absolute",bottom:-1,left:0,right:0,background:C.gold,border:"none",borderRadius:"0 0 7px 7px",padding:"2px",color:"#000",fontSize:8,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                          }} style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(200,169,110,.9)",border:"none",borderRadius:"0 0 6px 6px",padding:"2px",color:"#000",fontSize:8,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                             👑 Titelbild
                           </button>
                         )}
                         {isOwn&&(
-                          <button onClick={()=>removeImageFromVehicle(v.id,i)}
-                            style={{position:"absolute",top:-5,right:-5,background:C.red,border:"2px solid #0a0a0a",color:"#fff",fontSize:9,width:18,height:18,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</button>
+                          <button onClick={e=>{e.stopPropagation();removeImageFromVehicle(v.id,i);}}
+                            style={{position:"absolute",top:-4,right:-4,background:C.red,border:"2px solid #0a0a0a",color:"#fff",fontSize:9,width:17,height:17,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</button>
                         )}
                       </div>
                     ))}
                     {isOwn&&(
-                      <label style={{width:70,height:70,background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:9,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,gap:2}}>
+                      <label style={{width:90,height:64,background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,gap:2}}>
                         <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
-                        <span style={{fontSize:20}}>{imgUploading?"⏳":"📷"}</span>
+                        <span style={{fontSize:22}}>{imgUploading?"⏳":"📷"}</span>
                         <span style={{fontSize:9,color:C.muted}}>Hinzufügen</span>
                       </label>
                     )}
