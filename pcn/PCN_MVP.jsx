@@ -1906,11 +1906,13 @@ function PCNInner() {
           <div className="card" style={{padding:16,marginBottom:14}}>
             <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>Fahrzeugdaten</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              {[["Baujahr","baujahr"],["Kraftstoff","kraftstoff"],["Getriebe","getriebe"],["Farbe","farbe"],["Kilometerstand","kilometerstand"],["TÜV","tuev_faelligkeit"]].filter(([,k])=>priv[k]!==false&&v[k]).map(([label,key])=>(
+              {[["Baujahr","baujahr"],["Kraftstoff","kraftstoff"],["Getriebe","getriebe"],["Farbe","farbe"],["Kilometerstand","kilometerstand"],["TÜV","tuev_faelligkeit"],["Marktwert","marktwert"],["FIN","fin"]].filter(([,k])=>priv[k]!==false&&v[k]).map(([label,key])=>(
                 <div key={key}>
                   <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.5}}>{label}</div>
                   <div style={{fontSize:14,fontWeight:600,color:C.white,marginTop:2}}>
-                    {key==="kilometerstand"?parseInt(v[key]).toLocaleString("de-DE")+" km":v[key]}
+                    {key==="kilometerstand"?parseInt(v[key]).toLocaleString("de-DE")+" km":
+                     key==="marktwert"?"€ "+parseInt(v[key]).toLocaleString("de-DE"):
+                     v[key]}
                   </div>
                 </div>
               ))}
@@ -2043,52 +2045,50 @@ function PCNInner() {
       {/* ── OVERLAYS (rendered in every screen) ── */}
       {showStatusPicker&&(
         <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
-          <div className="sheet">
+          <div className="sheet" style={{maxHeight:"88vh",overflowY:"auto"}}>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Live-Status setzen</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+            <div style={{fontSize:11,color:C.muted,marginBottom:12}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
+
+            {/* ── Dauer oben — immer sichtbar ── */}
+            <div style={{background:`${C.red}18`,border:`1.5px solid ${C.red}44`,borderRadius:12,padding:"13px",marginBottom:14}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <span style={{fontSize:13,fontWeight:700,color:C.white}}>⏱ Aktivierungsdauer</span>
+                <span style={{fontSize:16,fontWeight:900,color:C.red}}>
+                  {(()=>{const m=statusCustomMins||30; return m>=60?`${Math.floor(m/60)}h${m%60>0?" "+m%60+"min":""}`:m+" Min";})()}
+                </span>
+              </div>
+              <input type="range" min="5" max="480" step="5"
+                value={statusCustomMins||30}
+                onChange={e=>setStatusCustomMins(parseInt(e.target.value))}
+                style={{width:"100%",accentColor:C.red}}/>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#555",marginTop:3}}>
+                <span>5 Min</span><span>30 Min</span><span>1 Std</span><span>4 Std</span><span>8 Std</span>
+              </div>
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
               {STATUS_PRESETS.map((p,i)=>(
-                <button key={i} onClick={()=>setStatus(showStatusPicker,p)}
-                  style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
-                  <span style={{fontSize:24,flexShrink:0}}>{p.icon}</span>
+                <button key={i} onClick={()=>setStatus(showStatusPicker,{...p,mins:statusCustomMins||p.mins})}
+                  style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                  <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
                   <div>
-                    <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.text}</div>
-                    <div style={{fontSize:11,color:C.muted}}>Läuft ab nach {p.mins} Min</div>
+                    <div style={{fontSize:14,fontWeight:700,color:C.white}}>{p.text}</div>
+                    <div style={{fontSize:11,color:C.muted}}>Läuft ab nach {statusCustomMins||p.mins} Min</div>
                   </div>
                 </button>
               ))}
             </div>
-            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginBottom:10}}>
+            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12,marginBottom:10}}>
               <div style={{fontSize:11,color:C.muted,marginBottom:8}}>Eigener Text</div>
-              <div style={{display:"flex",gap:8,marginBottom:12}}>
+              <div style={{display:"flex",gap:8}}>
                 <input className="inp" placeholder="z.B. Bin gleich beim Einlass..." value={statusCustom}
                   onChange={e=>setStatusCustom(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:statusCustomMins||30},statusCustom);}}
                   style={{flex:1}}/>
+                <button className="btn" disabled={!statusCustom.trim()}
+                  onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:statusCustomMins||30},statusCustom);}}
+                  style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
               </div>
-              {/* Custom duration */}
-              <div style={{marginBottom:12}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                  <span style={{fontSize:11,color:C.muted}}>⏱ Aktivierungsdauer</span>
-                  <span style={{fontSize:13,fontWeight:700,color:C.white}}>
-                    {(()=>{
-                      const m = parseInt(statusCustomMins||30);
-                      return m >= 60 ? `${Math.round(m/60)} Std` : `${m} Min`;
-                    })()}
-                  </span>
-                </div>
-                <input type="range" min="5" max="480" step="5"
-                  value={statusCustomMins||30}
-                  onChange={e=>setStatusCustomMins(parseInt(e.target.value))}
-                  style={{width:"100%",accentColor:C.red}}/>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#444",marginTop:2}}>
-                  <span>5 Min</span><span>30 Min</span><span>1 Std</span><span>4 Std</span><span>8 Std</span>
-                </div>
-              </div>
-              <button className="btn" disabled={!statusCustom.trim()}
-                onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:statusCustomMins||30},statusCustom);}}
-                style={{width:"100%",opacity:statusCustom.trim()?1:.4}}>
-                Status setzen · {(()=>{const m=parseInt(statusCustomMins||30); return m>=60?`${Math.round(m/60)} Std`:`${m} Min`;})()}
-              </button>
             </div>
             {getActiveStatus(showStatusPicker)&&(
               <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
