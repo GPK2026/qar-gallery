@@ -1802,15 +1802,26 @@
             if (realV) v = realV;
           }
           if (v) {
-            setPublicV({
+            const vWithPrivacy = {
               ...v,
               privacy: {
                 ...DEF_PRIVACY,
                 ...(v.privacy || {})
               }
-            });
+            };
+            setPublicV(vWithPrivacy);
             setScreen("public");
-            if (DB) loadStatusFor(v.id);
+            // Load status immediately — essential for cross-device status display
+            if (DB) {
+              DB.vehicles.getStatus(v.id).then(({
+                data
+              }) => {
+                if (data && data.text) setVehicleStatus(prev => ({
+                  ...prev,
+                  [v.id]: data
+                }));
+              });
+            }
             return;
           } else {
             toast_("Fahrzeug nicht gefunden: " + qarId, "err");
@@ -3856,8 +3867,10 @@
           margin: "0 auto"
         }
       }, (() => {
-        const s = getActiveStatus(v.id);
-        if (!s) return null;
+        const s = vehicleStatus[v.id];
+        // Check expiry
+        if (s && s.expiresAt && Date.now() > s.expiresAt) return null;
+        if (!s || !s.text) return null;
         const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : null;
         return /*#__PURE__*/_react.default.createElement("div", {
           style: {
@@ -3879,7 +3892,7 @@
             fontSize: 28,
             flexShrink: 0
           }
-        }, s.icon), /*#__PURE__*/_react.default.createElement("div", {
+        }, s.icon || "💬"), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             flex: 1
           }
