@@ -3797,6 +3797,13 @@ function PCNInner() {
             <span className="lbl">{label}</span>
           </button>
         ))}
+        {/* Guest: back to public vehicle page */}
+        {isGuest&&publicV&&(
+          <button className="tab-btn" onClick={()=>setScreen("public")}>
+            <span className="ico">🚗</span>
+            <span className="lbl">Fahrzeugakte</span>
+          </button>
+        )}
         {/* Guest: upgrade prompt */}
         {isGuest&&(
           <button className="tab-btn" onClick={()=>{setScreen("splash");setLoginForm(p=>({...p,mode:"register"}));}}>
