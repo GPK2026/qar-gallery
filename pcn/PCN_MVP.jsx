@@ -1696,20 +1696,6 @@ function PCNInner() {
         <div style={{padding:"12px 14px",background:C.dark,borderBottom:`1px solid ${C.border}`}}>
           <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:520,margin:"0 auto"}}>
 
-            {/* PHONE — prominent green call button */}
-            {(priv.pub_phone===true)&&v.phone&&v.phone.trim()&&(
-              <a href={`tel:${(v.phone||"").replace(/[^+\d]/g,"")}`}
-                style={{display:"flex",alignItems:"center",gap:12,background:"#16a34a",border:"none",
-                  borderRadius:12,padding:"14px 16px",textDecoration:"none",color:"#fff",cursor:"pointer"}}>
-                <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>📞</div>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:800,fontSize:15,color:"#fff"}}>Direkt anrufen</div>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:1}}>{v.phone}</div>
-                </div>
-                <span style={{fontSize:20,color:"rgba(255,255,255,.7)"}}>›</span>
-              </a>
-            )}
-
             {/* ── Thumbnail strip — additional gallery images ── */}
           {priv.pub_gallery!==false&&(()=>{
             const allImgs = v.images||(DEMO_VEHICLES[v.id]?.images)||[];
@@ -1745,6 +1731,20 @@ function PCNInner() {
                 </div>
               );
             })()}
+
+            {/* PHONE — below status, above message */}
+            {(priv.pub_phone===true)&&v.phone&&v.phone.trim()&&(
+              <a href={`tel:${(v.phone||"").replace(/[^+\d]/g,"")}`}
+                style={{display:"flex",alignItems:"center",gap:12,background:"#16a34a",border:"none",
+                  borderRadius:12,padding:"14px 16px",textDecoration:"none",color:"#fff",cursor:"pointer"}}>
+                <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>📞</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:800,fontSize:15,color:"#fff"}}>Direkt anrufen</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:1}}>{v.phone}</div>
+                </div>
+                <span style={{fontSize:20,color:"rgba(255,255,255,.7)"}}>›</span>
+              </a>
+            )}
 
             {/* CHAT — always visible for visitors (non-owners), opens anonymous chat */}
             {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
