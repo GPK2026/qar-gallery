@@ -9550,7 +9550,14 @@
       className: "ico"
     }, icon), /*#__PURE__*/_react.default.createElement("span", {
       className: "lbl"
-    }, label))), isGuest && /*#__PURE__*/_react.default.createElement("button", {
+    }, label))), isGuest && publicV && /*#__PURE__*/_react.default.createElement("button", {
+      className: "tab-btn",
+      onClick: () => setScreen("public")
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      className: "ico"
+    }, "🚗"), /*#__PURE__*/_react.default.createElement("span", {
+      className: "lbl"
+    }, "Fahrzeugakte")), isGuest && /*#__PURE__*/_react.default.createElement("button", {
       className: "tab-btn",
       onClick: () => {
         setScreen("splash");
