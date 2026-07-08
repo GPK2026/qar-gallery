@@ -595,6 +595,7 @@ function PCNInner() {
   const [guestThreads, setGuestThreads] = useState(() => {
     try { return JSON.parse(localStorage.getItem("pcn_guest_threads")||"[]"); } catch(e){ return []; }
   });
+  const [confirmDeleteThread, setConfirmDeleteThread] = useState(null); // thread id to confirm delete
   const [deletedThreadIds, setDeletedThreadIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem("pcn_deleted_threads")||"[]"); } catch(e){ return []; }
   });
@@ -3320,22 +3321,50 @@ function PCNInner() {
                         </div>
                       </div>
                       <button
-                        onClick={e=>{
-                          e.stopPropagation();
-                          if(!window.confirm("Chat löschen?")) return;
-                          setGuestThreads(prev=>{
-                            const updated=prev.filter(x=>x.id!==gt.id);
-                            localStorage.setItem("pcn_guest_threads",JSON.stringify(updated));
-                            return updated;
-                          });
-                          setThreads(prev=>{const n={...prev};delete n[gt.id];return n;});
-                        }}
-                        style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontSize:18,padding:"4px 6px",flexShrink:0}}>
+                        onClick={e=>{e.stopPropagation(); setConfirmDeleteThread(gt.id);}}
+                        style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:18,padding:"4px 8px",flexShrink:0}}>
                         🗑
                       </button>
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* ── Inline Delete Confirm ── */}
+            {confirmDeleteThread&&(
+              <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 40px"}}>
+                <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,padding:"20px",width:"100%",maxWidth:420,margin:"0 16px"}}>
+                  <div style={{fontWeight:700,fontSize:16,color:C.white,marginBottom:8}}>Chat löschen?</div>
+                  <div style={{fontSize:13,color:C.muted,marginBottom:20}}>Der Chat wird dauerhaft entfernt und kann nicht wiederhergestellt werden.</div>
+                  <div style={{display:"flex",gap:10}}>
+                    <button onClick={()=>setConfirmDeleteThread(null)}
+                      style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",color:C.white,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14}}>
+                      Abbrechen
+                    </button>
+                    <button onClick={async()=>{
+                        const id = confirmDeleteThread;
+                        setConfirmDeleteThread(null);
+                        const DB=window.PCN_DB;
+                        if(DB) await DB.threads.delete(id).catch(()=>{});
+                        setThreads(prev=>{const n={...prev};delete n[id];return n;});
+                        setDeletedThreadIds(prev=>{
+                          const updated=[...new Set([...prev, id])];
+                          localStorage.setItem("pcn_deleted_threads",JSON.stringify(updated));
+                          return updated;
+                        });
+                        setGuestThreads(prev=>{
+                          const updated=prev.filter(x=>x.id!==id);
+                          localStorage.setItem("pcn_guest_threads",JSON.stringify(updated));
+                          return updated;
+                        });
+                        toast_("Chat gelöscht");
+                      }}
+                      style={{flex:1,background:C.red,border:"none",borderRadius:10,padding:"12px",color:"#fff",cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14}}>
+                      🗑 Löschen
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -3433,25 +3462,9 @@ function PCNInner() {
                   </div>
                   </div>
                   <button
-                    onClick={async e=>{
-                      e.stopPropagation();
-                      if(!window.confirm("Chat löschen?")) return;
-                      const DB=window.PCN_DB;
-                      if(DB) await DB.threads.delete(t.id).catch(()=>{});
-                      setThreads(prev=>{const n={...prev};delete n[t.id];return n;});
-                      setDeletedThreadIds(prev=>{
-                        const updated=[...new Set([...prev, t.id])];
-                        localStorage.setItem("pcn_deleted_threads",JSON.stringify(updated));
-                        return updated;
-                      });
-                      setGuestThreads(prev=>{
-                        const updated=prev.filter(x=>x.id!==t.id);
-                        localStorage.setItem("pcn_guest_threads",JSON.stringify(updated));
-                        return updated;
-                      });
-                    }}
-                    style={{background:"none",border:"none",color:"#444",cursor:"pointer",
-                      fontSize:17,padding:"4px 6px",flexShrink:0}}>
+                    onClick={e=>{e.stopPropagation(); setConfirmDeleteThread(t.id);}}
+                    style={{background:"none",border:"none",color:"#555",cursor:"pointer",
+                      fontSize:17,padding:"4px 8px",flexShrink:0}}>
                     🗑
                   </button>
                 </div>
