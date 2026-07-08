@@ -1860,12 +1860,18 @@
           data: liveThreads
         } = await DB.threads.list(me.id);
         if (!liveThreads) return;
+        // Read deleted IDs fresh from localStorage each time
+        const deletedIds = JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
         setThreads(prev => {
           const next = {
             ...prev
           };
-          liveThreads.forEach(t => {
+          liveThreads.filter(t => !deletedIds.includes(t.id)).forEach(t => {
             next[t.id] = t;
+          });
+          // Also remove any previously deleted threads from state
+          deletedIds.forEach(id => {
+            delete next[id];
           });
           return next;
         });
