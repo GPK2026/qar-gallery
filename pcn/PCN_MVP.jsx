@@ -1191,9 +1191,15 @@ function PCNInner() {
       setAllUsers(prev=>({...prev,[ownerId]:{id:ownerId,name:"PCN-Mitglied",email:v.owner,role:"member"}}));
     }
     const {data:myThreadsLive} = DB ? await DB.threads.list(currentMe.id) : {data:[]};
-    const existing = (myThreadsLive||Object.values(threads)).find(t=>t.vehicleId===v.id&&(t.participants||[]).includes(currentMe.id));
+    const allThreads = myThreadsLive||Object.values(threads);
+    const existing = allThreads.find(t=>
+      (t.vehicleId===v.id || t.vehicle_id===v.id) &&
+      (t.participants||[]).includes(currentMe.id)
+    );
     if(existing){
-      setThreads(prev=>({...prev,[existing.id]:existing}));
+      // Merge into state with correct field names
+      const merged = {...existing, vehicleId: existing.vehicleId||existing.vehicle_id};
+      setThreads(prev=>({...prev,[existing.id]:merged}));
       setActiveThread(existing.id); setScreen("chat"); return;
     }
     const {data:t,error}=await DB.threads.create([currentMe.id,ownerId],v.id,`${v.hersteller} ${v.modell}`);
