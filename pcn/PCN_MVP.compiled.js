@@ -4930,13 +4930,24 @@
           color: C.muted,
           lineHeight: 1.5
         }
-      }, "✨ ", v.besonderheiten), isOwn && /*#__PURE__*/_react.default.createElement("div", {
+      }, "✨ ", v.besonderheiten)), isOwn && /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          marginTop: 14,
-          paddingTop: 12,
-          borderTop: `1px solid ${C.border}`
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 14,
+          padding: "14px",
+          marginBottom: 14
         }
-      }, (() => {
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
+          color: C.muted,
+          textTransform: "uppercase",
+          letterSpacing: 2,
+          marginBottom: 12
+        }
+      }, "🔗 QR-Code & Aktionen"), (() => {
         const active = getActiveStatus(v.id);
         if (!active) return null;
         return /*#__PURE__*/_react.default.createElement("div", {
@@ -5061,6 +5072,7 @@
           background: C.black,
           borderRadius: 10,
           padding: "12px",
+          width: "100%",
           display: "flex",
           gap: 14,
           alignItems: "center",
@@ -5154,7 +5166,7 @@
           fontSize: 10,
           color: C.muted
         }
-      }, "So sehen Besucher dein Fahrzeug beim QR-Scan")))))), (() => {
+      }, "So sehen Besucher dein Fahrzeug beim QR-Scan"))))), (() => {
         const vRems = myReminders.filter(r => r.vehicleId === v.id || r.vehicle_id === v.id);
         if (vRems.length === 0) return null;
         return /*#__PURE__*/_react.default.createElement("div", {
