@@ -3588,54 +3588,7 @@
           maxWidth: 520,
           margin: "0 auto"
         }
-      }, priv.pub_phone === true && v.phone && v.phone.trim() && /*#__PURE__*/_react.default.createElement("a", {
-        href: `tel:${(v.phone || "").replace(/[^+\d]/g, "")}`,
-        style: {
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          background: "#16a34a",
-          border: "none",
-          borderRadius: 12,
-          padding: "14px 16px",
-          textDecoration: "none",
-          color: "#fff",
-          cursor: "pointer"
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          width: 40,
-          height: 40,
-          borderRadius: "50%",
-          background: "rgba(255,255,255,.2)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 18,
-          flexShrink: 0
-        }
-      }, "📞"), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          flex: 1
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontWeight: 800,
-          fontSize: 15,
-          color: "#fff"
-        }
-      }, "Direkt anrufen"), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 12,
-          color: "rgba(255,255,255,.7)",
-          marginTop: 1
-        }
-      }, v.phone)), /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 20,
-          color: "rgba(255,255,255,.7)"
-        }
-      }, "›")), priv.pub_gallery !== false && (() => {
+      }, priv.pub_gallery !== false && (() => {
         const allImgs = v.images || DEMO_VEHICLES[v.id]?.images || [];
         if (allImgs.length <= 1) return null;
         return /*#__PURE__*/_react.default.createElement("div", {
@@ -3709,7 +3662,54 @@
             marginTop: 3
           }
         }, "Noch ca. ", minsLeft, " Min"))));
-      })(), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("button", {
+      })(), priv.pub_phone === true && v.phone && v.phone.trim() && /*#__PURE__*/_react.default.createElement("a", {
+        href: `tel:${(v.phone || "").replace(/[^+\d]/g, "")}`,
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          background: "#16a34a",
+          border: "none",
+          borderRadius: 12,
+          padding: "14px 16px",
+          textDecoration: "none",
+          color: "#fff",
+          cursor: "pointer"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          background: "rgba(255,255,255,.2)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 18,
+          flexShrink: 0
+        }
+      }, "📞"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          flex: 1
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontWeight: 800,
+          fontSize: 15,
+          color: "#fff"
+        }
+      }, "Direkt anrufen"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: "rgba(255,255,255,.7)",
+          marginTop: 1
+        }
+      }, v.phone)), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 20,
+          color: "rgba(255,255,255,.7)"
+        }
+      }, "›")), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => {
           if (me) {
             startContact(v.id);
