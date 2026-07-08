@@ -1788,14 +1788,44 @@ function PCNInner() {
                   <span style={{fontSize:16}}>🔄</span> Live-Status abrufen
                 </button>
               );
-              const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : null;
+              // Time calculations
+              const now = Date.now();
+              const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - now) / 60000) : null;
+              const setAt = s.setAt ? new Date(s.setAt) : null;
+              const isToday = setAt && setAt.toDateString()===new Date().toDateString();
+              const timeStamp = setAt
+                ? (isToday
+                  ? "Heute " + setAt.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) + " Uhr"
+                  : setAt.toLocaleDateString("de-DE",{day:"2-digit",month:"short"}) + " · " + setAt.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) + " Uhr")
+                : null;
+              const urgent = minsLeft && minsLeft <= 5;
+              const color = urgent ? "#ef4444" : C.amber;
               return (
-                <div style={{background:`${C.amber}18`,border:`2px solid ${C.amber}66`,borderRadius:14,padding:"14px 16px",marginBottom:4,animation:"fadeIn .3s ease"}}>
-                  <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                    <span style={{fontSize:28,flexShrink:0}}>{s.icon||"💬"}</span>
+                <div style={{background:urgent?"#ef444418":`${C.amber}18`,
+                  border:`2px solid ${urgent?"#ef444466":C.amber+"66"}`,
+                  borderRadius:14,padding:"14px 16px",marginBottom:4,animation:"fadeIn .3s ease"}}>
+                  <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                    <span style={{fontSize:28,flexShrink:0,marginTop:2}}>{s.icon||"💬"}</span>
                     <div style={{flex:1}}>
-                      <div style={{fontWeight:800,fontSize:16,color:C.amber,lineHeight:1.2}}>{s.text}</div>
-                      {minsLeft&&minsLeft>0&&<div style={{fontSize:11,color:C.muted,marginTop:3}}>Noch ca. {minsLeft} Min</div>}
+                      <div style={{fontWeight:800,fontSize:16,color,lineHeight:1.2,marginBottom:5}}>{s.text}</div>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                        {timeStamp&&(
+                          <span style={{fontSize:10,color:C.muted,display:"flex",alignItems:"center",gap:3}}>
+                            🕐 {timeStamp}
+                          </span>
+                        )}
+                        {minsLeft&&minsLeft>0&&(
+                          <span style={{fontSize:11,fontWeight:700,color,
+                            background:urgent?"#ef444422":`${C.amber}22`,
+                            border:`1px solid ${urgent?"#ef444444":C.amber+"44"}`,
+                            borderRadius:6,padding:"2px 8px"}}>
+                            {minsLeft<=1?"< 1 Min":minsLeft<60?`noch ${minsLeft} Min`:`noch ca. ${Math.round(minsLeft/60)} Std`}
+                          </span>
+                        )}
+                        {!minsLeft&&(
+                          <span style={{fontSize:10,color:"#555"}}>Kein Ablauf gesetzt</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
