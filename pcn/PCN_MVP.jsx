@@ -1772,43 +1772,6 @@ function PCNInner() {
               </div>
             )}
 
-            {/* SHARE — Teilen Button + Link kopieren */}
-            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:10}}>
-              <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>
-                Fahrzeugakte teilen
-              </div>
-              <div style={{display:"flex",gap:8}}>
-                {(()=>{
-                  const shareUrl = "https://qar.gallery/pcn/?v="+v.qarId;
-                  const shareTitle = v.hersteller+" "+v.modell+" — Digitale Fahrzeugakte";
-                  return (<>
-                    <button
-                      onClick={async()=>{
-                        if(navigator.share){
-                          try{ await navigator.share({title:shareTitle,url:shareUrl}); return; }catch(e){}
-                        }
-                        try{ await navigator.clipboard.writeText(shareUrl); toast_("Link kopiert ✓"); }
-                        catch(e){ toast_(shareUrl); }
-                      }}
-                      style={{flex:2,background:C.red,border:"none",borderRadius:9,padding:"11px",
-                        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                        color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                      <span style={{fontSize:16}}>↑</span> Teilen
-                    </button>
-                    <button
-                      onClick={async()=>{
-                        try{ await navigator.clipboard.writeText(shareUrl); toast_("Link kopiert ✓"); }
-                        catch(e){ toast_(shareUrl); }
-                      }}
-                      style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"11px",
-                        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                        color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                      <span style={{fontSize:16}}>🔗</span> Link
-                    </button>
-                  </>);
-                })()}
-              </div>
-            </div>
 
           </div>
         </div>
@@ -1852,6 +1815,40 @@ function PCNInner() {
               ))}
             </div>
           )}
+
+          {/* SHARE — ganz unten */}
+          <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginTop:4}}>
+            <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>
+              Fahrzeugakte teilen
+            </div>
+            <div style={{display:"flex",gap:8,marginBottom:16}}>
+              {(()=>{
+                const shareUrl = "https://qar.gallery/pcn/?v="+v.qarId;
+                const shareTitle = v.hersteller+" "+v.modell+" — Digitale Fahrzeugakte";
+                return (<>
+                  <button
+                    onClick={async()=>{
+                      if(navigator.share){ try{ await navigator.share({title:shareTitle,url:shareUrl}); return; }catch(e){} }
+                      try{ await navigator.clipboard.writeText(shareUrl); toast_("Link kopiert ✓"); }catch(e){ toast_(shareUrl); }
+                    }}
+                    style={{flex:2,background:C.red,border:"none",borderRadius:9,padding:"11px",
+                      display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                      color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                    <span style={{fontSize:16}}>↑</span> Teilen
+                  </button>
+                  <button
+                    onClick={async()=>{
+                      try{ await navigator.clipboard.writeText(shareUrl); toast_("Link kopiert ✓"); }catch(e){ toast_(shareUrl); }
+                    }}
+                    style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"11px",
+                      display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                      color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                    <span style={{fontSize:16}}>🔗</span> Link
+                  </button>
+                </>);
+              })()}
+            </div>
+          </div>
 
           <div style={{textAlign:"center",padding:"12px 0",borderTop:`1px solid ${C.border}`}}>
             <div style={{fontSize:9,color:"#333",letterSpacing:2,marginBottom:4}}>VERIFIZIERT DURCH QAR.GALLERY</div>
