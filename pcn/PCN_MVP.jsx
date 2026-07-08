@@ -3431,6 +3431,11 @@ function PCNInner() {
                       const DB=window.PCN_DB;
                       if(DB) await DB.threads.delete(t.id).catch(()=>{});
                       setThreads(prev=>{const n={...prev};delete n[t.id];return n;});
+                      setDeletedThreadIds(prev=>{
+                        const updated=[...new Set([...prev, t.id])];
+                        localStorage.setItem("pcn_deleted_threads",JSON.stringify(updated));
+                        return updated;
+                      });
                       setGuestThreads(prev=>{
                         const updated=prev.filter(x=>x.id!==t.id);
                         localStorage.setItem("pcn_guest_threads",JSON.stringify(updated));
