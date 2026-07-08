@@ -128,7 +128,16 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-  <!-- Config (credentials, not in git) — must load before storage -->
+  <script>
+    // Pre-load session before React mounts to avoid flash of splash screen
+    try {
+      const s = localStorage.getItem("pcn_session");
+      if(s) {
+        const u = JSON.parse(s);
+        if(u && u.id) window.__PCN_PRELOAD_SESSION__ = u;
+      }
+    } catch(e) {}
+  </script>
   <script src="pcn_config.js"></script>
 
   <!-- PostHog Analytics (optional — loads only if key configured) -->
@@ -140,13 +149,13 @@
     }
   </script>
   <!-- jsQR — bundled locally, no CDN needed -->
-  <script src="jsQR.js?v=1783289266"></script>
+  <script src="jsQR.js?v=1783491739"></script>
   <!-- QR Code generator — bundled locally -->
-  <script src="qrcode_bundle.js?v=1783289266"></script>
+  <script src="qrcode_bundle.js?v=1783491739"></script>
   <!-- Storage layer (load before app) -->
-  <script src="pcn_storage.js?v=1783289266"></script>
+  <script src="pcn_storage.js?v=1783491739"></script>
   <!-- App -->
-  <script src="PCN_MVP.compiled.js?v=1783289266"></script>
+  <script src="PCN_MVP.compiled.js?v=1783491739"></script>
 
   <script>
     (function() {
