@@ -1601,6 +1601,7 @@
         ...prev,
         [vehicleId]: status
       }));
+      broadcastStatus(vehicleId, status);
       const DB = window.PCN_DB;
       if (DB) await DB.vehicles.setStatus(vehicleId, status);
       setShowStatusPicker(null);
@@ -1615,6 +1616,7 @@
         delete n[vehicleId];
         return n;
       });
+      broadcastStatus(vehicleId, null);
       const DB = window.PCN_DB;
       if (DB) await DB.vehicles.clearStatus(vehicleId);
     };
@@ -1966,25 +1968,107 @@
       });
     }, [screen, publicV?.id]);
 
-    // ── Auto-refresh status on public page every 10s ──────────────────────────
+    // ── Status Broadcast — instant cross-tab sync + Realtime + fast polling ──────
     (0, _react.useEffect)(() => {
-      if (screen !== "public" || !publicV?.id) return;
+      // 1. BroadcastChannel: instant same-browser cross-tab sync
+      let bc = null;
+      try {
+        bc = new BroadcastChannel("pcn_status");
+        bc.onmessage = e => {
+          if (e.data?.type === "status_update") {
+            const {
+              vehicleId,
+              status
+            } = e.data;
+            if (status) setVehicleStatus(prev => ({
+              ...prev,
+              [vehicleId]: status
+            }));else setVehicleStatus(prev => {
+              const n = {
+                ...prev
+              };
+              delete n[vehicleId];
+              return n;
+            });
+          }
+        };
+      } catch (err) {}
+
+      // 2. Supabase Realtime: instant cross-device push
+      let ws = null;
+      const cfg = window.PCN_CONFIG || {};
+      if (cfg.supabaseUrl && cfg.supabaseKey) {
+        try {
+          const wsUrl = cfg.supabaseUrl.replace("https://", "wss://").replace("http://", "ws://") + "/realtime/v1/websocket?apikey=" + cfg.supabaseKey + "&vsn=1.0.0";
+          ws = new WebSocket(wsUrl);
+          ws.onopen = () => ws.send(JSON.stringify({
+            topic: "realtime:public:vehicle_status",
+            event: "phx_join",
+            payload: {
+              config: {
+                broadcast: {
+                  ack: false
+                },
+                presence: {
+                  key: ""
+                },
+                postgres_changes: [{
+                  event: "*",
+                  schema: "public",
+                  table: "vehicle_status"
+                }]
+              }
+            },
+            ref: "status_1"
+          }));
+          ws.onmessage = e => {
+            try {
+              const d = JSON.parse(e.data);
+              if (d.event === "postgres_changes" || d.payload?.type === "INSERT" || d.payload?.type === "UPDATE") {
+                // Reload status for current public vehicle
+                if (publicV?.id) loadStatusFor(publicV.id);
+              }
+            } catch (err) {}
+          };
+        } catch (err) {}
+      }
+
+      // 3. Fast polling fallback: 3s when on public page, 10s otherwise
       const DB = window.PCN_DB;
-      if (!DB) return;
       const poll = setInterval(async () => {
-        const {
-          data
-        } = await DB.vehicles.getStatus(publicV.id);
-        if (data) setVehicleStatus(prev => ({
-          ...prev,
-          [publicV.id]: data
-        }));else setVehicleStatus(prev => ({
-          ...prev,
-          [publicV.id]: null
-        }));
-      }, 10000);
-      return () => clearInterval(poll);
+        if (!DB || !publicV?.id) return;
+        if (screen === "public") {
+          const {
+            data
+          } = await DB.vehicles.getStatus(publicV.id);
+          if (data) setVehicleStatus(prev => ({
+            ...prev,
+            [publicV.id]: data
+          }));else setVehicleStatus(prev => ({
+            ...prev,
+            [publicV.id]: null
+          }));
+        }
+      }, screen === "public" ? 3000 : 10000);
+      return () => {
+        bc?.close();
+        ws?.close();
+        clearInterval(poll);
+      };
     }, [screen, publicV?.id]);
+
+    // ── Broadcast status change to other tabs when set ────────────────────────
+    const broadcastStatus = (0, _react.useCallback)((vehicleId, status) => {
+      try {
+        const bc = new BroadcastChannel("pcn_status");
+        bc.postMessage({
+          type: "status_update",
+          vehicleId,
+          status
+        });
+        bc.close();
+      } catch (err) {}
+    }, []);
 
     // ── Scanner ──────────────────────────────────────────────────────────────────
     const openScanner = () => {
