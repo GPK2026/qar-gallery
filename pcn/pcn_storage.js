@@ -683,11 +683,14 @@ const PCN_STORAGE = (() => {
       // Normalize: messages table uses from_id/created_at — map to app shape {from,text,ts,read,isSystem}
       const mapped = (res.data||[]).map(t => ({
         ...t,
+        vehicleId: t.vehicle_id||t.vehicleId,
+        vehicleName: t.vehicle_name||t.vehicleName||"",
         messages: (t.messages||[])
           .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))
           .map(m=>({
             id: m.id, from: m.from_id, text: m.text,
             ts: new Date(m.created_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}),
+            created_at: m.created_at,
             read: m.read, isSystem: m.is_system,
           })),
       }));
