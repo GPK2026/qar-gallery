@@ -7990,137 +7990,162 @@
       style: {
         fontSize: 12
       }
-    }, "Scanne einen QR-Code am Fahrzeug oder tippe auf „Kontakt\" in der Fahrzeugakte")) : myThreads.map(t => {
-      const other = Object.values(allUsers).find(u => (t.participants || []).includes(u.id) && u.id !== me?.id) || {
-        name: "Mitglied"
-      };
-      const last = t.messages.filter(m => !m.isSystem).pop();
-      const unread = t.messages.some(m => m.from !== me?.id && !m.read && !m.isSystem);
-      const tv = vehicles[t.vehicleId];
-      const isAnon = t.anonymous;
-      return /*#__PURE__*/_react.default.createElement("div", {
-        key: t.id,
-        style: {
-          background: C.card,
-          border: `1.5px solid ${unread ? C.red + "55" : C.border}`,
-          borderRadius: 14,
-          padding: "14px 14px",
-          marginBottom: 10,
-          display: "flex",
-          gap: 14,
-          alignItems: "center",
-          position: "relative"
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          flex: 1,
-          display: "flex",
-          gap: 14,
-          alignItems: "center",
-          cursor: "pointer"
-        },
-        onClick: () => {
-          setActiveThread(t.id);
-          setScreen("chat");
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          width: 48,
-          height: 48,
-          borderRadius: "50%",
-          background: isAnon ? "#1a1a2e" : `${C.red}22`,
-          border: `2px solid ${isAnon ? "#3a3a5e" : C.red + "44"}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontWeight: 800,
-          fontSize: isAnon ? 22 : 18,
-          flexShrink: 0,
-          color: isAnon ? "#6b7fff" : C.red
-        }
-      }, isAnon ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          flex: 1,
-          minWidth: 0
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 3,
-          alignItems: "center"
-        }
-      }, /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontWeight: unread ? 800 : 600,
-          fontSize: 15,
-          color: C.white
-        }
-      }, isAnon ? "🔒 Anonyme Nachricht" : other.name), /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 11,
-          color: C.muted,
-          flexShrink: 0,
-          marginLeft: 6
-        }
-      }, last?.ts || "")), tv && /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 12,
-          color: `${C.red}99`,
-          marginBottom: 3,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap"
-        }
-      }, "Re: ", tv.hersteller, " ", tv.modell), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 13,
-          color: unread ? C.white : C.muted,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap"
-        }
-      }, last ? (last.from === me?.id ? "Du: " : "") + last.text : "Neuer Chat")), unread && /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          width: 10,
-          height: 10,
-          borderRadius: "50%",
-          background: C.red,
-          flexShrink: 0
-        }
-      })), /*#__PURE__*/_react.default.createElement("button", {
-        onClick: async e => {
-          e.stopPropagation();
-          if (!window.confirm("Chat löschen?")) return;
-          const DB = window.PCN_DB;
-          if (DB) await DB.threads.delete(t.id).catch(() => {});
-          setThreads(prev => {
-            const n = {
-              ...prev
-            };
-            delete n[t.id];
-            return n;
-          });
-          // Also remove from guest threads
-          setGuestThreads(prev => {
-            const updated = prev.filter(x => x.id !== t.id);
-            localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
-            return updated;
-          });
-        },
-        style: {
-          background: "none",
-          border: "none",
-          color: "#444",
-          cursor: "pointer",
-          fontSize: 18,
-          padding: "4px 6px",
-          flexShrink: 0,
-          lineHeight: 1
-        },
-        title: "Chat löschen"
-      }, "🗑"));
-    }))), tab === "reminders" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Scanne einen QR-Code am Fahrzeug oder tippe auf „Kontakt\" in der Fahrzeugakte")) : (() => {
+      // Filter out empty duplicate threads — keep only one per vehicleId + show threads with messages first
+      const seen = new Set();
+      const filtered = myThreads.filter(t => {
+        const hasMsg = t.messages.filter(m => !m.isSystem).length > 0;
+        const key = t.vehicleId || t.id;
+        if (!hasMsg && seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).sort((a, b) => {
+        const aLast = a.messages.filter(m => !m.isSystem).pop();
+        const bLast = b.messages.filter(m => !m.isSystem).pop();
+        if (!aLast && !bLast) return 0;
+        if (!aLast) return 1;
+        if (!bLast) return -1;
+        return (bLast.ts || "").localeCompare(aLast.ts || "");
+      });
+      return filtered.map(t => {
+        const other = Object.values(allUsers).find(u => (t.participants || []).includes(u.id) && u.id !== me?.id) || {
+          name: "Mitglied"
+        };
+        const last = t.messages.filter(m => !m.isSystem).pop();
+        const unread = t.messages.some(m => m.from !== me?.id && !m.read && !m.isSystem);
+        const tv = vehicles[t.vehicleId];
+        // Fallback: try to get vehicle name from thread title or guestThreads
+        const guestT = guestThreads.find(g => g.id === t.id);
+        const vehicleName = tv ? `${tv.hersteller} ${tv.modell}` : t.vehicleName || guestT?.vehicleName || "";
+        const isAnon = t.anonymous;
+        // Title: vehicle name for anon threads, member name for direct messages
+        const title = isAnon && vehicleName ? vehicleName : isAnon ? "Anonyme Nachricht" : other.name;
+        return /*#__PURE__*/_react.default.createElement("div", {
+          key: t.id,
+          style: {
+            background: C.card,
+            border: `1.5px solid ${unread ? C.red + "55" : C.border}`,
+            borderRadius: 14,
+            padding: "13px 14px",
+            marginBottom: 8,
+            display: "flex",
+            gap: 12,
+            alignItems: "center",
+            position: "relative"
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            flex: 1,
+            display: "flex",
+            gap: 12,
+            alignItems: "center",
+            cursor: "pointer"
+          },
+          onClick: () => {
+            setActiveThread(t.id);
+            setScreen("chat");
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            width: 46,
+            height: 46,
+            borderRadius: "50%",
+            flexShrink: 0,
+            background: isAnon ? "#1a1a2e" : `${C.red}22`,
+            border: `2px solid ${isAnon ? "#3a3a5e" : C.red + "44"}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: isAnon ? 20 : 17,
+            color: isAnon ? "#6b7fff" : C.red,
+            fontWeight: 800
+          }
+        }, isAnon ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            flex: 1,
+            minWidth: 0
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 2,
+            alignItems: "center"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontWeight: unread ? 800 : 700,
+            fontSize: 14,
+            color: C.white,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            maxWidth: "65%"
+          }
+        }, title), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 6,
+            alignItems: "center",
+            flexShrink: 0
+          }
+        }, unread && /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: C.red
+          }
+        }), /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 10,
+            color: C.muted
+          }
+        }, last?.ts || ""))), isAnon && /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 11,
+            color: "#6b7fff",
+            marginBottom: 2
+          }
+        }, "🔒 Anonym · ", vehicleName || "Fahrzeuganfrage"), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 12,
+            color: unread ? C.white : C.muted,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+          }
+        }, last ? (last.from === me?.id ? "Du: " : "") + last.text : "Noch keine Nachricht"))), /*#__PURE__*/_react.default.createElement("button", {
+          onClick: async e => {
+            e.stopPropagation();
+            if (!window.confirm("Chat löschen?")) return;
+            const DB = window.PCN_DB;
+            if (DB) await DB.threads.delete(t.id).catch(() => {});
+            setThreads(prev => {
+              const n = {
+                ...prev
+              };
+              delete n[t.id];
+              return n;
+            });
+            setGuestThreads(prev => {
+              const updated = prev.filter(x => x.id !== t.id);
+              localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
+              return updated;
+            });
+          },
+          style: {
+            background: "none",
+            border: "none",
+            color: "#444",
+            cursor: "pointer",
+            fontSize: 17,
+            padding: "4px 6px",
+            flexShrink: 0
+          }
+        }, "🗑"));
+      });
+    })())), tab === "reminders" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         animation: "fadeIn .2s"
       }
