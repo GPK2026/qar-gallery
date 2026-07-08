@@ -3242,38 +3242,63 @@ function PCNInner() {
                 <div style={{fontSize:14,color:C.white,marginBottom:4}}>Noch keine Nachrichten</div>
                 <div style={{fontSize:12}}>Scanne einen QR-Code am Fahrzeug oder tippe auf „Kontakt" in der Fahrzeugakte</div>
               </div>
-            ):myThreads.map(t=>{
+            ):(() => {
+              // Filter out empty duplicate threads — keep only one per vehicleId + show threads with messages first
+              const seen = new Set();
+              const filtered = myThreads
+                .filter(t => {
+                  const hasMsg = t.messages.filter(m=>!m.isSystem).length > 0;
+                  const key = t.vehicleId || t.id;
+                  if(!hasMsg && seen.has(key)) return false;
+                  seen.add(key);
+                  return true;
+                })
+                .sort((a,b) => {
+                  const aLast = a.messages.filter(m=>!m.isSystem).pop();
+                  const bLast = b.messages.filter(m=>!m.isSystem).pop();
+                  if(!aLast && !bLast) return 0;
+                  if(!aLast) return 1;
+                  if(!bLast) return -1;
+                  return (bLast.ts||"").localeCompare(aLast.ts||"");
+                });
+
+              return filtered.map(t=>{
               const other=Object.values(allUsers).find(u=>(t.participants||[]).includes(u.id)&&u.id!==me?.id)||{name:"Mitglied"};
               const last=t.messages.filter(m=>!m.isSystem).pop();
               const unread=t.messages.some(m=>m.from!==me?.id&&!m.read&&!m.isSystem);
               const tv=vehicles[t.vehicleId];
+              // Fallback: try to get vehicle name from thread title or guestThreads
+              const guestT = guestThreads.find(g=>g.id===t.id);
+              const vehicleName = tv ? `${tv.hersteller} ${tv.modell}` : (t.vehicleName||guestT?.vehicleName||"");
               const isAnon = t.anonymous;
+              // Title: vehicle name for anon threads, member name for direct messages
+              const title = isAnon && vehicleName ? vehicleName : isAnon ? "Anonyme Nachricht" : other.name;
               return (
-                <div key={t.id} style={{background:C.card,border:`1.5px solid ${unread?C.red+"55":C.border}`,borderRadius:14,padding:"14px 14px",marginBottom:10,display:"flex",gap:14,alignItems:"center",position:"relative"}}>
-                  <div style={{flex:1,display:"flex",gap:14,alignItems:"center",cursor:"pointer"}}
+                <div key={t.id} style={{background:C.card,border:`1.5px solid ${unread?C.red+"55":C.border}`,borderRadius:14,padding:"13px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",position:"relative"}}>
+                  <div style={{flex:1,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}
                     onClick={()=>{setActiveThread(t.id);setScreen("chat");}}>
-                  {/* Avatar: Schloss für anonym, farbige Initiale für Mitglied */}
-                  <div style={{width:48,height:48,borderRadius:"50%",
+                  <div style={{width:46,height:46,borderRadius:"50%",flexShrink:0,
                     background:isAnon?"#1a1a2e":`${C.red}22`,
                     border:`2px solid ${isAnon?"#3a3a5e":C.red+"44"}`,
                     display:"flex",alignItems:"center",justifyContent:"center",
-                    fontWeight:800,fontSize:isAnon?22:18,flexShrink:0,
-                    color:isAnon?"#6b7fff":C.red}}>
+                    fontSize:isAnon?20:17,color:isAnon?"#6b7fff":C.red,fontWeight:800}}>
                     {isAnon?"🔒":other.name[0]?.toUpperCase()}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,alignItems:"center"}}>
-                      <span style={{fontWeight:unread?800:600,fontSize:15,color:C.white}}>
-                        {isAnon?"🔒 Anonyme Nachricht":other.name}
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:2,alignItems:"center"}}>
+                      <span style={{fontWeight:unread?800:700,fontSize:14,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"65%"}}>
+                        {title}
                       </span>
-                      <span style={{fontSize:11,color:C.muted,flexShrink:0,marginLeft:6}}>{last?.ts||""}</span>
+                      <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0}}>
+                        {unread&&<div style={{width:8,height:8,borderRadius:"50%",background:C.red}}/>}
+                        <span style={{fontSize:10,color:C.muted}}>{last?.ts||""}</span>
+                      </div>
                     </div>
-                    {tv&&<div style={{fontSize:12,color:`${C.red}99`,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>Re: {tv.hersteller} {tv.modell}</div>}
-                    <div style={{fontSize:13,color:unread?C.white:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                      {last?(last.from===me?.id?"Du: ":"")+last.text:"Neuer Chat"}
+                    {isAnon&&<div style={{fontSize:11,color:"#6b7fff",marginBottom:2}}>🔒 Anonym · {vehicleName||"Fahrzeuganfrage"}</div>}
+                    <div style={{fontSize:12,color:unread?C.white:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {last?(last.from===me?.id?"Du: ":"")+last.text:"Noch keine Nachricht"}
                     </div>
                   </div>
-                  {unread&&<div style={{width:10,height:10,borderRadius:"50%",background:C.red,flexShrink:0}}/>}
                   </div>
                   <button
                     onClick={async e=>{
@@ -3282,7 +3307,6 @@ function PCNInner() {
                       const DB=window.PCN_DB;
                       if(DB) await DB.threads.delete(t.id).catch(()=>{});
                       setThreads(prev=>{const n={...prev};delete n[t.id];return n;});
-                      // Also remove from guest threads
                       setGuestThreads(prev=>{
                         const updated=prev.filter(x=>x.id!==t.id);
                         localStorage.setItem("pcn_guest_threads",JSON.stringify(updated));
@@ -3290,13 +3314,12 @@ function PCNInner() {
                       });
                     }}
                     style={{background:"none",border:"none",color:"#444",cursor:"pointer",
-                      fontSize:18,padding:"4px 6px",flexShrink:0,lineHeight:1}}
-                    title="Chat löschen">
+                      fontSize:17,padding:"4px 6px",flexShrink:0}}>
                     🗑
                   </button>
                 </div>
               );
-            })}
+            });})()}
             </div>
             )}
           </div>
