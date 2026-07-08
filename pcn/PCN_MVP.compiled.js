@@ -504,8 +504,148 @@
       }
     }
   };
-
-  // Demo expert opinions / Gutachten
+  const DEMO_LOGBOOK = {
+    "V001": [{
+      id: "L1",
+      vehicleId: "V001",
+      date: dMinus(60),
+      type: "Ölwechsel",
+      km: "31200",
+      notes: "Mobil 1 5W-50",
+      workshop: "Porsche Zentrum Koblenz"
+    }, {
+      id: "L2",
+      vehicleId: "V001",
+      date: dMinus(120),
+      type: "Inspektion",
+      km: "27800",
+      notes: "Großer Service — Bremsflüssigkeit, Luftfilter",
+      workshop: "Porsche Zentrum Koblenz"
+    }, {
+      id: "L3",
+      vehicleId: "V001",
+      date: dMinus(200),
+      type: "Reifenwechsel",
+      km: "24100",
+      notes: "Pirelli P Zero Sommer",
+      workshop: "Eigene Werkstatt"
+    }],
+    "V002": [{
+      id: "L4",
+      vehicleId: "V002",
+      date: dMinus(90),
+      type: "Inspektion",
+      km: "18200",
+      notes: "Jahresinspektion i.O.",
+      workshop: "Porsche Zentrum Koblenz"
+    }]
+  };
+  const DEMO_PARTICIPANTS = {
+    "E001": [{
+      id: "P1",
+      eventId: "E001",
+      vehicleId: "V001",
+      userId: "u1",
+      class: "Sport",
+      startNr: "07",
+      status: "confirmed"
+    }, {
+      id: "P2",
+      eventId: "E001",
+      vehicleId: "V003",
+      userId: "u2",
+      class: "Race",
+      startNr: "03",
+      status: "confirmed"
+    }],
+    "E002": [{
+      id: "P3",
+      eventId: "E002",
+      vehicleId: "V002",
+      userId: "u1",
+      class: "Alle Modelle",
+      startNr: "12",
+      status: "confirmed"
+    }]
+  };
+  const DEMO_HISTORY = [{
+    id: "H1",
+    vehicleId: "V001",
+    eventName: "PCN TrackDay 2025",
+    date: dMinus(280),
+    startNr: "05",
+    class: "Sport",
+    result: "Finisher",
+    note: "Bestzeit 9:43 min Nordschleife"
+  }, {
+    id: "H2",
+    vehicleId: "V001",
+    eventName: "After Work Classics Sep 2025",
+    date: dMinus(310),
+    startNr: "11",
+    class: "Alle Modelle",
+    result: "Teilnahme",
+    note: ""
+  }, {
+    id: "H3",
+    vehicleId: "V003",
+    eventName: "PCN TrackDay 2025",
+    date: dMinus(280),
+    startNr: "02",
+    class: "Race",
+    result: "Schnellste Zeit",
+    note: "7:58 min — Clubrekord"
+  }];
+  const DEMO_EVENTS = {
+    "E001": {
+      id: "E001",
+      name: "PCN TrackDay Nürburgring",
+      date: dPlus(12),
+      location: "Nürburgring, Nordschleife",
+      category: "Trackday",
+      maxParticipants: 30,
+      classes: ["Sport", "Race", "Touring"],
+      desc: "Der jährliche PCN TrackDay auf der legendären Nordschleife. Zeittraining + freies Fahren.",
+      organizer: "PCN Vorstand",
+      price: "€ 180"
+    },
+    "E002": {
+      id: "E002",
+      name: "PCN Ausfahrt Eifel",
+      date: dPlus(22),
+      location: "Grand-Prix-Strecke, Nürburgring",
+      category: "Ausfahrt",
+      maxParticipants: 50,
+      classes: ["Alle Modelle"],
+      desc: "Entspannte Ausfahrt durch die Eifel — kein Zeitdruck, Pausenstopp in Adenau.",
+      organizer: "Max Mustermann",
+      price: "Kostenlos"
+    },
+    "E003": {
+      id: "E003",
+      name: "PCN Rennsport Revival",
+      date: dPlus(41),
+      location: "Nürburgring",
+      category: "Rennsport",
+      maxParticipants: 20,
+      classes: ["Classic", "Sport", "Race"],
+      desc: "Historischer Rennsport — Gleichmäßigkeitsprüfung für Fahrzeuge vor Bj. 1990.",
+      organizer: "PCN Technik",
+      price: "€ 95"
+    },
+    "E004": {
+      id: "E004",
+      name: "After Work Classics",
+      date: dPlus(51),
+      location: "Historisches Fahrerlager",
+      category: "Clubabend",
+      maxParticipants: 100,
+      classes: ["Alle Modelle"],
+      desc: "Monatlicher Clubabend im Fahrerlager. Fahrzeugpräsentationen, Experten-Talk.",
+      organizer: "PCN Vorstand",
+      price: "Kostenlos"
+    }
+  };
   const DEMO_GUTACHTEN = {
     "V001": [{
       id: "G1",
