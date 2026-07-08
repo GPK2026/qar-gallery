@@ -1628,13 +1628,13 @@ function PCNInner() {
             style={{height:36,objectFit:"contain"}}/>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             <span style={{fontSize:11,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
-            {/* QR Code button — zeigt QR zum Handy-zu-Handy scannen */}
+            {/* QR Code button */}
             <button
               onClick={()=>setLightbox({images:["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v="+v.qarId],index:0})}
               style={{background:"#f5f5f5",border:"1px solid #ddd",borderRadius:8,
-                padding:"7px 10px",color:"#111",cursor:"pointer",fontSize:13,fontWeight:700,
+                padding:"7px 10px",color:"#111",cursor:"pointer",fontSize:12,fontWeight:700,
                 fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
-              <span style={{fontSize:16}}>▪️</span> QR
+              📱 QR-Code anzeigen
             </button>
             <button
               onClick={async()=>{
@@ -1762,7 +1762,7 @@ function PCNInner() {
               </div>
             )}
 
-            {/* SHARE — Teilen per WhatsApp, E-Mail oder Link */}
+            {/* SHARE — Teilen Button + Link kopieren */}
             <div style={{borderTop:`1px solid ${C.border}`,paddingTop:10}}>
               <div style={{fontSize:10,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>
                 Fahrzeugakte teilen
@@ -1770,30 +1770,27 @@ function PCNInner() {
               <div style={{display:"flex",gap:8}}>
                 {(()=>{
                   const shareUrl = "https://qar.gallery/pcn/?v="+v.qarId;
-                  const shareText = v.hersteller+" "+v.modell+" — Digitale Fahrzeugakte: "+shareUrl;
+                  const shareTitle = v.hersteller+" "+v.modell+" — Digitale Fahrzeugakte";
                   return (<>
-                    <a href={"https://wa.me/?text="+encodeURIComponent(shareText)}
-                      target="_blank" rel="noopener noreferrer"
-                      style={{flex:1,background:"#25D366",borderRadius:9,padding:"10px",
-                        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                        color:"#fff",fontSize:12,fontWeight:700,textDecoration:"none",fontFamily:"'Barlow',sans-serif"}}>
-                      <span style={{fontSize:16}}>💬</span> WhatsApp
-                    </a>
-                    <a href={"mailto:?subject="+encodeURIComponent(v.hersteller+" "+v.modell)+"&body="+encodeURIComponent("Hier die digitale Fahrzeugakte:\n"+shareUrl)}
-                      style={{flex:1,background:`${C.blue||"#2563EB"}22`,border:`1px solid ${C.blue||"#2563EB"}44`,borderRadius:9,padding:"10px",
-                        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                        color:C.blue||"#2563EB",fontSize:12,fontWeight:700,textDecoration:"none",fontFamily:"'Barlow',sans-serif"}}>
-                      <span style={{fontSize:16}}>✉️</span> E-Mail
-                    </a>
                     <button
                       onClick={async()=>{
-                        try {
-                          if(navigator.share){ await navigator.share({title:v.hersteller+" "+v.modell,url:shareUrl}); return; }
-                          await navigator.clipboard.writeText(shareUrl);
-                          toast_("Link kopiert ✓");
-                        } catch(e){ toast_("Link: "+shareUrl); }
+                        if(navigator.share){
+                          try{ await navigator.share({title:shareTitle,url:shareUrl}); return; }catch(e){}
+                        }
+                        try{ await navigator.clipboard.writeText(shareUrl); toast_("Link kopiert ✓"); }
+                        catch(e){ toast_(shareUrl); }
                       }}
-                      style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"10px",
+                      style={{flex:2,background:C.red,border:"none",borderRadius:9,padding:"11px",
+                        display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                        color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      <span style={{fontSize:16}}>↑</span> Teilen
+                    </button>
+                    <button
+                      onClick={async()=>{
+                        try{ await navigator.clipboard.writeText(shareUrl); toast_("Link kopiert ✓"); }
+                        catch(e){ toast_(shareUrl); }
+                      }}
+                      style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"11px",
                         display:"flex",alignItems:"center",justifyContent:"center",gap:6,
                         color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                       <span style={{fontSize:16}}>🔗</span> Link
