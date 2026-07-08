@@ -1579,6 +1579,7 @@
     const [vehicleStatus, setVehicleStatus] = (0, _react.useState)({}); // {vehicleId: {text, icon, expiresAt}}
     const [showStatusPicker, setShowStatusPicker] = (0, _react.useState)(null); // vehicleId
     const [statusCustom, setStatusCustom] = (0, _react.useState)("");
+    const [statusCustomMins, setStatusCustomMins] = (0, _react.useState)(30);
     const [gallerySwipe, setGallerySwipe] = (0, _react.useState)({}); // {vehicleId: currentIndex}
     const [scannerOpen, setScannerOpen] = (0, _react.useState)(false);
     const [scannerError, setScannerError] = (0, _react.useState)(null);
@@ -4514,36 +4515,78 @@
       }, "Eigener Text"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
-          gap: 8
+          gap: 8,
+          marginBottom: 12
         }
       }, /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
         placeholder: "z.B. Bin gleich beim Einlass...",
         value: statusCustom,
         onChange: e => setStatusCustom(e.target.value),
-        onKeyDown: e => {
-          if (e.key === "Enter" && statusCustom.trim()) setStatus(showStatusPicker, {
-            icon: "💬",
-            mins: 30
-          }, statusCustom);
-        },
         style: {
           flex: 1
         }
-      }), /*#__PURE__*/_react.default.createElement("button", {
+      })), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          marginBottom: 12
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 6
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 11,
+          color: C.muted
+        }
+      }, "⏱ Aktivierungsdauer"), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 13,
+          fontWeight: 700,
+          color: C.white
+        }
+      }, (() => {
+        const m = parseInt(statusCustomMins || 30);
+        return m >= 60 ? `${Math.round(m / 60)} Std` : `${m} Min`;
+      })())), /*#__PURE__*/_react.default.createElement("input", {
+        type: "range",
+        min: "5",
+        max: "480",
+        step: "5",
+        value: statusCustomMins || 30,
+        onChange: e => setStatusCustomMins(parseInt(e.target.value)),
+        style: {
+          width: "100%",
+          accentColor: C.red
+        }
+      }), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: 9,
+          color: "#444",
+          marginTop: 2
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", null, "5 Min"), /*#__PURE__*/_react.default.createElement("span", null, "30 Min"), /*#__PURE__*/_react.default.createElement("span", null, "1 Std"), /*#__PURE__*/_react.default.createElement("span", null, "4 Std"), /*#__PURE__*/_react.default.createElement("span", null, "8 Std"))), /*#__PURE__*/_react.default.createElement("button", {
         className: "btn",
         disabled: !statusCustom.trim(),
         onClick: () => {
           if (statusCustom.trim()) setStatus(showStatusPicker, {
             icon: "💬",
-            mins: 30
+            mins: statusCustomMins || 30
           }, statusCustom);
         },
         style: {
-          flexShrink: 0,
+          width: "100%",
           opacity: statusCustom.trim() ? 1 : .4
         }
-      }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/_react.default.createElement("button", {
+      }, "Status setzen · ", (() => {
+        const m = parseInt(statusCustomMins || 30);
+        return m >= 60 ? `${Math.round(m / 60)} Std` : `${m} Min`;
+      })())), getActiveStatus(showStatusPicker) && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn ghost",
         style: {
           width: "100%",
