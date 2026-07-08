@@ -4260,7 +4260,7 @@
           color: C.white,
           marginBottom: 4
         }
-      }, "📍 Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "📍 Live-Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
@@ -5074,7 +5074,7 @@
           fontSize: 13,
           color: C.white
         }
-      }, "Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "Live-Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted
@@ -6424,7 +6424,7 @@
           color: C.white,
           marginBottom: 4
         }
-      }, "📍 Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "📍 Live-Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
