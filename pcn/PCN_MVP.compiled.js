@@ -1480,6 +1480,13 @@
         return [];
       }
     });
+    const [deletedThreadIds, setDeletedThreadIds] = (0, _react.useState)(() => {
+      try {
+        return JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
+      } catch (e) {
+        return [];
+      }
+    });
     const [viewV, setViewV] = (0, _react.useState)(null);
     const [viewEv, setViewEv] = (0, _react.useState)(null);
     const [publicV, setPublicV] = (0, _react.useState)(null);
@@ -1563,7 +1570,7 @@
     const myVehicles = Object.values(vehicles).filter(v => v.owner === me?.email || v.userId === me?.id);
     const myReminders = reminders.filter(r => !r.done).sort((a, b) => new Date(a.date) - new Date(b.date));
     const myParticipations = Object.values(participants).flat().filter(p => p.userId === me?.id);
-    const myThreads = Object.values(threads).filter(t => (t.participants || []).includes(me?.id));
+    const myThreads = Object.values(threads).filter(t => (t.participants || []).includes(me?.id) && !deletedThreadIds.includes(t.id));
     const unreadCount = myThreads.filter(t => t.messages.some(m => m.from !== me?.id && !m.read && !m.isSystem)).length;
     const appState = {
       logbook,
