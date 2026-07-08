@@ -640,6 +640,7 @@ function PCNInner() {
   const [vehicleStatus, setVehicleStatus] = useState({}); // {vehicleId: {text, icon, expiresAt}}
   const [showStatusPicker, setShowStatusPicker] = useState(null); // vehicleId
   const [statusCustom, setStatusCustom]   = useState("");
+  const [statusCustomMins, setStatusCustomMins] = useState(30);
   const [gallerySwipe, setGallerySwipe] = useState({}); // {vehicleId: currentIndex}
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState(null);
@@ -2059,15 +2060,35 @@ function PCNInner() {
             </div>
             <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginBottom:10}}>
               <div style={{fontSize:11,color:C.muted,marginBottom:8}}>Eigener Text</div>
-              <div style={{display:"flex",gap:8}}>
+              <div style={{display:"flex",gap:8,marginBottom:12}}>
                 <input className="inp" placeholder="z.B. Bin gleich beim Einlass..." value={statusCustom}
                   onChange={e=>setStatusCustom(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
                   style={{flex:1}}/>
-                <button className="btn" disabled={!statusCustom.trim()}
-                  onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
-                  style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
               </div>
+              {/* Custom duration */}
+              <div style={{marginBottom:12}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  <span style={{fontSize:11,color:C.muted}}>⏱ Aktivierungsdauer</span>
+                  <span style={{fontSize:13,fontWeight:700,color:C.white}}>
+                    {(()=>{
+                      const m = parseInt(statusCustomMins||30);
+                      return m >= 60 ? `${Math.round(m/60)} Std` : `${m} Min`;
+                    })()}
+                  </span>
+                </div>
+                <input type="range" min="5" max="480" step="5"
+                  value={statusCustomMins||30}
+                  onChange={e=>setStatusCustomMins(parseInt(e.target.value))}
+                  style={{width:"100%",accentColor:C.red}}/>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#444",marginTop:2}}>
+                  <span>5 Min</span><span>30 Min</span><span>1 Std</span><span>4 Std</span><span>8 Std</span>
+                </div>
+              </div>
+              <button className="btn" disabled={!statusCustom.trim()}
+                onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:statusCustomMins||30},statusCustom);}}
+                style={{width:"100%",opacity:statusCustom.trim()?1:.4}}>
+                Status setzen · {(()=>{const m=parseInt(statusCustomMins||30); return m>=60?`${Math.round(m/60)} Std`:`${m} Min`;})()}
+              </button>
             </div>
             {getActiveStatus(showStatusPicker)&&(
               <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
