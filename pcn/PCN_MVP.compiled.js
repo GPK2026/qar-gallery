@@ -1968,13 +1968,13 @@
       });
     }, [screen, publicV?.id]);
 
-    // ── Status Broadcast — instant cross-tab sync + Realtime + fast polling ──────
+    // ── Live sync — vehicle data + status on public page ─────────────────────────
     (0, _react.useEffect)(() => {
-      // 1. BroadcastChannel: instant same-browser cross-tab sync
+      // BroadcastChannel: instant same-browser cross-tab sync
       let bc = null;
       try {
         bc = new BroadcastChannel("pcn_status");
-        bc.onmessage = e => {
+        bc.onmessage = async e => {
           if (e.data?.type === "status_update") {
             const {
               vehicleId,
@@ -1991,68 +1991,55 @@
               return n;
             });
           }
+          // Vehicle data changed (privacy, fields) — reload publicV
+          if (e.data?.type === "vehicle_update" && publicV?.qarId) {
+            const DB = window.PCN_DB;
+            if (DB) {
+              const {
+                data
+              } = await DB.vehicles.getPublic(publicV.qarId);
+              if (data) setPublicV({
+                ...data,
+                privacy: {
+                  ...DEF_PRIVACY,
+                  ...(data.privacy || {})
+                }
+              });
+            }
+          }
         };
       } catch (err) {}
 
-      // 2. Supabase Realtime: instant cross-device push
-      let ws = null;
-      const cfg = window.PCN_CONFIG || {};
-      if (cfg.supabaseUrl && cfg.supabaseKey) {
-        try {
-          const wsUrl = cfg.supabaseUrl.replace("https://", "wss://").replace("http://", "ws://") + "/realtime/v1/websocket?apikey=" + cfg.supabaseKey + "&vsn=1.0.0";
-          ws = new WebSocket(wsUrl);
-          ws.onopen = () => ws.send(JSON.stringify({
-            topic: "realtime:public:vehicle_status",
-            event: "phx_join",
-            payload: {
-              config: {
-                broadcast: {
-                  ack: false
-                },
-                presence: {
-                  key: ""
-                },
-                postgres_changes: [{
-                  event: "*",
-                  schema: "public",
-                  table: "vehicle_status"
-                }]
-              }
-            },
-            ref: "status_1"
-          }));
-          ws.onmessage = e => {
-            try {
-              const d = JSON.parse(e.data);
-              if (d.event === "postgres_changes" || d.payload?.type === "INSERT" || d.payload?.type === "UPDATE") {
-                // Reload status for current public vehicle
-                if (publicV?.id) loadStatusFor(publicV.id);
-              }
-            } catch (err) {}
-          };
-        } catch (err) {}
-      }
-
-      // 3. Fast polling fallback: 3s when on public page, 10s otherwise
+      // 5s polling — reload full vehicle + status when on public page
       const DB = window.PCN_DB;
       const poll = setInterval(async () => {
-        if (!DB || !publicV?.id) return;
-        if (screen === "public") {
-          const {
-            data
-          } = await DB.vehicles.getStatus(publicV.id);
-          if (data) setVehicleStatus(prev => ({
-            ...prev,
-            [publicV.id]: data
-          }));else setVehicleStatus(prev => ({
-            ...prev,
-            [publicV.id]: null
-          }));
-        }
-      }, screen === "public" ? 3000 : 10000);
+        if (!DB || screen !== "public" || !publicV?.qarId) return;
+        // Reload full vehicle data (catches privacy/field changes)
+        const {
+          data: vd
+        } = await DB.vehicles.getPublic(publicV.qarId);
+        if (vd) setPublicV({
+          ...vd,
+          privacy: {
+            ...DEF_PRIVACY,
+            ...(vd.privacy || {})
+          }
+        });
+        // Reload status
+        const vid = vd?.id || publicV.id;
+        const {
+          data: s
+        } = await DB.vehicles.getStatus(vid);
+        if (s) setVehicleStatus(prev => ({
+          ...prev,
+          [publicV.id]: s
+        }));else setVehicleStatus(prev => ({
+          ...prev,
+          [publicV.id]: null
+        }));
+      }, 5000);
       return () => {
         bc?.close();
-        ws?.close();
         clearInterval(poll);
       };
     }, [screen, publicV?.id]);
@@ -2412,6 +2399,15 @@
       const DB = window.PCN_DB;
       if (DB) await DB.vehicles.save(updated);
       toast_(`${key.replace("pub_", "")}: ${!currentVal ? "🔓 Öffentlich" : "🔒 Privat"}`);
+      // Broadcast to other tabs (public page)
+      try {
+        const bc = new BroadcastChannel("pcn_status");
+        bc.postMessage({
+          type: "vehicle_update",
+          vehicleId
+        });
+        bc.close();
+      } catch (e) {}
     };
     const updateVehicleImage = async (vehicleId, dataUrl) => {
       const v = vehicles[vehicleId];
