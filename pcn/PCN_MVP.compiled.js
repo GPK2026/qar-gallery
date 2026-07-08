@@ -416,8 +416,7 @@
         pub_events: true
       }
     },
-    // ── Max: Porsche 718 Boxster GTS 4.0, Pythongrün ────────────────────────────
-    // Alle Bilder: grüner Roadster, offen fahrend, Sommer
+    // ── Max: Porsche 718 Boxster GTS 4.0, Karminrot ─────────────────────────────
     "V002": {
       id: "V002",
       qarId: "QAR-K9P2M7RW",
@@ -425,26 +424,27 @@
       owner: "max@pcn.de",
       hersteller: "Porsche",
       modell: "718 Boxster GTS 4.0",
-      baujahr: "2022",
+      baujahr: "2021",
       kraftstoff: "Benzin",
-      getriebe: "6-Gang manuell",
-      farbe: "Pythongrün",
+      getriebe: "PDK",
+      farbe: "Karminrot",
       kennzeichen: "AW-PC 718",
-      fin: "WP0ZZZ98ZNS200042",
-      kilometerstand: "18.700",
-      tuev_faelligkeit: "09/2027",
-      marktwert: "89.000",
+      phone: "+49 171 9110718",
+      kilometerstand: "17056",
+      tuev_faelligkeit: "06/2028",
+      marktwert: "85000",
       zustand: "1",
-      besonderheiten: "Manuelles Getriebe, Alcantara-Paket, Sportabgas, Windschott",
-      image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=85",
-      images: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=85", "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=900&q=85", "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=900&q=85", "https://images.unsplash.com/photo-1547744152-14d985cb937f?w=900&q=85"],
+      besonderheiten: "Sport Chrono Plus, PDLS+, Bose, Carbon-Zierleisten, Leder/Alcantara, 400 PS Saugmotor 4.0L, Erstbesitz",
+      image: "https://cdn.elferspot.com/wp-content/uploads/2023/02/10/unnamed-file.jpg?class=xl",
+      images: ["https://cdn.elferspot.com/wp-content/uploads/2023/02/10/unnamed-file.jpg?class=xl", "https://cdn.elferspot.com/wp-content/uploads/2023/02/14/DSC03430-groot.jpeg?class=xl", "https://cdn.elferspot.com/wp-content/uploads/2023/02/14/DSC03379-groot.jpeg?class=xl", "https://cdn.elferspot.com/wp-content/uploads/2023/02/14/DSC03371-groot.jpeg?class=xl", "https://cdn.elferspot.com/wp-content/uploads/2023/02/14/DSC03434-groot.jpeg?class=xl", "https://cdn.elferspot.com/wp-content/uploads/2023/02/14/DSC03424-groot.jpeg?class=xl", "https://cdn.elferspot.com/wp-content/uploads/2023/02/10/Boxster-GTS.jpg?class=xl"],
       privacy: {
         ...DEF_PRIVACY,
-        pub_gallery: true
+        pub_phone: true,
+        pub_gallery: true,
+        pub_events: true
       }
     },
-    // ── Thomas: Porsche 992 GT3, Riviera Blau ────────────────────────────────────
-    // Alle Bilder: blauer/sportlicher GT3 auf der Rennstrecke
+    // ── Thomas: Porsche 992 GT3, Riviera Blau ───────────────────────────────────
     "V003": {
       id: "V003",
       qarId: "QAR-T7M3N9PX",
@@ -459,219 +459,50 @@
       kennzeichen: "MYK-PC 992",
       fin: "WP0AC2A92NS230001",
       phone: "+49 172 5550992",
-      kilometerstand: "8.200",
+      kilometerstand: "8200",
       tuev_faelligkeit: "06/2027",
-      marktwert: "195.000",
+      marktwert: "195000",
       zustand: "1",
-      besonderheiten: "Clubsport-Paket, Liftsystem, Carbon-Dach, PDK",
-      image: "https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=900&q=85",
-      images: ["https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=900&q=85", "https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=900&q=85", "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=900&q=85", "https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=900&q=85"],
+      besonderheiten: "Clubsport-Paket, Liftsystem, Carbon-Dach, PDK, Weissach-Paket",
+      image: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=900&q=85",
+      images: ["https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=900&q=85", "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=900&q=85"],
       privacy: {
         ...DEF_PRIVACY,
         pub_events: true,
         pub_gallery: true,
         pub_phone: true
       }
-    }
-  };
-  const DEMO_EVENTS = {
-    "E001": {
-      id: "E001",
-      name: "PCN TrackDay Nürburgring",
-      subtitle: "Nordschleife · Touristenfahrten",
-      date: dPlus(12),
-      location: "Nürburgring, Nordschleife",
-      category: "Trackday",
-      maxParticipants: 40,
-      entryFee: "€ 380 / Fahrzeug",
-      description: "Jährlicher PCN TrackDay auf der Nordschleife. Touristenfahrten, optional mit Instruktor. Technische Abnahme vor Ort.",
-      classes: ["Street", "Sport", "Race"]
     },
-    "E002": {
-      id: "E002",
-      name: "After Work Classics",
-      subtitle: "Abendausfahrt Grand-Prix-Strecke",
-      date: dPlus(22),
-      location: "Grand-Prix-Strecke, Nürburgring",
-      category: "Ausfahrt",
-      maxParticipants: 60,
-      entryFee: "kostenlos für Mitglieder",
-      description: "Entspannte Abendausfahrt. Alle Porsche-Modelle willkommen.",
-      classes: ["Alle Modelle"]
-    },
-    "E003": {
-      id: "E003",
-      name: "BELMOT Oldtimer-Grand-Prix",
-      subtitle: "53. Auflage — Clubbesuch",
-      date: dPlus(41),
-      location: "Nürburgring",
-      category: "Rennsport",
-      maxParticipants: 200,
-      entryFee: "Eintritt ab € 29",
-      description: "Gemeinsamer Besuch des BELMOT Grand Prix. PCN-Treffpunkt am Historischen Fahrerlager.",
-      classes: ["Besucher", "Aktive Fahrer"]
-    },
-    "E004": {
-      id: "E004",
-      name: "PCN Clubabend",
-      subtitle: "CHRSN x PCN im Kesselchen",
-      date: dPlus(51),
-      location: "Historisches Fahrerlager",
-      category: "Clubabend",
-      maxParticipants: 80,
-      entryFee: "kostenlos",
-      description: "Monatlicher Clubabend im Kesselchen. Austausch und Neuigkeiten.",
-      classes: ["Alle Mitglieder"]
-    }
-  };
-  const DEMO_LOGBOOK = {
-    "V001": [{
-      id: "L1",
-      vehicleId: "V001",
-      date: dMinus(60),
-      type: "Ölwechsel",
-      km: "31200",
-      notes: "Mobil 1 5W-50",
-      workshop: "Porsche Zentrum Koblenz"
-    }, {
-      id: "L2",
-      vehicleId: "V001",
-      date: dMinus(120),
-      type: "Inspektion",
-      km: "27800",
-      notes: "Großer Service — Bremsflüssigkeit, Luftfilter",
-      workshop: "Porsche Zentrum Koblenz"
-    }, {
-      id: "L3",
-      vehicleId: "V001",
-      date: dMinus(200),
-      type: "Reifenwechsel",
-      km: "24100",
-      notes: "Pirelli P Zero Sommer",
-      workshop: "Eigene Werkstatt"
-    }],
-    "V002": [{
-      id: "L4",
-      vehicleId: "V002",
-      date: dMinus(90),
-      type: "Inspektion",
-      km: "18200",
-      notes: "Jahresinspektion i.O.",
-      workshop: "Porsche Zentrum Koblenz"
-    }]
-  };
-  const DEMO_PARTICIPANTS = {
-    "E001": [{
-      id: "P1",
-      eventId: "E001",
-      vehicleId: "V001",
-      userId: "u1",
-      class: "Sport",
-      startNr: "07",
-      status: "confirmed"
-    }, {
-      id: "P2",
-      eventId: "E001",
-      vehicleId: "V003",
+    // ── Thomas: Porsche 904 Carrera GTS, Oldtimer ───────────────────────────────
+    "V004": {
+      id: "V004",
+      qarId: "QAR-W2L8X4KR",
       userId: "u2",
-      class: "Race",
-      startNr: "03",
-      status: "confirmed"
-    }],
-    "E002": [{
-      id: "P3",
-      eventId: "E002",
-      vehicleId: "V002",
-      userId: "u1",
-      class: "Alle Modelle",
-      startNr: "12",
-      status: "confirmed"
-    }]
-  };
-  const DEMO_HISTORY = [{
-    id: "H1",
-    vehicleId: "V001",
-    eventName: "PCN TrackDay 2025",
-    date: dMinus(280),
-    startNr: "05",
-    class: "Sport",
-    result: "Finisher",
-    note: "Bestzeit 9:43 min Nordschleife"
-  }, {
-    id: "H2",
-    vehicleId: "V001",
-    eventName: "After Work Classics Sep 2025",
-    date: dMinus(310),
-    startNr: "11",
-    class: "Alle Modelle",
-    result: "Teilnahme",
-    note: ""
-  }, {
-    id: "H3",
-    vehicleId: "V003",
-    eventName: "PCN TrackDay 2025",
-    date: dMinus(280),
-    startNr: "02",
-    class: "Race",
-    result: "Schnellste Zeit",
-    note: "7:58 min — Clubrekord"
-  }];
-
-  // Demo insurance data per vehicle
-  const DEMO_INSURANCE = {
-    "V001": [{
-      id: "I1",
-      type: "Vollkasko",
-      provider: "Allianz Classic",
-      nr: "KFZ-ALZ-2024-881234",
-      since: "2024-01-15",
-      until: "2025-01-14",
-      premium: "€ 1.240/Jahr",
-      note: "Vereinbartes Entschädigungswert: € 142.000",
-      status: "aktiv"
-    }, {
-      id: "I2",
-      type: "Haftpflicht",
-      provider: "Allianz Classic",
-      nr: "KFZ-ALZ-2024-881234",
-      since: "2024-01-15",
-      until: "2025-01-14",
-      premium: "im Vollkasko enthalten",
-      note: "SF-Klasse 10",
-      status: "aktiv"
-    }, {
-      id: "I3",
-      type: "Teilkasko",
-      provider: "Allianz Classic",
-      nr: "KFZ-ALZ-2024-881234",
-      since: "2024-01-15",
-      until: "2025-01-14",
-      premium: "inklusive",
-      note: "Naturgefahren, Diebstahl, Wildschaden",
-      status: "aktiv"
-    }],
-    "V002": [{
-      id: "I4",
-      type: "Oldtimer-Vollkasko",
-      provider: "Zurich Classic Cars",
-      nr: "ZCC-2023-001882",
-      since: "2023-06-01",
-      until: "2024-05-31",
-      premium: "€ 680/Jahr",
-      note: "Saisonkennzeichen 03–11, Wiederbeschaffungswert: € 91.000",
-      status: "abgelaufen"
-    }],
-    "V003": [{
-      id: "I5",
-      type: "Vollkasko Sport",
-      provider: "HDI Motorsport",
-      nr: "HDI-MS-2024-449871",
-      since: "2024-03-01",
-      until: "2025-02-28",
-      premium: "€ 2.890/Jahr",
-      note: "Track-Day mitversichert bis 150 km/h. Fahrzeugwert: € 198.000",
-      status: "aktiv"
-    }]
+      owner: "thomas@pcn.de",
+      hersteller: "Porsche",
+      modell: "904 Carrera GTS",
+      baujahr: "1964",
+      kraftstoff: "Benzin",
+      getriebe: "5-Gang manuell",
+      farbe: "Irischgrün",
+      kennzeichen: "MYK-PC 904",
+      fin: "904012",
+      phone: "+49 172 5550904",
+      kilometerstand: "42800",
+      tuev_faelligkeit: "12/2026",
+      marktwert: "1400000",
+      zustand: "1",
+      besonderheiten: "FIN 904012 · Ehem. Robert Redford · Glasfaser-Karosserie · Rally Monte Carlo 1965 · Bonhams Paris 2022 ~1,4 Mio EUR",
+      image: "https://www.secret-classics.com/wp-content/uploads/2022/02/image-3.jpeg",
+      images: ["https://www.secret-classics.com/wp-content/uploads/2022/02/image-3.jpeg", "https://www.secret-classics.com/wp-content/uploads/2023/10/image-4.jpeg", "https://www.secret-classics.com/wp-content/uploads/2023/10/image-5-1024x683.jpeg", "https://www.secret-classics.com/wp-content/uploads/2023/10/image-6-1024x683.jpeg", "https://www.secret-classics.com/wp-content/uploads/2023/10/image-1.jpeg", "https://www.secret-classics.com/wp-content/uploads/2023/10/image-2.jpeg", "https://www.secret-classics.com/wp-content/uploads/2023/10/image-8-edited.jpeg", "https://www.secret-classics.com/wp-content/uploads/2023/10/image-1-1-1024x683.jpeg"],
+      privacy: {
+        ...DEF_PRIVACY,
+        pub_events: true,
+        pub_gallery: true,
+        pub_phone: true,
+        marktwert: true
+      }
+    }
   };
 
   // Demo expert opinions / Gutachten
@@ -1480,7 +1311,6 @@
         return [];
       }
     });
-    const [confirmDeleteThread, setConfirmDeleteThread] = (0, _react.useState)(null); // thread id to confirm delete
     const [deletedThreadIds, setDeletedThreadIds] = (0, _react.useState)(() => {
       try {
         return JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
@@ -1860,18 +1690,12 @@
           data: liveThreads
         } = await DB.threads.list(me.id);
         if (!liveThreads) return;
-        // Read deleted IDs fresh from localStorage each time
-        const deletedIds = JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
         setThreads(prev => {
           const next = {
             ...prev
           };
-          liveThreads.filter(t => !deletedIds.includes(t.id)).forEach(t => {
+          liveThreads.forEach(t => {
             next[t.id] = t;
-          });
-          // Also remove any previously deleted threads from state
-          deletedIds.forEach(id => {
-            delete next[id];
           });
           return next;
         });
@@ -8038,12 +7862,38 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontWeight: 700,
-          fontSize: 15,
-          color: C.white,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           marginBottom: 2
         }
-      }, gt.vehicleName), /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontWeight: 700,
+          fontSize: 15,
+          color: C.white
+        }
+      }, gt.vehicleName), (() => {
+        const t = threads[gt.id];
+        const last = t?.messages?.filter(m => !m.isSystem)?.slice(-1)[0];
+        if (!last) return null;
+        const raw = last.created_at || last.createdAt || "";
+        const d = raw ? new Date(raw) : null;
+        const today = new Date();
+        const isToday = d && d.toDateString() === today.toDateString();
+        return /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 10,
+            color: C.muted
+          }
+        }, d ? isToday ? d.toLocaleTimeString("de-DE", {
+          hour: "2-digit",
+          minute: "2-digit"
+        }) : d.toLocaleDateString("de-DE", {
+          day: "2-digit",
+          month: "short"
+        }) : "");
+      })()), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 12,
           color: "#6b7fff",
@@ -8057,112 +7907,34 @@
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, lastMsg ? lastMsg.text : "Noch keine Nachricht")), /*#__PURE__*/_react.default.createElement("button", {
+      }, lastMsg ? (lastMsg.from === me?.id ? "Du: " : "") + lastMsg.text : "Noch keine Nachricht")), /*#__PURE__*/_react.default.createElement("button", {
         onClick: e => {
           e.stopPropagation();
-          setConfirmDeleteThread(gt.id);
+          if (!window.confirm("Chat löschen?")) return;
+          setGuestThreads(prev => {
+            const updated = prev.filter(x => x.id !== gt.id);
+            localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
+            return updated;
+          });
+          setThreads(prev => {
+            const n = {
+              ...prev
+            };
+            delete n[gt.id];
+            return n;
+          });
         },
         style: {
           background: "none",
           border: "none",
-          color: "#555",
+          color: "#444",
           cursor: "pointer",
           fontSize: 18,
-          padding: "4px 8px",
+          padding: "4px 6px",
           flexShrink: 0
         }
       }, "🗑"));
-    })), confirmDeleteThread && /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,.7)",
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "center",
-        padding: "0 0 40px"
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        background: C.dark,
-        border: `1px solid ${C.border}`,
-        borderRadius: 16,
-        padding: "20px",
-        width: "100%",
-        maxWidth: 420,
-        margin: "0 16px"
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontWeight: 700,
-        fontSize: 16,
-        color: C.white,
-        marginBottom: 8
-      }
-    }, "Chat löschen?"), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 13,
-        color: C.muted,
-        marginBottom: 20
-      }
-    }, "Der Chat wird dauerhaft entfernt und kann nicht wiederhergestellt werden."), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 10
-      }
-    }, /*#__PURE__*/_react.default.createElement("button", {
-      onClick: () => setConfirmDeleteThread(null),
-      style: {
-        flex: 1,
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 10,
-        padding: "12px",
-        color: C.white,
-        cursor: "pointer",
-        fontFamily: "'Barlow',sans-serif",
-        fontWeight: 700,
-        fontSize: 14
-      }
-    }, "Abbrechen"), /*#__PURE__*/_react.default.createElement("button", {
-      onClick: async () => {
-        const id = confirmDeleteThread;
-        setConfirmDeleteThread(null);
-        const DB = window.PCN_DB;
-        if (DB) await DB.threads.delete(id).catch(() => {});
-        setThreads(prev => {
-          const n = {
-            ...prev
-          };
-          delete n[id];
-          return n;
-        });
-        setDeletedThreadIds(prev => {
-          const updated = [...new Set([...prev, id])];
-          localStorage.setItem("pcn_deleted_threads", JSON.stringify(updated));
-          return updated;
-        });
-        setGuestThreads(prev => {
-          const updated = prev.filter(x => x.id !== id);
-          localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
-          return updated;
-        });
-        toast_("Chat gelöscht");
-      },
-      style: {
-        flex: 1,
-        background: C.red,
-        border: "none",
-        borderRadius: 10,
-        padding: "12px",
-        color: "#fff",
-        cursor: "pointer",
-        fontFamily: "'Barlow',sans-serif",
-        fontWeight: 700,
-        fontSize: 14
-      }
-    }, "🗑 Löschen")))), !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+    })), !isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 16
       }
@@ -8420,17 +8192,36 @@
             whiteSpace: "nowrap"
           }
         }, last ? (last.from === me?.id ? "Du: " : "") + last.text : "Noch keine Nachricht"))), /*#__PURE__*/_react.default.createElement("button", {
-          onClick: e => {
+          onClick: async e => {
             e.stopPropagation();
-            setConfirmDeleteThread(t.id);
+            if (!window.confirm("Chat löschen?")) return;
+            const DB = window.PCN_DB;
+            if (DB) await DB.threads.delete(t.id).catch(() => {});
+            setThreads(prev => {
+              const n = {
+                ...prev
+              };
+              delete n[t.id];
+              return n;
+            });
+            setDeletedThreadIds(prev => {
+              const updated = [...new Set([...prev, t.id])];
+              localStorage.setItem("pcn_deleted_threads", JSON.stringify(updated));
+              return updated;
+            });
+            setGuestThreads(prev => {
+              const updated = prev.filter(x => x.id !== t.id);
+              localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
+              return updated;
+            });
           },
           style: {
             background: "none",
             border: "none",
-            color: "#555",
+            color: "#444",
             cursor: "pointer",
             fontSize: 17,
-            padding: "4px 8px",
+            padding: "4px 6px",
             flexShrink: 0
           }
         }, "🗑"));
