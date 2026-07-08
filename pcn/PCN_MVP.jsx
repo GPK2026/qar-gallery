@@ -1922,7 +1922,7 @@ function PCNInner() {
       {showStatusPicker&&(
         <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
           <div className="sheet">
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Status setzen</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Live-Status setzen</div>
             <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
             <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
               {STATUS_PRESETS.map((p,i)=>(
@@ -2190,7 +2190,7 @@ function PCNInner() {
                     style={{flex:1,background:`${C.amber}15`,border:`1.5px solid ${C.amber}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
                     <span style={{fontSize:18}}>📍</span>
                     <div style={{textAlign:"left"}}>
-                      <div style={{fontWeight:700,fontSize:13,color:C.white}}>Status setzen</div>
+                      <div style={{fontWeight:700,fontSize:13,color:C.white}}>Live-Status setzen</div>
                       <div style={{fontSize:10,color:C.muted}}>Sichtbar beim QR-Scan</div>
                     </div>
                   </button>
@@ -2690,7 +2690,7 @@ function PCNInner() {
         {showStatusPicker&&(
           <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
             <div className="sheet">
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Status setzen</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Live-Status setzen</div>
               <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
               <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
                 {STATUS_PRESETS.map((p,i)=>(
