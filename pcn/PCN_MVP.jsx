@@ -1692,26 +1692,27 @@ function PCNInner() {
             </div>
           </div>
         </div>
-        {/* ── Action Buttons — directly under hero, always visible ── */}
-        <div style={{padding:"12px 14px",background:C.dark,borderBottom:`1px solid ${C.border}`}}>
-          <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:520,margin:"0 auto"}}>
-
-            {/* ── Thumbnail strip — additional gallery images ── */}
+          {/* ── Thumbnail strip — direkt unter Hero, Teil des Bild-Blocks ── */}
           {priv.pub_gallery!==false&&(()=>{
             const allImgs = v.images||(DEMO_VEHICLES[v.id]?.images)||[];
             if(allImgs.length<=1) return null;
             return (
-              <div style={{display:"flex",gap:6,overflowX:"auto",padding:"8px 14px 4px",background:"#0a0a0a",scrollbarWidth:"none"}}>
+              <div style={{display:"flex",gap:6,overflowX:"auto",padding:"8px 10px",background:"#0a0a0a",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
                 {allImgs.map((img,i)=>(
                   <img key={i} src={img} alt=""
                     onClick={()=>setLightbox({images:allImgs,index:i})}
-                    style={{width:80,height:56,objectFit:"cover",borderRadius:7,
-                      flexShrink:0,cursor:"pointer",border:i===0?"2px solid #D5001C":"1px solid #222"}}
+                    style={{width:90,height:64,objectFit:"cover",borderRadius:8,
+                      flexShrink:0,cursor:"pointer",
+                      border:i===0?"2px solid #D5001C":"1px solid #333"}}
                     onError={e=>e.target.style.display="none"}/>
                 ))}
               </div>
             );
           })()}
+
+        {/* ── Action Buttons ── */}
+        <div style={{padding:"12px 14px",background:C.dark,borderBottom:`1px solid ${C.border}`}}>
+          <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:520,margin:"0 auto"}}>
 
           {/* ── Status Banner — live from DB, above message button ── */}
             {(()=>{
