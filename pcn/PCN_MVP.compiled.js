@@ -473,12 +473,12 @@
         pub_phone: true
       }
     },
-    // ── Thomas: Porsche 904 Carrera GTS, Oldtimer ───────────────────────────────
+    // ── Max: Porsche 904 Carrera GTS, Oldtimer ───────────────────────────────────
     "V004": {
       id: "V004",
       qarId: "QAR-W2L8X4KR",
-      userId: "u2",
-      owner: "thomas@pcn.de",
+      userId: "u1",
+      owner: "max@pcn.de",
       hersteller: "Porsche",
       modell: "904 Carrera GTS",
       baujahr: "1964",
