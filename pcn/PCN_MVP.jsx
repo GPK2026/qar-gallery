@@ -1718,6 +1718,25 @@ function PCNInner() {
               </a>
             )}
 
+            {/* ── Status Banner — live from DB, above message button ── */}
+            {(()=>{
+              const s = vehicleStatus[v.id];
+              if(s && s.expiresAt && Date.now() > s.expiresAt) return null;
+              if(!s || !s.text) return null;
+              const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : null;
+              return (
+                <div style={{background:`${C.amber}18`,border:`2px solid ${C.amber}66`,borderRadius:14,padding:"14px 16px",marginBottom:4,animation:"fadeIn .3s ease"}}>
+                  <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                    <span style={{fontSize:28,flexShrink:0}}>{s.icon||"💬"}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:800,fontSize:16,color:C.amber,lineHeight:1.2}}>{s.text}</div>
+                      {minsLeft&&minsLeft>0&&<div style={{fontSize:11,color:C.muted,marginTop:3}}>Noch ca. {minsLeft} Min</div>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* CHAT — always visible for visitors (non-owners), opens anonymous chat */}
             {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
               <button
@@ -1788,25 +1807,6 @@ function PCNInner() {
         </div>
 
         <div style={{padding:"14px 16px",maxWidth:520,margin:"0 auto"}}>
-          {/* ── Status Banner — live from DB ── */}
-          {(()=>{
-            const s = vehicleStatus[v.id];
-            // Check expiry
-            if(s && s.expiresAt && Date.now() > s.expiresAt) return null;
-            if(!s || !s.text) return null;
-            const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : null;
-            return (
-              <div style={{background:`${C.amber}18`,border:`2px solid ${C.amber}66`,borderRadius:14,padding:"14px 16px",marginBottom:14,animation:"fadeIn .3s ease"}}>
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                  <span style={{fontSize:28,flexShrink:0}}>{s.icon||"💬"}</span>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:800,fontSize:16,color:C.amber,lineHeight:1.2}}>{s.text}</div>
-                    {minsLeft&&minsLeft>0&&<div style={{fontSize:11,color:C.muted,marginTop:3}}>Noch ca. {minsLeft} Min</div>}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
 
         {nextEvent&&priv.pub_events&&(
             <div style={{background:`${C.red}11`,border:`1px solid ${C.red}33`,borderRadius:12,padding:"12px 14px",marginBottom:14}}>
