@@ -7597,11 +7597,20 @@
     }, "✕"))), (() => {
       const items = DEMO_NEWS.filter(n => n.type !== "welcome" && newsState[n.id] !== "read").sort((a, b) => new Date(b.date) - new Date(a.date));
       if (!items.length) return null;
-      const Card = ({
-        n
-      }) => {
+      return /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 12,
+          overflowX: "auto",
+          scrollbarWidth: "none",
+          WebkitOverflowScrolling: "touch",
+          paddingBottom: 4,
+          marginBottom: 8
+        }
+      }, items.map(n => {
         const isRemind = newsState[n.id] === "remind";
         return /*#__PURE__*/_react.default.createElement("div", {
+          key: n.id,
           style: {
             background: isRemind ? `${C.amber}10` : n.pinned ? `${C.red}0d` : C.card,
             border: `1px solid ${isRemind ? C.amber + "44" : n.pinned ? C.red + "33" : C.border}`,
@@ -7654,63 +7663,50 @@
             borderRadius: 4,
             flexShrink: 0
           }
-        }, "NEU"), isRemind && /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            background: `${C.amber}33`,
-            color: C.amber,
-            fontSize: 8,
-            fontWeight: 800,
-            padding: "2px 6px",
-            borderRadius: 4,
-            flexShrink: 0
-          }
-        }, "🔔")), /*#__PURE__*/_react.default.createElement("div", {
+        }, "NEU")), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             fontSize: 11,
             color: C.muted,
             lineHeight: 1.7,
             marginBottom: 8
           }
-        }, (() => {
-          if (n.type === "newsletter") {
-            const expanded = newsState[n.id + "_open"];
-            return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("button", {
-              onClick: e => {
-                e.stopPropagation();
-                setNewsState(p => ({
-                  ...p,
-                  [n.id + "_open"]: !expanded
-                }));
-              },
-              style: {
-                background: "none",
-                border: "none",
-                color: C.red,
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 700,
-                fontFamily: "'Barlow',sans-serif",
-                padding: 0,
-                marginBottom: expanded ? 10 : 0,
-                display: "flex",
-                alignItems: "center",
-                gap: 4
-              }
-            }, expanded ? "▾ Schließen" : "▸ Newsletter lesen"), expanded && /*#__PURE__*/_react.default.createElement("div", {
-              style: {
-                fontSize: 12,
-                color: C.muted,
-                lineHeight: 1.8,
-                whiteSpace: "pre-wrap",
-                borderTop: `1px solid ${C.border}`,
-                paddingTop: 10
-              }
-            }, n.body));
-          }
-          return n.body.split("\\n").map((line, i) => /*#__PURE__*/_react.default.createElement("span", {
-            key: i
-          }, line, i < n.body.split("\\n").length - 1 && /*#__PURE__*/_react.default.createElement("br", null)));
-        })()), n.eventId && /*#__PURE__*/_react.default.createElement("button", {
+        }, n.type === "newsletter" ? (() => {
+          const expanded = newsState[n.id + "_open"];
+          return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("button", {
+            onClick: e => {
+              e.stopPropagation();
+              setNewsState(p => ({
+                ...p,
+                [n.id + "_open"]: !expanded
+              }));
+            },
+            style: {
+              background: "none",
+              border: "none",
+              color: C.red,
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 700,
+              fontFamily: "'Barlow',sans-serif",
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 4
+            }
+          }, expanded ? "▾ Schließen" : "▸ Newsletter lesen"), expanded && /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 12,
+              color: C.muted,
+              lineHeight: 1.8,
+              whiteSpace: "pre-wrap",
+              borderTop: `1px solid ${C.border}`,
+              paddingTop: 10,
+              marginTop: 8
+            }
+          }, n.body));
+        })() : n.body.split("\\n").map((line, i) => /*#__PURE__*/_react.default.createElement("span", {
+          key: i
+        }, line, i < n.body.split("\\n").length - 1 && /*#__PURE__*/_react.default.createElement("br", null)))), n.eventId && /*#__PURE__*/_react.default.createElement("button", {
           onClick: () => {
             const ev = events[n.eventId];
             if (ev) {
@@ -7777,67 +7773,7 @@
             fontFamily: "'Barlow',sans-serif"
           }
         }, "🔔 ", isRemind ? "Aktiv" : "Erinnern")))));
-      };
-      const NewsScroller = ({
-        items
-      }) => {
-        const scrollRef = _react.default.useRef(null);
-        _react.default.useEffect(() => {
-          const el = scrollRef.current;
-          if (!el) return;
-          let frame,
-            paused = false;
-          const speed = 0.5;
-          const animate = () => {
-            if (!paused && el) {
-              el.scrollLeft += speed;
-              if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft = 0;
-            }
-            frame = requestAnimationFrame(animate);
-          };
-          frame = requestAnimationFrame(animate);
-          const pause = () => {
-            paused = true;
-          };
-          const resume = () => {
-            setTimeout(() => {
-              paused = false;
-            }, 1200);
-          };
-          el.addEventListener("touchstart", pause, {
-            passive: true
-          });
-          el.addEventListener("touchend", resume, {
-            passive: true
-          });
-          return () => {
-            cancelAnimationFrame(frame);
-            el.removeEventListener("touchstart", pause);
-            el.removeEventListener("touchend", resume);
-          };
-        }, []);
-        return /*#__PURE__*/_react.default.createElement("div", {
-          ref: scrollRef,
-          style: {
-            display: "flex",
-            gap: 12,
-            overflowX: "auto",
-            scrollbarWidth: "none",
-            WebkitOverflowScrolling: "touch",
-            maskImage: "linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)",
-            WebkitMaskImage: "linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)"
-          }
-        }, items.map((n, i) => /*#__PURE__*/_react.default.createElement(Card, {
-          key: n.id + "a" + i,
-          n: n
-        })), items.map((n, i) => /*#__PURE__*/_react.default.createElement(Card, {
-          key: n.id + "b" + i,
-          n: n
-        })));
-      };
-      return /*#__PURE__*/_react.default.createElement(NewsScroller, {
-        items: items
-      });
+      }));
     })()), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
