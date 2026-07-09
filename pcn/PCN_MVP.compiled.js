@@ -7459,8 +7459,42 @@
       }
     }, recentVehicles.map(rv => /*#__PURE__*/_react.default.createElement("div", {
       key: rv.id,
+      style: {
+        flexShrink: 0,
+        width: 130,
+        position: "relative"
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        setRecentVehicles(prev => {
+          const updated = prev.filter(v => v.id !== rv.id);
+          localStorage.setItem("pcn_recent_vehicles", JSON.stringify(updated));
+          return updated;
+        });
+      },
+      style: {
+        position: "absolute",
+        top: -6,
+        right: -6,
+        zIndex: 10,
+        width: 20,
+        height: 20,
+        borderRadius: "50%",
+        background: "#333",
+        border: `1.5px solid ${C.border}`,
+        color: "#aaa",
+        fontSize: 10,
+        fontWeight: 900,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        lineHeight: 1,
+        fontFamily: "sans-serif"
+      }
+    }, "✕"), /*#__PURE__*/_react.default.createElement("div", {
       onClick: () => {
-        // Open public page for this vehicle
         const full = vehicles[rv.id] || DEMO_VEHICLES[rv.id];
         if (full) {
           setPublicV({
@@ -7488,8 +7522,6 @@
         }
       },
       style: {
-        flexShrink: 0,
-        width: 130,
         cursor: "pointer",
         borderRadius: 10,
         overflow: "hidden",
@@ -7539,7 +7571,7 @@
         color: C.muted,
         marginTop: 2
       }
-    }, rv.kennzeichen || rv.qarId)))), /*#__PURE__*/_react.default.createElement("button", {
+    }, rv.kennzeichen || rv.qarId))))), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => {
         setRecentVehicles([]);
         localStorage.removeItem("pcn_recent_vehicles");
