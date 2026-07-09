@@ -252,12 +252,12 @@ const DEMO_LOGBOOK = {
 };
 
 const DEMO_PARTICIPANTS = {
-  "E001":[
-    {id:"P1",eventId:"E001",vehicleId:"V001",userId:"u1",class:"Sport",startNr:"07",status:"confirmed"},
-    {id:"P2",eventId:"E001",vehicleId:"V003",userId:"u2",class:"Race",startNr:"03",status:"confirmed"},
+  "E010":[
+    {id:"P1",eventId:"E010",vehicleId:"V001",userId:"u1",class:"Sport",startNr:"07",status:"confirmed"},
+    {id:"P2",eventId:"E010",vehicleId:"V003",userId:"u2",class:"Race",startNr:"03",status:"confirmed"},
   ],
-  "E002":[
-    {id:"P3",eventId:"E002",vehicleId:"V002",userId:"u1",class:"Alle Modelle",startNr:"12",status:"confirmed"},
+  "E006":[
+    {id:"P3",eventId:"E006",vehicleId:"V004",userId:"u1",class:"H-Kennzeichen",startNr:"12",status:"confirmed"},
   ],
 };
 
@@ -268,16 +268,13 @@ const DEMO_HISTORY = [
 ];
 
 const DEMO_EVENTS = {
-  "E001":{id:"E001",name:"PCN TrackDay Nürburgring",date:dPlus(12),location:"Nürburgring, Nordschleife",category:"Trackday",maxParticipants:30,classes:["Sport","Race","Touring"],desc:"Der jährliche PCN TrackDay auf der legendären Nordschleife. Zeittraining + freies Fahren.",organizer:"PCN Vorstand",price:"€ 180"},
-  "E002":{id:"E002",name:"PCN Ausfahrt Eifel",date:dPlus(22),location:"Grand-Prix-Strecke, Nürburgring",category:"Ausfahrt",maxParticipants:50,classes:["Alle Modelle"],desc:"Entspannte Ausfahrt durch die Eifel — kein Zeitdruck, Pausenstopp in Adenau.",organizer:"Max Mustermann",price:"Kostenlos"},
-  "E003":{id:"E003",name:"PCN Rennsport Revival",date:dPlus(41),location:"Nürburgring",category:"Rennsport",maxParticipants:20,classes:["Classic","Sport","Race"],desc:"Historischer Rennsport — Gleichmäßigkeitsprüfung für Fahrzeuge vor Bj. 1990.",organizer:"PCN Technik",price:"€ 95"},
   "E005":{id:"E005",name:"Clubabend im Kesselchen",date:"2026-07-14",location:"Kesselchen, Nürburgring",category:"Clubabend",maxParticipants:100,classes:["Alle Modelle"],desc:"Monatlicher Clubabend im Kesselchen.",organizer:"PCN Vorstand",price:"Kostenlos"},
   "E006":{id:"E006",name:"53. Bellmot Oldtimer Grand Prix",date:"2026-08-07",location:"Nürburgring Fahrerlager",category:"Oldtimer",maxParticipants:200,classes:["H-Kennzeichen"],desc:"Zelt und Stellfläche für Ausstellungsfahrzeuge (H-Kennzeichen) im Vorstart-Bereich, 10×30m. Wochenendtickets ab 49 EUR, inkl. Parkplatz Mercedes-Arena 120 EUR.",organizer:"PCN Vorstand",price:"49–120 EUR"},
   "E007":{id:"E007",name:"Clubabend im Kesselchen",date:"2026-08-11",location:"Kesselchen, Nürburgring",category:"Clubabend",maxParticipants:100,classes:["Alle Modelle"],desc:"Monatlicher Clubabend.",organizer:"PCN Vorstand",price:"Kostenlos"},
   "E008":{id:"E008",name:"After Work Classic",date:"2026-08-31",location:"Altes Fahrerlager, Kesselchen",category:"Ausfahrt",maxParticipants:100,classes:["Alle Modelle"],desc:"Treffpunkt Altes Fahrerlager, Kesselchen.",organizer:"PCN Vorstand",price:"Kostenlos"},
   "E009":{id:"E009",name:"Clubabend im Kesselchen",date:"2026-09-08",location:"Kesselchen, Nürburgring",category:"Clubabend",maxParticipants:100,classes:["Alle Modelle"],desc:"Monatlicher Clubabend.",organizer:"PCN Vorstand",price:"Kostenlos"},
   "E010":{id:"E010",name:"PCN TrackDay Grand Prix Strecke",date:"2026-09-10",location:"Nürburgring Grand Prix Strecke",category:"Trackday",maxParticipants:40,classes:["Sport","Race","Touring"],desc:"Unser jährlicher TrackDay auf der Grand Prix Strecke. Helfer gesucht für Zufahrtskontrolle / Boxengasse / Auf- und Abbau — gerne melden!",organizer:"PCN Vorstand",price:"Auf Anfrage"},
-  "E011":{id:"E011",name:"Saisonabschluss Bodensee-Fahrt",date:"2026-10-22",location:"Bodensee-Region",category:"Saisonfahrt",maxParticipants:30,classes:["Alle Modelle"],desc:"Mehrtägiger Ausflug 22.–25. Oktober in die Bodensee-Region. Hotel am Bodensee, mehrere Ausfahrten. Streckenplanung: Präsident PC Bodensee-Oberschwaben. Bei Interesse bitte vormerken.",organizer:"PCN Vorstand",price:"Auf Anfrage"},
+  "E011":{id:"E011",name:"Saisonabschluss Bodensee-Fahrt",date:"2026-10-22",location:"Bodensee-Region",category:"Saisonfahrt",maxParticipants:30,classes:["Alle Modelle"],desc:"Mehrtägiger Ausflug 22.–25. Oktober. Hotel am Bodensee, mehrere Ausfahrten. Streckenplanung: Präsident PC Bodensee-Oberschwaben.",organizer:"PCN Vorstand",price:"Auf Anfrage"},
 };
 const DEMO_INSURANCE = {
   "V001":[
