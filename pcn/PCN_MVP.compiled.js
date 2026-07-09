@@ -8272,7 +8272,11 @@
         letterSpacing: 2,
         marginBottom: 10
       }
-    }, "🔒 Meine anonymen Chats"), guestThreads.map(gt => {
+    }, "🔒 Meine anonymen Chats"), [...guestThreads].sort((a, b) => {
+      const at = threads[a.id]?.messages?.filter(m => !m.isSystem)?.slice(-1)[0];
+      const bt = threads[b.id]?.messages?.filter(m => !m.isSystem)?.slice(-1)[0];
+      return new Date(bt?.created_at || bt?.createdAt || 0) - new Date(at?.created_at || at?.createdAt || 0);
+    }).map(gt => {
       const t = threads[gt.id];
       const lastMsg = t?.messages?.filter(m => !m.isSystem)?.slice(-1)[0];
       return /*#__PURE__*/_react.default.createElement("div", {
@@ -8546,10 +8550,10 @@
       }).sort((a, b) => {
         const aLast = a.messages.filter(m => !m.isSystem).pop();
         const bLast = b.messages.filter(m => !m.isSystem).pop();
-        if (!aLast && !bLast) return 0;
-        if (!aLast) return 1;
-        if (!bLast) return -1;
-        return (bLast.ts || "").localeCompare(aLast.ts || "");
+        // Sort by created_at or createdAt timestamp, newest first
+        const aTime = aLast ? new Date(aLast.created_at || aLast.createdAt || 0).getTime() : 0;
+        const bTime = bLast ? new Date(bLast.created_at || bLast.createdAt || 0).getTime() : 0;
+        return bTime - aTime;
       });
       return filtered.map(t => {
         const other = Object.values(allUsers).find(u => (t.participants || []).includes(u.id) && u.id !== me?.id) || {
