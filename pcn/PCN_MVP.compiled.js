@@ -8158,13 +8158,12 @@
           borderRadius: 12,
           padding: "13px 14px",
           marginBottom: 8,
-          cursor: "pointer",
           display: "flex",
           gap: 12,
-          alignItems: "center"
+          alignItems: "center",
+          position: "relative"
         },
         onClick: async () => {
-          // Reload thread from DB if needed
           if (!t && window.PCN_DB) {
             const {
               data: liveThreads
@@ -8209,12 +8208,11 @@
           fontSize: 15,
           color: C.white
         }
-      }, gt.vehicleName), (() => {
-        const t = threads[gt.id];
+      }, gt.vehicleName || "Anonymer Chat"), (() => {
         const last = t?.messages?.filter(m => !m.isSystem)?.slice(-1)[0];
         if (!last) return null;
-        const raw = last.created_at || last.createdAt || "";
-        const d = raw ? new Date(raw) : null;
+        const raw = last.created_at || last.createdAt || last.ts || "";
+        const d = raw && !raw.includes(":") === false ? new Date(raw) : null;
         const today = new Date();
         const isToday = d && d.toDateString() === today.toDateString();
         return /*#__PURE__*/_react.default.createElement("span", {
@@ -8222,13 +8220,13 @@
             fontSize: 10,
             color: C.muted
           }
-        }, d ? isToday ? d.toLocaleTimeString("de-DE", {
+        }, d && !isNaN(d) ? isToday ? d.toLocaleTimeString("de-DE", {
           hour: "2-digit",
           minute: "2-digit"
         }) : d.toLocaleDateString("de-DE", {
           day: "2-digit",
           month: "short"
-        }) : "");
+        }) : last.ts || "");
       })()), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 12,
@@ -8246,31 +8244,40 @@
       }, lastMsg ? (lastMsg.from === me?.id ? "Du: " : "") + lastMsg.text : "Noch keine Nachricht")), /*#__PURE__*/_react.default.createElement("button", {
         onClick: e => {
           e.stopPropagation();
-          if (!window.confirm("Chat löschen?")) return;
-          setGuestThreads(prev => {
-            const updated = prev.filter(x => x.id !== gt.id);
-            localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
-            return updated;
-          });
-          setThreads(prev => {
-            const n = {
-              ...prev
-            };
-            delete n[gt.id];
-            return n;
-          });
+          setConfirmDeleteThread(gt.id);
         },
         style: {
           background: "none",
           border: "none",
-          color: "#444",
+          color: "#555",
           cursor: "pointer",
-          fontSize: 18,
-          padding: "4px 6px",
+          fontSize: 17,
+          padding: "4px 8px",
           flexShrink: 0
         }
       }, "🗑"));
-    })), !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+    })), isGuest && guestThreads.length === 0 && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        textAlign: "center",
+        padding: "40px 20px",
+        color: C.muted
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 32,
+        marginBottom: 12
+      }
+    }, "💬"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 600,
+        marginBottom: 6
+      }
+    }, "Noch keine Chats"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12
+      }
+    }, "Scanne einen QR-Code und schreibe dem Fahrzeughalter")), !isGuest && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 16
       }
