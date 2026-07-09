@@ -168,6 +168,7 @@
     kilometerstand: false,
     zustand: false,
     tuev_faelligkeit: false,
+    besonderheiten: true,
     fin: false,
     marktwert: false,
     pub_logbook: false,
@@ -4084,7 +4085,7 @@
           color: C.white,
           marginTop: 2
         }
-      }, key === "kilometerstand" ? parseInt(v[key]).toLocaleString("de-DE") + " km" : key === "marktwert" ? "€ " + parseInt(v[key]).toLocaleString("de-DE") : v[key])))), v.besonderheiten && /*#__PURE__*/_react.default.createElement("div", {
+      }, key === "kilometerstand" ? parseInt(v[key]).toLocaleString("de-DE") + " km" : key === "marktwert" ? "€ " + parseInt(v[key]).toLocaleString("de-DE") : v[key])))), v.besonderheiten && priv.besonderheiten !== false && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           marginTop: 12,
           paddingTop: 10,
@@ -6166,7 +6167,7 @@
           gap: 6,
           flexWrap: "wrap"
         }
-      }, [[priv.pub_gallery !== false, "📸 Fotos"], [priv.pub_events, "🏁 Events"], [priv.pub_logbook, "📋 Logbuch"], [priv.pub_phone, "📞 Telefon"], [priv.kennzeichen !== false, "🔑 Kennzeichen"]].map(([on, label]) => /*#__PURE__*/_react.default.createElement("span", {
+      }, [[priv.pub_gallery !== false, "📸 Fotos"], [priv.pub_events, "🏁 Events"], [priv.pub_logbook, "📋 Logbuch"], [priv.pub_phone, "📞 Telefon"], [priv.kennzeichen !== false, "🔑 Kennzeichen"], [priv.besonderheiten !== false, "✨ Besonderheiten"]].map(([on, label]) => /*#__PURE__*/_react.default.createElement("span", {
         key: label,
         style: {
           fontSize: 10,
@@ -6184,7 +6185,7 @@
           marginBottom: 16,
           lineHeight: 1.6
         }
-      }, "🔓 = sichtbar für Besucher · 🔒 = nur für dich sichtbar"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"]]], ["Abschnitte", [["pub_gallery", "Fotogalerie 📸"], ["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/_react.default.createElement("div", {
+      }, "🔓 = sichtbar für Besucher · 🔒 = nur für dich sichtbar"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"], ["besonderheiten", "Besonderheiten ✨"]]], ["Abschnitte", [["pub_gallery", "Fotogalerie 📸"], ["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/_react.default.createElement("div", {
         key: group,
         style: {
           marginBottom: 14
