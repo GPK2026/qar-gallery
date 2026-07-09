@@ -661,6 +661,9 @@ function PCNInner() {
   const [viewV, setViewV]         = useState(null);
   const [viewEv, setViewEv]       = useState(null);
   const [publicV, setPublicV]     = useState(null);
+  const [recentVehicles, setRecentVehicles] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("pcn_recent_vehicles")||"[]"); } catch(e){ return []; }
+  });
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [loginForm, setLoginForm] = useState({mode:"register",code:"",email:"",name:""});
@@ -986,6 +989,24 @@ function PCNInner() {
     },3000);
     return ()=>clearInterval(fast);
   },[screen,activeThread,me?.id]);
+
+  // ── Track recently viewed vehicles ──────────────────────────────────────────
+  useEffect(()=>{
+    if(screen!=="public"||!publicV) return;
+    const entry = {
+      id: publicV.id, qarId: publicV.qarId,
+      hersteller: publicV.hersteller, modell: publicV.modell,
+      image: publicV.image||(publicV.images&&publicV.images[0])||"",
+      kennzeichen: publicV.kennzeichen,
+      viewedAt: new Date().toISOString(),
+    };
+    setRecentVehicles(prev=>{
+      const filtered = prev.filter(v=>v.id!==entry.id);
+      const updated = [entry,...filtered].slice(0,10);
+      localStorage.setItem("pcn_recent_vehicles", JSON.stringify(updated));
+      return updated;
+    });
+  },[screen, publicV?.id]);
 
   // ── Track screen changes for analytics ───────────────────────────────────────
   useEffect(()=>{
@@ -3092,6 +3113,47 @@ function PCNInner() {
                   </div>
                 );
               })()}
+
+              {/* ── Zuletzt angesehen ── */}
+              {recentVehicles.length>0&&(
+                <div style={{marginBottom:18}}>
+                  <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>🕐 Zuletzt angesehen</div>
+                  <div style={{display:"flex",gap:10,overflowX:"auto",scrollbarWidth:"none",paddingBottom:4}}>
+                    {recentVehicles.map(rv=>(
+                      <div key={rv.id}
+                        onClick={()=>{
+                          // Open public page for this vehicle
+                          const full = vehicles[rv.id]||DEMO_VEHICLES[rv.id];
+                          if(full){ setPublicV({...full,privacy:{...DEF_PRIVACY,...(full.privacy||{})}}); setScreen("public"); }
+                          else if(rv.qarId){
+                            const DB=window.PCN_DB;
+                            if(DB) DB.vehicles.getPublic(rv.qarId).then(({data})=>{
+                              if(data) setPublicV({...data,privacy:{...DEF_PRIVACY,...(data.privacy||{})}});
+                            });
+                            setScreen("public");
+                          }
+                        }}
+                        style={{flexShrink:0,width:130,cursor:"pointer",borderRadius:10,overflow:"hidden",
+                          border:`1px solid ${C.border}`,background:C.card}}>
+                        <div style={{height:80,overflow:"hidden",background:"#111",position:"relative"}}>
+                          {rv.image
+                            ? <img src={rv.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                            : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",fontSize:28}}>🚗</div>}
+                        </div>
+                        <div style={{padding:"7px 8px"}}>
+                          <div style={{fontSize:11,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
+                          <div style={{fontSize:10,color:C.muted,marginTop:2}}>{rv.kennzeichen||rv.qarId}</div>
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={()=>{setRecentVehicles([]);localStorage.removeItem("pcn_recent_vehicles");}}
+                      style={{flexShrink:0,width:44,height:"100%",background:"none",border:`1px dashed ${C.border}`,
+                        borderRadius:10,color:"#333",cursor:"pointer",fontSize:16,alignSelf:"stretch",minHeight:120}}>
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Neuigkeiten mit Lesen/Erinnern-Aktionen */}
               {DEMO_NEWS.filter(n=>n.type!=="welcome").sort((a,b)=>new Date(b.date)-new Date(a.date)).map(n=>{
