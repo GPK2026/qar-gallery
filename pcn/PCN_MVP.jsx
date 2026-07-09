@@ -3029,12 +3029,12 @@ function PCNInner() {
                 const welcome = DEMO_NEWS.find(n=>n.type==="welcome");
                 if(!welcome) return null;
                 return (
-                  <div style={{background:`${C.gold}12`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:"13px 14px",marginBottom:10}}>
+                  <div style={{background:"#ffffff",border:"1px solid #e5e7eb",borderRadius:12,padding:"13px 14px",marginBottom:10}}>
                     <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                       <span style={{fontSize:20,flexShrink:0}}>🎉</span>
                       <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:3}}>{welcome.title}</div>
-                        <div style={{fontSize:11,color:C.muted,lineHeight:1.6}}>{welcome.body}</div>
+                        <div style={{fontSize:13,fontWeight:700,color:"#111",marginBottom:3}}>{welcome.title}</div>
+                        <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>{welcome.body}</div>
                       </div>
                     </div>
                   </div>
@@ -3090,18 +3090,18 @@ function PCNInner() {
                             🏁 Zum Event →
                           </button>
                         )}
-                        {/* Aktionen */}
-                        <div style={{display:"flex",gap:6}}>
+                        {/* Aktionen — rechts unten */}
+                        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:6,marginTop:8}}>
+                          <div style={{fontSize:9,color:"#444",marginRight:"auto"}}>{fmtDate(n.date)}</div>
                           <button onClick={()=>setNewsState(p=>({...p,[n.id]:"read"}))}
-                            style={{background:"none",border:`1px solid ${C.border}`,borderRadius:7,padding:"5px 10px",color:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                            style={{background:"none",border:`1px solid ${C.border}`,borderRadius:7,padding:"4px 9px",color:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                             ✓ Gelesen
                           </button>
                           <button onClick={()=>setNewsState(p=>({...p,[n.id]:isRemind?undefined:"remind"}))}
-                            style={{background:isRemind?`${C.amber}22`:"none",border:`1px solid ${isRemind?C.amber+"44":C.border}`,borderRadius:7,padding:"5px 10px",
+                            style={{background:isRemind?`${C.amber}22`:"none",border:`1px solid ${isRemind?C.amber+"44":C.border}`,borderRadius:7,padding:"4px 9px",
                               color:isRemind?C.amber:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                            🔔 {isRemind?"Erinnerung aktiv":"Erinnern"}
+                            🔔 {isRemind?"Aktiv":"Erinnern"}
                           </button>
-                          <div style={{fontSize:9,color:"#444",alignSelf:"center",marginLeft:"auto"}}>{fmtDate(n.date)}</div>
                         </div>
                       </div>
                     </div>
