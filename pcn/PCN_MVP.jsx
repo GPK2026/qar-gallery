@@ -3247,7 +3247,19 @@ function PCNInner() {
                 };
                 return (
                   <div className="news-marquee-wrap">
-                    <div className="news-marquee-track">
+                    <div className="news-marquee-track"
+                      ref={el=>{
+                        if(!el) return;
+                        let startX=0, scrollLeft=0, dragging=false;
+                        el.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;scrollLeft=el._offset||0;dragging=true;el.style.animationPlayState="paused";},{passive:true});
+                        el.addEventListener("touchmove",e=>{
+                          if(!dragging) return;
+                          const dx=startX-e.touches[0].clientX;
+                          el._offset=(scrollLeft+dx);
+                          el.style.transform=`translateX(calc(var(--marquee-pos,0%) + ${-(scrollLeft+dx)}px))`;
+                        },{passive:true});
+                        el.addEventListener("touchend",()=>{dragging=false;setTimeout(()=>{el.style.animationPlayState="";el.style.transform="";},1200);});
+                      }}>
                       {items.map((n,i)=><Card key={n.id+"a"+i} n={n}/>)}
                       {items.map((n,i)=><Card key={n.id+"b"+i} n={n}/>)}
                     </div>
