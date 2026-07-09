@@ -551,9 +551,9 @@
     }]
   };
   const DEMO_PARTICIPANTS = {
-    "E001": [{
+    "E010": [{
       id: "P1",
-      eventId: "E001",
+      eventId: "E010",
       vehicleId: "V001",
       userId: "u1",
       class: "Sport",
@@ -561,19 +561,19 @@
       status: "confirmed"
     }, {
       id: "P2",
-      eventId: "E001",
+      eventId: "E010",
       vehicleId: "V003",
       userId: "u2",
       class: "Race",
       startNr: "03",
       status: "confirmed"
     }],
-    "E002": [{
+    "E006": [{
       id: "P3",
-      eventId: "E002",
-      vehicleId: "V002",
+      eventId: "E006",
+      vehicleId: "V004",
       userId: "u1",
-      class: "Alle Modelle",
+      class: "H-Kennzeichen",
       startNr: "12",
       status: "confirmed"
     }]
@@ -607,42 +607,6 @@
     note: "7:58 min — Clubrekord"
   }];
   const DEMO_EVENTS = {
-    "E001": {
-      id: "E001",
-      name: "PCN TrackDay Nürburgring",
-      date: dPlus(12),
-      location: "Nürburgring, Nordschleife",
-      category: "Trackday",
-      maxParticipants: 30,
-      classes: ["Sport", "Race", "Touring"],
-      desc: "Der jährliche PCN TrackDay auf der legendären Nordschleife. Zeittraining + freies Fahren.",
-      organizer: "PCN Vorstand",
-      price: "€ 180"
-    },
-    "E002": {
-      id: "E002",
-      name: "PCN Ausfahrt Eifel",
-      date: dPlus(22),
-      location: "Grand-Prix-Strecke, Nürburgring",
-      category: "Ausfahrt",
-      maxParticipants: 50,
-      classes: ["Alle Modelle"],
-      desc: "Entspannte Ausfahrt durch die Eifel — kein Zeitdruck, Pausenstopp in Adenau.",
-      organizer: "Max Mustermann",
-      price: "Kostenlos"
-    },
-    "E003": {
-      id: "E003",
-      name: "PCN Rennsport Revival",
-      date: dPlus(41),
-      location: "Nürburgring",
-      category: "Rennsport",
-      maxParticipants: 20,
-      classes: ["Classic", "Sport", "Race"],
-      desc: "Historischer Rennsport — Gleichmäßigkeitsprüfung für Fahrzeuge vor Bj. 1990.",
-      organizer: "PCN Technik",
-      price: "€ 95"
-    },
     "E005": {
       id: "E005",
       name: "Clubabend im Kesselchen",
@@ -723,7 +687,7 @@
       category: "Saisonfahrt",
       maxParticipants: 30,
       classes: ["Alle Modelle"],
-      desc: "Mehrtägiger Ausflug 22.–25. Oktober in die Bodensee-Region. Hotel am Bodensee, mehrere Ausfahrten. Streckenplanung: Präsident PC Bodensee-Oberschwaben. Bei Interesse bitte vormerken.",
+      desc: "Mehrtägiger Ausflug 22.–25. Oktober. Hotel am Bodensee, mehrere Ausfahrten. Streckenplanung: Präsident PC Bodensee-Oberschwaben.",
       organizer: "PCN Vorstand",
       price: "Auf Anfrage"
     }
