@@ -3155,26 +3155,28 @@ function PCNInner() {
                 </div>
               )}
 
-              {/* Neuigkeiten mit Lesen/Erinnern-Aktionen */}
-              {DEMO_NEWS.filter(n=>n.type!=="welcome").sort((a,b)=>new Date(b.date)-new Date(a.date)).map(n=>{
-                const state = newsState[n.id];
-                if(state==="read") return null; // ausgeblendet wenn gelesen
-                const isRemind = state==="remind";
-                return (
-                  <div key={n.id} style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}0d`:C.card,
+              {/* Neuigkeiten — Marquee rechts→links, pausiert bei Touch */}
+              {(()=>{
+                const items = DEMO_NEWS
+                  .filter(n=>n.type!=="welcome" && newsState[n.id]!=="read")
+                  .sort((a,b)=>new Date(b.date)-new Date(a.date));
+                if(!items.length) return null;
+                const Card = ({n}) => {
+                  const isRemind = newsState[n.id]==="remind";
+                  return (
+                  <div style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}0d`:C.card,
                     border:`1px solid ${isRemind?C.amber+"44":n.pinned?C.red+"33":C.border}`,
-                    borderRadius:12,padding:"13px 14px",marginBottom:8}}>
+                    borderRadius:12,padding:"13px 14px",width:290,flexShrink:0}}>
                     <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                       <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
-                          <div style={{fontSize:13,fontWeight:700,color:C.white,flex:1}}>{n.title}</div>
+                          <div style={{fontSize:13,fontWeight:700,color:C.white,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
                           {n.pinned&&<span style={{background:C.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>NEU</span>}
-                          {isRemind&&<span style={{background:`${C.amber}33`,color:C.amber,fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>🔔 ERINNERT</span>}
+                          {isRemind&&<span style={{background:`${C.amber}33`,color:C.amber,fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>🔔</span>}
                         </div>
                         <div style={{fontSize:11,color:C.muted,lineHeight:1.7,marginBottom:8}}>
                           {(()=>{
-                            // For newsletter: show as accordion (collapsed by default)
                             if(n.type==="newsletter") {
                               const expanded = newsState[n.id+"_open"];
                               return (
@@ -3191,21 +3193,18 @@ function PCNInner() {
                                 </div>
                               );
                             }
-                            // Regular news
                             return n.body.split("\\n").map((line,i)=>(
                               <span key={i}>{line}{i<n.body.split("\\n").length-1&&<br/>}</span>
                             ));
                           })()}
                         </div>
-                        {/* Event-Link falls vorhanden */}
                         {n.eventId&&(
                           <button onClick={()=>{const ev=events[n.eventId];if(ev){setViewEv(ev);setScreen("event");}}}
                             style={{background:"none",border:`1px solid ${C.red}44`,borderRadius:7,padding:"5px 10px",color:C.red,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",marginBottom:8}}>
                             🏁 Zum Event →
                           </button>
                         )}
-                        {/* Aktionen — rechts unten */}
-                        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:6,marginTop:8}}>
+                        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:6,marginTop:4}}>
                           <div style={{fontSize:9,color:"#444",marginRight:"auto"}}>{fmtDate(n.date)}</div>
                           <button onClick={()=>setNewsState(p=>({...p,[n.id]:"read"}))}
                             style={{background:"none",border:`1px solid ${C.border}`,borderRadius:7,padding:"4px 9px",color:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
@@ -3220,8 +3219,17 @@ function PCNInner() {
                       </div>
                     </div>
                   </div>
+                  );
+                };
+                return (
+                  <div className="news-marquee-wrap">
+                    <div className="news-marquee-track">
+                      {items.map((n,i)=><Card key={n.id+"a"+i} n={n}/>)}
+                      {items.map((n,i)=><Card key={n.id+"b"+i} n={n}/>)}
+                    </div>
+                  </div>
                 );
-              })}
+              })()}
             </div>
 
             {/* ── 2. Meine Fahrzeuge ── */}
