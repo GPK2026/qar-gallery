@@ -61,7 +61,8 @@ const DEF_PRIVACY = {
   hersteller:true, modell:true, baujahr:true, farbe:true,
   kraftstoff:true, getriebe:true, kennzeichen:true,
   kilometerstand:false, zustand:false, tuev_faelligkeit:false,
-  fin:false, marktwert:false, pub_logbook:false, pub_events:true, pub_phone:false, pub_gallery:true,
+  besonderheiten:true, fin:false, marktwert:false,
+  pub_logbook:false, pub_events:true, pub_phone:false, pub_gallery:true,
 };
 
 // ─── QR Code (Real, scannable — uses bundled qrcode.js library) ──────────────
@@ -1750,10 +1751,12 @@ function PCNInner() {
               color:"#fff",lineHeight:1,marginBottom:10,textShadow:"0 2px 8px rgba(0,0,0,.5)"}}>
               {v.hersteller} {v.modell}
             </h1>
+            {priv.kennzeichen!==false&&kz&&(
             <div style={{display:"inline-flex",alignItems:"center",background:"#fff",
               border:"2px solid #222",borderRadius:5,padding:"3px 12px"}}>
               <span style={{fontSize:14,fontWeight:800,color:"#111",letterSpacing:2,fontFamily:"Arial,sans-serif"}}>{kz}</span>
             </div>
+            )}
           </div>
         </div>
           {/* ── Thumbnail strip — direkt unter Hero, Teil des Bild-Blocks ── */}
@@ -1917,7 +1920,7 @@ function PCNInner() {
                 </div>
               ))}
             </div>
-            {v.besonderheiten&&<div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:12,color:C.muted,lineHeight:1.6}}>ℹ️ {v.besonderheiten}</div>}
+            {v.besonderheiten&&priv.besonderheiten!==false&&<div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:12,color:C.muted,lineHeight:1.6}}>ℹ️ {v.besonderheiten}</div>}
           </div>
           {priv.pub_events&&vHist.length>0&&(
             <div className="card" style={{padding:16,marginBottom:14}}>
@@ -2623,6 +2626,7 @@ function PCNInner() {
                   [priv.pub_logbook,"📋 Logbuch"],
                   [priv.pub_phone,"📞 Telefon"],
                   [priv.kennzeichen!==false,"🔑 Kennzeichen"],
+                  [priv.besonderheiten!==false,"✨ Besonderheiten"],
                 ].map(([on,label])=>(
                   <span key={label} style={{fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:4,
                     background:on?`${C.green}22`:`${C.border}44`,
@@ -2638,7 +2642,7 @@ function PCNInner() {
               </div>
               {[
                 ["Basis",[["kennzeichen","Kennzeichen"],["farbe","Farbe"],["kraftstoff","Kraftstoff"],["getriebe","Getriebe"],["baujahr","Baujahr"]]],
-                ["Details",[["kilometerstand","Kilometerstand"],["tuev_faelligkeit","TÜV-Datum"],["zustand","Zustand"],["marktwert","Marktwert"]]],
+                ["Details",[["kilometerstand","Kilometerstand"],["tuev_faelligkeit","TÜV-Datum"],["zustand","Zustand"],["marktwert","Marktwert"],["besonderheiten","Besonderheiten ✨"]]],
                 ["Abschnitte",[["pub_gallery","Fotogalerie 📸"],["pub_events","Veranstaltungsteilnahmen"],["pub_logbook","Service-Logbuch"]]],
                 ["Kontakt",[["pub_phone","Telefonnummer (Direktanruf)"]]],
               ].map(([group,fields])=>(
