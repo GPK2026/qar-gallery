@@ -3360,9 +3360,8 @@ function PCNInner() {
                   const lastMsg=t?.messages?.filter(m=>!m.isSystem)?.slice(-1)[0];
                   return (
                     <div key={gt.id}
-                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 14px",marginBottom:8,cursor:"pointer",display:"flex",gap:12,alignItems:"center"}}
+                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 14px",marginBottom:8,display:"flex",gap:12,alignItems:"center",position:"relative"}}
                       onClick={async()=>{
-                        // Reload thread from DB if needed
                         if(!t && window.PCN_DB) {
                           const {data:liveThreads}=await window.PCN_DB.threads.list(me?.id||gt.id);
                           const found=(liveThreads||[]).find(x=>x.id===gt.id);
@@ -3373,16 +3372,15 @@ function PCNInner() {
                       <div style={{width:44,height:44,borderRadius:"50%",background:"#1a1a2e",border:"2px solid #3a3a5e",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🔒</div>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
-                          <span style={{fontWeight:700,fontSize:15,color:C.white}}>{gt.vehicleName}</span>
+                          <span style={{fontWeight:700,fontSize:15,color:C.white}}>{gt.vehicleName||"Anonymer Chat"}</span>
                           {(()=>{
-                            const t=threads[gt.id];
                             const last=t?.messages?.filter(m=>!m.isSystem)?.slice(-1)[0];
                             if(!last) return null;
-                            const raw=last.created_at||last.createdAt||"";
-                            const d=raw?new Date(raw):null;
+                            const raw=last.created_at||last.createdAt||last.ts||"";
+                            const d=raw&&!raw.includes(":")===false?new Date(raw):null;
                             const today=new Date();
                             const isToday=d&&d.toDateString()===today.toDateString();
-                            return <span style={{fontSize:10,color:C.muted}}>{d?(isToday?d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):d.toLocaleDateString("de-DE",{day:"2-digit",month:"short"})):""}</span>;
+                            return <span style={{fontSize:10,color:C.muted}}>{d&&!isNaN(d)?(isToday?d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):d.toLocaleDateString("de-DE",{day:"2-digit",month:"short"})):last.ts||""}</span>;
                           })()}
                         </div>
                         <div style={{fontSize:12,color:"#6b7fff",marginBottom:2}}>QAR: {gt.qarId}</div>
@@ -3391,22 +3389,20 @@ function PCNInner() {
                         </div>
                       </div>
                       <button
-                        onClick={e=>{
-                          e.stopPropagation();
-                          if(!window.confirm("Chat löschen?")) return;
-                          setGuestThreads(prev=>{
-                            const updated=prev.filter(x=>x.id!==gt.id);
-                            localStorage.setItem("pcn_guest_threads",JSON.stringify(updated));
-                            return updated;
-                          });
-                          setThreads(prev=>{const n={...prev};delete n[gt.id];return n;});
-                        }}
-                        style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontSize:18,padding:"4px 6px",flexShrink:0}}>
+                        onClick={e=>{e.stopPropagation(); setConfirmDeleteThread(gt.id);}}
+                        style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:17,padding:"4px 8px",flexShrink:0}}>
                         🗑
                       </button>
                     </div>
                   );
                 })}
+              </div>
+            )}
+            {isGuest&&guestThreads.length===0&&(
+              <div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}>
+                <div style={{fontSize:32,marginBottom:12}}>💬</div>
+                <div style={{fontSize:14,fontWeight:600,marginBottom:6}}>Noch keine Chats</div>
+                <div style={{fontSize:12}}>Scanne einen QR-Code und schreibe dem Fahrzeughalter</div>
               </div>
             )}
 
