@@ -7285,8 +7285,8 @@
       if (!welcome) return null;
       return /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          background: `${C.gold}12`,
-          border: `1px solid ${C.gold}33`,
+          background: "#ffffff",
+          border: "1px solid #e5e7eb",
           borderRadius: 12,
           padding: "13px 14px",
           marginBottom: 10
@@ -7310,13 +7310,13 @@
         style: {
           fontSize: 13,
           fontWeight: 700,
-          color: C.white,
+          color: "#111",
           marginBottom: 3
         }
       }, welcome.title), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
-          color: C.muted,
+          color: "#666",
           lineHeight: 1.6
         }
       }, welcome.body))));
@@ -7455,9 +7455,18 @@
       }, "🏁 Zum Event →"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
-          gap: 6
+          justifyContent: "flex-end",
+          alignItems: "center",
+          gap: 6,
+          marginTop: 8
         }
-      }, /*#__PURE__*/_react.default.createElement("button", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 9,
+          color: "#444",
+          marginRight: "auto"
+        }
+      }, fmtDate(n.date)), /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => setNewsState(p => ({
           ...p,
           [n.id]: "read"
@@ -7466,7 +7475,7 @@
           background: "none",
           border: `1px solid ${C.border}`,
           borderRadius: 7,
-          padding: "5px 10px",
+          padding: "4px 9px",
           color: C.muted,
           fontSize: 10,
           fontWeight: 700,
@@ -7482,21 +7491,14 @@
           background: isRemind ? `${C.amber}22` : "none",
           border: `1px solid ${isRemind ? C.amber + "44" : C.border}`,
           borderRadius: 7,
-          padding: "5px 10px",
+          padding: "4px 9px",
           color: isRemind ? C.amber : C.muted,
           fontSize: 10,
           fontWeight: 700,
           cursor: "pointer",
           fontFamily: "'Barlow',sans-serif"
         }
-      }, "🔔 ", isRemind ? "Erinnerung aktiv" : "Erinnern"), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 9,
-          color: "#444",
-          alignSelf: "center",
-          marginLeft: "auto"
-        }
-      }, fmtDate(n.date))))));
+      }, "🔔 ", isRemind ? "Aktiv" : "Erinnern")))));
     })), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
