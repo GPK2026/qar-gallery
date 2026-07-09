@@ -3179,109 +3179,63 @@ function PCNInner() {
                 </div>
               )}
 
-              {/* Neuigkeiten — Marquee rechts→links, pausiert bei Touch */}
+              {/* Neuigkeiten — horizontal swipeable */}
               {(()=>{
                 const items = DEMO_NEWS
                   .filter(n=>n.type!=="welcome" && newsState[n.id]!=="read")
                   .sort((a,b)=>new Date(b.date)-new Date(a.date));
                 if(!items.length) return null;
-                const Card = ({n}) => {
-                  const isRemind = newsState[n.id]==="remind";
-                  return (
-                  <div style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}0d`:C.card,
-                    border:`1px solid ${isRemind?C.amber+"44":n.pinned?C.red+"33":C.border}`,
-                    borderRadius:12,padding:"13px 14px",width:290,flexShrink:0}}>
-                    <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                      <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
-                          <div style={{fontSize:13,fontWeight:700,color:C.white,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
-                          {n.pinned&&<span style={{background:C.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>NEU</span>}
-                          {isRemind&&<span style={{background:`${C.amber}33`,color:C.amber,fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>🔔</span>}
+                return (
+                  <div style={{display:"flex",gap:12,overflowX:"auto",scrollbarWidth:"none",
+                    WebkitOverflowScrolling:"touch",paddingBottom:4,marginBottom:8}}>
+                    {items.map(n=>{
+                      const isRemind = newsState[n.id]==="remind";
+                      return (
+                        <div key={n.id} style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}0d`:C.card,
+                          border:`1px solid ${isRemind?C.amber+"44":n.pinned?C.red+"33":C.border}`,
+                          borderRadius:12,padding:"13px 14px",width:290,flexShrink:0}}>
+                          <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                            <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
+                                <div style={{fontSize:13,fontWeight:700,color:C.white,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
+                                {n.pinned&&<span style={{background:C.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>NEU</span>}
+                              </div>
+                              <div style={{fontSize:11,color:C.muted,lineHeight:1.7,marginBottom:8}}>
+                                {n.type==="newsletter"?(()=>{
+                                  const expanded=newsState[n.id+"_open"];
+                                  return (<div>
+                                    <button onClick={e=>{e.stopPropagation();setNewsState(p=>({...p,[n.id+"_open"]:!expanded}));}}
+                                      style={{background:"none",border:"none",color:C.red,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif",padding:0,display:"flex",alignItems:"center",gap:4}}>
+                                      {expanded?"▾ Schließen":"▸ Newsletter lesen"}
+                                    </button>
+                                    {expanded&&<div style={{fontSize:12,color:C.muted,lineHeight:1.8,whiteSpace:"pre-wrap",borderTop:`1px solid ${C.border}`,paddingTop:10,marginTop:8}}>{n.body}</div>}
+                                  </div>);
+                                })():n.body.split("\\n").map((line,i)=><span key={i}>{line}{i<n.body.split("\\n").length-1&&<br/>}</span>)}
+                              </div>
+                              {n.eventId&&<button onClick={()=>{const ev=events[n.eventId];if(ev){setViewEv(ev);setScreen("event");}}}
+                                style={{background:"none",border:`1px solid ${C.red}44`,borderRadius:7,padding:"5px 10px",color:C.red,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",marginBottom:8}}>
+                                🏁 Zum Event →
+                              </button>}
+                              <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:6,marginTop:4}}>
+                                <div style={{fontSize:9,color:"#444",marginRight:"auto"}}>{fmtDate(n.date)}</div>
+                                <button onClick={()=>setNewsState(p=>({...p,[n.id]:"read"}))}
+                                  style={{background:"none",border:`1px solid ${C.border}`,borderRadius:7,padding:"4px 9px",color:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                                  ✓ Gelesen
+                                </button>
+                                <button onClick={()=>setNewsState(p=>({...p,[n.id]:isRemind?undefined:"remind"}))}
+                                  style={{background:isRemind?`${C.amber}22`:"none",border:`1px solid ${isRemind?C.amber+"44":C.border}`,borderRadius:7,padding:"4px 9px",
+                                    color:isRemind?C.amber:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                                  🔔 {isRemind?"Aktiv":"Erinnern"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div style={{fontSize:11,color:C.muted,lineHeight:1.7,marginBottom:8}}>
-                          {(()=>{
-                            if(n.type==="newsletter") {
-                              const expanded = newsState[n.id+"_open"];
-                              return (
-                                <div>
-                                  <button onClick={e=>{e.stopPropagation();setNewsState(p=>({...p,[n.id+"_open"]:!expanded}));}}
-                                    style={{background:"none",border:"none",color:C.red,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif",padding:0,marginBottom:expanded?10:0,display:"flex",alignItems:"center",gap:4}}>
-                                    {expanded?"▾ Schließen":"▸ Newsletter lesen"}
-                                  </button>
-                                  {expanded&&(
-                                    <div style={{fontSize:12,color:C.muted,lineHeight:1.8,whiteSpace:"pre-wrap",borderTop:`1px solid ${C.border}`,paddingTop:10}}>
-                                      {n.body}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            }
-                            return n.body.split("\\n").map((line,i)=>(
-                              <span key={i}>{line}{i<n.body.split("\\n").length-1&&<br/>}</span>
-                            ));
-                          })()}
-                        </div>
-                        {n.eventId&&(
-                          <button onClick={()=>{const ev=events[n.eventId];if(ev){setViewEv(ev);setScreen("event");}}}
-                            style={{background:"none",border:`1px solid ${C.red}44`,borderRadius:7,padding:"5px 10px",color:C.red,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",marginBottom:8}}>
-                            🏁 Zum Event →
-                          </button>
-                        )}
-                        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:6,marginTop:4}}>
-                          <div style={{fontSize:9,color:"#444",marginRight:"auto"}}>{fmtDate(n.date)}</div>
-                          <button onClick={()=>setNewsState(p=>({...p,[n.id]:"read"}))}
-                            style={{background:"none",border:`1px solid ${C.border}`,borderRadius:7,padding:"4px 9px",color:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                            ✓ Gelesen
-                          </button>
-                          <button onClick={()=>setNewsState(p=>({...p,[n.id]:isRemind?undefined:"remind"}))}
-                            style={{background:isRemind?`${C.amber}22`:"none",border:`1px solid ${isRemind?C.amber+"44":C.border}`,borderRadius:7,padding:"4px 9px",
-                              color:isRemind?C.amber:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                            🔔 {isRemind?"Aktiv":"Erinnern"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
-                  );
-                };
-                const NewsScroller = ({items}) => {
-                  const scrollRef = React.useRef(null);
-                  React.useEffect(()=>{
-                    const el = scrollRef.current;
-                    if(!el) return;
-                    let frame, paused=false;
-                    const speed = 0.5;
-                    const animate = () => {
-                      if(!paused && el) {
-                        el.scrollLeft += speed;
-                        if(el.scrollLeft >= el.scrollWidth/2) el.scrollLeft = 0;
-                      }
-                      frame = requestAnimationFrame(animate);
-                    };
-                    frame = requestAnimationFrame(animate);
-                    const pause = () => { paused=true; };
-                    const resume = () => { setTimeout(()=>{ paused=false; }, 1200); };
-                    el.addEventListener("touchstart", pause, {passive:true});
-                    el.addEventListener("touchend", resume, {passive:true});
-                    return () => {
-                      cancelAnimationFrame(frame);
-                      el.removeEventListener("touchstart", pause);
-                      el.removeEventListener("touchend", resume);
-                    };
-                  }, []);
-                  return (
-                    <div ref={scrollRef}
-                      style={{display:"flex",gap:12,overflowX:"auto",scrollbarWidth:"none",
-                        WebkitOverflowScrolling:"touch",
-                        maskImage:"linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)",
-                        WebkitMaskImage:"linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)"}}>
-                      {items.map((n,i)=><Card key={n.id+"a"+i} n={n}/>)}
-                      {items.map((n,i)=><Card key={n.id+"b"+i} n={n}/>)}
-                    </div>
-                  );
-                };
-                return <NewsScroller items={items}/>;
+                );
               })()}
             </div>
 
