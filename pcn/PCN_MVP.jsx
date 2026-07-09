@@ -1455,6 +1455,11 @@ function PCNInner() {
     @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
     @keyframes scanline{0%{top:4px}50%{top:calc(100% - 6px)}100%{top:4px}}
+    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+    .news-marquee-wrap{overflow:hidden;width:100%;mask-image:linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%);-webkit-mask-image:linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)}
+    .news-marquee-track{display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;gap:12px;width:max-content !important;animation:marquee 34s linear infinite}
+    .news-marquee-track:hover,.news-marquee-track:active{animation-play-state:paused}
     .btn{background:${C.red};color:#fff;border:none;border-radius:10px;padding:14px 18px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Barlow',sans-serif;transition:opacity .15s}
     .btn:active{opacity:.8}
     .btn.ghost{background:transparent;color:${C.white};border:1px solid ${C.border}}
