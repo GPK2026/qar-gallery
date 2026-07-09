@@ -338,6 +338,43 @@
     }]
   };
   const DEMO_NEWS = [{
+    id: "N0",
+    type: "newsletter",
+    icon: "📬",
+    pinned: true,
+    title: "Newsletter Juli 2026 — Termine & Veranstaltungen",
+    date: "2026-07-09",
+    author: "PCN Vorstand",
+    events: [{
+      date: "2026-07-14",
+      title: "Clubabend im Kesselchen"
+    }, {
+      date: "2026-08-07",
+      title: "53. Bellmot Oldtimer Grand Prix",
+      days: 3,
+      note: "Zelt + Stellfläche Vorstart, 10×30m · Wochenendtickets ab 49 EUR"
+    }, {
+      date: "2026-08-11",
+      title: "Clubabend im Kesselchen"
+    }, {
+      date: "2026-08-31",
+      title: "After Work Classic",
+      note: "Treffpunkt Altes Fahrerlager, Kesselchen"
+    }, {
+      date: "2026-09-08",
+      title: "Clubabend im Kesselchen"
+    }, {
+      date: "2026-09-10",
+      title: "PCN TrackDay Grand Prix Strecke",
+      note: "Helfer gesucht! Zufahrtskontrolle / Boxengasse / Auf- und Abbau"
+    }, {
+      date: "2026-10-22",
+      title: "Saisonabschluss Bodensee-Fahrt",
+      days: 4,
+      note: "22.–25. Oktober · Hotel am Bodensee · Streckenplanung: PC Bodensee-Oberschwaben"
+    }],
+    body: "Liebe Mitglieder,\n\nvielen Dank für die zahlreiche Teilnahme an der Nürburgring Classic — unser Stand war eine tolle Visitenkarte für den Club!\n\nNachfolgend die Termine für Juli und August sowie Hinweise für September und Oktober.\n\n📅 7.–9. August: 53. Bellmot Oldtimer Grand Prix\nWie immer haben wir unser Zelt und Stellfläche für Ausstellungsfahrzeuge (H-Kennzeichen) im Vorstart-Bereich. Unsere Fläche wurde auf 10×30 Meter vergrößert.\nVergünstigte Tickets:\n• Wochenendticket: 49 EUR\n• Wochenendticket inkl. Parkplatz Mercedes-Arena: 120 EUR\nBestellung ab Ende nächster Woche auf der Homepage.\n\n📅 10. September: PCN TrackDay Grand Prix Strecke\nNach dem erfolgreichen TrackDay 2025 hoffen wir auf rege Teilnahme. Helfer für Zufahrtskontrolle und Boxengasse gesucht!\n\n📅 22.–25. Oktober: Saisonabschluss Bodensee-Fahrt\nMehrtägiger Ausflug in die Bodensee-Region. Hotel am Bodensee, mehrere Ausfahrten. Streckenplanung: Präsident PC Bodensee-Oberschwaben. Bitte Termin vormerken bei Interesse!"
+  }, {
     id: "N1",
     type: "news",
     icon: "📰",
@@ -7239,7 +7276,7 @@
           lineHeight: 1.6
         }
       }, welcome.body))));
-    })(), DEMO_NEWS.filter(n => n.type !== "welcome").map(n => {
+    })(), DEMO_NEWS.filter(n => n.type !== "welcome").sort((a, b) => new Date(b.date) - new Date(a.date)).map(n => {
       const state = newsState[n.id];
       if (state === "read") return null; // ausgeblendet wenn gelesen
       const isRemind = state === "remind";
@@ -7308,9 +7345,87 @@
           fontSize: 11,
           color: C.muted,
           lineHeight: 1.6,
+          marginBottom: n.events ? 0 : 8
+        }
+      }, n.body.split("\\n").map((line, i) => /*#__PURE__*/_react.default.createElement("span", {
+        key: i
+      }, line, i < n.body.split("\\n").length - 1 && /*#__PURE__*/_react.default.createElement("br", null)))), n.events && n.events.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          marginTop: 10,
           marginBottom: 8
         }
-      }, n.body), n.eventId && /*#__PURE__*/_react.default.createElement("button", {
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 9,
+          fontWeight: 800,
+          color: C.muted,
+          textTransform: "uppercase",
+          letterSpacing: 2,
+          marginBottom: 6
+        }
+      }, "📅 Termine"), n.events.map((ev, i) => /*#__PURE__*/_react.default.createElement("div", {
+        key: i,
+        style: {
+          display: "flex",
+          gap: 10,
+          alignItems: "flex-start",
+          padding: "6px 0",
+          borderBottom: i < n.events.length - 1 ? `1px solid ${C.border}22` : "none"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          minWidth: 52,
+          fontSize: 10,
+          fontWeight: 800,
+          color: C.red,
+          flexShrink: 0
+        }
+      }, new Date(ev.date).toLocaleDateString("de-DE", {
+        day: "2-digit",
+        month: "short"
+      }), ev.days && /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          color: C.muted
+        }
+      }, "–", new Date(new Date(ev.date).getTime() + (ev.days - 1) * 86400000).toLocaleDateString("de-DE", {
+        day: "2-digit",
+        month: "short"
+      }))), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          flex: 1
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          fontWeight: 700,
+          color: C.white
+        }
+      }, ev.title), ev.note && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted,
+          marginTop: 1
+        }
+      }, ev.note)), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => generateICS({
+          title: ev.title,
+          date: ev.date,
+          description: ev.note || "",
+          alarmMinutes: 1440
+        }),
+        style: {
+          background: "none",
+          border: `1px solid ${C.border}`,
+          borderRadius: 5,
+          padding: "3px 7px",
+          color: C.muted,
+          fontSize: 9,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          flexShrink: 0
+        }
+      }, "📅")))), n.eventId && /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => {
           const ev = events[n.eventId];
           if (ev) {
