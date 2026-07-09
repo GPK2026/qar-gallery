@@ -3245,42 +3245,43 @@ function PCNInner() {
                   </div>
                   );
                 };
-                const scrollRef = React.useRef(null);
-                React.useEffect(()=>{
-                  const el = scrollRef.current;
-                  if(!el) return;
-                  let frame, paused=false;
-                  const speed = 0.6; // px per frame
-                  const animate = () => {
-                    if(!paused && el) {
-                      el.scrollLeft += speed;
-                      // Reset to start when halfway (seamless loop)
-                      if(el.scrollLeft >= el.scrollWidth/2) el.scrollLeft = 0;
-                    }
+                const NewsScroller = ({items}) => {
+                  const scrollRef = React.useRef(null);
+                  React.useEffect(()=>{
+                    const el = scrollRef.current;
+                    if(!el) return;
+                    let frame, paused=false;
+                    const speed = 0.5;
+                    const animate = () => {
+                      if(!paused && el) {
+                        el.scrollLeft += speed;
+                        if(el.scrollLeft >= el.scrollWidth/2) el.scrollLeft = 0;
+                      }
+                      frame = requestAnimationFrame(animate);
+                    };
                     frame = requestAnimationFrame(animate);
-                  };
-                  frame = requestAnimationFrame(animate);
-                  // Pause on touch
-                  const pause = () => { paused=true; };
-                  const resume = () => { setTimeout(()=>{ paused=false; }, 1000); };
-                  el.addEventListener("touchstart", pause, {passive:true});
-                  el.addEventListener("touchend", resume, {passive:true});
-                  return () => {
-                    cancelAnimationFrame(frame);
-                    el.removeEventListener("touchstart", pause);
-                    el.removeEventListener("touchend", resume);
-                  };
-                }, [items.length]);
-                return (
-                  <div ref={scrollRef}
-                    style={{display:"flex",gap:12,overflowX:"auto",scrollbarWidth:"none",
-                      WebkitOverflowScrolling:"touch",
-                      maskImage:"linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)",
-                      WebkitMaskImage:"linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)"}}>
-                    {items.map((n,i)=><Card key={n.id+"a"+i} n={n}/>)}
-                    {items.map((n,i)=><Card key={n.id+"b"+i} n={n}/>)}
-                  </div>
-                );
+                    const pause = () => { paused=true; };
+                    const resume = () => { setTimeout(()=>{ paused=false; }, 1200); };
+                    el.addEventListener("touchstart", pause, {passive:true});
+                    el.addEventListener("touchend", resume, {passive:true});
+                    return () => {
+                      cancelAnimationFrame(frame);
+                      el.removeEventListener("touchstart", pause);
+                      el.removeEventListener("touchend", resume);
+                    };
+                  }, []);
+                  return (
+                    <div ref={scrollRef}
+                      style={{display:"flex",gap:12,overflowX:"auto",scrollbarWidth:"none",
+                        WebkitOverflowScrolling:"touch",
+                        maskImage:"linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)",
+                        WebkitMaskImage:"linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)"}}>
+                      {items.map((n,i)=><Card key={n.id+"a"+i} n={n}/>)}
+                      {items.map((n,i)=><Card key={n.id+"b"+i} n={n}/>)}
+                    </div>
+                  );
+                };
+                return <NewsScroller items={items}/>;
               })()}
             </div>
 
