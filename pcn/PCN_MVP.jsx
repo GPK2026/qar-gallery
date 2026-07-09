@@ -3120,29 +3120,48 @@ function PCNInner() {
                   <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>🕐 Zuletzt angesehen</div>
                   <div style={{display:"flex",gap:10,overflowX:"auto",scrollbarWidth:"none",paddingBottom:4}}>
                     {recentVehicles.map(rv=>(
-                      <div key={rv.id}
-                        onClick={()=>{
-                          // Open public page for this vehicle
-                          const full = vehicles[rv.id]||DEMO_VEHICLES[rv.id];
-                          if(full){ setPublicV({...full,privacy:{...DEF_PRIVACY,...(full.privacy||{})}}); setScreen("public"); }
-                          else if(rv.qarId){
-                            const DB=window.PCN_DB;
-                            if(DB) DB.vehicles.getPublic(rv.qarId).then(({data})=>{
-                              if(data) setPublicV({...data,privacy:{...DEF_PRIVACY,...(data.privacy||{})}});
+                      <div key={rv.id} style={{flexShrink:0,width:130,position:"relative"}}>
+                        {/* ✕ per Kachel */}
+                        <button
+                          onClick={e=>{
+                            e.stopPropagation();
+                            setRecentVehicles(prev=>{
+                              const updated=prev.filter(v=>v.id!==rv.id);
+                              localStorage.setItem("pcn_recent_vehicles",JSON.stringify(updated));
+                              return updated;
                             });
-                            setScreen("public");
-                          }
-                        }}
-                        style={{flexShrink:0,width:130,cursor:"pointer",borderRadius:10,overflow:"hidden",
-                          border:`1px solid ${C.border}`,background:C.card}}>
-                        <div style={{height:80,overflow:"hidden",background:"#111",position:"relative"}}>
-                          {rv.image
-                            ? <img src={rv.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
-                            : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",fontSize:28}}>🚗</div>}
-                        </div>
-                        <div style={{padding:"7px 8px"}}>
-                          <div style={{fontSize:11,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
-                          <div style={{fontSize:10,color:C.muted,marginTop:2}}>{rv.kennzeichen||rv.qarId}</div>
+                          }}
+                          style={{position:"absolute",top:-6,right:-6,zIndex:10,
+                            width:20,height:20,borderRadius:"50%",
+                            background:"#333",border:`1.5px solid ${C.border}`,
+                            color:"#aaa",fontSize:10,fontWeight:900,
+                            cursor:"pointer",display:"flex",alignItems:"center",
+                            justifyContent:"center",lineHeight:1,fontFamily:"sans-serif"}}>
+                          ✕
+                        </button>
+                        <div
+                          onClick={()=>{
+                            const full = vehicles[rv.id]||DEMO_VEHICLES[rv.id];
+                            if(full){ setPublicV({...full,privacy:{...DEF_PRIVACY,...(full.privacy||{})}}); setScreen("public"); }
+                            else if(rv.qarId){
+                              const DB=window.PCN_DB;
+                              if(DB) DB.vehicles.getPublic(rv.qarId).then(({data})=>{
+                                if(data) setPublicV({...data,privacy:{...DEF_PRIVACY,...(data.privacy||{})}});
+                              });
+                              setScreen("public");
+                            }
+                          }}
+                          style={{cursor:"pointer",borderRadius:10,overflow:"hidden",
+                            border:`1px solid ${C.border}`,background:C.card}}>
+                          <div style={{height:80,overflow:"hidden",background:"#111",position:"relative"}}>
+                            {rv.image
+                              ? <img src={rv.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                              : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",fontSize:28}}>🚗</div>}
+                          </div>
+                          <div style={{padding:"7px 8px"}}>
+                            <div style={{fontSize:11,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
+                            <div style={{fontSize:10,color:C.muted,marginTop:2}}>{rv.kennzeichen||rv.qarId}</div>
+                          </div>
                         </div>
                       </div>
                     ))}
