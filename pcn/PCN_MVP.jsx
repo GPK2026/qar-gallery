@@ -3245,24 +3245,40 @@ function PCNInner() {
                   </div>
                   );
                 };
+                const scrollRef = React.useRef(null);
+                React.useEffect(()=>{
+                  const el = scrollRef.current;
+                  if(!el) return;
+                  let frame, paused=false;
+                  const speed = 0.6; // px per frame
+                  const animate = () => {
+                    if(!paused && el) {
+                      el.scrollLeft += speed;
+                      // Reset to start when halfway (seamless loop)
+                      if(el.scrollLeft >= el.scrollWidth/2) el.scrollLeft = 0;
+                    }
+                    frame = requestAnimationFrame(animate);
+                  };
+                  frame = requestAnimationFrame(animate);
+                  // Pause on touch
+                  const pause = () => { paused=true; };
+                  const resume = () => { setTimeout(()=>{ paused=false; }, 1000); };
+                  el.addEventListener("touchstart", pause, {passive:true});
+                  el.addEventListener("touchend", resume, {passive:true});
+                  return () => {
+                    cancelAnimationFrame(frame);
+                    el.removeEventListener("touchstart", pause);
+                    el.removeEventListener("touchend", resume);
+                  };
+                }, [items.length]);
                 return (
-                  <div className="news-marquee-wrap">
-                    <div className="news-marquee-track"
-                      ref={el=>{
-                        if(!el) return;
-                        let startX=0, scrollLeft=0, dragging=false;
-                        el.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;scrollLeft=el._offset||0;dragging=true;el.style.animationPlayState="paused";},{passive:true});
-                        el.addEventListener("touchmove",e=>{
-                          if(!dragging) return;
-                          const dx=startX-e.touches[0].clientX;
-                          el._offset=(scrollLeft+dx);
-                          el.style.transform=`translateX(calc(var(--marquee-pos,0%) + ${-(scrollLeft+dx)}px))`;
-                        },{passive:true});
-                        el.addEventListener("touchend",()=>{dragging=false;setTimeout(()=>{el.style.animationPlayState="";el.style.transform="";},1200);});
-                      }}>
-                      {items.map((n,i)=><Card key={n.id+"a"+i} n={n}/>)}
-                      {items.map((n,i)=><Card key={n.id+"b"+i} n={n}/>)}
-                    </div>
+                  <div ref={scrollRef}
+                    style={{display:"flex",gap:12,overflowX:"auto",scrollbarWidth:"none",
+                      WebkitOverflowScrolling:"touch",
+                      maskImage:"linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)",
+                      WebkitMaskImage:"linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)"}}>
+                    {items.map((n,i)=><Card key={n.id+"a"+i} n={n}/>)}
+                    {items.map((n,i)=><Card key={n.id+"b"+i} n={n}/>)}
                   </div>
                 );
               })()}
