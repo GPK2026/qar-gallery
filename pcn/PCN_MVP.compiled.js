@@ -7557,186 +7557,202 @@
         alignSelf: "stretch",
         minHeight: 120
       }
-    }, "✕"))), DEMO_NEWS.filter(n => n.type !== "welcome").sort((a, b) => new Date(b.date) - new Date(a.date)).map(n => {
-      const state = newsState[n.id];
-      if (state === "read") return null; // ausgeblendet wenn gelesen
-      const isRemind = state === "remind";
-      return /*#__PURE__*/_react.default.createElement("div", {
-        key: n.id,
-        style: {
-          background: isRemind ? `${C.amber}10` : n.pinned ? `${C.red}0d` : C.card,
-          border: `1px solid ${isRemind ? C.amber + "44" : n.pinned ? C.red + "33" : C.border}`,
-          borderRadius: 12,
-          padding: "13px 14px",
-          marginBottom: 8
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          gap: 10,
-          alignItems: "flex-start"
-        }
-      }, /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 20,
-          flexShrink: 0,
-          marginTop: 1
-        }
-      }, n.icon), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          flex: 1,
-          minWidth: 0
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          gap: 6,
-          alignItems: "center",
-          marginBottom: 3
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 13,
-          fontWeight: 700,
-          color: C.white,
-          flex: 1
-        }
-      }, n.title), n.pinned && /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          background: C.red,
-          color: "#fff",
-          fontSize: 8,
-          fontWeight: 800,
-          padding: "2px 6px",
-          borderRadius: 4,
-          flexShrink: 0
-        }
-      }, "NEU"), isRemind && /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          background: `${C.amber}33`,
-          color: C.amber,
-          fontSize: 8,
-          fontWeight: 800,
-          padding: "2px 6px",
-          borderRadius: 4,
-          flexShrink: 0
-        }
-      }, "🔔 ERINNERT")), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 11,
-          color: C.muted,
-          lineHeight: 1.7,
-          marginBottom: 8
-        }
-      }, (() => {
-        // For newsletter: show as accordion (collapsed by default)
-        if (n.type === "newsletter") {
-          const expanded = newsState[n.id + "_open"];
-          return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("button", {
-            onClick: e => {
-              e.stopPropagation();
-              setNewsState(p => ({
-                ...p,
-                [n.id + "_open"]: !expanded
-              }));
-            },
-            style: {
-              background: "none",
-              border: "none",
-              color: C.red,
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 700,
-              fontFamily: "'Barlow',sans-serif",
-              padding: 0,
-              marginBottom: expanded ? 10 : 0,
-              display: "flex",
-              alignItems: "center",
-              gap: 4
-            }
-          }, expanded ? "▾ Schließen" : "▸ Newsletter lesen"), expanded && /*#__PURE__*/_react.default.createElement("div", {
-            style: {
-              fontSize: 12,
-              color: C.muted,
-              lineHeight: 1.8,
-              whiteSpace: "pre-wrap",
-              borderTop: `1px solid ${C.border}`,
-              paddingTop: 10
-            }
-          }, n.body));
-        }
-        // Regular news
-        return n.body.split("\\n").map((line, i) => /*#__PURE__*/_react.default.createElement("span", {
-          key: i
-        }, line, i < n.body.split("\\n").length - 1 && /*#__PURE__*/_react.default.createElement("br", null)));
-      })()), n.eventId && /*#__PURE__*/_react.default.createElement("button", {
-        onClick: () => {
-          const ev = events[n.eventId];
-          if (ev) {
-            setViewEv(ev);
-            setScreen("event");
+    }, "✕"))), (() => {
+      const items = DEMO_NEWS.filter(n => n.type !== "welcome" && newsState[n.id] !== "read").sort((a, b) => new Date(b.date) - new Date(a.date));
+      if (!items.length) return null;
+      const Card = ({
+        n
+      }) => {
+        const isRemind = newsState[n.id] === "remind";
+        return /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            background: isRemind ? `${C.amber}10` : n.pinned ? `${C.red}0d` : C.card,
+            border: `1px solid ${isRemind ? C.amber + "44" : n.pinned ? C.red + "33" : C.border}`,
+            borderRadius: 12,
+            padding: "13px 14px",
+            width: 290,
+            flexShrink: 0
           }
-        },
-        style: {
-          background: "none",
-          border: `1px solid ${C.red}44`,
-          borderRadius: 7,
-          padding: "5px 10px",
-          color: C.red,
-          fontSize: 11,
-          fontWeight: 700,
-          cursor: "pointer",
-          fontFamily: "'Barlow',sans-serif",
-          marginBottom: 8
-        }
-      }, "🏁 Zum Event →"), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          gap: 6,
-          marginTop: 8
-        }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 10,
+            alignItems: "flex-start"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 20,
+            flexShrink: 0,
+            marginTop: 1
+          }
+        }, n.icon), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            flex: 1,
+            minWidth: 0
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 6,
+            alignItems: "center",
+            marginBottom: 3
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 13,
+            fontWeight: 700,
+            color: C.white,
+            flex: 1,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+          }
+        }, n.title), n.pinned && /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            background: C.red,
+            color: "#fff",
+            fontSize: 8,
+            fontWeight: 800,
+            padding: "2px 6px",
+            borderRadius: 4,
+            flexShrink: 0
+          }
+        }, "NEU"), isRemind && /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            background: `${C.amber}33`,
+            color: C.amber,
+            fontSize: 8,
+            fontWeight: 800,
+            padding: "2px 6px",
+            borderRadius: 4,
+            flexShrink: 0
+          }
+        }, "🔔")), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 11,
+            color: C.muted,
+            lineHeight: 1.7,
+            marginBottom: 8
+          }
+        }, (() => {
+          if (n.type === "newsletter") {
+            const expanded = newsState[n.id + "_open"];
+            return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("button", {
+              onClick: e => {
+                e.stopPropagation();
+                setNewsState(p => ({
+                  ...p,
+                  [n.id + "_open"]: !expanded
+                }));
+              },
+              style: {
+                background: "none",
+                border: "none",
+                color: C.red,
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: "'Barlow',sans-serif",
+                padding: 0,
+                marginBottom: expanded ? 10 : 0,
+                display: "flex",
+                alignItems: "center",
+                gap: 4
+              }
+            }, expanded ? "▾ Schließen" : "▸ Newsletter lesen"), expanded && /*#__PURE__*/_react.default.createElement("div", {
+              style: {
+                fontSize: 12,
+                color: C.muted,
+                lineHeight: 1.8,
+                whiteSpace: "pre-wrap",
+                borderTop: `1px solid ${C.border}`,
+                paddingTop: 10
+              }
+            }, n.body));
+          }
+          return n.body.split("\\n").map((line, i) => /*#__PURE__*/_react.default.createElement("span", {
+            key: i
+          }, line, i < n.body.split("\\n").length - 1 && /*#__PURE__*/_react.default.createElement("br", null)));
+        })()), n.eventId && /*#__PURE__*/_react.default.createElement("button", {
+          onClick: () => {
+            const ev = events[n.eventId];
+            if (ev) {
+              setViewEv(ev);
+              setScreen("event");
+            }
+          },
+          style: {
+            background: "none",
+            border: `1px solid ${C.red}44`,
+            borderRadius: 7,
+            padding: "5px 10px",
+            color: C.red,
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: "pointer",
+            fontFamily: "'Barlow',sans-serif",
+            marginBottom: 8
+          }
+        }, "🏁 Zum Event →"), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            gap: 6,
+            marginTop: 4
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 9,
+            color: "#444",
+            marginRight: "auto"
+          }
+        }, fmtDate(n.date)), /*#__PURE__*/_react.default.createElement("button", {
+          onClick: () => setNewsState(p => ({
+            ...p,
+            [n.id]: "read"
+          })),
+          style: {
+            background: "none",
+            border: `1px solid ${C.border}`,
+            borderRadius: 7,
+            padding: "4px 9px",
+            color: C.muted,
+            fontSize: 10,
+            fontWeight: 700,
+            cursor: "pointer",
+            fontFamily: "'Barlow',sans-serif"
+          }
+        }, "✓ Gelesen"), /*#__PURE__*/_react.default.createElement("button", {
+          onClick: () => setNewsState(p => ({
+            ...p,
+            [n.id]: isRemind ? undefined : "remind"
+          })),
+          style: {
+            background: isRemind ? `${C.amber}22` : "none",
+            border: `1px solid ${isRemind ? C.amber + "44" : C.border}`,
+            borderRadius: 7,
+            padding: "4px 9px",
+            color: isRemind ? C.amber : C.muted,
+            fontSize: 10,
+            fontWeight: 700,
+            cursor: "pointer",
+            fontFamily: "'Barlow',sans-serif"
+          }
+        }, "🔔 ", isRemind ? "Aktiv" : "Erinnern")))));
+      };
+      return /*#__PURE__*/_react.default.createElement("div", {
+        className: "news-marquee-wrap"
       }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 9,
-          color: "#444",
-          marginRight: "auto"
-        }
-      }, fmtDate(n.date)), /*#__PURE__*/_react.default.createElement("button", {
-        onClick: () => setNewsState(p => ({
-          ...p,
-          [n.id]: "read"
-        })),
-        style: {
-          background: "none",
-          border: `1px solid ${C.border}`,
-          borderRadius: 7,
-          padding: "4px 9px",
-          color: C.muted,
-          fontSize: 10,
-          fontWeight: 700,
-          cursor: "pointer",
-          fontFamily: "'Barlow',sans-serif"
-        }
-      }, "✓ Gelesen"), /*#__PURE__*/_react.default.createElement("button", {
-        onClick: () => setNewsState(p => ({
-          ...p,
-          [n.id]: isRemind ? undefined : "remind"
-        })),
-        style: {
-          background: isRemind ? `${C.amber}22` : "none",
-          border: `1px solid ${isRemind ? C.amber + "44" : C.border}`,
-          borderRadius: 7,
-          padding: "4px 9px",
-          color: isRemind ? C.amber : C.muted,
-          fontSize: 10,
-          fontWeight: 700,
-          cursor: "pointer",
-          fontFamily: "'Barlow',sans-serif"
-        }
-      }, "🔔 ", isRemind ? "Aktiv" : "Erinnern")))));
-    })), /*#__PURE__*/_react.default.createElement("div", {
+        className: "news-marquee-track"
+      }, items.map((n, i) => /*#__PURE__*/_react.default.createElement(Card, {
+        key: n.id + "a" + i,
+        n: n
+      })), items.map((n, i) => /*#__PURE__*/_react.default.createElement(Card, {
+        key: n.id + "b" + i,
+        n: n
+      }))));
+    })()), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
       }
