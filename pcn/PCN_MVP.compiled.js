@@ -1219,9 +1219,12 @@
     onSend,
     onMarkRead,
     onViewVehicle,
-    onUpgrade
+    onUpgrade,
+    onDeleteMessage,
+    onDeleteThread
   }) {
     const [msg, setMsg] = (0, _react.useState)("");
+    const [selectedMsg, setSelectedMsg] = (0, _react.useState)(null); // for delete menu
     const endRef = (0, _react.useRef)(null);
     const rootRef = (0, _react.useRef)(null);
     const threadParticipants = thread.participants || [];
@@ -1230,6 +1233,7 @@
     };
     const v = vehicles[thread.vehicleId];
     const isGuest = me?.role === "guest";
+    const longPressTimer = (0, _react.useRef)(null);
     (0, _react.useEffect)(() => {
       endRef.current?.scrollIntoView({
         behavior: "smooth"
@@ -1238,6 +1242,17 @@
     (0, _react.useEffect)(() => {
       if (onMarkRead) onMarkRead(thread.id);
     }, [thread.id]);
+    const startLongPress = m => {
+      longPressTimer.current = setTimeout(() => {
+        setSelectedMsg(m);
+      }, 500);
+    };
+    const cancelLongPress = () => {
+      clearTimeout(longPressTimer.current);
+    };
+    (0, _react.useEffect)(() => {
+      return () => clearTimeout(longPressTimer.current);
+    }, []);
 
     // ── iOS keyboard fix: resize root to visualViewport height ─────────────────
     (0, _react.useEffect)(() => {
@@ -1330,7 +1345,18 @@
         fontSize: 12,
         flexShrink: 0
       }
-    }, "Akte →")), thread.isGroup && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Akte →"), onDeleteThread && /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => onDeleteThread(thread.id),
+      style: {
+        background: "none",
+        border: "none",
+        color: "#555",
+        cursor: "pointer",
+        fontSize: 18,
+        padding: "0 4px",
+        flexShrink: 0
+      }
+    }, "🗑")), thread.isGroup && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         gap: 6,
@@ -1420,7 +1446,6 @@
       const mine = m.from === me?.id;
       const senderUser = !mine ? Object.values(allUsers).find(u => u.id === m.from) : null;
       const senderName = thread.isGroup ? mine ? "Du" : senderUser?.name || "Mitglied" : null;
-      // Format timestamp — use created_at from DB or ts field
       const rawTs = m.created_at || m.createdAt || "";
       const tsDate = rawTs ? new Date(rawTs) : null;
       const today = new Date();
@@ -1451,12 +1476,23 @@
           paddingLeft: 4
         }
       }, senderName), /*#__PURE__*/_react.default.createElement("div", {
+        onMouseDown: () => startLongPress(m),
+        onMouseUp: cancelLongPress,
+        onMouseLeave: cancelLongPress,
+        onTouchStart: () => startLongPress(m),
+        onTouchEnd: cancelLongPress,
+        onTouchMove: cancelLongPress,
         style: {
           maxWidth: "82%",
           background: mine ? C.red : "#1e1e1e",
           border: mine ? "none" : `1px solid ${C.border}`,
           borderRadius: mine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-          padding: "11px 15px"
+          padding: "11px 15px",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          cursor: "pointer",
+          opacity: selectedMsg?.id === m.id ? 0.7 : 1,
+          transition: "opacity .1s"
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
@@ -1474,7 +1510,83 @@
       }, fullTs)));
     }), /*#__PURE__*/_react.default.createElement("div", {
       ref: endRef
-    })), /*#__PURE__*/_react.default.createElement("div", {
+    })), selectedMsg && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        zIndex: 200,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        padding: "0 0 0"
+      },
+      onClick: () => setSelectedMsg(null)
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.dark,
+        border: `1px solid ${C.border}`,
+        borderRadius: "16px 16px 0 0",
+        padding: "16px",
+        width: "100%",
+        maxWidth: 480
+      },
+      onClick: e => e.stopPropagation()
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted,
+        marginBottom: 12,
+        textAlign: "center"
+      }
+    }, "„", selectedMsg.text.slice(0, 40), selectedMsg.text.length > 40 ? "…" : "", "\""), selectedMsg.from === me?.id && onDeleteMessage && /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => {
+        onDeleteMessage(thread.id, selectedMsg.id);
+        setSelectedMsg(null);
+      },
+      style: {
+        width: "100%",
+        background: "#ef444422",
+        border: "1px solid #ef444444",
+        borderRadius: 10,
+        padding: "13px",
+        color: "#ef4444",
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        marginBottom: 8
+      }
+    }, "🗑 Nachricht löschen"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: async () => {
+        await navigator.clipboard.writeText(selectedMsg.text).catch(() => {});
+        setSelectedMsg(null);
+      },
+      style: {
+        width: "100%",
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        padding: "13px",
+        color: C.white,
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        marginBottom: 8
+      }
+    }, "📋 Kopieren"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setSelectedMsg(null),
+      style: {
+        width: "100%",
+        background: "none",
+        border: "none",
+        color: C.muted,
+        fontSize: 13,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        padding: "8px"
+      }
+    }, "Abbrechen"))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         padding: "10px 12px",
         background: C.dark,
@@ -7094,8 +7206,21 @@
           setViewV(v);
           setScreen("vehicle");
         },
+        onDeleteMessage: async (threadId, msgId) => {
+          setThreads(prev => ({
+            ...prev,
+            [threadId]: {
+              ...prev[threadId],
+              messages: (prev[threadId]?.messages || []).filter(m => m.id !== msgId)
+            }
+          }));
+          const DB = window.PCN_DB;
+          if (DB) try {
+            await DB.threads.deleteMessage(msgId);
+          } catch (e) {}
+        },
+        onDeleteThread: threadId => setConfirmDeleteThread(threadId),
         onUpgrade: () => {
-          // Pre-fill registration form with the guest's existing name/email — frictionless upgrade
           setLoginForm({
             mode: "register",
             code: "",
