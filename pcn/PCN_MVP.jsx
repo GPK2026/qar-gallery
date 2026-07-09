@@ -3410,7 +3410,11 @@ function PCNInner() {
             {guestThreads.length>0&&(
               <div style={{marginBottom:18}}>
                 <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>🔒 Meine anonymen Chats</div>
-                {guestThreads.map(gt=>{
+                {[...guestThreads].sort((a,b)=>{
+                  const at=threads[a.id]?.messages?.filter(m=>!m.isSystem)?.slice(-1)[0];
+                  const bt=threads[b.id]?.messages?.filter(m=>!m.isSystem)?.slice(-1)[0];
+                  return new Date(bt?.created_at||bt?.createdAt||0) - new Date(at?.created_at||at?.createdAt||0);
+                }).map(gt=>{
                   const t=threads[gt.id];
                   const lastMsg=t?.messages?.filter(m=>!m.isSystem)?.slice(-1)[0];
                   return (
@@ -3510,10 +3514,10 @@ function PCNInner() {
                 .sort((a,b) => {
                   const aLast = a.messages.filter(m=>!m.isSystem).pop();
                   const bLast = b.messages.filter(m=>!m.isSystem).pop();
-                  if(!aLast && !bLast) return 0;
-                  if(!aLast) return 1;
-                  if(!bLast) return -1;
-                  return (bLast.ts||"").localeCompare(aLast.ts||"");
+                  // Sort by created_at or createdAt timestamp, newest first
+                  const aTime = aLast ? new Date(aLast.created_at||aLast.createdAt||0).getTime() : 0;
+                  const bTime = bLast ? new Date(bLast.created_at||bLast.createdAt||0).getTime() : 0;
+                  return bTime - aTime;
                 });
 
               return filtered.map(t=>{
