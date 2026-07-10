@@ -7693,7 +7693,149 @@
           }
         }, "Lesen →")))));
       }));
-    })()), recentVehicles.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+    })()), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginBottom: 20
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 800,
+        color: "#aaa",
+        textTransform: "uppercase",
+        letterSpacing: 1.5
+      }
+    }, "🚗 Meine Fahrzeuge"), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn sm ghost",
+      onClick: () => setShowAddV(true)
+    }, "+ Hinzufügen")), myVehicles.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1.5px dashed ${C.border}`,
+        borderRadius: 12,
+        padding: "28px",
+        textAlign: "center",
+        cursor: "pointer"
+      },
+      onClick: () => setShowAddV(true)
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 32,
+        marginBottom: 8
+      }
+    }, "🏎️"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.white,
+        fontWeight: 600,
+        marginBottom: 4
+      }
+    }, "Erstes Fahrzeug hinzufügen"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted
+      }
+    }, "Schaltet QR-Code, Logbuch und Events frei")) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
+      key: v.id,
+      style: {
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 12,
+        marginBottom: 10,
+        overflow: "hidden",
+        cursor: "pointer",
+        display: "flex"
+      },
+      onClick: () => {
+        setViewV(v);
+        setScreen("vehicle");
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        width: 90,
+        height: 90,
+        overflow: "hidden",
+        background: "#111",
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, v.image ? /*#__PURE__*/_react.default.createElement("img", {
+      src: v.image,
+      alt: "",
+      style: {
+        width: "100%",
+        height: "100%",
+        objectFit: "cover"
+      },
+      onError: e => e.target.style.display = "none"
+    }) : /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 28
+      }
+    }, "🏎️")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        padding: "12px 13px",
+        flex: 1,
+        minWidth: 0,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontWeight: 700,
+        fontSize: 15,
+        color: C.white
+      }
+    }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        marginTop: 5,
+        alignItems: "center",
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        background: "#fff",
+        border: "1.5px solid #222",
+        borderRadius: 4,
+        padding: "1px 7px",
+        fontSize: 10,
+        fontWeight: 800,
+        color: "#111",
+        letterSpacing: 1,
+        fontFamily: "Arial,sans-serif"
+      }
+    }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: C.muted
+      }
+    }, v.baujahr), (logbook[v.id] || []).length > 0 && /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 9,
+        color: C.green,
+        fontWeight: 700
+      }
+    }, (logbook[v.id] || []).length, " Einträge"))), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        paddingRight: 12,
+        color: C.muted,
+        fontSize: 20
+      }
+    }, "›")))), recentVehicles.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 18
       }
@@ -7847,148 +7989,6 @@
         minHeight: 120
       }
     }, "✕"))), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        marginBottom: 20
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 10
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 11,
-        fontWeight: 800,
-        color: "#aaa",
-        textTransform: "uppercase",
-        letterSpacing: 1.5
-      }
-    }, "🚗 Meine Fahrzeuge"), /*#__PURE__*/_react.default.createElement("button", {
-      className: "btn sm ghost",
-      onClick: () => setShowAddV(true)
-    }, "+ Hinzufügen")), myVehicles.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        background: C.card,
-        border: `1.5px dashed ${C.border}`,
-        borderRadius: 12,
-        padding: "28px",
-        textAlign: "center",
-        cursor: "pointer"
-      },
-      onClick: () => setShowAddV(true)
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 32,
-        marginBottom: 8
-      }
-    }, "🏎️"), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 13,
-        color: C.white,
-        fontWeight: 600,
-        marginBottom: 4
-      }
-    }, "Erstes Fahrzeug hinzufügen"), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.muted
-      }
-    }, "Schaltet QR-Code, Logbuch und Events frei")) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
-      key: v.id,
-      style: {
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 12,
-        marginBottom: 10,
-        overflow: "hidden",
-        cursor: "pointer",
-        display: "flex"
-      },
-      onClick: () => {
-        setViewV(v);
-        setScreen("vehicle");
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        width: 90,
-        height: 90,
-        overflow: "hidden",
-        background: "#111",
-        flexShrink: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
-      }
-    }, v.image ? /*#__PURE__*/_react.default.createElement("img", {
-      src: v.image,
-      alt: "",
-      style: {
-        width: "100%",
-        height: "100%",
-        objectFit: "cover"
-      },
-      onError: e => e.target.style.display = "none"
-    }) : /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 28
-      }
-    }, "🏎️")), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        padding: "12px 13px",
-        flex: 1,
-        minWidth: 0,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center"
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontWeight: 700,
-        fontSize: 15,
-        color: C.white
-      }
-    }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 6,
-        marginTop: 5,
-        alignItems: "center",
-        flexWrap: "wrap"
-      }
-    }, /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        background: "#fff",
-        border: "1.5px solid #222",
-        borderRadius: 4,
-        padding: "1px 7px",
-        fontSize: 10,
-        fontWeight: 800,
-        color: "#111",
-        letterSpacing: 1,
-        fontFamily: "Arial,sans-serif"
-      }
-    }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 10,
-        color: C.muted
-      }
-    }, v.baujahr), (logbook[v.id] || []).length > 0 && /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 9,
-        color: C.green,
-        fontWeight: 700
-      }
-    }, (logbook[v.id] || []).length, " Einträge"))), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        alignItems: "center",
-        paddingRight: 12,
-        color: C.muted,
-        fontSize: 20
-      }
-    }, "›")))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 8
       }
