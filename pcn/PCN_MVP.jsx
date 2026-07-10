@@ -3179,8 +3179,8 @@ function PCNInner() {
                       const teaser = n.body ? n.body.replace(/\n/g," ").slice(0,90)+(n.body.length>90?"…":"") : "";
                       return (
                         <div key={n.id} onClick={()=>setViewNews(n)}
-                          style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}0d`:C.card,
-                            border:`1px solid ${isRemind?C.amber+"44":n.pinned?C.red+"33":C.border}`,
+                          style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}10`:"#0d0d0d",
+                            border:`1px solid ${isRemind?C.amber+"55":C.red+"33"}`,
                             borderRadius:12,padding:"13px 14px",width:260,flexShrink:0,cursor:"pointer"}}>
                           <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                             <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
