@@ -740,6 +740,7 @@ const PCN_STORAGE = (() => {
     async deleteMessage(msgId) {
       return await supabase._delete("messages","id=eq."+msgId);
     },
+    cancel: (regId) => supabase._delete("participants","id=eq."+regId),
     async getStats(userId) {
       const [v,r,p,t] = await Promise.all([
         supabase._q("vehicles","?user_id=eq."+userId+"&select=count"),
