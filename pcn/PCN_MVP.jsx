@@ -687,7 +687,8 @@ function PCNInner() {
   const toggleSection = (vid, section) => setOpenSections(p=>({...p,[vid+"_"+section]:!p[vid+"_"+section]}));
   const isOpen = (vid, section) => !!openSections[vid+"_"+section];
   const [profileImgUploading, setProfileImgUploading] = useState(false);
-  const [newsState, setNewsState] = useState({}); // {id: "read"|"remind"}
+  const [newsState, setNewsState] = useState({});
+  const [viewNews, setViewNews] = useState(null); // full newsletter detail // {id: "read"|"remind"}
   const [showInfoModal, setShowInfoModal] = useState(false); // false | 'features' | 'points'
   const [eventsView, setEventsView] = useState("list"); // "list" | "calendar"
   const [calMonth, setCalMonth] = useState(new Date());
@@ -2218,6 +2219,49 @@ function PCNInner() {
   // ══════════════════════════════════════════════════════════════════════════════
   // VEHICLE DETAIL
   // ══════════════════════════════════════════════════════════════════════════════
+  // ── News Detail / Newsletter Vollansicht ────────────────────────────────────
+  if(viewNews) return (
+    <div style={{position:"fixed",inset:0,background:C.dark,zIndex:300,overflowY:"auto",animation:"slideUp .25s ease"}}>
+      <div style={{background:"#fff",borderBottom:`3px solid ${C.red}`,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,position:"sticky",top:0,zIndex:10}}>
+        <button onClick={()=>setViewNews(null)}
+          style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:"#111",padding:"0 4px"}}>←</button>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,color:"#111",letterSpacing:1}}>PCN NÜRBURGRING</div>
+          <div style={{fontSize:10,color:"#888"}}>Mitglieder-Information</div>
+        </div>
+        <img src="https://www.pcn-nuerburgring.de/wp-content/uploads/2020/07/PCN-Logo_2020_internet.jpg"
+          style={{height:32,objectFit:"contain"}} onError={e=>e.target.style.display="none"} alt="PCN"/>
+      </div>
+      <div style={{padding:"24px 18px",maxWidth:600,margin:"0 auto"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+          <span style={{fontSize:28}}>{viewNews.icon}</span>
+          {viewNews.pinned&&<span style={{background:C.red,color:"#fff",fontSize:9,fontWeight:800,padding:"2px 8px",borderRadius:4}}>NEU</span>}
+        </div>
+        <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,lineHeight:1.2,marginBottom:8}}>{viewNews.title}</h1>
+        <div style={{fontSize:11,color:C.muted,marginBottom:24}}>
+          {viewNews.author&&<span>{viewNews.author} · </span>}{fmtDate(viewNews.date)}
+        </div>
+        <div style={{fontSize:14,color:"#ccc",lineHeight:1.9,whiteSpace:"pre-wrap",marginBottom:32}}>
+          {viewNews.body}
+        </div>
+        <div style={{display:"flex",gap:10,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
+          <button onClick={()=>{setNewsState(p=>({...p,[viewNews.id]:"read"}));setViewNews(null);}}
+            style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",
+              color:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+            ✓ Gelesen
+          </button>
+          <button onClick={()=>setNewsState(p=>({...p,[viewNews.id]:p[viewNews.id]==="remind"?undefined:"remind"}))}
+            style={{flex:1,background:newsState[viewNews.id]==="remind"?`${C.amber}22`:C.card,
+              border:`1px solid ${newsState[viewNews.id]==="remind"?C.amber+"44":C.border}`,
+              borderRadius:10,padding:"12px",color:newsState[viewNews.id]==="remind"?C.amber:C.muted,
+              fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+            🔔 {newsState[viewNews.id]==="remind"?"Erinnerung aktiv":"Erinnern"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if(screen==="vehicle"&&viewV) {
     const v=viewV;
     const vLog=logbook[v.id]||[];
@@ -3190,44 +3234,24 @@ function PCNInner() {
                     WebkitOverflowScrolling:"touch",paddingBottom:4,marginBottom:8}}>
                     {items.map(n=>{
                       const isRemind = newsState[n.id]==="remind";
+                      // Teaser: first 80 chars
+                      const teaser = n.body ? n.body.replace(/\n/g," ").slice(0,90)+(n.body.length>90?"…":"") : "";
                       return (
-                        <div key={n.id} style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}0d`:C.card,
-                          border:`1px solid ${isRemind?C.amber+"44":n.pinned?C.red+"33":C.border}`,
-                          borderRadius:12,padding:"13px 14px",width:290,flexShrink:0}}>
+                        <div key={n.id} onClick={()=>setViewNews(n)}
+                          style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}0d`:C.card,
+                            border:`1px solid ${isRemind?C.amber+"44":n.pinned?C.red+"33":C.border}`,
+                            borderRadius:12,padding:"13px 14px",width:260,flexShrink:0,cursor:"pointer"}}>
                           <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                             <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
                             <div style={{flex:1,minWidth:0}}>
-                              <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
+                              <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
                                 <div style={{fontSize:13,fontWeight:700,color:C.white,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
                                 {n.pinned&&<span style={{background:C.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>NEU</span>}
                               </div>
-                              <div style={{fontSize:11,color:C.muted,lineHeight:1.7,marginBottom:8}}>
-                                {n.type==="newsletter"?(()=>{
-                                  const expanded=newsState[n.id+"_open"];
-                                  return (<div>
-                                    <button onClick={e=>{e.stopPropagation();setNewsState(p=>({...p,[n.id+"_open"]:!expanded}));}}
-                                      style={{background:"none",border:"none",color:C.red,cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif",padding:0,display:"flex",alignItems:"center",gap:4}}>
-                                      {expanded?"▾ Schließen":"▸ Newsletter lesen"}
-                                    </button>
-                                    {expanded&&<div style={{fontSize:12,color:C.muted,lineHeight:1.8,whiteSpace:"pre-wrap",borderTop:`1px solid ${C.border}`,paddingTop:10,marginTop:8}}>{n.body}</div>}
-                                  </div>);
-                                })():n.body.split("\\n").map((line,i)=><span key={i}>{line}{i<n.body.split("\\n").length-1&&<br/>}</span>)}
-                              </div>
-                              {n.eventId&&<button onClick={()=>{const ev=events[n.eventId];if(ev){setViewEv(ev);setScreen("event");}}}
-                                style={{background:"none",border:`1px solid ${C.red}44`,borderRadius:7,padding:"5px 10px",color:C.red,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",marginBottom:8}}>
-                                🏁 Zum Event →
-                              </button>}
-                              <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:6,marginTop:4}}>
-                                <div style={{fontSize:9,color:"#444",marginRight:"auto"}}>{fmtDate(n.date)}</div>
-                                <button onClick={()=>setNewsState(p=>({...p,[n.id]:"read"}))}
-                                  style={{background:"none",border:`1px solid ${C.border}`,borderRadius:7,padding:"4px 9px",color:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                                  ✓ Gelesen
-                                </button>
-                                <button onClick={()=>setNewsState(p=>({...p,[n.id]:isRemind?undefined:"remind"}))}
-                                  style={{background:isRemind?`${C.amber}22`:"none",border:`1px solid ${isRemind?C.amber+"44":C.border}`,borderRadius:7,padding:"4px 9px",
-                                    color:isRemind?C.amber:C.muted,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                                  🔔 {isRemind?"Aktiv":"Erinnern"}
-                                </button>
+                              <div style={{fontSize:11,color:C.muted,lineHeight:1.6,marginBottom:10}}>{teaser}</div>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                                <span style={{fontSize:9,color:"#444"}}>{fmtDate(n.date)}</span>
+                                <span style={{fontSize:11,color:C.red,fontWeight:700}}>Lesen →</span>
                               </div>
                             </div>
                           </div>
