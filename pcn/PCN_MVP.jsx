@@ -699,8 +699,26 @@ function PCNInner() {
   const toggleSection = (vid, section) => setOpenSections(p=>({...p,[vid+"_"+section]:!p[vid+"_"+section]}));
   const isOpen = (vid, section) => !!openSections[vid+"_"+section];
   const [profileImgUploading, setProfileImgUploading] = useState(false);
-  const [newsState, setNewsState] = useState({});
-  const [viewNews, setViewNews] = useState(null); // full newsletter detail // {id: "read"|"remind"}
+  const [newsState, setNewsState] = useState(()=>{
+    try { return JSON.parse(localStorage.getItem("pcn_news_state")||"{}"); } catch(e){ return {}; }
+  });
+  const [viewNews, setViewNews] = useState(null);
+  const markNewsRead = (id) => {
+    setNewsState(p=>{
+      const updated = {...p,[id]:"read"};
+      localStorage.setItem("pcn_news_state", JSON.stringify(updated));
+      return updated;
+    });
+    // Add points for reading — 10 pts per article
+    const readKey = "pcn_news_read_pts";
+    const already = JSON.parse(localStorage.getItem(readKey)||"[]");
+    if(!already.includes(id)) {
+      localStorage.setItem(readKey, JSON.stringify([...already, id]));
+      toast_("✓ Gelesen · +10 Punkte 🏆");
+    } else {
+      toast_("✓ Als gelesen markiert");
+    }
+  }; // full newsletter detail // {id: "read"|"remind"}
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showFeatureDetail, setShowFeatureDetail] = useState(null); // false | 'features' | 'points'
   const [eventsView, setEventsView] = useState("list"); // "list" | "calendar"
@@ -740,6 +758,8 @@ function PCNInner() {
     pts += Object.values(logbook).flat().length * 10; // 10 Punkte pro Logbuch-Eintrag
     pts += myParticipations.length * 100;      // 100 Punkte pro Event-Teilnahme
     pts += myThreads.length * 5;               // 5 Punkte pro Nachricht
+    // 10 Punkte pro gelesenen News-Artikel
+    try { pts += JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length * 10; } catch(e){}
     return pts;
   };
   const myPoints = calcPoints();
@@ -2258,7 +2278,7 @@ function PCNInner() {
           {viewNews.body}
         </div>
         <div style={{display:"flex",gap:10,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
-          <button onClick={()=>{setNewsState(p=>({...p,[viewNews.id]:"read"}));setViewNews(null);}}
+          <button onClick={()=>{markNewsRead(viewNews.id);setViewNews(null);}}
             style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",
               color:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
             ✓ Gelesen
