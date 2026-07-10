@@ -344,108 +344,179 @@ const STATUS_PRESETS = [
 
 // ─── Sub-components (proper React components — no hooks-in-render) ─────────────
 
-function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin, onViewVehicle}) {
+function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin, onCancel, onViewVehicle}) {
   const [selV, setSelV] = useState(myVehicles[0]?.id||"");
-  const [selC, setSelC] = useState(ev.classes[0]);
-  const evParts = participants[ev.id]||[];
-  const myReg = evParts.find(p=>p.userId===me?.id);
+  const [selC, setSelC] = useState((ev.classes||["Alle Modelle"])[0]);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const evParts = (participants[ev.id]||[]).filter(p=>p.status!=="cancelled");
+  const confirmedParts = evParts.filter(p=>p.status==="confirmed");
+  const myReg = (participants[ev.id]||[]).find(p=>p.userId===me?.id&&p.status!=="cancelled");
   const days = daysUntil(ev.date);
+  const spotsLeft = (ev.maxParticipants||100) - confirmedParts.length;
+  const isPast = new Date(ev.date) < new Date();
+
+  const statusColor = myReg?.status==="confirmed" ? C.green : myReg?.status==="pending" ? C.amber : "#ef4444";
+  const statusLabel = myReg?.status==="confirmed"
+    ? `✓ Bestätigt${myReg.startNr?" — #"+myReg.startNr:""}`
+    : myReg?.status==="pending" ? "🟡 Anmeldung eingegangen" : "✗ Abgelehnt";
 
   return (
     <div style={{minHeight:"100vh",background:C.black,paddingBottom:40,animation:"fadeIn .2s"}}>
+      {/* Header */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"14px 16px"}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,padding:0,marginBottom:10}}>← Events</button>
         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:6}}>
-          <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>{ev.category}</span>
-          <span style={{background:days<=7?`${C.amber}22`:`${C.border}22`,color:days<=7?C.amber:C.muted,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>
-            {days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}
+          <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>{ev.category||"Event"}</span>
+          <span style={{background:isPast?"#33333322":days<=7?`${C.amber}22`:`${C.border}22`,
+            color:isPast?C.muted:days<=7?C.amber:C.muted,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>
+            {isPast?"Abgeschlossen":days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}
           </span>
+          {!isPast&&<span style={{background:spotsLeft<=5?`${C.red}22`:`${C.green}11`,color:spotsLeft<=5?C.red:C.green,
+            borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>
+            {spotsLeft<=0?"Ausgebucht":`${spotsLeft} Plätze frei`}
+          </span>}
         </div>
         <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1.1}}>{ev.name}</h1>
-        <p style={{fontSize:11,color:C.muted,marginTop:3}}>{ev.subtitle}</p>
       </div>
+
       <div style={{padding:"16px",maxWidth:520,margin:"0 auto"}}>
+        {/* Event Info */}
         <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:14}}>
-          {[["📅",fmtDate(ev.date),"Datum"],["📍",ev.location,"Ort"],["💶",ev.entryFee,"Nenngeld"],["👥",`${evParts.length} / ${ev.maxParticipants}`,"Plätze"]].map(([icon,val,label])=>(
+          {[
+            ["📅", fmtDate(ev.date), "Datum"],
+            ["📍", ev.location, "Ort"],
+            ["💶", ev.entryFee||ev.price||"Kostenlos", "Eintritt"],
+            ["👥", `${confirmedParts.length} / ${ev.maxParticipants||100}`, "Bestätigte Teilnehmer"],
+          ].filter(([,v])=>v).map(([icon,val,label])=>(
             <div key={label} style={{display:"flex",gap:10,marginBottom:8,alignItems:"center"}}>
               <span style={{width:20,textAlign:"center"}}>{icon}</span>
-              <span style={{fontSize:11,color:C.muted,minWidth:56}}>{label}</span>
+              <span style={{fontSize:11,color:C.muted,minWidth:60}}>{label}</span>
               <span style={{fontSize:13,color:C.white,fontWeight:600}}>{val}</span>
             </div>
           ))}
-          <p style={{fontSize:12,color:C.muted,lineHeight:1.7,marginTop:8,paddingTop:8,borderTop:`1px solid ${C.border}`}}>{ev.description}</p>
+          {ev.description&&<p style={{fontSize:12,color:"#bbb",lineHeight:1.75,marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`}}>{ev.description}</p>}
         </div>
 
-        {myReg?(
-          <div style={{
-            background:myReg.status==="confirmed"?`${C.green}11`:myReg.status==="pending"?`${C.amber}11`:`${C.red}11`,
-            border:`1px solid ${myReg.status==="confirmed"?C.green:myReg.status==="pending"?C.amber:C.red}44`,
-            borderRadius:12,padding:"14px 16px",marginBottom:14}}>
-            <div style={{fontWeight:700,fontSize:15,marginBottom:3,color:myReg.status==="confirmed"?C.green:myReg.status==="pending"?C.amber:"#ef4444"}}>
-              {myReg.status==="confirmed"?`✓ Bestätigt — #${myReg.startNr}`:myReg.status==="pending"?"🟡 Angefragt — Bestätigung ausstehend":"✗ Abgelehnt"}
+        {/* ── Mein Anmeldestatus ── */}
+        {myReg&&(
+          <div style={{background:`${statusColor}11`,border:`2px solid ${statusColor}33`,borderRadius:14,padding:"16px",marginBottom:14}}>
+            <div style={{fontWeight:800,fontSize:16,color:statusColor,marginBottom:4}}>{statusLabel}</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:12}}>
+              {vehicles[myReg.vehicleId]&&`${vehicles[myReg.vehicleId].hersteller} ${vehicles[myReg.vehicleId].modell}`}
+              {myReg.class&&` · ${myReg.class}`}
             </div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:myReg.status==="confirmed"?10:4}}>{myReg.class} · {fmtDate(ev.date)}</div>
-            {myReg.status==="pending"&&<div style={{fontSize:11,color:C.amber,marginBottom:10}}>Der Admin bestätigt deine Teilnahme — du erhältst danach Punkte.</div>}
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>generateICS({
-                  title: ev.name,
-                  date: ev.date,
-                  location: ev.location||"",
-                  description: `PCN Event · Klasse: ${myReg.class} · Startnr: #${myReg.startNr}`,
-                  alarmMinutes: 1440,
-                })}
-                style={{flex:1,background:"#fff",border:"none",borderRadius:8,padding:"9px",
-                  fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
-                  color:"#111",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-                📅 Apple / Outlook
-              </button>
-              <button onClick={()=>{
-                  const t=encodeURIComponent(ev.name);
-                  const d=(ev.date||"").replace(/-/g,"");
-                  const loc=encodeURIComponent(ev.location||"");
-                  const det=encodeURIComponent(`Klasse: ${myReg.class} · Startnr: #${myReg.startNr}`);
-                  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${d}/${d}&location=${loc}&details=${det}`,"_blank");
-                }}
-                style={{flex:1,background:"#4285F4",border:"none",borderRadius:8,padding:"9px",
-                  fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
-                  color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-                🗓 Google
-              </button>
-            </div>
+            {myReg.status==="pending"&&(
+              <div style={{background:`${C.amber}18`,borderRadius:8,padding:"10px 12px",marginBottom:12,fontSize:12,color:C.amber,lineHeight:1.6}}>
+                ⏳ Deine Anmeldung wird vom Admin geprüft und bestätigt.<br/>
+                Nach Bestätigung erhältst du <b>+100 Punkte</b> und eine Startnummer.
+              </div>
+            )}
+            {myReg.status==="confirmed"&&(
+              <div style={{display:"flex",gap:8,marginBottom:12}}>
+                <button onClick={()=>generateICS({title:ev.name,date:ev.date,location:ev.location||"",
+                    description:`PCN Event · Klasse: ${myReg.class||""}${myReg.startNr?" · Startnr: #"+myReg.startNr:""}`,alarmMinutes:1440})}
+                  style={{flex:1,background:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:700,
+                    cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                  📅 Kalender
+                </button>
+                <button onClick={()=>{
+                    const t=encodeURIComponent(ev.name),d=(ev.date||"").replace(/-/g,""),loc=encodeURIComponent(ev.location||"");
+                    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${d}/${d}&location=${loc}`,"_blank");
+                  }}
+                  style={{flex:1,background:"#4285F4",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:700,
+                    cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                  🗓 Google
+                </button>
+              </div>
+            )}
+            {/* Abmelden */}
+            {!isPast&&(
+              confirmCancel?(
+                <div style={{background:"#ef444418",border:"1px solid #ef444433",borderRadius:10,padding:"12px"}}>
+                  <div style={{fontSize:13,color:"#ef4444",marginBottom:10,fontWeight:600}}>Anmeldung wirklich stornieren?</div>
+                  <div style={{display:"flex",gap:8}}>
+                    <button onClick={()=>{ onCancel(ev.id, myReg.id); setConfirmCancel(false); }}
+                      style={{flex:1,background:"#ef4444",border:"none",borderRadius:8,padding:"10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      Ja, abmelden
+                    </button>
+                    <button onClick={()=>setConfirmCancel(false)}
+                      style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"10px",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      Abbrechen
+                    </button>
+                  </div>
+                </div>
+              ):(
+                <button onClick={()=>setConfirmCancel(true)}
+                  style={{background:"none",border:`1px solid #ef444433`,borderRadius:8,padding:"8px 14px",
+                    color:"#ef4444",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                  ✕ Anmeldung stornieren
+                </button>
+              )
+            )}
           </div>
-        ):me&&myVehicles.length>0?(
+        )}
+
+        {/* ── Anmeldung — nur wenn noch nicht angemeldet ── */}
+        {!myReg&&!isPast&&me&&myVehicles.length>0&&spotsLeft>0&&(
           <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:14}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:800,color:C.white,marginBottom:12}}>Jetzt anmelden</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:C.white,marginBottom:4}}>Jetzt anmelden</div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:14}}>
+              Nach Anmeldung wird deine Teilnahme vom Admin bestätigt.
+            </div>
+            <label style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5}}>Fahrzeug</label>
             <select value={selV} onChange={e=>setSelV(e.target.value)}
-              style={{width:"100%",background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",marginBottom:8}}>
+              style={{width:"100%",background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",
+                color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",marginBottom:10,appearance:"none"}}>
               {myVehicles.map(v=><option key={v.id} value={v.id}>{v.hersteller} {v.modell} · {v.kennzeichen}</option>)}
             </select>
-            <select value={selC} onChange={e=>setSelC(e.target.value)}
-              style={{width:"100%",background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",marginBottom:14}}>
-              {ev.classes.map(c=><option key={c}>{c}</option>)}
-            </select>
-            <button className="btn" onClick={()=>onJoin(ev.id,selV,selC)} style={{width:"100%"}}>Anmelden ✓</button>
+            {(ev.classes||[]).length>1&&(
+              <>
+                <label style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5}}>Klasse</label>
+                <select value={selC} onChange={e=>setSelC(e.target.value)}
+                  style={{width:"100%",background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",
+                    color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",marginBottom:14,appearance:"none"}}>
+                  {(ev.classes||[]).map(c=><option key={c}>{c}</option>)}
+                </select>
+              </>
+            )}
+            <button className="btn" onClick={()=>onJoin(ev.id,selV,selC)} style={{width:"100%",padding:"14px",fontSize:15}}>
+              Anmelden →
+            </button>
           </div>
-        ):me?(
+        )}
+        {!myReg&&!isPast&&spotsLeft<=0&&(
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14,textAlign:"center"}}>
+            <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>Ausgebucht</div>
+            <div style={{fontSize:12,color:C.muted}}>Keine freien Plätze mehr.</div>
+          </div>
+        )}
+        {!myReg&&!isPast&&me&&myVehicles.length===0&&(
           <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14,textAlign:"center",color:C.muted,fontSize:13}}>
-            Zuerst ein Fahrzeug hinzufügen um dich anzumelden.
+            Zuerst ein Fahrzeug anlegen um dich anzumelden.
           </div>
-        ):null}
+        )}
 
-        {evParts.length>0&&(
-          <div>
-            <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Teilnehmer ({evParts.length})</div>
-            {evParts.map(p=>{
-              const pv=vehicles[p.vehicleId];
+        {/* ── Teilnehmerliste (nur Bestätigte) ── */}
+        {confirmedParts.length>0&&(
+          <div style={{marginTop:8}}>
+            <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>
+              Bestätigte Teilnehmer ({confirmedParts.length})
+            </div>
+            {confirmedParts.map(p=>{
+              const pv=vehicles[p.vehicleId||p.vehicle_id];
               return (
-                <div key={p.id} style={{display:"flex",gap:10,alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.border}`,cursor:pv?"pointer":"default"}}
+                <div key={p.id} style={{display:"flex",gap:10,alignItems:"center",padding:"10px 0",
+                  borderBottom:`1px solid ${C.border}`,cursor:pv?"pointer":"default"}}
                   onClick={()=>pv&&onViewVehicle(pv)}>
-                  <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:7,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.red,flexShrink:0}}>#{p.startNr}</div>
+                  <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:7,padding:"3px 8px",
+                    fontWeight:800,fontSize:13,color:C.red,flexShrink:0,minWidth:32,textAlign:"center"}}>
+                    {p.startNr?"#"+p.startNr:"·"}
+                  </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                       {pv?`${pv.hersteller} ${pv.modell}`:"Fahrzeug"}
                     </div>
-                    <div style={{fontSize:11,color:C.muted}}>{p.class}{pv?.kennzeichen?" · "+fmtKz(pv.kennzeichen,pv.baujahr):""}</div>
+                    <div style={{fontSize:11,color:C.muted}}>{p.class||p.klasse||""}{pv?.kennzeichen?" · "+pv.kennzeichen:""}</div>
                   </div>
                   {pv&&<span style={{color:C.muted,fontSize:16}}>›</span>}
                 </div>
@@ -1189,6 +1260,16 @@ function PCNInner() {
     setLogbook(prev=>({...prev,[vehicleId]:[e,...(prev[vehicleId]||[])]}));
     setShowAddLog(null); setAddLogForm({type:"Ölwechsel",km:"",notes:"",workshop:""});
     toast_("Eintrag gespeichert ✓");
+  };
+
+  const cancelEvent = async (eventId, regId) => {
+    const DB=window.PCN_DB;
+    if(DB) await DB.events.cancel?.(regId).catch(()=>{});
+    setParticipants(prev=>{
+      const evParts = (prev[eventId]||[]).map(p=>p.id===regId?{...p,status:"cancelled"}:p);
+      return {...prev,[eventId]:evParts};
+    });
+    toast_("Anmeldung storniert");
   };
 
   const joinEvent = async (eventId,vehicleId,cls) => {
@@ -3107,8 +3188,9 @@ function PCNInner() {
         <EventDetail
           ev={viewEv} me={me} myVehicles={myVehicles} vehicles={vehicles}
           participants={participants}
-          onBack={()=>setScreen("app")}
+          onBack={()=>{ setScreen("app"); setTab("events"); }}
           onJoin={joinEvent}
+          onCancel={cancelEvent}
           onViewVehicle={v=>{ setViewV(v); setScreen("vehicle"); }}
         />
       </>
