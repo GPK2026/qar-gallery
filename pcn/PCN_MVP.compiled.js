@@ -1726,7 +1726,8 @@
     }));
     const isOpen = (vid, section) => !!openSections[vid + "_" + section];
     const [profileImgUploading, setProfileImgUploading] = (0, _react.useState)(false);
-    const [newsState, setNewsState] = (0, _react.useState)({}); // {id: "read"|"remind"}
+    const [newsState, setNewsState] = (0, _react.useState)({});
+    const [viewNews, setViewNews] = (0, _react.useState)(null); // full newsletter detail // {id: "read"|"remind"}
     const [showInfoModal, setShowInfoModal] = (0, _react.useState)(false); // false | 'features' | 'points'
     const [eventsView, setEventsView] = (0, _react.useState)("list"); // "list" | "calendar"
     const [calMonth, setCalMonth] = (0, _react.useState)(new Date());
@@ -4930,6 +4931,157 @@
     // ══════════════════════════════════════════════════════════════════════════════
     // VEHICLE DETAIL
     // ══════════════════════════════════════════════════════════════════════════════
+    // ── News Detail / Newsletter Vollansicht ────────────────────────────────────
+    if (viewNews) return /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: C.dark,
+        zIndex: 300,
+        overflowY: "auto",
+        animation: "slideUp .25s ease"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: "#fff",
+        borderBottom: `3px solid ${C.red}`,
+        padding: "12px 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        position: "sticky",
+        top: 0,
+        zIndex: 10
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setViewNews(null),
+      style: {
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        fontSize: 22,
+        color: "#111",
+        padding: "0 4px"
+      }
+    }, "←"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 14,
+        fontWeight: 900,
+        color: "#111",
+        letterSpacing: 1
+      }
+    }, "PCN NÜRBURGRING"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#888"
+      }
+    }, "Mitglieder-Information")), /*#__PURE__*/_react.default.createElement("img", {
+      src: "https://www.pcn-nuerburgring.de/wp-content/uploads/2020/07/PCN-Logo_2020_internet.jpg",
+      style: {
+        height: 32,
+        objectFit: "contain"
+      },
+      onError: e => e.target.style.display = "none",
+      alt: "PCN"
+    })), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        padding: "24px 18px",
+        maxWidth: 600,
+        margin: "0 auto"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 28
+      }
+    }, viewNews.icon), viewNews.pinned && /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        background: C.red,
+        color: "#fff",
+        fontSize: 9,
+        fontWeight: 800,
+        padding: "2px 8px",
+        borderRadius: 4
+      }
+    }, "NEU")), /*#__PURE__*/_react.default.createElement("h1", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 26,
+        fontWeight: 900,
+        color: C.white,
+        lineHeight: 1.2,
+        marginBottom: 8
+      }
+    }, viewNews.title), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginBottom: 24
+      }
+    }, viewNews.author && /*#__PURE__*/_react.default.createElement("span", null, viewNews.author, " · "), fmtDate(viewNews.date)), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 14,
+        color: "#ccc",
+        lineHeight: 1.9,
+        whiteSpace: "pre-wrap",
+        marginBottom: 32
+      }
+    }, viewNews.body), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10,
+        paddingTop: 16,
+        borderTop: `1px solid ${C.border}`
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => {
+        setNewsState(p => ({
+          ...p,
+          [viewNews.id]: "read"
+        }));
+        setViewNews(null);
+      },
+      style: {
+        flex: 1,
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        padding: "12px",
+        color: C.muted,
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif"
+      }
+    }, "✓ Gelesen"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setNewsState(p => ({
+        ...p,
+        [viewNews.id]: p[viewNews.id] === "remind" ? undefined : "remind"
+      })),
+      style: {
+        flex: 1,
+        background: newsState[viewNews.id] === "remind" ? `${C.amber}22` : C.card,
+        border: `1px solid ${newsState[viewNews.id] === "remind" ? C.amber + "44" : C.border}`,
+        borderRadius: 10,
+        padding: "12px",
+        color: newsState[viewNews.id] === "remind" ? C.amber : C.muted,
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif"
+      }
+    }, "🔔 ", newsState[viewNews.id] === "remind" ? "Erinnerung aktiv" : "Erinnern"))));
     if (screen === "vehicle" && viewV) {
       const v = viewV;
       const vLog = logbook[v.id] || [];
@@ -7609,15 +7761,19 @@
         }
       }, items.map(n => {
         const isRemind = newsState[n.id] === "remind";
+        // Teaser: first 80 chars
+        const teaser = n.body ? n.body.replace(/\n/g, " ").slice(0, 90) + (n.body.length > 90 ? "…" : "") : "";
         return /*#__PURE__*/_react.default.createElement("div", {
           key: n.id,
+          onClick: () => setViewNews(n),
           style: {
             background: isRemind ? `${C.amber}10` : n.pinned ? `${C.red}0d` : C.card,
             border: `1px solid ${isRemind ? C.amber + "44" : n.pinned ? C.red + "33" : C.border}`,
             borderRadius: 12,
             padding: "13px 14px",
-            width: 290,
-            flexShrink: 0
+            width: 260,
+            flexShrink: 0,
+            cursor: "pointer"
           }
         }, /*#__PURE__*/_react.default.createElement("div", {
           style: {
@@ -7641,7 +7797,7 @@
             display: "flex",
             gap: 6,
             alignItems: "center",
-            marginBottom: 3
+            marginBottom: 4
           }
         }, /*#__PURE__*/_react.default.createElement("div", {
           style: {
@@ -7667,112 +7823,27 @@
           style: {
             fontSize: 11,
             color: C.muted,
-            lineHeight: 1.7,
-            marginBottom: 8
+            lineHeight: 1.6,
+            marginBottom: 10
           }
-        }, n.type === "newsletter" ? (() => {
-          const expanded = newsState[n.id + "_open"];
-          return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("button", {
-            onClick: e => {
-              e.stopPropagation();
-              setNewsState(p => ({
-                ...p,
-                [n.id + "_open"]: !expanded
-              }));
-            },
-            style: {
-              background: "none",
-              border: "none",
-              color: C.red,
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 700,
-              fontFamily: "'Barlow',sans-serif",
-              padding: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: 4
-            }
-          }, expanded ? "▾ Schließen" : "▸ Newsletter lesen"), expanded && /*#__PURE__*/_react.default.createElement("div", {
-            style: {
-              fontSize: 12,
-              color: C.muted,
-              lineHeight: 1.8,
-              whiteSpace: "pre-wrap",
-              borderTop: `1px solid ${C.border}`,
-              paddingTop: 10,
-              marginTop: 8
-            }
-          }, n.body));
-        })() : n.body.split("\\n").map((line, i) => /*#__PURE__*/_react.default.createElement("span", {
-          key: i
-        }, line, i < n.body.split("\\n").length - 1 && /*#__PURE__*/_react.default.createElement("br", null)))), n.eventId && /*#__PURE__*/_react.default.createElement("button", {
-          onClick: () => {
-            const ev = events[n.eventId];
-            if (ev) {
-              setViewEv(ev);
-              setScreen("event");
-            }
-          },
-          style: {
-            background: "none",
-            border: `1px solid ${C.red}44`,
-            borderRadius: 7,
-            padding: "5px 10px",
-            color: C.red,
-            fontSize: 11,
-            fontWeight: 700,
-            cursor: "pointer",
-            fontFamily: "'Barlow',sans-serif",
-            marginBottom: 8
-          }
-        }, "🏁 Zum Event →"), /*#__PURE__*/_react.default.createElement("div", {
+        }, teaser), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            gap: 6,
-            marginTop: 4
+            justifyContent: "space-between",
+            alignItems: "center"
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/_react.default.createElement("span", {
           style: {
             fontSize: 9,
-            color: "#444",
-            marginRight: "auto"
+            color: "#444"
           }
-        }, fmtDate(n.date)), /*#__PURE__*/_react.default.createElement("button", {
-          onClick: () => setNewsState(p => ({
-            ...p,
-            [n.id]: "read"
-          })),
+        }, fmtDate(n.date)), /*#__PURE__*/_react.default.createElement("span", {
           style: {
-            background: "none",
-            border: `1px solid ${C.border}`,
-            borderRadius: 7,
-            padding: "4px 9px",
-            color: C.muted,
-            fontSize: 10,
-            fontWeight: 700,
-            cursor: "pointer",
-            fontFamily: "'Barlow',sans-serif"
+            fontSize: 11,
+            color: C.red,
+            fontWeight: 700
           }
-        }, "✓ Gelesen"), /*#__PURE__*/_react.default.createElement("button", {
-          onClick: () => setNewsState(p => ({
-            ...p,
-            [n.id]: isRemind ? undefined : "remind"
-          })),
-          style: {
-            background: isRemind ? `${C.amber}22` : "none",
-            border: `1px solid ${isRemind ? C.amber + "44" : C.border}`,
-            borderRadius: 7,
-            padding: "4px 9px",
-            color: isRemind ? C.amber : C.muted,
-            fontSize: 10,
-            fontWeight: 700,
-            cursor: "pointer",
-            fontFamily: "'Barlow',sans-serif"
-          }
-        }, "🔔 ", isRemind ? "Aktiv" : "Erinnern")))));
+        }, "Lesen →")))));
       }));
     })()), /*#__PURE__*/_react.default.createElement("div", {
       style: {
