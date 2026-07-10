@@ -825,8 +825,8 @@
     icon: "💶",
     label: "KI-Marktwertanalyse",
     milestone: "3 Logbuch-Einträge",
-    desc: "Claude KI bewertet deinen Porsche anhand der Servicehistorie, Kilometerstand und aktueller Marktlage.",
-    detail: "Die KI-Marktwertanalyse vergleicht dein Fahrzeug mit aktuellen Marktpreisen auf Plattformen wie Elferspot, Mobile.de und Autoscout24. Einbezogen werden: Servicehistorie aus dem Logbuch, Kilometerstand, Baujahr, Ausstattung und Farbe.\n\nDas Ergebnis: ein realistischer Marktwert mit Spanne (konservativ / optimistisch) — ideal für Versicherungsverträge, Verkaufsgespräche oder die eigene Planung.\n\nWird automatisch aktualisiert wenn neue Logbuch-Einträge hinzukommen."
+    desc: "KI-gestützte Bewertung anhand deiner Fahrzeughistorie und aktueller Marktrecherche.",
+    detail: "Die KI analysiert deine Fahrzeughistorie, das Logbuch und führt eine aktuelle Marktrecherche auf Plattformen wie Elferspot, Mobile.de und Autoscout24 durch.\n\nEinbezogen werden: Kilometerstand, Baujahr, Ausstattung, Farbe, Pflegezustand und Vollständigkeit der Dokumentation.\n\nDas Ergebnis: ein realistischer Marktwert mit Spanne (konservativ / optimistisch) — ideal für Versicherungsverträge, Verkaufsgespräche oder die eigene Planung.\n\nWird automatisch aktualisiert wenn neue Logbuch-Einträge hinzukommen."
   }, {
     id: "history",
     icon: "⏱️",
