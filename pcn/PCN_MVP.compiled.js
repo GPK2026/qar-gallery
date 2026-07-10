@@ -825,37 +825,43 @@
     icon: "💶",
     label: "KI-Marktwertanalyse",
     milestone: "3 Logbuch-Einträge",
-    desc: "Claude bewertet deinen Porsche anhand der Servicehistorie"
+    desc: "Claude KI bewertet deinen Porsche anhand der Servicehistorie, Kilometerstand und aktueller Marktlage.",
+    detail: "Die KI-Marktwertanalyse vergleicht dein Fahrzeug mit aktuellen Marktpreisen auf Plattformen wie Elferspot, Mobile.de und Autoscout24. Einbezogen werden: Servicehistorie aus dem Logbuch, Kilometerstand, Baujahr, Ausstattung und Farbe.\n\nDas Ergebnis: ein realistischer Marktwert mit Spanne (konservativ / optimistisch) — ideal für Versicherungsverträge, Verkaufsgespräche oder die eigene Planung.\n\nWird automatisch aktualisiert wenn neue Logbuch-Einträge hinzukommen."
   }, {
     id: "history",
     icon: "⏱️",
     label: "Rundenzeiten",
     milestone: "Erste Event-Teilnahme",
-    desc: "Nordschleife-Bestzeiten tracken"
+    desc: "Nordschleife-Bestzeiten tracken und mit Clubmitgliedern vergleichen.",
+    detail: "Nach deiner ersten Event-Teilnahme wird das Rundenzeiten-Modul freigeschaltet. Du kannst eigene Zeiten auf der Nordschleife und Grand-Prix-Strecke eintragen, mit Fahrzeug und Setup verknüpfen und im Clubranking vergleichen.\n\nDie Zeiten werden automatisch mit dem passenden Event aus deiner Veranstaltungshistorie verknüpft — so entsteht eine vollständige Performance-Dokumentation."
   }, {
     id: "fleet",
     icon: "📊",
     label: "Fuhrpark-Analyse",
     milestone: "2 Fahrzeuge",
-    desc: "Kosten/km und Wertverlauf"
+    desc: "Kosten pro Kilometer und Wertverlauf über alle Fahrzeuge im Überblick.",
+    detail: "Ab zwei Fahrzeugen in der Akte berechnet die Fuhrpark-Analyse automatisch: Kosten pro Kilometer (Betriebskosten, Service, Versicherung), Wertverlauf über Zeit, und eine Gegenüberstellung beider Fahrzeuge.\n\nBesonders hilfreich für Mitglieder mit Alltagsfahrzeug und Porsche — der direkte Vergleich zeigt den tatsächlichen Aufwand pro Kilometer."
   }, {
     id: "workshop",
     icon: "🔧",
     label: "Werkstatt-Zugang",
     milestone: "Partnerschaft aktiv",
-    desc: "PCN-Partnerwerkstätten greifen auf die Akte zu"
+    desc: "PCN-Partnerwerkstätten greifen direkt auf die digitale Akte zu.",
+    detail: "Mit aktivierter Werkstatt-Partnerschaft kann dein bevorzugter Betrieb (z.B. Porsche Zentrum Koblenz) die digitale Fahrzeugakte direkt einsehen — inklusive Servicehistorie, Logbuch und letzten Einträgen.\n\nDu entscheidest per Toggle welche Daten sichtbar sind. Der Werkstatt-Zugang wird per QR-Code oder Link aktiviert und kann jederzeit widerrufen werden."
   }, {
     id: "insurer",
     icon: "🛡️",
     label: "Versicherer-Zugang",
     milestone: "Club-Partner",
-    desc: "Allianz Classic sieht deine Dokumentation"
+    desc: "Allianz Classic sieht deine vollständige Dokumentation für bessere Konditionen.",
+    detail: "Als PCN-Clubmitglied profitierst du vom direkten Versicherer-Zugang für Allianz Classic. Deine lückenlose Dokumentation — Logbuch, Servicehistorie, Gutachten — wird direkt übermittelt.\n\nMögliche Vorteile: bessere Einstufung, schnellere Schadensabwicklung, günstigere Agreed-Value-Prämien. Die Datenweitergabe erfolgt nur mit deiner ausdrücklichen Freigabe."
   }, {
     id: "token",
     icon: "🪙",
     label: "Digitaler Fahrzeugpass",
     milestone: "Beta-Programm",
-    desc: "Blockchain-Eigentumsnachweis"
+    desc: "Blockchain-basierter Eigentumsnachweis für deinen Porsche.",
+    detail: "Der digitale Fahrzeugpass ist ein QAR-zertifiziertes Dokument auf Blockchain-Basis — fälschungssicher, dauerhaft und übertragbar.\n\nBeim Verkauf des Fahrzeugs kann der neue Besitzer die komplette Dokumentation direkt übernehmen: Servicehistorie, Logbuch, Events, Fotos. Ein echtes Alleinstellungsmerkmal das den Verkaufswert nachweisbar steigert.\n\nDerzeit im Beta-Programm — Teilnahme für PCN-Mitglieder auf Anfrage."
   }];
 
   // ─── Status Presets ──────────────────────────────────────────────────────────
@@ -8023,6 +8029,7 @@
       }
     }, LOCKED_FEATURES.filter(f => unlockedFeatures.has(f.id)).map(f => /*#__PURE__*/_react.default.createElement("div", {
       key: f.id,
+      onClick: () => setShowFeatureDetail(f),
       style: {
         background: `${C.green}0d`,
         border: `1px solid ${C.green}33`,
@@ -8031,7 +8038,8 @@
         marginBottom: 7,
         display: "flex",
         gap: 12,
-        alignItems: "center"
+        alignItems: "center",
+        cursor: "pointer"
       }
     }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
@@ -8054,7 +8062,13 @@
         color: C.green,
         marginTop: 2
       }
-    }, "✓ Freigeschaltet · ", f.desc))))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "✓ Freigeschaltet · ", f.desc)), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 16,
+        color: C.green,
+        flexShrink: 0
+      }
+    }, "›")))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
@@ -9607,8 +9621,7 @@
         zIndex: 600,
         display: "flex",
         alignItems: "flex-end",
-        justifyContent: "center",
-        padding: "0 0 0"
+        justifyContent: "center"
       },
       onClick: () => setShowFeatureDetail(null)
     }, /*#__PURE__*/_react.default.createElement("div", {
@@ -9619,7 +9632,9 @@
         padding: "28px 24px",
         width: "100%",
         maxWidth: 480,
-        animation: "slideUp .25s ease"
+        animation: "slideUp .25s ease",
+        maxHeight: "85vh",
+        overflowY: "auto"
       },
       onClick: e => e.stopPropagation()
     }, /*#__PURE__*/_react.default.createElement("div", {
@@ -9630,107 +9645,113 @@
         borderRadius: 2,
         margin: "0 auto 20px"
       }
-    }), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 14,
-        alignItems: "flex-start",
-        marginBottom: 20
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        width: 56,
-        height: 56,
-        borderRadius: 16,
-        background: `${C.red}22`,
-        border: `1px solid ${C.red}44`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 28,
-        flexShrink: 0
-      }
-    }, showFeatureDetail.icon), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 4
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontFamily: "'Barlow Condensed',sans-serif",
-        fontSize: 22,
-        fontWeight: 900,
-        color: C.white
-      }
-    }, showFeatureDetail.label), /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 12
-      }
-    }, "🔒")), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: C.red,
-        fontWeight: 700
-      }
-    }, showFeatureDetail.milestone))), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 14,
-        color: "#ccc",
-        lineHeight: 1.8,
-        marginBottom: 24
-      }
-    }, showFeatureDetail.desc), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        background: "#111",
-        border: `1px solid ${C.border}`,
-        borderRadius: 12,
-        padding: "14px",
-        marginBottom: 20
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 11,
-        fontWeight: 800,
-        color: C.muted,
-        textTransform: "uppercase",
-        letterSpacing: 1,
-        marginBottom: 10
-      }
-    }, "So freischalten"), [["💳", "Premium-Mitgliedschaft aktivieren", "Sofortzugang zu allen Funktionen"], ["🏆", "Punkte durch Events sammeln", "Aktive Teilnahme schaltet Features frei"], ["👥", "Neue Mitglieder werben", "Bonus-Punkte pro Empfehlung"]].map(([ic, title, sub]) => /*#__PURE__*/_react.default.createElement("div", {
-      key: title,
-      style: {
-        display: "flex",
-        gap: 10,
-        alignItems: "center",
-        marginBottom: 10
-      }
-    }, /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 18,
-        flexShrink: 0
-      }
-    }, ic), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 12,
-        fontWeight: 700,
-        color: C.white
-      }
-    }, title), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 10,
-        color: C.muted
-      }
-    }, sub))))), /*#__PURE__*/_react.default.createElement("button", {
-      className: "btn",
-      style: {
-        width: "100%",
-        padding: "14px",
-        fontSize: 15
-      },
-      onClick: () => setShowFeatureDetail(null)
-    }, "Verstanden"))), showInfoModal && showInfoModal !== 'points' && /*#__PURE__*/_react.default.createElement("div", {
+    }), (() => {
+      const isUnlocked = unlockedFeatures.has(showFeatureDetail.id);
+      const accent = isUnlocked ? C.green : C.red;
+      return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 14,
+          alignItems: "flex-start",
+          marginBottom: 20
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          width: 56,
+          height: 56,
+          borderRadius: 16,
+          background: `${accent}22`,
+          border: `1px solid ${accent}44`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 28,
+          flexShrink: 0
+        }
+      }, showFeatureDetail.icon), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 4
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontFamily: "'Barlow Condensed',sans-serif",
+          fontSize: 22,
+          fontWeight: 900,
+          color: C.white
+        }
+      }, showFeatureDetail.label), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 12
+        }
+      }, isUnlocked ? "✅" : "🔒")), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: accent,
+          fontWeight: 700
+        }
+      }, isUnlocked ? "✓ Freigeschaltet" : showFeatureDetail.milestone))), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 14,
+          color: "#ccc",
+          lineHeight: 1.85,
+          marginBottom: 24,
+          whiteSpace: "pre-wrap"
+        }
+      }, showFeatureDetail.detail || showFeatureDetail.desc), !isUnlocked && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: "#111",
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          padding: "14px",
+          marginBottom: 20
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          fontWeight: 800,
+          color: "#888",
+          textTransform: "uppercase",
+          letterSpacing: 1,
+          marginBottom: 10
+        }
+      }, "So freischalten"), [["💳", "Premium-Mitgliedschaft aktivieren", "Sofortzugang zu allen Funktionen"], ["🏆", "Punkte durch Events sammeln", "Aktive Teilnahme schaltet Features frei"], ["👥", "Neue Mitglieder werben", "Bonus-Punkte pro Empfehlung"]].map(([ic, title, sub]) => /*#__PURE__*/_react.default.createElement("div", {
+        key: title,
+        style: {
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 18,
+          flexShrink: 0
+        }
+      }, ic), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          fontWeight: 700,
+          color: C.white
+        }
+      }, title), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted
+        }
+      }, sub))))), /*#__PURE__*/_react.default.createElement("button", {
+        className: "btn",
+        style: {
+          width: "100%",
+          padding: "14px",
+          fontSize: 15,
+          background: isUnlocked ? C.green : C.red
+        },
+        onClick: () => setShowFeatureDetail(null)
+      }, "Verstanden"));
+    })())), showInfoModal && showInfoModal !== 'points' && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "fixed",
         inset: 0,
