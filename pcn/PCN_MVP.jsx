@@ -689,7 +689,8 @@ function PCNInner() {
   const [profileImgUploading, setProfileImgUploading] = useState(false);
   const [newsState, setNewsState] = useState({});
   const [viewNews, setViewNews] = useState(null); // full newsletter detail // {id: "read"|"remind"}
-  const [showInfoModal, setShowInfoModal] = useState(false); // false | 'features' | 'points'
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showFeatureDetail, setShowFeatureDetail] = useState(null); // false | 'features' | 'points'
   const [eventsView, setEventsView] = useState("list"); // "list" | "calendar"
   const [calMonth, setCalMonth] = useState(new Date());
   const [profileForm, setProfileForm]         = useState({});
@@ -3319,14 +3320,18 @@ function PCNInner() {
                 </div>
               )}
 
-              {/* Locked functions — greyed out grid */}
+              {/* Locked functions — greyed out grid, tappable for explanation */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {LOCKED_FEATURES.filter(f=>!unlockedFeatures.has(f.id)).map(f=>(
-                  <div key={f.id} style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:11,padding:"12px 11px",opacity:.45,position:"relative"}}>
+                  <div key={f.id} onClick={()=>setShowFeatureDetail(f)}
+                    style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:11,padding:"12px 11px",
+                      opacity:.6,position:"relative",cursor:"pointer",transition:"opacity .15s"}}
+                    onMouseEnter={e=>e.currentTarget.style.opacity=".85"}
+                    onMouseLeave={e=>e.currentTarget.style.opacity=".6"}>
                     <div style={{position:"absolute",top:7,right:8,fontSize:11}}>🔒</div>
                     <div style={{fontSize:20,marginBottom:5}}>{f.icon}</div>
-                    <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:2}}>{f.label}</div>
-                    <div style={{fontSize:9,color:"#333",lineHeight:1.4}}>{f.milestone}</div>
+                    <div style={{fontSize:11,fontWeight:700,color:"#888",marginBottom:2}}>{f.label}</div>
+                    <div style={{fontSize:9,color:"#444",lineHeight:1.4}}>{f.milestone}</div>
                   </div>
                 ))}
               </div>
@@ -3897,6 +3902,52 @@ function PCNInner() {
       </div>
 
       {/* overlays moved to each screen */}
+
+      {/* ── Feature Detail Modal ── */}
+      {showFeatureDetail&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 0"}}
+          onClick={()=>setShowFeatureDetail(null)}>
+          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:"20px 20px 0 0",
+            padding:"28px 24px",width:"100%",maxWidth:480,animation:"slideUp .25s ease"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{width:40,height:4,background:C.border,borderRadius:2,margin:"0 auto 20px"}}/>
+            <div style={{display:"flex",gap:14,alignItems:"flex-start",marginBottom:20}}>
+              <div style={{width:56,height:56,borderRadius:16,background:`${C.red}22`,border:`1px solid ${C.red}44`,
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}}>
+                {showFeatureDetail.icon}
+              </div>
+              <div>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>{showFeatureDetail.label}</div>
+                  <span style={{fontSize:12}}>🔒</span>
+                </div>
+                <div style={{fontSize:12,color:C.red,fontWeight:700}}>{showFeatureDetail.milestone}</div>
+              </div>
+            </div>
+            <div style={{fontSize:14,color:"#ccc",lineHeight:1.8,marginBottom:24}}>
+              {showFeatureDetail.desc}
+            </div>
+            <div style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:20}}>
+              <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>So freischalten</div>
+              {[
+                ["💳","Premium-Mitgliedschaft aktivieren","Sofortzugang zu allen Funktionen"],
+                ["🏆","Punkte durch Events sammeln","Aktive Teilnahme schaltet Features frei"],
+                ["👥","Neue Mitglieder werben","Bonus-Punkte pro Empfehlung"],
+              ].map(([ic,title,sub])=>(
+                <div key={title} style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
+                  <span style={{fontSize:18,flexShrink:0}}>{ic}</span>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700,color:C.white}}>{title}</div>
+                    <div style={{fontSize:10,color:C.muted}}>{sub}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15}}
+              onClick={()=>setShowFeatureDetail(null)}>Verstanden</button>
+          </div>
+        </div>
+      )}
 
       {/* ── INFO MODAL ── */}
       {showInfoModal&&showInfoModal!=='points'&&(
