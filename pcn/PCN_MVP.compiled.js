@@ -814,13 +814,20 @@
     participants,
     onBack,
     onJoin,
+    onCancel,
     onViewVehicle
   }) {
     const [selV, setSelV] = (0, _react.useState)(myVehicles[0]?.id || "");
-    const [selC, setSelC] = (0, _react.useState)(ev.classes[0]);
-    const evParts = participants[ev.id] || [];
-    const myReg = evParts.find(p => p.userId === me?.id);
+    const [selC, setSelC] = (0, _react.useState)((ev.classes || ["Alle Modelle"])[0]);
+    const [confirmCancel, setConfirmCancel] = (0, _react.useState)(false);
+    const evParts = (participants[ev.id] || []).filter(p => p.status !== "cancelled");
+    const confirmedParts = evParts.filter(p => p.status === "confirmed");
+    const myReg = (participants[ev.id] || []).find(p => p.userId === me?.id && p.status !== "cancelled");
     const days = daysUntil(ev.date);
+    const spotsLeft = (ev.maxParticipants || 100) - confirmedParts.length;
+    const isPast = new Date(ev.date) < new Date();
+    const statusColor = myReg?.status === "confirmed" ? C.green : myReg?.status === "pending" ? C.amber : "#ef4444";
+    const statusLabel = myReg?.status === "confirmed" ? `✓ Bestätigt${myReg.startNr ? " — #" + myReg.startNr : ""}` : myReg?.status === "pending" ? "🟡 Anmeldung eingegangen" : "✗ Abgelehnt";
     return /*#__PURE__*/_react.default.createElement("div", {
       style: {
         minHeight: "100vh",
@@ -862,16 +869,25 @@
         fontSize: 10,
         fontWeight: 700
       }
-    }, ev.category), /*#__PURE__*/_react.default.createElement("span", {
+    }, ev.category || "Event"), /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        background: days <= 7 ? `${C.amber}22` : `${C.border}22`,
-        color: days <= 7 ? C.amber : C.muted,
+        background: isPast ? "#33333322" : days <= 7 ? `${C.amber}22` : `${C.border}22`,
+        color: isPast ? C.muted : days <= 7 ? C.amber : C.muted,
         borderRadius: 6,
         padding: "2px 8px",
         fontSize: 10,
         fontWeight: 700
       }
-    }, days <= 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} T.`)), /*#__PURE__*/_react.default.createElement("h1", {
+    }, isPast ? "Abgeschlossen" : days <= 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} T.`), !isPast && /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        background: spotsLeft <= 5 ? `${C.red}22` : `${C.green}11`,
+        color: spotsLeft <= 5 ? C.red : C.green,
+        borderRadius: 6,
+        padding: "2px 8px",
+        fontSize: 10,
+        fontWeight: 700
+      }
+    }, spotsLeft <= 0 ? "Ausgebucht" : `${spotsLeft} Plätze frei`)), /*#__PURE__*/_react.default.createElement("h1", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 24,
@@ -879,13 +895,7 @@
         color: C.white,
         lineHeight: 1.1
       }
-    }, ev.name), /*#__PURE__*/_react.default.createElement("p", {
-      style: {
-        fontSize: 11,
-        color: C.muted,
-        marginTop: 3
-      }
-    }, ev.subtitle)), /*#__PURE__*/_react.default.createElement("div", {
+    }, ev.name)), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         padding: "16px",
         maxWidth: 520,
@@ -899,7 +909,7 @@
         padding: 16,
         marginBottom: 14
       }
-    }, [["📅", fmtDate(ev.date), "Datum"], ["📍", ev.location, "Ort"], ["💶", ev.entryFee, "Nenngeld"], ["👥", `${evParts.length} / ${ev.maxParticipants}`, "Plätze"]].map(([icon, val, label]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, [["📅", fmtDate(ev.date), "Datum"], ["📍", ev.location, "Ort"], ["💶", ev.entryFee || ev.price || "Kostenlos", "Eintritt"], ["👥", `${confirmedParts.length} / ${ev.maxParticipants || 100}`, "Bestätigte Teilnehmer"]].filter(([, v]) => v).map(([icon, val, label]) => /*#__PURE__*/_react.default.createElement("div", {
       key: label,
       style: {
         display: "flex",
@@ -916,7 +926,7 @@
       style: {
         fontSize: 11,
         color: C.muted,
-        minWidth: 56
+        minWidth: 60
       }
     }, label), /*#__PURE__*/_react.default.createElement("span", {
       style: {
@@ -924,53 +934,58 @@
         color: C.white,
         fontWeight: 600
       }
-    }, val))), /*#__PURE__*/_react.default.createElement("p", {
+    }, val))), ev.description && /*#__PURE__*/_react.default.createElement("p", {
       style: {
         fontSize: 12,
-        color: C.muted,
-        lineHeight: 1.7,
-        marginTop: 8,
-        paddingTop: 8,
+        color: "#bbb",
+        lineHeight: 1.75,
+        marginTop: 10,
+        paddingTop: 10,
         borderTop: `1px solid ${C.border}`
       }
-    }, ev.description)), myReg ? /*#__PURE__*/_react.default.createElement("div", {
+    }, ev.description)), myReg && /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        background: myReg.status === "confirmed" ? `${C.green}11` : myReg.status === "pending" ? `${C.amber}11` : `${C.red}11`,
-        border: `1px solid ${myReg.status === "confirmed" ? C.green : myReg.status === "pending" ? C.amber : C.red}44`,
-        borderRadius: 12,
-        padding: "14px 16px",
+        background: `${statusColor}11`,
+        border: `2px solid ${statusColor}33`,
+        borderRadius: 14,
+        padding: "16px",
         marginBottom: 14
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontWeight: 700,
-        fontSize: 15,
-        marginBottom: 3,
-        color: myReg.status === "confirmed" ? C.green : myReg.status === "pending" ? C.amber : "#ef4444"
+        fontWeight: 800,
+        fontSize: 16,
+        color: statusColor,
+        marginBottom: 4
       }
-    }, myReg.status === "confirmed" ? `✓ Bestätigt — #${myReg.startNr}` : myReg.status === "pending" ? "🟡 Angefragt — Bestätigung ausstehend" : "✗ Abgelehnt"), /*#__PURE__*/_react.default.createElement("div", {
+    }, statusLabel), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
-        marginBottom: myReg.status === "confirmed" ? 10 : 4
+        marginBottom: 12
       }
-    }, myReg.class, " · ", fmtDate(ev.date)), myReg.status === "pending" && /*#__PURE__*/_react.default.createElement("div", {
+    }, vehicles[myReg.vehicleId] && `${vehicles[myReg.vehicleId].hersteller} ${vehicles[myReg.vehicleId].modell}`, myReg.class && ` · ${myReg.class}`), myReg.status === "pending" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 11,
+        background: `${C.amber}18`,
+        borderRadius: 8,
+        padding: "10px 12px",
+        marginBottom: 12,
+        fontSize: 12,
         color: C.amber,
-        marginBottom: 10
+        lineHeight: 1.6
       }
-    }, "Der Admin bestätigt deine Teilnahme — du erhältst danach Punkte."), /*#__PURE__*/_react.default.createElement("div", {
+    }, "⏳ Deine Anmeldung wird vom Admin geprüft und bestätigt.", /*#__PURE__*/_react.default.createElement("br", null), "Nach Bestätigung erhältst du ", /*#__PURE__*/_react.default.createElement("b", null, "+100 Punkte"), " und eine Startnummer."), myReg.status === "confirmed" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
-        gap: 8
+        gap: 8,
+        marginBottom: 12
       }
     }, /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => generateICS({
         title: ev.name,
         date: ev.date,
         location: ev.location || "",
-        description: `PCN Event · Klasse: ${myReg.class} · Startnr: #${myReg.startNr}`,
+        description: `PCN Event · Klasse: ${myReg.class || ""}${myReg.startNr ? " · Startnr: #" + myReg.startNr : ""}`,
         alarmMinutes: 1440
       }),
       style: {
@@ -987,15 +1002,14 @@
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: 5
+        gap: 4
       }
-    }, "📅 Apple / Outlook"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "📅 Kalender"), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => {
-        const t = encodeURIComponent(ev.name);
-        const d = (ev.date || "").replace(/-/g, "");
-        const loc = encodeURIComponent(ev.location || "");
-        const det = encodeURIComponent(`Klasse: ${myReg.class} · Startnr: #${myReg.startNr}`);
-        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${d}/${d}&location=${loc}&details=${det}`, "_blank");
+        const t = encodeURIComponent(ev.name),
+          d = (ev.date || "").replace(/-/g, ""),
+          loc = encodeURIComponent(ev.location || "");
+        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${d}/${d}&location=${loc}`, "_blank");
       },
       style: {
         flex: 1,
@@ -1011,9 +1025,71 @@
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: 5
+        gap: 4
       }
-    }, "🗓 Google"))) : me && myVehicles.length > 0 ? /*#__PURE__*/_react.default.createElement("div", {
+    }, "🗓 Google")), !isPast && (confirmCancel ? /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: "#ef444418",
+        border: "1px solid #ef444433",
+        borderRadius: 10,
+        padding: "12px"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#ef4444",
+        marginBottom: 10,
+        fontWeight: 600
+      }
+    }, "Anmeldung wirklich stornieren?"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => {
+        onCancel(ev.id, myReg.id);
+        setConfirmCancel(false);
+      },
+      style: {
+        flex: 1,
+        background: "#ef4444",
+        border: "none",
+        borderRadius: 8,
+        padding: "10px",
+        color: "#fff",
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif"
+      }
+    }, "Ja, abmelden"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setConfirmCancel(false),
+      style: {
+        flex: 1,
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 8,
+        padding: "10px",
+        color: C.muted,
+        fontSize: 13,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif"
+      }
+    }, "Abbrechen"))) : /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setConfirmCancel(true),
+      style: {
+        background: "none",
+        border: `1px solid #ef444433`,
+        borderRadius: 8,
+        padding: "8px 14px",
+        color: "#ef4444",
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif"
+      }
+    }, "✕ Anmeldung stornieren"))), !myReg && !isPast && me && myVehicles.length > 0 && spotsLeft > 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -1024,12 +1100,28 @@
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: 800,
         color: C.white,
-        marginBottom: 12
+        marginBottom: 4
       }
-    }, "Jetzt anmelden"), /*#__PURE__*/_react.default.createElement("select", {
+    }, "Jetzt anmelden"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginBottom: 14
+      }
+    }, "Nach Anmeldung wird deine Teilnahme vom Admin bestätigt."), /*#__PURE__*/_react.default.createElement("label", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        color: C.muted,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        display: "block",
+        marginBottom: 5
+      }
+    }, "Fahrzeug"), /*#__PURE__*/_react.default.createElement("select", {
       value: selV,
       onChange: e => setSelV(e.target.value),
       style: {
@@ -1041,12 +1133,23 @@
         color: C.white,
         fontSize: 14,
         fontFamily: "'Barlow',sans-serif",
-        marginBottom: 8
+        marginBottom: 10,
+        appearance: "none"
       }
     }, myVehicles.map(v => /*#__PURE__*/_react.default.createElement("option", {
       key: v.id,
       value: v.id
-    }, v.hersteller, " ", v.modell, " · ", v.kennzeichen))), /*#__PURE__*/_react.default.createElement("select", {
+    }, v.hersteller, " ", v.modell, " · ", v.kennzeichen))), (ev.classes || []).length > 1 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("label", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        color: C.muted,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        display: "block",
+        marginBottom: 5
+      }
+    }, "Klasse"), /*#__PURE__*/_react.default.createElement("select", {
       value: selC,
       onChange: e => setSelC(e.target.value),
       style: {
@@ -1058,17 +1161,41 @@
         color: C.white,
         fontSize: 14,
         fontFamily: "'Barlow',sans-serif",
-        marginBottom: 14
+        marginBottom: 14,
+        appearance: "none"
       }
-    }, ev.classes.map(c => /*#__PURE__*/_react.default.createElement("option", {
+    }, (ev.classes || []).map(c => /*#__PURE__*/_react.default.createElement("option", {
       key: c
-    }, c))), /*#__PURE__*/_react.default.createElement("button", {
+    }, c)))), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       onClick: () => onJoin(ev.id, selV, selC),
       style: {
-        width: "100%"
+        width: "100%",
+        padding: "14px",
+        fontSize: 15
       }
-    }, "Anmelden ✓")) : me ? /*#__PURE__*/_react.default.createElement("div", {
+    }, "Anmelden →")), !myReg && !isPast && spotsLeft <= 0 && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 12,
+        padding: "14px 16px",
+        marginBottom: 14,
+        textAlign: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 700,
+        color: "#ef4444",
+        marginBottom: 4
+      }
+    }, "Ausgebucht"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted
+      }
+    }, "Keine freien Plätze mehr.")), !myReg && !isPast && me && myVehicles.length === 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -1079,7 +1206,11 @@
         color: C.muted,
         fontSize: 13
       }
-    }, "Zuerst ein Fahrzeug hinzufügen um dich anzumelden.") : null, evParts.length > 0 && /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    }, "Zuerst ein Fahrzeug anlegen um dich anzumelden."), confirmedParts.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginTop: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -1088,8 +1219,8 @@
         letterSpacing: 1.5,
         marginBottom: 10
       }
-    }, "Teilnehmer (", evParts.length, ")"), evParts.map(p => {
-      const pv = vehicles[p.vehicleId];
+    }, "Bestätigte Teilnehmer (", confirmedParts.length, ")"), confirmedParts.map(p => {
+      const pv = vehicles[p.vehicleId || p.vehicle_id];
       return /*#__PURE__*/_react.default.createElement("div", {
         key: p.id,
         style: {
@@ -1110,9 +1241,11 @@
           fontWeight: 800,
           fontSize: 13,
           color: C.red,
-          flexShrink: 0
+          flexShrink: 0,
+          minWidth: 32,
+          textAlign: "center"
         }
-      }, "#", p.startNr), /*#__PURE__*/_react.default.createElement("div", {
+      }, p.startNr ? "#" + p.startNr : "·"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           flex: 1,
           minWidth: 0
@@ -1131,7 +1264,7 @@
           fontSize: 11,
           color: C.muted
         }
-      }, p.class, pv?.kennzeichen ? " · " + fmtKz(pv.kennzeichen, pv.baujahr) : "")), pv && /*#__PURE__*/_react.default.createElement("span", {
+      }, p.class || p.klasse || "", pv?.kennzeichen ? " · " + pv.kennzeichen : "")), pv && /*#__PURE__*/_react.default.createElement("span", {
         style: {
           color: C.muted,
           fontSize: 16
@@ -2414,6 +2547,21 @@
         workshop: ""
       });
       toast_("Eintrag gespeichert ✓");
+    };
+    const cancelEvent = async (eventId, regId) => {
+      const DB = window.PCN_DB;
+      if (DB) await DB.events.cancel?.(regId).catch(() => {});
+      setParticipants(prev => {
+        const evParts = (prev[eventId] || []).map(p => p.id === regId ? {
+          ...p,
+          status: "cancelled"
+        } : p);
+        return {
+          ...prev,
+          [eventId]: evParts
+        };
+      });
+      toast_("Anmeldung storniert");
     };
     const joinEvent = async (eventId, vehicleId, cls) => {
       if (!vehicleId) return toast_("Fahrzeug wählen", "err");
@@ -7334,8 +7482,12 @@
         myVehicles: myVehicles,
         vehicles: vehicles,
         participants: participants,
-        onBack: () => setScreen("app"),
+        onBack: () => {
+          setScreen("app");
+          setTab("events");
+        },
         onJoin: joinEvent,
+        onCancel: cancelEvent,
         onViewVehicle: v => {
           setViewV(v);
           setScreen("vehicle");
