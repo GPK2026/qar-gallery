@@ -7594,7 +7594,106 @@
           lineHeight: 1.6
         }
       }, welcome.body))));
-    })(), recentVehicles.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+    })(), (() => {
+      const items = DEMO_NEWS.filter(n => n.type !== "welcome" && newsState[n.id] !== "read").sort((a, b) => new Date(b.date) - new Date(a.date));
+      if (!items.length) return null;
+      return /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 12,
+          overflowX: "auto",
+          scrollbarWidth: "none",
+          WebkitOverflowScrolling: "touch",
+          paddingBottom: 4,
+          marginBottom: 8
+        }
+      }, items.map(n => {
+        const isRemind = newsState[n.id] === "remind";
+        // Teaser: first 80 chars
+        const teaser = n.body ? n.body.replace(/\n/g, " ").slice(0, 90) + (n.body.length > 90 ? "…" : "") : "";
+        return /*#__PURE__*/_react.default.createElement("div", {
+          key: n.id,
+          onClick: () => setViewNews(n),
+          style: {
+            background: isRemind ? `${C.amber}10` : n.pinned ? `${C.red}0d` : C.card,
+            border: `1px solid ${isRemind ? C.amber + "44" : n.pinned ? C.red + "33" : C.border}`,
+            borderRadius: 12,
+            padding: "13px 14px",
+            width: 260,
+            flexShrink: 0,
+            cursor: "pointer"
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 10,
+            alignItems: "flex-start"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 20,
+            flexShrink: 0,
+            marginTop: 1
+          }
+        }, n.icon), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            flex: 1,
+            minWidth: 0
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 6,
+            alignItems: "center",
+            marginBottom: 4
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 13,
+            fontWeight: 700,
+            color: C.white,
+            flex: 1,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+          }
+        }, n.title), n.pinned && /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            background: C.red,
+            color: "#fff",
+            fontSize: 8,
+            fontWeight: 800,
+            padding: "2px 6px",
+            borderRadius: 4,
+            flexShrink: 0
+          }
+        }, "NEU")), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 11,
+            color: C.muted,
+            lineHeight: 1.6,
+            marginBottom: 10
+          }
+        }, teaser), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 9,
+            color: "#444"
+          }
+        }, fmtDate(n.date)), /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 11,
+            color: C.red,
+            fontWeight: 700
+          }
+        }, "Lesen →")))));
+      }));
+    })()), recentVehicles.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 18
       }
@@ -7747,106 +7846,7 @@
         alignSelf: "stretch",
         minHeight: 120
       }
-    }, "✕"))), (() => {
-      const items = DEMO_NEWS.filter(n => n.type !== "welcome" && newsState[n.id] !== "read").sort((a, b) => new Date(b.date) - new Date(a.date));
-      if (!items.length) return null;
-      return /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          gap: 12,
-          overflowX: "auto",
-          scrollbarWidth: "none",
-          WebkitOverflowScrolling: "touch",
-          paddingBottom: 4,
-          marginBottom: 8
-        }
-      }, items.map(n => {
-        const isRemind = newsState[n.id] === "remind";
-        // Teaser: first 80 chars
-        const teaser = n.body ? n.body.replace(/\n/g, " ").slice(0, 90) + (n.body.length > 90 ? "…" : "") : "";
-        return /*#__PURE__*/_react.default.createElement("div", {
-          key: n.id,
-          onClick: () => setViewNews(n),
-          style: {
-            background: isRemind ? `${C.amber}10` : n.pinned ? `${C.red}0d` : C.card,
-            border: `1px solid ${isRemind ? C.amber + "44" : n.pinned ? C.red + "33" : C.border}`,
-            borderRadius: 12,
-            padding: "13px 14px",
-            width: 260,
-            flexShrink: 0,
-            cursor: "pointer"
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            display: "flex",
-            gap: 10,
-            alignItems: "flex-start"
-          }
-        }, /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 20,
-            flexShrink: 0,
-            marginTop: 1
-          }
-        }, n.icon), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            flex: 1,
-            minWidth: 0
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            display: "flex",
-            gap: 6,
-            alignItems: "center",
-            marginBottom: 4
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontSize: 13,
-            fontWeight: 700,
-            color: C.white,
-            flex: 1,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap"
-          }
-        }, n.title), n.pinned && /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            background: C.red,
-            color: "#fff",
-            fontSize: 8,
-            fontWeight: 800,
-            padding: "2px 6px",
-            borderRadius: 4,
-            flexShrink: 0
-          }
-        }, "NEU")), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontSize: 11,
-            color: C.muted,
-            lineHeight: 1.6,
-            marginBottom: 10
-          }
-        }, teaser), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center"
-          }
-        }, /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 9,
-            color: "#444"
-          }
-        }, fmtDate(n.date)), /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 11,
-            color: C.red,
-            fontWeight: 700
-          }
-        }, "Lesen →")))));
-      }));
-    })()), /*#__PURE__*/_react.default.createElement("div", {
+    }, "✕"))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
       }
