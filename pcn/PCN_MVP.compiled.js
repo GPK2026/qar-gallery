@@ -1728,7 +1728,8 @@
     const [profileImgUploading, setProfileImgUploading] = (0, _react.useState)(false);
     const [newsState, setNewsState] = (0, _react.useState)({});
     const [viewNews, setViewNews] = (0, _react.useState)(null); // full newsletter detail // {id: "read"|"remind"}
-    const [showInfoModal, setShowInfoModal] = (0, _react.useState)(false); // false | 'features' | 'points'
+    const [showInfoModal, setShowInfoModal] = (0, _react.useState)(false);
+    const [showFeatureDetail, setShowFeatureDetail] = (0, _react.useState)(null); // false | 'features' | 'points'
     const [eventsView, setEventsView] = (0, _react.useState)("list"); // "list" | "calendar"
     const [calMonth, setCalMonth] = (0, _react.useState)(new Date());
     const [profileForm, setProfileForm] = (0, _react.useState)({});
@@ -8061,14 +8062,19 @@
       }
     }, LOCKED_FEATURES.filter(f => !unlockedFeatures.has(f.id)).map(f => /*#__PURE__*/_react.default.createElement("div", {
       key: f.id,
+      onClick: () => setShowFeatureDetail(f),
       style: {
         background: "#111",
         border: `1px solid ${C.border}`,
         borderRadius: 11,
         padding: "12px 11px",
-        opacity: .45,
-        position: "relative"
-      }
+        opacity: .6,
+        position: "relative",
+        cursor: "pointer",
+        transition: "opacity .15s"
+      },
+      onMouseEnter: e => e.currentTarget.style.opacity = ".85",
+      onMouseLeave: e => e.currentTarget.style.opacity = ".6"
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "absolute",
@@ -8085,13 +8091,13 @@
       style: {
         fontSize: 11,
         fontWeight: 700,
-        color: "#555",
+        color: "#888",
         marginBottom: 2
       }
     }, f.label), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 9,
-        color: "#333",
+        color: "#444",
         lineHeight: 1.4
       }
     }, f.milestone)))), /*#__PURE__*/_react.default.createElement("div", {
@@ -9593,7 +9599,138 @@
         setScreen("splash");
         setTab("dashboard");
       }
-    }, "Abmelden"))), showInfoModal && showInfoModal !== 'points' && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Abmelden"))), showFeatureDetail && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.85)",
+        zIndex: 600,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        padding: "0 0 0"
+      },
+      onClick: () => setShowFeatureDetail(null)
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.dark,
+        border: `1px solid ${C.border}`,
+        borderRadius: "20px 20px 0 0",
+        padding: "28px 24px",
+        width: "100%",
+        maxWidth: 480,
+        animation: "slideUp .25s ease"
+      },
+      onClick: e => e.stopPropagation()
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        width: 40,
+        height: 4,
+        background: C.border,
+        borderRadius: 2,
+        margin: "0 auto 20px"
+      }
+    }), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 14,
+        alignItems: "flex-start",
+        marginBottom: 20
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        width: 56,
+        height: 56,
+        borderRadius: 16,
+        background: `${C.red}22`,
+        border: `1px solid ${C.red}44`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 28,
+        flexShrink: 0
+      }
+    }, showFeatureDetail.icon), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 4
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 22,
+        fontWeight: 900,
+        color: C.white
+      }
+    }, showFeatureDetail.label), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 12
+      }
+    }, "🔒")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.red,
+        fontWeight: 700
+      }
+    }, showFeatureDetail.milestone))), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 14,
+        color: "#ccc",
+        lineHeight: 1.8,
+        marginBottom: 24
+      }
+    }, showFeatureDetail.desc), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: "#111",
+        border: `1px solid ${C.border}`,
+        borderRadius: 12,
+        padding: "14px",
+        marginBottom: 20
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 800,
+        color: C.muted,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        marginBottom: 10
+      }
+    }, "So freischalten"), [["💳", "Premium-Mitgliedschaft aktivieren", "Sofortzugang zu allen Funktionen"], ["🏆", "Punkte durch Events sammeln", "Aktive Teilnahme schaltet Features frei"], ["👥", "Neue Mitglieder werben", "Bonus-Punkte pro Empfehlung"]].map(([ic, title, sub]) => /*#__PURE__*/_react.default.createElement("div", {
+      key: title,
+      style: {
+        display: "flex",
+        gap: 10,
+        alignItems: "center",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 18,
+        flexShrink: 0
+      }
+    }, ic), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: C.white
+      }
+    }, title), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.muted
+      }
+    }, sub))))), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn",
+      style: {
+        width: "100%",
+        padding: "14px",
+        fontSize: 15
+      },
+      onClick: () => setShowFeatureDetail(null)
+    }, "Verstanden"))), showInfoModal && showInfoModal !== 'points' && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "fixed",
         inset: 0,
