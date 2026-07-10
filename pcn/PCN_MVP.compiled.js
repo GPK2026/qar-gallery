@@ -1152,11 +1152,11 @@
       }
     }, "Zuerst ein Fahrzeug hinzufügen um dich anzumelden.") : null, evParts.length > 0 && /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 800,
-        color: C.muted,
+        color: "#aaa",
         textTransform: "uppercase",
-        letterSpacing: 2,
+        letterSpacing: 1.5,
         marginBottom: 10
       }
     }, "Teilnehmer (", evParts.length, ")"), evParts.map(p => {
@@ -4247,11 +4247,11 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 800,
-          color: C.muted,
+          color: "#aaa",
           textTransform: "uppercase",
-          letterSpacing: 2,
+          letterSpacing: 1.5,
           marginBottom: 10
         }
       }, "Fahrzeugdaten"), /*#__PURE__*/_react.default.createElement("div", {
@@ -4271,9 +4271,9 @@
         }
       }, label), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 14,
+          fontSize: 15,
           fontWeight: 600,
-          color: C.white,
+          color: "#eee",
           marginTop: 2
         }
       }, key === "kilometerstand" ? parseInt(v[key]).toLocaleString("de-DE") + " km" : key === "marktwert" ? "€ " + parseInt(v[key]).toLocaleString("de-DE") : v[key])))), v.besonderheiten && priv.besonderheiten !== false && /*#__PURE__*/_react.default.createElement("div", {
@@ -4293,11 +4293,11 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 800,
-          color: C.muted,
+          color: "#aaa",
           textTransform: "uppercase",
-          letterSpacing: 2,
+          letterSpacing: 1.5,
           marginBottom: 10
         }
       }, "Veranstaltungshistorie"), vHist.map(h => /*#__PURE__*/_react.default.createElement("div", {
@@ -5606,11 +5606,11 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 800,
-          color: C.muted,
+          color: "#aaa",
           textTransform: "uppercase",
-          letterSpacing: 2,
+          letterSpacing: 1.5,
           marginBottom: 12
         }
       }, "🔗 QR-Code & Aktionen"), (() => {
@@ -5841,11 +5841,11 @@
           }
         }, /*#__PURE__*/_react.default.createElement("div", {
           style: {
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: 800,
-            color: C.muted,
+            color: "#aaa",
             textTransform: "uppercase",
-            letterSpacing: 2,
+            letterSpacing: 1.5,
             marginBottom: 8
           }
         }, "🔔 Termine & Erinnerungen"), vRems.map(r => {
@@ -6352,11 +6352,11 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 800,
-          color: C.muted,
+          color: "#aaa",
           textTransform: "uppercase",
-          letterSpacing: 2,
+          letterSpacing: 1.5,
           marginBottom: 8
         }
       }, "📞 Kontakt"), /*#__PURE__*/_react.default.createElement("div", {
@@ -6534,11 +6534,11 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 800,
-          color: C.muted,
+          color: "#aaa",
           textTransform: "uppercase",
-          letterSpacing: 2,
+          letterSpacing: 1.5,
           marginBottom: 8
         }
       }, group), fields.map(([key, label]) => /*#__PURE__*/_react.default.createElement("div", {
@@ -6603,11 +6603,11 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 800,
-          color: C.muted,
+          color: "#aaa",
           textTransform: "uppercase",
-          letterSpacing: 2,
+          letterSpacing: 1.5,
           marginBottom: 8
         }
       }, "Basis"), /*#__PURE__*/_react.default.createElement("div", {
@@ -6683,11 +6683,11 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 800,
-          color: C.muted,
+          color: "#aaa",
           textTransform: "uppercase",
-          letterSpacing: 2,
+          letterSpacing: 1.5,
           marginBottom: 8
         }
       }, "Status & Technik"), /*#__PURE__*/_react.default.createElement("div", {
@@ -6758,11 +6758,11 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 800,
-          color: C.muted,
+          color: "#aaa",
           textTransform: "uppercase",
-          letterSpacing: 2,
+          letterSpacing: 1.5,
           marginBottom: 8
         }
       }, "Kontakt"), /*#__PURE__*/_react.default.createElement("input", {
@@ -6786,11 +6786,11 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 800,
-          color: C.muted,
+          color: "#aaa",
           textTransform: "uppercase",
-          letterSpacing: 2,
+          letterSpacing: 1.5,
           marginBottom: 8
         }
       }, "Besonderheiten"), /*#__PURE__*/_react.default.createElement("textarea", {
@@ -7547,11 +7547,11 @@
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 800,
-        color: C.muted,
+        color: "#aaa",
         textTransform: "uppercase",
-        letterSpacing: 2,
+        letterSpacing: 1.5,
         marginBottom: 10
       }
     }, "📰 Infos & Neuigkeiten"), (() => {
@@ -7669,9 +7669,9 @@
           }
         }, "NEU")), /*#__PURE__*/_react.default.createElement("div", {
           style: {
-            fontSize: 11,
-            color: C.muted,
-            lineHeight: 1.6,
+            fontSize: 12,
+            color: "#bbb",
+            lineHeight: 1.7,
             marginBottom: 10
           }
         }, teaser), /*#__PURE__*/_react.default.createElement("div", {
@@ -7699,11 +7699,11 @@
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 800,
-        color: C.muted,
+        color: "#aaa",
         textTransform: "uppercase",
-        letterSpacing: 2,
+        letterSpacing: 1.5,
         marginBottom: 10
       }
     }, "🕐 Zuletzt angesehen"), /*#__PURE__*/_react.default.createElement("div", {
@@ -7859,11 +7859,11 @@
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 800,
-        color: C.muted,
+        color: "#aaa",
         textTransform: "uppercase",
-        letterSpacing: 2
+        letterSpacing: 1.5
       }
     }, "🚗 Meine Fahrzeuge"), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn sm ghost",
@@ -7946,7 +7946,7 @@
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontWeight: 700,
-        fontSize: 14,
+        fontSize: 15,
         color: C.white
       }
     }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
@@ -8001,11 +8001,11 @@
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 800,
-        color: C.muted,
+        color: "#aaa",
         textTransform: "uppercase",
-        letterSpacing: 2
+        letterSpacing: 1.5
       }
     }, "⚙️ Plattform-Funktionen"), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => setShowInfoModal(true),
@@ -8532,10 +8532,10 @@
         fontWeight: 800,
         color: C.muted,
         textTransform: "uppercase",
-        letterSpacing: 2,
-        marginBottom: 10
+        letterSpacing: 1.5,
+        marginBottom: 12
       }
-    }, "🔒 Meine anonymen Chats"), [...guestThreads].sort((a, b) => {
+    }, "🔒 MEINE CHATS"), [...guestThreads].sort((a, b) => {
       const at = threads[a.id]?.messages?.filter(m => !m.isSystem)?.slice(-1)[0];
       const bt = threads[b.id]?.messages?.filter(m => !m.isSystem)?.slice(-1)[0];
       return new Date(bt?.created_at || bt?.createdAt || 0) - new Date(at?.created_at || at?.createdAt || 0);
@@ -8974,11 +8974,11 @@
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 800,
-        color: C.muted,
+        color: "#aaa",
         textTransform: "uppercase",
-        letterSpacing: 2
+        letterSpacing: 1.5
       }
     }, "Erinnerungen"), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn sm ghost",
@@ -10046,11 +10046,11 @@
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 800,
-        color: C.muted,
+        color: "#aaa",
         textTransform: "uppercase",
-        letterSpacing: 2,
+        letterSpacing: 1.5,
         marginBottom: 8
       }
     }, "Persönlich"), /*#__PURE__*/_react.default.createElement("input", {
@@ -10127,11 +10127,11 @@
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 800,
-        color: C.muted,
+        color: "#aaa",
         textTransform: "uppercase",
-        letterSpacing: 2,
+        letterSpacing: 1.5,
         marginBottom: 10
       }
     }, "Benachrichtigungen"), [["notifications_events", "🏁  Event-Erinnerungen", "Neue Events und Anmeldungsbestätigungen"], ["notifications_messages", "💬  Neue Nachrichten", "Eingehende Nachrichten im Chat"]].map(([key, label, sub]) => /*#__PURE__*/_react.default.createElement("div", {
