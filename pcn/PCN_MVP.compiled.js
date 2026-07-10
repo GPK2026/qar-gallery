@@ -2884,6 +2884,38 @@
           date: dPlus(45),
           done: false
         }]);
+        // Load events from Supabase
+        if (DB) {
+          const {
+            data: liveEvs
+          } = await DB.events.list().catch(() => ({
+            data: null
+          }));
+          if (liveEvs && liveEvs.length > 0) {
+            const evMap = {};
+            liveEvs.forEach(e => {
+              evMap[e.id] = e;
+            });
+            setEvents(evMap);
+          }
+          // Load participants for demo user
+          const {
+            data: liveParts
+          } = await DB.events.participants("u1").catch(() => ({
+            data: null
+          }));
+          if (liveParts && liveParts.length > 0) {
+            const pMap = {
+              ...DEMO_PARTICIPANTS
+            };
+            liveParts.forEach(p => {
+              const eid = p.eventId || p.event_id;
+              if (!pMap[eid]) pMap[eid] = [];
+              if (!pMap[eid].find(x => x.id === p.id)) pMap[eid].push(p);
+            });
+            setParticipants(pMap);
+          }
+        }
       }
       setAllUsers({
         ...DEMO_USERS
