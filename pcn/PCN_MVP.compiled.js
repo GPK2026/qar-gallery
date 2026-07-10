@@ -1732,8 +1732,33 @@
     }));
     const isOpen = (vid, section) => !!openSections[vid + "_" + section];
     const [profileImgUploading, setProfileImgUploading] = (0, _react.useState)(false);
-    const [newsState, setNewsState] = (0, _react.useState)({});
-    const [viewNews, setViewNews] = (0, _react.useState)(null); // full newsletter detail // {id: "read"|"remind"}
+    const [newsState, setNewsState] = (0, _react.useState)(() => {
+      try {
+        return JSON.parse(localStorage.getItem("pcn_news_state") || "{}");
+      } catch (e) {
+        return {};
+      }
+    });
+    const [viewNews, setViewNews] = (0, _react.useState)(null);
+    const markNewsRead = id => {
+      setNewsState(p => {
+        const updated = {
+          ...p,
+          [id]: "read"
+        };
+        localStorage.setItem("pcn_news_state", JSON.stringify(updated));
+        return updated;
+      });
+      // Add points for reading — 10 pts per article
+      const readKey = "pcn_news_read_pts";
+      const already = JSON.parse(localStorage.getItem(readKey) || "[]");
+      if (!already.includes(id)) {
+        localStorage.setItem(readKey, JSON.stringify([...already, id]));
+        toast_("✓ Gelesen · +10 Punkte 🏆");
+      } else {
+        toast_("✓ Als gelesen markiert");
+      }
+    }; // full newsletter detail // {id: "read"|"remind"}
     const [showInfoModal, setShowInfoModal] = (0, _react.useState)(false);
     const [showFeatureDetail, setShowFeatureDetail] = (0, _react.useState)(null); // false | 'features' | 'points'
     const [eventsView, setEventsView] = (0, _react.useState)("list"); // "list" | "calendar"
@@ -1782,6 +1807,10 @@
       pts += Object.values(logbook).flat().length * 10; // 10 Punkte pro Logbuch-Eintrag
       pts += myParticipations.length * 100; // 100 Punkte pro Event-Teilnahme
       pts += myThreads.length * 5; // 5 Punkte pro Nachricht
+      // 10 Punkte pro gelesenen News-Artikel
+      try {
+        pts += JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length * 10;
+      } catch (e) {}
       return pts;
     };
     const myPoints = calcPoints();
@@ -5053,10 +5082,7 @@
       }
     }, /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => {
-        setNewsState(p => ({
-          ...p,
-          [viewNews.id]: "read"
-        }));
+        markNewsRead(viewNews.id);
         setViewNews(null);
       },
       style: {
