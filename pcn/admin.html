@@ -125,6 +125,11 @@
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;margin-bottom:4px">Club-Administration</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Nur für autorisierte Vorstandsmitglieder</div>
     <div class="field"><label>Admin-Code</label><input type="password" id="code-inp" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="field" style="margin-top:4px">
+      <label>Supabase Service Key <span style="color:#555;font-weight:400;text-transform:none">(Einmalig · wird lokal gespeichert)</span></label>
+      <input type="password" id="svc-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="font-size:11px;font-family:monospace">
+      <div style="font-size:10px;color:#444;margin-top:4px">Supabase → Project Settings → API → service_role</div>
+    </div>
     <button class="btn" style="width:100%;padding:13px;margin-top:4px;font-size:15px" onclick="doLogin()">Anmelden →</button>
     <div style="font-size:11px;color:#222;text-align:center;margin-top:16px">Powered by <span style="color:var(--gold)">QAR.Gallery</span></div>
   </div>
@@ -193,18 +198,20 @@
 
 <script>
 const SB   = "https://xsyuhfleesstrchcwspg.supabase.co/rest/v1";
-const KEY  = "sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED";
+const KEY_PUB = "sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED";
 const ADMIN= "PCN-ADMIN-2026";
 const EUR  = 95;
 
 let DB = {members:[],events:[],vehicles:[]};
 let currentTab = "dashboard";
+let SERVICE_KEY = sessionStorage.getItem("pcn_svc_key")||"";
 
 async function api(path, opts={}) {
+  const key = SERVICE_KEY || KEY_PUB;
   try {
     const r = await fetch(SB+"/"+path, {
       ...opts,
-      headers:{"apikey":KEY,"Authorization":"Bearer "+KEY,"Content-Type":"application/json","Prefer":"return=representation",...(opts.headers||{})}
+      headers:{"apikey":key,"Authorization":"Bearer "+key,"Content-Type":"application/json","Prefer":"return=representation",...(opts.headers||{})}
     });
     const d = await r.json().catch(()=>({}));
     return r.ok ? {data:d} : {data:null,error:d};
@@ -214,6 +221,8 @@ async function api(path, opts={}) {
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function doLogin() {
   if(document.getElementById("code-inp").value.trim().toUpperCase()===ADMIN) {
+    const svc = document.getElementById("svc-key")?.value.trim();
+    if(svc) { SERVICE_KEY=svc; sessionStorage.setItem("pcn_svc_key",svc); }
     sessionStorage.setItem("pcn_adm","1");
     document.getElementById("login-wrap").style.display="none";
     document.getElementById("app").classList.remove("hidden");
