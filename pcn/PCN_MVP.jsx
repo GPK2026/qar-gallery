@@ -1469,6 +1469,26 @@ function PCNInner() {
         {id:"R2",vehicleId:"V002",title:"Sommerreifenwechsel",date:dPlus(4),done:false},
         {id:"R3",vehicleId:"V001",title:"TÜV Termin vereinbaren",date:dPlus(45),done:false},
       ]);
+      // Load events from Supabase
+      if(DB) {
+        const {data:liveEvs} = await DB.events.list().catch(()=>({data:null}));
+        if(liveEvs && liveEvs.length>0) {
+          const evMap={};
+          liveEvs.forEach(e=>{evMap[e.id]=e;});
+          setEvents(evMap);
+        }
+        // Load participants for demo user
+        const {data:liveParts} = await DB.events.participants("u1").catch(()=>({data:null}));
+        if(liveParts && liveParts.length>0) {
+          const pMap={...DEMO_PARTICIPANTS};
+          liveParts.forEach(p=>{
+            const eid=p.eventId||p.event_id;
+            if(!pMap[eid]) pMap[eid]=[];
+            if(!pMap[eid].find(x=>x.id===p.id)) pMap[eid].push(p);
+          });
+          setParticipants(pMap);
+        }
+      }
     }
     setAllUsers({...DEMO_USERS}); setScreen("app"); setTab("dashboard");
     toast_("Demo geladen — Willkommen, Max! 🏁 (nicht in echter DB gespeichert)");
