@@ -87,8 +87,13 @@
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="pcn_config.js"></script>
-<script src="pcn_storage.js"></script>
+<script>
+// Inline config — admin page is gitignored anyway
+window.PCN_CONFIG = {
+  supabaseUrl: "https://xsyuhfleesstrchcwspg.supabase.co",
+  supabaseKey: "sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED"
+};
+</script>
 <script type="text/babel">
 const {useState,useEffect,useCallback,useRef} = React;
 const ADMIN_CODE = "PCN-ADMIN-2026";
