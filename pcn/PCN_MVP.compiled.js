@@ -7615,8 +7615,8 @@
           key: n.id,
           onClick: () => setViewNews(n),
           style: {
-            background: isRemind ? `${C.amber}10` : n.pinned ? `${C.red}0d` : C.card,
-            border: `1px solid ${isRemind ? C.amber + "44" : n.pinned ? C.red + "33" : C.border}`,
+            background: isRemind ? `${C.amber}10` : n.pinned ? `${C.red}10` : "#0d0d0d",
+            border: `1px solid ${isRemind ? C.amber + "55" : C.red + "33"}`,
             borderRadius: 12,
             padding: "13px 14px",
             width: 260,
