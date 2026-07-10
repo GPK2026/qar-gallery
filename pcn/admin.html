@@ -198,7 +198,7 @@ const KEY_SVC = atob("ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM0
 const ADMIN= "PCN-ADMIN-2026";
 const EUR  = 95;
 
-let DB = {members:[],events:[],vehicles:[]};
+let DB = {members:[],events:[],vehicles:[],participants:[]};
 let currentTab = "dashboard";
 let SERVICE_KEY = KEY_SVC; // Always use service key in admin
 
@@ -228,10 +228,11 @@ function doLogout(){ sessionStorage.removeItem("pcn_adm"); location.reload(); }
 async function loadAll() {
   toast("Lädt…");
   try {
-    const [m,e,v] = await Promise.all([
+    const [m,e,v,p] = await Promise.all([
       api("users?select=*&order=created_at.desc&limit=200"),
       api("events?select=*&order=date.asc&limit=100"),
       api("vehicles?select=*&order=created_at.desc&limit=200"),
+      api("participants?select=*&order=created_at.desc&limit=500"),
     ]);
 
     // Auth error — only show dialog if not already authenticated
@@ -247,9 +248,10 @@ async function loadAll() {
       return;
     }
 
-    DB.members  = m.data || [];
-    DB.events   = e.data || [];
-    DB.vehicles = v.data || [];
+    DB.members      = m.data || [];
+    DB.events       = e.data || [];
+    DB.vehicles     = v.data || [];
+    DB.participants = p.data || [];
     updateBadges();
     renderTab(currentTab);
     toast(`✓ ${DB.members.length} Mitglieder · ${DB.vehicles.length} Fahrzeuge`);
@@ -369,6 +371,7 @@ function rDashboard(el) {
       ${stat(pct+"%","Beitrag","${bezahlt.length} von ${aktive.length}","var(--green)")}
       ${stat("€"+bezahlt.length*EUR,"Einnahmen","€"+offen.length*EUR+" offen","var(--gold)")}
       ${stat(DB.vehicles.length,"Fahrzeuge","im System","var(--blue)")}
+      ${stat(DB.participants.filter(p=>p.status==="pending").length||0,"Offene Anfragen","Events ausstehend","var(--amber)")}
       ${stat(next.length,"Events","anstehend","var(--red)")}
     </div>
 
@@ -709,6 +712,10 @@ function rSettings(el) {
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────
+async function confirmParticipant(partId, eventId) {
+  await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"confirmed"})});
+  toast("✓ Teilnahme bestätigt"); await loadAll();
+}
 async function markPaid(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:true})}); toast("✓ Bezahlt"); await loadAll(); }
 async function markUnpaid(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:false})}); toast("Zurückgesetzt"); await loadAll(); }
 async function upgradeMember(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:"member"})}); toast("✓ Als Mitglied freigegeben"); await loadAll(); }
