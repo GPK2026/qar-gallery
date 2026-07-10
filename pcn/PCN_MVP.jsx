@@ -320,12 +320,24 @@ const MILESTONES = [
 ];
 
 const LOCKED_FEATURES = [
-  {id:"marktwert",icon:"💶",label:"KI-Marktwertanalyse",milestone:"3 Logbuch-Einträge",desc:"Claude bewertet deinen Porsche anhand der Servicehistorie"},
-  {id:"history",icon:"⏱️",label:"Rundenzeiten",milestone:"Erste Event-Teilnahme",desc:"Nordschleife-Bestzeiten tracken"},
-  {id:"fleet",icon:"📊",label:"Fuhrpark-Analyse",milestone:"2 Fahrzeuge",desc:"Kosten/km und Wertverlauf"},
-  {id:"workshop",icon:"🔧",label:"Werkstatt-Zugang",milestone:"Partnerschaft aktiv",desc:"PCN-Partnerwerkstätten greifen auf die Akte zu"},
-  {id:"insurer",icon:"🛡️",label:"Versicherer-Zugang",milestone:"Club-Partner",desc:"Allianz Classic sieht deine Dokumentation"},
-  {id:"token",icon:"🪙",label:"Digitaler Fahrzeugpass",milestone:"Beta-Programm",desc:"Blockchain-Eigentumsnachweis"},
+  {id:"marktwert",icon:"💶",label:"KI-Marktwertanalyse",milestone:"3 Logbuch-Einträge",
+    desc:"Claude KI bewertet deinen Porsche anhand der Servicehistorie, Kilometerstand und aktueller Marktlage.",
+    detail:"Die KI-Marktwertanalyse vergleicht dein Fahrzeug mit aktuellen Marktpreisen auf Plattformen wie Elferspot, Mobile.de und Autoscout24. Einbezogen werden: Servicehistorie aus dem Logbuch, Kilometerstand, Baujahr, Ausstattung und Farbe.\n\nDas Ergebnis: ein realistischer Marktwert mit Spanne (konservativ / optimistisch) — ideal für Versicherungsverträge, Verkaufsgespräche oder die eigene Planung.\n\nWird automatisch aktualisiert wenn neue Logbuch-Einträge hinzukommen."},
+  {id:"history",icon:"⏱️",label:"Rundenzeiten",milestone:"Erste Event-Teilnahme",
+    desc:"Nordschleife-Bestzeiten tracken und mit Clubmitgliedern vergleichen.",
+    detail:"Nach deiner ersten Event-Teilnahme wird das Rundenzeiten-Modul freigeschaltet. Du kannst eigene Zeiten auf der Nordschleife und Grand-Prix-Strecke eintragen, mit Fahrzeug und Setup verknüpfen und im Clubranking vergleichen.\n\nDie Zeiten werden automatisch mit dem passenden Event aus deiner Veranstaltungshistorie verknüpft — so entsteht eine vollständige Performance-Dokumentation."},
+  {id:"fleet",icon:"📊",label:"Fuhrpark-Analyse",milestone:"2 Fahrzeuge",
+    desc:"Kosten pro Kilometer und Wertverlauf über alle Fahrzeuge im Überblick.",
+    detail:"Ab zwei Fahrzeugen in der Akte berechnet die Fuhrpark-Analyse automatisch: Kosten pro Kilometer (Betriebskosten, Service, Versicherung), Wertverlauf über Zeit, und eine Gegenüberstellung beider Fahrzeuge.\n\nBesonders hilfreich für Mitglieder mit Alltagsfahrzeug und Porsche — der direkte Vergleich zeigt den tatsächlichen Aufwand pro Kilometer."},
+  {id:"workshop",icon:"🔧",label:"Werkstatt-Zugang",milestone:"Partnerschaft aktiv",
+    desc:"PCN-Partnerwerkstätten greifen direkt auf die digitale Akte zu.",
+    detail:"Mit aktivierter Werkstatt-Partnerschaft kann dein bevorzugter Betrieb (z.B. Porsche Zentrum Koblenz) die digitale Fahrzeugakte direkt einsehen — inklusive Servicehistorie, Logbuch und letzten Einträgen.\n\nDu entscheidest per Toggle welche Daten sichtbar sind. Der Werkstatt-Zugang wird per QR-Code oder Link aktiviert und kann jederzeit widerrufen werden."},
+  {id:"insurer",icon:"🛡️",label:"Versicherer-Zugang",milestone:"Club-Partner",
+    desc:"Allianz Classic sieht deine vollständige Dokumentation für bessere Konditionen.",
+    detail:"Als PCN-Clubmitglied profitierst du vom direkten Versicherer-Zugang für Allianz Classic. Deine lückenlose Dokumentation — Logbuch, Servicehistorie, Gutachten — wird direkt übermittelt.\n\nMögliche Vorteile: bessere Einstufung, schnellere Schadensabwicklung, günstigere Agreed-Value-Prämien. Die Datenweitergabe erfolgt nur mit deiner ausdrücklichen Freigabe."},
+  {id:"token",icon:"🪙",label:"Digitaler Fahrzeugpass",milestone:"Beta-Programm",
+    desc:"Blockchain-basierter Eigentumsnachweis für deinen Porsche.",
+    detail:"Der digitale Fahrzeugpass ist ein QAR-zertifiziertes Dokument auf Blockchain-Basis — fälschungssicher, dauerhaft und übertragbar.\n\nBeim Verkauf des Fahrzeugs kann der neue Besitzer die komplette Dokumentation direkt übernehmen: Servicehistorie, Logbuch, Events, Fotos. Ein echtes Alleinstellungsmerkmal das den Verkaufswert nachweisbar steigert.\n\nDerzeit im Beta-Programm — Teilnahme für PCN-Mitglieder auf Anfrage."},
 ];
 
 // ─── Status Presets ──────────────────────────────────────────────────────────
@@ -3309,12 +3321,14 @@ function PCNInner() {
               {LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).length>0&&(
                 <div style={{marginBottom:10}}>
                   {LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).map(f=>(
-                    <div key={f.id} style={{background:`${C.green}0d`,border:`1px solid ${C.green}33`,borderRadius:11,padding:"12px 14px",marginBottom:7,display:"flex",gap:12,alignItems:"center"}}>
+                    <div key={f.id} onClick={()=>setShowFeatureDetail(f)}
+                      style={{background:`${C.green}0d`,border:`1px solid ${C.green}33`,borderRadius:11,padding:"12px 14px",marginBottom:7,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}>
                       <span style={{fontSize:22,flexShrink:0}}>{f.icon}</span>
                       <div style={{flex:1}}>
                         <div style={{fontSize:13,fontWeight:700,color:C.white}}>{f.label}</div>
                         <div style={{fontSize:10,color:C.green,marginTop:2}}>✓ Freigeschaltet · {f.desc}</div>
                       </div>
+                      <span style={{fontSize:16,color:C.green,flexShrink:0}}>›</span>
                     </div>
                   ))}
                 </div>
@@ -3905,46 +3919,56 @@ function PCNInner() {
 
       {/* ── Feature Detail Modal ── */}
       {showFeatureDetail&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 0"}}
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"flex-end",justifyContent:"center"}}
           onClick={()=>setShowFeatureDetail(null)}>
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:"20px 20px 0 0",
-            padding:"28px 24px",width:"100%",maxWidth:480,animation:"slideUp .25s ease"}}
+            padding:"28px 24px",width:"100%",maxWidth:480,animation:"slideUp .25s ease",maxHeight:"85vh",overflowY:"auto"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{width:40,height:4,background:C.border,borderRadius:2,margin:"0 auto 20px"}}/>
-            <div style={{display:"flex",gap:14,alignItems:"flex-start",marginBottom:20}}>
-              <div style={{width:56,height:56,borderRadius:16,background:`${C.red}22`,border:`1px solid ${C.red}44`,
-                display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}}>
-                {showFeatureDetail.icon}
-              </div>
-              <div>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>{showFeatureDetail.label}</div>
-                  <span style={{fontSize:12}}>🔒</span>
-                </div>
-                <div style={{fontSize:12,color:C.red,fontWeight:700}}>{showFeatureDetail.milestone}</div>
-              </div>
-            </div>
-            <div style={{fontSize:14,color:"#ccc",lineHeight:1.8,marginBottom:24}}>
-              {showFeatureDetail.desc}
-            </div>
-            <div style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:20}}>
-              <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>So freischalten</div>
-              {[
-                ["💳","Premium-Mitgliedschaft aktivieren","Sofortzugang zu allen Funktionen"],
-                ["🏆","Punkte durch Events sammeln","Aktive Teilnahme schaltet Features frei"],
-                ["👥","Neue Mitglieder werben","Bonus-Punkte pro Empfehlung"],
-              ].map(([ic,title,sub])=>(
-                <div key={title} style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
-                  <span style={{fontSize:18,flexShrink:0}}>{ic}</span>
+            {(()=>{
+              const isUnlocked = unlockedFeatures.has(showFeatureDetail.id);
+              const accent = isUnlocked ? C.green : C.red;
+              return (<>
+                <div style={{display:"flex",gap:14,alignItems:"flex-start",marginBottom:20}}>
+                  <div style={{width:56,height:56,borderRadius:16,background:`${accent}22`,border:`1px solid ${accent}44`,
+                    display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}}>
+                    {showFeatureDetail.icon}
+                  </div>
                   <div>
-                    <div style={{fontSize:12,fontWeight:700,color:C.white}}>{title}</div>
-                    <div style={{fontSize:10,color:C.muted}}>{sub}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>{showFeatureDetail.label}</div>
+                      <span style={{fontSize:12}}>{isUnlocked?"✅":"🔒"}</span>
+                    </div>
+                    <div style={{fontSize:12,color:accent,fontWeight:700}}>
+                      {isUnlocked?"✓ Freigeschaltet":showFeatureDetail.milestone}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15}}
-              onClick={()=>setShowFeatureDetail(null)}>Verstanden</button>
+                <div style={{fontSize:14,color:"#ccc",lineHeight:1.85,marginBottom:24,whiteSpace:"pre-wrap"}}>
+                  {showFeatureDetail.detail||showFeatureDetail.desc}
+                </div>
+                {!isUnlocked&&(
+                  <div style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:20}}>
+                    <div style={{fontSize:11,fontWeight:800,color:"#888",textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>So freischalten</div>
+                    {[
+                      ["💳","Premium-Mitgliedschaft aktivieren","Sofortzugang zu allen Funktionen"],
+                      ["🏆","Punkte durch Events sammeln","Aktive Teilnahme schaltet Features frei"],
+                      ["👥","Neue Mitglieder werben","Bonus-Punkte pro Empfehlung"],
+                    ].map(([ic,title,sub])=>(
+                      <div key={title} style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
+                        <span style={{fontSize:18,flexShrink:0}}>{ic}</span>
+                        <div>
+                          <div style={{fontSize:12,fontWeight:700,color:C.white}}>{title}</div>
+                          <div style={{fontSize:10,color:C.muted}}>{sub}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,background:isUnlocked?C.green:C.red}}
+                  onClick={()=>setShowFeatureDetail(null)}>Verstanden</button>
+              </>);
+            })()}
           </div>
         </div>
       )}
