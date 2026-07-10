@@ -1018,26 +1018,32 @@
       }
     }, ev.description)), myReg ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        background: `${C.green}11`,
-        border: `1px solid ${C.green}44`,
+        background: myReg.status === "confirmed" ? `${C.green}11` : myReg.status === "pending" ? `${C.amber}11` : `${C.red}11`,
+        border: `1px solid ${myReg.status === "confirmed" ? C.green : myReg.status === "pending" ? C.amber : C.red}44`,
         borderRadius: 12,
         padding: "14px 16px",
         marginBottom: 14
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        color: C.green,
         fontWeight: 700,
         fontSize: 15,
-        marginBottom: 3
+        marginBottom: 3,
+        color: myReg.status === "confirmed" ? C.green : myReg.status === "pending" ? C.amber : "#ef4444"
       }
-    }, "✓ Angemeldet — #", myReg.startNr), /*#__PURE__*/_react.default.createElement("div", {
+    }, myReg.status === "confirmed" ? `✓ Bestätigt — #${myReg.startNr}` : myReg.status === "pending" ? "🟡 Angefragt — Bestätigung ausstehend" : "✗ Abgelehnt"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
+        marginBottom: myReg.status === "confirmed" ? 10 : 4
+      }
+    }, myReg.class, " · ", fmtDate(ev.date)), myReg.status === "pending" && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.amber,
         marginBottom: 10
       }
-    }, myReg.class, " · ", fmtDate(ev.date)), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Der Admin bestätigt deine Teilnahme — du erhältst danach Punkte."), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         gap: 8
@@ -1805,7 +1811,7 @@
       let pts = 0;
       pts += myVehicles.length * 50; // 50 Punkte pro Fahrzeug
       pts += Object.values(logbook).flat().length * 10; // 10 Punkte pro Logbuch-Eintrag
-      pts += myParticipations.length * 100; // 100 Punkte pro Event-Teilnahme
+      pts += myParticipations.filter(p => p.status === "confirmed").length * 100; // 100 Punkte nur bei bestätigter Teilnahme
       pts += myThreads.length * 5; // 5 Punkte pro Nachricht
       // 10 Punkte pro gelesenen News-Artikel
       try {
@@ -2512,10 +2518,9 @@
         userId: me.id,
         vehicleId,
         class: cls,
-        startNr: String(Math.floor(Math.random() * 90) + 10),
-        status: "confirmed"
+        startNr: null,
+        status: "pending"
       };
-      // Update state immediately, avoid duplicates
       setParticipants(prev => {
         const existing = prev[eventId] || [];
         if (existing.find(x => x.userId === me.id)) return prev;
@@ -2524,7 +2529,7 @@
           [eventId]: [...existing, reg]
         };
       });
-      toast_(`Angemeldet — Startnr. #${reg.startNr} ✓`);
+      toast_("Anmeldung eingegangen — wird vom Admin bestätigt 🟡");
       setTimeout(() => {
         setScreen("app");
         setTab("events");
