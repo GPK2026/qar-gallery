@@ -233,16 +233,62 @@ async function loadAll() {
       api("events?select=*&order=date.asc&limit=100"),
       api("vehicles?select=*&order=created_at.desc&limit=200"),
     ]);
-    if(m.data && Array.isArray(m.data)) DB.members  = m.data;
-    if(e.data && Array.isArray(e.data)) DB.events   = e.data;
-    if(v.data && Array.isArray(v.data)) DB.vehicles = v.data;
+
+    // Check if we got valid data or auth error
+    if(!m.data || !Array.isArray(m.data)) {
+      const errMsg = m.error?.message || m.error?.hint || JSON.stringify(m.error||"Unbekannt");
+      // Show key input dialog
+      showKeyDialog(errMsg);
+      return;
+    }
+
+    if(Array.isArray(m.data)) DB.members  = m.data;
+    if(Array.isArray(e.data)) DB.events   = e.data;
+    if(Array.isArray(v.data)) DB.vehicles = v.data;
     updateBadges();
     renderTab(currentTab);
-    toast(`Geladen: ${DB.members.length} Mitglieder, ${DB.vehicles.length} Fahrzeuge ✓`);
+    toast(`✓ ${DB.members.length} Mitglieder · ${DB.vehicles.length} Fahrzeuge`);
   } catch(err) {
-    toast("Fehler beim Laden: "+err.message,"err");
-    renderTab(currentTab);
+    showKeyDialog(err.message);
   }
+}
+
+function showKeyDialog(errMsg) {
+  const existing = document.getElementById("key-dialog");
+  if(existing) existing.remove();
+  const d = document.createElement("div");
+  d.id = "key-dialog";
+  d.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px";
+  d.innerHTML = `
+    <div style="background:#111;border:1px solid #333;border-radius:14px;padding:28px;width:100%;max-width:420px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;margin-bottom:8px">🔑 Supabase API-Key</div>
+      <div style="font-size:12px;color:#666;margin-bottom:16px">Fehler: ${errMsg}</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:12px;line-height:1.6">
+        Gehe zu: <b style="color:#fff">Supabase → Project Settings → API</b><br>
+        Kopiere den <b style="color:#fff">service_role</b> JWT Token (beginnt mit <code style="color:#C8A96E">eyJ...</code>)
+      </div>
+      <label style="font-size:9px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Service Role JWT</label>
+      <textarea id="key-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:7px;padding:10px;color:#fff;font-size:11px;font-family:monospace;min-height:80px;outline:none;resize:none;margin-bottom:12px"></textarea>
+      <div style="display:flex;gap:8px">
+        <button onclick="applyKey()" style="flex:1;background:#D5001C;border:none;border-radius:7px;padding:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif">
+          Verbinden →
+        </button>
+        <button onclick="document.getElementById('key-dialog').remove()" style="background:none;border:1px solid #333;border-radius:7px;padding:12px;color:#555;font-size:14px;cursor:pointer;font-family:'Barlow',sans-serif">
+          ✕
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(d);
+}
+
+function applyKey() {
+  const k = document.getElementById("key-input")?.value.trim();
+  if(!k || !k.startsWith("eyJ")) return toast("Ungültiger Key — muss mit eyJ beginnen","err");
+  SERVICE_KEY = k;
+  sessionStorage.setItem("pcn_svc_key", k);
+  document.getElementById("key-dialog")?.remove();
+  loadAll();
 }
 
 function updateBadges() {
