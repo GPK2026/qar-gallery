@@ -606,92 +606,9 @@
     result: "Schnellste Zeit",
     note: "7:58 min — Clubrekord"
   }];
-  const DEMO_EVENTS = {
-    "E005": {
-      id: "E005",
-      name: "Clubabend im Kesselchen",
-      date: "2026-07-14",
-      location: "Kesselchen, Nürburgring",
-      category: "Clubabend",
-      maxParticipants: 100,
-      classes: ["Alle Modelle"],
-      desc: "Monatlicher Clubabend im Kesselchen.",
-      organizer: "PCN Vorstand",
-      price: "Kostenlos"
-    },
-    "E006": {
-      id: "E006",
-      name: "53. Bellmot Oldtimer Grand Prix",
-      date: "2026-08-07",
-      location: "Nürburgring Fahrerlager",
-      category: "Oldtimer",
-      maxParticipants: 200,
-      classes: ["H-Kennzeichen"],
-      desc: "Zelt und Stellfläche für Ausstellungsfahrzeuge (H-Kennzeichen) im Vorstart-Bereich, 10×30m. Wochenendtickets ab 49 EUR, inkl. Parkplatz Mercedes-Arena 120 EUR.",
-      organizer: "PCN Vorstand",
-      price: "49–120 EUR"
-    },
-    "E007": {
-      id: "E007",
-      name: "Clubabend im Kesselchen",
-      date: "2026-08-11",
-      location: "Kesselchen, Nürburgring",
-      category: "Clubabend",
-      maxParticipants: 100,
-      classes: ["Alle Modelle"],
-      desc: "Monatlicher Clubabend.",
-      organizer: "PCN Vorstand",
-      price: "Kostenlos"
-    },
-    "E008": {
-      id: "E008",
-      name: "After Work Classic",
-      date: "2026-08-31",
-      location: "Altes Fahrerlager, Kesselchen",
-      category: "Ausfahrt",
-      maxParticipants: 100,
-      classes: ["Alle Modelle"],
-      desc: "Treffpunkt Altes Fahrerlager, Kesselchen.",
-      organizer: "PCN Vorstand",
-      price: "Kostenlos"
-    },
-    "E009": {
-      id: "E009",
-      name: "Clubabend im Kesselchen",
-      date: "2026-09-08",
-      location: "Kesselchen, Nürburgring",
-      category: "Clubabend",
-      maxParticipants: 100,
-      classes: ["Alle Modelle"],
-      desc: "Monatlicher Clubabend.",
-      organizer: "PCN Vorstand",
-      price: "Kostenlos"
-    },
-    "E010": {
-      id: "E010",
-      name: "PCN TrackDay Grand Prix Strecke",
-      date: "2026-09-10",
-      location: "Nürburgring Grand Prix Strecke",
-      category: "Trackday",
-      maxParticipants: 40,
-      classes: ["Sport", "Race", "Touring"],
-      desc: "Unser jährlicher TrackDay auf der Grand Prix Strecke. Helfer gesucht für Zufahrtskontrolle / Boxengasse / Auf- und Abbau — gerne melden!",
-      organizer: "PCN Vorstand",
-      price: "Auf Anfrage"
-    },
-    "E011": {
-      id: "E011",
-      name: "Saisonabschluss Bodensee-Fahrt",
-      date: "2026-10-22",
-      location: "Bodensee-Region",
-      category: "Saisonfahrt",
-      maxParticipants: 30,
-      classes: ["Alle Modelle"],
-      desc: "Mehrtägiger Ausflug 22.–25. Oktober. Hotel am Bodensee, mehrere Ausfahrten. Streckenplanung: Präsident PC Bodensee-Oberschwaben.",
-      organizer: "PCN Vorstand",
-      price: "Auf Anfrage"
-    }
-  };
+
+  // Events now live in Supabase — loaded on login
+  const DEMO_EVENTS = {};
   const DEMO_INSURANCE = {
     "V001": [{
       id: "I1",
@@ -1660,7 +1577,7 @@
     const [logbook, setLogbook] = (0, _react.useState)({});
     const [reminders, setReminders] = (0, _react.useState)([]);
     const [participants, setParticipants] = (0, _react.useState)({});
-    const [events, setEvents] = (0, _react.useState)(DEMO_EVENTS);
+    const [events, setEvents] = (0, _react.useState)({});
     const [eventHistory] = (0, _react.useState)(DEMO_HISTORY);
     const [threads, setThreads] = (0, _react.useState)({});
     const [activeThread, setActiveThread] = (0, _react.useState)(null);
@@ -1979,14 +1896,12 @@
       setReminders(remRes.data || []);
       // Merge saved events with demo events
       const savedEvs = evRes.data || [];
-      const evMap = {
-        ...DEMO_EVENTS
-      };
+      const evMap = {};
       savedEvs.forEach(e => evMap[e.id] = e);
       setEvents(evMap);
       const pMap = {};
       // Load participants for all known events (from DB + demo)
-      const allEventIds = [...new Set([...Object.keys(evMap), ...Object.keys(DEMO_EVENTS)])];
+      const allEventIds = [...Object.keys(evMap)];
       await Promise.all(allEventIds.map(async eid => {
         const r = await DB.events.participants(eid);
         if (r.data && r.data.length > 0) pMap[eid] = r.data;
@@ -2913,7 +2828,7 @@
         stored.session = DEMO_USERS.u1;
         stored.vehicles = DEMO_VEHICLES;
         stored.logbook = DEMO_LOGBOOK;
-        stored.events = DEMO_EVENTS;
+        stored.events = {};
         stored.participants = DEMO_PARTICIPANTS;
         stored.threads = DEMO_THREADS;
         stored.reminders = {
@@ -3620,7 +3535,7 @@
           }
           const stored = JSON.parse(localStorage.getItem("pcn_v1") || "{}");
           if (!stored.events || Object.keys(stored.events).length === 0) {
-            stored.events = DEMO_EVENTS;
+            stored.events = {};
             localStorage.setItem("pcn_v1", JSON.stringify(stored));
           }
           track("member_register", {
@@ -3631,7 +3546,6 @@
             ...p,
             [u.id]: u
           }));
-          setEvents(DEMO_EVENTS);
           setScreen("app");
           toast_("Willkommen, " + u.name + "! 🏁");
         } catch (e) {
