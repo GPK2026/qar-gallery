@@ -223,7 +223,7 @@ const PCN_STORAGE = (() => {
         return { error: "Bereits angemeldet" };
       const p = { id: uid(), eventId, userId, vehicleId, class: cls,
         startNr: String(list.length + 1).padStart(2,"0"),
-        status: "confirmed", registeredAt: now() };
+        status: "pending", registeredAt: now() };
       all[eventId] = [...list, p];
       local._set("participants", all);
       return { data: p };
@@ -668,7 +668,7 @@ const PCN_STORAGE = (() => {
       const res = await supabase._post("participants",{
         event_id:eventId, user_id:userId, vehicle_id:vehicleId,
         class:cls, start_nr:String(count+1).padStart(2,"0"),
-        status:"confirmed", registered_at:now()
+        status:"pending", registered_at:now()
       });
       if(res.error) return res;
       return { data: supabase._mapParticipant(res.data) };
