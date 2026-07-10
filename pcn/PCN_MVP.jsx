@@ -3164,6 +3164,46 @@ function PCNInner() {
                 );
               })()}
 
+{/* Neuigkeiten — horizontal swipeable */}
+              {(()=>{
+                const items = DEMO_NEWS
+                  .filter(n=>n.type!=="welcome" && newsState[n.id]!=="read")
+                  .sort((a,b)=>new Date(b.date)-new Date(a.date));
+                if(!items.length) return null;
+                return (
+                  <div style={{display:"flex",gap:12,overflowX:"auto",scrollbarWidth:"none",
+                    WebkitOverflowScrolling:"touch",paddingBottom:4,marginBottom:8}}>
+                    {items.map(n=>{
+                      const isRemind = newsState[n.id]==="remind";
+                      // Teaser: first 80 chars
+                      const teaser = n.body ? n.body.replace(/\n/g," ").slice(0,90)+(n.body.length>90?"…":"") : "";
+                      return (
+                        <div key={n.id} onClick={()=>setViewNews(n)}
+                          style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}0d`:C.card,
+                            border:`1px solid ${isRemind?C.amber+"44":n.pinned?C.red+"33":C.border}`,
+                            borderRadius:12,padding:"13px 14px",width:260,flexShrink:0,cursor:"pointer"}}>
+                          <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                            <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
+                                <div style={{fontSize:13,fontWeight:700,color:C.white,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
+                                {n.pinned&&<span style={{background:C.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>NEU</span>}
+                              </div>
+                              <div style={{fontSize:11,color:C.muted,lineHeight:1.6,marginBottom:10}}>{teaser}</div>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                                <span style={{fontSize:9,color:"#444"}}>{fmtDate(n.date)}</span>
+                                <span style={{fontSize:11,color:C.red,fontWeight:700}}>Lesen →</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
               {/* ── Zuletzt angesehen ── */}
               {recentVehicles.length>0&&(
                 <div style={{marginBottom:18}}>
@@ -3224,47 +3264,7 @@ function PCNInner() {
                 </div>
               )}
 
-              {/* Neuigkeiten — horizontal swipeable */}
-              {(()=>{
-                const items = DEMO_NEWS
-                  .filter(n=>n.type!=="welcome" && newsState[n.id]!=="read")
-                  .sort((a,b)=>new Date(b.date)-new Date(a.date));
-                if(!items.length) return null;
-                return (
-                  <div style={{display:"flex",gap:12,overflowX:"auto",scrollbarWidth:"none",
-                    WebkitOverflowScrolling:"touch",paddingBottom:4,marginBottom:8}}>
-                    {items.map(n=>{
-                      const isRemind = newsState[n.id]==="remind";
-                      // Teaser: first 80 chars
-                      const teaser = n.body ? n.body.replace(/\n/g," ").slice(0,90)+(n.body.length>90?"…":"") : "";
-                      return (
-                        <div key={n.id} onClick={()=>setViewNews(n)}
-                          style={{background:isRemind?`${C.amber}10`:n.pinned?`${C.red}0d`:C.card,
-                            border:`1px solid ${isRemind?C.amber+"44":n.pinned?C.red+"33":C.border}`,
-                            borderRadius:12,padding:"13px 14px",width:260,flexShrink:0,cursor:"pointer"}}>
-                          <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                            <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
-                                <div style={{fontSize:13,fontWeight:700,color:C.white,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
-                                {n.pinned&&<span style={{background:C.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>NEU</span>}
-                              </div>
-                              <div style={{fontSize:11,color:C.muted,lineHeight:1.6,marginBottom:10}}>{teaser}</div>
-                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                                <span style={{fontSize:9,color:"#444"}}>{fmtDate(n.date)}</span>
-                                <span style={{fontSize:11,color:C.red,fontWeight:700}}>Lesen →</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* ── 2. Meine Fahrzeuge ── */}
+                          {/* ── 2. Meine Fahrzeuge ── */}
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <div style={{fontSize:10,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>🚗 Meine Fahrzeuge</div>
