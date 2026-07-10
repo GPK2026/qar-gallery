@@ -155,19 +155,19 @@
   <div id="layout">
     <nav id="sidebar">
       <div class="nav-sec">Übersicht</div>
-      <div class="nav-item active" onclick="showTab('dashboard')">📊 Dashboard</div>
-      <div class="nav-item" onclick="showTab('activity')">⚡ Aktivität</div>
+      <div class="nav-item active" data-tab="dashboard" onclick="showTab('dashboard')">📊 Dashboard</div>
+      <div class="nav-item" data-tab="activity" onclick="showTab('activity')">⚡ Aktivität</div>
       <div class="nav-sec">Mitglieder</div>
-      <div class="nav-item" onclick="showTab('members')">👥 Mitglieder <span class="nbadge" id="sb-guests" style="display:none"></span></div>
-      <div class="nav-item" onclick="showTab('payments')">💳 Zahlungen <span class="nbadge" id="sb-pay" style="display:none"></span></div>
-      <div class="nav-item" onclick="showTab('points')">🏆 Punkte</div>
-      <div class="nav-item" onclick="showTab('vehicles')">🚗 Fahrzeuge</div>
+      <div class="nav-item" data-tab="members" onclick="showTab('members')">👥 Mitglieder <span class="nbadge" id="sb-guests" style="display:none"></span></div>
+      <div class="nav-item" data-tab="payments" onclick="showTab('payments')">💳 Zahlungen <span class="nbadge" id="sb-pay" style="display:none"></span></div>
+      <div class="nav-item" data-tab="points" onclick="showTab('points')">🏆 Punkte</div>
+      <div class="nav-item" data-tab="vehicles" onclick="showTab('vehicles')">🚗 Fahrzeuge</div>
       <div class="nav-sec">Events & Inhalt</div>
-      <div class="nav-item" onclick="showTab('events')">🏁 Events</div>
-      <div class="nav-item" onclick="showTab('newsletter')">📬 Newsletter</div>
-      <div class="nav-item" onclick="showTab('newsfeed')">📰 News-Feed</div>
+      <div class="nav-item" data-tab="events" onclick="showTab('events')">🏁 Events</div>
+      <div class="nav-item" data-tab="newsletter" onclick="showTab('newsletter')">📬 Newsletter</div>
+      <div class="nav-item" data-tab="newsfeed" onclick="showTab('newsfeed')">📰 News-Feed</div>
       <div class="nav-sec">System</div>
-      <div class="nav-item" onclick="showTab('settings')">⚙️ Einstellungen</div>
+      <div class="nav-item" data-tab="settings" onclick="showTab('settings')">⚙️ Einstellungen</div>
     </nav>
     <main id="main">
       <div id="tab-dashboard"></div>
@@ -185,12 +185,12 @@
 
   <!-- Mobile Bottom Tabbar -->
   <div id="tabbar">
-    <button class="tbt active" onclick="showTab('dashboard')" id="tbt-dashboard"><span>📊</span><span>Dashboard</span></button>
-    <button class="tbt" onclick="showTab('members')" id="tbt-members"><span>👥</span><span>Mitglieder</span><span class="tbt-badge hidden" id="tb-guests"></span></button>
-    <button class="tbt" onclick="showTab('payments')" id="tbt-payments"><span>💳</span><span>Zahlungen</span><span class="tbt-badge hidden" id="tb-pay"></span></button>
-    <button class="tbt" onclick="showTab('points')" id="tbt-points"><span>🏆</span><span>Punkte</span></button>
-    <button class="tbt" onclick="showTab('events')" id="tbt-events"><span>🏁</span><span>Events</span></button>
-    <button class="tbt" onclick="showTab('newsletter')" id="tbt-newsletter"><span>📬</span><span>Content</span></button>
+    <button class="tbt active" data-tab="dashboard" onclick="showTab('dashboard')" id="tbt-dashboard"><span>📊</span><span>Dashboard</span></button>
+    <button class="tbt" data-tab="members" onclick="showTab('members')" id="tbt-members"><span>👥</span><span>Mitglieder</span><span class="tbt-badge hidden" id="tb-guests"></span></button>
+    <button class="tbt" data-tab="payments" onclick="showTab('payments')" id="tbt-payments"><span>💳</span><span>Zahlungen</span><span class="tbt-badge hidden" id="tb-pay"></span></button>
+    <button class="tbt" data-tab="points" onclick="showTab('points')" id="tbt-points"><span>🏆</span><span>Punkte</span></button>
+    <button class="tbt" data-tab="events" onclick="showTab('events')" id="tbt-events"><span>🏁</span><span>Events</span></button>
+    <button class="tbt" data-tab="newsletter" onclick="showTab('newsletter')" id="tbt-newsletter"><span>📬</span><span>Content</span></button>
   </div>
 </div>
 
@@ -234,15 +234,22 @@ function doLogout(){ sessionStorage.removeItem("pcn_adm"); location.reload(); }
 // ── Load ──────────────────────────────────────────────────────────────────────
 async function loadAll() {
   toast("Lädt…");
-  const [m,e,v] = await Promise.all([
-    api("users?select=*&order=created_at.desc"),
-    api("events?select=*&order=date.asc"),
-    api("vehicles?select=*&order=created_at.desc"),
-  ]);
-  if(m.data) DB.members  = m.data;
-  if(e.data) DB.events   = e.data;
-  if(v.data) DB.vehicles = v.data;
-  updateBadges(); renderTab(currentTab); toast("Aktualisiert ✓");
+  try {
+    const [m,e,v] = await Promise.all([
+      api("users?select=*&order=created_at.desc&limit=200"),
+      api("events?select=*&order=date.asc&limit=100"),
+      api("vehicles?select=*&order=created_at.desc&limit=200"),
+    ]);
+    if(m.data && Array.isArray(m.data)) DB.members  = m.data;
+    if(e.data && Array.isArray(e.data)) DB.events   = e.data;
+    if(v.data && Array.isArray(v.data)) DB.vehicles = v.data;
+    updateBadges();
+    renderTab(currentTab);
+    toast(`Geladen: ${DB.members.length} Mitglieder, ${DB.vehicles.length} Fahrzeuge ✓`);
+  } catch(err) {
+    toast("Fehler beim Laden: "+err.message,"err");
+    renderTab(currentTab);
+  }
 }
 
 function updateBadges() {
@@ -255,11 +262,20 @@ function updateBadges() {
 // ── Nav ───────────────────────────────────────────────────────────────────────
 function showTab(id) {
   currentTab = id;
-  document.querySelectorAll(".nav-item").forEach(el=>el.classList.toggle("active",el.getAttribute("onclick")===`showTab('${id}')`));
-  document.querySelectorAll(".tbt").forEach(el=>el.classList.toggle("active",el.id==="tbt-"+id));
+  // Desktop sidebar
+  document.querySelectorAll(".nav-item").forEach(el=>{
+    el.classList.toggle("active", el.dataset.tab===id);
+  });
+  // Mobile tabbar
+  document.querySelectorAll(".tbt").forEach(el=>{
+    el.classList.toggle("active", el.dataset.tab===id);
+  });
+  // Show/hide content
   document.querySelectorAll("[id^='tab-']").forEach(el=>el.classList.add("hidden"));
   const el = document.getElementById("tab-"+id);
   if(el) { el.classList.remove("hidden"); renderTab(id); }
+  // Scroll to top
+  document.getElementById("main").scrollTop = 0;
 }
 function renderTab(id) {
   const el = document.getElementById("tab-"+id);
