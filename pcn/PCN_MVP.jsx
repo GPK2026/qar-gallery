@@ -165,7 +165,7 @@ const DEMO_USERS = {
 const DEMO_VEHICLES = {
   // ── Max: Porsche 911 Carrera 4S, GT-Silbermetallic ──────────────────────────
   // Alle Bilder zeigen denselben silbernen 911 aus verschiedenen Perspektiven
-  "V001":{id:"V001",qarId:"QAR-R4T8W3NX",userId:"u1",owner:"max@pcn.de",
+  "V001":{id:"V001",qarId:"QAR-R4T8W3NX",userId:"7701c779-1568-4c42-aa2d-b8506bc3e988",owner:"business@gear7.de",
     hersteller:"Porsche",modell:"911 GTS",baujahr:"2019",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"GT-Silbermetallic",
     kennzeichen:"AW-PC 911",fin:"WP0ZZZ99ZLS100001",phone:"+49 171 9110911",
@@ -186,7 +186,7 @@ const DEMO_VEHICLES = {
     privacy:{...DEF_PRIVACY, pub_phone:true, pub_gallery:true, pub_events:true}},
 
   // ── Max: Porsche 718 Boxster GTS 4.0, Karminrot ─────────────────────────────
-  "V002":{id:"V002",qarId:"QAR-K9P2M7RW",userId:"u1",owner:"max@pcn.de",
+  "V002":{id:"V002",qarId:"QAR-K9P2M7RW",userId:"7701c779-1568-4c42-aa2d-b8506bc3e988",owner:"business@gear7.de",
     hersteller:"Porsche",modell:"718 Boxster GTS 4.0",baujahr:"2021",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"Karminrot",
     kennzeichen:"AW-PC 718",phone:"+49 171 9110718",
@@ -206,7 +206,7 @@ const DEMO_VEHICLES = {
     privacy:{...DEF_PRIVACY, pub_phone:true, pub_gallery:true, pub_events:true}},
 
   // ── Thomas: Porsche 992 GT3, Riviera Blau ───────────────────────────────────
-  "V003":{id:"V003",qarId:"QAR-T7M3N9PX",userId:"u2",owner:"thomas@pcn.de",
+  "V003":{id:"V003",qarId:"QAR-T7M3N9PX",userId:"7701c779-1568-4c42-aa2d-b8506bc3e988",owner:"business@gear7.de",
     hersteller:"Porsche",modell:"992 GT3",baujahr:"2022",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"Riviera Blau",
     kennzeichen:"MYK-PC 992",fin:"WP0AC2A92NS230001",phone:"+49 172 5550992",
@@ -220,7 +220,7 @@ const DEMO_VEHICLES = {
     privacy:{...DEF_PRIVACY, pub_events:true, pub_gallery:true, pub_phone:true}},
 
   // ── Max: Porsche 904 Carrera GTS, Oldtimer ───────────────────────────────────
-  "V004":{id:"V004",qarId:"QAR-W2L8X4KR",userId:"u1",owner:"max@pcn.de",
+  "V004":{id:"V004",qarId:"QAR-W2L8X4KR",userId:"7701c779-1568-4c42-aa2d-b8506bc3e988",owner:"business@gear7.de",
     hersteller:"Porsche",modell:"904 Carrera GTS",baujahr:"1964",
     kraftstoff:"Benzin",getriebe:"5-Gang manuell",farbe:"Irischgrün",
     kennzeichen:"MYK-PC 904",fin:"904012",phone:"+49 172 5550904",
@@ -814,6 +814,11 @@ function PCNInner() {
   // ── Derived ──────────────────────────────────────────────────────────────────
   const isGuest = me?.role === "guest";
   const myVehicles = Object.values(vehicles).filter(v=>v.owner===me?.email||v.userId===me?.id);
+  const isDemo = me?.id==="u1"||me?.id==="u2";
+  // In demo mode show all demo vehicles as "Neueste Fahrzeuge"
+  const displayVehicles = isDemo
+    ? Object.values(vehicles).filter(v=>["V001","V002","V003","V004"].includes(v.id))
+    : myVehicles;
   const myReminders = reminders.filter(r=>!r.done).sort((a,b)=>new Date(a.date)-new Date(b.date));
   const myParticipations = Object.values(participants).flat().filter(p=>p.userId===me?.id);
   const myThreads = Object.values(threads).filter(t=>(t.participants||[]).includes(me?.id) && !deletedThreadIds.includes(t.id));
@@ -3346,19 +3351,21 @@ function PCNInner() {
               })()}
             </div>
 
-            {/* ── 2. Meine Fahrzeuge ── */}
+            {/* ── 2. Neueste Fahrzeuge ── */}
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🚗 Meine Fahrzeuge</div>
-                <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>
+                <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
+                  🚗 {isDemo?"Neueste Mitglieder-Fahrzeuge":"Meine Fahrzeuge"}
+                </div>
+                {!isDemo&&<button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>}
               </div>
-              {myVehicles.length===0?(
+              {displayVehicles.length===0&&!isDemo?(
                 <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center",cursor:"pointer"}} onClick={()=>setShowAddV(true)}>
                   <div style={{fontSize:32,marginBottom:8}}>🏎️</div>
                   <div style={{fontSize:13,color:C.white,fontWeight:600,marginBottom:4}}>Erstes Fahrzeug hinzufügen</div>
                   <div style={{fontSize:11,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei</div>
                 </div>
-              ):myVehicles.map(v=>(
+              ):displayVehicles.map(v=>(
                 <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer",display:"flex"}}
                   onClick={()=>{setViewV(v);setScreen("vehicle");}}>
                   <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -3372,6 +3379,7 @@ function PCNInner() {
                       </span>
                       <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
                       {(logbook[v.id]||[]).length>0&&<span style={{fontSize:9,color:C.green,fontWeight:700}}>{(logbook[v.id]||[]).length} Einträge</span>}
+                      {isDemo&&<span style={{fontSize:9,color:C.gold,fontWeight:700}}>Peter K.</span>}
                     </div>
                   </div>
                   <div style={{display:"flex",alignItems:"center",paddingRight:12,color:C.muted,fontSize:20}}>›</div>
