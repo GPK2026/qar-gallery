@@ -1276,19 +1276,27 @@ function PCNInner() {
     if(!vehicleId) return toast_("Fahrzeug wählen","err");
     const DB=window.PCN_DB;
     const {data:p,error}=await DB.events.join(eventId,me.id,vehicleId,cls);
-    if(error){toast_("Fehler: "+error,"err");return;}
-    // Build registration object defensively — DB may return undefined
-    const reg = p || {
-      id:"P"+Date.now(), eventId, userId:me.id, vehicleId, class:cls,
-      startNr:null, status:"pending"
-    };
+    if(error){
+      // Already registered — load existing from DB and show status
+      const {data:parts} = await DB.events.participants(me.id).catch(()=>({data:null}));
+      if(parts) {
+        const existing = parts.filter(x=>x.eventId===eventId||x.event_id===eventId);
+        if(existing.length>0) {
+          setParticipants(prev=>({...prev,[eventId]:[...((prev[eventId]||[]).filter(x=>x.userId!==me.id)),...existing]}));
+          toast_("Du bist bereits angemeldet 🟡");
+          return;
+        }
+      }
+      toast_("Fehler: "+error,"err");
+      return;
+    }
+    const reg = p || { id:"P"+Date.now(), eventId, userId:me.id, vehicleId, class:cls, startNr:null, status:"pending" };
     setParticipants(prev=>{
       const existing = prev[eventId]||[];
       if(existing.find(x=>x.userId===me.id)) return prev;
       return {...prev,[eventId]:[...existing,reg]};
     });
     toast_("Anmeldung eingegangen — wird vom Admin bestätigt 🟡");
-    setTimeout(()=>{ setScreen("app"); setTab("events"); }, 150);
   };
 
   const openEditProfile = () => {
@@ -1558,14 +1566,16 @@ function PCNInner() {
           liveEvs.forEach(e=>{evMap[e.id]=e;});
           setEvents(evMap);
         }
-        // Load participants for demo user
-        const {data:liveParts} = await DB.events.participants("u1").catch(()=>({data:null}));
+        // Load participants for demo user from Supabase
+        const {data:liveParts} = await DB.events.participants(DEMO_USERS.u1.id).catch(()=>({data:null}));
         if(liveParts && liveParts.length>0) {
           const pMap={...DEMO_PARTICIPANTS};
           liveParts.forEach(p=>{
             const eid=p.eventId||p.event_id;
             if(!pMap[eid]) pMap[eid]=[];
-            if(!pMap[eid].find(x=>x.id===p.id)) pMap[eid].push(p);
+            const exists = pMap[eid].find(x=>x.id===p.id||x.userId===p.userId||x.user_id===p.user_id);
+            if(!exists) pMap[eid].push(p);
+            else Object.assign(exists, p); // update with fresh DB data
           });
           setParticipants(pMap);
         }
