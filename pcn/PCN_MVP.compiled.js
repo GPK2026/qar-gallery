@@ -401,8 +401,8 @@
     "V001": {
       id: "V001",
       qarId: "QAR-R4T8W3NX",
-      userId: "u1",
-      owner: "max@pcn.de",
+      userId: "7701c779-1568-4c42-aa2d-b8506bc3e988",
+      owner: "business@gear7.de",
       hersteller: "Porsche",
       modell: "911 GTS",
       baujahr: "2019",
@@ -430,8 +430,8 @@
     "V002": {
       id: "V002",
       qarId: "QAR-K9P2M7RW",
-      userId: "u1",
-      owner: "max@pcn.de",
+      userId: "7701c779-1568-4c42-aa2d-b8506bc3e988",
+      owner: "business@gear7.de",
       hersteller: "Porsche",
       modell: "718 Boxster GTS 4.0",
       baujahr: "2021",
@@ -458,8 +458,8 @@
     "V003": {
       id: "V003",
       qarId: "QAR-T7M3N9PX",
-      userId: "u2",
-      owner: "thomas@pcn.de",
+      userId: "7701c779-1568-4c42-aa2d-b8506bc3e988",
+      owner: "business@gear7.de",
       hersteller: "Porsche",
       modell: "992 GT3",
       baujahr: "2022",
@@ -487,8 +487,8 @@
     "V004": {
       id: "V004",
       qarId: "QAR-W2L8X4KR",
-      userId: "u1",
-      owner: "max@pcn.de",
+      userId: "7701c779-1568-4c42-aa2d-b8506bc3e988",
+      owner: "business@gear7.de",
       hersteller: "Porsche",
       modell: "904 Carrera GTS",
       baujahr: "1964",
@@ -1844,6 +1844,9 @@
     // ── Derived ──────────────────────────────────────────────────────────────────
     const isGuest = me?.role === "guest";
     const myVehicles = Object.values(vehicles).filter(v => v.owner === me?.email || v.userId === me?.id);
+    const isDemo = me?.id === "u1" || me?.id === "u2";
+    // In demo mode show all demo vehicles as "Neueste Fahrzeuge"
+    const displayVehicles = isDemo ? Object.values(vehicles).filter(v => ["V001", "V002", "V003", "V004"].includes(v.id)) : myVehicles;
     const myReminders = reminders.filter(r => !r.done).sort((a, b) => new Date(a.date) - new Date(b.date));
     const myParticipations = Object.values(participants).flat().filter(p => p.userId === me?.id);
     const myThreads = Object.values(threads).filter(t => (t.participants || []).includes(me?.id) && !deletedThreadIds.includes(t.id));
@@ -7860,10 +7863,10 @@
         textTransform: "uppercase",
         letterSpacing: 1.5
       }
-    }, "🚗 Meine Fahrzeuge"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "🚗 ", isDemo ? "Neueste Mitglieder-Fahrzeuge" : "Meine Fahrzeuge"), !isDemo && /*#__PURE__*/_react.default.createElement("button", {
       className: "btn sm ghost",
       onClick: () => setShowAddV(true)
-    }, "+ Hinzufügen")), myVehicles.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+    }, "+ Hinzufügen")), displayVehicles.length === 0 && !isDemo ? /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1.5px dashed ${C.border}`,
@@ -7890,7 +7893,7 @@
         fontSize: 11,
         color: C.muted
       }
-    }, "Schaltet QR-Code, Logbuch und Events frei")) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
+    }, "Schaltet QR-Code, Logbuch und Events frei")) : displayVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
       key: v.id,
       style: {
         background: C.card,
@@ -7975,7 +7978,13 @@
         color: C.green,
         fontWeight: 700
       }
-    }, (logbook[v.id] || []).length, " Einträge"))), /*#__PURE__*/_react.default.createElement("div", {
+    }, (logbook[v.id] || []).length, " Einträge"), isDemo && /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 9,
+        color: C.gold,
+        fontWeight: 700
+      }
+    }, "Peter K."))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",
