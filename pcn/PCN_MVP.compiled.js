@@ -2571,10 +2571,26 @@
         error
       } = await DB.events.join(eventId, me.id, vehicleId, cls);
       if (error) {
+        // Already registered — load existing from DB and show status
+        const {
+          data: parts
+        } = await DB.events.participants(me.id).catch(() => ({
+          data: null
+        }));
+        if (parts) {
+          const existing = parts.filter(x => x.eventId === eventId || x.event_id === eventId);
+          if (existing.length > 0) {
+            setParticipants(prev => ({
+              ...prev,
+              [eventId]: [...(prev[eventId] || []).filter(x => x.userId !== me.id), ...existing]
+            }));
+            toast_("Du bist bereits angemeldet 🟡");
+            return;
+          }
+        }
         toast_("Fehler: " + error, "err");
         return;
       }
-      // Build registration object defensively — DB may return undefined
       const reg = p || {
         id: "P" + Date.now(),
         eventId,
@@ -2593,10 +2609,6 @@
         };
       });
       toast_("Anmeldung eingegangen — wird vom Admin bestätigt 🟡");
-      setTimeout(() => {
-        setScreen("app");
-        setTab("events");
-      }, 150);
     };
     const openEditProfile = () => {
       setProfileForm({
@@ -3046,10 +3058,10 @@
             });
             setEvents(evMap);
           }
-          // Load participants for demo user
+          // Load participants for demo user from Supabase
           const {
             data: liveParts
-          } = await DB.events.participants("u1").catch(() => ({
+          } = await DB.events.participants(DEMO_USERS.u1.id).catch(() => ({
             data: null
           }));
           if (liveParts && liveParts.length > 0) {
@@ -3059,7 +3071,8 @@
             liveParts.forEach(p => {
               const eid = p.eventId || p.event_id;
               if (!pMap[eid]) pMap[eid] = [];
-              if (!pMap[eid].find(x => x.id === p.id)) pMap[eid].push(p);
+              const exists = pMap[eid].find(x => x.id === p.id || x.userId === p.userId || x.user_id === p.user_id);
+              if (!exists) pMap[eid].push(p);else Object.assign(exists, p); // update with fresh DB data
             });
             setParticipants(pMap);
           }
