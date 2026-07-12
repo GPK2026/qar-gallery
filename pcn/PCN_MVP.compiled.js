@@ -1847,8 +1847,8 @@
 
     // ── Derived ──────────────────────────────────────────────────────────────────
     const isGuest = me?.role === "guest";
-    const myVehicles = Object.values(vehicles).filter(v => v.owner === me?.email || v.userId === me?.id);
     const isDemo = me?.id === "u1" || me?.id === "u2";
+    const myVehicles = Object.values(vehicles).filter(v => v.owner === me?.email || v.userId === me?.id || isDemo && v.id === "V001");
     // In demo mode show all demo vehicles as "Neueste Fahrzeuge"
     const displayVehicles = isDemo ? Object.values(vehicles).filter(v => ["V001", "V002", "V003", "V004"].includes(v.id)) : myVehicles;
     const myReminders = reminders.filter(r => !r.done).sort((a, b) => new Date(a.date) - new Date(b.date));
