@@ -3355,11 +3355,17 @@ function PCNInner() {
 
             {/* ── Demo-Hinweis ── */}
             {isDemo&&(
-              <div style={{background:"#6b7fff18",border:"1px solid #6b7fff33",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center"}}>
-                <span style={{fontSize:16}}>🎭</span>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:12,fontWeight:700,color:"#6b7fff"}}>Demo-Modus — Max Mustermann</div>
-                  <div style={{fontSize:11,color:"#aaa"}}>Du siehst alle Mitglieder-Funktionen in der Vorschau</div>
+              <div style={{background:"#6b7fff18",border:"1px solid #6b7fff44",borderRadius:12,padding:"13px 16px",marginBottom:16}}>
+                <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:8}}>
+                  <span style={{fontSize:18}}>🎭</span>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:900,color:"#6b7fff",letterSpacing:.5}}>Demo-Modus — Max Mustermann</div>
+                </div>
+                <div style={{fontSize:12,color:"#bbb",lineHeight:1.7}}>
+                  Alle Funktionen der Plattform sind vollständig implementiert und hier erlebbar — Events, Chat, Fahrzeugakte, QR-Code, Punkte und Admin-Dashboard.
+                </div>
+                <div style={{marginTop:8,background:"#ffffff12",borderRadius:7,padding:"7px 10px",display:"flex",gap:7,alignItems:"center"}}>
+                  <span style={{fontSize:13}}>🔄</span>
+                  <div style={{fontSize:11,color:"#aaa"}}>Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt — Änderungen sind nicht dauerhaft gespeichert.</div>
                 </div>
               </div>
             )}
