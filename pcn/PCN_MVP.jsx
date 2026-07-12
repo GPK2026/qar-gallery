@@ -1417,14 +1417,36 @@ function PCNInner() {
     } catch(e){}
   }, []);
 
+  const PETER_ID = "7701c779-1568-4c42-aa2d-b8506bc3e988";
+  const DEMO_REPLIES = [
+    "Gerne! Die Fahrzeugakte des 904 ist vollständig digital — Servicenachweise seit 1964, Rennhistorie und Gutachten sind alle hinterlegt.",
+    "Ja, das Fahrzeug hat H-Kennzeichen. Beim Bellmot haben wir immer einen schönen Platz auf der PCN-Stellfläche — freue mich auf das Treffen!",
+    "Der 904 wird selten bewegt, aber beim Clubabend im Kesselchen bin ich regelmäßig dabei. Mit dem 992 GT3 fahre ich häufiger.",
+    "Die Marktwertanalyse auf der Plattform hat den 904 übrigens auf 1,3–1,5 Mio. EUR eingeschätzt — sehr nützliche Funktion!",
+    "Danke für Ihr Interesse! Gerne teile ich die QR-Akte beim nächsten Treffen persönlich mit Ihnen.",
+  ];
+  let _demoReplyIdx = 0;
+
   const sendMsg = async (threadId,text) => {
     const clean = sanitize(text);
     if(!clean) return;
+    const newMsg = {id:"m"+Date.now(),from:me.id,text:clean,created_at:new Date().toISOString(),read:false};
+    setThreads(prev=>({...prev,[threadId]:{...prev[threadId],messages:[...(prev[threadId]?.messages||[]),newMsg]}}));
+
+    // Try DB send (may fail in demo — that's ok)
     const DB=window.PCN_DB;
-    const {data:msg,error}=await DB.threads.send(threadId,me.id,clean);
-    if(error){toast_("Fehler","err");return;}
+    if(DB) DB.threads.send(threadId,me.id,clean).catch(()=>{});
     track("message_sent", {thread_id:threadId, is_guest:me?.role==="guest"});
-    setThreads(prev=>({...prev,[threadId]:{...prev[threadId],messages:[...(prev[threadId].messages||[]),msg]}}));
+
+    // Demo chatbot auto-reply from Peter
+    if(isDemo) {
+      setTimeout(()=>{
+        const reply = DEMO_REPLIES[_demoReplyIdx % DEMO_REPLIES.length];
+        _demoReplyIdx++;
+        const botMsg = {id:"bot"+Date.now(),from:PETER_ID,text:reply,created_at:new Date().toISOString(),read:false};
+        setThreads(prev=>({...prev,[threadId]:{...prev[threadId],messages:[...(prev[threadId]?.messages||[]),botMsg]}}));
+      }, 1200 + Math.random()*800);
+    }
   };
 
   const startContact = async (vehicleId, asUser) => {
@@ -3980,7 +4002,7 @@ function PCNInner() {
               <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid rgba(255,255,255,.1)`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,color:C.gold}}>{isDemo?580:myPoints}</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,color:C.gold}}>{myPoints}</span>
                     <span style={{fontSize:15,color:C.muted}}>Punkte</span>
                     <button onClick={()=>setShowInfoModal("points")}
                       style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,padding:0,lineHeight:1}}>ℹ️</button>
@@ -3995,7 +4017,7 @@ function PCNInner() {
                   <div style={{height:"100%",width:`${pointsProgress}%`,background:`linear-gradient(90deg, ${C.red}, ${C.gold})`,borderRadius:99,transition:"width .6s ease"}}/>
                 </div>
                 <div style={{fontSize:11,color:C.muted,marginTop:6}}>
-                  🏁 {isDemo?"3":myParticipations.length} Events · 🚗 {isDemo?"1":myVehicles.length} Fahrzeuge · 📋 {isDemo?"8":Object.values(logbook).flat().length} Logbuch-Einträge
+                  🏁 {myParticipations.length} Events · 🚗 {myVehicles.length} Fahrzeuge · 📋 {Object.values(logbook).flat().length} Logbuch-Einträge
                 </div>
               </div>
 
