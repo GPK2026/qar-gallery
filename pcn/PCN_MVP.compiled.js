@@ -8094,10 +8094,18 @@
         display: "flex"
       },
       onClick: () => {
-        setViewV(v);
-        setScreen("vehicle");
+        // Open public view — respects privacy settings
+        const priv = typeof v.privacy === "string" ? JSON.parse(v.privacy) : v.privacy || {};
+        setPublicV({
+          ...v,
+          privacy: {
+            ...DEF_PRIVACY,
+            ...priv
+          }
+        });
+        setScreen("public");
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, "                    ", /*#__PURE__*/_react.default.createElement("div", {
       style: {
         width: 90,
         height: 90,
