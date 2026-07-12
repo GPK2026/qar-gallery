@@ -2775,29 +2775,56 @@
         });
       } catch (e) {}
     }, []);
+    const PETER_ID = "7701c779-1568-4c42-aa2d-b8506bc3e988";
+    const DEMO_REPLIES = ["Gerne! Die Fahrzeugakte des 904 ist vollständig digital — Servicenachweise seit 1964, Rennhistorie und Gutachten sind alle hinterlegt.", "Ja, das Fahrzeug hat H-Kennzeichen. Beim Bellmot haben wir immer einen schönen Platz auf der PCN-Stellfläche — freue mich auf das Treffen!", "Der 904 wird selten bewegt, aber beim Clubabend im Kesselchen bin ich regelmäßig dabei. Mit dem 992 GT3 fahre ich häufiger.", "Die Marktwertanalyse auf der Plattform hat den 904 übrigens auf 1,3–1,5 Mio. EUR eingeschätzt — sehr nützliche Funktion!", "Danke für Ihr Interesse! Gerne teile ich die QR-Akte beim nächsten Treffen persönlich mit Ihnen."];
+    let _demoReplyIdx = 0;
     const sendMsg = async (threadId, text) => {
       const clean = sanitize(text);
       if (!clean) return;
-      const DB = window.PCN_DB;
-      const {
-        data: msg,
-        error
-      } = await DB.threads.send(threadId, me.id, clean);
-      if (error) {
-        toast_("Fehler", "err");
-        return;
-      }
-      track("message_sent", {
-        thread_id: threadId,
-        is_guest: me?.role === "guest"
-      });
+      const newMsg = {
+        id: "m" + Date.now(),
+        from: me.id,
+        text: clean,
+        created_at: new Date().toISOString(),
+        read: false
+      };
       setThreads(prev => ({
         ...prev,
         [threadId]: {
           ...prev[threadId],
-          messages: [...(prev[threadId].messages || []), msg]
+          messages: [...(prev[threadId]?.messages || []), newMsg]
         }
       }));
+
+      // Try DB send (may fail in demo — that's ok)
+      const DB = window.PCN_DB;
+      if (DB) DB.threads.send(threadId, me.id, clean).catch(() => {});
+      track("message_sent", {
+        thread_id: threadId,
+        is_guest: me?.role === "guest"
+      });
+
+      // Demo chatbot auto-reply from Peter
+      if (isDemo) {
+        setTimeout(() => {
+          const reply = DEMO_REPLIES[_demoReplyIdx % DEMO_REPLIES.length];
+          _demoReplyIdx++;
+          const botMsg = {
+            id: "bot" + Date.now(),
+            from: PETER_ID,
+            text: reply,
+            created_at: new Date().toISOString(),
+            read: false
+          };
+          setThreads(prev => ({
+            ...prev,
+            [threadId]: {
+              ...prev[threadId],
+              messages: [...(prev[threadId]?.messages || []), botMsg]
+            }
+          }));
+        }, 1200 + Math.random() * 800);
+      }
     };
     const startContact = async (vehicleId, asUser) => {
       const currentMe = asUser || me;
@@ -9570,7 +9597,7 @@
         fontWeight: 900,
         color: C.gold
       }
-    }, isDemo ? 580 : myPoints), /*#__PURE__*/_react.default.createElement("span", {
+    }, myPoints), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 15,
         color: C.muted
@@ -9622,7 +9649,7 @@
         color: C.muted,
         marginTop: 6
       }
-    }, "🏁 ", isDemo ? "3" : myParticipations.length, " Events · 🚗 ", isDemo ? "1" : myVehicles.length, " Fahrzeuge · 📋 ", isDemo ? "8" : Object.values(logbook).flat().length, " Logbuch-Einträge")), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+    }, "🏁 ", myParticipations.length, " Events · 🚗 ", myVehicles.length, " Fahrzeuge · 📋 ", Object.values(logbook).flat().length, " Logbuch-Einträge")), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginTop: 14,
         paddingTop: 12,
