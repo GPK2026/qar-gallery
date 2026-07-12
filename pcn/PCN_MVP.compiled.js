@@ -378,7 +378,11 @@
       name: "Max Mustermann",
       email: "max@pcn.de",
       role: "member",
-      memberNr: "PCN-0847"
+      memberNr: "PCN-0847",
+      city: "Adenau",
+      beitragBezahlt: true,
+      joinedAt: "2021-03-15",
+      avatar: null
     },
     "u2": {
       id: "u2",
@@ -7692,7 +7696,37 @@
       style: {
         animation: "fadeIn .2s"
       }
+    }, isDemo && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: "#6b7fff18",
+        border: "1px solid #6b7fff33",
+        borderRadius: 10,
+        padding: "10px 14px",
+        marginBottom: 14,
+        display: "flex",
+        gap: 10,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 16
+      }
+    }, "🎭"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        flex: 1
+      }
     }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: "#6b7fff"
+      }
+    }, "Demo-Modus — Max Mustermann"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#aaa"
+      }
+    }, "Du siehst alle Mitglieder-Funktionen in der Vorschau"))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
       }
@@ -7863,7 +7897,7 @@
         textTransform: "uppercase",
         letterSpacing: 1.5
       }
-    }, "🚗 ", isDemo ? "Neueste Mitglieder-Fahrzeuge" : "Meine Fahrzeuge"), !isDemo && /*#__PURE__*/_react.default.createElement("button", {
+    }, "🚗 ", isDemo ? "Neueste Mitglieder-Fahrzeuge" : "Meine Fahrzeuge"), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn sm ghost",
       onClick: () => setShowAddV(true)
     }, "+ Hinzufügen")), displayVehicles.length === 0 && !isDemo ? /*#__PURE__*/_react.default.createElement("div", {
@@ -9436,7 +9470,7 @@
         fontWeight: 900,
         color: C.gold
       }
-    }, myPoints), /*#__PURE__*/_react.default.createElement("span", {
+    }, isDemo ? 580 : myPoints), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 15,
         color: C.muted
@@ -9488,7 +9522,7 @@
         color: C.muted,
         marginTop: 6
       }
-    }, "🏁 ", myParticipations.length, " Events · 🚗 ", myVehicles.length, " Fahrzeuge · 📋 ", Object.values(logbook).flat().length, " Logbuch-Einträge")), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+    }, "🏁 ", isDemo ? "3" : myParticipations.length, " Events · 🚗 ", isDemo ? "1" : myVehicles.length, " Fahrzeuge · 📋 ", isDemo ? "8" : Object.values(logbook).flat().length, " Logbuch-Einträge")), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginTop: 14,
         paddingTop: 12,
