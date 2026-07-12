@@ -701,25 +701,42 @@
     }]
   };
   const DEMO_THREADS = {
-    "T001": {
-      id: "T001",
-      participants: ["u1", "u2"],
-      vehicleId: "V003",
-      vehicleName: "Porsche 992 GT3",
-      anonymous: true,
+    "a1b2c3d4-e5f6-7890-abcd-ef1234567890": {
+      id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      participants: ["a0000000-0000-0000-0000-000000000001", "7701c779-1568-4c42-aa2d-b8506bc3e988"],
+      vehicleId: "V004",
+      vehicleName: "Porsche 904 Carrera GTS",
+      anonymous: false,
       messages: [{
-        id: "M0",
-        from: "system",
-        text: "Kontakt über QAR-ID: QAR-T7M3N9PX",
-        ts: "Gestern 18:31",
-        isSystem: true,
+        id: "DM1",
+        from: "a0000000-0000-0000-0000-000000000001",
+        text: "Hallo! Ich habe gerade Ihren 904 Carrera GTS via QR-Code gescannt — was für ein beeindruckendes Fahrzeug. Ist das wirklich das Exemplar von Monte Carlo 1965?",
+        created_at: "2026-07-12T11:23:00+00:00",
         read: true
       }, {
-        id: "M1",
-        from: "u2",
-        text: "Hallo! Welche Reifengröße fährst du hinten beim GT3?",
-        ts: "Gestern 18:32",
-        read: false
+        id: "DM2",
+        from: "7701c779-1568-4c42-aa2d-b8506bc3e988",
+        text: "Ja, genau! FIN 904012, einer von 16 werksseitig eingesetzten Rennwagen. Das Fahrzeug war 1965 in Monaco am Start. Die Provenienz ist lückenlos dokumentiert.",
+        created_at: "2026-07-12T11:24:15+00:00",
+        read: true
+      }, {
+        id: "DM3",
+        from: "a0000000-0000-0000-0000-000000000001",
+        text: "Unglaublich. Ich bin selbst PCN-Mitglied — Max Mustermann, PCN-0847. Bringen Sie den 904 zum Bellmot Grand Prix im August? Das wäre ein Highlight auf unserer Stellfläche.",
+        created_at: "2026-07-12T11:25:30+00:00",
+        read: true
+      }, {
+        id: "DM4",
+        from: "7701c779-1568-4c42-aa2d-b8506bc3e988",
+        text: "Das ist geplant! Als Ausstellungsfahrzeug ist er natürlich dabei. Freue mich auf den Austausch beim Clubabend.",
+        created_at: "2026-07-12T11:26:45+00:00",
+        read: true
+      }, {
+        id: "DM5",
+        from: "a0000000-0000-0000-0000-000000000001",
+        text: "Perfekt — dann sehen wir uns am 7. August! Ich bringe meinen 911 GTS mit. Falls Sie die Fahrzeugakte teilen möchten, wäre das für unser Clubarchiv fantastisch.",
+        created_at: "2026-07-12T11:27:50+00:00",
+        read: true
       }]
     }
   };
@@ -3046,7 +3063,7 @@
         stored.logbook = DEMO_LOGBOOK;
         stored.events = {};
         stored.participants = DEMO_PARTICIPANTS;
-        stored.threads = DEMO_THREADS;
+        stored.threads = JSON.parse(JSON.stringify(DEMO_THREADS)); // fresh copy each login
         stored.reminders = {
           "u1": [{
             id: "R1",
@@ -3080,7 +3097,8 @@
         // Filter out previously deleted demo threads
         const deletedIds = JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
         const filteredThreads = Object.fromEntries(Object.entries(DEMO_THREADS).filter(([id]) => !deletedIds.includes(id)));
-        setThreads(filteredThreads);
+        // Always reset demo threads to original state
+        setThreads(JSON.parse(JSON.stringify(DEMO_THREADS)));
         setReminders([{
           id: "R1",
           vehicleId: "V001",
@@ -3100,6 +3118,41 @@
           date: dPlus(45),
           done: false
         }]);
+        // Load news/newsletter from Supabase (non-persistent — session only)
+        if (DB) {
+          const {
+            data: liveNews
+          } = (await DB.threads.list) ? {
+            data: null
+          } : {
+            data: null
+          }; // placeholder
+          // Fetch news directly
+          try {
+            const newsResp = await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/news?select=*&order=created_at.desc&limit=20", {
+              headers: {
+                "apikey": "sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED",
+                "Authorization": "Bearer sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED"
+              }
+            });
+            if (newsResp.ok) {
+              const newsData = await newsResp.json();
+              if (newsData && newsData.length > 0) {
+                // Merge DB news with DEMO_NEWS (DB takes priority, no localStorage persistence)
+                window._dbNews = newsData.map(n => ({
+                  id: n.id,
+                  type: n.type || "news",
+                  icon: n.icon || "📰",
+                  title: n.title,
+                  body: n.body || "",
+                  date: n.created_at?.slice(0, 10) || "",
+                  author: n.author,
+                  pinned: n.pinned || false
+                }));
+              }
+            }
+          } catch (e) {}
+        }
         // Load events from Supabase
         if (DB) {
           const {
@@ -7829,7 +7882,8 @@
         }
       }, welcome.body))));
     })(), (() => {
-      const items = DEMO_NEWS.filter(n => n.type !== "welcome" && newsState[n.id] !== "read").sort((a, b) => new Date(b.date) - new Date(a.date));
+      const dbNews = (window._dbNews || []).filter(n => !DEMO_NEWS.find(d => d.id === n.id));
+      const items = [...dbNews, ...DEMO_NEWS].filter(n => n.type !== "welcome" && newsState[n.id] !== "read").sort((a, b) => new Date(b.date) - new Date(a.date));
       if (!items.length) return null;
       return /*#__PURE__*/_react.default.createElement("div", {
         style: {
