@@ -374,7 +374,7 @@
   const dMinus = days => new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
   const DEMO_USERS = {
     "u1": {
-      id: "u1",
+      id: "a0000000-0000-0000-0000-000000000001",
       name: "Max Mustermann",
       email: "max@pcn.de",
       role: "member",
@@ -1847,7 +1847,7 @@
 
     // ── Derived ──────────────────────────────────────────────────────────────────
     const isGuest = me?.role === "guest";
-    const isDemo = me?.id === "u1" || me?.id === "u2";
+    const isDemo = me?.id === "a0000000-0000-0000-0000-000000000001" || me?.id === "u2";
     const myVehicles = Object.values(vehicles).filter(v => v.owner === me?.email || v.userId === me?.id || isDemo && v.id === "V001");
     // In demo mode show all demo vehicles as "Neueste Fahrzeuge"
     const displayVehicles = isDemo ? Object.values(vehicles).filter(v => ["V001", "V002", "V003", "V004"].includes(v.id)) : myVehicles;
