@@ -442,7 +442,7 @@
       kraftstoff: "Benzin",
       getriebe: "PDK",
       farbe: "Karminrot",
-      kennzeichen: "AW-PC 718",
+      kennzeichen: "MYK-PC 718",
       phone: "+49 171 9110718",
       kilometerstand: "17056",
       tuev_faelligkeit: "06/2028",
