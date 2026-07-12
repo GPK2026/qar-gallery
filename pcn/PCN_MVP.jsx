@@ -3434,8 +3434,12 @@ function PCNInner() {
                 </div>
                 {displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).map(v=>(
                   <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer",display:"flex"}}
-                    onClick={()=>{setViewV(v);setScreen("vehicle");}}>
-                    <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    onClick={()=>{
+                      // Open public view — respects privacy settings
+                      const priv = typeof v.privacy==="string" ? JSON.parse(v.privacy) : (v.privacy||{});
+                      setPublicV({...v, privacy:{...DEF_PRIVACY,...priv}});
+                      setScreen("public");
+                    }}>                    <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
                       {v.image?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:28}}>🏎️</span>}
                     </div>
                     <div style={{padding:"12px 13px",flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center"}}>
