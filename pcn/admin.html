@@ -394,7 +394,10 @@ function rDashboard(el) {
             <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
             <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.email||""}</div>
           </div>
-          <button class="btn btn-sm btn-green" onclick="upgradeMember('${m.id}')">→ Mitglied</button>
+          <label class="toggle-wrap">
+              <span class="toggle"><input type="checkbox" onchange="upgradeMember('${m.id}')"><span class="toggle-slider"></span></span>
+              <span class="toggle-label" style="color:var(--amber)">Gast</span>
+            </label>
         </div>`).join("")}
       ${gaeste.length>4?`<div style="font-size:11px;color:var(--muted);margin-top:8px">+${gaeste.length-4} weitere im Mitglieder-Tab</div>`:""}
     </div>`:""}
@@ -416,8 +419,8 @@ function rDashboard(el) {
           ${offen.slice(0,4).map(m=>`
             <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #131313">
               <span style="font-size:13px;font-weight:600">${m.name||m.email||"—"}</span>
-              <label class="toggle-wrap" onclick="togglePaid('${m.id}',false)">
-                <span class="toggle"><input type="checkbox"><span class="toggle-slider"></span></span>
+              <label class="toggle-wrap">
+                <span class="toggle"><input type="checkbox" onchange="togglePaid('${m.id}',false)"><span class="toggle-slider"></span></span>
                 <span class="toggle-label" style="color:#ef4444">Offen</span>
               </label>
             </div>`).join("")}
@@ -572,8 +575,8 @@ function rPayments(el) {
               <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
               <div style="font-size:10px;color:var(--muted)">${m.email||""} · € ${EUR}</div>
             </div>
-            <label class="toggle-wrap" onclick="togglePaid('${m.id}',false)">
-              <span class="toggle"><input type="checkbox"><span class="toggle-slider"></span></span>
+            <label class="toggle-wrap">
+              <span class="toggle"><input type="checkbox" onchange="togglePaid('${m.id}',false)"><span class="toggle-slider"></span></span>
               <span class="toggle-label" style="color:#ef4444">Offen</span>
             </label>
           </div>`).join("")}
@@ -584,8 +587,8 @@ function rPayments(el) {
         <div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #131313">
           <div class="member-avatar" style="width:32px;height:32px;font-size:12px">${(m.name||"?")[0].toUpperCase()}</div>
           <div style="flex:1;min-width:0;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
-          <label class="toggle-wrap" onclick="togglePaid('${m.id}',true)">
-            <span class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></span>
+          <label class="toggle-wrap">
+            <span class="toggle"><input type="checkbox" checked onchange="togglePaid('${m.id}',true)"><span class="toggle-slider"></span></span>
             <span class="toggle-label" style="color:var(--green)">Bezahlt</span>
           </label>
         </div>`).join("")}
