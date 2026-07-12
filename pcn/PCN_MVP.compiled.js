@@ -1311,7 +1311,10 @@
     const endRef = (0, _react.useRef)(null);
     const rootRef = (0, _react.useRef)(null);
     const threadParticipants = thread.participants || [];
-    const other = Object.values(allUsers).find(u => threadParticipants.includes(u.id) && u.id !== me?.id) || {
+    const isAdminThread = thread.id?.startsWith("admin-");
+    const other = isAdminThread ? {
+      name: "Admin-Mitteilungen"
+    } : Object.values(allUsers).find(u => threadParticipants.includes(u.id) && u.id !== me?.id) || {
       name: thread.isGroup ? thread.name : "Mitglied"
     };
     const v = vehicles[thread.vehicleId];
@@ -1394,7 +1397,7 @@
         width: 44,
         height: 44,
         borderRadius: thread.isGroup ? "12px" : "50%",
-        background: thread.isGroup ? C.red : thread.anonymous ? "#1a1a2e" : `${C.red}22`,
+        background: isAdminThread ? `${C.gold}22` : thread.isGroup ? C.red : thread.anonymous ? "#1a1a2e" : `${C.red}22`,
         color: "#fff",
         display: "flex",
         alignItems: "center",
@@ -1403,7 +1406,7 @@
         fontSize: thread.isGroup ? 22 : 17,
         flexShrink: 0
       }
-    }, thread.isGroup ? "🏎️" : thread.anonymous ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
+    }, isAdminThread ? "📋" : thread.isGroup ? "🏎️" : thread.anonymous ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0
@@ -1415,7 +1418,7 @@
         color: C.white,
         lineHeight: 1.2
       }
-    }, thread.isGroup ? thread.name : thread.anonymous ? "🔒 Anonyme Nachricht" : other.name), /*#__PURE__*/_react.default.createElement("div", {
+    }, isAdminThread ? "Admin-Mitteilungen" : thread.isGroup ? thread.name : thread.anonymous ? "🔒 Anonyme Nachricht" : other.name), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
@@ -1527,6 +1530,7 @@
         }
       }, "— ", m.text, " —");
       const mine = m.from === me?.id;
+      const isAdminMsg = m.isSystem || m.from === "00000000-0000-0000-0000-000000000000" || thread.id?.startsWith("admin-") && m.from !== me?.id;
       const senderUser = !mine ? Object.values(allUsers).find(u => u.id === m.from) : null;
       const senderName = thread.isGroup ? mine ? "Du" : senderUser?.name || "Mitglied" : null;
       const rawTs = m.created_at || m.createdAt || "";
@@ -1566,10 +1570,10 @@
         onTouchEnd: cancelLongPress,
         onTouchMove: cancelLongPress,
         style: {
-          maxWidth: "82%",
-          background: mine ? C.red : "#1e1e1e",
-          border: mine ? "none" : `1px solid ${C.border}`,
-          borderRadius: mine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+          maxWidth: isAdminMsg ? "95%" : "82%",
+          background: isAdminMsg ? `${C.gold}15` : mine ? C.red : "#1e1e1e",
+          border: isAdminMsg ? `1px solid ${C.gold}44` : mine ? "none" : `1px solid ${C.border}`,
+          borderRadius: isAdminMsg ? "12px" : mine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
           padding: "11px 15px",
           userSelect: "none",
           WebkitUserSelect: "none",
