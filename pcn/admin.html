@@ -413,12 +413,15 @@ function rDashboard(el) {
       <div class="bar"><div class="bar-fill" style="width:${100-pct}%;background:var(--amber)"></div></div>
       ${offen.length>0?`
         <div style="margin-top:12px">
-          ${offen.slice(0,3).map(m=>`
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #131313">
-              <span style="font-size:12px">${m.name||m.email||"—"}</span>
-              <button class="btn btn-sm btn-green" onclick="markPaid('${m.id}')">✓ Bezahlt</button>
+          ${offen.slice(0,4).map(m=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #131313">
+              <span style="font-size:13px;font-weight:600">${m.name||m.email||"—"}</span>
+              <label class="toggle-wrap" onclick="togglePaid('${m.id}',false)">
+                <span class="toggle"><input type="checkbox"><span class="toggle-slider"></span></span>
+                <span class="toggle-label" style="color:#ef4444">Offen</span>
+              </label>
             </div>`).join("")}
-          ${offen.length>3?`<div style="font-size:11px;color:var(--muted);margin-top:6px">+${offen.length-3} weitere im Zahlungen-Tab</div>`:""}
+          ${offen.length>4?`<div style="font-size:11px;color:var(--muted);margin-top:6px">+${offen.length-4} weitere im Zahlungen-Tab</div>`:""}
         </div>`:""}
     </div>
 
@@ -563,23 +566,28 @@ function rPayments(el) {
       <div class="sec-title">Offene Beiträge (${o.length})</div>
       ${o.length===0?"<div style='color:var(--green);font-size:13px'>✓ Alle Beiträge bezahlt</div>":
         o.map(m=>`
-          <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">
-            <div class="member-avatar" style="width:30px;height:30px;font-size:12px">${(m.name||"?")[0].toUpperCase()}</div>
+          <div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #131313">
+            <div class="member-avatar" style="width:32px;height:32px;font-size:12px">${(m.name||"?")[0].toUpperCase()}</div>
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
-              <div style="font-size:10px;color:var(--muted)">€ ${EUR}</div>
+              <div style="font-size:10px;color:var(--muted)">${m.email||""} · € ${EUR}</div>
             </div>
-            <button class="btn btn-sm btn-green" onclick="markPaid('${m.id}')">✓</button>
+            <label class="toggle-wrap" onclick="togglePaid('${m.id}',false)">
+              <span class="toggle"><input type="checkbox"><span class="toggle-slider"></span></span>
+              <span class="toggle-label" style="color:#ef4444">Offen</span>
+            </label>
           </div>`).join("")}
     </div>
     <div class="card">
       <div class="sec-title">Bezahlt (${b.length})</div>
       ${b.map(m=>`
-        <div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid #131313">
-          <div class="member-avatar" style="width:30px;height:30px;font-size:12px">${(m.name||"?")[0].toUpperCase()}</div>
-          <div style="flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
-          <span class="b b-green">✓ €${EUR}</span>
-          <button class="btn btn-sm btn-ghost" style="font-size:10px" onclick="markUnpaid('${m.id}')">↺</button>
+        <div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #131313">
+          <div class="member-avatar" style="width:32px;height:32px;font-size:12px">${(m.name||"?")[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
+          <label class="toggle-wrap" onclick="togglePaid('${m.id}',true)">
+            <span class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></span>
+            <span class="toggle-label" style="color:var(--green)">Bezahlt</span>
+          </label>
         </div>`).join("")}
     </div>`;
 }
