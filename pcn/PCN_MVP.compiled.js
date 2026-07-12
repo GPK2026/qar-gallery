@@ -3094,10 +3094,10 @@
         setVehicles(DEMO_VEHICLES);
         setLogbook(DEMO_LOGBOOK);
         setParticipants(DEMO_PARTICIPANTS);
-        // Filter out previously deleted demo threads
-        const deletedIds = JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
-        const filteredThreads = Object.fromEntries(Object.entries(DEMO_THREADS).filter(([id]) => !deletedIds.includes(id)));
-        // Always reset demo threads to original state
+        // Clear session news cache — will be reloaded fresh
+        window._dbNews = null;
+        // Always reset demo threads — fresh every login
+        localStorage.removeItem("pcn_deleted_threads");
         setThreads(JSON.parse(JSON.stringify(DEMO_THREADS)));
         setReminders([{
           id: "R1",
@@ -3120,14 +3120,7 @@
         }]);
         // Load news/newsletter from Supabase (non-persistent — session only)
         if (DB) {
-          const {
-            data: liveNews
-          } = (await DB.threads.list) ? {
-            data: null
-          } : {
-            data: null
-          }; // placeholder
-          // Fetch news directly
+          // Fetch news from Supabase (session only — not persisted)
           try {
             const newsResp = await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/news?select=*&order=created_at.desc&limit=20", {
               headers: {
@@ -3170,7 +3163,7 @@
           // Load participants for demo user from Supabase
           const {
             data: liveParts
-          } = await DB.events.participants(DEMO_USERS.u1.id).catch(() => ({
+          } = await DB.events.participants("a0000000-0000-0000-0000-000000000001").catch(() => ({
             data: null
           }));
           if (liveParts && liveParts.length > 0) {
@@ -3187,8 +3180,16 @@
           }
         }
       }
+      // Add Peter to allUsers so his name shows in chat
       setAllUsers({
-        ...DEMO_USERS
+        ...DEMO_USERS,
+        "7701c779-1568-4c42-aa2d-b8506bc3e988": {
+          id: "7701c779-1568-4c42-aa2d-b8506bc3e988",
+          name: "Peter K.",
+          email: "business@gear7.de",
+          role: "member",
+          memberNr: "PCN-4213"
+        }
       });
       setScreen("app");
       setTab("dashboard");
@@ -7882,7 +7883,7 @@
         }
       }, welcome.body))));
     })(), (() => {
-      const dbNews = (window._dbNews || []).filter(n => !DEMO_NEWS.find(d => d.id === n.id));
+      const dbNews = (window._dbNews || []).filter(n => n && !DEMO_NEWS.find(d => d.id === String(n.id)));
       const items = [...dbNews, ...DEMO_NEWS].filter(n => n.type !== "welcome" && newsState[n.id] !== "read").sort((a, b) => new Date(b.date) - new Date(a.date));
       if (!items.length) return null;
       return /*#__PURE__*/_react.default.createElement("div", {
