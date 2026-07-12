@@ -3361,21 +3361,19 @@ function PCNInner() {
               })()}
             </div>
 
-            {/* ── 2. Neueste Fahrzeuge ── */}
+            {/* ── 2. Meine Fahrzeuge ── */}
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
-                  🚗 {isDemo?"Neueste Mitglieder-Fahrzeuge":"Meine Fahrzeuge"}
-                </div>
+                <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🚗 Meine Fahrzeuge</div>
                 <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>
               </div>
-              {displayVehicles.length===0&&!isDemo?(
+              {myVehicles.length===0?(
                 <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center",cursor:"pointer"}} onClick={()=>setShowAddV(true)}>
                   <div style={{fontSize:32,marginBottom:8}}>🏎️</div>
                   <div style={{fontSize:13,color:C.white,fontWeight:600,marginBottom:4}}>Erstes Fahrzeug hinzufügen</div>
                   <div style={{fontSize:11,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei</div>
                 </div>
-              ):displayVehicles.map(v=>(
+              ):myVehicles.map(v=>(
                 <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer",display:"flex"}}
                   onClick={()=>{setViewV(v);setScreen("vehicle");}}>
                   <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -3389,13 +3387,40 @@ function PCNInner() {
                       </span>
                       <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
                       {(logbook[v.id]||[]).length>0&&<span style={{fontSize:9,color:C.green,fontWeight:700}}>{(logbook[v.id]||[]).length} Einträge</span>}
-                      {isDemo&&<span style={{fontSize:9,color:C.gold,fontWeight:700}}>Peter K.</span>}
                     </div>
                   </div>
                   <div style={{display:"flex",alignItems:"center",paddingRight:12,color:C.muted,fontSize:20}}>›</div>
                 </div>
               ))}
             </div>
+
+            {/* ── Neueste Mitglieder-Fahrzeuge (Demo: alle 4, sonst ausgeblendet) ── */}
+            {isDemo&&(
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>
+                  🚗 Neueste Mitglieder-Fahrzeuge
+                </div>
+                {displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).map(v=>(
+                  <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer",display:"flex"}}
+                    onClick={()=>{setViewV(v);setScreen("vehicle");}}>
+                    <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      {v.image?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:28}}>🏎️</span>}
+                    </div>
+                    <div style={{padding:"12px 13px",flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                      <div style={{fontWeight:700,fontSize:15,color:C.white}}>{v.hersteller} {v.modell}</div>
+                      <div style={{display:"flex",gap:6,marginTop:5,alignItems:"center",flexWrap:"wrap"}}>
+                        <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"1px 7px",fontSize:10,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif"}}>
+                          {fmtKz(v.kennzeichen,v.baujahr)}
+                        </span>
+                        <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
+                        <span style={{fontSize:9,color:C.gold,fontWeight:700}}>Peter K.</span>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",paddingRight:12,color:C.muted,fontSize:20}}>›</div>
+                  </div>
+                ))}
+              </div>
+            )}
 
               {/* ── Zuletzt angesehen ── */}
               {recentVehicles.length>0&&(
