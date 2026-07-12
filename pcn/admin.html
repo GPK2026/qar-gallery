@@ -115,6 +115,15 @@
     /* Points bar */
     .pts-bar{height:4px;background:#1a1a1a;border-radius:2px;overflow:hidden;margin-top:4px}
     .pts-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:2px}
+    /* Toggle switch */
+    .toggle-wrap{display:flex;align-items:center;gap:10px;cursor:pointer}
+    .toggle{position:relative;width:48px;height:26px;flex-shrink:0}
+    .toggle input{opacity:0;width:0;height:0;position:absolute}
+    .toggle-slider{position:absolute;inset:0;background:#333;border-radius:13px;transition:.2s;cursor:pointer}
+    .toggle-slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+    input:checked+.toggle-slider{background:var(--green)}
+    input:checked+.toggle-slider:before{transform:translateX(22px)}
+    .toggle-label{font-size:12px;font-weight:700}
   </style>
 </head>
 <body>
@@ -428,6 +437,16 @@ function rDashboard(el) {
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ev.name}</div>
               <div style="font-size:10px;color:var(--muted)">${ev.location||""}</div>
+              ${(()=>{
+                const parts = DB.participants.filter(p=>p.event_id===ev.id);
+                const c=parts.filter(p=>p.status==="confirmed").length;
+                const p=parts.filter(p=>p.status==="pending").length;
+                if(!parts.length) return "";
+                return '<div style="display:flex;gap:4px;margin-top:2px">'
+                  +(c?'<span class="b b-green" style="font-size:8px">✓'+c+'</span>':"")
+                  +(p?'<span class="b b-amber" style="font-size:8px">🟡'+p+'</span>':"")
+                  +'</div>';
+              })()}
             </div>
             <span class="b" style="background:${col}22;color:${col};border:1px solid ${col}44;flex-shrink:0">${dl>0?dl+"d":"Heute"}</span>
           </div>`;}).join("")}
@@ -666,6 +685,18 @@ function rEvents(el) {
           <div style="flex:1;min-width:0">
             <div style="font-size:14px;font-weight:700">${ev.name}</div>
             <div style="font-size:11px;color:var(--muted)">${ev.location||""} · ${ev.category||""}</div>
+            ${(()=>{
+              const parts = DB.participants.filter(p=>p.event_id===ev.id);
+              const confirmed = parts.filter(p=>p.status==="confirmed").length;
+              const pending = parts.filter(p=>p.status==="pending").length;
+              const cancelled = parts.filter(p=>p.status==="cancelled").length;
+              if(!parts.length) return '<div style="font-size:10px;color:var(--muted);margin-top:2px">Keine Anmeldungen</div>';
+              return '<div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">'
+                + (confirmed?'<span class="b b-green" style="font-size:9px">✓ '+confirmed+' best.</span>':"")
+                + (pending?'<span class="b b-amber" style="font-size:9px">🟡 '+pending+' offen</span>':"")
+                + (cancelled?'<span class="b b-gray" style="font-size:9px">✕ '+cancelled+'</span>':"")
+                + '</div>';
+            })()}
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
             <span class="b" style="background:${col}22;color:${col};border:1px solid ${col}44">${past?"Abgesch.":dl<=7?"Bald":"Geplant"}</span>
@@ -747,6 +778,15 @@ async function cancelParticipant(partId, eventId) {
   if(!confirm("Anmeldung stornieren?")) return;
   await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"cancelled"})});
   toast("Anmeldung storniert"); await loadAll();
+}
+async function toggleRole(id, isMember) {
+  const newRole = isMember ? "guest" : "member";
+  await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:newRole})});
+  toast(isMember?"→ Als Gast gesetzt":"✓ Als Mitglied freigegeben"); await loadAll();
+}
+async function togglePaid(id, isPaid) {
+  await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:!isPaid})});
+  toast(isPaid?"Beitrag als offen markiert":"✓ Beitrag als bezahlt markiert"); await loadAll();
 }
 async function markPaid(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:true})}); toast("✓ Bezahlt"); await loadAll(); }
 async function markUnpaid(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:false})}); toast("Zurückgesetzt"); await loadAll(); }
