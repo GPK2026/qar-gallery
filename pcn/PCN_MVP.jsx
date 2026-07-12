@@ -165,7 +165,7 @@ const DEMO_USERS = {
 const DEMO_VEHICLES = {
   // ── Max: Porsche 911 Carrera 4S, GT-Silbermetallic ──────────────────────────
   // Alle Bilder zeigen denselben silbernen 911 aus verschiedenen Perspektiven
-  "V001":{id:"V001",qarId:"QAR-R4T8W3NX",userId:"7701c779-1568-4c42-aa2d-b8506bc3e988",owner:"business@gear7.de",
+  "V001":{id:"V001",qarId:"QAR-R4T8W3NX",userId:"u1",owner:"max@pcn.de",
     hersteller:"Porsche",modell:"911 GTS",baujahr:"2019",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"GT-Silbermetallic",
     kennzeichen:"AW-PC 911",fin:"WP0ZZZ99ZLS100001",phone:"+49 171 9110911",
