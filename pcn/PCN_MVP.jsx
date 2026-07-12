@@ -157,7 +157,7 @@ const dPlus = days => new Date(Date.now()+days*86400000).toISOString().split("T"
 const dMinus = days => new Date(Date.now()-days*86400000).toISOString().split("T")[0];
 
 const DEMO_USERS = {
-  "u1":{id:"u1",name:"Max Mustermann",email:"max@pcn.de",role:"member",memberNr:"PCN-0847",city:"Adenau",beitragBezahlt:true,joinedAt:"2021-03-15",avatar:null},
+  "u1":{id:"a0000000-0000-0000-0000-000000000001",name:"Max Mustermann",email:"max@pcn.de",role:"member",memberNr:"PCN-0847",city:"Adenau",beitragBezahlt:true,joinedAt:"2021-03-15",avatar:null},
   "u2":{id:"u2",name:"Thomas Weber",email:"thomas@pcn.de",role:"member",memberNr:"PCN-0312"},
   "u3":{id:"u3",name:"Anna Fischer",email:"anna@pcn.de",role:"member",memberNr:"PCN-0561"},
 };
@@ -813,7 +813,7 @@ function PCNInner() {
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const isGuest = me?.role === "guest";
-  const isDemo = me?.id==="u1"||me?.id==="u2";
+  const isDemo = me?.id==="a0000000-0000-0000-0000-000000000001"||me?.id==="u2";
   const myVehicles = Object.values(vehicles).filter(v=>v.owner===me?.email||v.userId===me?.id||(isDemo&&v.id==="V001"));
   // In demo mode show all demo vehicles as "Neueste Fahrzeuge"
   const displayVehicles = isDemo
