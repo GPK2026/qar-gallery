@@ -541,7 +541,10 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
   const endRef = useRef(null);
   const rootRef = useRef(null);
   const threadParticipants = thread.participants||[];
-  const other = Object.values(allUsers).find(u=>threadParticipants.includes(u.id)&&u.id!==me?.id)||{name:thread.isGroup?thread.name:"Mitglied"};
+  const isAdminThread = thread.id?.startsWith("admin-");
+  const other = isAdminThread
+    ? {name:"Admin-Mitteilungen"}
+    : Object.values(allUsers).find(u=>threadParticipants.includes(u.id)&&u.id!==me?.id)||{name:thread.isGroup?thread.name:"Mitglied"};
   const v = vehicles[thread.vehicleId];
   const isGuest = me?.role === "guest";
   const longPressTimer = useRef(null);
@@ -581,14 +584,14 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:22,padding:0,lineHeight:1,flexShrink:0}}>←</button>
           {/* Avatar */}
           <div style={{width:44,height:44,borderRadius:thread.isGroup?"12px":"50%",
-            background:thread.isGroup?C.red:thread.anonymous?"#1a1a2e":`${C.red}22`,
+            background:isAdminThread?`${C.gold}22`:thread.isGroup?C.red:thread.anonymous?"#1a1a2e":`${C.red}22`,
             color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",
             fontWeight:800,fontSize:thread.isGroup?22:17,flexShrink:0}}>
-            {thread.isGroup?"🏎️":thread.anonymous?"🔒":other.name[0]?.toUpperCase()}
+{isAdminThread?"📋":thread.isGroup?"🏎️":thread.anonymous?"🔒":other.name[0]?.toUpperCase()}
           </div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontWeight:800,fontSize:16,color:C.white,lineHeight:1.2}}>
-              {thread.isGroup?thread.name:thread.anonymous?"🔒 Anonyme Nachricht":other.name}
+              {isAdminThread?"Admin-Mitteilungen":thread.isGroup?thread.name:thread.anonymous?"🔒 Anonyme Nachricht":other.name}
             </div>
             <div style={{fontSize:12,color:C.muted,marginTop:2}}>
               {thread.isGroup
@@ -643,6 +646,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
             <div key={m.id} style={{textAlign:"center",fontSize:10,color:"#444",margin:"4px 0"}}>— {m.text} —</div>
           );
           const mine = m.from===me?.id;
+          const isAdminMsg = m.isSystem || m.from==="00000000-0000-0000-0000-000000000000" || (thread.id?.startsWith("admin-") && m.from!==me?.id);
           const senderUser = !mine ? Object.values(allUsers).find(u=>u.id===m.from) : null;
           const senderName = thread.isGroup ? (mine?"Du":senderUser?.name||"Mitglied") : null;
           const rawTs = m.created_at||m.createdAt||"";
@@ -663,9 +667,11 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                 onTouchStart={()=>startLongPress(m)}
                 onTouchEnd={cancelLongPress}
                 onTouchMove={cancelLongPress}
-                style={{maxWidth:"82%",background:mine?C.red:"#1e1e1e",border:mine?"none":`1px solid ${C.border}`,
-                  borderRadius:mine?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:"11px 15px",
-                  userSelect:"none",WebkitUserSelect:"none",cursor:"pointer",
+                style={{maxWidth:isAdminMsg?"95%":"82%",
+                  background:isAdminMsg?`${C.gold}15`:mine?C.red:"#1e1e1e",
+                  border:isAdminMsg?`1px solid ${C.gold}44`:mine?"none":`1px solid ${C.border}`,
+                  borderRadius:isAdminMsg?"12px":mine?"18px 18px 4px 18px":"18px 18px 18px 4px",
+                  padding:"11px 15px",userSelect:"none",WebkitUserSelect:"none",cursor:"pointer",
                   opacity:selectedMsg?.id===m.id?0.7:1,transition:"opacity .1s"}}>
                 <div style={{fontSize:15,color:"#fff",lineHeight:1.5}}>{m.text}</div>
                 <div style={{fontSize:10,color:mine?"rgba(255,255,255,.5)":C.muted,marginTop:4,textAlign:"right"}}>
