@@ -806,10 +806,13 @@ function PCNInner() {
   const [editForm, setEditForm] = useState({});
   const [imgUploading, setImgUploading] = useState(false);
   const [lightbox, setLightbox]       = useState(null); // {images:[], index:0}
-  const [vehicleStatus, setVehicleStatus] = useState({}); // {vehicleId: {text, icon, expiresAt}}
+  const [vehicleStatus, setVehicleStatus] = useState({}); // {vehicleId: [{id,text,icon,expiresAt}]}
   const [showStatusPicker, setShowStatusPicker] = useState(null); // vehicleId
   const [statusCustom, setStatusCustom]   = useState("");
   const [statusCustomMins, setStatusCustomMins] = useState(30);
+  const [statusUseDate, setStatusUseDate] = useState(false);  // true = exact datetime, false = duration
+  const [statusDateTime, setStatusDateTime] = useState("");    // ISO datetime for exact end
+  const [statusEditSlot, setStatusEditSlot] = useState(null);  // slot id being edited
   const [gallerySwipe, setGallerySwipe] = useState({}); // {vehicleId: currentIndex}
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState(null);
@@ -861,28 +864,60 @@ function PCNInner() {
   // ── Status helpers — now wired to DB layer (works across devices via Supabase) ──
   const setStatus = async (vehicleId, preset, customText="") => {
     const text = customText || preset.text;
-    const expiresAt = preset.mins ? Date.now() + preset.mins*60*1000 : null;
-    const status = {text, icon:preset.icon||"💬", expiresAt, setAt:Date.now()};
-    setVehicleStatus(prev=>({...prev,[vehicleId]:status}));
-    broadcastStatus(vehicleId, status);
+    let expiresAt = null;
+    if(statusUseDate && statusDateTime) {
+      expiresAt = new Date(statusDateTime).getTime();
+    } else if(preset.mins || statusCustomMins) {
+      expiresAt = Date.now() + (statusCustomMins||preset.mins||30)*60*1000;
+    }
+    const slot = {id:"s"+Date.now(), text, icon:preset.icon||"💬", expiresAt, setAt:Date.now()};
+    setVehicleStatus(prev=>{
+      const slots = (prev[vehicleId]||[]).filter(s=>s.expiresAt===null||Date.now()<s.expiresAt);
+      // Replace slot being edited, or add new (max 3)
+      let updated;
+      if(statusEditSlot) {
+        updated = slots.map(s=>s.id===statusEditSlot?{...slot,id:statusEditSlot}:s);
+      } else {
+        updated = slots.length>=3 ? [...slots.slice(1),slot] : [...slots,slot];
+      }
+      return {...prev,[vehicleId]:updated};
+    });
+    broadcastStatus(vehicleId, slot);
     const DB = window.PCN_DB;
-    if(DB) await DB.vehicles.setStatus(vehicleId, status);
-    setShowStatusPicker(null); setStatusCustom("");
+    if(DB) await DB.vehicles.setStatus(vehicleId, slot).catch(()=>{});
+    setShowStatusPicker(null); setStatusCustom(""); setStatusEditSlot(null);
     toast_(`Status gesetzt: "${text}"`);
   };
 
-  const clearStatus = async (vehicleId) => {
-    setVehicleStatus(prev=>{const n={...prev};delete n[vehicleId];return n;});
+  const clearStatus = async (vehicleId, slotId=null) => {
+    setVehicleStatus(prev=>{
+      if(slotId) {
+        const slots = (prev[vehicleId]||[]).filter(s=>s.id!==slotId);
+        if(slots.length===0){const n={...prev};delete n[vehicleId];return n;}
+        return {...prev,[vehicleId]:slots};
+      }
+      const n={...prev};delete n[vehicleId];return n;
+    });
     broadcastStatus(vehicleId, null);
     const DB = window.PCN_DB;
-    if(DB) await DB.vehicles.clearStatus(vehicleId);
+    if(DB) await DB.vehicles.clearStatus(vehicleId).catch(()=>{});
   };
 
   const getActiveStatus = (vehicleId) => {
-    const s = vehicleStatus[vehicleId];
-    if(!s) return null;
-    if(s.expiresAt && Date.now() > s.expiresAt) { clearStatus(vehicleId); return null; }
-    return s;
+    const slots = vehicleStatus[vehicleId];
+    if(!slots || slots.length===0) return null;
+    if(Array.isArray(slots)) {
+      const active = slots.filter(s=>!s.expiresAt||Date.now()<s.expiresAt);
+      if(active.length===0){clearStatus(vehicleId);return null;}
+      return active; // returns array
+    }
+    // legacy single object
+    if(slots.expiresAt && Date.now()>slots.expiresAt){clearStatus(vehicleId);return null;}
+    return [slots];
+  };
+  const getFirstStatus = (vehicleId) => {
+    const s = getActiveStatus(vehicleId);
+    return s ? s[0] : null;
   };
 
   // Load status fresh when viewing a vehicle (public or detail) — ensures cross-device sync
@@ -2075,22 +2110,24 @@ function PCNInner() {
         <div style={{padding:"12px 14px",background:C.dark,borderBottom:`1px solid ${C.border}`}}>
           <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:520,margin:"0 auto"}}>
 
-          {/* ── Status Banner — live from DB, above message button ── */}
+          {/* ── Status Banner — shows all active slots ── */}
             {(()=>{
-              const s = vehicleStatus[v.id];
-              if(s && s.expiresAt && Date.now() > s.expiresAt) return null;
-              if(!s || !s.text) return (
+              const rawSlots = vehicleStatus[v.id];
+              // Normalize to array
+              const allSlots = !rawSlots ? [] : Array.isArray(rawSlots) ? rawSlots : [rawSlots];
+              const active = allSlots.filter(s=>!s.expiresAt||Date.now()<s.expiresAt);
+
+              if(!active.length) return (
                 <button onClick={async()=>{
                     const DB=window.PCN_DB; if(!DB) return;
-                    // Try by vehicle id first, fallback to qarId lookup
                     let vid = v.id;
                     if(v.qarId && (!vid || vid.startsWith("tmp-"))) {
                       const {data:rv} = await DB.vehicles.getPublic(v.qarId);
                       if(rv?.id) vid = rv.id;
                     }
                     const {data} = await DB.vehicles.getStatus(vid);
-                    if(data && data.text) {
-                      setVehicleStatus(prev=>({...prev,[v.id]:data}));
+                    if(data) {
+                      setVehicleStatus(prev=>({...prev,[v.id]:Array.isArray(data)?data:[data]}));
                       toast_("Status geladen ✓");
                     } else {
                       toast_("Kein aktiver Status");
@@ -2104,48 +2141,52 @@ function PCNInner() {
                   <span style={{fontSize:16}}>🔄</span> Live-Status abrufen
                 </button>
               );
-              // Time calculations
-              const now = Date.now();
-              const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - now) / 60000) : null;
-              const setAt = s.setAt ? new Date(s.setAt) : null;
-              const isToday = setAt && setAt.toDateString()===new Date().toDateString();
-              const timeStamp = setAt
-                ? (isToday
-                  ? "Heute " + setAt.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) + " Uhr"
-                  : setAt.toLocaleDateString("de-DE",{day:"2-digit",month:"short"}) + " · " + setAt.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) + " Uhr")
-                : null;
-              const urgent = minsLeft && minsLeft <= 5;
-              const color = urgent ? "#ef4444" : C.amber;
-              return (
-                <div style={{background:urgent?"#ef444418":`${C.amber}18`,
-                  border:`2px solid ${urgent?"#ef444466":C.amber+"66"}`,
-                  borderRadius:14,padding:"14px 16px",marginBottom:4,animation:"fadeIn .3s ease"}}>
-                  <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                    <span style={{fontSize:28,flexShrink:0,marginTop:2}}>{s.icon||"💬"}</span>
-                    <div style={{flex:1}}>
-                      <div style={{fontWeight:800,fontSize:16,color,lineHeight:1.2,marginBottom:5}}>{s.text}</div>
-                      <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                        {timeStamp&&(
-                          <span style={{fontSize:10,color:C.muted,display:"flex",alignItems:"center",gap:3}}>
-                            🕐 {timeStamp}
-                          </span>
-                        )}
-                        {minsLeft&&minsLeft>0&&(
-                          <span style={{fontSize:11,fontWeight:700,color,
-                            background:urgent?"#ef444422":`${C.amber}22`,
-                            border:`1px solid ${urgent?"#ef444444":C.amber+"44"}`,
-                            borderRadius:6,padding:"2px 8px"}}>
-                            {minsLeft<=1?"< 1 Min":minsLeft<60?`noch ${minsLeft} Min`:`noch ca. ${Math.round(minsLeft/60)} Std`}
-                          </span>
-                        )}
-                        {!minsLeft&&(
-                          <span style={{fontSize:10,color:"#555"}}>Kein Ablauf gesetzt</span>
-                        )}
+
+              return active.map(s=>{
+                const now = Date.now();
+                const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - now) / 60000) : null;
+                const setAt = s.setAt ? new Date(s.setAt) : null;
+                const isToday = setAt && setAt.toDateString()===new Date().toDateString();
+                const timeStamp = setAt
+                  ? (isToday
+                    ? "Heute " + setAt.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) + " Uhr"
+                    : setAt.toLocaleDateString("de-DE",{day:"2-digit",month:"short"}) + " · " + setAt.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) + " Uhr")
+                  : null;
+                const urgent = minsLeft && minsLeft <= 5;
+                const color = urgent ? "#ef4444" : C.amber;
+                return (
+                  <div key={s.id||s.text} style={{background:urgent?"#ef444418":`${C.amber}18`,
+                    border:`2px solid ${urgent?"#ef444466":C.amber+"66"}`,
+                    borderRadius:14,padding:"14px 16px",marginBottom:8,animation:"fadeIn .3s ease"}}>
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                      <span style={{fontSize:28,flexShrink:0,marginTop:2}}>{s.icon||"💬"}</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:800,fontSize:16,color,lineHeight:1.2,marginBottom:5}}>{s.text}</div>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                          {timeStamp&&(
+                            <span style={{fontSize:10,color:C.muted,display:"flex",alignItems:"center",gap:3}}>
+                              🕐 {timeStamp}
+                            </span>
+                          )}
+                          {minsLeft&&minsLeft>0&&(
+                            <span style={{fontSize:11,fontWeight:700,color,
+                              background:urgent?"#ef444422":`${C.amber}22`,
+                              border:`1px solid ${urgent?"#ef444444":C.amber+"44"}`,
+                              borderRadius:6,padding:"2px 8px"}}>
+                              {minsLeft<=1?"< 1 Min":minsLeft<60?`noch ${minsLeft} Min`:`noch ca. ${Math.round(minsLeft/60)} Std`}
+                            </span>
+                          )}
+                          {!minsLeft&&s.expiresAt&&new Date(s.expiresAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})&&(
+                            <span style={{fontSize:10,color:C.muted}}>
+                              bis {new Date(s.expiresAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
+                );
+              });
             })()}
 
             {/* PHONE — below status, above message */}
@@ -2341,56 +2382,132 @@ function PCNInner() {
 
       {/* ── OVERLAYS (rendered in every screen) ── */}
       {showStatusPicker&&(
-        <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
-          <div className="sheet" style={{maxHeight:"88vh",overflowY:"auto"}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Live-Status setzen</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:12}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
+        <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget){setShowStatusPicker(null);setStatusEditSlot(null);}}}>
+          <div className="sheet" style={{maxHeight:"92vh",overflowY:"auto"}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:2}}>📍 Live-Status</div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:14}}>Bis zu 3 Status-Infos — sichtbar beim QR-Scan</div>
 
-            {/* ── Dauer oben — immer sichtbar ── */}
-            <div style={{background:`${C.red}18`,border:`1.5px solid ${C.red}44`,borderRadius:12,padding:"13px",marginBottom:14}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                <span style={{fontSize:13,fontWeight:700,color:C.white}}>⏱ Aktivierungsdauer</span>
-                <span style={{fontSize:16,fontWeight:900,color:C.red}}>
-                  {(()=>{const m=statusCustomMins||30; return m>=60?`${Math.floor(m/60)}h${m%60>0?" "+m%60+"min":""}`:m+" Min";})()}
-                </span>
-              </div>
-              <input type="range" min="5" max="480" step="5"
-                value={statusCustomMins||30}
-                onChange={e=>setStatusCustomMins(parseInt(e.target.value))}
-                style={{width:"100%",accentColor:C.red}}/>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#555",marginTop:3}}>
-                <span>5 Min</span><span>30 Min</span><span>1 Std</span><span>4 Std</span><span>8 Std</span>
-              </div>
-            </div>
+            {/* ── Aktive Slots ── */}
+            {(()=>{
+              const slots = getActiveStatus(showStatusPicker)||[];
+              if(!slots.length) return null;
+              return (
+                <div style={{marginBottom:14}}>
+                  <div style={{fontSize:10,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Aktive Status ({slots.length}/3)</div>
+                  {slots.map(s=>{
+                    const remaining = s.expiresAt ? Math.max(0,Math.ceil((s.expiresAt-Date.now())/60000)) : null;
+                    const expDate = s.expiresAt ? new Date(s.expiresAt) : null;
+                    return (
+                      <div key={s.id} style={{background:`${C.green}11`,border:`1px solid ${C.green}33`,borderRadius:10,padding:"10px 12px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
+                        <span style={{fontSize:20,flexShrink:0}}>{s.icon}</span>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.text}</div>
+                          <div style={{fontSize:10,color:C.muted}}>
+                            {remaining!==null
+                              ? (remaining<60?`Noch ${remaining} Min`:`Bis ${expDate.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`)
+                              : "Dauerhaft"}
+                          </div>
+                        </div>
+                        <div style={{display:"flex",gap:4,flexShrink:0}}>
+                          <button onClick={()=>{
+                            setStatusCustom(s.text);
+                            setStatusEditSlot(s.id);
+                            const rem = s.expiresAt ? Math.ceil((s.expiresAt-Date.now())/60000) : 30;
+                            setStatusCustomMins(rem);
+                          }} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✏️</button>
+                          <button onClick={()=>{clearStatus(showStatusPicker,s.id);toast_("Status gelöscht");}}
+                            style={{background:"#ef444418",border:"1px solid #ef444433",borderRadius:6,padding:"4px 8px",color:"#ef4444",fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✕</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {slots.length<3&&<div style={{fontSize:11,color:C.muted,marginBottom:4}}>+ Weiteren Status hinzufügen:</div>}
+                </div>
+              );
+            })()}
 
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
-              {STATUS_PRESETS.map((p,i)=>(
-                <button key={i} onClick={()=>setStatus(showStatusPicker,{...p,mins:statusCustomMins||p.mins})}
-                  style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
-                  <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
-                  <div>
-                    <div style={{fontSize:14,fontWeight:700,color:C.white}}>{p.text}</div>
-                    <div style={{fontSize:11,color:C.muted}}>Läuft ab nach {statusCustomMins||p.mins} Min</div>
+            {/* ── Neuer Status (nur wenn < 3 aktive) ── */}
+            {(getActiveStatus(showStatusPicker)||[]).length<3&&(
+              <>
+                {/* Preset Buttons */}
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
+                  {STATUS_PRESETS.map((p,i)=>(
+                    <button key={i} onClick={()=>setStatus(showStatusPicker,{...p,mins:statusCustomMins||p.mins})}
+                      style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                      <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:700,color:C.white}}>{p.text}</div>
+                        <div style={{fontSize:10,color:C.muted}}>Aktiv für {statusCustomMins||p.mins} Min</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Eigener Text */}
+                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",marginBottom:12}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#aaa",marginBottom:8}}>✏️ Eigener Status</div>
+                  <div style={{display:"flex",gap:8,marginBottom:12}}>
+                    <input className="inp" placeholder="z.B. Bin beim Einlass..." value={statusCustom}
+                      onChange={e=>setStatusCustom(e.target.value)}
+                      onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬"},statusCustom);}}
+                      style={{flex:1}}/>
                   </div>
-                </button>
-              ))}
-            </div>
-            <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12,marginBottom:10}}>
-              <div style={{fontSize:11,color:C.muted,marginBottom:8}}>Eigener Text</div>
-              <div style={{display:"flex",gap:8}}>
-                <input className="inp" placeholder="z.B. Bin gleich beim Einlass..." value={statusCustom}
-                  onChange={e=>setStatusCustom(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:statusCustomMins||30},statusCustom);}}
-                  style={{flex:1}}/>
-                <button className="btn" disabled={!statusCustom.trim()}
-                  onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:statusCustomMins||30},statusCustom);}}
-                  style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
-              </div>
-            </div>
-            {getActiveStatus(showStatusPicker)&&(
-              <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
-                onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Status gelöscht");}}>
-                Status löschen
+
+                  {/* Zeiteinstellung */}
+                  <div style={{borderTop:`1px solid ${C.border}`,paddingTop:10}}>
+                    <div style={{display:"flex",gap:8,marginBottom:10}}>
+                      <button onClick={()=>setStatusUseDate(false)}
+                        style={{flex:1,background:!statusUseDate?C.red:"#1a1a1a",border:`1px solid ${!statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:!statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        ⏱ Dauer
+                      </button>
+                      <button onClick={()=>setStatusUseDate(true)}
+                        style={{flex:1,background:statusUseDate?C.red:"#1a1a1a",border:`1px solid ${statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        📅 Bis Uhrzeit
+                      </button>
+                    </div>
+
+                    {!statusUseDate?(
+                      <>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                          <span style={{fontSize:12,color:C.muted}}>Dauer</span>
+                          <span style={{fontSize:16,fontWeight:900,color:C.red}}>
+                            {(()=>{const m=statusCustomMins||30;return m>=60?`${Math.floor(m/60)}h${m%60>0?" "+m%60+"m":""}`:`${m} Min`;})()}
+                          </span>
+                        </div>
+                        <input type="range" min="5" max="480" step="5"
+                          value={statusCustomMins||30}
+                          onChange={e=>setStatusCustomMins(parseInt(e.target.value))}
+                          style={{width:"100%",accentColor:C.red}}/>
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#555",marginTop:3}}>
+                          <span>5m</span><span>30m</span><span>1h</span><span>4h</span><span>8h</span>
+                        </div>
+                      </>
+                    ):(
+                      <>
+                        <div style={{fontSize:11,color:C.muted,marginBottom:6}}>Status aktiv bis:</div>
+                        <input type="datetime-local"
+                          value={statusDateTime}
+                          min={new Date(Date.now()+5*60000).toISOString().slice(0,16)}
+                          onChange={e=>setStatusDateTime(e.target.value)}
+                          style={{width:"100%",background:"#1a1a1a",border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 12px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",outline:"none"}}/>
+                      </>
+                    )}
+                  </div>
+
+                  <button className="btn" disabled={!statusCustom.trim()}
+                    onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬"},statusCustom);}}
+                    style={{width:"100%",marginTop:12,opacity:statusCustom.trim()?1:.4}}>
+                    {statusEditSlot?"Status aktualisieren":"Status setzen"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Alle löschen */}
+            {(getActiveStatus(showStatusPicker)||[]).length>0&&(
+              <button className="btn ghost" style={{width:"100%",color:"#ef4444",borderColor:"#ef444444"}}
+                onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Alle Status gelöscht");}}>
+                Alle Status löschen
               </button>
             )}
           </div>
@@ -2657,19 +2774,22 @@ function PCNInner() {
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
               <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>🔗 QR-Code & Aktionen</div>
               {(()=>{
-                const active = getActiveStatus(v.id);
-                if(!active) return null;
-                return (
-                  <div style={{background:`${C.amber}18`,border:`1px solid ${C.amber}44`,borderRadius:10,padding:"10px 13px",marginBottom:10,display:"flex",gap:10,alignItems:"center"}}>
-                    <span style={{fontSize:20}}>{active.icon}</span>
+                const slots = getActiveStatus(v.id)||[];
+                if(!slots.length) return null;
+                return slots.map(s=>(
+                  <div key={s.id} style={{background:`${C.amber}18`,border:`1px solid ${C.amber}44`,borderRadius:10,padding:"10px 13px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
+                    <span style={{fontSize:20}}>{s.icon}</span>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:13,fontWeight:700,color:C.amber}}>{active.text}</div>
-                      <div style={{fontSize:10,color:C.muted,marginTop:1}}>Aktiver Status · sichtbar für Besucher</div>
+                      <div style={{fontSize:13,fontWeight:700,color:C.amber}}>{s.text}</div>
+                      <div style={{fontSize:10,color:C.muted,marginTop:1}}>
+                        {s.expiresAt ? `Bis ${new Date(s.expiresAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr` : "Dauerhaft"}
+                        {" · sichtbar für Besucher"}
+                      </div>
                     </div>
-                    <button onClick={()=>{clearStatus(v.id);toast_("Status gelöscht");}}
+                    <button onClick={()=>{clearStatus(v.id,s.id);toast_("Status gelöscht");}}
                       style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:18,padding:"0 4px"}}>✕</button>
                   </div>
-                );
+                ));
               })()}
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 <button onClick={()=>setShowStatusPicker(v.id)}
@@ -3198,10 +3318,10 @@ function PCNInner() {
                     style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
                 </div>
               </div>
-              {getActiveStatus(showStatusPicker)&&(
+              {(getActiveStatus(showStatusPicker)||[]).length>0&&(
                 <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
                   onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Status gelöscht");}}>
-                  Status löschen
+                  Alle Status löschen
                 </button>
               )}
             </div>
