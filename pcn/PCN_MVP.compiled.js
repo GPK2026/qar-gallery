@@ -1877,8 +1877,30 @@
       return pts;
     };
     const myPoints = calcPoints();
-    const pointsToNext = myPoints < 100 ? 100 : myPoints < 300 ? 300 : myPoints < 500 ? 500 : 1000;
-    const pointsProgress = Math.min(100, Math.round(myPoints / pointsToNext * 100));
+    const TIERS = [{
+      name: "Bronze",
+      pts: 100
+    }, {
+      name: "Silber",
+      pts: 300
+    }, {
+      name: "Gold",
+      pts: 600
+    }, {
+      name: "Platin",
+      pts: 1000
+    }, {
+      name: "Legend",
+      pts: 2000
+    }];
+    const currentTier = TIERS.filter(t => myPoints >= t.pts).slice(-1)[0] || null;
+    const nextTier = TIERS.find(t => myPoints < t.pts) || {
+      name: "Legend",
+      pts: 2000
+    };
+    const prevTierPts = currentTier?.pts || 0;
+    const pointsToNext = nextTier.pts;
+    const pointsProgress = Math.min(100, Math.round((myPoints - prevTierPts) / (nextTier.pts - prevTierPts) * 100));
 
     // ── Toast ────────────────────────────────────────────────────────────────────
     // ── Status helpers — now wired to DB layer (works across devices via Supabase) ──
@@ -9628,7 +9650,7 @@
         fontWeight: 700,
         color: C.gold
       }
-    }, pointsToNext, " Pkt"))), /*#__PURE__*/_react.default.createElement("div", {
+    }, nextTier.name, " · ", pointsToNext, " Pkt"))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         height: 8,
         background: "rgba(255,255,255,.1)",
@@ -10229,7 +10251,7 @@
         color: C.muted,
         lineHeight: 1.7
       }
-    }, "💡 Stufen: 100 Pkt = Bronze · 300 Pkt = Silber · 500 Pkt = Gold · 1000 Pkt = Platin"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "💡 Stufen: 100 Pkt = Bronze · 300 Pkt = Silber · 600 Pkt = Gold · 1.000 Pkt = Platin · 2.000 Pkt = Legend"), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         width: "100%",
