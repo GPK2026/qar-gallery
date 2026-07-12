@@ -189,7 +189,7 @@ const DEMO_VEHICLES = {
   "V002":{id:"V002",qarId:"QAR-K9P2M7RW",userId:"7701c779-1568-4c42-aa2d-b8506bc3e988",owner:"business@gear7.de",
     hersteller:"Porsche",modell:"718 Boxster GTS 4.0",baujahr:"2021",
     kraftstoff:"Benzin",getriebe:"PDK",farbe:"Karminrot",
-    kennzeichen:"AW-PC 718",phone:"+49 171 9110718",
+    kennzeichen:"MYK-PC 718",phone:"+49 171 9110718",
     kilometerstand:"17056",tuev_faelligkeit:"06/2028",
     marktwert:"85000",zustand:"1",
     besonderheiten:"Sport Chrono Plus, PDLS+, Bose, Carbon-Zierleisten, Leder/Alcantara, 400 PS Saugmotor 4.0L, Erstbesitz",
