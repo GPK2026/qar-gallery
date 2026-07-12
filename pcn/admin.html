@@ -781,27 +781,100 @@ function rSettings(el) {
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────
+
+async function sendAdminMsg(userId, text, icon="📋") {
+  // Find or create admin thread for this user
+  const threadId = 'admin-' + userId;
+  const SB = "https://xsyuhfleesstrchcwspg.supabase.co/rest/v1";
+  const K = atob("ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0ltNWxkQ0k2SW5oemVYVm9abXhsWlhOemRISmphR0MzYzNCbklpd2ljbTlzWlNJNkluTnZiWEJzWlhSbElpd2lhV0YwSWpveE56Z3lOek13TmpVNUxDSmxlSEFpT2pJd09UZ3pNRFkyTmpVNWZRLmtCcXJXOTc3WmpNZnJIVjVuUmwyemJ3dmJJRzNXOFRfLXgxV2xkaXVqUWM=");
+  const H = {"apikey":K,"Authorization":"Bearer "+K,"Content-Type":"application/json","Prefer":"return=representation"};
+  
+  // Ensure admin thread exists
+  try {
+    const existing = await fetch(SB+"/threads?id=eq."+threadId, {headers:H});
+    const rows = await existing.json();
+    if(!rows.length) {
+      await fetch(SB+"/threads", {method:"POST",headers:H,body:JSON.stringify({
+        id:threadId,
+        participants:[userId],
+        vehicle_name:"Admin-Mitteilungen",
+        anonymous:false,
+        created_at:new Date().toISOString()
+      })});
+    }
+  } catch(e) {}
+  
+  // Send message
+  const fullText = icon + " " + text;
+  const r = await fetch(SB+"/messages", {
+    method:"POST", headers:H,
+    body:JSON.stringify({
+      thread_id:threadId,
+      from_id:"00000000-0000-0000-0000-000000000000",
+      text:fullText,
+      is_system:true,
+      created_at:new Date().toISOString()
+    })
+  });
+  return r.ok;
+}
+
 async function confirmParticipant(partId, eventId) {
   await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"confirmed"})});
-  toast("✓ Teilnahme bestätigt"); await loadAll();
+  // Find participant for admin message
+  const part = DB.participants.find(p=>p.id===partId);
+  const ev   = DB.events.find(e=>e.id===eventId);
+  const veh  = DB.vehicles.find(v=>v.id===part?.vehicle_id);
+  if(part?.user_id && ev) {
+    const txt = `Deine Anmeldung für "${ev.name}" wurde bestätigt!`
+      + (veh ? ` Fahrzeug: ${veh.hersteller} ${veh.modell}.` : "")
+      + ` Wir freuen uns auf dich! 🏁`;
+    await sendAdminMsg(part.user_id, txt, "✅");
+  }
+  toast("✓ Teilnahme bestätigt + Nachricht gesendet"); await loadAll();
 }
 async function cancelParticipant(partId, eventId) {
   if(!confirm("Anmeldung stornieren?")) return;
   await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"cancelled"})});
-  toast("Anmeldung storniert"); await loadAll();
+  const part = DB.participants.find(p=>p.id===partId);
+  const ev   = DB.events.find(e=>e.id===eventId);
+  if(part?.user_id && ev) {
+    await sendAdminMsg(part.user_id, `Deine Anmeldung für "${ev.name}" wurde leider storniert. Bei Fragen melde dich beim Vorstand.`, "❌");
+  }
+  toast("Anmeldung storniert + Nachricht gesendet"); await loadAll();
 }
 async function toggleRole(id, isMember) {
   const newRole = isMember ? "guest" : "member";
   await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:newRole})});
+  if(!isMember) {
+    // Just upgraded to member
+    const m = DB.members.find(m=>m.id===id);
+    await sendAdminMsg(id,
+      `Willkommen als Mitglied im Porsche Club Nürburgring! 🏎️ Dein Konto wurde freigeschaltet. Du hast jetzt Zugang zu allen Mitglieder-Funktionen, Events und der digitalen Fahrzeugakte.`,
+      "🎉"
+    );
+  }
   toast(isMember?"→ Als Gast gesetzt":"✓ Als Mitglied freigegeben"); await loadAll();
 }
 async function togglePaid(id, isPaid) {
   await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:!isPaid})});
+  if(!isPaid) {
+    // Just marked as paid → send confirmation
+    const m = DB.members.find(m=>m.id===id);
+    if(m) await sendAdminMsg(id, `Dein Mitgliedsbeitrag ${new Date().getFullYear()} wurde als bezahlt verbucht. Vielen Dank! 🙏`, "💳");
+  }
   toast(isPaid?"Beitrag als offen markiert":"✓ Beitrag als bezahlt markiert"); await loadAll();
 }
 async function markPaid(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:true})}); toast("✓ Bezahlt"); await loadAll(); }
 async function markUnpaid(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:false})}); toast("Zurückgesetzt"); await loadAll(); }
-async function upgradeMember(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:"member"})}); toast("✓ Als Mitglied freigegeben"); await loadAll(); }
+async function upgradeMember(id) {
+  await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:"member"})});
+  await sendAdminMsg(id,
+    "Willkommen als Mitglied im Porsche Club Nürburgring! 🏎️ Dein Konto wurde freigeschaltet. Du hast jetzt Zugang zu allen Mitglieder-Funktionen, Events und der digitalen Fahrzeugakte.",
+    "🎉"
+  );
+  toast("✓ Als Mitglied freigegeben + Willkommensnachricht gesendet"); await loadAll();
+}
 async function delMember(id,name) { if(!confirm(`${name} löschen?`)) return; await api(`users?id=eq.${id}`,{method:"DELETE"}); toast("Gelöscht"); await loadAll(); }
 function toggleNewEvent() { document.getElementById("ev-form").classList.toggle("hidden"); }
 async function createEvent() {
