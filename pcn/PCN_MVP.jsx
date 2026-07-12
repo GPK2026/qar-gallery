@@ -3729,7 +3729,7 @@ function PCNInner() {
 
         {/* MESSAGES */}
         {tab==="messages"&&(
-          <div style={{animation:"fadeIn .2s"}}>
+          <div style={{animation:"fadeIn .2s",overflowX:"hidden",width:"100%"}}>
 
             {/* ── Meine anonymen Chats (Gast + Mitglied) ── */}
             {guestThreads.length>0&&(
