@@ -8868,7 +8868,9 @@
       }, "Keine Events in diesem Monat")));
     })()), tab === "messages" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        animation: "fadeIn .2s"
+        animation: "fadeIn .2s",
+        overflowX: "hidden",
+        width: "100%"
       }
     }, guestThreads.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
