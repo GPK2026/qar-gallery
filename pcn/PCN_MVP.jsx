@@ -157,7 +157,7 @@ const dPlus = days => new Date(Date.now()+days*86400000).toISOString().split("T"
 const dMinus = days => new Date(Date.now()-days*86400000).toISOString().split("T")[0];
 
 const DEMO_USERS = {
-  "u1":{id:"u1",name:"Max Mustermann",email:"max@pcn.de",role:"member",memberNr:"PCN-0847"},
+  "u1":{id:"u1",name:"Max Mustermann",email:"max@pcn.de",role:"member",memberNr:"PCN-0847",city:"Adenau",beitragBezahlt:true,joinedAt:"2021-03-15",avatar:null},
   "u2":{id:"u2",name:"Thomas Weber",email:"thomas@pcn.de",role:"member",memberNr:"PCN-0312"},
   "u3":{id:"u3",name:"Anna Fischer",email:"anna@pcn.de",role:"member",memberNr:"PCN-0561"},
 };
@@ -3290,6 +3290,16 @@ function PCNInner() {
         {tab==="dashboard"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
 
+            {/* ── Demo-Hinweis ── */}
+            {isDemo&&(
+              <div style={{background:"#6b7fff18",border:"1px solid #6b7fff33",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center"}}>
+                <span style={{fontSize:16}}>🎭</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"#6b7fff"}}>Demo-Modus — Max Mustermann</div>
+                  <div style={{fontSize:11,color:"#aaa"}}>Du siehst alle Mitglieder-Funktionen in der Vorschau</div>
+                </div>
+              </div>
+            )}
             {/* ── 1. Infos & Neuigkeiten ── */}
             <div style={{marginBottom:20}}>
               <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>📰 Infos & Neuigkeiten</div>
@@ -3357,7 +3367,7 @@ function PCNInner() {
                 <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
                   🚗 {isDemo?"Neueste Mitglieder-Fahrzeuge":"Meine Fahrzeuge"}
                 </div>
-                {!isDemo&&<button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>}
+                <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>
               </div>
               {displayVehicles.length===0&&!isDemo?(
                 <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center",cursor:"pointer"}} onClick={()=>setShowAddV(true)}>
@@ -3945,7 +3955,7 @@ function PCNInner() {
               <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid rgba(255,255,255,.1)`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,color:C.gold}}>{myPoints}</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,color:C.gold}}>{isDemo?580:myPoints}</span>
                     <span style={{fontSize:15,color:C.muted}}>Punkte</span>
                     <button onClick={()=>setShowInfoModal("points")}
                       style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,padding:0,lineHeight:1}}>ℹ️</button>
@@ -3960,7 +3970,7 @@ function PCNInner() {
                   <div style={{height:"100%",width:`${pointsProgress}%`,background:`linear-gradient(90deg, ${C.red}, ${C.gold})`,borderRadius:99,transition:"width .6s ease"}}/>
                 </div>
                 <div style={{fontSize:11,color:C.muted,marginTop:6}}>
-                  🏁 {myParticipations.length} Events · 🚗 {myVehicles.length} Fahrzeuge · 📋 {Object.values(logbook).flat().length} Logbuch-Einträge
+                  🏁 {isDemo?"3":myParticipations.length} Events · 🚗 {isDemo?"1":myVehicles.length} Fahrzeuge · 📋 {isDemo?"8":Object.values(logbook).flat().length} Logbuch-Einträge
                 </div>
               </div>
 
