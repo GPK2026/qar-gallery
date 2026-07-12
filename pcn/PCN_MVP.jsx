@@ -838,8 +838,18 @@ function PCNInner() {
     return pts;
   };
   const myPoints = calcPoints();
-  const pointsToNext = myPoints < 100 ? 100 : myPoints < 300 ? 300 : myPoints < 500 ? 500 : 1000;
-  const pointsProgress = Math.min(100, Math.round((myPoints / pointsToNext) * 100));
+  const TIERS = [
+    {name:"Bronze",  pts:100},
+    {name:"Silber",  pts:300},
+    {name:"Gold",    pts:600},
+    {name:"Platin",  pts:1000},
+    {name:"Legend",  pts:2000},
+  ];
+  const currentTier = TIERS.filter(t=>myPoints>=t.pts).slice(-1)[0]||null;
+  const nextTier = TIERS.find(t=>myPoints<t.pts)||{name:"Legend",pts:2000};
+  const prevTierPts = currentTier?.pts||0;
+  const pointsToNext = nextTier.pts;
+  const pointsProgress = Math.min(100, Math.round(((myPoints-prevTierPts)/(nextTier.pts-prevTierPts))*100));
 
   // ── Toast ────────────────────────────────────────────────────────────────────
   // ── Status helpers — now wired to DB layer (works across devices via Supabase) ──
@@ -4009,7 +4019,7 @@ function PCNInner() {
                   </div>
                   <div style={{textAlign:"right"}}>
                     <div style={{fontSize:12,color:C.muted}}>Nächste Stufe</div>
-                    <div style={{fontSize:15,fontWeight:700,color:C.gold}}>{pointsToNext} Pkt</div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.gold}}>{nextTier.name} · {pointsToNext} Pkt</div>
                   </div>
                 </div>
                 {/* Progress bar */}
@@ -4227,7 +4237,7 @@ function PCNInner() {
               </div>
             ))}
             <div style={{marginTop:16,padding:"12px",background:`${C.gold}11`,borderRadius:10,fontSize:12,color:C.muted,lineHeight:1.7}}>
-              💡 Stufen: 100 Pkt = Bronze · 300 Pkt = Silber · 500 Pkt = Gold · 1000 Pkt = Platin
+              💡 Stufen: 100 Pkt = Bronze · 300 Pkt = Silber · 600 Pkt = Gold · 1.000 Pkt = Platin · 2.000 Pkt = Legend
             </div>
             <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,marginTop:16}}
               onClick={()=>setShowInfoModal(false)}>Verstanden ✓</button>
