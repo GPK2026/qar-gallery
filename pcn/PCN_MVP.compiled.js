@@ -1851,10 +1851,13 @@
     const [editForm, setEditForm] = (0, _react.useState)({});
     const [imgUploading, setImgUploading] = (0, _react.useState)(false);
     const [lightbox, setLightbox] = (0, _react.useState)(null); // {images:[], index:0}
-    const [vehicleStatus, setVehicleStatus] = (0, _react.useState)({}); // {vehicleId: {text, icon, expiresAt}}
+    const [vehicleStatus, setVehicleStatus] = (0, _react.useState)({}); // {vehicleId: [{id,text,icon,expiresAt}]}
     const [showStatusPicker, setShowStatusPicker] = (0, _react.useState)(null); // vehicleId
     const [statusCustom, setStatusCustom] = (0, _react.useState)("");
     const [statusCustomMins, setStatusCustomMins] = (0, _react.useState)(30);
+    const [statusUseDate, setStatusUseDate] = (0, _react.useState)(false); // true = exact datetime, false = duration
+    const [statusDateTime, setStatusDateTime] = (0, _react.useState)(""); // ISO datetime for exact end
+    const [statusEditSlot, setStatusEditSlot] = (0, _react.useState)(null); // slot id being edited
     const [gallerySwipe, setGallerySwipe] = (0, _react.useState)({}); // {vehicleId: currentIndex}
     const [scannerOpen, setScannerOpen] = (0, _react.useState)(false);
     const [scannerError, setScannerError] = (0, _react.useState)(null);
@@ -1923,26 +1926,60 @@
     // ── Status helpers — now wired to DB layer (works across devices via Supabase) ──
     const setStatus = async (vehicleId, preset, customText = "") => {
       const text = customText || preset.text;
-      const expiresAt = preset.mins ? Date.now() + preset.mins * 60 * 1000 : null;
-      const status = {
+      let expiresAt = null;
+      if (statusUseDate && statusDateTime) {
+        expiresAt = new Date(statusDateTime).getTime();
+      } else if (preset.mins || statusCustomMins) {
+        expiresAt = Date.now() + (statusCustomMins || preset.mins || 30) * 60 * 1000;
+      }
+      const slot = {
+        id: "s" + Date.now(),
         text,
         icon: preset.icon || "💬",
         expiresAt,
         setAt: Date.now()
       };
-      setVehicleStatus(prev => ({
-        ...prev,
-        [vehicleId]: status
-      }));
-      broadcastStatus(vehicleId, status);
+      setVehicleStatus(prev => {
+        const slots = (prev[vehicleId] || []).filter(s => s.expiresAt === null || Date.now() < s.expiresAt);
+        // Replace slot being edited, or add new (max 3)
+        let updated;
+        if (statusEditSlot) {
+          updated = slots.map(s => s.id === statusEditSlot ? {
+            ...slot,
+            id: statusEditSlot
+          } : s);
+        } else {
+          updated = slots.length >= 3 ? [...slots.slice(1), slot] : [...slots, slot];
+        }
+        return {
+          ...prev,
+          [vehicleId]: updated
+        };
+      });
+      broadcastStatus(vehicleId, slot);
       const DB = window.PCN_DB;
-      if (DB) await DB.vehicles.setStatus(vehicleId, status);
+      if (DB) await DB.vehicles.setStatus(vehicleId, slot).catch(() => {});
       setShowStatusPicker(null);
       setStatusCustom("");
+      setStatusEditSlot(null);
       toast_(`Status gesetzt: "${text}"`);
     };
-    const clearStatus = async vehicleId => {
+    const clearStatus = async (vehicleId, slotId = null) => {
       setVehicleStatus(prev => {
+        if (slotId) {
+          const slots = (prev[vehicleId] || []).filter(s => s.id !== slotId);
+          if (slots.length === 0) {
+            const n = {
+              ...prev
+            };
+            delete n[vehicleId];
+            return n;
+          }
+          return {
+            ...prev,
+            [vehicleId]: slots
+          };
+        }
         const n = {
           ...prev
         };
@@ -1951,16 +1988,29 @@
       });
       broadcastStatus(vehicleId, null);
       const DB = window.PCN_DB;
-      if (DB) await DB.vehicles.clearStatus(vehicleId);
+      if (DB) await DB.vehicles.clearStatus(vehicleId).catch(() => {});
     };
     const getActiveStatus = vehicleId => {
-      const s = vehicleStatus[vehicleId];
-      if (!s) return null;
-      if (s.expiresAt && Date.now() > s.expiresAt) {
+      const slots = vehicleStatus[vehicleId];
+      if (!slots || slots.length === 0) return null;
+      if (Array.isArray(slots)) {
+        const active = slots.filter(s => !s.expiresAt || Date.now() < s.expiresAt);
+        if (active.length === 0) {
+          clearStatus(vehicleId);
+          return null;
+        }
+        return active; // returns array
+      }
+      // legacy single object
+      if (slots.expiresAt && Date.now() > slots.expiresAt) {
         clearStatus(vehicleId);
         return null;
       }
-      return s;
+      return [slots];
+    };
+    const getFirstStatus = vehicleId => {
+      const s = getActiveStatus(vehicleId);
+      return s ? s[0] : null;
     };
 
     // Load status fresh when viewing a vehicle (public or detail) — ensures cross-device sync
@@ -4199,13 +4249,14 @@
           margin: "0 auto"
         }
       }, (() => {
-        const s = vehicleStatus[v.id];
-        if (s && s.expiresAt && Date.now() > s.expiresAt) return null;
-        if (!s || !s.text) return /*#__PURE__*/_react.default.createElement("button", {
+        const rawSlots = vehicleStatus[v.id];
+        // Normalize to array
+        const allSlots = !rawSlots ? [] : Array.isArray(rawSlots) ? rawSlots : [rawSlots];
+        const active = allSlots.filter(s => !s.expiresAt || Date.now() < s.expiresAt);
+        if (!active.length) return /*#__PURE__*/_react.default.createElement("button", {
           onClick: async () => {
             const DB = window.PCN_DB;
             if (!DB) return;
-            // Try by vehicle id first, fallback to qarId lookup
             let vid = v.id;
             if (v.qarId && (!vid || vid.startsWith("tmp-"))) {
               const {
@@ -4216,10 +4267,10 @@
             const {
               data
             } = await DB.vehicles.getStatus(vid);
-            if (data && data.text) {
+            if (data) {
               setVehicleStatus(prev => ({
                 ...prev,
-                [v.id]: data
+                [v.id]: Array.isArray(data) ? data : [data]
               }));
               toast_("Status geladen ✓");
             } else {
@@ -4247,87 +4298,95 @@
             fontSize: 16
           }
         }, "🔄"), " Live-Status abrufen");
-        // Time calculations
-        const now = Date.now();
-        const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - now) / 60000) : null;
-        const setAt = s.setAt ? new Date(s.setAt) : null;
-        const isToday = setAt && setAt.toDateString() === new Date().toDateString();
-        const timeStamp = setAt ? isToday ? "Heute " + setAt.toLocaleTimeString("de-DE", {
-          hour: "2-digit",
-          minute: "2-digit"
-        }) + " Uhr" : setAt.toLocaleDateString("de-DE", {
-          day: "2-digit",
-          month: "short"
-        }) + " · " + setAt.toLocaleTimeString("de-DE", {
-          hour: "2-digit",
-          minute: "2-digit"
-        }) + " Uhr" : null;
-        const urgent = minsLeft && minsLeft <= 5;
-        const color = urgent ? "#ef4444" : C.amber;
-        return /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            background: urgent ? "#ef444418" : `${C.amber}18`,
-            border: `2px solid ${urgent ? "#ef444466" : C.amber + "66"}`,
-            borderRadius: 14,
-            padding: "14px 16px",
-            marginBottom: 4,
-            animation: "fadeIn .3s ease"
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            display: "flex",
-            gap: 10,
-            alignItems: "flex-start"
-          }
-        }, /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 28,
-            flexShrink: 0,
-            marginTop: 2
-          }
-        }, s.icon || "💬"), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            flex: 1
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontWeight: 800,
-            fontSize: 16,
-            color,
-            lineHeight: 1.2,
-            marginBottom: 5
-          }
-        }, s.text), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            display: "flex",
-            gap: 6,
-            flexWrap: "wrap",
-            alignItems: "center"
-          }
-        }, timeStamp && /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 10,
-            color: C.muted,
-            display: "flex",
-            alignItems: "center",
-            gap: 3
-          }
-        }, "🕐 ", timeStamp), minsLeft && minsLeft > 0 && /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 11,
-            fontWeight: 700,
-            color,
-            background: urgent ? "#ef444422" : `${C.amber}22`,
-            border: `1px solid ${urgent ? "#ef444444" : C.amber + "44"}`,
-            borderRadius: 6,
-            padding: "2px 8px"
-          }
-        }, minsLeft <= 1 ? "< 1 Min" : minsLeft < 60 ? `noch ${minsLeft} Min` : `noch ca. ${Math.round(minsLeft / 60)} Std`), !minsLeft && /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 10,
-            color: "#555"
-          }
-        }, "Kein Ablauf gesetzt")))));
+        return active.map(s => {
+          const now = Date.now();
+          const minsLeft = s.expiresAt ? Math.ceil((s.expiresAt - now) / 60000) : null;
+          const setAt = s.setAt ? new Date(s.setAt) : null;
+          const isToday = setAt && setAt.toDateString() === new Date().toDateString();
+          const timeStamp = setAt ? isToday ? "Heute " + setAt.toLocaleTimeString("de-DE", {
+            hour: "2-digit",
+            minute: "2-digit"
+          }) + " Uhr" : setAt.toLocaleDateString("de-DE", {
+            day: "2-digit",
+            month: "short"
+          }) + " · " + setAt.toLocaleTimeString("de-DE", {
+            hour: "2-digit",
+            minute: "2-digit"
+          }) + " Uhr" : null;
+          const urgent = minsLeft && minsLeft <= 5;
+          const color = urgent ? "#ef4444" : C.amber;
+          return /*#__PURE__*/_react.default.createElement("div", {
+            key: s.id || s.text,
+            style: {
+              background: urgent ? "#ef444418" : `${C.amber}18`,
+              border: `2px solid ${urgent ? "#ef444466" : C.amber + "66"}`,
+              borderRadius: 14,
+              padding: "14px 16px",
+              marginBottom: 8,
+              animation: "fadeIn .3s ease"
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              display: "flex",
+              gap: 10,
+              alignItems: "flex-start"
+            }
+          }, /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 28,
+              flexShrink: 0,
+              marginTop: 2
+            }
+          }, s.icon || "💬"), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              flex: 1
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontWeight: 800,
+              fontSize: 16,
+              color,
+              lineHeight: 1.2,
+              marginBottom: 5
+            }
+          }, s.text), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              display: "flex",
+              gap: 6,
+              flexWrap: "wrap",
+              alignItems: "center"
+            }
+          }, timeStamp && /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 10,
+              color: C.muted,
+              display: "flex",
+              alignItems: "center",
+              gap: 3
+            }
+          }, "🕐 ", timeStamp), minsLeft && minsLeft > 0 && /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 11,
+              fontWeight: 700,
+              color,
+              background: urgent ? "#ef444422" : `${C.amber}22`,
+              border: `1px solid ${urgent ? "#ef444444" : C.amber + "44"}`,
+              borderRadius: 6,
+              padding: "2px 8px"
+            }
+          }, minsLeft <= 1 ? "< 1 Min" : minsLeft < 60 ? `noch ${minsLeft} Min` : `noch ca. ${Math.round(minsLeft / 60)} Std`), !minsLeft && s.expiresAt && new Date(s.expiresAt).toLocaleTimeString("de-DE", {
+            hour: "2-digit",
+            minute: "2-digit"
+          }) && /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 10,
+              color: C.muted
+            }
+          }, "bis ", new Date(s.expiresAt).toLocaleTimeString("de-DE", {
+            hour: "2-digit",
+            minute: "2-digit"
+          }), " Uhr")))));
+        });
       })(), priv.pub_phone === true && v.phone && v.phone.trim() && /*#__PURE__*/_react.default.createElement("a", {
         href: `tel:${(v.phone || "").replace(/[^+\d]/g, "")}`,
         style: {
@@ -4893,12 +4952,15 @@
           zIndex: 500
         },
         onClick: e => {
-          if (e.target === e.currentTarget) setShowStatusPicker(null);
+          if (e.target === e.currentTarget) {
+            setShowStatusPicker(null);
+            setStatusEditSlot(null);
+          }
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         className: "sheet",
         style: {
-          maxHeight: "88vh",
+          maxHeight: "92vh",
           overflowY: "auto"
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
@@ -4907,64 +4969,119 @@
           fontSize: 20,
           fontWeight: 800,
           color: C.white,
-          marginBottom: 4
+          marginBottom: 2
         }
-      }, "📍 Live-Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "📍 Live-Status"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
-          marginBottom: 12
-        }
-      }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          background: `${C.red}18`,
-          border: `1.5px solid ${C.red}44`,
-          borderRadius: 12,
-          padding: "13px",
           marginBottom: 14
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 8
-        }
-      }, /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 13,
-          fontWeight: 700,
-          color: C.white
-        }
-      }, "⏱ Aktivierungsdauer"), /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 16,
-          fontWeight: 900,
-          color: C.red
-        }
-      }, (() => {
-        const m = statusCustomMins || 30;
-        return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 > 0 ? " " + m % 60 + "min" : ""}` : m + " Min";
-      })())), /*#__PURE__*/_react.default.createElement("input", {
-        type: "range",
-        min: "5",
-        max: "480",
-        step: "5",
-        value: statusCustomMins || 30,
-        onChange: e => setStatusCustomMins(parseInt(e.target.value)),
-        style: {
-          width: "100%",
-          accentColor: C.red
-        }
-      }), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: 9,
-          color: "#555",
-          marginTop: 3
-        }
-      }, /*#__PURE__*/_react.default.createElement("span", null, "5 Min"), /*#__PURE__*/_react.default.createElement("span", null, "30 Min"), /*#__PURE__*/_react.default.createElement("span", null, "1 Std"), /*#__PURE__*/_react.default.createElement("span", null, "4 Std"), /*#__PURE__*/_react.default.createElement("span", null, "8 Std"))), /*#__PURE__*/_react.default.createElement("div", {
+      }, "Bis zu 3 Status-Infos — sichtbar beim QR-Scan"), (() => {
+        const slots = getActiveStatus(showStatusPicker) || [];
+        if (!slots.length) return null;
+        return /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 10,
+            fontWeight: 800,
+            color: "#aaa",
+            textTransform: "uppercase",
+            letterSpacing: 1.5,
+            marginBottom: 8
+          }
+        }, "Aktive Status (", slots.length, "/3)"), slots.map(s => {
+          const remaining = s.expiresAt ? Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 60000)) : null;
+          const expDate = s.expiresAt ? new Date(s.expiresAt) : null;
+          return /*#__PURE__*/_react.default.createElement("div", {
+            key: s.id,
+            style: {
+              background: `${C.green}11`,
+              border: `1px solid ${C.green}33`,
+              borderRadius: 10,
+              padding: "10px 12px",
+              marginBottom: 8,
+              display: "flex",
+              gap: 10,
+              alignItems: "center"
+            }
+          }, /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              fontSize: 20,
+              flexShrink: 0
+            }
+          }, s.icon), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              flex: 1,
+              minWidth: 0
+            }
+          }, /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 13,
+              fontWeight: 700,
+              color: C.white,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }
+          }, s.text), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              fontSize: 10,
+              color: C.muted
+            }
+          }, remaining !== null ? remaining < 60 ? `Noch ${remaining} Min` : `Bis ${expDate.toLocaleTimeString("de-DE", {
+            hour: "2-digit",
+            minute: "2-digit"
+          })} Uhr` : "Dauerhaft")), /*#__PURE__*/_react.default.createElement("div", {
+            style: {
+              display: "flex",
+              gap: 4,
+              flexShrink: 0
+            }
+          }, /*#__PURE__*/_react.default.createElement("button", {
+            onClick: () => {
+              setStatusCustom(s.text);
+              setStatusEditSlot(s.id);
+              const rem = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : 30;
+              setStatusCustomMins(rem);
+            },
+            style: {
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: 6,
+              padding: "4px 8px",
+              color: C.muted,
+              fontSize: 11,
+              cursor: "pointer",
+              fontFamily: "'Barlow',sans-serif"
+            }
+          }, "✏️"), /*#__PURE__*/_react.default.createElement("button", {
+            onClick: () => {
+              clearStatus(showStatusPicker, s.id);
+              toast_("Status gelöscht");
+            },
+            style: {
+              background: "#ef444418",
+              border: "1px solid #ef444433",
+              borderRadius: 6,
+              padding: "4px 8px",
+              color: "#ef4444",
+              fontSize: 11,
+              cursor: "pointer",
+              fontFamily: "'Barlow',sans-serif"
+            }
+          }, "✕")));
+        }), slots.length < 3 && /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 11,
+            color: C.muted,
+            marginBottom: 4
+          }
+        }, "+ Weiteren Status hinzufügen:"));
+      })(), (getActiveStatus(showStatusPicker) || []).length < 3 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           flexDirection: "column",
@@ -4984,7 +5101,7 @@
           background: C.card,
           border: `1px solid ${C.border}`,
           borderRadius: 12,
-          padding: "13px",
+          padding: "12px",
           cursor: "pointer",
           fontFamily: "'Barlow',sans-serif",
           textAlign: "left"
@@ -4994,75 +5111,182 @@
           fontSize: 22,
           flexShrink: 0
         }
-      }, p.icon), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+      }, p.icon), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 14,
+          flex: 1
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 13,
           fontWeight: 700,
           color: C.white
         }
       }, p.text), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 11,
+          fontSize: 10,
           color: C.muted
         }
-      }, "Läuft ab nach ", statusCustomMins || p.mins, " Min"))))), /*#__PURE__*/_react.default.createElement("div", {
+      }, "Aktiv für ", statusCustomMins || p.mins, " Min"))))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          borderTop: `1px solid ${C.border}`,
-          paddingTop: 12,
-          marginBottom: 10
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          padding: "13px",
+          marginBottom: 12
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
-          color: C.muted,
+          fontWeight: 700,
+          color: "#aaa",
           marginBottom: 8
         }
-      }, "Eigener Text"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "✏️ Eigener Status"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
-          gap: 8
+          gap: 8,
+          marginBottom: 12
         }
       }, /*#__PURE__*/_react.default.createElement("input", {
         className: "inp",
-        placeholder: "z.B. Bin gleich beim Einlass...",
+        placeholder: "z.B. Bin beim Einlass...",
         value: statusCustom,
         onChange: e => setStatusCustom(e.target.value),
         onKeyDown: e => {
           if (e.key === "Enter" && statusCustom.trim()) setStatus(showStatusPicker, {
-            icon: "💬",
-            mins: statusCustomMins || 30
+            icon: "💬"
           }, statusCustom);
         },
         style: {
           flex: 1
         }
-      }), /*#__PURE__*/_react.default.createElement("button", {
+      })), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          borderTop: `1px solid ${C.border}`,
+          paddingTop: 10
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 8,
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => setStatusUseDate(false),
+        style: {
+          flex: 1,
+          background: !statusUseDate ? C.red : "#1a1a1a",
+          border: `1px solid ${!statusUseDate ? C.red : C.border}`,
+          borderRadius: 8,
+          padding: "8px",
+          color: !statusUseDate ? "#fff" : C.muted,
+          fontSize: 12,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "⏱ Dauer"), /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => setStatusUseDate(true),
+        style: {
+          flex: 1,
+          background: statusUseDate ? C.red : "#1a1a1a",
+          border: `1px solid ${statusUseDate ? C.red : C.border}`,
+          borderRadius: 8,
+          padding: "8px",
+          color: statusUseDate ? "#fff" : C.muted,
+          fontSize: 12,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "📅 Bis Uhrzeit")), !statusUseDate ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 6
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 12,
+          color: C.muted
+        }
+      }, "Dauer"), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 16,
+          fontWeight: 900,
+          color: C.red
+        }
+      }, (() => {
+        const m = statusCustomMins || 30;
+        return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 > 0 ? " " + m % 60 + "m" : ""}` : `${m} Min`;
+      })())), /*#__PURE__*/_react.default.createElement("input", {
+        type: "range",
+        min: "5",
+        max: "480",
+        step: "5",
+        value: statusCustomMins || 30,
+        onChange: e => setStatusCustomMins(parseInt(e.target.value)),
+        style: {
+          width: "100%",
+          accentColor: C.red
+        }
+      }), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: 9,
+          color: "#555",
+          marginTop: 3
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", null, "5m"), /*#__PURE__*/_react.default.createElement("span", null, "30m"), /*#__PURE__*/_react.default.createElement("span", null, "1h"), /*#__PURE__*/_react.default.createElement("span", null, "4h"), /*#__PURE__*/_react.default.createElement("span", null, "8h"))) : /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          marginBottom: 6
+        }
+      }, "Status aktiv bis:"), /*#__PURE__*/_react.default.createElement("input", {
+        type: "datetime-local",
+        value: statusDateTime,
+        min: new Date(Date.now() + 5 * 60000).toISOString().slice(0, 16),
+        onChange: e => setStatusDateTime(e.target.value),
+        style: {
+          width: "100%",
+          background: "#1a1a1a",
+          border: `1px solid ${C.border}`,
+          borderRadius: 8,
+          padding: "10px 12px",
+          color: C.white,
+          fontSize: 14,
+          fontFamily: "'Barlow',sans-serif",
+          outline: "none"
+        }
+      }))), /*#__PURE__*/_react.default.createElement("button", {
         className: "btn",
         disabled: !statusCustom.trim(),
         onClick: () => {
           if (statusCustom.trim()) setStatus(showStatusPicker, {
-            icon: "💬",
-            mins: statusCustomMins || 30
+            icon: "💬"
           }, statusCustom);
         },
         style: {
-          flexShrink: 0,
+          width: "100%",
+          marginTop: 12,
           opacity: statusCustom.trim() ? 1 : .4
         }
-      }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/_react.default.createElement("button", {
+      }, statusEditSlot ? "Status aktualisieren" : "Status setzen"))), (getActiveStatus(showStatusPicker) || []).length > 0 && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn ghost",
         style: {
           width: "100%",
-          marginTop: 4,
           color: "#ef4444",
           borderColor: "#ef444444"
         },
         onClick: () => {
           clearStatus(showStatusPicker);
           setShowStatusPicker(null);
-          toast_("Status gelöscht");
+          toast_("Alle Status gelöscht");
         }
-      }, "Status löschen"))), lightbox && /*#__PURE__*/_react.default.createElement("div", {
+      }, "Alle Status löschen"))), lightbox && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           position: "fixed",
           inset: 0,
@@ -5868,15 +6092,16 @@
           marginBottom: 12
         }
       }, "🔗 QR-Code & Aktionen"), (() => {
-        const active = getActiveStatus(v.id);
-        if (!active) return null;
-        return /*#__PURE__*/_react.default.createElement("div", {
+        const slots = getActiveStatus(v.id) || [];
+        if (!slots.length) return null;
+        return slots.map(s => /*#__PURE__*/_react.default.createElement("div", {
+          key: s.id,
           style: {
             background: `${C.amber}18`,
             border: `1px solid ${C.amber}44`,
             borderRadius: 10,
             padding: "10px 13px",
-            marginBottom: 10,
+            marginBottom: 8,
             display: "flex",
             gap: 10,
             alignItems: "center"
@@ -5885,7 +6110,7 @@
           style: {
             fontSize: 20
           }
-        }, active.icon), /*#__PURE__*/_react.default.createElement("div", {
+        }, s.icon), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             flex: 1
           }
@@ -5895,15 +6120,18 @@
             fontWeight: 700,
             color: C.amber
           }
-        }, active.text), /*#__PURE__*/_react.default.createElement("div", {
+        }, s.text), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             fontSize: 10,
             color: C.muted,
             marginTop: 1
           }
-        }, "Aktiver Status · sichtbar für Besucher")), /*#__PURE__*/_react.default.createElement("button", {
+        }, s.expiresAt ? `Bis ${new Date(s.expiresAt).toLocaleTimeString("de-DE", {
+          hour: "2-digit",
+          minute: "2-digit"
+        })} Uhr` : "Dauerhaft", " · sichtbar für Besucher")), /*#__PURE__*/_react.default.createElement("button", {
           onClick: () => {
-            clearStatus(v.id);
+            clearStatus(v.id, s.id);
             toast_("Status gelöscht");
           },
           style: {
@@ -5914,7 +6142,7 @@
             fontSize: 18,
             padding: "0 4px"
           }
-        }, "✕"));
+        }, "✕")));
       })(), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
@@ -7388,7 +7616,7 @@
           flexShrink: 0,
           opacity: statusCustom.trim() ? 1 : .4
         }
-      }, "OK"))), getActiveStatus(showStatusPicker) && /*#__PURE__*/_react.default.createElement("button", {
+      }, "OK"))), (getActiveStatus(showStatusPicker) || []).length > 0 && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn ghost",
         style: {
           width: "100%",
@@ -7401,7 +7629,7 @@
           setShowStatusPicker(null);
           toast_("Status gelöscht");
         }
-      }, "Status löschen"))), lightbox && /*#__PURE__*/_react.default.createElement("div", {
+      }, "Alle Status löschen"))), lightbox && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           position: "fixed",
           inset: 0,
