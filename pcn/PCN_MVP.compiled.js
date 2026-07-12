@@ -7802,34 +7802,56 @@
     }, isDemo && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: "#6b7fff18",
-        border: "1px solid #6b7fff33",
-        borderRadius: 10,
-        padding: "10px 14px",
-        marginBottom: 14,
+        border: "1px solid #6b7fff44",
+        borderRadius: 12,
+        padding: "13px 16px",
+        marginBottom: 16
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
         display: "flex",
         gap: 10,
+        alignItems: "center",
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 18
+      }
+    }, "🎭"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 17,
+        fontWeight: 900,
+        color: "#6b7fff",
+        letterSpacing: .5
+      }
+    }, "Demo-Modus — Max Mustermann")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#bbb",
+        lineHeight: 1.7
+      }
+    }, "Alle Funktionen der Plattform sind vollständig implementiert und hier erlebbar — Events, Chat, Fahrzeugakte, QR-Code, Punkte und Admin-Dashboard."), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginTop: 8,
+        background: "#ffffff12",
+        borderRadius: 7,
+        padding: "7px 10px",
+        display: "flex",
+        gap: 7,
         alignItems: "center"
       }
     }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        fontSize: 16
+        fontSize: 13
       }
-    }, "🎭"), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        flex: 1
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 12,
-        fontWeight: 700,
-        color: "#6b7fff"
-      }
-    }, "Demo-Modus — Max Mustermann"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🔄"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: "#aaa"
       }
-    }, "Du siehst alle Mitglieder-Funktionen in der Vorschau"))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt — Änderungen sind nicht dauerhaft gespeichert."))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
       }
