@@ -232,7 +232,7 @@ async function loadAll() {
       api("users?select=*&order=created_at.desc&limit=200"),
       api("events?select=*&order=date.asc&limit=100"),
       api("vehicles?select=*&order=created_at.desc&limit=200"),
-      api("participants?select=*&order=created_at.desc&limit=500"),
+      api("participants?select=*&order=registered_at.desc&limit=500"),
     ]);
 
     // Auth error — only show dialog if not already authenticated
@@ -371,7 +371,7 @@ function rDashboard(el) {
       ${stat(pct+"%","Beitrag","${bezahlt.length} von ${aktive.length}","var(--green)")}
       ${stat("€"+bezahlt.length*EUR,"Einnahmen","€"+offen.length*EUR+" offen","var(--gold)")}
       ${stat(DB.vehicles.length,"Fahrzeuge","im System","var(--blue)")}
-      ${stat(DB.participants.filter(p=>p.status==="pending").length||0,"Offene Anfragen","Events ausstehend","var(--amber)")}
+      ${stat(DB.participants.filter(p=>p.status==="pending").length||0,"Offene Anfragen","→ Bestätigung ausstehend","var(--amber)")}
       ${stat(next.length,"Events","anstehend","var(--red)")}
     </div>
 
@@ -418,6 +418,7 @@ function rDashboard(el) {
       ${next.length===0?"<div style='color:var(--muted);font-size:13px'>Keine Events geplant</div>":
         next.slice(0,4).map(ev=>{
           const dl=daysLeft(ev.date);
+
           const col=dl<=7?"var(--red)":dl<=30?"var(--amber)":"var(--green)";
           return `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">
             <div style="min-width:32px;text-align:center">
@@ -430,7 +431,33 @@ function rDashboard(el) {
             </div>
             <span class="b" style="background:${col}22;color:${col};border:1px solid ${col}44;flex-shrink:0">${dl>0?dl+"d":"Heute"}</span>
           </div>`;}).join("")}
-    </div>`;
+    </div>
+
+    ${(()=>{
+      const pending = DB.participants.filter(p=>p.status==="pending");
+      if(!pending.length) return "";
+      return `<div class="card" style="border-color:#f59e0b44">
+        <div class="sec-title" style="color:var(--amber)">🟡 Offene Anmeldungen (${pending.length})</div>
+        ${pending.slice(0,5).map(p=>{
+          const member = DB.members.find(m=>m.id===p.user_id);
+          const vehicle = DB.vehicles.find(v=>v.id===p.vehicle_id);
+          const ev = DB.events.find(e=>e.id===p.event_id);
+          return `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                ${member?.name||"Mitglied"} → ${ev?.name||"Event"}
+              </div>
+              <div style="font-size:10px;color:var(--muted)">
+                ${vehicle?.hersteller||""} ${vehicle?.modell||""}${p.class?" · "+p.class:""}
+              </div>
+            </div>
+            <button class="btn btn-sm btn-green" onclick="confirmParticipant('${p.id}','${p.event_id}')">✓ Bestätigen</button>
+          </div>`;
+        }).join("")}
+        ${pending.length>5?`<div style="font-size:11px;color:var(--muted);margin-top:6px">+${pending.length-5} weitere im Events-Tab</div>`:""}
+      </div>`;
+    })()}
+    `;
 }
 
 // ── Activity ──────────────────────────────────────────────────────────────────
@@ -716,6 +743,11 @@ async function confirmParticipant(partId, eventId) {
   await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"confirmed"})});
   toast("✓ Teilnahme bestätigt"); await loadAll();
 }
+async function cancelParticipant(partId, eventId) {
+  if(!confirm("Anmeldung stornieren?")) return;
+  await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"cancelled"})});
+  toast("Anmeldung storniert"); await loadAll();
+}
 async function markPaid(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:true})}); toast("✓ Bezahlt"); await loadAll(); }
 async function markUnpaid(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:false})}); toast("Zurückgesetzt"); await loadAll(); }
 async function upgradeMember(id) { await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:"member"})}); toast("✓ Als Mitglied freigegeben"); await loadAll(); }
@@ -724,7 +756,7 @@ function toggleNewEvent() { document.getElementById("ev-form").classList.toggle(
 async function createEvent() {
   const name=document.getElementById("ev-name")?.value, date=document.getElementById("ev-date")?.value;
   if(!name||!date) return toast("Name + Datum erforderlich","err");
-  await api("events",{method:"POST",body:JSON.stringify({name,date,location:document.getElementById("ev-loc")?.value,category:document.getElementById("ev-cat")?.value,price:document.getElementById("ev-price")?.value,desc:document.getElementById("ev-desc")?.value,created_at:new Date().toISOString()})});
+  await api("events",{method:"POST",body:JSON.stringify({name,date,location:document.getElementById("ev-loc")?.value,category:document.getElementById("ev-cat")?.value,entry_fee:document.getElementById("ev-price")?.value,description:document.getElementById("ev-desc")?.value,created_at:new Date().toISOString()})});
   toast("Event erstellt ✓"); await loadAll();
 }
 async function delEvent(id,name) { if(!confirm(`"${name}" löschen?`)) return; await api(`events?id=eq.${id}`,{method:"DELETE"}); toast("Gelöscht"); await loadAll(); }
