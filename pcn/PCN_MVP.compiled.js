@@ -1291,7 +1291,8 @@ function ChatScreen({
   onViewVehicle,
   onUpgrade,
   onDeleteMessage,
-  onDeleteThread
+  onDeleteThread,
+  onConfirmScan
 }) {
   const [msg, setMsg] = (0, _react.useState)("");
   const [selectedMsg, setSelectedMsg] = (0, _react.useState)(null); // for delete menu
@@ -1580,8 +1581,8 @@ function ChatScreen({
         color: "#fff",
         lineHeight: 1.5
       }
-    }, m.text), scanPayload && me && me.id === thread.id?.replace("admin-", "") && /*#__PURE__*/_react.default.createElement("button", {
-      onClick: () => confirmScan(scanPayload.scannerId, scanPayload.vehicleId, scanPayload.scannerName),
+    }, m.text), scanPayload && me && /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => onConfirmScan && onConfirmScan(scanPayload.scannerId, scanPayload.vehicleId, scanPayload.scannerName),
       style: {
         marginTop: 10,
         background: C.green,
@@ -8143,6 +8144,7 @@ function PCNInner() {
         } catch (e) {}
       },
       onDeleteThread: threadId => setConfirmDeleteThread(threadId),
+      onConfirmScan: confirmScan,
       onUpgrade: () => {
         setLoginForm({
           mode: "register",
