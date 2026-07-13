@@ -117,7 +117,13 @@ function QRCodeCanvas({value, size=140}) {
 // ─── Demo Data ────────────────────────────────────────────────────────────────
 const CLUB_CODE = "PCN2026";
 // Sponsor config — set in pcn_config.js: window.PCN_SPONSOR = {name:"Porschezentrum Koblenz", url:"https://...", logo:"https://..."}
-const SPONSOR = typeof window !== "undefined" ? (window.PCN_SPONSOR || null) : null;
+const SPONSOR = {
+  name: "Porsche Zentrum Koblenz",
+  subtitle: "Löhr Sportfahrzeuge GmbH",
+  url: "https://www.porsche-koblenz.de",
+  logo: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyODAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCAyODAgNjAiPgogIDxyZWN0IHdpZHRoPSIyODAiIGhlaWdodD0iNjAiIGZpbGw9IiMxMTEiIHJ4PSI2Ii8+CiAgPCEtLSBQb3JzY2hlIHNoaWVsZCBpY29uIHNpbXBsaWZpZWQgLS0+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTIsMTApIj4KICAgIDxwYXRoIGQ9Ik0yMCwyIEwzMiwyIFEzOCwyIDM4LDEwIEwzOCwzMCBRMzgsNDAgMjAsNDAgUTIsNDAgMiwzMCBMMiwxMCBRMiwyIDgsMiBaIiAKICAgICAgICAgIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0Q1MDAxQyIgc3Ryb2tlLXdpZHRoPSIxLjUiLz4KICAgIDxsaW5lIHgxPSIyMCIgeTE9IjIiIHgyPSIyMCIgeTI9IjQwIiBzdHJva2U9IiNENTAwMUMiIHN0cm9rZS13aWR0aD0iMSIvPgogICAgPGxpbmUgeDE9IjIiIHkxPSIxOCIgeDI9IjM4IiB5Mj0iMTgiIHN0cm9rZT0iI0Q1MDAxQyIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgICA8IS0tIEhvcnNlIHNpbGhvdWV0dGUgc2ltcGxpZmllZCAtLT4KICAgIDxwYXRoIGQ9Ik0xNCw4IFExNiw2IDE4LDggTDE4LDE2IFExNiwxOCAxNCwxNiBaIiBmaWxsPSIjRDUwMDFDIiBvcGFjaXR5PSIwLjciLz4KICA8L2c+CiAgPCEtLSBUZXh0IC0tPgogIDx0ZXh0IHg9IjUyIiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNENTAwMUMiIGxldHRlci1zcGFjaW5nPSIyIj5QT1JTQ0hFPC90ZXh0PgogIDx0ZXh0IHg9IjUyIiB5PSIzNiIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgZm9udC13ZWlnaHQ9IjQwMCIgZmlsbD0iI2NjYyIgbGV0dGVyLXNwYWNpbmc9IjEuNSI+WkVOVFJVTSBLT0JMRU5aPC90ZXh0PgogIDx0ZXh0IHg9IjUyIiB5PSI0OSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNyIgZmlsbD0iIzY2NiIgbGV0dGVyLXNwYWNpbmc9IjEiPkzDtmhyIFNwb3J0ZmFocnpldWdlIEdtYkg8L3RleHQ+Cjwvc3ZnPg==",
+  tagline: "Offizieller Partner des PCN"
+};
 
 // Demo group channel messages
 const DEMO_GROUP = {
@@ -2112,6 +2118,30 @@ function PCNInner() {
               fontSize:13,fontFamily:"'Barlow',sans-serif",width:"100%",marginTop:8,padding:"8px"}}>
             ← Zurück zum Chat
           </button>
+        )}
+
+        {/* ── Sponsor ── */}
+        {SPONSOR&&(
+          <div style={{marginTop:20}}>
+            <div style={{fontSize:9,fontWeight:700,color:"#333",textTransform:"uppercase",letterSpacing:2,textAlign:"center",marginBottom:10}}>
+              Offizieller Partner
+            </div>
+            <a href={SPONSOR.url} target="_blank" rel="noopener noreferrer"
+              style={{display:"flex",alignItems:"center",gap:12,background:"#fff",
+                borderRadius:12,padding:"12px 16px",textDecoration:"none",
+                border:"1px solid #eee",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+              {SPONSOR.logo
+                ?<img src={SPONSOR.logo} alt={SPONSOR.name} style={{height:36,objectFit:"contain",flexShrink:0}}/>
+                :<div style={{width:36,height:36,background:C.red,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🏎️</div>
+              }
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:800,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{SPONSOR.name}</div>
+                {SPONSOR.subtitle&&<div style={{fontSize:10,color:"#888",marginTop:1}}>{SPONSOR.subtitle}</div>}
+                {SPONSOR.tagline&&<div style={{fontSize:9,color:C.red,fontWeight:700,marginTop:2,textTransform:"uppercase",letterSpacing:.5}}>{SPONSOR.tagline}</div>}
+              </div>
+              <span style={{fontSize:16,color:"#ccc"}}>›</span>
+            </a>
+          </div>
         )}
 
         <p style={{textAlign:"center",fontSize:10,color:"#333",marginTop:16}}>
