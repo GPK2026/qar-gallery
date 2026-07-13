@@ -1,16 +1,12 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 exports.default = PCN;
-var _react = _interopRequireWildcard(require("react"));
+var React = { default: window.React, useState: window.React.useState, useEffect: window.React.useEffect };
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
 // PCN — Porsche Club Nürburgring · Digitale Clubplattform v3
 // Vollständig neu geschrieben — alle Bugs behoben
 
 // ─── Error Boundary — catches crashes, shows message instead of black screen ──
-class ErrorBoundary extends _react.default.Component {
+class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -41,7 +37,7 @@ class ErrorBoundary extends _react.default.Component {
   }
   render() {
     if (!this.state.hasError) return this.props.children;
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         minHeight: "100vh",
         background: "#0a0a0a",
@@ -51,7 +47,7 @@ class ErrorBoundary extends _react.default.Component {
         padding: 24,
         fontFamily: "sans-serif"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         background: "#191919",
         border: "1px solid #e3061344",
@@ -60,19 +56,19 @@ class ErrorBoundary extends _react.default.Component {
         maxWidth: 380,
         textAlign: "center"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 44,
         marginBottom: 14
       }
-    }, "⚠️"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "⚠️"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 17,
         fontWeight: 800,
         color: "#fff",
         marginBottom: 8
       }
-    }, "Etwas ist schiefgelaufen"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Etwas ist schiefgelaufen"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: "#999",
@@ -81,13 +77,13 @@ class ErrorBoundary extends _react.default.Component {
         fontFamily: "monospace",
         wordBreak: "break-word"
       }
-    }, this.state.error?.message || "Unbekannter Fehler"), /*#__PURE__*/_react.default.createElement("div", {
+    }, this.state.error?.message || "Unbekannter Fehler"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: "#666",
         marginBottom: 20
       }
-    }, "Deine Daten sind sicher gespeichert."), /*#__PURE__*/_react.default.createElement("button", {
+    }, "Deine Daten sind sicher gespeichert."), /*#__PURE__*/React.createElement("button", {
       onClick: () => window.location.reload(),
       style: {
         background: "#e30613",
@@ -170,9 +166,9 @@ function QRCodeCanvas({
   value,
   size = 140
 }) {
-  const ref = (0, _react.useRef)(null);
-  const [status, setStatus] = (0, _react.useState)(window.QRCodeLib ? "ready" : "loading");
-  (0, _react.useEffect)(() => {
+  const ref = (0, React.useRef)(null);
+  const [status, setStatus] = (0, React.useState)(window.QRCodeLib ? "ready" : "loading");
+  (0, React.useEffect)(() => {
     if (window.QRCodeLib) {
       setStatus("ready");
       return;
@@ -196,7 +192,7 @@ function QRCodeCanvas({
       clearTimeout(timer);
     };
   }, []);
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     if (status !== "ready" || !ref.current || !window.QRCodeLib) return;
     try {
       const QR = window.QRCodeLib;
@@ -219,7 +215,7 @@ function QRCodeCanvas({
       setStatus("error");
     }
   }, [status, value, size]);
-  if (status === "loading") return /*#__PURE__*/_react.default.createElement("div", {
+  if (status === "loading") return /*#__PURE__*/React.createElement("div", {
     style: {
       width: size,
       height: size,
@@ -229,14 +225,14 @@ function QRCodeCanvas({
       alignItems: "center",
       justifyContent: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       color: "#999",
       fontFamily: "sans-serif"
     }
   }, "Lädt…"));
-  if (status === "error") return /*#__PURE__*/_react.default.createElement("div", {
+  if (status === "error") return /*#__PURE__*/React.createElement("div", {
     style: {
       width: size,
       height: size,
@@ -249,11 +245,11 @@ function QRCodeCanvas({
       padding: 8,
       gap: 4
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 20
     }
-  }, "📱"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "📱"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 9,
       color: "#666",
@@ -262,7 +258,7 @@ function QRCodeCanvas({
       wordBreak: "break-all"
     }
   }, value));
-  return /*#__PURE__*/_react.default.createElement("canvas", {
+  return /*#__PURE__*/React.createElement("canvas", {
     ref: ref,
     style: {
       borderRadius: 4,
@@ -825,9 +821,9 @@ function EventDetail({
   onCancel,
   onViewVehicle
 }) {
-  const [selV, setSelV] = (0, _react.useState)(myVehicles[0]?.id || "");
-  const [selC, setSelC] = (0, _react.useState)((ev.classes || ["Alle Modelle"])[0]);
-  const [confirmCancel, setConfirmCancel] = (0, _react.useState)(false);
+  const [selV, setSelV] = (0, React.useState)(myVehicles[0]?.id || "");
+  const [selC, setSelC] = (0, React.useState)((ev.classes || ["Alle Modelle"])[0]);
+  const [confirmCancel, setConfirmCancel] = (0, React.useState)(false);
   const evParts = (participants[ev.id] || []).filter(p => p.status !== "cancelled");
   const confirmedParts = evParts.filter(p => p.status === "confirmed");
   const myReg = (participants[ev.id] || []).find(p => p.userId === me?.id && p.status !== "cancelled");
@@ -836,20 +832,20 @@ function EventDetail({
   const isPast = new Date(ev.date) < new Date();
   const statusColor = myReg?.status === "confirmed" ? C.green : myReg?.status === "pending" ? C.amber : "#ef4444";
   const statusLabel = myReg?.status === "confirmed" ? `✓ Bestätigt${myReg.startNr ? " — #" + myReg.startNr : ""}` : myReg?.status === "pending" ? "🟡 Anmeldung eingegangen" : "✗ Abgelehnt";
-  return /*#__PURE__*/_react.default.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     style: {
       minHeight: "100vh",
       background: C.black,
       paddingBottom: 40,
       animation: "fadeIn .2s"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.dark,
       borderBottom: `1px solid ${C.border}`,
       padding: "14px 16px"
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: onBack,
     style: {
       background: "none",
@@ -860,7 +856,7 @@ function EventDetail({
       padding: 0,
       marginBottom: 10
     }
-  }, "← Events"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "← Events"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -868,7 +864,7 @@ function EventDetail({
       flexWrap: "wrap",
       marginBottom: 6
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       background: `${C.red}22`,
       color: C.red,
@@ -877,7 +873,7 @@ function EventDetail({
       fontSize: 10,
       fontWeight: 700
     }
-  }, ev.category || "Event"), /*#__PURE__*/_react.default.createElement("span", {
+  }, ev.category || "Event"), /*#__PURE__*/React.createElement("span", {
     style: {
       background: isPast ? "#33333322" : days <= 7 ? `${C.amber}22` : `${C.border}22`,
       color: isPast ? C.muted : days <= 7 ? C.amber : C.muted,
@@ -886,7 +882,7 @@ function EventDetail({
       fontSize: 10,
       fontWeight: 700
     }
-  }, isPast ? "Abgeschlossen" : days <= 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} T.`), !isPast && /*#__PURE__*/_react.default.createElement("span", {
+  }, isPast ? "Abgeschlossen" : days <= 0 ? "Heute" : days === 1 ? "Morgen" : `in ${days} T.`), !isPast && /*#__PURE__*/React.createElement("span", {
     style: {
       background: spotsLeft <= 5 ? `${C.red}22` : `${C.green}11`,
       color: spotsLeft <= 5 ? C.red : C.green,
@@ -895,7 +891,7 @@ function EventDetail({
       fontSize: 10,
       fontWeight: 700
     }
-  }, spotsLeft <= 0 ? "Ausgebucht" : `${spotsLeft} Plätze frei`)), /*#__PURE__*/_react.default.createElement("h1", {
+  }, spotsLeft <= 0 ? "Ausgebucht" : `${spotsLeft} Plätze frei`)), /*#__PURE__*/React.createElement("h1", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 24,
@@ -903,13 +899,13 @@ function EventDetail({
       color: C.white,
       lineHeight: 1.1
     }
-  }, ev.name)), /*#__PURE__*/_react.default.createElement("div", {
+  }, ev.name)), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "16px",
       maxWidth: 520,
       margin: "0 auto"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
       border: `1px solid ${C.border}`,
@@ -917,7 +913,7 @@ function EventDetail({
       padding: 16,
       marginBottom: 14
     }
-  }, [["📅", fmtDate(ev.date), "Datum"], ["📍", ev.location, "Ort"], ["💶", ev.entryFee || ev.price || "Kostenlos", "Eintritt"], ["👥", `${confirmedParts.length} / ${ev.maxParticipants || 100}`, "Bestätigte Teilnehmer"]].filter(([, v]) => v).map(([icon, val, label]) => /*#__PURE__*/_react.default.createElement("div", {
+  }, [["📅", fmtDate(ev.date), "Datum"], ["📍", ev.location, "Ort"], ["💶", ev.entryFee || ev.price || "Kostenlos", "Eintritt"], ["👥", `${confirmedParts.length} / ${ev.maxParticipants || 100}`, "Bestätigte Teilnehmer"]].filter(([, v]) => v).map(([icon, val, label]) => /*#__PURE__*/React.createElement("div", {
     key: label,
     style: {
       display: "flex",
@@ -925,24 +921,24 @@ function EventDetail({
       marginBottom: 8,
       alignItems: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       width: 20,
       textAlign: "center"
     }
-  }, icon), /*#__PURE__*/_react.default.createElement("span", {
+  }, icon), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: C.muted,
       minWidth: 60
     }
-  }, label), /*#__PURE__*/_react.default.createElement("span", {
+  }, label), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       color: C.white,
       fontWeight: 600
     }
-  }, val))), ev.description && /*#__PURE__*/_react.default.createElement("p", {
+  }, val))), ev.description && /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: 12,
       color: "#bbb",
@@ -951,7 +947,7 @@ function EventDetail({
       paddingTop: 10,
       borderTop: `1px solid ${C.border}`
     }
-  }, ev.description)), myReg && /*#__PURE__*/_react.default.createElement("div", {
+  }, ev.description)), myReg && /*#__PURE__*/React.createElement("div", {
     style: {
       background: `${statusColor}11`,
       border: `2px solid ${statusColor}33`,
@@ -959,20 +955,20 @@ function EventDetail({
       padding: "16px",
       marginBottom: 14
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontWeight: 800,
       fontSize: 16,
       color: statusColor,
       marginBottom: 4
     }
-  }, statusLabel), /*#__PURE__*/_react.default.createElement("div", {
+  }, statusLabel), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted,
       marginBottom: 12
     }
-  }, vehicles[myReg.vehicleId] && `${vehicles[myReg.vehicleId].hersteller} ${vehicles[myReg.vehicleId].modell}`, myReg.class && ` · ${myReg.class}`), myReg.status === "pending" && /*#__PURE__*/_react.default.createElement("div", {
+  }, vehicles[myReg.vehicleId] && `${vehicles[myReg.vehicleId].hersteller} ${vehicles[myReg.vehicleId].modell}`, myReg.class && ` · ${myReg.class}`), myReg.status === "pending" && /*#__PURE__*/React.createElement("div", {
     style: {
       background: `${C.amber}18`,
       borderRadius: 8,
@@ -982,13 +978,13 @@ function EventDetail({
       color: C.amber,
       lineHeight: 1.6
     }
-  }, "⏳ Deine Anmeldung wird vom Admin geprüft und bestätigt.", /*#__PURE__*/_react.default.createElement("br", null), "Nach Bestätigung erhältst du ", /*#__PURE__*/_react.default.createElement("b", null, "+100 Punkte"), " und eine Startnummer."), myReg.status === "confirmed" && /*#__PURE__*/_react.default.createElement("div", {
+  }, "⏳ Deine Anmeldung wird vom Admin geprüft und bestätigt.", /*#__PURE__*/React.createElement("br", null), "Nach Bestätigung erhältst du ", /*#__PURE__*/React.createElement("b", null, "+100 Punkte"), " und eine Startnummer."), myReg.status === "confirmed" && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
       marginBottom: 12
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: () => generateICS({
       title: ev.name,
       date: ev.date,
@@ -1012,7 +1008,7 @@ function EventDetail({
       justifyContent: "center",
       gap: 4
     }
-  }, "📅 Kalender"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "📅 Kalender"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const t = encodeURIComponent(ev.name),
         d = (ev.date || "").replace(/-/g, ""),
@@ -1035,26 +1031,26 @@ function EventDetail({
       justifyContent: "center",
       gap: 4
     }
-  }, "🗓 Google")), !isPast && (confirmCancel ? /*#__PURE__*/_react.default.createElement("div", {
+  }, "🗓 Google")), !isPast && (confirmCancel ? /*#__PURE__*/React.createElement("div", {
     style: {
       background: "#ef444418",
       border: "1px solid #ef444433",
       borderRadius: 10,
       padding: "12px"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: "#ef4444",
       marginBottom: 10,
       fontWeight: 600
     }
-  }, "Anmeldung wirklich stornieren?"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Anmeldung wirklich stornieren?"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       onCancel(ev.id, myReg.id);
       setConfirmCancel(false);
@@ -1071,7 +1067,7 @@ function EventDetail({
       cursor: "pointer",
       fontFamily: "'Barlow',sans-serif"
     }
-  }, "Ja, abmelden"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "Ja, abmelden"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setConfirmCancel(false),
     style: {
       flex: 1,
@@ -1084,7 +1080,7 @@ function EventDetail({
       cursor: "pointer",
       fontFamily: "'Barlow',sans-serif"
     }
-  }, "Abbrechen"))) : /*#__PURE__*/_react.default.createElement("button", {
+  }, "Abbrechen"))) : /*#__PURE__*/React.createElement("button", {
     onClick: () => setConfirmCancel(true),
     style: {
       background: "none",
@@ -1097,7 +1093,7 @@ function EventDetail({
       cursor: "pointer",
       fontFamily: "'Barlow',sans-serif"
     }
-  }, "✕ Anmeldung stornieren"))), !myReg && !isPast && me && myVehicles.length > 0 && spotsLeft > 0 && /*#__PURE__*/_react.default.createElement("div", {
+  }, "✕ Anmeldung stornieren"))), !myReg && !isPast && me && myVehicles.length > 0 && spotsLeft > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
       border: `1px solid ${C.border}`,
@@ -1105,7 +1101,7 @@ function EventDetail({
       padding: 16,
       marginBottom: 14
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 18,
@@ -1113,13 +1109,13 @@ function EventDetail({
       color: C.white,
       marginBottom: 4
     }
-  }, "Jetzt anmelden"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Jetzt anmelden"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginBottom: 14
     }
-  }, "Nach Anmeldung wird deine Teilnahme vom Admin bestätigt."), /*#__PURE__*/_react.default.createElement("label", {
+  }, "Nach Anmeldung wird deine Teilnahme vom Admin bestätigt."), /*#__PURE__*/React.createElement("label", {
     style: {
       fontSize: 10,
       fontWeight: 700,
@@ -1129,7 +1125,7 @@ function EventDetail({
       display: "block",
       marginBottom: 5
     }
-  }, "Fahrzeug"), /*#__PURE__*/_react.default.createElement("select", {
+  }, "Fahrzeug"), /*#__PURE__*/React.createElement("select", {
     value: selV,
     onChange: e => setSelV(e.target.value),
     style: {
@@ -1144,10 +1140,10 @@ function EventDetail({
       marginBottom: 10,
       appearance: "none"
     }
-  }, myVehicles.map(v => /*#__PURE__*/_react.default.createElement("option", {
+  }, myVehicles.map(v => /*#__PURE__*/React.createElement("option", {
     key: v.id,
     value: v.id
-  }, v.hersteller, " ", v.modell, " · ", v.kennzeichen))), (ev.classes || []).length > 1 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("label", {
+  }, v.hersteller, " ", v.modell, " · ", v.kennzeichen))), (ev.classes || []).length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
     style: {
       fontSize: 10,
       fontWeight: 700,
@@ -1157,7 +1153,7 @@ function EventDetail({
       display: "block",
       marginBottom: 5
     }
-  }, "Klasse"), /*#__PURE__*/_react.default.createElement("select", {
+  }, "Klasse"), /*#__PURE__*/React.createElement("select", {
     value: selC,
     onChange: e => setSelC(e.target.value),
     style: {
@@ -1172,9 +1168,9 @@ function EventDetail({
       marginBottom: 14,
       appearance: "none"
     }
-  }, (ev.classes || []).map(c => /*#__PURE__*/_react.default.createElement("option", {
+  }, (ev.classes || []).map(c => /*#__PURE__*/React.createElement("option", {
     key: c
-  }, c)))), /*#__PURE__*/_react.default.createElement("button", {
+  }, c)))), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     onClick: () => onJoin(ev.id, selV, selC),
     style: {
@@ -1182,7 +1178,7 @@ function EventDetail({
       padding: "14px",
       fontSize: 15
     }
-  }, "Anmelden →")), !myReg && !isPast && spotsLeft <= 0 && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Anmelden →")), !myReg && !isPast && spotsLeft <= 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
       border: `1px solid ${C.border}`,
@@ -1191,19 +1187,19 @@ function EventDetail({
       marginBottom: 14,
       textAlign: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 700,
       color: "#ef4444",
       marginBottom: 4
     }
-  }, "Ausgebucht"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Ausgebucht"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted
     }
-  }, "Keine freien Plätze mehr.")), !myReg && !isPast && me && myVehicles.length === 0 && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Keine freien Plätze mehr.")), !myReg && !isPast && me && myVehicles.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
       border: `1px solid ${C.border}`,
@@ -1214,11 +1210,11 @@ function EventDetail({
       color: C.muted,
       fontSize: 13
     }
-  }, "Zuerst ein Fahrzeug anlegen um dich anzumelden."), confirmedParts.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Zuerst ein Fahrzeug anlegen um dich anzumelden."), confirmedParts.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 8
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -1229,7 +1225,7 @@ function EventDetail({
     }
   }, "Bestätigte Teilnehmer (", confirmedParts.length, ")"), confirmedParts.map(p => {
     const pv = vehicles[p.vehicleId || p.vehicle_id];
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       key: p.id,
       style: {
         display: "flex",
@@ -1240,7 +1236,7 @@ function EventDetail({
         cursor: pv ? "pointer" : "default"
       },
       onClick: () => pv && onViewVehicle(pv)
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         background: `${C.red}22`,
         border: `1px solid ${C.red}44`,
@@ -1253,12 +1249,12 @@ function EventDetail({
         minWidth: 32,
         textAlign: "center"
       }
-    }, p.startNr ? "#" + p.startNr : "·"), /*#__PURE__*/_react.default.createElement("div", {
+    }, p.startNr ? "#" + p.startNr : "·"), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 600,
@@ -1267,12 +1263,12 @@ function EventDetail({
         textOverflow: "ellipsis",
         whiteSpace: "nowrap"
       }
-    }, pv ? `${pv.hersteller} ${pv.modell}` : "Fahrzeug"), /*#__PURE__*/_react.default.createElement("div", {
+    }, pv ? `${pv.hersteller} ${pv.modell}` : "Fahrzeug"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted
       }
-    }, p.class || p.klasse || "", pv?.kennzeichen ? " · " + pv.kennzeichen : "")), pv && /*#__PURE__*/_react.default.createElement("span", {
+    }, p.class || p.klasse || "", pv?.kennzeichen ? " · " + pv.kennzeichen : "")), pv && /*#__PURE__*/React.createElement("span", {
       style: {
         color: C.muted,
         fontSize: 16
@@ -1294,10 +1290,10 @@ function ChatScreen({
   onDeleteThread,
   onConfirmScan
 }) {
-  const [msg, setMsg] = (0, _react.useState)("");
-  const [selectedMsg, setSelectedMsg] = (0, _react.useState)(null); // for delete menu
-  const endRef = (0, _react.useRef)(null);
-  const rootRef = (0, _react.useRef)(null);
+  const [msg, setMsg] = (0, React.useState)("");
+  const [selectedMsg, setSelectedMsg] = (0, React.useState)(null); // for delete menu
+  const endRef = (0, React.useRef)(null);
+  const rootRef = (0, React.useRef)(null);
   const threadParticipants = thread.participants || [];
   const isAdminThread = thread.id?.startsWith("admin-");
   const other = isAdminThread ? {
@@ -1307,13 +1303,13 @@ function ChatScreen({
   };
   const v = vehicles[thread.vehicleId];
   const isGuest = me?.role === "guest";
-  const longPressTimer = (0, _react.useRef)(null);
-  (0, _react.useEffect)(() => {
+  const longPressTimer = (0, React.useRef)(null);
+  (0, React.useEffect)(() => {
     endRef.current?.scrollIntoView({
       behavior: "smooth"
     });
   }, [thread.messages]);
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     if (onMarkRead) onMarkRead(thread.id);
   }, [thread.id]);
   const startLongPress = m => {
@@ -1324,12 +1320,12 @@ function ChatScreen({
   const cancelLongPress = () => {
     clearTimeout(longPressTimer.current);
   };
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     return () => clearTimeout(longPressTimer.current);
   }, []);
 
   // ── iOS keyboard fix: resize root to visualViewport height ─────────────────
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     if (!window.visualViewport) return;
     const onResize = () => {
       if (rootRef.current) {
@@ -1344,7 +1340,7 @@ function ChatScreen({
       window.visualViewport.removeEventListener("scroll", onResize);
     };
   }, []);
-  return /*#__PURE__*/_react.default.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     ref: rootRef,
     style: {
       height: "100vh",
@@ -1354,21 +1350,21 @@ function ChatScreen({
       position: "fixed",
       inset: 0
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.dark,
       borderBottom: `1px solid ${C.border}`,
       padding: "12px 16px",
       flexShrink: 0
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 12,
       alignItems: "center",
       marginBottom: thread.isGroup ? 6 : 0
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: onBack,
     style: {
       background: "none",
@@ -1380,7 +1376,7 @@ function ChatScreen({
       lineHeight: 1,
       flexShrink: 0
     }
-  }, "←"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "←"), /*#__PURE__*/React.createElement("div", {
     style: {
       width: 44,
       height: 44,
@@ -1394,32 +1390,32 @@ function ChatScreen({
       fontSize: thread.isGroup ? 22 : 17,
       flexShrink: 0
     }
-  }, isAdminThread ? "📋" : thread.isGroup ? "🏎️" : thread.anonymous ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
+  }, isAdminThread ? "📋" : thread.isGroup ? "🏎️" : thread.anonymous ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontWeight: 800,
       fontSize: 16,
       color: C.white,
       lineHeight: 1.2
     }
-  }, isAdminThread ? "Admin-Mitteilungen" : thread.isGroup ? thread.name : thread.anonymous ? "🔒 Anonyme Nachricht" : other.name), /*#__PURE__*/_react.default.createElement("div", {
+  }, isAdminThread ? "Admin-Mitteilungen" : thread.isGroup ? thread.name : thread.anonymous ? "🔒 Anonyme Nachricht" : other.name), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted,
       marginTop: 2
     }
-  }, thread.isGroup ? `${threadParticipants.length} Mitglieder` : v ? `Re: ${v.hersteller} ${v.modell}` : "Direktnachricht")), !thread.isGroup && v && /*#__PURE__*/_react.default.createElement("button", {
+  }, thread.isGroup ? `${threadParticipants.length} Mitglieder` : v ? `Re: ${v.hersteller} ${v.modell}` : "Direktnachricht")), !thread.isGroup && v && /*#__PURE__*/React.createElement("button", {
     className: "btn sm ghost",
     onClick: () => onViewVehicle(v),
     style: {
       fontSize: 12,
       flexShrink: 0
     }
-  }, "Akte →"), onDeleteThread && /*#__PURE__*/_react.default.createElement("button", {
+  }, "Akte →"), onDeleteThread && /*#__PURE__*/React.createElement("button", {
     onClick: () => onDeleteThread(thread.id),
     style: {
       background: "none",
@@ -1430,7 +1426,7 @@ function ChatScreen({
       padding: "0 4px",
       flexShrink: 0
     }
-  }, "🗑")), thread.isGroup && /*#__PURE__*/_react.default.createElement("div", {
+  }, "🗑")), thread.isGroup && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
@@ -1441,7 +1437,7 @@ function ChatScreen({
     const u = allUsers[uid] || {
       name: "?"
     };
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       key: uid,
       style: {
         width: 26,
@@ -1457,12 +1453,12 @@ function ChatScreen({
         color: C.white
       }
     }, u.name[0]?.toUpperCase());
-  }), threadParticipants.length > 5 && /*#__PURE__*/_react.default.createElement("div", {
+  }), threadParticipants.length > 5 && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: C.muted
     }
-  }, "+", threadParticipants.length - 5))), isGuest && /*#__PURE__*/_react.default.createElement("div", {
+  }, "+", threadParticipants.length - 5))), isGuest && /*#__PURE__*/React.createElement("div", {
     style: {
       background: `${C.gold}14`,
       borderBottom: `1px solid ${C.gold}33`,
@@ -1472,19 +1468,19 @@ function ChatScreen({
       gap: 10,
       flexShrink: 0
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 16,
       flexShrink: 0
     }
-  }, "👋"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "👋"), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       fontSize: 11,
       color: C.white,
       lineHeight: 1.4
     }
-  }, "Du schreibst als ", /*#__PURE__*/_react.default.createElement("strong", null, "Gast"), ". Mitglieder bekommen eigene Fahrzeugakte & Event-Zugang."), /*#__PURE__*/_react.default.createElement("button", {
+  }, "Du schreibst als ", /*#__PURE__*/React.createElement("strong", null, "Gast"), ". Mitglieder bekommen eigene Fahrzeugakte & Event-Zugang."), /*#__PURE__*/React.createElement("button", {
     onClick: onUpgrade,
     style: {
       background: C.gold,
@@ -1498,7 +1494,7 @@ function ChatScreen({
       flexShrink: 0,
       fontFamily: "'Barlow',sans-serif"
     }
-  }, "Mitglied werden")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Mitglied werden")), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       overflowY: "auto",
@@ -1508,7 +1504,7 @@ function ChatScreen({
       gap: 8
     }
   }, thread.messages.map(m => {
-    if (m.isSystem) return /*#__PURE__*/_react.default.createElement("div", {
+    if (m.isSystem) return /*#__PURE__*/React.createElement("div", {
       key: m.id,
       style: {
         textAlign: "center",
@@ -1541,7 +1537,7 @@ function ChatScreen({
       month: "short"
     }) : "";
     const fullTs = dateStr ? `${dateStr} · ${timeStr}` : timeStr;
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       key: m.id,
       style: {
         display: "flex",
@@ -1549,14 +1545,14 @@ function ChatScreen({
         alignItems: mine ? "flex-end" : "flex-start",
         marginBottom: 2
       }
-    }, senderName && /*#__PURE__*/_react.default.createElement("div", {
+    }, senderName && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginBottom: 2,
         paddingLeft: 4
       }
-    }, senderName), /*#__PURE__*/_react.default.createElement("div", {
+    }, senderName), /*#__PURE__*/React.createElement("div", {
       onMouseDown: () => startLongPress(m),
       onMouseUp: cancelLongPress,
       onMouseLeave: cancelLongPress,
@@ -1575,13 +1571,13 @@ function ChatScreen({
         opacity: selectedMsg?.id === m.id ? 0.7 : 1,
         transition: "opacity .1s"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 15,
         color: "#fff",
         lineHeight: 1.5
       }
-    }, m.text), scanPayload && me && /*#__PURE__*/_react.default.createElement("button", {
+    }, m.text), scanPayload && me && /*#__PURE__*/React.createElement("button", {
       onClick: () => onConfirmScan && onConfirmScan(scanPayload.scannerId, scanPayload.vehicleId, scanPayload.scannerName),
       style: {
         marginTop: 10,
@@ -1600,7 +1596,7 @@ function ChatScreen({
         justifyContent: "center",
         gap: 6
       }
-    }, "✅ Scan bestätigen — ", scanPayload.scannerName || "Nutzer", " erhält +10 Punkte"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "✅ Scan bestätigen — ", scanPayload.scannerName || "Nutzer", " erhält +10 Punkte"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: mine ? "rgba(255,255,255,.5)" : C.muted,
@@ -1608,9 +1604,9 @@ function ChatScreen({
         textAlign: "right"
       }
     }, fullTs)));
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     ref: endRef
-  })), selectedMsg && /*#__PURE__*/_react.default.createElement("div", {
+  })), selectedMsg && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
       inset: 0,
@@ -1621,7 +1617,7 @@ function ChatScreen({
       padding: "0 0 0"
     },
     onClick: () => setSelectedMsg(null)
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.dark,
       border: `1px solid ${C.border}`,
@@ -1631,14 +1627,14 @@ function ChatScreen({
       maxWidth: 480
     },
     onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted,
       marginBottom: 12,
       textAlign: "center"
     }
-  }, "„", selectedMsg.text.slice(0, 40), selectedMsg.text.length > 40 ? "…" : "", "\""), selectedMsg.from === me?.id && onDeleteMessage && /*#__PURE__*/_react.default.createElement("button", {
+  }, "„", selectedMsg.text.slice(0, 40), selectedMsg.text.length > 40 ? "…" : "", "\""), selectedMsg.from === me?.id && onDeleteMessage && /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       onDeleteMessage(thread.id, selectedMsg.id);
       setSelectedMsg(null);
@@ -1656,7 +1652,7 @@ function ChatScreen({
       fontFamily: "'Barlow',sans-serif",
       marginBottom: 8
     }
-  }, "🗑 Nachricht löschen"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "🗑 Nachricht löschen"), /*#__PURE__*/React.createElement("button", {
     onClick: async () => {
       await navigator.clipboard.writeText(selectedMsg.text).catch(() => {});
       setSelectedMsg(null);
@@ -1674,7 +1670,7 @@ function ChatScreen({
       fontFamily: "'Barlow',sans-serif",
       marginBottom: 8
     }
-  }, "📋 Kopieren"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "📋 Kopieren"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setSelectedMsg(null),
     style: {
       width: "100%",
@@ -1686,7 +1682,7 @@ function ChatScreen({
       fontFamily: "'Barlow',sans-serif",
       padding: "8px"
     }
-  }, "Abbrechen"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Abbrechen"))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "10px 12px",
       background: C.dark,
@@ -1696,7 +1692,7 @@ function ChatScreen({
       flexShrink: 0,
       paddingBottom: "calc(10px + env(safe-area-inset-bottom,0))"
     }
-  }, /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     placeholder: "Nachricht…",
     value: msg,
     onChange: e => setMsg(e.target.value),
@@ -1717,7 +1713,7 @@ function ChatScreen({
       fontSize: 14,
       fontFamily: "'Barlow',sans-serif"
     }
-  }), /*#__PURE__*/_react.default.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     style: {
       padding: "10px 18px",
@@ -1734,49 +1730,49 @@ function ChatScreen({
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 function PCN() {
-  return /*#__PURE__*/_react.default.createElement(ErrorBoundary, null, /*#__PURE__*/_react.default.createElement(PCNInner, null));
+  return /*#__PURE__*/React.createElement(ErrorBoundary, null, /*#__PURE__*/React.createElement(PCNInner, null));
 }
 function PCNInner() {
   // ── Core state ──────────────────────────────────────────────────────────────
-  const [screen, setScreen] = (0, _react.useState)(() => window.__PCN_PRELOAD_SESSION__ ? "app" : "splash");
-  const [tab, setTab] = (0, _react.useState)("dashboard");
-  const [favorites, setFavorites] = (0, _react.useState)(() => {
+  const [screen, setScreen] = (0, React.useState)(() => window.__PCN_PRELOAD_SESSION__ ? "app" : "splash");
+  const [tab, setTab] = (0, React.useState)("dashboard");
+  const [favorites, setFavorites] = (0, React.useState)(() => {
     try {
       return JSON.parse(localStorage.getItem("pcn_favorites") || "[]");
     } catch (e) {
       return [];
     }
   });
-  const [me, setMe] = (0, _react.useState)(() => window.__PCN_PRELOAD_SESSION__ || null);
-  const [allUsers, setAllUsers] = (0, _react.useState)({
+  const [me, setMe] = (0, React.useState)(() => window.__PCN_PRELOAD_SESSION__ || null);
+  const [allUsers, setAllUsers] = (0, React.useState)({
     ...DEMO_USERS
   });
-  const [vehicles, setVehicles] = (0, _react.useState)({});
-  const [logbook, setLogbook] = (0, _react.useState)({});
-  const [reminders, setReminders] = (0, _react.useState)([]);
-  const [participants, setParticipants] = (0, _react.useState)({});
-  const [events, setEvents] = (0, _react.useState)({});
-  const [eventHistory] = (0, _react.useState)(DEMO_HISTORY);
-  const [threads, setThreads] = (0, _react.useState)({});
-  const [activeThread, setActiveThread] = (0, _react.useState)(null);
-  const [guestThreads, setGuestThreads] = (0, _react.useState)(() => {
+  const [vehicles, setVehicles] = (0, React.useState)({});
+  const [logbook, setLogbook] = (0, React.useState)({});
+  const [reminders, setReminders] = (0, React.useState)([]);
+  const [participants, setParticipants] = (0, React.useState)({});
+  const [events, setEvents] = (0, React.useState)({});
+  const [eventHistory] = (0, React.useState)(DEMO_HISTORY);
+  const [threads, setThreads] = (0, React.useState)({});
+  const [activeThread, setActiveThread] = (0, React.useState)(null);
+  const [guestThreads, setGuestThreads] = (0, React.useState)(() => {
     try {
       return JSON.parse(localStorage.getItem("pcn_guest_threads") || "[]");
     } catch (e) {
       return [];
     }
   });
-  const [deletedThreadIds, setDeletedThreadIds] = (0, _react.useState)(() => {
+  const [deletedThreadIds, setDeletedThreadIds] = (0, React.useState)(() => {
     try {
       return JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
     } catch (e) {
       return [];
     }
   });
-  const [viewV, setViewV] = (0, _react.useState)(null);
-  const [viewEv, setViewEv] = (0, _react.useState)(null);
-  const [publicV, setPublicV] = (0, _react.useState)(null);
-  const [recentVehicles, setRecentVehicles] = (0, _react.useState)(() => {
+  const [viewV, setViewV] = (0, React.useState)(null);
+  const [viewEv, setViewEv] = (0, React.useState)(null);
+  const [publicV, setPublicV] = (0, React.useState)(null);
+  const [recentVehicles, setRecentVehicles] = (0, React.useState)(() => {
     try {
       return JSON.parse(localStorage.getItem("pcn_recent_vehicles") || "[]");
     } catch (e) {
@@ -1785,17 +1781,17 @@ function PCNInner() {
   });
 
   // ── Form state ──────────────────────────────────────────────────────────────
-  const [loginForm, setLoginForm] = (0, _react.useState)({
+  const [loginForm, setLoginForm] = (0, React.useState)({
     mode: "register",
     code: "",
     email: "",
     name: ""
   });
-  const [loginPassword, setLoginPassword] = (0, _react.useState)("");
-  const [showPassword, setShowPassword] = (0, _react.useState)(false);
-  const [authLoading, setAuthLoading] = (0, _react.useState)(false);
-  const [authStep, setAuthStep] = (0, _react.useState)(""); // status message during auth
-  const [addVForm, setAddVForm] = (0, _react.useState)({
+  const [loginPassword, setLoginPassword] = (0, React.useState)("");
+  const [showPassword, setShowPassword] = (0, React.useState)(false);
+  const [authLoading, setAuthLoading] = (0, React.useState)(false);
+  const [authStep, setAuthStep] = (0, React.useState)(""); // status message during auth
+  const [addVForm, setAddVForm] = (0, React.useState)({
     hersteller: "Porsche",
     modell: "",
     baujahr: "",
@@ -1806,41 +1802,41 @@ function PCNInner() {
     images: [],
     phone: ""
   });
-  const [addLogForm, setAddLogForm] = (0, _react.useState)({
+  const [addLogForm, setAddLogForm] = (0, React.useState)({
     type: "Ölwechsel",
     km: "",
     notes: "",
     workshop: ""
   });
-  const [remForm, setRemForm] = (0, _react.useState)({
+  const [remForm, setRemForm] = (0, React.useState)({
     vehicleId: "",
     title: "",
     date: ""
   });
 
   // ── UI state ─────────────────────────────────────────────────────────────────
-  const [toast, setToast] = (0, _react.useState)(null);
-  const [showAddV, setShowAddV] = (0, _react.useState)(false);
-  const [showAddLog, setShowAddLog] = (0, _react.useState)(null);
-  const [showAddRem, setShowAddRem] = (0, _react.useState)(false);
-  const [showPrivacy, setShowPrivacy] = (0, _react.useState)(null);
-  const [showEditVehicle, setShowEditVehicle] = (0, _react.useState)(null); // vehicleId
-  const [showEditProfile, setShowEditProfile] = (0, _react.useState)(false);
-  const [openSections, setOpenSections] = (0, _react.useState)({}); // {vehicleId_section: bool}
+  const [toast, setToast] = (0, React.useState)(null);
+  const [showAddV, setShowAddV] = (0, React.useState)(false);
+  const [showAddLog, setShowAddLog] = (0, React.useState)(null);
+  const [showAddRem, setShowAddRem] = (0, React.useState)(false);
+  const [showPrivacy, setShowPrivacy] = (0, React.useState)(null);
+  const [showEditVehicle, setShowEditVehicle] = (0, React.useState)(null); // vehicleId
+  const [showEditProfile, setShowEditProfile] = (0, React.useState)(false);
+  const [openSections, setOpenSections] = (0, React.useState)({}); // {vehicleId_section: bool}
   const toggleSection = (vid, section) => setOpenSections(p => ({
     ...p,
     [vid + "_" + section]: !p[vid + "_" + section]
   }));
   const isOpen = (vid, section) => !!openSections[vid + "_" + section];
-  const [profileImgUploading, setProfileImgUploading] = (0, _react.useState)(false);
-  const [newsState, setNewsState] = (0, _react.useState)(() => {
+  const [profileImgUploading, setProfileImgUploading] = (0, React.useState)(false);
+  const [newsState, setNewsState] = (0, React.useState)(() => {
     try {
       return JSON.parse(localStorage.getItem("pcn_news_state") || "{}");
     } catch (e) {
       return {};
     }
   });
-  const [viewNews, setViewNews] = (0, _react.useState)(null);
+  const [viewNews, setViewNews] = (0, React.useState)(null);
   const markNewsRead = id => {
     setNewsState(p => {
       const updated = {
@@ -1860,34 +1856,34 @@ function PCNInner() {
       toast_("✓ Als gelesen markiert");
     }
   }; // full newsletter detail // {id: "read"|"remind"}
-  const [showInfoModal, setShowInfoModal] = (0, _react.useState)(false);
-  const [showFeatureDetail, setShowFeatureDetail] = (0, _react.useState)(null); // false | 'features' | 'points'
-  const [eventsView, setEventsView] = (0, _react.useState)("list"); // "list" | "calendar"
-  const [calMonth, setCalMonth] = (0, _react.useState)(new Date());
-  const [profileForm, setProfileForm] = (0, _react.useState)({});
-  const [showContactAuth, setShowContactAuth] = (0, _react.useState)(null); // vehicleId — triggers login/register/guest sheet
-  const [contactAuthMode, setContactAuthMode] = (0, _react.useState)("guest"); // "guest" | "login" | "register"
-  const [contactAuthForm, setContactAuthForm] = (0, _react.useState)({
+  const [showInfoModal, setShowInfoModal] = (0, React.useState)(false);
+  const [showFeatureDetail, setShowFeatureDetail] = (0, React.useState)(null); // false | 'features' | 'points'
+  const [eventsView, setEventsView] = (0, React.useState)("list"); // "list" | "calendar"
+  const [calMonth, setCalMonth] = (0, React.useState)(new Date());
+  const [profileForm, setProfileForm] = (0, React.useState)({});
+  const [showContactAuth, setShowContactAuth] = (0, React.useState)(null); // vehicleId — triggers login/register/guest sheet
+  const [contactAuthMode, setContactAuthMode] = (0, React.useState)("guest"); // "guest" | "login" | "register"
+  const [contactAuthForm, setContactAuthForm] = (0, React.useState)({
     name: "",
     email: "",
     code: ""
   });
-  const [editForm, setEditForm] = (0, _react.useState)({});
-  const [imgUploading, setImgUploading] = (0, _react.useState)(false);
-  const [lightbox, setLightbox] = (0, _react.useState)(null); // {images:[], index:0}
-  const [vehicleStatus, setVehicleStatus] = (0, _react.useState)({}); // {vehicleId: [{id,text,icon,expiresAt}]}
-  const [showStatusPicker, setShowStatusPicker] = (0, _react.useState)(null); // vehicleId
-  const [statusCustom, setStatusCustom] = (0, _react.useState)("");
-  const [statusCustomMins, setStatusCustomMins] = (0, _react.useState)(30);
-  const [statusUseDate, setStatusUseDate] = (0, _react.useState)(false); // true = exact datetime, false = duration
-  const [statusDateTime, setStatusDateTime] = (0, _react.useState)(""); // ISO datetime for exact end
-  const [statusEditSlot, setStatusEditSlot] = (0, _react.useState)(null); // slot id being edited
-  const [gallerySwipe, setGallerySwipe] = (0, _react.useState)({}); // {vehicleId: currentIndex}
-  const [scannerOpen, setScannerOpen] = (0, _react.useState)(false);
-  const [scannerError, setScannerError] = (0, _react.useState)(null);
-  const [scannerStatus, setScannerStatus] = (0, _react.useState)("idle");
-  const videoRef = (0, _react.useRef)(null);
-  const canvasRef = (0, _react.useRef)(null);
+  const [editForm, setEditForm] = (0, React.useState)({});
+  const [imgUploading, setImgUploading] = (0, React.useState)(false);
+  const [lightbox, setLightbox] = (0, React.useState)(null); // {images:[], index:0}
+  const [vehicleStatus, setVehicleStatus] = (0, React.useState)({}); // {vehicleId: [{id,text,icon,expiresAt}]}
+  const [showStatusPicker, setShowStatusPicker] = (0, React.useState)(null); // vehicleId
+  const [statusCustom, setStatusCustom] = (0, React.useState)("");
+  const [statusCustomMins, setStatusCustomMins] = (0, React.useState)(30);
+  const [statusUseDate, setStatusUseDate] = (0, React.useState)(false); // true = exact datetime, false = duration
+  const [statusDateTime, setStatusDateTime] = (0, React.useState)(""); // ISO datetime for exact end
+  const [statusEditSlot, setStatusEditSlot] = (0, React.useState)(null); // slot id being edited
+  const [gallerySwipe, setGallerySwipe] = (0, React.useState)({}); // {vehicleId: currentIndex}
+  const [scannerOpen, setScannerOpen] = (0, React.useState)(false);
+  const [scannerError, setScannerError] = (0, React.useState)(null);
+  const [scannerStatus, setScannerStatus] = (0, React.useState)("idle");
+  const videoRef = (0, React.useRef)(null);
+  const canvasRef = (0, React.useRef)(null);
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const isGuest = me?.role === "guest";
@@ -2193,7 +2189,7 @@ function PCNInner() {
       return n;
     });
   };
-  const toast_ = (0, _react.useCallback)((msg, type = "ok") => {
+  const toast_ = (0, React.useCallback)((msg, type = "ok") => {
     setToast({
       msg,
       type
@@ -2312,7 +2308,7 @@ function PCNInner() {
   };
 
   // ── Session restore + Magic Link token handler ───────────────────────────────
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     (async () => {
       const params = new URLSearchParams(window.location.search);
       // Handle magic link token from URL hash
@@ -2385,7 +2381,7 @@ function PCNInner() {
   }, []);
 
   // ── Realtime message sync — WebSocket first, polling fallback ────────────────
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     if (!me?.id) return;
     const DB = window.PCN_DB;
     if (!DB) return;
@@ -2480,7 +2476,7 @@ function PCNInner() {
   }, [me?.id]);
 
   // ── Fast polling (3s) when actively viewing a chat ────────────────────────
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     if (screen !== "chat" || !activeThread || !me?.id) return;
     const DB = window.PCN_DB;
     if (!DB) return;
@@ -2504,7 +2500,7 @@ function PCNInner() {
   }, [screen, activeThread, me?.id]);
 
   // ── Track recently viewed vehicles ──────────────────────────────────────────
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     if (screen !== "public" || !publicV) return;
     const entry = {
       id: publicV.id,
@@ -2524,7 +2520,7 @@ function PCNInner() {
   }, [screen, publicV?.id]);
 
   // ── Track screen changes for analytics ───────────────────────────────────────
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     if (screen === "public" && publicV) {
       track("qr_scan_public_view", {
         vehicle_id: publicV?.id,
@@ -2538,7 +2534,7 @@ function PCNInner() {
   }, [screen, publicV?.id]);
 
   // ── Live sync — vehicle data + status on public page ─────────────────────────
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     // BroadcastChannel: instant same-browser cross-tab sync
     let bc = null;
     try {
@@ -2614,7 +2610,7 @@ function PCNInner() {
   }, [screen, publicV?.id]);
 
   // ── Broadcast status change to other tabs when set ────────────────────────
-  const broadcastStatus = (0, _react.useCallback)((vehicleId, status) => {
+  const broadcastStatus = (0, React.useCallback)((vehicleId, status) => {
     try {
       const bc = new BroadcastChannel("pcn_status");
       bc.postMessage({
@@ -2670,7 +2666,7 @@ function PCNInner() {
       } else toast_("Fahrzeug nicht gefunden: " + qarId, "err");
     }, 600);
   };
-  (0, _react.useEffect)(() => {
+  (0, React.useEffect)(() => {
     if (!scannerOpen || scannerStatus !== "loading") return;
     const loadjsQR = () => new Promise((res, rej) => {
       if (window.jsQR) {
@@ -3024,7 +3020,7 @@ function PCNInner() {
   const sanitize = t => t.replace(/<[^>]*>/g, "").replace(/[<>]/g, "").trim().slice(0, 1000);
 
   // PostHog Analytics — track key funnel events (called outside render)
-  const track = (0, _react.useCallback)((event, props = {}) => {
+  const track = (0, React.useCallback)((event, props = {}) => {
     try {
       if (window.posthog) window.posthog.capture(event, {
         ...props,
@@ -3462,7 +3458,7 @@ function PCNInner() {
   // ══════════════════════════════════════════════════════════════════════════════
   // SCANNER OVERLAY
   // ══════════════════════════════════════════════════════════════════════════════
-  const ScannerOverlay = scannerOpen ? /*#__PURE__*/_react.default.createElement("div", {
+  const ScannerOverlay = scannerOpen ? /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
       inset: 0,
@@ -3471,7 +3467,7 @@ function PCNInner() {
       display: "flex",
       flexDirection: "column"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: 0,
@@ -3484,19 +3480,19 @@ function PCNInner() {
       alignItems: "center",
       background: "linear-gradient(to bottom,rgba(0,0,0,.8),transparent)"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 18,
       fontWeight: 800,
       color: "#fff"
     }
-  }, "QR-Code scannen"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "QR-Code scannen"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "rgba(255,255,255,.5)"
     }
-  }, "Halte die Kamera über den QAR-Code")), /*#__PURE__*/_react.default.createElement("button", {
+  }, "Halte die Kamera über den QAR-Code")), /*#__PURE__*/React.createElement("button", {
     onClick: closeScanner,
     style: {
       background: "rgba(0,0,0,.6)",
@@ -3509,7 +3505,7 @@ function PCNInner() {
       fontWeight: 700,
       fontFamily: "'Barlow',sans-serif"
     }
-  }, "✕ Schließen")), /*#__PURE__*/_react.default.createElement("video", {
+  }, "✕ Schließen")), /*#__PURE__*/React.createElement("video", {
     ref: videoRef,
     style: {
       width: "100%",
@@ -3518,12 +3514,12 @@ function PCNInner() {
     },
     muted: true,
     playsInline: true
-  }), /*#__PURE__*/_react.default.createElement("canvas", {
+  }), /*#__PURE__*/React.createElement("canvas", {
     ref: canvasRef,
     style: {
       display: "none"
     }
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       inset: 0,
@@ -3532,7 +3528,7 @@ function PCNInner() {
       justifyContent: "center",
       pointerEvents: "none"
     }
-  }, scannerStatus === "found" ? /*#__PURE__*/_react.default.createElement("div", {
+  }, scannerStatus === "found" ? /*#__PURE__*/React.createElement("div", {
     style: {
       width: 220,
       height: 220,
@@ -3543,18 +3539,18 @@ function PCNInner() {
       justifyContent: "center",
       background: "rgba(34,197,94,.15)"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 64,
       color: "#22c55e"
     }
-  }, "✓")) : /*#__PURE__*/_react.default.createElement("div", {
+  }, "✓")) : /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
       width: 220,
       height: 220
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: 0,
@@ -3565,7 +3561,7 @@ function PCNInner() {
       borderLeft: `3px solid ${C.red}`,
       borderRadius: "8px 0 0 0"
     }
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: 0,
@@ -3576,7 +3572,7 @@ function PCNInner() {
       borderRight: `3px solid ${C.red}`,
       borderRadius: "0 8px 0 0"
     }
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       bottom: 0,
@@ -3587,7 +3583,7 @@ function PCNInner() {
       borderLeft: `3px solid ${C.red}`,
       borderRadius: "0 0 0 8px"
     }
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       bottom: 0,
@@ -3598,7 +3594,7 @@ function PCNInner() {
       borderRight: `3px solid ${C.red}`,
       borderRadius: "0 0 8px 0"
     }
-  }), scannerStatus === "scanning" && /*#__PURE__*/_react.default.createElement("div", {
+  }), scannerStatus === "scanning" && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       left: 4,
@@ -3607,7 +3603,7 @@ function PCNInner() {
       background: `linear-gradient(90deg,transparent,${C.red},transparent)`,
       animation: "scanline 1.8s ease-in-out infinite"
     }
-  }))), scannerError && /*#__PURE__*/_react.default.createElement("div", {
+  }))), scannerError && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       bottom: 100,
@@ -3618,14 +3614,14 @@ function PCNInner() {
       borderRadius: 14,
       padding: "16px"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       color: "#ef4444",
       fontWeight: 700,
       fontSize: 14,
       marginBottom: 6
     }
-  }, "⚠️ Kein Kamera-Zugriff"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "⚠️ Kein Kamera-Zugriff"), /*#__PURE__*/React.createElement("div", {
     style: {
       color: "#999",
       fontSize: 12,
@@ -3633,7 +3629,7 @@ function PCNInner() {
       marginBottom: 12,
       whiteSpace: "pre-line"
     }
-  }, scannerError), /*#__PURE__*/_react.default.createElement("button", {
+  }, scannerError), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setScannerError(null);
       setScannerStatus("loading");
@@ -3650,7 +3646,7 @@ function PCNInner() {
       width: "100%",
       fontFamily: "'Barlow',sans-serif"
     }
-  }, "Erneut versuchen")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Erneut versuchen")), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       bottom: 0,
@@ -3660,14 +3656,14 @@ function PCNInner() {
       background: "linear-gradient(to top,rgba(0,0,0,.95),transparent)",
       paddingBottom: "calc(20px + env(safe-area-inset-bottom,0))"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "rgba(255,255,255,.4)",
       textAlign: "center",
       marginBottom: 8
     }
-  }, "Oder UID manuell eingeben"), /*#__PURE__*/_react.default.createElement("input", {
+  }, "Oder UID manuell eingeben"), /*#__PURE__*/React.createElement("input", {
     placeholder: "QAR-XXXXXXXX",
     onChange: e => {
       const v = e.target.value.toUpperCase();
@@ -3690,16 +3686,16 @@ function PCNInner() {
   // ══════════════════════════════════════════════════════════════════════════════
   // SPLASH
   // ══════════════════════════════════════════════════════════════════════════════
-  if (screen === "splash") return /*#__PURE__*/_react.default.createElement("div", {
+  if (screen === "splash") return /*#__PURE__*/React.createElement("div", {
     style: {
       minHeight: "100vh",
       background: C.black,
       display: "flex",
       flexDirection: "column"
     }
-  }, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
     className: `toast ${toast.type}`
-  }, toast.msg), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+  }, toast.msg), me?.role === "guest" && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.dark,
       padding: "10px 16px",
@@ -3707,7 +3703,7 @@ function PCNInner() {
       alignItems: "center",
       borderBottom: `1px solid ${C.border}`
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setScreen("app"),
     style: {
       background: "none",
@@ -3721,14 +3717,14 @@ function PCNInner() {
       alignItems: "center",
       gap: 6
     }
-  }, "← Zurück zum Chat")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "← Zurück zum Chat")), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "#ffffff",
       padding: "36px 24px 28px",
       textAlign: "center",
       borderBottom: "3px solid " + C.red
     }
-  }, /*#__PURE__*/_react.default.createElement("img", {
+  }, /*#__PURE__*/React.createElement("img", {
     src: LOGO_URL,
     alt: "PCN",
     onError: e => e.target.style.display = "none",
@@ -3738,7 +3734,7 @@ function PCNInner() {
       objectFit: "contain",
       marginBottom: 16
     }
-  }), /*#__PURE__*/_react.default.createElement("h1", {
+  }), /*#__PURE__*/React.createElement("h1", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 22,
@@ -3747,17 +3743,17 @@ function PCNInner() {
       letterSpacing: 1,
       lineHeight: 1
     }
-  }, "DIGITALE ", /*#__PURE__*/_react.default.createElement("span", {
+  }, "DIGITALE ", /*#__PURE__*/React.createElement("span", {
     style: {
       color: C.red
     }
-  }, "CLUBPLATTFORM")), /*#__PURE__*/_react.default.createElement("p", {
+  }, "CLUBPLATTFORM")), /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: 11,
       color: "#888",
       marginTop: 6
     }
-  }, "Fahrzeugakte · Events · QR-Code · Messenger")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Fahrzeugakte · Events · QR-Code · Messenger")), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       display: "flex",
@@ -3768,7 +3764,7 @@ function PCNInner() {
       margin: "0 auto",
       width: "100%"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       background: "#1a1a1a",
@@ -3776,7 +3772,7 @@ function PCNInner() {
       padding: 3,
       marginBottom: 20
     }
-  }, [["login", "Anmelden"], ["register", "Registrieren"]].map(([m, label]) => /*#__PURE__*/_react.default.createElement("button", {
+  }, [["login", "Anmelden"], ["register", "Registrieren"]].map(([m, label]) => /*#__PURE__*/React.createElement("button", {
     key: m,
     onClick: () => {
       setLoginForm(p => ({
@@ -3799,7 +3795,7 @@ function PCNInner() {
       background: loginForm.mode === m ? C.red : "transparent",
       color: loginForm.mode === m ? "#fff" : C.muted
     }
-  }, label))), loginForm.mode === "login" && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("input", {
+  }, label))), loginForm.mode === "login" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "E-Mail-Adresse",
     type: "email",
@@ -3812,12 +3808,12 @@ function PCNInner() {
       marginBottom: 10,
       fontSize: 16
     }
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
       marginBottom: 14
     }
-  }, /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "Passwort",
     type: showPassword ? "text" : "password",
@@ -3844,7 +3840,7 @@ function PCNInner() {
       setScreen("app");
       toast_("Willkommen zurück, " + u.name + "! 🏁");
     }
-  }), /*#__PURE__*/_react.default.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowPassword(p => !p),
     style: {
       position: "absolute",
@@ -3857,7 +3853,7 @@ function PCNInner() {
       fontSize: 16,
       color: C.muted
     }
-  }, showPassword ? "🙈" : "👁")), /*#__PURE__*/_react.default.createElement("button", {
+  }, showPassword ? "🙈" : "👁")), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     style: {
       width: "100%",
@@ -3902,14 +3898,14 @@ function PCNInner() {
         toast_("Fehler: " + e.message, "err");
       }
     }
-  }, authLoading ? authStep || "⏳ Anmelden…" : "Anmelden →"), /*#__PURE__*/_react.default.createElement("div", {
+  }, authLoading ? authStep || "⏳ Anmelden…" : "Anmelden →"), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       marginTop: 10,
       fontSize: 11,
       color: C.muted
     }
-  }, "Passwort vergessen?", " ", /*#__PURE__*/_react.default.createElement("span", {
+  }, "Passwort vergessen?", " ", /*#__PURE__*/React.createElement("span", {
     style: {
       color: C.red,
       cursor: "pointer",
@@ -3924,18 +3920,18 @@ function PCNInner() {
       await DB.auth.resetPassword(loginForm.email);
       toast_("Reset-Link gesendet — schau in dein Postfach ✉️");
     }
-  }, "Reset-Link senden"))), loginForm.mode === "register" && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+  }, "Reset-Link senden"))), loginForm.mode === "register" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 16
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginBottom: 6,
       fontWeight: 600
     }
-  }, "CLUB-CODE"), /*#__PURE__*/_react.default.createElement("input", {
+  }, "CLUB-CODE"), /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "PCN2026",
     value: loginForm.code,
@@ -3951,21 +3947,21 @@ function PCNInner() {
       fontSize: 20,
       border: `2px solid ${loginForm.code.toUpperCase() === CLUB_CODE ? C.green : loginForm.code.length > 0 ? "#ef4444" : C.border}`
     }
-  }), loginForm.code.length > 0 && loginForm.code.toUpperCase() !== CLUB_CODE && /*#__PURE__*/_react.default.createElement("div", {
+  }), loginForm.code.length > 0 && loginForm.code.toUpperCase() !== CLUB_CODE && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "#ef4444",
       marginTop: 4,
       textAlign: "center"
     }
-  }, "Falscher Club-Code"), loginForm.code.toUpperCase() === CLUB_CODE && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Falscher Club-Code"), loginForm.code.toUpperCase() === CLUB_CODE && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: C.green,
       marginTop: 4,
       textAlign: "center"
     }
-  }, "✓ Club-Code korrekt")), loginForm.code.toUpperCase() === CLUB_CODE && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("input", {
+  }, "✓ Club-Code korrekt")), loginForm.code.toUpperCase() === CLUB_CODE && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "Dein Name",
     style: {
@@ -3976,7 +3972,7 @@ function PCNInner() {
       ...p,
       name: e.target.value
     }))
-  }), /*#__PURE__*/_react.default.createElement("input", {
+  }), /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "E-Mail",
     type: "email",
@@ -3988,12 +3984,12 @@ function PCNInner() {
       ...p,
       email: e.target.value
     }))
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
       marginBottom: 14
     }
-  }, /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "Passwort wählen (mind. 6 Zeichen)",
     type: showPassword ? "text" : "password",
@@ -4003,7 +3999,7 @@ function PCNInner() {
       fontSize: 16,
       paddingRight: 44
     }
-  }), /*#__PURE__*/_react.default.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowPassword(p => !p),
     style: {
       position: "absolute",
@@ -4016,7 +4012,7 @@ function PCNInner() {
       fontSize: 16,
       color: C.muted
     }
-  }, showPassword ? "🙈" : "👁"))), /*#__PURE__*/_react.default.createElement("button", {
+  }, showPassword ? "🙈" : "👁"))), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     style: {
       width: "100%",
@@ -4078,20 +4074,20 @@ function PCNInner() {
         toast_("Fehler: " + e.message, "err");
       }
     }
-  }, authLoading ? authStep || "⏳ Erstelle Konto…" : "Konto erstellen →"), authLoading && /*#__PURE__*/_react.default.createElement("div", {
+  }, authLoading ? authStep || "⏳ Erstelle Konto…" : "Konto erstellen →"), authLoading && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12,
       background: "rgba(255,255,255,.05)",
       borderRadius: 10,
       padding: "12px 14px"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
       gap: 10
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: 16,
       height: 16,
@@ -4101,49 +4097,49 @@ function PCNInner() {
       animation: "spin 1s linear infinite",
       flexShrink: 0
     }
-  }), /*#__PURE__*/_react.default.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       color: "#aaa"
     }
-  }, authStep || "Verbindung wird hergestellt…")), /*#__PURE__*/_react.default.createElement("div", {
+  }, authStep || "Verbindung wird hergestellt…")), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 8,
       fontSize: 11,
       color: "#555"
     }
-  }, "Dies kann bei erster Registrierung bis zu 15 Sekunden dauern.")), !authLoading && loginPassword.length > 0 && loginPassword.length < 6 && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Dies kann bei erster Registrierung bis zu 15 Sekunden dauern.")), !authLoading && loginPassword.length > 0 && loginPassword.length < 6 && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "#ef4444",
       textAlign: "center",
       marginTop: 6
     }
-  }, "Passwort muss mind. 6 Zeichen haben")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Passwort muss mind. 6 Zeichen haben")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
       gap: 10,
       margin: "18px 0"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       height: 1,
       background: C.border
     }
-  }), /*#__PURE__*/_react.default.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: "#444"
     }
-  }, "oder"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "oder"), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       height: 1,
       background: C.border
     }
-  })), /*#__PURE__*/_react.default.createElement("button", {
+  })), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost",
     style: {
       width: "100%",
@@ -4151,7 +4147,7 @@ function PCNInner() {
       fontSize: 14
     },
     onClick: loadDemo
-  }, "Demo ansehen"), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("button", {
+  }, "Demo ansehen"), me?.role === "guest" && /*#__PURE__*/React.createElement("button", {
     onClick: () => setScreen("app"),
     style: {
       background: "none",
@@ -4164,14 +4160,14 @@ function PCNInner() {
       marginTop: 8,
       padding: "8px"
     }
-  }, "← Zurück zum Chat"), /*#__PURE__*/_react.default.createElement("p", {
+  }, "← Zurück zum Chat"), /*#__PURE__*/React.createElement("p", {
     style: {
       textAlign: "center",
       fontSize: 10,
       color: "#333",
       marginTop: 16
     }
-  }, "Powered by ", /*#__PURE__*/_react.default.createElement("span", {
+  }, "Powered by ", /*#__PURE__*/React.createElement("span", {
     style: {
       color: C.gold
     }
@@ -4190,15 +4186,15 @@ function PCNInner() {
       ...p,
       ev: events[p.eventId]
     })).filter(p => p.ev && daysUntil(p.ev.date) > 0).sort((a, b) => daysUntil(a.ev.date) - daysUntil(b.ev.date))[0];
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         minHeight: "100vh",
         background: C.black,
         paddingBottom: 40
       }
-    }, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
       className: `toast ${toast.type}`
-    }, toast.msg), /*#__PURE__*/_react.default.createElement("div", {
+    }, toast.msg), /*#__PURE__*/React.createElement("div", {
       style: {
         background: "#ffffff",
         borderBottom: `3px solid ${C.red}`,
@@ -4210,7 +4206,7 @@ function PCNInner() {
         top: 0,
         zIndex: 50
       }
-    }, /*#__PURE__*/_react.default.createElement("img", {
+    }, /*#__PURE__*/React.createElement("img", {
       src: LOGO_URL,
       alt: "PCN",
       onError: e => e.target.style.display = "none",
@@ -4218,19 +4214,19 @@ function PCNInner() {
         height: 36,
         objectFit: "contain"
       }
-    }), /*#__PURE__*/_react.default.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
         alignItems: "center"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         color: "#888",
         fontWeight: 600
       }
-    }, "Digitale Fahrzeugakte"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "Digitale Fahrzeugakte"), /*#__PURE__*/React.createElement("button", {
       onClick: () => setLightbox({
         images: ["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v=" + v.qarId],
         index: 0
@@ -4249,7 +4245,7 @@ function PCNInner() {
         alignItems: "center",
         gap: 4
       }
-    }, "📱 QR-Code anzeigen"))), SPONSOR && /*#__PURE__*/_react.default.createElement("a", {
+    }, "📱 QR-Code anzeigen"))), SPONSOR && /*#__PURE__*/React.createElement("a", {
       href: SPONSOR.url || "#",
       target: "_blank",
       rel: "noopener noreferrer",
@@ -4262,26 +4258,26 @@ function PCNInner() {
         textDecoration: "none",
         borderBottom: "1px solid #eee"
       }
-    }, SPONSOR.logo && /*#__PURE__*/_react.default.createElement("img", {
+    }, SPONSOR.logo && /*#__PURE__*/React.createElement("img", {
       src: SPONSOR.logo,
       alt: SPONSOR.name,
       style: {
         height: 28,
         objectFit: "contain"
       }
-    }), /*#__PURE__*/_react.default.createElement("span", {
+    }), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         color: "#888",
         fontWeight: 600
       }
-    }, "Powered by"), /*#__PURE__*/_react.default.createElement("span", {
+    }, "Powered by"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
         fontWeight: 800,
         color: "#111"
       }
-    }, SPONSOR.name)), /*#__PURE__*/_react.default.createElement("div", {
+    }, SPONSOR.name)), /*#__PURE__*/React.createElement("div", {
       style: {
         height: 260,
         position: "relative",
@@ -4293,7 +4289,7 @@ function PCNInner() {
       // Show gallery unless explicitly disabled (undefined = show by default)
       const galleryEnabled = priv.pub_gallery !== false;
       const img = galleryEnabled && (v.images && v.images[0] || v.image || DEMO_VEHICLES[v.id]?.images?.[0] || DEMO_VEHICLES[v.id]?.image);
-      if (img) return /*#__PURE__*/_react.default.createElement("img", {
+      if (img) return /*#__PURE__*/React.createElement("img", {
         src: img,
         alt: "",
         style: {
@@ -4305,7 +4301,7 @@ function PCNInner() {
           e.target.style.display = "none";
         }
       });
-      if (priv.pub_gallery === false) return /*#__PURE__*/_react.default.createElement("div", {
+      if (priv.pub_gallery === false) return /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           alignItems: "center",
@@ -4315,35 +4311,35 @@ function PCNInner() {
           flexDirection: "column",
           gap: 8
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 32
         }
-      }, "🔒"), /*#__PURE__*/_react.default.createElement("span", {
+      }, "🔒"), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 12
         }
       }, "Galerie nicht öffentlich"));
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         style: {
           height: "100%",
           background: "linear-gradient(135deg,#1a1a1a,#111)"
         }
       });
-    })(), /*#__PURE__*/_react.default.createElement("div", {
+    })(), /*#__PURE__*/React.createElement("div", {
       style: {
         position: "absolute",
         inset: 0,
         background: "linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 40%,rgba(0,0,0,.85) 100%)"
       }
-    }), /*#__PURE__*/_react.default.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         position: "absolute",
         bottom: 16,
         left: 16,
         right: 16
       }
-    }, /*#__PURE__*/_react.default.createElement("h1", {
+    }, /*#__PURE__*/React.createElement("h1", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 30,
@@ -4353,7 +4349,7 @@ function PCNInner() {
         marginBottom: 10,
         textShadow: "0 2px 8px rgba(0,0,0,.5)"
       }
-    }, v.hersteller, " ", v.modell), priv.kennzeichen !== false && kz && /*#__PURE__*/_react.default.createElement("div", {
+    }, v.hersteller, " ", v.modell), priv.kennzeichen !== false && kz && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "inline-flex",
         alignItems: "center",
@@ -4362,7 +4358,7 @@ function PCNInner() {
         borderRadius: 5,
         padding: "3px 12px"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 14,
         fontWeight: 800,
@@ -4373,7 +4369,7 @@ function PCNInner() {
     }, kz)))), priv.pub_gallery !== false && (() => {
       const allImgs = v.images || DEMO_VEHICLES[v.id]?.images || [];
       if (allImgs.length <= 1) return null;
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           gap: 6,
@@ -4383,7 +4379,7 @@ function PCNInner() {
           scrollbarWidth: "none",
           WebkitOverflowScrolling: "touch"
         }
-      }, allImgs.map((img, i) => /*#__PURE__*/_react.default.createElement("img", {
+      }, allImgs.map((img, i) => /*#__PURE__*/React.createElement("img", {
         key: i,
         src: img,
         alt: "",
@@ -4402,13 +4398,13 @@ function PCNInner() {
         },
         onError: e => e.target.style.display = "none"
       })));
-    })(), /*#__PURE__*/_react.default.createElement("div", {
+    })(), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: "12px 14px",
         background: C.dark,
         borderBottom: `1px solid ${C.border}`
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -4421,7 +4417,7 @@ function PCNInner() {
       // Normalize to array
       const allSlots = !rawSlots ? [] : Array.isArray(rawSlots) ? rawSlots : [rawSlots];
       const active = allSlots.filter(s => !s.expiresAt || Date.now() < s.expiresAt);
-      if (!active.length) return /*#__PURE__*/_react.default.createElement("button", {
+      if (!active.length) return /*#__PURE__*/React.createElement("button", {
         onClick: async () => {
           const DB = window.PCN_DB;
           if (!DB) return;
@@ -4461,7 +4457,7 @@ function PCNInner() {
           fontSize: 13,
           fontWeight: 600
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 16
         }
@@ -4483,7 +4479,7 @@ function PCNInner() {
         }) + " Uhr" : null;
         const urgent = minsLeft && minsLeft <= 5;
         const color = urgent ? "#ef4444" : C.amber;
-        return /*#__PURE__*/_react.default.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: s.id || s.text,
           style: {
             background: urgent ? "#ef444418" : `${C.amber}18`,
@@ -4493,23 +4489,23 @@ function PCNInner() {
             marginBottom: 8,
             animation: "fadeIn .3s ease"
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             display: "flex",
             gap: 10,
             alignItems: "flex-start"
           }
-        }, /*#__PURE__*/_react.default.createElement("span", {
+        }, /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 28,
             flexShrink: 0,
             marginTop: 2
           }
-        }, s.icon || "💬"), /*#__PURE__*/_react.default.createElement("div", {
+        }, s.icon || "💬"), /*#__PURE__*/React.createElement("div", {
           style: {
             flex: 1
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             fontWeight: 800,
             fontSize: 16,
@@ -4517,14 +4513,14 @@ function PCNInner() {
             lineHeight: 1.2,
             marginBottom: 5
           }
-        }, s.text), /*#__PURE__*/_react.default.createElement("div", {
+        }, s.text), /*#__PURE__*/React.createElement("div", {
           style: {
             display: "flex",
             gap: 6,
             flexWrap: "wrap",
             alignItems: "center"
           }
-        }, timeStamp && /*#__PURE__*/_react.default.createElement("span", {
+        }, timeStamp && /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 10,
             color: C.muted,
@@ -4532,7 +4528,7 @@ function PCNInner() {
             alignItems: "center",
             gap: 3
           }
-        }, "🕐 ", timeStamp), minsLeft && minsLeft > 0 && /*#__PURE__*/_react.default.createElement("span", {
+        }, "🕐 ", timeStamp), minsLeft && minsLeft > 0 && /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 11,
             fontWeight: 700,
@@ -4545,7 +4541,7 @@ function PCNInner() {
         }, minsLeft <= 1 ? "< 1 Min" : minsLeft < 60 ? `noch ${minsLeft} Min` : `noch ca. ${Math.round(minsLeft / 60)} Std`), !minsLeft && s.expiresAt && new Date(s.expiresAt).toLocaleTimeString("de-DE", {
           hour: "2-digit",
           minute: "2-digit"
-        }) && /*#__PURE__*/_react.default.createElement("span", {
+        }) && /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 10,
             color: C.muted
@@ -4555,7 +4551,7 @@ function PCNInner() {
           minute: "2-digit"
         }), " Uhr")))));
       });
-    })(), priv.pub_phone === true && v.phone && v.phone.trim() && /*#__PURE__*/_react.default.createElement("a", {
+    })(), priv.pub_phone === true && v.phone && v.phone.trim() && /*#__PURE__*/React.createElement("a", {
       href: `tel:${(v.phone || "").replace(/[^+\d]/g, "")}`,
       style: {
         display: "flex",
@@ -4569,7 +4565,7 @@ function PCNInner() {
         color: "#fff",
         cursor: "pointer"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         width: 40,
         height: 40,
@@ -4581,23 +4577,23 @@ function PCNInner() {
         fontSize: 18,
         flexShrink: 0
       }
-    }, "📞"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "📞"), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 800,
         fontSize: 15,
         color: "#fff"
       }
-    }, "Direkt anrufen"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Direkt anrufen"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: "rgba(255,255,255,.7)",
         marginTop: 1
       }
-    }, v.phone)), /*#__PURE__*/_react.default.createElement("span", {
+    }, v.phone)), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 20,
         color: "rgba(255,255,255,.7)"
@@ -4612,11 +4608,11 @@ function PCNInner() {
       const alreadyConf = scanKey && getScanConfirmed().includes(scanKey);
       const alreadyReq = scanKey && JSON.parse(localStorage.getItem("pcn_scan_requests") || "[]").includes(scanKey);
       const alreadyView = getViewedVehicles().includes(vid);
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         style: {
           marginBottom: 12
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           background: `${C.blue}11`,
           border: `1px solid ${C.blue}22`,
@@ -4627,17 +4623,17 @@ function PCNInner() {
           gap: 8,
           alignItems: "center"
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 16
         }
-      }, "👁"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "👁"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 12,
           color: alreadyView ? C.muted : C.blue,
           fontWeight: alreadyView ? 400 : 600
         }
-      }, alreadyView ? "✓ +2 Punkte für Ansehen (bereits vergeben)" : "+2 Punkte fürs Ansehen dieser Akte")), me && v.userId && /*#__PURE__*/_react.default.createElement("div", {
+      }, alreadyView ? "✓ +2 Punkte für Ansehen (bereits vergeben)" : "+2 Punkte fürs Ansehen dieser Akte")), me && v.userId && /*#__PURE__*/React.createElement("div", {
         style: {
           background: alreadyConf ? `${C.green}11` : `${C.gold}11`,
           border: `1px solid ${alreadyConf ? C.green : C.gold}33`,
@@ -4647,27 +4643,27 @@ function PCNInner() {
           gap: 10,
           alignItems: "center"
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 20
         }
-      }, alreadyConf ? "✅" : "📱"), /*#__PURE__*/_react.default.createElement("div", {
+      }, alreadyConf ? "✅" : "📱"), /*#__PURE__*/React.createElement("div", {
         style: {
           flex: 1,
           minWidth: 0
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 13,
           fontWeight: 700,
           color: alreadyConf ? C.green : C.gold
         }
-      }, alreadyConf ? "QR-Scan bestätigt · +10 Punkte" : "QR-Code scannen · +10 Punkte"), /*#__PURE__*/_react.default.createElement("div", {
+      }, alreadyConf ? "QR-Scan bestätigt · +10 Punkte" : "QR-Code scannen · +10 Punkte"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted
         }
-      }, alreadyConf ? "Bestätigt vom Fahrzeugbesitzer" : alreadyReq ? "⏳ Bestätigung ausstehend…" : "Besitzer bestätigt deinen Scan (Anti-Cheat)")), !alreadyConf && !alreadyReq && me && /*#__PURE__*/_react.default.createElement("button", {
+      }, alreadyConf ? "Bestätigt vom Fahrzeugbesitzer" : alreadyReq ? "⏳ Bestätigung ausstehend…" : "Besitzer bestätigt deinen Scan (Anti-Cheat)")), !alreadyConf && !alreadyReq && me && /*#__PURE__*/React.createElement("button", {
         onClick: async () => {
           const reqs = JSON.parse(localStorage.getItem("pcn_scan_requests") || "[]");
           reqs.push(scanKey);
@@ -4687,7 +4683,7 @@ function PCNInner() {
           fontFamily: "'Barlow',sans-serif"
         }
       }, "Anfragen")));
-    })(), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("button", {
+    })(), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         if (me) {
           startContact(v.id);
@@ -4709,7 +4705,7 @@ function PCNInner() {
         color: "#fff",
         width: "100%"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         width: 40,
         height: 40,
@@ -4721,28 +4717,28 @@ function PCNInner() {
         fontSize: 18,
         flexShrink: 0
       }
-    }, "💬"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "💬"), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         textAlign: "left"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 800,
         fontSize: 15
       }
-    }, "Nachricht an Fahrer(in) senden"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Nachricht an Fahrer(in) senden"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: "rgba(255,255,255,.7)",
         marginTop: 1
       }
-    }, "Anonym · Besitzer antwortet per App")), /*#__PURE__*/_react.default.createElement("span", {
+    }, "Anonym · Besitzer antwortet per App")), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 20,
         color: "rgba(255,255,255,.7)"
       }
-    }, "›")), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("div", {
+    }, "›")), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/React.createElement("div", {
       style: {
         background: "rgba(255,255,255,.05)",
         border: "1px solid rgba(255,255,255,.1)",
@@ -4752,29 +4748,29 @@ function PCNInner() {
         gap: 10,
         alignItems: "flex-start"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 16,
         flexShrink: 0,
         marginTop: 1
       }
-    }, "🔒"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🔒"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: "#888",
         lineHeight: 1.6
       }
-    }, /*#__PURE__*/_react.default.createElement("strong", {
+    }, /*#__PURE__*/React.createElement("strong", {
       style: {
         color: "#aaa"
       }
-    }, "Anonymer Kontakt:"), " Deine Nachricht wird anonym übermittelt — Name und E-Mail bleiben geschützt. Der Fahrzeughalter antwortet direkt über die QAR-App.")))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Anonymer Kontakt:"), " Deine Nachricht wird anonym übermittelt — Name und E-Mail bleiben geschützt. Der Fahrzeughalter antwortet direkt über die QAR-App.")))), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: "14px 16px",
         maxWidth: 520,
         margin: "0 auto"
       }
-    }, nextEvent && priv.pub_events && /*#__PURE__*/_react.default.createElement("div", {
+    }, nextEvent && priv.pub_events && /*#__PURE__*/React.createElement("div", {
       style: {
         background: `${C.red}11`,
         border: `1px solid ${C.red}33`,
@@ -4782,7 +4778,7 @@ function PCNInner() {
         padding: "12px 14px",
         marginBottom: 14
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 9,
         color: C.red,
@@ -4791,30 +4787,30 @@ function PCNInner() {
         letterSpacing: 1,
         marginBottom: 3
       }
-    }, "🏁 Nächste Veranstaltung — in ", daysUntil(nextEvent.ev.date), " Tagen"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🏁 Nächste Veranstaltung — in ", daysUntil(nextEvent.ev.date), " Tagen"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 700,
         fontSize: 14,
         color: C.white
       }
-    }, nextEvent.ev.name), /*#__PURE__*/_react.default.createElement("div", {
+    }, nextEvent.ev.name), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginTop: 2
       }
-    }, "Startnr. ", /*#__PURE__*/_react.default.createElement("span", {
+    }, "Startnr. ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: C.gold,
         fontWeight: 700
       }
-    }, "#", nextEvent.startNr), " · ", nextEvent.class)), /*#__PURE__*/_react.default.createElement("div", {
+    }, "#", nextEvent.startNr), " · ", nextEvent.class)), /*#__PURE__*/React.createElement("div", {
       className: "card",
       style: {
         padding: 16,
         marginBottom: 14
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -4823,29 +4819,29 @@ function PCNInner() {
         letterSpacing: 1.5,
         marginBottom: 10
       }
-    }, "Fahrzeugdaten"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Fahrzeugdaten"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 10
       }
-    }, [["Baujahr", "baujahr"], ["Kraftstoff", "kraftstoff"], ["Getriebe", "getriebe"], ["Farbe", "farbe"], ["Kilometerstand", "kilometerstand"], ["TÜV", "tuev_faelligkeit"], ["Marktwert", "marktwert"], ["FIN", "fin"]].filter(([, k]) => priv[k] !== false && v[k]).map(([label, key]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, [["Baujahr", "baujahr"], ["Kraftstoff", "kraftstoff"], ["Getriebe", "getriebe"], ["Farbe", "farbe"], ["Kilometerstand", "kilometerstand"], ["TÜV", "tuev_faelligkeit"], ["Marktwert", "marktwert"], ["FIN", "fin"]].filter(([, k]) => priv[k] !== false && v[k]).map(([label, key]) => /*#__PURE__*/React.createElement("div", {
       key: key
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 9,
         color: C.muted,
         textTransform: "uppercase",
         letterSpacing: .5
       }
-    }, label), /*#__PURE__*/_react.default.createElement("div", {
+    }, label), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 15,
         fontWeight: 600,
         color: "#eee",
         marginTop: 2
       }
-    }, key === "kilometerstand" ? parseInt(v[key]).toLocaleString("de-DE") + " km" : key === "marktwert" ? "€ " + parseInt(v[key]).toLocaleString("de-DE") : v[key])))), v.besonderheiten && priv.besonderheiten !== false && /*#__PURE__*/_react.default.createElement("div", {
+    }, key === "kilometerstand" ? parseInt(v[key]).toLocaleString("de-DE") + " km" : key === "marktwert" ? "€ " + parseInt(v[key]).toLocaleString("de-DE") : v[key])))), v.besonderheiten && priv.besonderheiten !== false && /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 12,
         paddingTop: 10,
@@ -4854,13 +4850,13 @@ function PCNInner() {
         color: C.muted,
         lineHeight: 1.6
       }
-    }, "ℹ️ ", v.besonderheiten)), priv.pub_events && vHist.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+    }, "ℹ️ ", v.besonderheiten)), priv.pub_events && vHist.length > 0 && /*#__PURE__*/React.createElement("div", {
       className: "card",
       style: {
         padding: 16,
         marginBottom: 14
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -4869,7 +4865,7 @@ function PCNInner() {
         letterSpacing: 1.5,
         marginBottom: 10
       }
-    }, "Veranstaltungshistorie"), vHist.map(h => /*#__PURE__*/_react.default.createElement("div", {
+    }, "Veranstaltungshistorie"), vHist.map(h => /*#__PURE__*/React.createElement("div", {
       key: h.id,
       style: {
         display: "flex",
@@ -4878,7 +4874,7 @@ function PCNInner() {
         padding: "8px 0",
         borderBottom: `1px solid ${C.border}`
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         background: `${C.red}22`,
         border: `1px solid ${C.red}44`,
@@ -4889,12 +4885,12 @@ function PCNInner() {
         color: C.red,
         flexShrink: 0
       }
-    }, "#", h.startNr), /*#__PURE__*/_react.default.createElement("div", {
+    }, "#", h.startNr), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         fontWeight: 600,
@@ -4903,30 +4899,30 @@ function PCNInner() {
         textOverflow: "ellipsis",
         whiteSpace: "nowrap"
       }
-    }, h.eventName), /*#__PURE__*/_react.default.createElement("div", {
+    }, h.eventName), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, fmtDate(h.date), " · ", h.class), h.note && /*#__PURE__*/_react.default.createElement("div", {
+    }, fmtDate(h.date), " · ", h.class), h.note && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.gold
       }
-    }, h.note)), /*#__PURE__*/_react.default.createElement("span", {
+    }, h.note)), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         fontWeight: 700,
         color: h.result === "Teilnahme" ? C.muted : C.gold,
         flexShrink: 0
       }
-    }, h.result)))), /*#__PURE__*/_react.default.createElement("div", {
+    }, h.result)))), /*#__PURE__*/React.createElement("div", {
       style: {
         borderTop: `1px solid ${C.border}`,
         paddingTop: 14,
         marginTop: 4
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted,
@@ -4935,7 +4931,7 @@ function PCNInner() {
         letterSpacing: 1,
         marginBottom: 8
       }
-    }, "Fahrzeugakte teilen"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Fahrzeugakte teilen"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
@@ -4944,7 +4940,7 @@ function PCNInner() {
     }, (() => {
       const shareUrl = "https://qar.gallery/pcn/?v=" + v.qarId;
       const shareTitle = v.hersteller + " " + v.modell + " — Digitale Fahrzeugakte";
-      return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("button", {
+      return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
         onClick: async () => {
           if (navigator.share) {
             try {
@@ -4978,11 +4974,11 @@ function PCNInner() {
           cursor: "pointer",
           fontFamily: "'Barlow',sans-serif"
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 16
         }
-      }, "↑"), " Teilen"), /*#__PURE__*/_react.default.createElement("button", {
+      }, "↑"), " Teilen"), /*#__PURE__*/React.createElement("button", {
         onClick: async () => {
           try {
             await navigator.clipboard.writeText(shareUrl);
@@ -5007,38 +5003,38 @@ function PCNInner() {
           cursor: "pointer",
           fontFamily: "'Barlow',sans-serif"
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 16
         }
       }, "🔗"), " Link"));
-    })())), /*#__PURE__*/_react.default.createElement("div", {
+    })())), /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "center",
         padding: "12px 0",
         borderTop: `1px solid ${C.border}`
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 9,
         color: "#333",
         letterSpacing: 2,
         marginBottom: 4
       }
-    }, "VERIFIZIERT DURCH QAR.GALLERY"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "VERIFIZIERT DURCH QAR.GALLERY"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "monospace",
         fontSize: 11,
         color: "#444"
       }
-    }, v.qarId)), me && /*#__PURE__*/_react.default.createElement("button", {
+    }, v.qarId)), me && /*#__PURE__*/React.createElement("button", {
       className: "btn sm ghost",
       style: {
         width: "100%",
         marginTop: 10
       },
       onClick: () => setScreen(viewV ? "vehicle" : "app")
-    }, "← Zurück")), showContactAuth && /*#__PURE__*/_react.default.createElement("div", {
+    }, "← Zurück")), showContactAuth && /*#__PURE__*/React.createElement("div", {
       className: "overlay",
       style: {
         zIndex: 550
@@ -5053,9 +5049,9 @@ function PCNInner() {
           });
         }
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "sheet"
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 20,
@@ -5063,13 +5059,13 @@ function PCNInner() {
         color: C.white,
         marginBottom: 4
       }
-    }, "💬 Nachricht senden"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "💬 Nachricht senden"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginBottom: 18
       }
-    }, "Um eine Nachricht zu senden, identifiziere dich kurz"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Um eine Nachricht zu senden, identifiziere dich kurz"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         background: "#111",
@@ -5077,7 +5073,7 @@ function PCNInner() {
         padding: 3,
         marginBottom: 16
       }
-    }, [["guest", "Als Gast"], ["login", "Anmelden"], ["register", "Registrieren"]].map(([m, label]) => /*#__PURE__*/_react.default.createElement("button", {
+    }, [["guest", "Als Gast"], ["login", "Anmelden"], ["register", "Registrieren"]].map(([m, label]) => /*#__PURE__*/React.createElement("button", {
       key: m,
       onClick: () => setContactAuthMode(m),
       style: {
@@ -5093,7 +5089,7 @@ function PCNInner() {
         color: contactAuthMode === m ? "#fff" : C.muted,
         transition: "all .15s"
       }
-    }, label))), contactAuthMode === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+    }, label))), contactAuthMode === "guest" && /*#__PURE__*/React.createElement("div", {
       style: {
         background: "#141414",
         border: `1px solid ${C.border}`,
@@ -5101,14 +5097,14 @@ function PCNInner() {
         padding: "14px",
         marginBottom: 16
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
         lineHeight: 1.6,
         marginBottom: 10
       }
-    }, "Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht."), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht."), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 800,
@@ -5117,7 +5113,7 @@ function PCNInner() {
         letterSpacing: 1,
         marginBottom: 8
       }
-    }, "Als PCN-Mitglied bekommst du zusätzlich"), [["🚗", "Eigene digitale Fahrzeugakte"], ["📱", "QR-Code fürs eigene Auto"], ["🏁", "Direkte Anmeldung zu Club-Events"]].map(([icon, text]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, "Als PCN-Mitglied bekommst du zusätzlich"), [["🚗", "Eigene digitale Fahrzeugakte"], ["📱", "QR-Code fürs eigene Auto"], ["🏁", "Direkte Anmeldung zu Club-Events"]].map(([icon, text]) => /*#__PURE__*/React.createElement("div", {
       key: text,
       style: {
         display: "flex",
@@ -5127,12 +5123,12 @@ function PCNInner() {
         color: C.white,
         marginBottom: 5
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 13,
         flexShrink: 0
       }
-    }, icon), /*#__PURE__*/_react.default.createElement("span", null, text))), /*#__PURE__*/_react.default.createElement("button", {
+    }, icon), /*#__PURE__*/React.createElement("span", null, text))), /*#__PURE__*/React.createElement("button", {
       onClick: () => setContactAuthMode("register"),
       style: {
         background: "none",
@@ -5145,7 +5141,7 @@ function PCNInner() {
         marginTop: 8,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "Stattdessen Mitglied werden →")), (contactAuthMode === "guest" || contactAuthMode === "register") && /*#__PURE__*/_react.default.createElement("input", {
+    }, "Stattdessen Mitglied werden →")), (contactAuthMode === "guest" || contactAuthMode === "register") && /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Dein Name",
       style: {
@@ -5156,7 +5152,7 @@ function PCNInner() {
         ...p,
         name: e.target.value
       }))
-    }), contactAuthMode === "register" && /*#__PURE__*/_react.default.createElement("input", {
+    }), contactAuthMode === "register" && /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Club-Code",
       style: {
@@ -5171,7 +5167,7 @@ function PCNInner() {
         ...p,
         code: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "E-Mail",
       type: "email",
@@ -5186,20 +5182,20 @@ function PCNInner() {
       onKeyDown: e => {
         if (e.key === "Enter") handleContactAuth();
       }
-    }), /*#__PURE__*/_react.default.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       className: "btn",
       style: {
         width: "100%"
       },
       onClick: handleContactAuth
-    }, contactAuthMode === "guest" ? "Weiter zur Nachricht →" : contactAuthMode === "login" ? "Anmelden →" : "Konto erstellen →"), contactAuthMode === "login" && /*#__PURE__*/_react.default.createElement("div", {
+    }, contactAuthMode === "guest" ? "Weiter zur Nachricht →" : contactAuthMode === "login" ? "Anmelden →" : "Konto erstellen →"), contactAuthMode === "login" && /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "center",
         marginTop: 10,
         fontSize: 11,
         color: C.muted
       }
-    }, "Kein Passwort nötig — nur deine E-Mail"))), showStatusPicker && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Kein Passwort nötig — nur deine E-Mail"))), showStatusPicker && /*#__PURE__*/React.createElement("div", {
       className: "overlay",
       style: {
         zIndex: 500
@@ -5210,13 +5206,13 @@ function PCNInner() {
           setStatusEditSlot(null);
         }
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "sheet",
       style: {
         maxHeight: "92vh",
         overflowY: "auto"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 20,
@@ -5224,7 +5220,7 @@ function PCNInner() {
         color: C.white,
         marginBottom: 2
       }
-    }, "📍 Live-Status"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "📍 Live-Status"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
@@ -5233,11 +5229,11 @@ function PCNInner() {
     }, "Bis zu 3 Status-Infos — sichtbar beim QR-Scan"), (() => {
       const slots = getActiveStatus(showStatusPicker) || [];
       if (!slots.length) return null;
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         style: {
           marginBottom: 14
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 10,
           fontWeight: 800,
@@ -5249,7 +5245,7 @@ function PCNInner() {
       }, "Aktive Status (", slots.length, "/3)"), slots.map(s => {
         const remaining = s.expiresAt ? Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 60000)) : null;
         const expDate = s.expiresAt ? new Date(s.expiresAt) : null;
-        return /*#__PURE__*/_react.default.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: s.id,
           style: {
             background: `${C.green}11`,
@@ -5261,17 +5257,17 @@ function PCNInner() {
             gap: 10,
             alignItems: "center"
           }
-        }, /*#__PURE__*/_react.default.createElement("span", {
+        }, /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 20,
             flexShrink: 0
           }
-        }, s.icon), /*#__PURE__*/_react.default.createElement("div", {
+        }, s.icon), /*#__PURE__*/React.createElement("div", {
           style: {
             flex: 1,
             minWidth: 0
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 13,
             fontWeight: 700,
@@ -5280,7 +5276,7 @@ function PCNInner() {
             textOverflow: "ellipsis",
             whiteSpace: "nowrap"
           }
-        }, s.text), /*#__PURE__*/_react.default.createElement("div", {
+        }, s.text), /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 10,
             color: C.muted
@@ -5288,13 +5284,13 @@ function PCNInner() {
         }, remaining !== null ? remaining < 60 ? `Noch ${remaining} Min` : `Bis ${expDate.toLocaleTimeString("de-DE", {
           hour: "2-digit",
           minute: "2-digit"
-        })} Uhr` : "Dauerhaft")), /*#__PURE__*/_react.default.createElement("div", {
+        })} Uhr` : "Dauerhaft")), /*#__PURE__*/React.createElement("div", {
           style: {
             display: "flex",
             gap: 4,
             flexShrink: 0
           }
-        }, /*#__PURE__*/_react.default.createElement("button", {
+        }, /*#__PURE__*/React.createElement("button", {
           onClick: () => {
             setStatusCustom(s.text);
             setStatusEditSlot(s.id);
@@ -5311,7 +5307,7 @@ function PCNInner() {
             cursor: "pointer",
             fontFamily: "'Barlow',sans-serif"
           }
-        }, "✏️"), /*#__PURE__*/_react.default.createElement("button", {
+        }, "✏️"), /*#__PURE__*/React.createElement("button", {
           onClick: () => {
             clearStatus(showStatusPicker, s.id);
             toast_("Status gelöscht");
@@ -5327,21 +5323,21 @@ function PCNInner() {
             fontFamily: "'Barlow',sans-serif"
           }
         }, "✕")));
-      }), slots.length < 3 && /*#__PURE__*/_react.default.createElement("div", {
+      }), slots.length < 3 && /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
           marginBottom: 4
         }
       }, "+ Weiteren Status hinzufügen:"));
-    })(), (getActiveStatus(showStatusPicker) || []).length < 3 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+    })(), (getActiveStatus(showStatusPicker) || []).length < 3 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
         gap: 8,
         marginBottom: 14
       }
-    }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/_react.default.createElement("button", {
+    }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/React.createElement("button", {
       key: i,
       onClick: () => setStatus(showStatusPicker, {
         ...p,
@@ -5359,27 +5355,27 @@ function PCNInner() {
         fontFamily: "'Barlow',sans-serif",
         textAlign: "left"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 22,
         flexShrink: 0
       }
-    }, p.icon), /*#__PURE__*/_react.default.createElement("div", {
+    }, p.icon), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 700,
         color: C.white
       }
-    }, p.text), /*#__PURE__*/_react.default.createElement("div", {
+    }, p.text), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, "Aktiv für ", statusCustomMins || p.mins, " Min"))))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Aktiv für ", statusCustomMins || p.mins, " Min"))))), /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -5387,20 +5383,20 @@ function PCNInner() {
         padding: "13px",
         marginBottom: 12
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 700,
         color: "#aaa",
         marginBottom: 8
       }
-    }, "✏️ Eigener Status"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "✏️ Eigener Status"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
         marginBottom: 12
       }
-    }, /*#__PURE__*/_react.default.createElement("input", {
+    }, /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "z.B. Bin beim Einlass...",
       value: statusCustom,
@@ -5413,18 +5409,18 @@ function PCNInner() {
       style: {
         flex: 1
       }
-    })), /*#__PURE__*/_react.default.createElement("div", {
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
         borderTop: `1px solid ${C.border}`,
         paddingTop: 10
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
         marginBottom: 10
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setStatusUseDate(false),
       style: {
         flex: 1,
@@ -5438,7 +5434,7 @@ function PCNInner() {
         cursor: "pointer",
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "⏱ Dauer"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "⏱ Dauer"), /*#__PURE__*/React.createElement("button", {
       onClick: () => setStatusUseDate(true),
       style: {
         flex: 1,
@@ -5452,19 +5448,19 @@ function PCNInner() {
         cursor: "pointer",
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "📅 Bis Uhrzeit")), !statusUseDate ? /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+    }, "📅 Bis Uhrzeit")), !statusUseDate ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         marginBottom: 6
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
         color: C.muted
       }
-    }, "Dauer"), /*#__PURE__*/_react.default.createElement("span", {
+    }, "Dauer"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 16,
         fontWeight: 900,
@@ -5473,7 +5469,7 @@ function PCNInner() {
     }, (() => {
       const m = statusCustomMins || 30;
       return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 > 0 ? " " + m % 60 + "m" : ""}` : `${m} Min`;
-    })())), /*#__PURE__*/_react.default.createElement("input", {
+    })())), /*#__PURE__*/React.createElement("input", {
       type: "range",
       min: "5",
       max: "480",
@@ -5484,7 +5480,7 @@ function PCNInner() {
         width: "100%",
         accentColor: C.red
       }
-    }), /*#__PURE__*/_react.default.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
@@ -5492,13 +5488,13 @@ function PCNInner() {
         color: "#555",
         marginTop: 3
       }
-    }, /*#__PURE__*/_react.default.createElement("span", null, "5m"), /*#__PURE__*/_react.default.createElement("span", null, "30m"), /*#__PURE__*/_react.default.createElement("span", null, "1h"), /*#__PURE__*/_react.default.createElement("span", null, "4h"), /*#__PURE__*/_react.default.createElement("span", null, "8h"))) : /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("span", null, "5m"), /*#__PURE__*/React.createElement("span", null, "30m"), /*#__PURE__*/React.createElement("span", null, "1h"), /*#__PURE__*/React.createElement("span", null, "4h"), /*#__PURE__*/React.createElement("span", null, "8h"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginBottom: 6
       }
-    }, "Status aktiv bis:"), /*#__PURE__*/_react.default.createElement("input", {
+    }, "Status aktiv bis:"), /*#__PURE__*/React.createElement("input", {
       type: "datetime-local",
       value: statusDateTime,
       min: new Date(Date.now() + 5 * 60000).toISOString().slice(0, 16),
@@ -5514,7 +5510,7 @@ function PCNInner() {
         fontFamily: "'Barlow',sans-serif",
         outline: "none"
       }
-    }))), /*#__PURE__*/_react.default.createElement("button", {
+    }))), /*#__PURE__*/React.createElement("button", {
       className: "btn",
       disabled: !statusCustom.trim(),
       onClick: () => {
@@ -5527,7 +5523,7 @@ function PCNInner() {
         marginTop: 12,
         opacity: statusCustom.trim() ? 1 : .4
       }
-    }, statusEditSlot ? "Status aktualisieren" : "Status setzen"))), (getActiveStatus(showStatusPicker) || []).length > 0 && /*#__PURE__*/_react.default.createElement("button", {
+    }, statusEditSlot ? "Status aktualisieren" : "Status setzen"))), (getActiveStatus(showStatusPicker) || []).length > 0 && /*#__PURE__*/React.createElement("button", {
       className: "btn ghost",
       style: {
         width: "100%",
@@ -5539,7 +5535,7 @@ function PCNInner() {
         setShowStatusPicker(null);
         toast_("Alle Status gelöscht");
       }
-    }, "Alle Status löschen"))), lightbox && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Alle Status löschen"))), lightbox && /*#__PURE__*/React.createElement("div", {
       style: {
         position: "fixed",
         inset: 0,
@@ -5549,7 +5545,7 @@ function PCNInner() {
         flexDirection: "column"
       },
       onClick: () => setLightbox(null)
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
@@ -5558,12 +5554,12 @@ function PCNInner() {
         flexShrink: 0
       },
       onClick: e => e.stopPropagation()
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: "rgba(255,255,255,.6)"
       }
-    }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/_react.default.createElement("button", {
+    }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/React.createElement("button", {
       onClick: () => setLightbox(null),
       style: {
         background: "rgba(255,255,255,.1)",
@@ -5578,7 +5574,7 @@ function PCNInner() {
         alignItems: "center",
         justifyContent: "center"
       }
-    }, "✕")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "✕")), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         display: "flex",
@@ -5588,7 +5584,7 @@ function PCNInner() {
         position: "relative"
       },
       onClick: e => e.stopPropagation()
-    }, /*#__PURE__*/_react.default.createElement("img", {
+    }, /*#__PURE__*/React.createElement("img", {
       src: lightbox.images[lightbox.index],
       alt: "",
       style: {
@@ -5597,7 +5593,7 @@ function PCNInner() {
         objectFit: "contain",
         borderRadius: 8
       }
-    }), lightbox.images.length > 1 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("button", {
+    }), lightbox.images.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       onClick: () => setLightbox(p => ({
         ...p,
         index: Math.max(0, p.index - 1)
@@ -5617,7 +5613,7 @@ function PCNInner() {
         alignItems: "center",
         justifyContent: "center"
       }
-    }, "‹"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "‹"), /*#__PURE__*/React.createElement("button", {
       onClick: () => setLightbox(p => ({
         ...p,
         index: Math.min(p.images.length - 1, p.index + 1)
@@ -5637,7 +5633,7 @@ function PCNInner() {
         alignItems: "center",
         justifyContent: "center"
       }
-    }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/_react.default.createElement("div", {
+    }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 6,
@@ -5646,7 +5642,7 @@ function PCNInner() {
         flexShrink: 0
       },
       onClick: e => e.stopPropagation()
-    }, lightbox.images.map((_, i) => /*#__PURE__*/_react.default.createElement("div", {
+    }, lightbox.images.map((_, i) => /*#__PURE__*/React.createElement("div", {
       key: i,
       onClick: () => setLightbox(p => ({
         ...p,
@@ -5667,7 +5663,7 @@ function PCNInner() {
   // VEHICLE DETAIL
   // ══════════════════════════════════════════════════════════════════════════════
   // ── News Detail / Newsletter Vollansicht ────────────────────────────────────
-  if (viewNews) return /*#__PURE__*/_react.default.createElement("div", {
+  if (viewNews) return /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
       inset: 0,
@@ -5676,7 +5672,7 @@ function PCNInner() {
       overflowY: "auto",
       animation: "slideUp .25s ease"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: "#fff",
       borderBottom: `3px solid ${C.red}`,
@@ -5688,7 +5684,7 @@ function PCNInner() {
       top: 0,
       zIndex: 10
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setViewNews(null),
     style: {
       background: "none",
@@ -5698,11 +5694,11 @@ function PCNInner() {
       color: "#111",
       padding: "0 4px"
     }
-  }, "←"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "←"), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 14,
@@ -5710,12 +5706,12 @@ function PCNInner() {
       color: "#111",
       letterSpacing: 1
     }
-  }, "PCN NÜRBURGRING"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "PCN NÜRBURGRING"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "#888"
     }
-  }, "Mitglieder-Information")), /*#__PURE__*/_react.default.createElement("img", {
+  }, "Mitglieder-Information")), /*#__PURE__*/React.createElement("img", {
     src: "data:image/jpeg;base64,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REBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEQ8FHTVL6qQwUnm/Kk9yDJU1jjJ1FKNuTmeTV56ivxntTc92P8ARfOsp7eBEA58hGTgbyskNwikeGEOY4nADgqMfUV7z5dS1o/NH+i+i2tcczyySHx3Lf3AZyMBR89TJUyGCj3/AJUnIIPEzooHdRRRNdOd2cZwtiio2042nHalPF3uXulpWUzMN3uPFx5rYUBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREHxw2mkd4wo6lc6jm7LKPJc7LHjmpJR1Se010ULP6I7TndyD7cIXMJq4ZNh7BvzzC1TVNqKhksxDGRDOObitmpLqyr7O0kRR73kc/BbTaOnDtsQtyqNQ9fcDzip+fe5b0MLIYwyNuAP2rIAigIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiIMdRIIYXyH5I3KLppH09NJUBof1nygd7T4rZur8xshYfLkdwHcvU1A2Rpa15aHAeSOGRwKD1bYeqpw473SeUSVtrRo55Wy9mqANto3OHMLeQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBalXVOicIom7czuA7ltqOnjqIa108MQl224Hggxkmnm62pPW1LvMY35KyiOvqP4yQQN7m8Vko6V7JDPUO2pXd3yVuKjWpaNkDzIXGSQjG05bKIoCIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIg//Z",
     style: {
       height: 32,
@@ -5723,24 +5719,24 @@ function PCNInner() {
     },
     onError: e => e.target.style.display = "none",
     alt: "PCN"
-  })), /*#__PURE__*/_react.default.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "24px 18px",
       maxWidth: 600,
       margin: "0 auto"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
       gap: 8,
       marginBottom: 8
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 28
     }
-  }, viewNews.icon), viewNews.pinned && /*#__PURE__*/_react.default.createElement("span", {
+  }, viewNews.icon), viewNews.pinned && /*#__PURE__*/React.createElement("span", {
     style: {
       background: C.red,
       color: "#fff",
@@ -5749,7 +5745,7 @@ function PCNInner() {
       padding: "2px 8px",
       borderRadius: 4
     }
-  }, "NEU")), /*#__PURE__*/_react.default.createElement("h1", {
+  }, "NEU")), /*#__PURE__*/React.createElement("h1", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 26,
@@ -5758,13 +5754,13 @@ function PCNInner() {
       lineHeight: 1.2,
       marginBottom: 8
     }
-  }, viewNews.title), /*#__PURE__*/_react.default.createElement("div", {
+  }, viewNews.title), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginBottom: 24
     }
-  }, viewNews.author && /*#__PURE__*/_react.default.createElement("span", null, viewNews.author, " · "), fmtDate(viewNews.date)), /*#__PURE__*/_react.default.createElement("div", {
+  }, viewNews.author && /*#__PURE__*/React.createElement("span", null, viewNews.author, " · "), fmtDate(viewNews.date)), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       color: "#ccc",
@@ -5772,14 +5768,14 @@ function PCNInner() {
       whiteSpace: "pre-wrap",
       marginBottom: 32
     }
-  }, viewNews.body), /*#__PURE__*/_react.default.createElement("div", {
+  }, viewNews.body), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 10,
       paddingTop: 16,
       borderTop: `1px solid ${C.border}`
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       markNewsRead(viewNews.id);
       setViewNews(null);
@@ -5796,7 +5792,7 @@ function PCNInner() {
       cursor: "pointer",
       fontFamily: "'Barlow',sans-serif"
     }
-  }, "✓ Gelesen"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "✓ Gelesen"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setNewsState(p => ({
       ...p,
       [viewNews.id]: p[viewNews.id] === "remind" ? undefined : "remind"
@@ -5826,15 +5822,15 @@ function PCNInner() {
     const tuevColor = !tuevDays ? C.muted : tuevDays < 0 ? C.red : tuevDays < 90 ? C.amber : C.green;
     const kz = fmtKz(v.kennzeichen, v.baujahr);
     const priv = v.privacy || DEF_PRIVACY;
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         minHeight: "100vh",
         background: C.black,
         paddingBottom: 80
       }
-    }, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
       className: `toast ${toast.type}`
-    }, toast.msg), ScannerOverlay, /*#__PURE__*/_react.default.createElement("div", {
+    }, toast.msg), ScannerOverlay, /*#__PURE__*/React.createElement("div", {
       style: {
         position: "relative"
       }
@@ -5846,7 +5842,7 @@ function PCNInner() {
         [v.id]: Math.max(0, Math.min(imgs.length - 1, i))
       }));
       let touchX = 0;
-      if (imgs.length === 0) return isOwn ? /*#__PURE__*/_react.default.createElement("label", {
+      if (imgs.length === 0) return isOwn ? /*#__PURE__*/React.createElement("label", {
         style: {
           height: 260,
           background: "#111",
@@ -5857,24 +5853,24 @@ function PCNInner() {
           gap: 10,
           cursor: "pointer"
         }
-      }, /*#__PURE__*/_react.default.createElement("input", {
+      }, /*#__PURE__*/React.createElement("input", {
         type: "file",
         accept: "image/*",
         style: {
           display: "none"
         },
         onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
-      }), /*#__PURE__*/_react.default.createElement("span", {
+      }), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 44
         }
-      }, "📷"), /*#__PURE__*/_react.default.createElement("span", {
+      }, "📷"), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 15,
           fontWeight: 700,
           color: "#fff"
         }
-      }, "Erstes Foto hinzufügen")) : /*#__PURE__*/_react.default.createElement("div", {
+      }, "Erstes Foto hinzufügen")) : /*#__PURE__*/React.createElement("div", {
         style: {
           height: 220,
           background: "#111",
@@ -5885,7 +5881,7 @@ function PCNInner() {
           fontSize: 40
         }
       }, "📷");
-      return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
         style: {
           height: 280,
           position: "relative",
@@ -5899,7 +5895,7 @@ function PCNInner() {
           const dx = e.changedTouches[0].clientX - touchX;
           if (Math.abs(dx) > 40) goTo(cur + (dx < 0 ? 1 : -1));
         }
-      }, /*#__PURE__*/_react.default.createElement("img", {
+      }, /*#__PURE__*/React.createElement("img", {
         src: imgs[cur],
         alt: "",
         draggable: false,
@@ -5915,14 +5911,14 @@ function PCNInner() {
           index: cur
         }),
         onError: e => e.target.style.display = "none"
-      }), /*#__PURE__*/_react.default.createElement("div", {
+      }), /*#__PURE__*/React.createElement("div", {
         style: {
           position: "absolute",
           inset: 0,
           background: "linear-gradient(to bottom,rgba(0,0,0,.45) 0%,transparent 40%,transparent 55%,rgba(0,0,0,.7) 100%)",
           pointerEvents: "none"
         }
-      }), imgs.length > 1 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+      }), imgs.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
         style: {
           position: "absolute",
           bottom: 14,
@@ -5933,7 +5929,7 @@ function PCNInner() {
           gap: 6,
           zIndex: 3
         }
-      }, imgs.map((_, i) => /*#__PURE__*/_react.default.createElement("div", {
+      }, imgs.map((_, i) => /*#__PURE__*/React.createElement("div", {
         key: i,
         onClick: e => {
           e.stopPropagation();
@@ -5947,7 +5943,7 @@ function PCNInner() {
           transition: "all .2s",
           cursor: "pointer"
         }
-      }))), /*#__PURE__*/_react.default.createElement("div", {
+      }))), /*#__PURE__*/React.createElement("div", {
         style: {
           position: "absolute",
           bottom: 14,
@@ -5960,7 +5956,7 @@ function PCNInner() {
           color: "rgba(255,255,255,.9)",
           zIndex: 3
         }
-      }, cur + 1, "/", imgs.length))), imgs.length > 1 && /*#__PURE__*/_react.default.createElement("div", {
+      }, cur + 1, "/", imgs.length))), imgs.length > 1 && /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           gap: 6,
@@ -5970,13 +5966,13 @@ function PCNInner() {
           scrollbarWidth: "none",
           WebkitOverflowScrolling: "touch"
         }
-      }, imgs.map((img, i) => /*#__PURE__*/_react.default.createElement("div", {
+      }, imgs.map((img, i) => /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
           position: "relative",
           flexShrink: 0
         }
-      }, /*#__PURE__*/_react.default.createElement("img", {
+      }, /*#__PURE__*/React.createElement("img", {
         src: img,
         alt: "",
         onClick: () => {
@@ -5998,7 +5994,7 @@ function PCNInner() {
           transition: "all .15s"
         },
         onError: e => e.target.style.display = "none"
-      }), i === 0 && /*#__PURE__*/_react.default.createElement("div", {
+      }), i === 0 && /*#__PURE__*/React.createElement("div", {
         style: {
           position: "absolute",
           top: 2,
@@ -6008,7 +6004,7 @@ function PCNInner() {
           borderRadius: 4,
           padding: "1px 4px"
         }
-      }, "👑"), isOwn && i === cur && i !== 0 && /*#__PURE__*/_react.default.createElement("button", {
+      }, "👑"), isOwn && i === cur && i !== 0 && /*#__PURE__*/React.createElement("button", {
         onClick: async e => {
           e.stopPropagation();
           const imgs2 = [...imgs];
@@ -6045,7 +6041,7 @@ function PCNInner() {
           cursor: "pointer",
           fontFamily: "'Barlow',sans-serif"
         }
-      }, "👑 Titelbild"), isOwn && /*#__PURE__*/_react.default.createElement("button", {
+      }, "👑 Titelbild"), isOwn && /*#__PURE__*/React.createElement("button", {
         onClick: e => {
           e.stopPropagation();
           removeImageFromVehicle(v.id, i);
@@ -6067,7 +6063,7 @@ function PCNInner() {
           justifyContent: "center",
           fontWeight: 700
         }
-      }, "✕"))), isOwn && /*#__PURE__*/_react.default.createElement("label", {
+      }, "✕"))), isOwn && /*#__PURE__*/React.createElement("label", {
         style: {
           width: 90,
           height: 64,
@@ -6082,31 +6078,31 @@ function PCNInner() {
           flexShrink: 0,
           gap: 2
         }
-      }, /*#__PURE__*/_react.default.createElement("input", {
+      }, /*#__PURE__*/React.createElement("input", {
         type: "file",
         accept: "image/*",
         style: {
           display: "none"
         },
         onChange: e => handleImageUpload(e.target.files[0], url => addImageToVehicle(v.id, url))
-      }), /*#__PURE__*/_react.default.createElement("span", {
+      }), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 22
         }
-      }, imgUploading ? "⏳" : "📷"), /*#__PURE__*/_react.default.createElement("span", {
+      }, imgUploading ? "⏳" : "📷"), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 9,
           color: C.muted
         }
       }, "Hinzufügen"))));
-    })(), /*#__PURE__*/_react.default.createElement("div", {
+    })(), /*#__PURE__*/React.createElement("div", {
       style: {
         position: "absolute",
         top: 16,
         left: 14,
         zIndex: 5
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setScreen("app"),
       style: {
         background: "rgba(0,0,0,.6)",
@@ -6120,7 +6116,7 @@ function PCNInner() {
         fontWeight: 700,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "← Zurück")), isOwn && /*#__PURE__*/_react.default.createElement("div", {
+    }, "← Zurück")), isOwn && /*#__PURE__*/React.createElement("div", {
       style: {
         position: "absolute",
         top: 16,
@@ -6129,7 +6125,7 @@ function PCNInner() {
         gap: 8,
         zIndex: 5
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       title: "QR-Sichtbarkeit einstellen",
       onClick: () => setShowPrivacy(v.id),
       style: {
@@ -6147,7 +6143,7 @@ function PCNInner() {
         gap: 4,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "QR 🔒"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "QR 🔒"), /*#__PURE__*/React.createElement("button", {
       title: "Öffentliche QR-Ansicht",
       onClick: () => {
         setPublicV({
@@ -6172,14 +6168,14 @@ function PCNInner() {
         gap: 4,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "👁 Vorschau")), !isOwn && /*#__PURE__*/_react.default.createElement("div", {
+    }, "👁 Vorschau")), !isOwn && /*#__PURE__*/React.createElement("div", {
       style: {
         position: "absolute",
         top: 16,
         right: 14,
         zIndex: 5
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setPublicV({
           ...v,
@@ -6200,13 +6196,13 @@ function PCNInner() {
         fontWeight: 700,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "👁 Ansicht"))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "👁 Ansicht"))), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: "16px",
         maxWidth: 560,
         margin: "0 auto"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -6214,21 +6210,21 @@ function PCNInner() {
         padding: "14px",
         marginBottom: 14
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "flex-start",
         marginBottom: 2
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 18,
         fontWeight: 900,
         color: C.white
       }
-    }, v.hersteller, " ", v.modell), isOwn && /*#__PURE__*/_react.default.createElement("button", {
+    }, v.hersteller, " ", v.modell), isOwn && /*#__PURE__*/React.createElement("button", {
       onClick: () => openEditVehicle(v),
       style: {
         background: C.red,
@@ -6243,20 +6239,20 @@ function PCNInner() {
         flexShrink: 0,
         marginLeft: 10
       }
-    }, "✏️ Bearbeiten")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "✏️ Bearbeiten")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
         marginBottom: 12
       }
-    }, v.baujahr, " · ", v.farbe, " · ", v.getriebe), /*#__PURE__*/_react.default.createElement("div", {
+    }, v.baujahr, " · ", v.farbe, " · ", v.getriebe), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "1fr 1fr 1fr",
         gap: 8,
         marginBottom: 10
       }
-    }, [[v.tuev_faelligkeit || "–", "TÜV", tuevColor], [(v.kilometerstand || "–") + " km", "Kilometerstand", C.white], [["", "Sehr gut", "Gut", "Befriend.", "Ausreichend", "Mangelhaft"][parseInt(v.zustand)] || "–", "Zustand", C.gold]].map(([val, label, color], i) => /*#__PURE__*/_react.default.createElement("div", {
+    }, [[v.tuev_faelligkeit || "–", "TÜV", tuevColor], [(v.kilometerstand || "–") + " km", "Kilometerstand", C.white], [["", "Sehr gut", "Gut", "Befriend.", "Ausreichend", "Mangelhaft"][parseInt(v.zustand)] || "–", "Zustand", C.gold]].map(([val, label, color], i) => /*#__PURE__*/React.createElement("div", {
       key: i,
       style: {
         background: C.black,
@@ -6264,7 +6260,7 @@ function PCNInner() {
         padding: "9px 8px",
         textAlign: "center"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         fontWeight: 700,
@@ -6272,20 +6268,20 @@ function PCNInner() {
         marginBottom: 2,
         lineHeight: 1.2
       }
-    }, val), /*#__PURE__*/_react.default.createElement("div", {
+    }, val), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 9,
         color: C.muted,
         textTransform: "uppercase",
         letterSpacing: .5
       }
-    }, label)))), /*#__PURE__*/_react.default.createElement("div", {
+    }, label)))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 8
       }
-    }, [["🔑", "Kennzeichen", v.kennzeichen || "–"], ["⛽", "Kraftstoff", v.kraftstoff || "–"], ["💶", "Marktwert", v.marktwert ? (v.marktwert.toLocaleString ? v.marktwert.toLocaleString("de-DE") : v.marktwert) + " €" : "–"], ["🔩", "FIN", v.fin ? "••• " + v.fin.slice(-6) : "–"]].map(([icon, label, val]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, [["🔑", "Kennzeichen", v.kennzeichen || "–"], ["⛽", "Kraftstoff", v.kraftstoff || "–"], ["💶", "Marktwert", v.marktwert ? (v.marktwert.toLocaleString ? v.marktwert.toLocaleString("de-DE") : v.marktwert) + " €" : "–"], ["🔩", "FIN", v.fin ? "••• " + v.fin.slice(-6) : "–"]].map(([icon, label, val]) => /*#__PURE__*/React.createElement("div", {
       key: label,
       style: {
         display: "flex",
@@ -6294,21 +6290,21 @@ function PCNInner() {
         padding: "6px 0",
         borderBottom: `1px solid ${C.border}`
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 14,
         flexShrink: 0
       }
-    }, icon), /*#__PURE__*/_react.default.createElement("div", {
+    }, icon), /*#__PURE__*/React.createElement("div", {
       style: {
         minWidth: 0
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, label), /*#__PURE__*/_react.default.createElement("div", {
+    }, label), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 600,
@@ -6317,7 +6313,7 @@ function PCNInner() {
         textOverflow: "ellipsis",
         whiteSpace: "nowrap"
       }
-    }, val))))), v.besonderheiten && /*#__PURE__*/_react.default.createElement("div", {
+    }, val))))), v.besonderheiten && /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 10,
         padding: "8px 10px",
@@ -6327,7 +6323,7 @@ function PCNInner() {
         color: C.muted,
         lineHeight: 1.5
       }
-    }, "✨ ", v.besonderheiten)), isOwn && /*#__PURE__*/_react.default.createElement("div", {
+    }, "✨ ", v.besonderheiten)), isOwn && /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -6335,7 +6331,7 @@ function PCNInner() {
         padding: "14px",
         marginBottom: 14
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -6347,7 +6343,7 @@ function PCNInner() {
     }, "🔗 QR-Code & Aktionen"), (() => {
       const slots = getActiveStatus(v.id) || [];
       if (!slots.length) return null;
-      return slots.map(s => /*#__PURE__*/_react.default.createElement("div", {
+      return slots.map(s => /*#__PURE__*/React.createElement("div", {
         key: s.id,
         style: {
           background: `${C.amber}18`,
@@ -6359,21 +6355,21 @@ function PCNInner() {
           gap: 10,
           alignItems: "center"
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 20
         }
-      }, s.icon), /*#__PURE__*/_react.default.createElement("div", {
+      }, s.icon), /*#__PURE__*/React.createElement("div", {
         style: {
           flex: 1
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 13,
           fontWeight: 700,
           color: C.amber
         }
-      }, s.text), /*#__PURE__*/_react.default.createElement("div", {
+      }, s.text), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 10,
           color: C.muted,
@@ -6382,7 +6378,7 @@ function PCNInner() {
       }, s.expiresAt ? `Bis ${new Date(s.expiresAt).toLocaleTimeString("de-DE", {
         hour: "2-digit",
         minute: "2-digit"
-      })} Uhr` : "Dauerhaft", " · sichtbar für Besucher")), /*#__PURE__*/_react.default.createElement("button", {
+      })} Uhr` : "Dauerhaft", " · sichtbar für Besucher")), /*#__PURE__*/React.createElement("button", {
         onClick: () => {
           clearStatus(v.id, s.id);
           toast_("Status gelöscht");
@@ -6396,13 +6392,13 @@ function PCNInner() {
           padding: "0 4px"
         }
       }, "✕")));
-    })(), /*#__PURE__*/_react.default.createElement("div", {
+    })(), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
         flexWrap: "wrap"
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowStatusPicker(v.id),
       style: {
         flex: 1,
@@ -6416,26 +6412,26 @@ function PCNInner() {
         gap: 8,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 18
       }
-    }, "📍"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "📍"), /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "left"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 700,
         fontSize: 13,
         color: C.white
       }
-    }, "Live-Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Live-Status setzen"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, "Sichtbar beim QR-Scan"))), /*#__PURE__*/_react.default.createElement("button", {
+    }, "Sichtbar beim QR-Scan"))), /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowPrivacy(v.id),
       style: {
         flex: 1,
@@ -6449,26 +6445,26 @@ function PCNInner() {
         gap: 8,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 18
       }
-    }, "🔒"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🔒"), /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "left"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 700,
         fontSize: 13,
         color: C.white
       }
-    }, "QR-Sichtbarkeit"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "QR-Sichtbarkeit"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, "Einstellen was Besucher sehen"))), v.qarId && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Einstellen was Besucher sehen"))), v.qarId && /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.black,
         borderRadius: 10,
@@ -6484,22 +6480,22 @@ function PCNInner() {
         images: ["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v=" + v.qarId],
         index: 0
       })
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         background: "#fff",
         borderRadius: 8,
         padding: 6,
         flexShrink: 0
       }
-    }, /*#__PURE__*/_react.default.createElement(QRCodeCanvas, {
+    }, /*#__PURE__*/React.createElement(QRCodeCanvas, {
       value: "https://qar.gallery/pcn/?v=" + v.qarId,
       size: 72
-    })), /*#__PURE__*/_react.default.createElement("div", {
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted,
@@ -6507,7 +6503,7 @@ function PCNInner() {
         textTransform: "uppercase",
         letterSpacing: 1
       }
-    }, "QAR-ID"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "QAR-ID"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "monospace",
         fontSize: 13,
@@ -6516,18 +6512,18 @@ function PCNInner() {
         letterSpacing: 1,
         marginBottom: 4
       }
-    }, v.qarId), /*#__PURE__*/_react.default.createElement("div", {
+    }, v.qarId), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, "Tippen zum Vergrößern · FIN wird niemals geteilt")), /*#__PURE__*/_react.default.createElement("span", {
+    }, "Tippen zum Vergrößern · FIN wird niemals geteilt")), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 18,
         color: C.muted,
         flexShrink: 0
       }
-    }, "⤢")), /*#__PURE__*/_react.default.createElement("button", {
+    }, "⤢")), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setPublicV({
           ...v,
@@ -6548,21 +6544,21 @@ function PCNInner() {
         gap: 8,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 18
       }
-    }, "👁"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "👁"), /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "left"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 700,
         fontSize: 13,
         color: C.white
       }
-    }, "Vorschau öffentliche Akte"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Vorschau öffentliche Akte"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted
@@ -6570,11 +6566,11 @@ function PCNInner() {
     }, "So sehen Besucher dein Fahrzeug beim QR-Scan"))))), (() => {
       const vRems = myReminders.filter(r => r.vehicleId === v.id || r.vehicle_id === v.id);
       if (vRems.length === 0) return null;
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         style: {
           marginBottom: 14
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 11,
           fontWeight: 800,
@@ -6587,7 +6583,7 @@ function PCNInner() {
         const days = daysUntil(r.date);
         const overdue = days < 0,
           urgent = days <= 7;
-        return /*#__PURE__*/_react.default.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: r.id,
           style: {
             background: C.card,
@@ -6599,23 +6595,23 @@ function PCNInner() {
             gap: 10,
             alignItems: "center"
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             flex: 1
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             fontWeight: 700,
             fontSize: 14,
             color: overdue ? C.red : urgent ? C.amber : C.white
           }
-        }, r.title), /*#__PURE__*/_react.default.createElement("div", {
+        }, r.title), /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 11,
             color: overdue ? C.red : urgent ? C.amber : C.muted,
             marginTop: 2
           }
-        }, overdue ? "⚠️ Überfällig" : days === 0 ? "📅 Heute" : days === 1 ? "📅 Morgen" : `📅 In ${days} Tagen`, " · ", fmtDate(r.date))), r.title.toLowerCase().includes("tüv") && /*#__PURE__*/_react.default.createElement("button", {
+        }, overdue ? "⚠️ Überfällig" : days === 0 ? "📅 Heute" : days === 1 ? "📅 Morgen" : `📅 In ${days} Tagen`, " · ", fmtDate(r.date))), r.title.toLowerCase().includes("tüv") && /*#__PURE__*/React.createElement("button", {
           onClick: () => {
             const ds = r.date ? r.date.replace(/-/g, "") : "";
             const t = encodeURIComponent(`TÜV ${v.hersteller} ${v.modell}`);
@@ -6633,7 +6629,7 @@ function PCNInner() {
             fontFamily: "'Barlow',sans-serif",
             flexShrink: 0
           }
-        }, "📅 Eintragen"), /*#__PURE__*/_react.default.createElement("button", {
+        }, "📅 Eintragen"), /*#__PURE__*/React.createElement("button", {
           onClick: async () => {
             const DB = window.PCN_DB;
             if (DB) await DB.reminders.done(me.id, r.id);
@@ -6656,7 +6652,7 @@ function PCNInner() {
             flexShrink: 0
           }
         }, "✓"));
-      }), isOwn && /*#__PURE__*/_react.default.createElement("button", {
+      }), isOwn && /*#__PURE__*/React.createElement("button", {
         className: "btn sm ghost",
         style: {
           marginTop: 4
@@ -6680,51 +6676,51 @@ function PCNInner() {
         count: vLog.length,
         action: isOwn ? () => setShowAddLog(v.id) : null,
         actionLabel: "+ Eintrag",
-        content: /*#__PURE__*/_react.default.createElement("div", null, vLog.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+        content: /*#__PURE__*/React.createElement("div", null, vLog.length === 0 ? /*#__PURE__*/React.createElement("div", {
           style: {
             padding: "16px",
             textAlign: "center",
             color: C.muted,
             fontSize: 13
           }
-        }, "Noch leer — 3 Einträge schalten KI-Marktwert frei") : vLog.map(e => /*#__PURE__*/_react.default.createElement("div", {
+        }, "Noch leer — 3 Einträge schalten KI-Marktwert frei") : vLog.map(e => /*#__PURE__*/React.createElement("div", {
           key: e.id,
           style: {
             padding: "12px 0",
             borderBottom: `1px solid ${C.border}`
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
             marginBottom: 3
           }
-        }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("span", {
+        }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
           style: {
             fontWeight: 700,
             fontSize: 14,
             color: C.white
           }
-        }, e.type), e.workshop && /*#__PURE__*/_react.default.createElement("span", {
+        }, e.type), e.workshop && /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 11,
             color: C.muted,
             marginLeft: 8
           }
-        }, "· ", e.workshop)), /*#__PURE__*/_react.default.createElement("span", {
+        }, "· ", e.workshop)), /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 11,
             color: C.muted,
             flexShrink: 0
           }
-        }, fmtDate(e.date))), e.km && /*#__PURE__*/_react.default.createElement("div", {
+        }, fmtDate(e.date))), e.km && /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 11,
             color: C.muted,
             marginBottom: 2
           }
-        }, parseInt(e.km).toLocaleString("de-DE"), " km"), e.notes && /*#__PURE__*/_react.default.createElement("div", {
+        }, parseInt(e.km).toLocaleString("de-DE"), " km"), e.notes && /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 12,
             color: "#888",
@@ -6736,10 +6732,10 @@ function PCNInner() {
         icon: "🏁",
         label: "Veranstaltungshistorie",
         count: vParts.length + vHist.length,
-        content: /*#__PURE__*/_react.default.createElement("div", null, vParts.map(p => {
+        content: /*#__PURE__*/React.createElement("div", null, vParts.map(p => {
           const ev = events[p.eventId];
           if (!ev) return null;
-          return /*#__PURE__*/_react.default.createElement("div", {
+          return /*#__PURE__*/React.createElement("div", {
             key: p.id,
             style: {
               display: "flex",
@@ -6753,7 +6749,7 @@ function PCNInner() {
               setViewEv(ev);
               setScreen("event");
             }
-          }, /*#__PURE__*/_react.default.createElement("div", {
+          }, /*#__PURE__*/React.createElement("div", {
             style: {
               background: `${C.red}22`,
               border: `1px solid ${C.red}44`,
@@ -6764,22 +6760,22 @@ function PCNInner() {
               color: C.red,
               flexShrink: 0
             }
-          }, "#", p.startNr), /*#__PURE__*/_react.default.createElement("div", {
+          }, "#", p.startNr), /*#__PURE__*/React.createElement("div", {
             style: {
               flex: 1
             }
-          }, /*#__PURE__*/_react.default.createElement("div", {
+          }, /*#__PURE__*/React.createElement("div", {
             style: {
               fontWeight: 600,
               fontSize: 14,
               color: C.white
             }
-          }, ev.name), /*#__PURE__*/_react.default.createElement("div", {
+          }, ev.name), /*#__PURE__*/React.createElement("div", {
             style: {
               fontSize: 11,
               color: C.muted
             }
-          }, fmtDate(ev.date), " · ", p.class)), /*#__PURE__*/_react.default.createElement("div", {
+          }, fmtDate(ev.date), " · ", p.class)), /*#__PURE__*/React.createElement("div", {
             style: {
               fontSize: 11,
               color: C.amber,
@@ -6787,7 +6783,7 @@ function PCNInner() {
               flexShrink: 0
             }
           }, "in ", daysUntil(ev.date), " T. →"));
-        }), vHist.map(h => /*#__PURE__*/_react.default.createElement("div", {
+        }), vHist.map(h => /*#__PURE__*/React.createElement("div", {
           key: h.id,
           style: {
             display: "flex",
@@ -6796,7 +6792,7 @@ function PCNInner() {
             padding: "11px 0",
             borderBottom: `1px solid ${C.border}`
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             background: `${C.gold}22`,
             border: `1px solid ${C.gold}44`,
@@ -6807,29 +6803,29 @@ function PCNInner() {
             color: C.gold,
             flexShrink: 0
           }
-        }, "#", h.startNr), /*#__PURE__*/_react.default.createElement("div", {
+        }, "#", h.startNr), /*#__PURE__*/React.createElement("div", {
           style: {
             flex: 1
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             fontWeight: 600,
             fontSize: 14,
             color: C.white
           }
-        }, h.eventName), /*#__PURE__*/_react.default.createElement("div", {
+        }, h.eventName), /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 11,
             color: C.muted
           }
-        }, fmtDate(h.date), h.note ? " · " + h.note : "")), /*#__PURE__*/_react.default.createElement("div", {
+        }, fmtDate(h.date), h.note ? " · " + h.note : "")), /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 11,
             color: h.result === "Teilnahme" ? C.muted : C.gold,
             fontWeight: 700,
             flexShrink: 0
           }
-        }, h.result))), vParts.length === 0 && vHist.length === 0 && /*#__PURE__*/_react.default.createElement("div", {
+        }, h.result))), vParts.length === 0 && vHist.length === 0 && /*#__PURE__*/React.createElement("div", {
           style: {
             padding: "16px",
             textAlign: "center",
@@ -6842,33 +6838,33 @@ function PCNInner() {
         icon: "🛡️",
         label: "Versicherungen",
         count: vInsurance.length,
-        content: /*#__PURE__*/_react.default.createElement("div", null, vInsurance.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+        content: /*#__PURE__*/React.createElement("div", null, vInsurance.length === 0 ? /*#__PURE__*/React.createElement("div", {
           style: {
             padding: "16px",
             textAlign: "center",
             color: C.muted,
             fontSize: 13
           }
-        }, "Noch keine Versicherungsdaten hinterlegt") : vInsurance.map(ins => /*#__PURE__*/_react.default.createElement("div", {
+        }, "Noch keine Versicherungsdaten hinterlegt") : vInsurance.map(ins => /*#__PURE__*/React.createElement("div", {
           key: ins.id,
           style: {
             padding: "12px 0",
             borderBottom: `1px solid ${C.border}`
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
             marginBottom: 4
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             fontWeight: 700,
             fontSize: 14,
             color: C.white
           }
-        }, ins.type), /*#__PURE__*/_react.default.createElement("span", {
+        }, ins.type), /*#__PURE__*/React.createElement("span", {
           style: {
             background: ins.status === "aktiv" ? `${C.green}22` : `${C.red}22`,
             color: ins.status === "aktiv" ? C.green : C.red,
@@ -6878,19 +6874,19 @@ function PCNInner() {
             borderRadius: 4,
             border: `1px solid ${ins.status === "aktiv" ? C.green + "44" : C.red + "44"}`
           }
-        }, ins.status.toUpperCase())), /*#__PURE__*/_react.default.createElement("div", {
+        }, ins.status.toUpperCase())), /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 12,
             color: C.muted,
             marginBottom: 2
           }
-        }, ins.provider, " · Nr: ", ins.nr), /*#__PURE__*/_react.default.createElement("div", {
+        }, ins.provider, " · Nr: ", ins.nr), /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 11,
             color: C.muted,
             marginBottom: 4
           }
-        }, "Gültig: ", fmtDate(ins.since), " – ", fmtDate(ins.until), " · ", ins.premium), ins.note && /*#__PURE__*/_react.default.createElement("div", {
+        }, "Gültig: ", fmtDate(ins.since), " – ", fmtDate(ins.until), " · ", ins.premium), ins.note && /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 11,
             color: "#777",
@@ -6904,39 +6900,39 @@ function PCNInner() {
         icon: "📄",
         label: "Gutachten",
         count: vGutachten.length,
-        content: /*#__PURE__*/_react.default.createElement("div", null, vGutachten.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+        content: /*#__PURE__*/React.createElement("div", null, vGutachten.length === 0 ? /*#__PURE__*/React.createElement("div", {
           style: {
             padding: "16px",
             textAlign: "center",
             color: C.muted,
             fontSize: 13
           }
-        }, "Noch keine Gutachten hinterlegt") : vGutachten.map(g => /*#__PURE__*/_react.default.createElement("div", {
+        }, "Noch keine Gutachten hinterlegt") : vGutachten.map(g => /*#__PURE__*/React.createElement("div", {
           key: g.id,
           style: {
             padding: "12px 0",
             borderBottom: `1px solid ${C.border}`
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
             marginBottom: 4
           }
-        }, /*#__PURE__*/_react.default.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           style: {
             fontWeight: 700,
             fontSize: 14,
             color: C.white
           }
-        }, g.type), /*#__PURE__*/_react.default.createElement("div", {
+        }, g.type), /*#__PURE__*/React.createElement("div", {
           style: {
             display: "flex",
             gap: 4,
             alignItems: "center"
           }
-        }, g.signiert && /*#__PURE__*/_react.default.createElement("span", {
+        }, g.signiert && /*#__PURE__*/React.createElement("span", {
           style: {
             background: `${C.green}22`,
             color: C.green,
@@ -6945,56 +6941,56 @@ function PCNInner() {
             padding: "2px 7px",
             borderRadius: 4
           }
-        }, "✓ SIGNIERT"), /*#__PURE__*/_react.default.createElement("span", {
+        }, "✓ SIGNIERT"), /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 11,
             color: C.muted
           }
-        }, fmtDate(g.date)))), /*#__PURE__*/_react.default.createElement("div", {
+        }, fmtDate(g.date)))), /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 12,
             color: C.muted,
             marginBottom: 2
           }
-        }, g.gutachter), /*#__PURE__*/_react.default.createElement("div", {
+        }, g.gutachter), /*#__PURE__*/React.createElement("div", {
           style: {
             display: "flex",
             gap: 12,
             marginBottom: 6,
             flexWrap: "wrap"
           }
-        }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("span", {
+        }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 10,
             color: C.muted
           }
-        }, "Bewertung: "), /*#__PURE__*/_react.default.createElement("span", {
+        }, "Bewertung: "), /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 13,
             fontWeight: 700,
             color: C.gold
           }
-        }, g.wert)), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("span", {
+        }, g.wert)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 10,
             color: C.muted
           }
-        }, "Zustand: "), /*#__PURE__*/_react.default.createElement("span", {
+        }, "Zustand: "), /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 12,
             color: C.white
           }
-        }, g.zustand)), g.km && /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("span", {
+        }, g.zustand)), g.km && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 10,
             color: C.muted
           }
-        }, "KM: "), /*#__PURE__*/_react.default.createElement("span", {
+        }, "KM: "), /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 12,
             color: C.white
           }
-        }, parseInt(g.km).toLocaleString("de-DE")))), g.note && /*#__PURE__*/_react.default.createElement("div", {
+        }, parseInt(g.km).toLocaleString("de-DE")))), g.note && /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 11,
             color: "#777",
@@ -7005,7 +7001,7 @@ function PCNInner() {
           }
         }, g.note))))
       }];
-      return sections.map(sec => /*#__PURE__*/_react.default.createElement("div", {
+      return sections.map(sec => /*#__PURE__*/React.createElement("div", {
         key: sec.id,
         style: {
           background: C.card,
@@ -7014,7 +7010,7 @@ function PCNInner() {
           marginBottom: 10,
           overflow: "hidden"
         }
-      }, /*#__PURE__*/_react.default.createElement("button", {
+      }, /*#__PURE__*/React.createElement("button", {
         onClick: () => toggleSection(v.id, sec.id),
         style: {
           width: "100%",
@@ -7027,12 +7023,12 @@ function PCNInner() {
           gap: 10,
           fontFamily: "'Barlow',sans-serif"
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 18,
           flexShrink: 0
         }
-      }, sec.icon), /*#__PURE__*/_react.default.createElement("span", {
+      }, sec.icon), /*#__PURE__*/React.createElement("span", {
         style: {
           fontWeight: 700,
           fontSize: 15,
@@ -7040,7 +7036,7 @@ function PCNInner() {
           flex: 1,
           textAlign: "left"
         }
-      }, sec.label), sec.count > 0 && /*#__PURE__*/_react.default.createElement("span", {
+      }, sec.label), sec.count > 0 && /*#__PURE__*/React.createElement("span", {
         style: {
           background: C.black,
           borderRadius: 99,
@@ -7050,7 +7046,7 @@ function PCNInner() {
           color: C.muted,
           flexShrink: 0
         }
-      }, sec.count), sec.action && isOpen(v.id, sec.id) && /*#__PURE__*/_react.default.createElement("button", {
+      }, sec.count), sec.action && isOpen(v.id, sec.id) && /*#__PURE__*/React.createElement("button", {
         onClick: e => {
           e.stopPropagation();
           sec.action();
@@ -7067,7 +7063,7 @@ function PCNInner() {
           flexShrink: 0,
           fontFamily: "'Barlow',sans-serif"
         }
-      }, sec.actionLabel), /*#__PURE__*/_react.default.createElement("span", {
+      }, sec.actionLabel), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 16,
           color: C.muted,
@@ -7075,17 +7071,17 @@ function PCNInner() {
           transition: "transform .2s",
           transform: isOpen(v.id, sec.id) ? "rotate(180deg)" : "rotate(0deg)"
         }
-      }, "▾")), isOpen(v.id, sec.id) && /*#__PURE__*/_react.default.createElement("div", {
+      }, "▾")), isOpen(v.id, sec.id) && /*#__PURE__*/React.createElement("div", {
         style: {
           padding: "0 16px 14px",
           borderTop: `1px solid ${C.border}`
         }
       }, sec.content)));
-    })(), isOwn && /*#__PURE__*/_react.default.createElement("div", {
+    })(), isOwn && /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 16
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -7094,21 +7090,21 @@ function PCNInner() {
         letterSpacing: 1.5,
         marginBottom: 8
       }
-    }, "📞 Kontakt"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "📞 Kontakt"), /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
         borderRadius: 12,
         overflow: "hidden"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         padding: "12px 14px",
         display: "flex",
         gap: 10,
         alignItems: "center"
       }
-    }, /*#__PURE__*/_react.default.createElement("input", {
+    }, /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Telefonnummer (aus Profil übernehmen)",
       type: "tel",
@@ -7137,7 +7133,7 @@ function PCNInner() {
         background: "transparent",
         padding: 0
       }
-    }), !viewV.phone && me?.phone && /*#__PURE__*/_react.default.createElement("button", {
+    }), !viewV.phone && me?.phone && /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         const updated = {
           ...viewV,
@@ -7164,7 +7160,7 @@ function PCNInner() {
         fontFamily: "'Barlow',sans-serif",
         flexShrink: 0
       }
-    }, "Übernehmen")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Übernehmen")), /*#__PURE__*/React.createElement("div", {
       style: {
         borderTop: `1px solid ${C.border}`,
         padding: "11px 14px",
@@ -7172,36 +7168,36 @@ function PCNInner() {
         alignItems: "center",
         justifyContent: "space-between"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         fontWeight: 600,
         color: priv.pub_phone ? C.green : C.white
       }
-    }, priv.pub_phone ? "🔓 Öffentlich sichtbar" : "🔒 Nur privat"), /*#__PURE__*/_react.default.createElement("div", {
+    }, priv.pub_phone ? "🔓 Öffentlich sichtbar" : "🔒 Nur privat"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted,
         marginTop: 2
       }
-    }, priv.pub_phone ? "Besucher sehen Direktanruf-Button" : "Nummer nicht im QR-Profil sichtbar")), /*#__PURE__*/_react.default.createElement("button", {
+    }, priv.pub_phone ? "Besucher sehen Direktanruf-Button" : "Nummer nicht im QR-Profil sichtbar")), /*#__PURE__*/React.createElement("button", {
       className: `tog ${priv.pub_phone ? "on" : "off"}`,
       onClick: () => togglePrivacy(v.id, "pub_phone")
-    }))))), showPrivacy === v.id && /*#__PURE__*/_react.default.createElement("div", {
+    }))))), showPrivacy === v.id && /*#__PURE__*/React.createElement("div", {
       className: "overlay",
       onClick: e => {
         if (e.target === e.currentTarget) setShowPrivacy(null);
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "sheet"
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",
         gap: 10,
         marginBottom: 4
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         background: `${C.red}22`,
         border: `1px solid ${C.red}44`,
@@ -7211,30 +7207,30 @@ function PCNInner() {
         alignItems: "center",
         gap: 5
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontWeight: 800,
         fontSize: 13,
         color: C.red
       }
-    }, "QR"), /*#__PURE__*/_react.default.createElement("span", {
+    }, "QR"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 16
       }
-    }, "🔒")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🔒")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 20,
         fontWeight: 800,
         color: C.white
       }
-    }, "QR-Sichtbarkeit")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "QR-Sichtbarkeit")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
         marginBottom: 4
       }
-    }, "Was sehen Besucher wenn sie den QR-Code scannen?"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Was sehen Besucher wenn sie den QR-Code scannen?"), /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.black,
         borderRadius: 8,
@@ -7244,7 +7240,7 @@ function PCNInner() {
         gap: 6,
         flexWrap: "wrap"
       }
-    }, [[priv.pub_gallery !== false, "📸 Fotos"], [priv.pub_events, "🏁 Events"], [priv.pub_logbook, "📋 Logbuch"], [priv.pub_phone, "📞 Telefon"], [priv.kennzeichen !== false, "🔑 Kennzeichen"], [priv.besonderheiten !== false, "✨ Besonderheiten"]].map(([on, label]) => /*#__PURE__*/_react.default.createElement("span", {
+    }, [[priv.pub_gallery !== false, "📸 Fotos"], [priv.pub_events, "🏁 Events"], [priv.pub_logbook, "📋 Logbuch"], [priv.pub_phone, "📞 Telefon"], [priv.kennzeichen !== false, "🔑 Kennzeichen"], [priv.besonderheiten !== false, "✨ Besonderheiten"]].map(([on, label]) => /*#__PURE__*/React.createElement("span", {
       key: label,
       style: {
         fontSize: 10,
@@ -7255,19 +7251,19 @@ function PCNInner() {
         color: on ? C.green : C.muted,
         border: `1px solid ${on ? C.green + "44" : C.border}`
       }
-    }, on ? "✓" : "✗", " ", label))), /*#__PURE__*/_react.default.createElement("div", {
+    }, on ? "✓" : "✗", " ", label))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: "#444",
         marginBottom: 16,
         lineHeight: 1.6
       }
-    }, "🔓 = sichtbar für Besucher · 🔒 = nur für dich sichtbar"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"], ["besonderheiten", "Besonderheiten ✨"]]], ["Abschnitte", [["pub_gallery", "Fotogalerie 📸"], ["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, "🔓 = sichtbar für Besucher · 🔒 = nur für dich sichtbar"), [["Basis", [["kennzeichen", "Kennzeichen"], ["farbe", "Farbe"], ["kraftstoff", "Kraftstoff"], ["getriebe", "Getriebe"], ["baujahr", "Baujahr"]]], ["Details", [["kilometerstand", "Kilometerstand"], ["tuev_faelligkeit", "TÜV-Datum"], ["zustand", "Zustand"], ["marktwert", "Marktwert"], ["besonderheiten", "Besonderheiten ✨"]]], ["Abschnitte", [["pub_gallery", "Fotogalerie 📸"], ["pub_events", "Veranstaltungsteilnahmen"], ["pub_logbook", "Service-Logbuch"]]], ["Kontakt", [["pub_phone", "Telefonnummer (Direktanruf)"]]]].map(([group, fields]) => /*#__PURE__*/React.createElement("div", {
       key: group,
       style: {
         marginBottom: 14
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -7276,7 +7272,7 @@ function PCNInner() {
         letterSpacing: 1.5,
         marginBottom: 8
       }
-    }, group), fields.map(([key, label]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, group), fields.map(([key, label]) => /*#__PURE__*/React.createElement("div", {
       key: key,
       style: {
         display: "flex",
@@ -7285,21 +7281,21 @@ function PCNInner() {
         padding: "11px 0",
         borderBottom: `1px solid ${C.border}`
       }
-    }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 14,
         color: C.white
       }
-    }, label), /*#__PURE__*/_react.default.createElement("div", {
+    }, label), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: priv[key] === true || priv[key] === undefined && DEF_PRIVACY[key] ? C.green : C.muted,
         marginTop: 1
       }
-    }, priv[key] === true || priv[key] === undefined && DEF_PRIVACY[key] ? "🔓 Öffentlich sichtbar" : "🔒 Nur privat")), /*#__PURE__*/_react.default.createElement("button", {
+    }, priv[key] === true || priv[key] === undefined && DEF_PRIVACY[key] ? "🔓 Öffentlich sichtbar" : "🔒 Nur privat")), /*#__PURE__*/React.createElement("button", {
       className: `tog ${priv[key] === true || priv[key] === undefined && DEF_PRIVACY[key] ? "on" : ""}`,
       onClick: () => togglePrivacy(v.id, key)
-    }))))), /*#__PURE__*/_react.default.createElement("button", {
+    }))))), /*#__PURE__*/React.createElement("button", {
       className: "btn",
       style: {
         width: "100%",
@@ -7308,7 +7304,7 @@ function PCNInner() {
         fontSize: 15
       },
       onClick: () => setShowPrivacy(null)
-    }, "Fertig ✓"))), showEditVehicle === v.id && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Fertig ✓"))), showEditVehicle === v.id && /*#__PURE__*/React.createElement("div", {
       className: "overlay",
       style: {
         zIndex: 500
@@ -7316,9 +7312,9 @@ function PCNInner() {
       onClick: e => {
         if (e.target === e.currentTarget) setShowEditVehicle(null);
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "sheet"
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 20,
@@ -7326,17 +7322,17 @@ function PCNInner() {
         color: C.white,
         marginBottom: 4
       }
-    }, "✏️ Fahrzeugdaten bearbeiten"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "✏️ Fahrzeugdaten bearbeiten"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginBottom: 18
       }
-    }, "Alle Angaben jederzeit änderbar"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Alle Angaben jederzeit änderbar"), /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 16
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -7345,13 +7341,13 @@ function PCNInner() {
         letterSpacing: 1.5,
         marginBottom: 8
       }
-    }, "Basis"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Basis"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 8
       }
-    }, /*#__PURE__*/_react.default.createElement("input", {
+    }, /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Hersteller",
       value: editForm.hersteller || "",
@@ -7359,7 +7355,7 @@ function PCNInner() {
         ...p,
         hersteller: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Modell *",
       value: editForm.modell || "",
@@ -7367,7 +7363,7 @@ function PCNInner() {
         ...p,
         modell: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Baujahr",
       value: editForm.baujahr || "",
@@ -7375,7 +7371,7 @@ function PCNInner() {
         ...p,
         baujahr: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Kennzeichen *",
       value: editForm.kennzeichen || "",
@@ -7383,7 +7379,7 @@ function PCNInner() {
         ...p,
         kennzeichen: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Farbe",
       value: editForm.farbe || "",
@@ -7391,16 +7387,16 @@ function PCNInner() {
         ...p,
         farbe: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("select", {
+    }), /*#__PURE__*/React.createElement("select", {
       className: "inp",
       value: editForm.kraftstoff || "Benzin",
       onChange: e => setEditForm(p => ({
         ...p,
         kraftstoff: e.target.value
       }))
-    }, ["Benzin", "Diesel", "Elektro", "Hybrid"].map(k => /*#__PURE__*/_react.default.createElement("option", {
+    }, ["Benzin", "Diesel", "Elektro", "Hybrid"].map(k => /*#__PURE__*/React.createElement("option", {
       key: k
-    }, k))), /*#__PURE__*/_react.default.createElement("select", {
+    }, k))), /*#__PURE__*/React.createElement("select", {
       className: "inp",
       style: {
         gridColumn: "1/-1"
@@ -7410,13 +7406,13 @@ function PCNInner() {
         ...p,
         getriebe: e.target.value
       }))
-    }, ["PDK", "7-Gang PDK", "6-Gang manuell", "8-Gang Automatik", "Stufenlos"].map(k => /*#__PURE__*/_react.default.createElement("option", {
+    }, ["PDK", "7-Gang PDK", "6-Gang manuell", "8-Gang Automatik", "Stufenlos"].map(k => /*#__PURE__*/React.createElement("option", {
       key: k
-    }, k))))), /*#__PURE__*/_react.default.createElement("div", {
+    }, k))))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 16
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -7425,13 +7421,13 @@ function PCNInner() {
         letterSpacing: 1.5,
         marginBottom: 8
       }
-    }, "Status & Technik"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Status & Technik"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 8
       }
-    }, /*#__PURE__*/_react.default.createElement("input", {
+    }, /*#__PURE__*/React.createElement("input", {
       className: "inp",
       type: "number",
       inputMode: "numeric",
@@ -7441,7 +7437,7 @@ function PCNInner() {
         ...p,
         kilometerstand: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "TÜV (MM/JJJJ)",
       value: editForm.tuev_faelligkeit || "",
@@ -7449,7 +7445,7 @@ function PCNInner() {
         ...p,
         tuev_faelligkeit: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Marktwert (€)",
       value: editForm.marktwert || "",
@@ -7457,7 +7453,7 @@ function PCNInner() {
         ...p,
         marktwert: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "FIN (Fahrgestellnummer)",
       value: editForm.fin || "",
@@ -7465,7 +7461,7 @@ function PCNInner() {
         ...p,
         fin: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("select", {
+    }), /*#__PURE__*/React.createElement("select", {
       className: "inp",
       style: {
         gridColumn: "1/-1"
@@ -7475,23 +7471,23 @@ function PCNInner() {
         ...p,
         zustand: e.target.value
       }))
-    }, /*#__PURE__*/_react.default.createElement("option", {
+    }, /*#__PURE__*/React.createElement("option", {
       value: ""
-    }, "Zustand wählen…"), /*#__PURE__*/_react.default.createElement("option", {
+    }, "Zustand wählen…"), /*#__PURE__*/React.createElement("option", {
       value: "1"
-    }, "1 — Sehr gut"), /*#__PURE__*/_react.default.createElement("option", {
+    }, "1 — Sehr gut"), /*#__PURE__*/React.createElement("option", {
       value: "2"
-    }, "2 — Gut"), /*#__PURE__*/_react.default.createElement("option", {
+    }, "2 — Gut"), /*#__PURE__*/React.createElement("option", {
       value: "3"
-    }, "3 — Befriedigend"), /*#__PURE__*/_react.default.createElement("option", {
+    }, "3 — Befriedigend"), /*#__PURE__*/React.createElement("option", {
       value: "4"
-    }, "4 — Ausreichend"), /*#__PURE__*/_react.default.createElement("option", {
+    }, "4 — Ausreichend"), /*#__PURE__*/React.createElement("option", {
       value: "5"
-    }, "5 — Mangelhaft")))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "5 — Mangelhaft")))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 16
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -7500,7 +7496,7 @@ function PCNInner() {
         letterSpacing: 1.5,
         marginBottom: 8
       }
-    }, "Kontakt"), /*#__PURE__*/_react.default.createElement("input", {
+    }, "Kontakt"), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       type: "tel",
       placeholder: "Telefonnummer (optional)",
@@ -7509,17 +7505,17 @@ function PCNInner() {
         ...p,
         phone: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted,
         marginTop: 6
       }
-    }, "🔒 Sichtbarkeit über QR-Einstellungen steuerbar")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🔒 Sichtbarkeit über QR-Einstellungen steuerbar")), /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 18
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -7528,7 +7524,7 @@ function PCNInner() {
         letterSpacing: 1.5,
         marginBottom: 8
       }
-    }, "Besonderheiten"), /*#__PURE__*/_react.default.createElement("textarea", {
+    }, "Besonderheiten"), /*#__PURE__*/React.createElement("textarea", {
       className: "inp",
       placeholder: "Ausstattung, Extras, Hinweise...",
       rows: 3,
@@ -7541,30 +7537,30 @@ function PCNInner() {
         resize: "vertical",
         fontFamily: "'Barlow',sans-serif"
       }
-    })), /*#__PURE__*/_react.default.createElement("div", {
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       className: "btn ghost",
       style: {
         flex: 1
       },
       onClick: () => setShowEditVehicle(null)
-    }, "Abbrechen"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "Abbrechen"), /*#__PURE__*/React.createElement("button", {
       className: "btn",
       style: {
         flex: 1
       },
       onClick: saveVehicleEdit
-    }, "Speichern ✓")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Speichern ✓")), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 16,
         paddingTop: 14,
         borderTop: `1px solid ${C.border}`
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: async () => {
         const v = vehicles[showEditVehicle];
         if (!v) return;
@@ -7595,14 +7591,14 @@ function PCNInner() {
         fontWeight: 700,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "🗑 Fahrzeug löschen"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🗑 Fahrzeug löschen"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: "#444",
         textAlign: "center",
         marginTop: 6
       }
-    }, "Löscht Fahrzeug, Logbuch und QR-Code dauerhaft")))), showContactAuth && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Löscht Fahrzeug, Logbuch und QR-Code dauerhaft")))), showContactAuth && /*#__PURE__*/React.createElement("div", {
       className: "overlay",
       style: {
         zIndex: 550
@@ -7617,9 +7613,9 @@ function PCNInner() {
           });
         }
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "sheet"
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 20,
@@ -7627,13 +7623,13 @@ function PCNInner() {
         color: C.white,
         marginBottom: 4
       }
-    }, "💬 Nachricht senden"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "💬 Nachricht senden"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginBottom: 18
       }
-    }, "Um eine Nachricht zu senden, identifiziere dich kurz"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Um eine Nachricht zu senden, identifiziere dich kurz"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         background: "#111",
@@ -7641,7 +7637,7 @@ function PCNInner() {
         padding: 3,
         marginBottom: 16
       }
-    }, [["guest", "Als Gast"], ["login", "Anmelden"], ["register", "Registrieren"]].map(([m, label]) => /*#__PURE__*/_react.default.createElement("button", {
+    }, [["guest", "Als Gast"], ["login", "Anmelden"], ["register", "Registrieren"]].map(([m, label]) => /*#__PURE__*/React.createElement("button", {
       key: m,
       onClick: () => setContactAuthMode(m),
       style: {
@@ -7657,7 +7653,7 @@ function PCNInner() {
         color: contactAuthMode === m ? "#fff" : C.muted,
         transition: "all .15s"
       }
-    }, label))), contactAuthMode === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+    }, label))), contactAuthMode === "guest" && /*#__PURE__*/React.createElement("div", {
       style: {
         background: "#141414",
         border: `1px solid ${C.border}`,
@@ -7665,14 +7661,14 @@ function PCNInner() {
         padding: "14px",
         marginBottom: 16
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
         lineHeight: 1.6,
         marginBottom: 10
       }
-    }, "Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht."), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht."), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         fontWeight: 800,
@@ -7681,7 +7677,7 @@ function PCNInner() {
         letterSpacing: 1,
         marginBottom: 8
       }
-    }, "Als PCN-Mitglied bekommst du zusätzlich"), [["🚗", "Eigene digitale Fahrzeugakte"], ["📱", "QR-Code fürs eigene Auto"], ["🏁", "Direkte Anmeldung zu Club-Events"]].map(([icon, text]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, "Als PCN-Mitglied bekommst du zusätzlich"), [["🚗", "Eigene digitale Fahrzeugakte"], ["📱", "QR-Code fürs eigene Auto"], ["🏁", "Direkte Anmeldung zu Club-Events"]].map(([icon, text]) => /*#__PURE__*/React.createElement("div", {
       key: text,
       style: {
         display: "flex",
@@ -7691,12 +7687,12 @@ function PCNInner() {
         color: C.white,
         marginBottom: 5
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 13,
         flexShrink: 0
       }
-    }, icon), /*#__PURE__*/_react.default.createElement("span", null, text))), /*#__PURE__*/_react.default.createElement("button", {
+    }, icon), /*#__PURE__*/React.createElement("span", null, text))), /*#__PURE__*/React.createElement("button", {
       onClick: () => setContactAuthMode("register"),
       style: {
         background: "none",
@@ -7709,7 +7705,7 @@ function PCNInner() {
         marginTop: 8,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "Stattdessen Mitglied werden →")), (contactAuthMode === "guest" || contactAuthMode === "register") && /*#__PURE__*/_react.default.createElement("input", {
+    }, "Stattdessen Mitglied werden →")), (contactAuthMode === "guest" || contactAuthMode === "register") && /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Dein Name",
       style: {
@@ -7720,7 +7716,7 @@ function PCNInner() {
         ...p,
         name: e.target.value
       }))
-    }), contactAuthMode === "register" && /*#__PURE__*/_react.default.createElement("input", {
+    }), contactAuthMode === "register" && /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Club-Code",
       style: {
@@ -7735,7 +7731,7 @@ function PCNInner() {
         ...p,
         code: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "E-Mail",
       type: "email",
@@ -7750,20 +7746,20 @@ function PCNInner() {
       onKeyDown: e => {
         if (e.key === "Enter") handleContactAuth();
       }
-    }), /*#__PURE__*/_react.default.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       className: "btn",
       style: {
         width: "100%"
       },
       onClick: handleContactAuth
-    }, contactAuthMode === "guest" ? "Weiter zur Nachricht →" : contactAuthMode === "login" ? "Anmelden →" : "Konto erstellen →"), contactAuthMode === "login" && /*#__PURE__*/_react.default.createElement("div", {
+    }, contactAuthMode === "guest" ? "Weiter zur Nachricht →" : contactAuthMode === "login" ? "Anmelden →" : "Konto erstellen →"), contactAuthMode === "login" && /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "center",
         marginTop: 10,
         fontSize: 11,
         color: C.muted
       }
-    }, "Kein Passwort nötig — nur deine E-Mail"))), showStatusPicker && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Kein Passwort nötig — nur deine E-Mail"))), showStatusPicker && /*#__PURE__*/React.createElement("div", {
       className: "overlay",
       style: {
         zIndex: 500
@@ -7771,9 +7767,9 @@ function PCNInner() {
       onClick: e => {
         if (e.target === e.currentTarget) setShowStatusPicker(null);
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "sheet"
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 20,
@@ -7781,20 +7777,20 @@ function PCNInner() {
         color: C.white,
         marginBottom: 4
       }
-    }, "📍 Live-Status setzen"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "📍 Live-Status setzen"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginBottom: 16
       }
-    }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Sichtbar wenn jemand deinen QR-Code scannt"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
         gap: 8,
         marginBottom: 16
       }
-    }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/_react.default.createElement("button", {
+    }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/React.createElement("button", {
       key: i,
       onClick: () => setStatus(showStatusPicker, p),
       style: {
@@ -7809,40 +7805,40 @@ function PCNInner() {
         fontFamily: "'Barlow',sans-serif",
         textAlign: "left"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 24,
         flexShrink: 0
       }
-    }, p.icon), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    }, p.icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 15,
         fontWeight: 700,
         color: C.white
       }
-    }, p.text), /*#__PURE__*/_react.default.createElement("div", {
+    }, p.text), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted
       }
-    }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Läuft ab nach ", p.mins, " Min"))))), /*#__PURE__*/React.createElement("div", {
       style: {
         borderTop: `1px solid ${C.border}`,
         paddingTop: 14,
         marginBottom: 10
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginBottom: 8
       }
-    }, "Eigener Text"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Eigener Text"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8
       }
-    }, /*#__PURE__*/_react.default.createElement("input", {
+    }, /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "z.B. Bin gleich beim Einlass...",
       value: statusCustom,
@@ -7856,7 +7852,7 @@ function PCNInner() {
       style: {
         flex: 1
       }
-    }), /*#__PURE__*/_react.default.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       className: "btn",
       disabled: !statusCustom.trim(),
       onClick: () => {
@@ -7869,7 +7865,7 @@ function PCNInner() {
         flexShrink: 0,
         opacity: statusCustom.trim() ? 1 : .4
       }
-    }, "OK"))), (getActiveStatus(showStatusPicker) || []).length > 0 && /*#__PURE__*/_react.default.createElement("button", {
+    }, "OK"))), (getActiveStatus(showStatusPicker) || []).length > 0 && /*#__PURE__*/React.createElement("button", {
       className: "btn ghost",
       style: {
         width: "100%",
@@ -7882,7 +7878,7 @@ function PCNInner() {
         setShowStatusPicker(null);
         toast_("Status gelöscht");
       }
-    }, "Alle Status löschen"))), lightbox && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Alle Status löschen"))), lightbox && /*#__PURE__*/React.createElement("div", {
       style: {
         position: "fixed",
         inset: 0,
@@ -7892,7 +7888,7 @@ function PCNInner() {
         flexDirection: "column"
       },
       onClick: () => setLightbox(null)
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
@@ -7901,12 +7897,12 @@ function PCNInner() {
         flexShrink: 0
       },
       onClick: e => e.stopPropagation()
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: "rgba(255,255,255,.6)"
       }
-    }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/_react.default.createElement("button", {
+    }, lightbox.index + 1, " / ", lightbox.images.length), /*#__PURE__*/React.createElement("button", {
       onClick: () => setLightbox(null),
       style: {
         background: "rgba(255,255,255,.1)",
@@ -7921,7 +7917,7 @@ function PCNInner() {
         alignItems: "center",
         justifyContent: "center"
       }
-    }, "✕")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "✕")), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         display: "flex",
@@ -7931,7 +7927,7 @@ function PCNInner() {
         position: "relative"
       },
       onClick: e => e.stopPropagation()
-    }, /*#__PURE__*/_react.default.createElement("img", {
+    }, /*#__PURE__*/React.createElement("img", {
       src: lightbox.images[lightbox.index],
       alt: "",
       style: {
@@ -7940,7 +7936,7 @@ function PCNInner() {
         objectFit: "contain",
         borderRadius: 8
       }
-    }), lightbox.images.length > 1 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("button", {
+    }), lightbox.images.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       onClick: () => setLightbox(p => ({
         ...p,
         index: Math.max(0, p.index - 1)
@@ -7960,7 +7956,7 @@ function PCNInner() {
         alignItems: "center",
         justifyContent: "center"
       }
-    }, "‹"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "‹"), /*#__PURE__*/React.createElement("button", {
       onClick: () => setLightbox(p => ({
         ...p,
         index: Math.min(p.images.length - 1, p.index + 1)
@@ -7980,7 +7976,7 @@ function PCNInner() {
         alignItems: "center",
         justifyContent: "center"
       }
-    }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/_react.default.createElement("div", {
+    }, "›"))), lightbox.images.length > 1 && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 6,
@@ -7989,7 +7985,7 @@ function PCNInner() {
         flexShrink: 0
       },
       onClick: e => e.stopPropagation()
-    }, lightbox.images.map((_, i) => /*#__PURE__*/_react.default.createElement("div", {
+    }, lightbox.images.map((_, i) => /*#__PURE__*/React.createElement("div", {
       key: i,
       onClick: () => setLightbox(p => ({
         ...p,
@@ -8003,14 +7999,14 @@ function PCNInner() {
         transition: "all .2s",
         cursor: "pointer"
       }
-    })))), showAddLog === v.id && /*#__PURE__*/_react.default.createElement("div", {
+    })))), showAddLog === v.id && /*#__PURE__*/React.createElement("div", {
       className: "overlay",
       onClick: e => {
         if (e.target === e.currentTarget) setShowAddLog(null);
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "sheet"
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 20,
@@ -8018,7 +8014,7 @@ function PCNInner() {
         color: C.white,
         marginBottom: 16
       }
-    }, "Logbuch-Eintrag"), /*#__PURE__*/_react.default.createElement("select", {
+    }, "Logbuch-Eintrag"), /*#__PURE__*/React.createElement("select", {
       className: "inp",
       value: addLogForm.type,
       onChange: e => setAddLogForm(p => ({
@@ -8028,9 +8024,9 @@ function PCNInner() {
       style: {
         marginBottom: 8
       }
-    }, ["Ölwechsel", "Inspektion", "Reifenwechsel", "Bremsenwechsel", "Hauptuntersuchung", "Trackday", "Sonstiges"].map(t => /*#__PURE__*/_react.default.createElement("option", {
+    }, ["Ölwechsel", "Inspektion", "Reifenwechsel", "Bremsenwechsel", "Hauptuntersuchung", "Trackday", "Sonstiges"].map(t => /*#__PURE__*/React.createElement("option", {
       key: t
-    }, t))), /*#__PURE__*/_react.default.createElement("input", {
+    }, t))), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       type: "number",
       inputMode: "numeric",
@@ -8043,7 +8039,7 @@ function PCNInner() {
         ...p,
         km: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Werkstatt",
       style: {
@@ -8054,7 +8050,7 @@ function PCNInner() {
         ...p,
         workshop: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       className: "inp",
       placeholder: "Notizen",
       style: {
@@ -8065,7 +8061,7 @@ function PCNInner() {
         ...p,
         notes: e.target.value
       }))
-    }), /*#__PURE__*/_react.default.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       className: "btn",
       style: {
         width: "100%"
@@ -8078,9 +8074,9 @@ function PCNInner() {
   // EVENT DETAIL (proper component — no useState-in-render bug)
   // ══════════════════════════════════════════════════════════════════════════════
   if (screen === "event" && viewEv) {
-    return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
       className: `toast ${toast.type}`
-    }, toast.msg), /*#__PURE__*/_react.default.createElement(EventDetail, {
+    }, toast.msg), /*#__PURE__*/React.createElement(EventDetail, {
       ev: viewEv,
       me: me,
       myVehicles: myVehicles,
@@ -8104,9 +8100,9 @@ function PCNInner() {
   // ══════════════════════════════════════════════════════════════════════════════
   if (screen === "chat" && activeThread && (threads[activeThread] || activeThread === "GROUP_PCN")) {
     const t = activeThread === "GROUP_PCN" ? DEMO_GROUP : threads[activeThread];
-    return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
       className: `toast ${toast.type}`
-    }, toast.msg), /*#__PURE__*/_react.default.createElement(ChatScreen, {
+    }, toast.msg), /*#__PURE__*/React.createElement(ChatScreen, {
       thread: t,
       me: me,
       allUsers: allUsers,
@@ -8161,15 +8157,15 @@ function PCNInner() {
   // ══════════════════════════════════════════════════════════════════════════════
   // MAIN APP TABS
   // ══════════════════════════════════════════════════════════════════════════════
-  return /*#__PURE__*/_react.default.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     style: {
       minHeight: "100vh",
       background: C.black,
       paddingBottom: 62
     }
-  }, /*#__PURE__*/_react.default.createElement("style", null, CSS), toast && /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("style", null, CSS), toast && /*#__PURE__*/React.createElement("div", {
     className: `toast ${toast.type}`
-  }, toast.msg), ScannerOverlay, /*#__PURE__*/_react.default.createElement("div", {
+  }, toast.msg), ScannerOverlay, /*#__PURE__*/React.createElement("div", {
     style: {
       background: "#ffffff",
       borderBottom: `3px solid ${C.red}`,
@@ -8181,7 +8177,7 @@ function PCNInner() {
       top: 0,
       zIndex: 100
     }
-  }, /*#__PURE__*/_react.default.createElement("img", {
+  }, /*#__PURE__*/React.createElement("img", {
     src: LOGO_URL,
     alt: "PCN",
     onError: e => e.target.style.display = "none",
@@ -8189,39 +8185,39 @@ function PCNInner() {
       height: 32,
       objectFit: "contain"
     }
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "right"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       fontWeight: 700,
       color: "#1a1a1a"
     }
-  }, me?.name), /*#__PURE__*/_react.default.createElement("div", {
+  }, me?.name), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "#888"
     }
-  }, me?.memberNr))), /*#__PURE__*/_react.default.createElement("div", {
+  }, me?.memberNr))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "14px 14px 0",
       maxWidth: 560,
       margin: "0 auto"
     }
-  }, tab === "dashboard" && isGuest && /*#__PURE__*/_react.default.createElement("div", {
+  }, tab === "dashboard" && isGuest && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "32px 20px",
       textAlign: "center",
       animation: "fadeIn .2s"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 48,
       marginBottom: 16
     }
-  }, "🔒"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🔒"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 24,
@@ -8229,14 +8225,14 @@ function PCNInner() {
       color: "#fff",
       marginBottom: 8
     }
-  }, "Gast-Modus"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Gast-Modus"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       color: C.muted,
       lineHeight: 1.7,
       marginBottom: 24
     }
-  }, "Du bist als Gast angemeldet und kannst Nachrichten an Fahrzeughalter senden.", /*#__PURE__*/_react.default.createElement("br", null), "Für alle Club-Features benötigst du ein Mitgliedskonto."), /*#__PURE__*/_react.default.createElement("button", {
+  }, "Du bist als Gast angemeldet und kannst Nachrichten an Fahrzeughalter senden.", /*#__PURE__*/React.createElement("br", null), "Für alle Club-Features benötigst du ein Mitgliedskonto."), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     style: {
       width: "100%",
@@ -8264,7 +8260,7 @@ function PCNInner() {
       width: "100%",
       marginBottom: 10
     }
-  }, "🏁 Jetzt Mitglied werden 🏁 Jetzt Mitglied werden"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "🏁 Jetzt Mitglied werden 🏁 Jetzt Mitglied werden"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setMe(null);
       setScreen("splash");
@@ -8277,11 +8273,11 @@ function PCNInner() {
       fontSize: 13,
       fontFamily: "'Barlow',sans-serif"
     }
-  }, "Abmelden")), tab === "dashboard" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Abmelden")), tab === "dashboard" && !isGuest && /*#__PURE__*/React.createElement("div", {
     style: {
       animation: "fadeIn .2s"
     }
-  }, isDemo && /*#__PURE__*/_react.default.createElement("div", {
+  }, isDemo && /*#__PURE__*/React.createElement("div", {
     style: {
       background: "#6b7fff18",
       border: "1px solid #6b7fff44",
@@ -8289,18 +8285,18 @@ function PCNInner() {
       padding: "13px 16px",
       marginBottom: 16
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 10,
       alignItems: "center",
       marginBottom: 8
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 18
     }
-  }, "🎭"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🎭"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 17,
@@ -8308,13 +8304,13 @@ function PCNInner() {
       color: "#6b7fff",
       letterSpacing: .5
     }
-  }, "Demo-Modus — Max Mustermann")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Demo-Modus — Max Mustermann")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#bbb",
       lineHeight: 1.7
     }
-  }, "Alle Funktionen der Plattform sind vollständig implementiert und hier erlebbar — Events, Chat, Fahrzeugakte, QR-Code, Punkte und Admin-Dashboard."), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Alle Funktionen der Plattform sind vollständig implementiert und hier erlebbar — Events, Chat, Fahrzeugakte, QR-Code, Punkte und Admin-Dashboard."), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 8,
       background: "#ffffff12",
@@ -8324,20 +8320,20 @@ function PCNInner() {
       gap: 7,
       alignItems: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13
     }
-  }, "🔄"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🔄"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "#aaa"
     }
-  }, "Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt — Änderungen sind nicht dauerhaft gespeichert."))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt — Änderungen sind nicht dauerhaft gespeichert."))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 20
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -8349,7 +8345,7 @@ function PCNInner() {
   }, "📰 Infos & Neuigkeiten"), (() => {
     const welcome = DEMO_NEWS.find(n => n.type === "welcome");
     if (!welcome) return null;
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         background: "#ffffff",
         border: "1px solid #e5e7eb",
@@ -8357,29 +8353,29 @@ function PCNInner() {
         padding: "13px 14px",
         marginBottom: 10
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 10,
         alignItems: "flex-start"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 20,
         flexShrink: 0
       }
-    }, "🎉"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🎉"), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 700,
         color: "#111",
         marginBottom: 3
       }
-    }, welcome.title), /*#__PURE__*/_react.default.createElement("div", {
+    }, welcome.title), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: "#666",
@@ -8390,7 +8386,7 @@ function PCNInner() {
     const dbNews = (window._dbNews || []).filter(n => n && !DEMO_NEWS.find(d => d.id === String(n.id)));
     const items = [...dbNews, ...DEMO_NEWS].filter(n => n.type !== "welcome" && newsState[n.id] !== "read").sort((a, b) => new Date(b.date) - new Date(a.date));
     if (!items.length) return null;
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 12,
@@ -8404,7 +8400,7 @@ function PCNInner() {
       const isRemind = newsState[n.id] === "remind";
       // Teaser: first 80 chars
       const teaser = n.body ? n.body.replace(/\n/g, " ").slice(0, 90) + (n.body.length > 90 ? "…" : "") : "";
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         key: n.id,
         onClick: () => setViewNews(n),
         style: {
@@ -8416,31 +8412,31 @@ function PCNInner() {
           flexShrink: 0,
           cursor: "pointer"
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           gap: 10,
           alignItems: "flex-start"
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 20,
           flexShrink: 0,
           marginTop: 1
         }
-      }, n.icon), /*#__PURE__*/_react.default.createElement("div", {
+      }, n.icon), /*#__PURE__*/React.createElement("div", {
         style: {
           flex: 1,
           minWidth: 0
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           gap: 6,
           alignItems: "center",
           marginBottom: 4
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 13,
           fontWeight: 700,
@@ -8450,7 +8446,7 @@ function PCNInner() {
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, n.title), n.pinned && /*#__PURE__*/_react.default.createElement("span", {
+      }, n.title), n.pinned && /*#__PURE__*/React.createElement("span", {
         style: {
           background: C.red,
           color: "#fff",
@@ -8460,25 +8456,25 @@ function PCNInner() {
           borderRadius: 4,
           flexShrink: 0
         }
-      }, "NEU")), /*#__PURE__*/_react.default.createElement("div", {
+      }, "NEU")), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 12,
           color: "#bbb",
           lineHeight: 1.7,
           marginBottom: 10
         }
-      }, teaser), /*#__PURE__*/_react.default.createElement("div", {
+      }, teaser), /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center"
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 9,
           color: "#444"
         }
-      }, fmtDate(n.date)), /*#__PURE__*/_react.default.createElement("span", {
+      }, fmtDate(n.date)), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 11,
           color: C.red,
@@ -8486,18 +8482,18 @@ function PCNInner() {
         }
       }, "Lesen →")))));
     }));
-  })()), /*#__PURE__*/_react.default.createElement("div", {
+  })()), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 20
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: 10
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -8505,10 +8501,10 @@ function PCNInner() {
       textTransform: "uppercase",
       letterSpacing: 1.5
     }
-  }, "🚗 Meine Fahrzeuge"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "🚗 Meine Fahrzeuge"), /*#__PURE__*/React.createElement("button", {
     className: "btn sm ghost",
     onClick: () => setShowAddV(true)
-  }, "+ Hinzufügen")), myVehicles.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+  }, "+ Hinzufügen")), myVehicles.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
       border: `1.5px dashed ${C.border}`,
@@ -8518,24 +8514,24 @@ function PCNInner() {
       cursor: "pointer"
     },
     onClick: () => setShowAddV(true)
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 32,
       marginBottom: 8
     }
-  }, "🏎️"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🏎️"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.white,
       fontWeight: 600,
       marginBottom: 4
     }
-  }, "Erstes Fahrzeug hinzufügen"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Erstes Fahrzeug hinzufügen"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted
     }
-  }, "Schaltet QR-Code, Logbuch und Events frei")) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
+  }, "Schaltet QR-Code, Logbuch und Events frei")) : myVehicles.map(v => /*#__PURE__*/React.createElement("div", {
     key: v.id,
     style: {
       background: C.card,
@@ -8550,7 +8546,7 @@ function PCNInner() {
       setViewV(v);
       setScreen("vehicle");
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: 90,
       height: 90,
@@ -8561,7 +8557,7 @@ function PCNInner() {
       alignItems: "center",
       justifyContent: "center"
     }
-  }, v.image ? /*#__PURE__*/_react.default.createElement("img", {
+  }, v.image ? /*#__PURE__*/React.createElement("img", {
     src: v.image,
     alt: "",
     style: {
@@ -8570,11 +8566,11 @@ function PCNInner() {
       objectFit: "cover"
     },
     onError: e => e.target.style.display = "none"
-  }) : /*#__PURE__*/_react.default.createElement("span", {
+  }) : /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 28
     }
-  }, "🏎️")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🏎️")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "12px 13px",
       flex: 1,
@@ -8583,13 +8579,13 @@ function PCNInner() {
       flexDirection: "column",
       justifyContent: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontWeight: 700,
       fontSize: 15,
       color: C.white
     }
-  }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
+  }, v.hersteller, " ", v.modell), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
@@ -8597,7 +8593,7 @@ function PCNInner() {
       alignItems: "center",
       flexWrap: "wrap"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       background: "#fff",
       border: "1.5px solid #222",
@@ -8609,18 +8605,18 @@ function PCNInner() {
       letterSpacing: 1,
       fontFamily: "Arial,sans-serif"
     }
-  }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/_react.default.createElement("span", {
+  }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       color: C.muted
     }
-  }, v.baujahr), (logbook[v.id] || []).length > 0 && /*#__PURE__*/_react.default.createElement("span", {
+  }, v.baujahr), (logbook[v.id] || []).length > 0 && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 9,
       color: C.green,
       fontWeight: 700
     }
-  }, (logbook[v.id] || []).length, " Einträge"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, (logbook[v.id] || []).length, " Einträge"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
@@ -8628,7 +8624,7 @@ function PCNInner() {
       gap: 2,
       paddingRight: 12
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: e => {
       e.stopPropagation();
       toggleFavorite(v.id);
@@ -8642,16 +8638,16 @@ function PCNInner() {
       lineHeight: 1,
       color: isFavorite(v.id) ? C.red : C.muted
     }
-  }, isFavorite(v.id) ? "❤️" : "🤍"), /*#__PURE__*/_react.default.createElement("span", {
+  }, isFavorite(v.id) ? "❤️" : "🤍"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 16,
       color: C.muted
     }
-  }, "›"))))), isDemo && /*#__PURE__*/_react.default.createElement("div", {
+  }, "›"))))), isDemo && /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 20
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -8660,7 +8656,7 @@ function PCNInner() {
       letterSpacing: 1.5,
       marginBottom: 10
     }
-  }, "🚗 Neueste Mitglieder-Fahrzeuge"), displayVehicles.filter(v => !myVehicles.find(m => m.id === v.id)).map(v => /*#__PURE__*/_react.default.createElement("div", {
+  }, "🚗 Neueste Mitglieder-Fahrzeuge"), displayVehicles.filter(v => !myVehicles.find(m => m.id === v.id)).map(v => /*#__PURE__*/React.createElement("div", {
     key: v.id,
     style: {
       background: C.card,
@@ -8683,7 +8679,7 @@ function PCNInner() {
       });
       setScreen("public");
     }
-  }, "                    ", /*#__PURE__*/_react.default.createElement("div", {
+  }, "                    ", /*#__PURE__*/React.createElement("div", {
     style: {
       width: 90,
       height: 90,
@@ -8694,7 +8690,7 @@ function PCNInner() {
       alignItems: "center",
       justifyContent: "center"
     }
-  }, v.image ? /*#__PURE__*/_react.default.createElement("img", {
+  }, v.image ? /*#__PURE__*/React.createElement("img", {
     src: v.image,
     alt: "",
     style: {
@@ -8703,11 +8699,11 @@ function PCNInner() {
       objectFit: "cover"
     },
     onError: e => e.target.style.display = "none"
-  }) : /*#__PURE__*/_react.default.createElement("span", {
+  }) : /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 28
     }
-  }, "🏎️")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🏎️")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "12px 13px",
       flex: 1,
@@ -8716,13 +8712,13 @@ function PCNInner() {
       flexDirection: "column",
       justifyContent: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontWeight: 700,
       fontSize: 15,
       color: C.white
     }
-  }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
+  }, v.hersteller, " ", v.modell), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
@@ -8730,7 +8726,7 @@ function PCNInner() {
       alignItems: "center",
       flexWrap: "wrap"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       background: "#fff",
       border: "1.5px solid #222",
@@ -8742,18 +8738,18 @@ function PCNInner() {
       letterSpacing: 1,
       fontFamily: "Arial,sans-serif"
     }
-  }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/_react.default.createElement("span", {
+  }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       color: C.muted
     }
-  }, v.baujahr), /*#__PURE__*/_react.default.createElement("span", {
+  }, v.baujahr), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 9,
       color: C.gold,
       fontWeight: 700
     }
-  }, "Peter K."))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Peter K."))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
@@ -8761,7 +8757,7 @@ function PCNInner() {
       gap: 2,
       paddingRight: 12
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: e => {
       e.stopPropagation();
       toggleFavorite(v.id);
@@ -8775,16 +8771,16 @@ function PCNInner() {
       lineHeight: 1,
       color: isFavorite(v.id) ? C.red : C.muted
     }
-  }, isFavorite(v.id) ? "❤️" : "🤍"), /*#__PURE__*/_react.default.createElement("span", {
+  }, isFavorite(v.id) ? "❤️" : "🤍"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 16,
       color: C.muted
     }
-  }, "›"))))), recentVehicles.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+  }, "›"))))), recentVehicles.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 18
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -8793,7 +8789,7 @@ function PCNInner() {
       letterSpacing: 1.5,
       marginBottom: 10
     }
-  }, "🕐 Zuletzt angesehen"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🕐 Zuletzt angesehen"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 10,
@@ -8801,14 +8797,14 @@ function PCNInner() {
       scrollbarWidth: "none",
       paddingBottom: 4
     }
-  }, recentVehicles.map(rv => /*#__PURE__*/_react.default.createElement("div", {
+  }, recentVehicles.map(rv => /*#__PURE__*/React.createElement("div", {
     key: rv.id,
     style: {
       flexShrink: 0,
       width: 130,
       position: "relative"
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: e => {
       e.stopPropagation();
       setRecentVehicles(prev => {
@@ -8837,7 +8833,7 @@ function PCNInner() {
       lineHeight: 1,
       fontFamily: "sans-serif"
     }
-  }, "✕"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "✕"), /*#__PURE__*/React.createElement("div", {
     onClick: () => {
       const full = vehicles[rv.id] || DEMO_VEHICLES[rv.id];
       if (full) {
@@ -8872,14 +8868,14 @@ function PCNInner() {
       border: `1px solid ${C.border}`,
       background: C.card
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: 80,
       overflow: "hidden",
       background: "#111",
       position: "relative"
     }
-  }, rv.image ? /*#__PURE__*/_react.default.createElement("img", {
+  }, rv.image ? /*#__PURE__*/React.createElement("img", {
     src: rv.image,
     alt: "",
     style: {
@@ -8888,7 +8884,7 @@ function PCNInner() {
       objectFit: "cover"
     },
     onError: e => e.target.style.display = "none"
-  }) : /*#__PURE__*/_react.default.createElement("div", {
+  }) : /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -8896,11 +8892,11 @@ function PCNInner() {
       height: "100%",
       fontSize: 28
     }
-  }, "🚗")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🚗")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "7px 8px"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -8909,13 +8905,13 @@ function PCNInner() {
       textOverflow: "ellipsis",
       whiteSpace: "nowrap"
     }
-  }, rv.hersteller, " ", rv.modell), /*#__PURE__*/_react.default.createElement("div", {
+  }, rv.hersteller, " ", rv.modell), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: C.muted,
       marginTop: 2
     }
-  }, rv.kennzeichen || rv.qarId))))), /*#__PURE__*/_react.default.createElement("button", {
+  }, rv.kennzeichen || rv.qarId))))), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setRecentVehicles([]);
       localStorage.removeItem("pcn_recent_vehicles");
@@ -8933,18 +8929,18 @@ function PCNInner() {
       alignSelf: "stretch",
       minHeight: 120
     }
-  }, "✕"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "✕"))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 8
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: 10
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -8952,7 +8948,7 @@ function PCNInner() {
       textTransform: "uppercase",
       letterSpacing: 1.5
     }
-  }, "⚙️ Plattform-Funktionen"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "⚙️ Plattform-Funktionen"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowInfoModal(true),
     style: {
       background: "none",
@@ -8962,11 +8958,11 @@ function PCNInner() {
       fontSize: 16,
       lineHeight: 1
     }
-  }, "ℹ️")), LOCKED_FEATURES.filter(f => unlockedFeatures.has(f.id)).length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+  }, "ℹ️")), LOCKED_FEATURES.filter(f => unlockedFeatures.has(f.id)).length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 10
     }
-  }, LOCKED_FEATURES.filter(f => unlockedFeatures.has(f.id)).map(f => /*#__PURE__*/_react.default.createElement("div", {
+  }, LOCKED_FEATURES.filter(f => unlockedFeatures.has(f.id)).map(f => /*#__PURE__*/React.createElement("div", {
     key: f.id,
     onClick: () => setShowFeatureDetail(f),
     style: {
@@ -8980,40 +8976,40 @@ function PCNInner() {
       alignItems: "center",
       cursor: "pointer"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 22,
       flexShrink: 0
     }
-  }, f.icon), /*#__PURE__*/_react.default.createElement("div", {
+  }, f.icon), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       fontWeight: 700,
       color: C.white
     }
-  }, f.label), /*#__PURE__*/_react.default.createElement("div", {
+  }, f.label), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: C.green,
       marginTop: 2
     }
-  }, "✓ Freigeschaltet · ", f.desc)), /*#__PURE__*/_react.default.createElement("span", {
+  }, "✓ Freigeschaltet · ", f.desc)), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 16,
       color: C.green,
       flexShrink: 0
     }
-  }, "›")))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "›")))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: 8
     }
-  }, LOCKED_FEATURES.filter(f => !unlockedFeatures.has(f.id)).map(f => /*#__PURE__*/_react.default.createElement("div", {
+  }, LOCKED_FEATURES.filter(f => !unlockedFeatures.has(f.id)).map(f => /*#__PURE__*/React.createElement("div", {
     key: f.id,
     onClick: () => setShowFeatureDetail(f),
     style: {
@@ -9028,32 +9024,32 @@ function PCNInner() {
     },
     onMouseEnter: e => e.currentTarget.style.opacity = ".85",
     onMouseLeave: e => e.currentTarget.style.opacity = ".6"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: 7,
       right: 8,
       fontSize: 11
     }
-  }, "🔒"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🔒"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 20,
       marginBottom: 5
     }
-  }, f.icon), /*#__PURE__*/_react.default.createElement("div", {
+  }, f.icon), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 700,
       color: "#888",
       marginBottom: 2
     }
-  }, f.label), /*#__PURE__*/_react.default.createElement("div", {
+  }, f.label), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 9,
       color: "#444",
       lineHeight: 1.4
     }
-  }, f.milestone)))), /*#__PURE__*/_react.default.createElement("div", {
+  }, f.milestone)))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "#444",
@@ -9061,31 +9057,31 @@ function PCNInner() {
       textAlign: "center",
       lineHeight: 1.6
     }
-  }, "Mehr Funktionen freischalten: Fahrzeug anlegen · Logbuch führen · Events besuchen"))), tab === "events" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Mehr Funktionen freischalten: Fahrzeug anlegen · Logbuch führen · Events besuchen"))), tab === "events" && !isGuest && /*#__PURE__*/React.createElement("div", {
     style: {
       animation: "fadeIn .2s"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: 14
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       fontWeight: 800,
       color: C.white
     }
-  }, "Veranstaltungen 2026"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Veranstaltungen 2026"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       background: "#1a1a1a",
       borderRadius: 8,
       padding: 2
     }
-  }, [["list", "☰ Liste"], ["calendar", "📅 Kalender"]].map(([v, label]) => /*#__PURE__*/_react.default.createElement("button", {
+  }, [["list", "☰ Liste"], ["calendar", "📅 Kalender"]].map(([v, label]) => /*#__PURE__*/React.createElement("button", {
     key: v,
     onClick: () => setEventsView(v),
     style: {
@@ -9103,7 +9099,7 @@ function PCNInner() {
   }, label)))), eventsView === "list" && Object.values(events).sort((a, b) => new Date(a.date) - new Date(b.date)).map(ev => {
     const days = daysUntil(ev.date);
     const myReg = (participants[ev.id] || []).find(p => p.userId === me?.id);
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       key: ev.id,
       style: {
         background: C.card,
@@ -9117,28 +9113,28 @@ function PCNInner() {
         setViewEv(ev);
         setScreen("event");
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         height: 4,
         background: myReg ? C.green : days <= 7 ? C.amber : C.red
       }
-    }), /*#__PURE__*/_react.default.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: "14px"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "flex-start",
         marginBottom: 8
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
@@ -9146,7 +9142,7 @@ function PCNInner() {
         marginBottom: 4,
         flexWrap: "wrap"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         background: `${C.red}22`,
         color: C.red,
@@ -9155,7 +9151,7 @@ function PCNInner() {
         fontSize: 12,
         fontWeight: 700
       }
-    }, ev.category), myReg ? /*#__PURE__*/_react.default.createElement("span", {
+    }, ev.category), myReg ? /*#__PURE__*/React.createElement("span", {
       style: {
         background: `${C.green}22`,
         color: C.green,
@@ -9164,7 +9160,7 @@ function PCNInner() {
         fontSize: 12,
         fontWeight: 800
       }
-    }, "✓ Angemeldet #", myReg.startNr) : /*#__PURE__*/_react.default.createElement("span", {
+    }, "✓ Angemeldet #", myReg.startNr) : /*#__PURE__*/React.createElement("span", {
       style: {
         background: `${C.border}44`,
         color: C.muted,
@@ -9173,19 +9169,19 @@ function PCNInner() {
         fontSize: 12,
         fontWeight: 600
       }
-    }, "Nicht angemeldet")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Nicht angemeldet")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 800,
         fontSize: 17,
         color: C.white,
         marginBottom: 3
       }
-    }, ev.name), /*#__PURE__*/_react.default.createElement("div", {
+    }, ev.name), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: C.muted
       }
-    }, fmtDate(ev.date), " · ", ev.location)), /*#__PURE__*/_react.default.createElement("div", {
+    }, fmtDate(ev.date), " · ", ev.location)), /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "center",
         background: days <= 0 ? "#1a1a1a" : days <= 7 ? `${C.amber}22` : `${C.border}33`,
@@ -9194,7 +9190,7 @@ function PCNInner() {
         marginLeft: 10,
         flexShrink: 0
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 22,
@@ -9202,23 +9198,23 @@ function PCNInner() {
         color: days <= 0 ? C.red : days <= 7 ? C.amber : C.white,
         lineHeight: 1
       }
-    }, days <= 0 ? "Heute" : days), days > 0 && /*#__PURE__*/_react.default.createElement("div", {
+    }, days <= 0 ? "Heute" : days), days > 0 && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, "Tage"))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Tage"))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
         color: C.muted
       }
-    }, "💶 ", ev.entryFee), /*#__PURE__*/_react.default.createElement("span", {
+    }, "💶 ", ev.entryFee), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
         color: C.muted
@@ -9243,14 +9239,14 @@ function PCNInner() {
     const todayMonth = new Date().getMonth();
     const todayYear = new Date().getFullYear();
     const isToday = d => d === today && month === todayMonth && year === todayYear;
-    return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         marginBottom: 14
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setCalMonth(new Date(year, month - 1, 1)),
       style: {
         background: C.card,
@@ -9262,7 +9258,7 @@ function PCNInner() {
         fontSize: 16,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "‹"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "‹"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 20,
@@ -9272,7 +9268,7 @@ function PCNInner() {
     }, new Date(year, month).toLocaleDateString("de-DE", {
       month: "long",
       year: "numeric"
-    })), /*#__PURE__*/_react.default.createElement("button", {
+    })), /*#__PURE__*/React.createElement("button", {
       onClick: () => setCalMonth(new Date(year, month + 1, 1)),
       style: {
         background: C.card,
@@ -9284,13 +9280,13 @@ function PCNInner() {
         fontSize: 16,
         fontFamily: "'Barlow',sans-serif"
       }
-    }, "›")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "›")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "repeat(7,1fr)",
         marginBottom: 4
       }
-    }, ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map(d => /*#__PURE__*/_react.default.createElement("div", {
+    }, ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map(d => /*#__PURE__*/React.createElement("div", {
       key: d,
       style: {
         textAlign: "center",
@@ -9299,7 +9295,7 @@ function PCNInner() {
         color: C.muted,
         padding: "4px 0"
       }
-    }, d))), /*#__PURE__*/_react.default.createElement("div", {
+    }, d))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "repeat(7,1fr)",
@@ -9308,14 +9304,14 @@ function PCNInner() {
       }
     }, Array.from({
       length: startOffset
-    }).map((_, i) => /*#__PURE__*/_react.default.createElement("div", {
+    }).map((_, i) => /*#__PURE__*/React.createElement("div", {
       key: "e" + i
     })), Array.from({
       length: daysInMonth
     }, (_, i) => i + 1).map(day => {
       const dayEvents = eventsByDay[day] || [];
       const hasReg = dayEvents.some(ev => (participants[ev.id] || []).find(p => p.userId === me?.id));
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         key: day,
         style: {
           minHeight: 44,
@@ -9332,7 +9328,7 @@ function PCNInner() {
             setScreen("event");
           }
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 13,
           fontWeight: isToday(day) ? 800 : 400,
@@ -9340,7 +9336,7 @@ function PCNInner() {
           textAlign: "center",
           lineHeight: 1.8
         }
-      }, day), dayEvents.map((ev, i) => /*#__PURE__*/_react.default.createElement("div", {
+      }, day), dayEvents.map((ev, i) => /*#__PURE__*/React.createElement("div", {
         key: ev.id,
         style: {
           fontSize: 8,
@@ -9360,7 +9356,7 @@ function PCNInner() {
           setScreen("event");
         }
       }, ev.name.split(" ")[0])));
-    })), eventsThisMonth.length > 0 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+    })), eventsThisMonth.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -9373,7 +9369,7 @@ function PCNInner() {
       month: "long"
     })), eventsThisMonth.map(ev => {
       const myReg = (participants[ev.id] || []).find(p => p.userId === me?.id);
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         key: ev.id,
         style: {
           background: C.card,
@@ -9390,7 +9386,7 @@ function PCNInner() {
           setViewEv(ev);
           setScreen("event");
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           width: 44,
           height: 44,
@@ -9402,14 +9398,14 @@ function PCNInner() {
           justifyContent: "center",
           flexShrink: 0
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 16,
           fontWeight: 800,
           color: myReg ? C.green : C.red,
           lineHeight: 1
         }
-      }, new Date(ev.date).getDate()), /*#__PURE__*/_react.default.createElement("div", {
+      }, new Date(ev.date).getDate()), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 9,
           color: C.muted,
@@ -9417,24 +9413,24 @@ function PCNInner() {
         }
       }, new Date(ev.date).toLocaleDateString("de-DE", {
         month: "short"
-      }))), /*#__PURE__*/_react.default.createElement("div", {
+      }))), /*#__PURE__*/React.createElement("div", {
         style: {
           flex: 1,
           minWidth: 0
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 15,
           fontWeight: 700,
           color: C.white,
           marginBottom: 2
         }
-      }, ev.name), /*#__PURE__*/_react.default.createElement("div", {
+      }, ev.name), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 12,
           color: C.muted
         }
-      }, ev.location)), myReg ? /*#__PURE__*/_react.default.createElement("span", {
+      }, ev.location)), myReg ? /*#__PURE__*/React.createElement("span", {
         style: {
           background: `${C.green}22`,
           color: C.green,
@@ -9444,7 +9440,7 @@ function PCNInner() {
           fontWeight: 800,
           flexShrink: 0
         }
-      }, "✓ #", myReg.startNr) : /*#__PURE__*/_react.default.createElement("span", {
+      }, "✓ #", myReg.startNr) : /*#__PURE__*/React.createElement("span", {
         style: {
           background: `${C.border}44`,
           color: C.muted,
@@ -9454,34 +9450,34 @@ function PCNInner() {
           flexShrink: 0
         }
       }, "Anmelden"));
-    })), eventsThisMonth.length === 0 && /*#__PURE__*/_react.default.createElement("div", {
+    })), eventsThisMonth.length === 0 && /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "center",
         padding: "30px 20px",
         color: C.muted
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 32,
         marginBottom: 8
       }
-    }, "📅"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "📅"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 15,
         color: C.white
       }
     }, "Keine Events in diesem Monat")));
-  })()), tab === "messages" && /*#__PURE__*/_react.default.createElement("div", {
+  })()), tab === "messages" && /*#__PURE__*/React.createElement("div", {
     style: {
       animation: "fadeIn .2s",
       overflowX: "hidden",
       width: "100%"
     }
-  }, guestThreads.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+  }, guestThreads.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 18
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -9497,7 +9493,7 @@ function PCNInner() {
   }).map(gt => {
     const t = threads[gt.id];
     const lastMsg = t?.messages?.filter(m => !m.isSystem)?.slice(-1)[0];
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       key: gt.id,
       style: {
         background: C.card,
@@ -9524,7 +9520,7 @@ function PCNInner() {
         setActiveThread(gt.id);
         setScreen("chat");
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         width: 44,
         height: 44,
@@ -9537,19 +9533,19 @@ function PCNInner() {
         fontSize: 20,
         flexShrink: 0
       }
-    }, "🔒"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🔒"), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         marginBottom: 2
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontWeight: 700,
         fontSize: 15,
@@ -9562,7 +9558,7 @@ function PCNInner() {
       const d = raw && !raw.includes(":") === false ? new Date(raw) : null;
       const today = new Date();
       const isToday = d && d.toDateString() === today.toDateString();
-      return /*#__PURE__*/_react.default.createElement("span", {
+      return /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 10,
           color: C.muted
@@ -9574,13 +9570,13 @@ function PCNInner() {
         day: "2-digit",
         month: "short"
       }) : last.ts || "");
-    })()), /*#__PURE__*/_react.default.createElement("div", {
+    })()), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: "#6b7fff",
         marginBottom: 2
       }
-    }, "QAR: ", gt.qarId), /*#__PURE__*/_react.default.createElement("div", {
+    }, "QAR: ", gt.qarId), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
@@ -9588,7 +9584,7 @@ function PCNInner() {
         textOverflow: "ellipsis",
         whiteSpace: "nowrap"
       }
-    }, lastMsg ? (lastMsg.from === me?.id ? "Du: " : "") + lastMsg.text : "Noch keine Nachricht")), /*#__PURE__*/_react.default.createElement("button", {
+    }, lastMsg ? (lastMsg.from === me?.id ? "Du: " : "") + lastMsg.text : "Noch keine Nachricht")), /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         setConfirmDeleteThread(gt.id);
@@ -9603,32 +9599,32 @@ function PCNInner() {
         flexShrink: 0
       }
     }, "🗑"));
-  })), isGuest && guestThreads.length === 0 && /*#__PURE__*/_react.default.createElement("div", {
+  })), isGuest && guestThreads.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       padding: "40px 20px",
       color: C.muted
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 32,
       marginBottom: 12
     }
-  }, "💬"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "💬"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 600,
       marginBottom: 6
     }
-  }, "Noch keine Chats"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Noch keine Chats"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12
     }
-  }, "Scanne einen QR-Code und schreibe dem Fahrzeughalter")), !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Scanne einen QR-Code und schreibe dem Fahrzeughalter")), !isGuest && /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 16
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -9637,7 +9633,7 @@ function PCNInner() {
       letterSpacing: 2,
       marginBottom: 10
     }
-  }, "📡 Club-Kanal"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "📡 Club-Kanal"), /*#__PURE__*/React.createElement("div", {
     style: {
       background: `linear-gradient(135deg, #1a0a0a, #200808)`,
       border: `2px solid ${C.red}44`,
@@ -9652,7 +9648,7 @@ function PCNInner() {
       setActiveThread("GROUP_PCN");
       setScreen("chat");
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: 52,
       height: 52,
@@ -9664,25 +9660,25 @@ function PCNInner() {
       fontSize: 26,
       flexShrink: 0
     }
-  }, "🏎️"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🏎️"), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: 3
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontWeight: 800,
       fontSize: 16,
       color: C.white
     }
-  }, "PCN Mitglieder"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "PCN Mitglieder"), /*#__PURE__*/React.createElement("span", {
     style: {
       background: C.red,
       color: "#fff",
@@ -9691,13 +9687,13 @@ function PCNInner() {
       fontSize: 11,
       fontWeight: 800
     }
-  }, "1")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "1")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: `${C.red}99`,
       marginBottom: 2
     }
-  }, "Gruppen-Kanal · ", DEMO_GROUP.participants.length, " Mitglieder"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Gruppen-Kanal · ", DEMO_GROUP.participants.length, " Mitglieder"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.muted,
@@ -9705,7 +9701,7 @@ function PCNInner() {
       textOverflow: "ellipsis",
       whiteSpace: "nowrap"
     }
-  }, "Thomas: Wer fährt mit dem Anhänger?")))), !isGuest && /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+  }, "Thomas: Wer fährt mit dem Anhänger?")))), !isGuest && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -9714,7 +9710,7 @@ function PCNInner() {
       letterSpacing: 2,
       marginBottom: 10
     }
-  }, "💬 Direktnachrichten"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "💬 Direktnachrichten"), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
       border: `1px solid ${C.border}`,
@@ -9725,34 +9721,34 @@ function PCNInner() {
       gap: 8,
       alignItems: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 16
     }
-  }, "🔒"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "🔒"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       color: C.muted,
       lineHeight: 1.5
     }
-  }, "Direktnachrichten sind anonym — Name und E-Mail bleiben geschützt.")), myThreads.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+  }, "Direktnachrichten sind anonym — Name und E-Mail bleiben geschützt.")), myThreads.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       padding: "40px 20px",
       color: C.muted
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 32,
       marginBottom: 8
     }
-  }, "💬"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "💬"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       color: C.white,
       marginBottom: 4
     }
-  }, "Noch keine Nachrichten"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Noch keine Nachrichten"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12
     }
@@ -9786,7 +9782,7 @@ function PCNInner() {
       const isAnon = t.anonymous;
       // Title: vehicle name for anon threads, member name for direct messages
       const title = isAnon && vehicleName ? vehicleName : isAnon ? "Anonyme Nachricht" : other.name;
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         key: t.id,
         style: {
           background: C.card,
@@ -9799,7 +9795,7 @@ function PCNInner() {
           alignItems: "center",
           position: "relative"
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           flex: 1,
           display: "flex",
@@ -9811,7 +9807,7 @@ function PCNInner() {
           setActiveThread(t.id);
           setScreen("chat");
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           width: 46,
           height: 46,
@@ -9826,19 +9822,19 @@ function PCNInner() {
           color: isAnon ? "#6b7fff" : C.red,
           fontWeight: 800
         }
-      }, isAnon ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
+      }, isAnon ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/React.createElement("div", {
         style: {
           flex: 1,
           minWidth: 0
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
           marginBottom: 2,
           alignItems: "center"
         }
-      }, /*#__PURE__*/_react.default.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontWeight: unread ? 800 : 700,
           fontSize: 14,
@@ -9848,32 +9844,32 @@ function PCNInner() {
           whiteSpace: "nowrap",
           maxWidth: "65%"
         }
-      }, title), /*#__PURE__*/_react.default.createElement("div", {
+      }, title), /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           gap: 6,
           alignItems: "center",
           flexShrink: 0
         }
-      }, unread && /*#__PURE__*/_react.default.createElement("div", {
+      }, unread && /*#__PURE__*/React.createElement("div", {
         style: {
           width: 8,
           height: 8,
           borderRadius: "50%",
           background: C.red
         }
-      }), /*#__PURE__*/_react.default.createElement("span", {
+      }), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 10,
           color: C.muted
         }
-      }, last?.ts || ""))), isAnon && /*#__PURE__*/_react.default.createElement("div", {
+      }, last?.ts || ""))), isAnon && /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 11,
           color: "#6b7fff",
           marginBottom: 2
         }
-      }, "🔒 Anonym · ", vehicleName || "Fahrzeuganfrage"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "🔒 Anonym · ", vehicleName || "Fahrzeuganfrage"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 12,
           color: unread ? C.white : C.muted,
@@ -9881,7 +9877,7 @@ function PCNInner() {
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, last ? (last.from === me?.id ? "Du: " : "") + last.text : "Noch keine Nachricht"))), /*#__PURE__*/_react.default.createElement("button", {
+      }, last ? (last.from === me?.id ? "Du: " : "") + last.text : "Noch keine Nachricht"))), /*#__PURE__*/React.createElement("button", {
         onClick: async e => {
           e.stopPropagation();
           if (!window.confirm("Chat löschen?")) return;
@@ -9916,18 +9912,18 @@ function PCNInner() {
         }
       }, "🗑"));
     });
-  })())), tab === "reminders" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+  })())), tab === "reminders" && !isGuest && /*#__PURE__*/React.createElement("div", {
     style: {
       animation: "fadeIn .2s"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: 12
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -9935,27 +9931,27 @@ function PCNInner() {
       textTransform: "uppercase",
       letterSpacing: 1.5
     }
-  }, "Erinnerungen"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "Erinnerungen"), /*#__PURE__*/React.createElement("button", {
     className: "btn sm ghost",
     onClick: () => setShowAddRem(true)
-  }, "+ Neu")), myReminders.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+  }, "+ Neu")), myReminders.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       padding: "40px 20px",
       color: C.muted
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 40,
       marginBottom: 10
     }
-  }, "🎉"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🎉"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16,
       color: C.white,
       marginBottom: 4
     }
-  }, "Alles erledigt!"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Alles erledigt!"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.muted
@@ -9965,7 +9961,7 @@ function PCNInner() {
     const rv = vehicles[r.vehicleId];
     const urgent = days <= 3;
     const overdue = days < 0;
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       key: r.id,
       style: {
         background: C.card,
@@ -9974,26 +9970,26 @@ function PCNInner() {
         padding: "14px",
         marginBottom: 10
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "flex-start",
         gap: 10
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         minWidth: 0
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 700,
         fontSize: 16,
         color: overdue ? C.red : urgent ? C.amber : C.white,
         marginBottom: 4
       }
-    }, r.title), rv && /*#__PURE__*/_react.default.createElement("div", {
+    }, r.title), rv && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",
@@ -10001,7 +9997,7 @@ function PCNInner() {
         marginBottom: 6,
         flexWrap: "wrap"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",
@@ -10012,24 +10008,24 @@ function PCNInner() {
         setViewV(rv);
         setScreen("vehicle");
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 13,
         color: C.muted
       }
-    }, rv.hersteller, " ", rv.modell), /*#__PURE__*/_react.default.createElement("span", {
+    }, rv.hersteller, " ", rv.modell), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         color: C.red,
         fontWeight: 700
       }
-    }, "→ Zur Akte")), r.date && /*#__PURE__*/_react.default.createElement("div", {
+    }, "→ Zur Akte")), r.date && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 5,
         flexWrap: "wrap"
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: () => generateICS({
         title: r.title + (rv ? ` — ${rv.hersteller} ${rv.modell}` : ""),
         date: r.date,
@@ -10050,7 +10046,7 @@ function PCNInner() {
         alignItems: "center",
         gap: 4
       }
-    }, "📅 .ics"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "📅 .ics"), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         const dateStr = r.date ? r.date.replace(/-/g, "") : "";
         const title = encodeURIComponent(r.title + (rv ? ` — ${rv.hersteller} ${rv.modell}` : ""));
@@ -10070,18 +10066,18 @@ function PCNInner() {
         alignItems: "center",
         gap: 4
       }
-    }, "🗓 Google"))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🗓 Google"))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 600,
         color: overdue ? C.red : urgent ? C.amber : C.muted
       }
-    }, overdue ? "⚠️ Überfällig" : days === 0 ? "📅 Heute fällig" : days === 1 ? "📅 Morgen fällig" : `📅 In ${days} Tagen`, /*#__PURE__*/_react.default.createElement("span", {
+    }, overdue ? "⚠️ Überfällig" : days === 0 ? "📅 Heute fällig" : days === 1 ? "📅 Morgen fällig" : `📅 In ${days} Tagen`, /*#__PURE__*/React.createElement("span", {
       style: {
         fontWeight: 400,
         color: C.muted
       }
-    }, " · ", fmtDate(r.date)))), /*#__PURE__*/_react.default.createElement("button", {
+    }, " · ", fmtDate(r.date)))), /*#__PURE__*/React.createElement("button", {
       onClick: async () => {
         const DB = window.PCN_DB;
         if (DB) await DB.reminders.done(me.id, r.id);
@@ -10104,11 +10100,11 @@ function PCNInner() {
         fontFamily: "'Barlow',sans-serif"
       }
     }, "✓")));
-  })), tab === "community" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+  })), tab === "community" && !isGuest && /*#__PURE__*/React.createElement("div", {
     style: {
       animation: "fadeIn .2s"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 24,
@@ -10116,28 +10112,28 @@ function PCNInner() {
       color: C.white,
       marginBottom: 4
     }
-  }, "Community"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Community"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted,
       marginBottom: 16
     }
-  }, "Fahrzeuge die dich begeistern"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Fahrzeuge die dich begeistern"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 24
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
       gap: 8,
       marginBottom: 12
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 18
     }
-  }, "❤️"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "❤️"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -10145,7 +10141,7 @@ function PCNInner() {
       textTransform: "uppercase",
       letterSpacing: 1.5
     }
-  }, "Meine Favoriten (", favorites.length, ")")), favorites.length === 0 ? /*#__PURE__*/_react.default.createElement("div", {
+  }, "Meine Favoriten (", favorites.length, ")")), favorites.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
       border: `1.5px dashed ${C.border}`,
@@ -10153,30 +10149,30 @@ function PCNInner() {
       padding: "32px 20px",
       textAlign: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 40,
       marginBottom: 10
     }
-  }, "🤍"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🤍"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       color: C.white,
       fontWeight: 600,
       marginBottom: 6
     }
-  }, "Noch keine Favoriten"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Noch keine Favoriten"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted,
       lineHeight: 1.6
     }
-  }, "Tippe auf das ❤️ bei einer Fahrzeugakte um sie hier zu speichern")) : /*#__PURE__*/_react.default.createElement("div", null, favorites.map(fid => {
+  }, "Tippe auf das ❤️ bei einer Fahrzeugakte um sie hier zu speichern")) : /*#__PURE__*/React.createElement("div", null, favorites.map(fid => {
     const fv = Object.values(vehicles).find(v => v.id === fid);
     if (!fv) return null;
     const isOwn = fv.userId === me?.id || fv.owner === me?.email;
     const DEFp = typeof fv.privacy === "string" ? JSON.parse(fv.privacy || "{}") : fv.privacy || {};
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       key: fid,
       style: {
         background: C.card,
@@ -10202,7 +10198,7 @@ function PCNInner() {
           setScreen("public");
         }
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         width: 90,
         height: 90,
@@ -10213,7 +10209,7 @@ function PCNInner() {
         alignItems: "center",
         justifyContent: "center"
       }
-    }, fv.image ? /*#__PURE__*/_react.default.createElement("img", {
+    }, fv.image ? /*#__PURE__*/React.createElement("img", {
       src: fv.image,
       alt: "",
       style: {
@@ -10222,11 +10218,11 @@ function PCNInner() {
         objectFit: "cover"
       },
       onError: e => e.target.style.display = "none"
-    }) : /*#__PURE__*/_react.default.createElement("span", {
+    }) : /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 28
       }
-    }, "🏎️")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🏎️")), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: "12px 13px",
         flex: 1,
@@ -10235,19 +10231,19 @@ function PCNInner() {
         flexDirection: "column",
         justifyContent: "center"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 700,
         fontSize: 15,
         color: C.white
       }
-    }, fv.hersteller, " ", fv.modell), /*#__PURE__*/_react.default.createElement("div", {
+    }, fv.hersteller, " ", fv.modell), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginTop: 4
       }
-    }, fv.baujahr, " · ", fv.farbe), /*#__PURE__*/_react.default.createElement("div", {
+    }, fv.baujahr, " · ", fv.farbe), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 6,
@@ -10255,7 +10251,7 @@ function PCNInner() {
         alignItems: "center",
         flexWrap: "wrap"
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         background: "#fff",
         border: "1.5px solid #222",
@@ -10267,18 +10263,18 @@ function PCNInner() {
         letterSpacing: 1,
         fontFamily: "Arial,sans-serif"
       }
-    }, fmtKz(fv.kennzeichen, fv.baujahr)), !isOwn && /*#__PURE__*/_react.default.createElement("span", {
+    }, fmtKz(fv.kennzeichen, fv.baujahr)), !isOwn && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, "Mitglied"), isOwn && /*#__PURE__*/_react.default.createElement("span", {
+    }, "Mitglied"), isOwn && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         color: C.green,
         fontWeight: 700
       }
-    }, "Mein Fahrzeug"))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Mein Fahrzeug"))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -10287,7 +10283,7 @@ function PCNInner() {
         paddingRight: 12,
         gap: 4
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: e => {
         e.stopPropagation();
         toggleFavorite(fid);
@@ -10300,7 +10296,7 @@ function PCNInner() {
         padding: "4px",
         color: C.red
       }
-    }, "❤️"), /*#__PURE__*/_react.default.createElement("span", {
+    }, "❤️"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 16,
         color: C.muted
@@ -10309,22 +10305,22 @@ function PCNInner() {
   }).filter(Boolean))), (() => {
     const recent = JSON.parse(localStorage.getItem("pcn_recent_vehicles") || "[]").filter(id => !favorites.includes(id));
     if (!recent.length) return null;
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 20
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",
         gap: 8,
         marginBottom: 12
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 16
       }
-    }, "👁"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "👁"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -10332,7 +10328,7 @@ function PCNInner() {
         textTransform: "uppercase",
         letterSpacing: 1.5
       }
-    }, "Zuletzt angesehen")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Zuletzt angesehen")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 10,
@@ -10344,7 +10340,7 @@ function PCNInner() {
       const rv = Object.values(vehicles).find(v => v.id === id);
       if (!rv) return null;
       const DEFp2 = typeof rv.privacy === "string" ? JSON.parse(rv.privacy || "{}") : rv.privacy || {};
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         key: id,
         onClick: () => {
           setPublicV({
@@ -10361,7 +10357,7 @@ function PCNInner() {
           width: 120,
           cursor: "pointer"
         }
-      }, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           width: 120,
           height: 80,
@@ -10374,7 +10370,7 @@ function PCNInner() {
           marginBottom: 6,
           position: "relative"
         }
-      }, rv.image ? /*#__PURE__*/_react.default.createElement("img", {
+      }, rv.image ? /*#__PURE__*/React.createElement("img", {
         src: rv.image,
         alt: "",
         style: {
@@ -10382,11 +10378,11 @@ function PCNInner() {
           height: "100%",
           objectFit: "cover"
         }
-      }) : /*#__PURE__*/_react.default.createElement("span", {
+      }) : /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 28
         }
-      }, "🏎️"), /*#__PURE__*/_react.default.createElement("button", {
+      }, "🏎️"), /*#__PURE__*/React.createElement("button", {
         onClick: e => {
           e.stopPropagation();
           toggleFavorite(id);
@@ -10407,7 +10403,7 @@ function PCNInner() {
           justifyContent: "center",
           color: isFavorite(id) ? C.red : "#fff"
         }
-      }, isFavorite(id) ? "❤" : "🤍")), /*#__PURE__*/_react.default.createElement("div", {
+      }, isFavorite(id) ? "❤" : "🤍")), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 11,
           fontWeight: 700,
@@ -10416,21 +10412,21 @@ function PCNInner() {
           textOverflow: "ellipsis",
           whiteSpace: "nowrap"
         }
-      }, rv.hersteller, " ", rv.modell), /*#__PURE__*/_react.default.createElement("div", {
+      }, rv.hersteller, " ", rv.modell), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 9,
           color: C.muted
         }
       }, rv.baujahr));
     }).filter(Boolean)));
-  })(), /*#__PURE__*/_react.default.createElement("div", {
+  })(), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
       border: `1px solid ${C.border}`,
       borderRadius: 12,
       padding: "14px 16px"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -10439,7 +10435,7 @@ function PCNInner() {
       letterSpacing: 1.5,
       marginBottom: 12
     }
-  }, "📊 Meine Aktivität"), [["❤️", "Favoriten", favorites.length + " Fahrzeuge"], ["👁", "Angesehen", getViewedVehicles().length + " Akten · +" + getViewedVehicles().length * 2 + " Pkt"], ["📱", "QR-Scans bestätigt", getScanConfirmed().length + " · +" + getScanConfirmed().length * 10 + " Pkt"]].map(([icon, label, val]) => /*#__PURE__*/_react.default.createElement("div", {
+  }, "📊 Meine Aktivität"), [["❤️", "Favoriten", favorites.length + " Fahrzeuge"], ["👁", "Angesehen", getViewedVehicles().length + " Akten · +" + getViewedVehicles().length * 2 + " Pkt"], ["📱", "QR-Scans bestätigt", getScanConfirmed().length + " · +" + getScanConfirmed().length * 10 + " Pkt"]].map(([icon, label, val]) => /*#__PURE__*/React.createElement("div", {
     key: label,
     style: {
       display: "flex",
@@ -10448,28 +10444,28 @@ function PCNInner() {
       padding: "8px 0",
       borderBottom: `1px solid ${C.border}`
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 18,
       width: 24,
       textAlign: "center"
     }
-  }, icon), /*#__PURE__*/_react.default.createElement("div", {
+  }, icon), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       fontSize: 13,
       color: C.white
     }
-  }, label), /*#__PURE__*/_react.default.createElement("div", {
+  }, label), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted
     }
-  }, val))))), tab === "profile" && !isGuest && /*#__PURE__*/_react.default.createElement("div", {
+  }, val))))), tab === "profile" && !isGuest && /*#__PURE__*/React.createElement("div", {
     style: {
       animation: "fadeIn .2s"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: `linear-gradient(135deg, #1a0a0a 0%, #2a0808 100%)`,
       border: `1px solid ${C.red}44`,
@@ -10477,13 +10473,13 @@ function PCNInner() {
       padding: "20px",
       marginBottom: 14
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 16,
       alignItems: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: 68,
       height: 68,
@@ -10498,7 +10494,7 @@ function PCNInner() {
       position: "relative"
     },
     onClick: openEditProfile
-  }, me?.avatar ? /*#__PURE__*/_react.default.createElement("img", {
+  }, me?.avatar ? /*#__PURE__*/React.createElement("img", {
     src: me.avatar,
     alt: "",
     style: {
@@ -10506,14 +10502,14 @@ function PCNInner() {
       height: "100%",
       objectFit: "cover"
     }
-  }) : /*#__PURE__*/_react.default.createElement("span", {
+  }) : /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 26,
       fontWeight: 900,
       color: "#fff",
       fontFamily: "'Barlow Condensed',sans-serif"
     }
-  }, (me?.name || "?")[0].toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
+  }, (me?.name || "?")[0].toUpperCase()), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       bottom: 0,
@@ -10528,12 +10524,12 @@ function PCNInner() {
       justifyContent: "center",
       fontSize: 10
     }
-  }, "📷")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "📷")), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minWidth: 0
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 24,
@@ -10541,19 +10537,19 @@ function PCNInner() {
       color: C.white,
       lineHeight: 1
     }
-  }, me?.name), /*#__PURE__*/_react.default.createElement("div", {
+  }, me?.name), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.muted,
       marginTop: 3
     }
-  }, me?.role === "guest" ? "Gast-Account" : "PCN-Mitglied", me?.memberNr ? " · " + me.memberNr : ""), me?.city && /*#__PURE__*/_react.default.createElement("div", {
+  }, me?.role === "guest" ? "Gast-Account" : "PCN-Mitglied", me?.memberNr ? " · " + me.memberNr : ""), me?.city && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.muted,
       marginTop: 2
     }
-  }, "📍 ", me.city)), /*#__PURE__*/_react.default.createElement("button", {
+  }, "📍 ", me.city)), /*#__PURE__*/React.createElement("button", {
     className: "btn sm ghost",
     style: {
       flexShrink: 0,
@@ -10561,38 +10557,38 @@ function PCNInner() {
       color: "#fff"
     },
     onClick: openEditProfile
-  }, "✏️")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "✏️")), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 16,
       paddingTop: 14,
       borderTop: `1px solid rgba(255,255,255,.1)`
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "baseline",
       marginBottom: 8
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "baseline",
       gap: 8
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 40,
       fontWeight: 900,
       color: C.gold
     }
-  }, myPoints), /*#__PURE__*/_react.default.createElement("span", {
+  }, myPoints), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 15,
       color: C.muted
     }
-  }, "Punkte"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "Punkte"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowInfoModal("points"),
     style: {
       background: "none",
@@ -10603,29 +10599,29 @@ function PCNInner() {
       padding: 0,
       lineHeight: 1
     }
-  }, "ℹ️")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "ℹ️")), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "right"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted
     }
-  }, "Nächste Stufe"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Nächste Stufe"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 15,
       fontWeight: 700,
       color: C.gold
     }
-  }, nextTier.name, " · ", pointsToNext, " Pkt"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, nextTier.name, " · ", pointsToNext, " Pkt"))), /*#__PURE__*/React.createElement("div", {
     style: {
       height: 8,
       background: "rgba(255,255,255,.1)",
       borderRadius: 99,
       overflow: "hidden"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: "100%",
       width: `${pointsProgress}%`,
@@ -10633,13 +10629,13 @@ function PCNInner() {
       borderRadius: 99,
       transition: "width .6s ease"
     }
-  })), /*#__PURE__*/_react.default.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginTop: 6
     }
-  }, "🏁 ", myParticipations.length, " Events · 🚗 ", myVehicles.length, " Fahrzeuge · 📋 ", Object.values(logbook).flat().length, " Logbuch-Einträge")), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+  }, "🏁 ", myParticipations.length, " Events · 🚗 ", myVehicles.length, " Fahrzeuge · 📋 ", Object.values(logbook).flat().length, " Logbuch-Einträge")), me?.role === "guest" && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 14,
       paddingTop: 12,
@@ -10648,13 +10644,13 @@ function PCNInner() {
       gap: 10,
       alignItems: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       fontSize: 13,
       color: C.muted
     }
-  }, "Vollmitglied werden — Fahrzeugakte, QR-Code & Events"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "Vollmitglied werden — Fahrzeugakte, QR-Code & Events"), /*#__PURE__*/React.createElement("button", {
     className: "btn sm",
     onClick: () => {
       setLoginForm({
@@ -10665,13 +10661,13 @@ function PCNInner() {
       });
       setScreen("splash");
     }
-  }, "Upgrade →"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Upgrade →"))), /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
       padding: 16,
       marginBottom: 12
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -10680,13 +10676,13 @@ function PCNInner() {
       letterSpacing: 2,
       marginBottom: 12
     }
-  }, "Statistiken"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Statistiken"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: 10
     }
-  }, [["🚗", "Fahrzeuge", myVehicles.length], ["📋", "Logbuch", Object.values(logbook).flat().length], ["🏁", "Events", myParticipations.length], ["💬", "Nachrichten", myThreads.length]].map(([icon, label, val]) => /*#__PURE__*/_react.default.createElement("div", {
+  }, [["🚗", "Fahrzeuge", myVehicles.length], ["📋", "Logbuch", Object.values(logbook).flat().length], ["🏁", "Events", myParticipations.length], ["💬", "Nachrichten", myThreads.length]].map(([icon, label, val]) => /*#__PURE__*/React.createElement("div", {
     key: label,
     style: {
       background: C.black,
@@ -10694,31 +10690,31 @@ function PCNInner() {
       padding: "12px",
       textAlign: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 22,
       marginBottom: 4
     }
-  }, icon), /*#__PURE__*/_react.default.createElement("div", {
+  }, icon), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 22,
       fontWeight: 800,
       color: C.white,
       fontFamily: "'Barlow Condensed',sans-serif"
     }
-  }, val), /*#__PURE__*/_react.default.createElement("div", {
+  }, val), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginTop: 2
     }
-  }, label))))), /*#__PURE__*/_react.default.createElement("div", {
+  }, label))))), /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
       padding: 16,
       marginBottom: 14
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -10729,7 +10725,7 @@ function PCNInner() {
     }
   }, "Milestones"), MILESTONES.map(m => {
     const done = m.check(appState);
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       key: m.id,
       style: {
         display: "flex",
@@ -10738,7 +10734,7 @@ function PCNInner() {
         padding: "10px 0",
         borderBottom: `1px solid ${C.border}`
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         width: 28,
         height: 28,
@@ -10752,33 +10748,33 @@ function PCNInner() {
         flexShrink: 0,
         fontWeight: 700
       }
-    }, done ? "✓" : "○"), /*#__PURE__*/_react.default.createElement("span", {
+    }, done ? "✓" : "○"), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 14,
         color: done ? C.white : C.muted,
         flex: 1
       }
-    }, m.label), done && /*#__PURE__*/_react.default.createElement("span", {
+    }, m.label), done && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         color: C.green,
         fontWeight: 700
       }
     }, "AKTIV"));
-  })), /*#__PURE__*/_react.default.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
       padding: 16,
       marginBottom: 14
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: 12
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -10786,26 +10782,26 @@ function PCNInner() {
       textTransform: "uppercase",
       letterSpacing: 2
     }
-  }, "💳 Wallet & Mitgliedschaft")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "💳 Wallet & Mitgliedschaft")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: 8,
       marginBottom: 12
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.black,
       borderRadius: 10,
       padding: "12px"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginBottom: 4
     }
-  }, "Mitglied seit"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Mitglied seit"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 15,
       fontWeight: 700,
@@ -10814,50 +10810,50 @@ function PCNInner() {
   }, me?.createdAt ? new Date(me.createdAt).toLocaleDateString("de-DE", {
     month: "short",
     year: "numeric"
-  }) : "2026")), /*#__PURE__*/_react.default.createElement("div", {
+  }) : "2026")), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.black,
       borderRadius: 10,
       padding: "12px"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginBottom: 4
     }
-  }, "Jahresbeitrag"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Jahresbeitrag"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 15,
       fontWeight: 700,
       color: C.green
     }
-  }, "✓ Bezahlt"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "✓ Bezahlt"))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: `${C.border}44`,
       borderRadius: 12,
       padding: "14px",
       marginBottom: 10
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       fontWeight: 700,
       color: C.white
     }
-  }, "PCN Mitgliedschaft"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "PCN Mitgliedschaft"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted,
       marginTop: 2
     }
-  }, "Gültig bis: 31.12.2026")), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Gültig bis: 31.12.2026")), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.green,
       borderRadius: 6,
@@ -10866,7 +10862,7 @@ function PCNInner() {
       fontWeight: 800,
       color: "#fff"
     }
-  }, "AKTIV"))), /*#__PURE__*/_react.default.createElement("button", {
+  }, "AKTIV"))), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost",
     style: {
       width: "100%",
@@ -10889,14 +10885,14 @@ function PCNInner() {
       // Uncomment when Stripe link is ready:
       // window.open(STRIPE_LINK+"?"+params.toString(), "_blank");
     }
-  }, "💳 Mitgliedsbeitrag bezahlen"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "💳 Mitgliedsbeitrag bezahlen"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: "#444",
       textAlign: "center",
       marginTop: 6
     }
-  }, "Sichere Zahlung via Stripe · SEPA · Kreditkarte")), /*#__PURE__*/_react.default.createElement("button", {
+  }, "Sichere Zahlung via Stripe · SEPA · Kreditkarte")), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost",
     style: {
       width: "100%",
@@ -10915,7 +10911,7 @@ function PCNInner() {
       setScreen("splash");
       setTab("dashboard");
     }
-  }, "Abmelden"))), showFeatureDetail && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Abmelden"))), showFeatureDetail && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
       inset: 0,
@@ -10926,7 +10922,7 @@ function PCNInner() {
       justifyContent: "center"
     },
     onClick: () => setShowFeatureDetail(null)
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.dark,
       border: `1px solid ${C.border}`,
@@ -10939,7 +10935,7 @@ function PCNInner() {
       overflowY: "auto"
     },
     onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: 40,
       height: 4,
@@ -10950,14 +10946,14 @@ function PCNInner() {
   }), (() => {
     const isUnlocked = unlockedFeatures.has(showFeatureDetail.id);
     const accent = isUnlocked ? C.green : C.red;
-    return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 14,
         alignItems: "flex-start",
         marginBottom: 20
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         width: 56,
         height: 56,
@@ -10970,31 +10966,31 @@ function PCNInner() {
         fontSize: 28,
         flexShrink: 0
       }
-    }, showFeatureDetail.icon), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    }, showFeatureDetail.icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",
         gap: 8,
         marginBottom: 4
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: "'Barlow Condensed',sans-serif",
         fontSize: 22,
         fontWeight: 900,
         color: C.white
       }
-    }, showFeatureDetail.label), /*#__PURE__*/_react.default.createElement("span", {
+    }, showFeatureDetail.label), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12
       }
-    }, isUnlocked ? "✅" : "🔒")), /*#__PURE__*/_react.default.createElement("div", {
+    }, isUnlocked ? "✅" : "🔒")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: accent,
         fontWeight: 700
       }
-    }, isUnlocked ? "✓ Freigeschaltet" : showFeatureDetail.milestone))), /*#__PURE__*/_react.default.createElement("div", {
+    }, isUnlocked ? "✓ Freigeschaltet" : showFeatureDetail.milestone))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 14,
         color: "#ccc",
@@ -11002,7 +10998,7 @@ function PCNInner() {
         marginBottom: 24,
         whiteSpace: "pre-wrap"
       }
-    }, showFeatureDetail.detail || showFeatureDetail.desc), !isUnlocked && /*#__PURE__*/_react.default.createElement("div", {
+    }, showFeatureDetail.detail || showFeatureDetail.desc), !isUnlocked && /*#__PURE__*/React.createElement("div", {
       style: {
         background: "#111",
         border: `1px solid ${C.border}`,
@@ -11010,7 +11006,7 @@ function PCNInner() {
         padding: "14px",
         marginBottom: 20
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         fontWeight: 800,
@@ -11019,7 +11015,7 @@ function PCNInner() {
         letterSpacing: 1,
         marginBottom: 10
       }
-    }, "So freischalten"), [["💳", "Premium-Mitgliedschaft aktivieren", "Sofortzugang zu allen Funktionen"], ["🏆", "Punkte durch Events sammeln", "Aktive Teilnahme schaltet Features frei"], ["👥", "Neue Mitglieder werben", "Bonus-Punkte pro Empfehlung"]].map(([ic, title, sub]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, "So freischalten"), [["💳", "Premium-Mitgliedschaft aktivieren", "Sofortzugang zu allen Funktionen"], ["🏆", "Punkte durch Events sammeln", "Aktive Teilnahme schaltet Features frei"], ["👥", "Neue Mitglieder werben", "Bonus-Punkte pro Empfehlung"]].map(([ic, title, sub]) => /*#__PURE__*/React.createElement("div", {
       key: title,
       style: {
         display: "flex",
@@ -11027,23 +11023,23 @@ function PCNInner() {
         alignItems: "center",
         marginBottom: 10
       }
-    }, /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 18,
         flexShrink: 0
       }
-    }, ic), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    }, ic), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         fontWeight: 700,
         color: C.white
       }
-    }, title), /*#__PURE__*/_react.default.createElement("div", {
+    }, title), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: C.muted
       }
-    }, sub))))), /*#__PURE__*/_react.default.createElement("button", {
+    }, sub))))), /*#__PURE__*/React.createElement("button", {
       className: "btn",
       style: {
         width: "100%",
@@ -11053,7 +11049,7 @@ function PCNInner() {
       },
       onClick: () => setShowFeatureDetail(null)
     }, "Verstanden"));
-  })())), showInfoModal && showInfoModal !== 'points' && /*#__PURE__*/_react.default.createElement("div", {
+  })())), showInfoModal && showInfoModal !== 'points' && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
       inset: 0,
@@ -11065,7 +11061,7 @@ function PCNInner() {
       padding: "24px"
     },
     onClick: () => setShowInfoModal(false)
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.dark,
       border: `1px solid ${C.border}`,
@@ -11076,7 +11072,7 @@ function PCNInner() {
       animation: "fadeIn .2s"
     },
     onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 26,
@@ -11084,14 +11080,14 @@ function PCNInner() {
       color: C.white,
       marginBottom: 6
     }
-  }, "⚙️ Funktionen freischalten"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "⚙️ Funktionen freischalten"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       color: C.muted,
       lineHeight: 1.7,
       marginBottom: 20
     }
-  }, "Zusätzliche Plattform-Funktionen werden auf drei Wegen freigeschaltet:"), [[C.gold, "💳", "Bezahlung", "Aktiviere die Premium-Mitgliedschaft und erhalte sofortigen Zugang zu allen Funktionen — KI-Marktwert, Werkstatt-Zugang, digitaler Fahrzeugpass und mehr."], [C.green, "🏆", "Punkte sammeln", "Jede Veranstaltungsteilnahme bringt Punkte. Ab bestimmten Schwellenwerten schalten sich neue Funktionen automatisch frei — Belohnung für aktive Mitglieder."], [C.red, "👥", "Mitglieder werben", "Lade neue Mitglieder in den Club ein. Pro erfolgreich geworbenes Mitglied erhältst du Bonus-Punkte und schaltest exklusive Funktionen frei."]].map(([color, icon, title, text]) => /*#__PURE__*/_react.default.createElement("div", {
+  }, "Zusätzliche Plattform-Funktionen werden auf drei Wegen freigeschaltet:"), [[C.gold, "💳", "Bezahlung", "Aktiviere die Premium-Mitgliedschaft und erhalte sofortigen Zugang zu allen Funktionen — KI-Marktwert, Werkstatt-Zugang, digitaler Fahrzeugpass und mehr."], [C.green, "🏆", "Punkte sammeln", "Jede Veranstaltungsteilnahme bringt Punkte. Ab bestimmten Schwellenwerten schalten sich neue Funktionen automatisch frei — Belohnung für aktive Mitglieder."], [C.red, "👥", "Mitglieder werben", "Lade neue Mitglieder in den Club ein. Pro erfolgreich geworbenes Mitglied erhältst du Bonus-Punkte und schaltest exklusive Funktionen frei."]].map(([color, icon, title, text]) => /*#__PURE__*/React.createElement("div", {
     key: title,
     style: {
       display: "flex",
@@ -11099,7 +11095,7 @@ function PCNInner() {
       marginBottom: 18,
       alignItems: "flex-start"
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: 44,
       height: 44,
@@ -11112,24 +11108,24 @@ function PCNInner() {
       fontSize: 22,
       flexShrink: 0
     }
-  }, icon), /*#__PURE__*/_react.default.createElement("div", {
+  }, icon), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 16,
       fontWeight: 700,
       color: C.white,
       marginBottom: 4
     }
-  }, title), /*#__PURE__*/_react.default.createElement("div", {
+  }, title), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.muted,
       lineHeight: 1.6
     }
-  }, text)))), /*#__PURE__*/_react.default.createElement("button", {
+  }, text)))), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     style: {
       width: "100%",
@@ -11138,7 +11134,7 @@ function PCNInner() {
       marginTop: 4
     },
     onClick: () => setShowInfoModal(false)
-  }, "Verstanden ✓"))), showInfoModal === "points" && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Verstanden ✓"))), showInfoModal === "points" && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
       inset: 0,
@@ -11150,7 +11146,7 @@ function PCNInner() {
       padding: "24px"
     },
     onClick: () => setShowInfoModal(false)
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.dark,
       border: `1px solid ${C.border}`,
@@ -11161,7 +11157,7 @@ function PCNInner() {
       animation: "fadeIn .2s"
     },
     onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 26,
@@ -11169,14 +11165,14 @@ function PCNInner() {
       color: C.white,
       marginBottom: 6
     }
-  }, "🏆 Punktesystem"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🏆 Punktesystem"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 14,
       color: C.muted,
       lineHeight: 1.7,
       marginBottom: 20
     }
-  }, "Sammle Punkte durch Aktivitäten und schalte neue Funktionen frei:"), [["🚗", "Fahrzeug anlegen", "50 Punkte pro Fahrzeug"], ["📋", "Logbuch-Eintrag", "10 Punkte pro Eintrag"], ["🏁", "Event-Teilnahme", "100 Punkte pro Veranstaltung"], ["💬", "Nachricht senden", "5 Punkte pro Nachricht"], ["👥", "Mitglied werben", "200 Punkte pro Neumitglied"]].map(([icon, label, pts]) => /*#__PURE__*/_react.default.createElement("div", {
+  }, "Sammle Punkte durch Aktivitäten und schalte neue Funktionen frei:"), [["🚗", "Fahrzeug anlegen", "50 Punkte pro Fahrzeug"], ["📋", "Logbuch-Eintrag", "10 Punkte pro Eintrag"], ["🏁", "Event-Teilnahme", "100 Punkte pro Veranstaltung"], ["💬", "Nachricht senden", "5 Punkte pro Nachricht"], ["👥", "Mitglied werben", "200 Punkte pro Neumitglied"]].map(([icon, label, pts]) => /*#__PURE__*/React.createElement("div", {
     key: label,
     style: {
       display: "flex",
@@ -11185,31 +11181,31 @@ function PCNInner() {
       padding: "10px 0",
       borderBottom: `1px solid ${C.border}`
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 22,
       flexShrink: 0,
       width: 32,
       textAlign: "center"
     }
-  }, icon), /*#__PURE__*/_react.default.createElement("div", {
+  }, icon), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 15,
       fontWeight: 600,
       color: C.white
     }
-  }, label)), /*#__PURE__*/_react.default.createElement("div", {
+  }, label)), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 15,
       fontWeight: 800,
       color: C.gold,
       flexShrink: 0
     }
-  }, pts))), /*#__PURE__*/_react.default.createElement("div", {
+  }, pts))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 16,
       padding: "12px",
@@ -11219,7 +11215,7 @@ function PCNInner() {
       color: C.muted,
       lineHeight: 1.7
     }
-  }, "💡 Stufen: 100 Pkt = Bronze · 300 Pkt = Silber · 600 Pkt = Gold · 1.000 Pkt = Platin · 2.000 Pkt = Legend"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "💡 Stufen: 100 Pkt = Bronze · 300 Pkt = Silber · 600 Pkt = Gold · 1.000 Pkt = Platin · 2.000 Pkt = Legend"), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     style: {
       width: "100%",
@@ -11228,7 +11224,7 @@ function PCNInner() {
       marginTop: 16
     },
     onClick: () => setShowInfoModal(false)
-  }, "Verstanden ✓"))), showEditProfile && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Verstanden ✓"))), showEditProfile && /*#__PURE__*/React.createElement("div", {
     className: "overlay",
     style: {
       zIndex: 500
@@ -11236,9 +11232,9 @@ function PCNInner() {
     onClick: e => {
       if (e.target === e.currentTarget) setShowEditProfile(false);
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "sheet"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 20,
@@ -11246,13 +11242,13 @@ function PCNInner() {
       color: C.white,
       marginBottom: 4
     }
-  }, "✏️ Profil bearbeiten"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "✏️ Profil bearbeiten"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginBottom: 16
     }
-  }, "Deine persönlichen Angaben"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Deine persönlichen Angaben"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -11263,7 +11259,7 @@ function PCNInner() {
       borderRadius: 12,
       border: `1px solid ${C.border}`
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: 72,
       height: 72,
@@ -11276,7 +11272,7 @@ function PCNInner() {
       flexShrink: 0,
       position: "relative"
     }
-  }, profileForm.avatar ? /*#__PURE__*/_react.default.createElement("img", {
+  }, profileForm.avatar ? /*#__PURE__*/React.createElement("img", {
     src: profileForm.avatar,
     alt: "",
     style: {
@@ -11284,30 +11280,30 @@ function PCNInner() {
       height: "100%",
       objectFit: "cover"
     }
-  }) : /*#__PURE__*/_react.default.createElement("span", {
+  }) : /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 28,
       fontWeight: 900,
       color: "#fff",
       fontFamily: "'Barlow Condensed',sans-serif"
     }
-  }, (profileForm.name || me?.name || "?")[0]?.toUpperCase())), /*#__PURE__*/_react.default.createElement("div", {
+  }, (profileForm.name || me?.name || "?")[0]?.toUpperCase())), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       fontWeight: 700,
       color: C.white,
       marginBottom: 6
     }
-  }, "Profilbild"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Profilbild"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8
     }
-  }, /*#__PURE__*/_react.default.createElement("label", {
+  }, /*#__PURE__*/React.createElement("label", {
     style: {
       background: C.red,
       borderRadius: 8,
@@ -11318,7 +11314,7 @@ function PCNInner() {
       cursor: "pointer",
       fontFamily: "'Barlow',sans-serif"
     }
-  }, /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     type: "file",
     accept: "image/*",
     style: {
@@ -11348,7 +11344,7 @@ function PCNInner() {
       };
       reader.readAsDataURL(file);
     }
-  }), profileImgUploading ? "⏳ Lädt…" : "📷 Foto wählen"), profileForm.avatar && /*#__PURE__*/_react.default.createElement("button", {
+  }), profileImgUploading ? "⏳ Lädt…" : "📷 Foto wählen"), profileForm.avatar && /*#__PURE__*/React.createElement("button", {
     onClick: () => setProfileForm(p => ({
       ...p,
       avatar: ""
@@ -11363,11 +11359,11 @@ function PCNInner() {
       fontSize: 12,
       fontFamily: "'Barlow',sans-serif"
     }
-  }, "Entfernen")))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Entfernen")))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 16
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -11376,7 +11372,7 @@ function PCNInner() {
       letterSpacing: 1.5,
       marginBottom: 8
     }
-  }, "Persönlich"), /*#__PURE__*/_react.default.createElement("input", {
+  }, "Persönlich"), /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "Name *",
     value: profileForm.name || "",
@@ -11387,7 +11383,7 @@ function PCNInner() {
     style: {
       marginBottom: 8
     }
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
       border: `1px solid ${C.border}`,
@@ -11398,17 +11394,17 @@ function PCNInner() {
       justifyContent: "space-between",
       alignItems: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 14,
       color: C.muted
     }
-  }, me?.email), /*#__PURE__*/_react.default.createElement("span", {
+  }, me?.email), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       color: "#444"
     }
-  }, "E-Mail (nicht änderbar)")), /*#__PURE__*/_react.default.createElement("input", {
+  }, "E-Mail (nicht änderbar)")), /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "Telefon (optional)",
     type: "tel",
@@ -11420,7 +11416,7 @@ function PCNInner() {
     style: {
       marginBottom: 8
     }
-  }), /*#__PURE__*/_react.default.createElement("input", {
+  }), /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "Wohnort (z.B. Koblenz)",
     value: profileForm.city || "",
@@ -11431,7 +11427,7 @@ function PCNInner() {
     style: {
       marginBottom: 8
     }
-  }), /*#__PURE__*/_react.default.createElement("textarea", {
+  }), /*#__PURE__*/React.createElement("textarea", {
     className: "inp",
     placeholder: "Kurzbeschreibung (optional, z.B. Porsche-Fan seit 2010, Nordschleife-Enthusiast)",
     rows: 2,
@@ -11444,11 +11440,11 @@ function PCNInner() {
       resize: "none",
       fontFamily: "'Barlow',sans-serif"
     }
-  })), /*#__PURE__*/_react.default.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 18
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 800,
@@ -11457,7 +11453,7 @@ function PCNInner() {
       letterSpacing: 1.5,
       marginBottom: 10
     }
-  }, "Benachrichtigungen"), [["notifications_events", "🏁  Event-Erinnerungen", "Neue Events und Anmeldungsbestätigungen"], ["notifications_messages", "💬  Neue Nachrichten", "Eingehende Nachrichten im Chat"]].map(([key, label, sub]) => /*#__PURE__*/_react.default.createElement("div", {
+  }, "Benachrichtigungen"), [["notifications_events", "🏁  Event-Erinnerungen", "Neue Events und Anmeldungsbestätigungen"], ["notifications_messages", "💬  Neue Nachrichten", "Eingehende Nachrichten im Chat"]].map(([key, label, sub]) => /*#__PURE__*/React.createElement("div", {
     key: key,
     style: {
       display: "flex",
@@ -11466,48 +11462,48 @@ function PCNInner() {
       padding: "11px 0",
       borderBottom: `1px solid ${C.border}`
     }
-  }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.white
     }
-  }, label), /*#__PURE__*/_react.default.createElement("div", {
+  }, label), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: C.muted,
       marginTop: 2
     }
-  }, sub)), /*#__PURE__*/_react.default.createElement("button", {
+  }, sub)), /*#__PURE__*/React.createElement("button", {
     className: `tog ${profileForm[key] ? "on" : "off"}`,
     onClick: () => setProfileForm(p => ({
       ...p,
       [key]: !p[key]
     }))
-  })))), /*#__PURE__*/_react.default.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8
     }
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     className: "btn ghost",
     style: {
       flex: 1
     },
     onClick: () => setShowEditProfile(false)
-  }, "Abbrechen"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "Abbrechen"), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     style: {
       flex: 1
     },
     onClick: saveProfile
-  }, "Speichern ✓")))), showAddV && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Speichern ✓")))), showAddV && /*#__PURE__*/React.createElement("div", {
     className: "overlay",
     onClick: e => {
       if (e.target === e.currentTarget) setShowAddV(false);
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "sheet"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 20,
@@ -11515,24 +11511,24 @@ function PCNInner() {
       color: C.white,
       marginBottom: 14
     }
-  }, "Fahrzeug hinzufügen"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Fahrzeug hinzufügen"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 10
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
       overflowX: "auto",
       marginBottom: 6
     }
-  }, (addVForm.images || []).map((img, i) => /*#__PURE__*/_react.default.createElement("div", {
+  }, (addVForm.images || []).map((img, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
       position: "relative",
       flexShrink: 0
     }
-  }, /*#__PURE__*/_react.default.createElement("img", {
+  }, /*#__PURE__*/React.createElement("img", {
     src: img,
     alt: "",
     style: {
@@ -11542,7 +11538,7 @@ function PCNInner() {
       borderRadius: 8,
       border: `2px solid ${C.border}`
     }
-  }), /*#__PURE__*/_react.default.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", {
     onClick: () => setAddVForm(p => ({
       ...p,
       images: p.images.filter((_, j) => j !== i)
@@ -11560,7 +11556,7 @@ function PCNInner() {
       borderRadius: "50%",
       cursor: "pointer"
     }
-  }, "✕"))), /*#__PURE__*/_react.default.createElement("label", {
+  }, "✕"))), /*#__PURE__*/React.createElement("label", {
     style: {
       width: 70,
       height: 70,
@@ -11575,7 +11571,7 @@ function PCNInner() {
       flexShrink: 0,
       gap: 2
     }
-  }, /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     type: "file",
     accept: "image/*",
     style: {
@@ -11585,21 +11581,21 @@ function PCNInner() {
       ...p,
       images: [...(p.images || []), url]
     })))
-  }), /*#__PURE__*/_react.default.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 20
     }
-  }, "📷"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "📷"), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 9,
       color: C.muted
     }
-  }, "Foto"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Foto"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted
     }
-  }, "Mehrere Fotos möglich — erstes Foto = Titelbild")), [["Modell *", "modell", "Cayman GT4"], ["Kennzeichen *", "kennzeichen", "AW-PC 718"], ["Baujahr", "baujahr", "2023"], ["Farbe", "farbe", "Pythongrün"]].map(([ph, key, ex]) => /*#__PURE__*/_react.default.createElement("input", {
+  }, "Mehrere Fotos möglich — erstes Foto = Titelbild")), [["Modell *", "modell", "Cayman GT4"], ["Kennzeichen *", "kennzeichen", "AW-PC 718"], ["Baujahr", "baujahr", "2023"], ["Farbe", "farbe", "Pythongrün"]].map(([ph, key, ex]) => /*#__PURE__*/React.createElement("input", {
     key: key,
     className: "inp",
     placeholder: `${ph} (z.B. ${ex})`,
@@ -11611,7 +11607,7 @@ function PCNInner() {
       ...p,
       [key]: e.target.value
     }))
-  })), /*#__PURE__*/_react.default.createElement("select", {
+  })), /*#__PURE__*/React.createElement("select", {
     className: "inp",
     value: addVForm.kraftstoff,
     onChange: e => setAddVForm(p => ({
@@ -11621,9 +11617,9 @@ function PCNInner() {
     style: {
       marginBottom: 10
     }
-  }, ["Benzin", "Diesel", "Elektro", "Hybrid"].map(k => /*#__PURE__*/_react.default.createElement("option", {
+  }, ["Benzin", "Diesel", "Elektro", "Hybrid"].map(k => /*#__PURE__*/React.createElement("option", {
     key: k
-  }, k))), /*#__PURE__*/_react.default.createElement("select", {
+  }, k))), /*#__PURE__*/React.createElement("select", {
     className: "inp",
     value: addVForm.getriebe || "PDK",
     onChange: e => setAddVForm(p => ({
@@ -11633,9 +11629,9 @@ function PCNInner() {
     style: {
       marginBottom: 8
     }
-  }, ["PDK", "7-Gang PDK", "6-Gang manuell", "8-Gang Automatik", "Stufenlos"].map(k => /*#__PURE__*/_react.default.createElement("option", {
+  }, ["PDK", "7-Gang PDK", "6-Gang manuell", "8-Gang Automatik", "Stufenlos"].map(k => /*#__PURE__*/React.createElement("option", {
     key: k
-  }, k))), /*#__PURE__*/_react.default.createElement("input", {
+  }, k))), /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "Telefon (optional, für Direktanruf)",
     type: "tel",
@@ -11647,26 +11643,26 @@ function PCNInner() {
     style: {
       marginBottom: 6
     }
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: C.muted,
       marginBottom: 14
     }
-  }, "🔒 Standardmäßig privat — Sichtbarkeit in QR-Einstellungen"), /*#__PURE__*/_react.default.createElement("button", {
+  }, "🔒 Standardmäßig privat — Sichtbarkeit in QR-Einstellungen"), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     style: {
       width: "100%"
     },
     onClick: addVehicle
-  }, "Hinzufügen ✓"))), showAddRem && /*#__PURE__*/_react.default.createElement("div", {
+  }, "Hinzufügen ✓"))), showAddRem && /*#__PURE__*/React.createElement("div", {
     className: "overlay",
     onClick: e => {
       if (e.target === e.currentTarget) setShowAddRem(false);
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "sheet"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "'Barlow Condensed',sans-serif",
       fontSize: 22,
@@ -11674,13 +11670,13 @@ function PCNInner() {
       color: C.white,
       marginBottom: 4
     }
-  }, "🔔 Erinnerung"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "🔔 Erinnerung"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted,
       marginBottom: 14
     }
-  }, "Neue Aufgabe oder Termin anlegen"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Neue Aufgabe oder Termin anlegen"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       fontWeight: 800,
@@ -11689,14 +11685,14 @@ function PCNInner() {
       letterSpacing: 1,
       marginBottom: 8
     }
-  }, "Schnellauswahl"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Schnellauswahl"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
       flexWrap: "wrap",
       marginBottom: 14
     }
-  }, [["🔧", "TÜV vereinbaren"], ["🛢️", "Ölwechsel"], ["🏎️", "Reifenwechsel"], ["📋", "Inspektion"], ["🏁", "Event vorbereiten"]].map(([icon, label]) => /*#__PURE__*/_react.default.createElement("button", {
+  }, [["🔧", "TÜV vereinbaren"], ["🛢️", "Ölwechsel"], ["🏎️", "Reifenwechsel"], ["📋", "Inspektion"], ["🏁", "Event vorbereiten"]].map(([icon, label]) => /*#__PURE__*/React.createElement("button", {
     key: label,
     onClick: () => setRemForm(p => ({
       ...p,
@@ -11715,7 +11711,7 @@ function PCNInner() {
       gap: 4,
       alignItems: "center"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", null, icon), /*#__PURE__*/_react.default.createElement("span", null, label)))), /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/React.createElement("span", null, icon), /*#__PURE__*/React.createElement("span", null, label)))), /*#__PURE__*/React.createElement("input", {
     className: "inp",
     placeholder: "Eigener Titel...",
     style: {
@@ -11726,13 +11722,13 @@ function PCNInner() {
       ...p,
       title: e.target.value
     }))
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginBottom: 6
     }
-  }, "Fälligkeitsdatum *"), /*#__PURE__*/_react.default.createElement("input", {
+  }, "Fälligkeitsdatum *"), /*#__PURE__*/React.createElement("input", {
     className: "inp",
     type: "date",
     style: {
@@ -11743,13 +11739,13 @@ function PCNInner() {
       ...p,
       date: e.target.value
     }))
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginBottom: 6
     }
-  }, "Fahrzeug (optional)"), /*#__PURE__*/_react.default.createElement("select", {
+  }, "Fahrzeug (optional)"), /*#__PURE__*/React.createElement("select", {
     className: "inp",
     style: {
       marginBottom: 16
@@ -11759,12 +11755,12 @@ function PCNInner() {
       ...p,
       vehicleId: e.target.value
     }))
-  }, /*#__PURE__*/_react.default.createElement("option", {
+  }, /*#__PURE__*/React.createElement("option", {
     value: ""
-  }, "Kein Fahrzeug"), myVehicles.map(v => /*#__PURE__*/_react.default.createElement("option", {
+  }, "Kein Fahrzeug"), myVehicles.map(v => /*#__PURE__*/React.createElement("option", {
     key: v.id,
     value: v.id
-  }, v.hersteller, " ", v.modell))), /*#__PURE__*/_react.default.createElement("button", {
+  }, v.hersteller, " ", v.modell))), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     style: {
       width: "100%",
@@ -11823,36 +11819,36 @@ function PCNInner() {
       });
       toast_("Erinnerung gespeichert ✓");
     }
-  }, "Speichern ✓"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Speichern ✓"))), /*#__PURE__*/React.createElement("div", {
     className: "tab-bar"
-  }, !isGuest && /*#__PURE__*/_react.default.createElement("button", {
+  }, !isGuest && /*#__PURE__*/React.createElement("button", {
     className: "tab-btn",
     onClick: openScanner,
     style: {
       color: C.red
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "ico"
-  }, "📷"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "📷"), /*#__PURE__*/React.createElement("span", {
     className: "lbl"
-  }, "Scan")), (isGuest ? [["messages", "💬", "Chats"]] : [["dashboard", "🏠", "Start"], ["events", "🏁", "Events"], ["community", "❤️", "Community"], ["messages", "💬", "Chats"], ["profile", "👤", "Profil"]]).map(([id, icon, label]) => /*#__PURE__*/_react.default.createElement("button", {
+  }, "Scan")), (isGuest ? [["messages", "💬", "Chats"]] : [["dashboard", "🏠", "Start"], ["events", "🏁", "Events"], ["community", "❤️", "Community"], ["messages", "💬", "Chats"], ["profile", "👤", "Profil"]]).map(([id, icon, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     className: `tab-btn ${tab === id ? "on" : ""}`,
     onClick: () => setTab(id)
-  }, id === "messages" && unreadCount > 0 && /*#__PURE__*/_react.default.createElement("div", {
+  }, id === "messages" && unreadCount > 0 && /*#__PURE__*/React.createElement("div", {
     className: "badge"
-  }, unreadCount), /*#__PURE__*/_react.default.createElement("span", {
+  }, unreadCount), /*#__PURE__*/React.createElement("span", {
     className: "ico"
-  }, icon), /*#__PURE__*/_react.default.createElement("span", {
+  }, icon), /*#__PURE__*/React.createElement("span", {
     className: "lbl"
-  }, label))), isGuest && publicV && /*#__PURE__*/_react.default.createElement("button", {
+  }, label))), isGuest && publicV && /*#__PURE__*/React.createElement("button", {
     className: "tab-btn",
     onClick: () => setScreen("public")
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "ico"
-  }, "🚗"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "🚗"), /*#__PURE__*/React.createElement("span", {
     className: "lbl"
-  }, "Fahrzeugakte")), isGuest && /*#__PURE__*/_react.default.createElement("button", {
+  }, "Fahrzeugakte")), isGuest && /*#__PURE__*/React.createElement("button", {
     className: "tab-btn",
     onClick: () => {
       setScreen("splash");
@@ -11861,9 +11857,13 @@ function PCNInner() {
         mode: "register"
       }));
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "ico"
-  }, "🔓"), /*#__PURE__*/_react.default.createElement("span", {
+  }, "🔓"), /*#__PURE__*/React.createElement("span", {
     className: "lbl"
   }, "Mitglied"))));
 }
+
+
+// Make available as global for index.html
+if(typeof exports !== "undefined" && exports.default) { window.PCN_MVP = exports.default; }
