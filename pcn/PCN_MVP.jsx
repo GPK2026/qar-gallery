@@ -746,6 +746,9 @@ function PCNInner() {
   // ── Core state ──────────────────────────────────────────────────────────────
   const [screen, setScreen]       = useState(()=>window.__PCN_PRELOAD_SESSION__ ? "app" : "splash");
   const [tab, setTab]             = useState("dashboard");
+  const [favorites, setFavorites] = useState(()=>{
+    try{ return JSON.parse(localStorage.getItem("pcn_favorites")||"[]"); }catch(e){ return []; }
+  });
   const [me, setMe]               = useState(()=>window.__PCN_PRELOAD_SESSION__||null);
   const [allUsers, setAllUsers]   = useState({...DEMO_USERS});
   const [vehicles, setVehicles]   = useState({});
@@ -942,6 +945,18 @@ function PCNInner() {
     return pts;
   };
   const myPoints = calcPoints();
+
+  const isFavorite = (vehicleId) => favorites.includes(vehicleId);
+  const toggleFavorite = (vehicleId) => {
+    setFavorites(prev => {
+      const next = prev.includes(vehicleId)
+        ? prev.filter(id=>id!==vehicleId)
+        : [...prev, vehicleId];
+      localStorage.setItem("pcn_favorites", JSON.stringify(next));
+      if(!prev.includes(vehicleId)) toast_("❤️ Gespeichert");
+      return next;
+    });
+  };
   const TIERS = [
     {name:"Bronze",  pts:100},
     {name:"Silber",  pts:300},
@@ -3728,7 +3743,13 @@ function PCNInner() {
                       {(logbook[v.id]||[]).length>0&&<span style={{fontSize:9,color:C.green,fontWeight:700}}>{(logbook[v.id]||[]).length} Einträge</span>}
                     </div>
                   </div>
-                  <div style={{display:"flex",alignItems:"center",paddingRight:12,color:C.muted,fontSize:20}}>›</div>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,paddingRight:12}}>
+                    <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
+                      style={{background:"none",border:"none",cursor:"pointer",fontSize:22,padding:"2px 4px",lineHeight:1,color:isFavorite(v.id)?C.red:C.muted}}>
+                      {isFavorite(v.id)?"❤️":"🤍"}
+                    </button>
+                    <span style={{fontSize:16,color:C.muted}}>›</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -3759,7 +3780,13 @@ function PCNInner() {
                         <span style={{fontSize:9,color:C.gold,fontWeight:700}}>Peter K.</span>
                       </div>
                     </div>
-                    <div style={{display:"flex",alignItems:"center",paddingRight:12,color:C.muted,fontSize:20}}>›</div>
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,paddingRight:12}}>
+                      <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
+                        style={{background:"none",border:"none",cursor:"pointer",fontSize:22,padding:"2px 4px",lineHeight:1,color:isFavorite(v.id)?C.red:C.muted}}>
+                        {isFavorite(v.id)?"❤️":"🤍"}
+                      </button>
+                      <span style={{fontSize:16,color:C.muted}}>›</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -4296,6 +4323,139 @@ function PCNInner() {
           </div>
         )}
 
+
+        {/* COMMUNITY */}
+        {tab==="community"&&!isGuest&&(
+          <div style={{animation:"fadeIn .2s"}}>
+            {/* Header */}
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,marginBottom:4}}>
+              Community
+            </div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:16}}>Fahrzeuge die dich begeistern</div>
+
+            {/* Favorites section */}
+            <div style={{marginBottom:24}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                <span style={{fontSize:18}}>❤️</span>
+                <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
+                  Meine Favoriten ({favorites.length})
+                </div>
+              </div>
+              {favorites.length===0?(
+                <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:14,padding:"32px 20px",textAlign:"center"}}>
+                  <div style={{fontSize:40,marginBottom:10}}>🤍</div>
+                  <div style={{fontSize:14,color:C.white,fontWeight:600,marginBottom:6}}>Noch keine Favoriten</div>
+                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>
+                    Tippe auf das ❤️ bei einer Fahrzeugakte um sie hier zu speichern
+                  </div>
+                </div>
+              ):(
+                <div>
+                  {favorites.map(fid=>{
+                    const fv = Object.values(vehicles).find(v=>v.id===fid);
+                    if(!fv) return null;
+                    const isOwn = fv.userId===me?.id||fv.owner===me?.email;
+                    const DEFp = typeof fv.privacy==="string"?JSON.parse(fv.privacy||"{}"):(fv.privacy||{});
+                    return (
+                      <div key={fid} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,marginBottom:10,
+                        overflow:"hidden",cursor:"pointer",display:"flex"}}
+                        onClick={()=>{
+                          if(isOwn){setViewV(fv);setScreen("vehicle");}
+                          else{setPublicV({...fv,privacy:{...DEF_PRIVACY,...DEFp}});setScreen("public");}
+                        }}>
+                        <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,
+                          display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {fv.image
+                            ?<img src={fv.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                            :<span style={{fontSize:28}}>🏎️</span>}
+                        </div>
+                        <div style={{padding:"12px 13px",flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                          <div style={{fontWeight:700,fontSize:15,color:C.white}}>{fv.hersteller} {fv.modell}</div>
+                          <div style={{fontSize:11,color:C.muted,marginTop:4}}>{fv.baujahr} · {fv.farbe}</div>
+                          <div style={{display:"flex",gap:6,marginTop:5,alignItems:"center",flexWrap:"wrap"}}>
+                            <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"1px 7px",
+                              fontSize:10,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif"}}>
+                              {fmtKz(fv.kennzeichen,fv.baujahr)}
+                            </span>
+                            {!isOwn&&<span style={{fontSize:10,color:C.muted}}>Mitglied</span>}
+                            {isOwn&&<span style={{fontSize:10,color:C.green,fontWeight:700}}>Mein Fahrzeug</span>}
+                          </div>
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",paddingRight:12,gap:4}}>
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(fid);}}
+                            style={{background:"none",border:"none",cursor:"pointer",fontSize:22,padding:"4px",color:C.red}}>
+                            ❤️
+                          </button>
+                          <span style={{fontSize:16,color:C.muted}}>›</span>
+                        </div>
+                      </div>
+                    );
+                  }).filter(Boolean)}
+                </div>
+              )}
+            </div>
+
+            {/* Recently viewed */}
+            {(()=>{
+              const recent = JSON.parse(localStorage.getItem("pcn_recent_vehicles")||"[]")
+                .filter(id=>!favorites.includes(id));
+              if(!recent.length) return null;
+              return (
+                <div style={{marginBottom:20}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                    <span style={{fontSize:16}}>👁</span>
+                    <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
+                      Zuletzt angesehen
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:8,WebkitOverflowScrolling:"touch"}}>
+                    {recent.slice(0,8).map(id=>{
+                      const rv=Object.values(vehicles).find(v=>v.id===id);
+                      if(!rv) return null;
+                      const DEFp2=typeof rv.privacy==="string"?JSON.parse(rv.privacy||"{}"):(rv.privacy||{});
+                      return (
+                        <div key={id} onClick={()=>{setPublicV({...rv,privacy:{...DEF_PRIVACY,...DEFp2}});setScreen("public");}}
+                          style={{flexShrink:0,width:120,cursor:"pointer"}}>
+                          <div style={{width:120,height:80,borderRadius:10,overflow:"hidden",background:"#111",
+                            display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6,position:"relative"}}>
+                            {rv.image
+                              ?<img src={rv.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                              :<span style={{fontSize:28}}>🏎️</span>}
+                            <button onClick={e=>{e.stopPropagation();toggleFavorite(id);}}
+                              style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,.6)",border:"none",
+                                borderRadius:"50%",width:24,height:24,cursor:"pointer",fontSize:13,display:"flex",
+                                alignItems:"center",justifyContent:"center",color:isFavorite(id)?C.red:"#fff"}}>
+                              {isFavorite(id)?"❤":"🤍"}
+                            </button>
+                          </div>
+                          <div style={{fontSize:11,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
+                          <div style={{fontSize:9,color:C.muted}}>{rv.baujahr}</div>
+                        </div>
+                      );
+                    }).filter(Boolean)}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Scan stats */}
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px"}}>
+              <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>📊 Meine Aktivität</div>
+              {[
+                ["❤️","Favoriten",favorites.length+" Fahrzeuge"],
+                ["👁","Angesehen",getViewedVehicles().length+" Akten · +"+(getViewedVehicles().length*2)+" Pkt"],
+                ["📱","QR-Scans bestätigt",getScanConfirmed().length+" · +"+(getScanConfirmed().length*10)+" Pkt"],
+              ].map(([icon,label,val])=>(
+                <div key={label} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <span style={{fontSize:18,width:24,textAlign:"center"}}>{icon}</span>
+                  <div style={{flex:1,fontSize:13,color:C.white}}>{label}</div>
+                  <div style={{fontSize:12,color:C.muted}}>{val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* PROFILE */}
         {tab==="profile"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
@@ -4767,7 +4927,7 @@ function PCNInner() {
         )}
         {(isGuest
           ? [["messages","💬","Chats"]]
-          : [["dashboard","🏠","Start"],["events","🏁","Events"],["messages","💬","Chats"],["reminders","🔔","Termine"],["profile","👤","Profil"]]
+          : [["dashboard","🏠","Start"],["events","🏁","Events"],["community","❤️","Community"],["messages","💬","Chats"],["profile","👤","Profil"]]
         ).map(([id,icon,label])=>(
           <button key={id} className={`tab-btn ${tab===id?"on":""}`} onClick={()=>setTab(id)}>
             {id==="messages"&&unreadCount>0&&<div className="badge">{unreadCount}</div>}
