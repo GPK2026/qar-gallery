@@ -151,22 +151,33 @@
     }
   </script>
   <!-- jsQR — bundled locally, no CDN needed -->
-  <script src="jsQR.js?v=1783927550"></script>
+  <script src="jsQR.js?v=1783930004"></script>
   <!-- QR Code generator — bundled locally -->
-  <script src="qrcode_bundle.js?v=1783927550"></script>
+  <script src="qrcode_bundle.js?v=1783930004"></script>
   <!-- Storage layer (load before app) -->
-  <script src="pcn_storage.js?v=1783927550"></script>
+  <script src="pcn_storage.js?v=1783930004"></script>
   <!-- App -->
-  <script src="PCN_MVP.compiled.js?v=1783927550"></script>
+  <script src="PCN_MVP.compiled.js?v=1783930004"></script>
 
   <script>
     (function() {
       try {
-        var App = (window.PCN_MVP && window.PCN_MVP.default)
-          ? window.PCN_MVP.default
-          : window.PCN_MVP;
-
-        if (!App) throw new Error('App konnte nicht geladen werden.');
+        // Try multiple export patterns
+        var App = null;
+        if (window.PCN_MVP && typeof window.PCN_MVP.default === "function") {
+          App = window.PCN_MVP.default;
+        } else if (typeof window.PCN_MVP === "function") {
+          App = window.PCN_MVP;
+        } else if (typeof window.PCN === "function") {
+          App = window.PCN;
+        } else if (typeof window.PCNInner === "function") {
+          App = window.PCNInner;
+        }
+        
+        // Debug: log what we have
+        console.log("[PCN] App load attempt:", typeof window.PCN_MVP, typeof App);
+        
+        if (!App) throw new Error('App konnte nicht geladen werden. PCN_MVP=' + typeof window.PCN_MVP);
 
         var root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(React.createElement(App));
