@@ -3744,12 +3744,8 @@ function PCNInner() {
                       {(logbook[v.id]||[]).length>0&&<span style={{fontSize:9,color:C.green,fontWeight:700}}>{(logbook[v.id]||[]).length} Einträge</span>}
                     </div>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,paddingRight:12}}>
-                    <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
-                      style={{background:"none",border:"none",cursor:"pointer",fontSize:22,padding:"2px 4px",lineHeight:1,color:isFavorite(v.id)?C.red:C.muted}}>
-                      {isFavorite(v.id)?"❤️":"🤍"}
-                    </button>
-                    <span style={{fontSize:16,color:C.muted}}>›</span>
+                  <div style={{display:"flex",alignItems:"center",paddingRight:14}}>
+                    <span style={{fontSize:18,color:C.muted}}>›</span>
                   </div>
                 </div>
               ))}
@@ -3768,8 +3764,18 @@ function PCNInner() {
                       const priv = typeof v.privacy==="string" ? JSON.parse(v.privacy) : (v.privacy||{});
                       setPublicV({...v, privacy:{...DEF_PRIVACY,...priv}});
                       setScreen("public");
-                    }}>                    <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    }}>
+                    <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
                       {v.image?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:28}}>🏎️</span>}
+                      {/* Heart badge on photo — top right */}
+                      <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
+                        style={{position:"absolute",top:5,right:5,background:"rgba(0,0,0,.55)",
+                          border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          fontSize:14,lineHeight:1,backdropFilter:"blur(4px)",
+                          WebkitTapHighlightColor:"transparent"}}>
+                        {isFavorite(v.id)?"❤️":"🤍"}
+                      </button>
                     </div>
                     <div style={{padding:"12px 13px",flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center"}}>
                       <div style={{fontWeight:700,fontSize:15,color:C.white}}>{v.hersteller} {v.modell}</div>
@@ -3781,12 +3787,8 @@ function PCNInner() {
                         <span style={{fontSize:9,color:C.gold,fontWeight:700}}>Peter K.</span>
                       </div>
                     </div>
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,paddingRight:12}}>
-                      <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
-                        style={{background:"none",border:"none",cursor:"pointer",fontSize:22,padding:"2px 4px",lineHeight:1,color:isFavorite(v.id)?C.red:C.muted}}>
-                        {isFavorite(v.id)?"❤️":"🤍"}
-                      </button>
-                      <span style={{fontSize:16,color:C.muted}}>›</span>
+                    <div style={{display:"flex",alignItems:"center",paddingRight:14}}>
+                      <span style={{fontSize:18,color:C.muted}}>›</span>
                     </div>
                   </div>
                 ))}
