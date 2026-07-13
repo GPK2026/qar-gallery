@@ -1200,9 +1200,19 @@
       style: {
         width: "100%",
         padding: "14px",
-        fontSize: 15
+        fontSize: 15,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8
       }
-    }, "Anmelden →")), !myReg && !isPast && spotsLeft <= 0 && /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("span", null, "Anmelden →"), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 10,
+        opacity: .7,
+        fontWeight: 600
+      }
+    }, "+100 Pkt bei Bestätigung"))), !myReg && !isPast && spotsLeft <= 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -1537,7 +1547,7 @@
           margin: "4px 0"
         }
       }, "— ", m.text, " —");
-      const mine = m.from === me?.id;
+      const mine = m.from === me?.id || m.from_id === me?.id;
       const isAdminMsg = m.isSystem || m.from === "00000000-0000-0000-0000-000000000000" || thread.id?.startsWith("admin-") && m.from !== me?.id;
       // Parse payload for scan requests
       let scanPayload = null;
@@ -4706,92 +4716,7 @@
           fontSize: 20,
           color: "rgba(255,255,255,.7)"
         }
-      }, "›")), (!me || v.owner !== me.email && v.userId !== me.id) &&
-      // ── QR-Scan Punkte Block ──────────────────────────────────────────
-      (() => {
-        const isOwner = me && (v.userId === me.id || v.owner === me.email);
-        if (isOwner) return null;
-        const vid = v.id || v.qarId;
-        const scanKey = me ? `${me.id}:${vid}` : null;
-        const alreadyConf = scanKey && getScanConfirmed().includes(scanKey);
-        const alreadyReq = scanKey && JSON.parse(localStorage.getItem("pcn_scan_requests") || "[]").includes(scanKey);
-        const alreadyView = getViewedVehicles().includes(vid);
-        return /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            marginBottom: 12
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            background: `${C.blue}11`,
-            border: `1px solid ${C.blue}22`,
-            borderRadius: 10,
-            padding: "9px 13px",
-            marginBottom: 8,
-            display: "flex",
-            gap: 8,
-            alignItems: "center"
-          }
-        }, /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 16
-          }
-        }, "👁"), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontSize: 12,
-            color: alreadyView ? C.muted : C.blue,
-            fontWeight: alreadyView ? 400 : 600
-          }
-        }, alreadyView ? "✓ +2 Punkte für Ansehen (bereits vergeben)" : "+2 Punkte fürs Ansehen dieser Akte")), me && v.userId && /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            background: alreadyConf ? `${C.green}11` : `${C.gold}11`,
-            border: `1px solid ${alreadyConf ? C.green : C.gold}33`,
-            borderRadius: 10,
-            padding: "11px 13px",
-            display: "flex",
-            gap: 10,
-            alignItems: "center"
-          }
-        }, /*#__PURE__*/_react.default.createElement("span", {
-          style: {
-            fontSize: 20
-          }
-        }, alreadyConf ? "✅" : "📱"), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            flex: 1,
-            minWidth: 0
-          }
-        }, /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontSize: 13,
-            fontWeight: 700,
-            color: alreadyConf ? C.green : C.gold
-          }
-        }, alreadyConf ? "QR-Scan bestätigt · +10 Punkte" : "QR-Code scannen · +10 Punkte"), /*#__PURE__*/_react.default.createElement("div", {
-          style: {
-            fontSize: 11,
-            color: C.muted
-          }
-        }, alreadyConf ? "Bestätigt vom Fahrzeugbesitzer" : alreadyReq ? "⏳ Bestätigung ausstehend…" : "Besitzer bestätigt deinen Scan (Anti-Cheat)")), !alreadyConf && !alreadyReq && me && /*#__PURE__*/_react.default.createElement("button", {
-          onClick: async () => {
-            const reqs = JSON.parse(localStorage.getItem("pcn_scan_requests") || "[]");
-            reqs.push(scanKey);
-            localStorage.setItem("pcn_scan_requests", JSON.stringify(reqs));
-            await requestScanConfirm(v);
-          },
-          style: {
-            flexShrink: 0,
-            background: C.gold,
-            color: "#111",
-            fontWeight: 800,
-            fontSize: 11,
-            padding: "7px 11px",
-            border: "none",
-            borderRadius: 7,
-            cursor: "pointer",
-            fontFamily: "'Barlow',sans-serif"
-          }
-        }, "Anfragen")));
-      })(), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("button", {
+      }, "›")), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => {
           if (me) {
             startContact(v.id);
@@ -4811,7 +4736,8 @@
           cursor: "pointer",
           fontFamily: "'Barlow',sans-serif",
           color: "#fff",
-          width: "100%"
+          width: "100%",
+          marginBottom: 10
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
@@ -4841,12 +4767,26 @@
           color: "rgba(255,255,255,.7)",
           marginTop: 1
         }
-      }, "Anonym · Besitzer antwortet per App")), /*#__PURE__*/_react.default.createElement("span", {
+      }, "Anonym · Besitzer antwortet per App")), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 20,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 2,
+          flexShrink: 0
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 18,
           color: "rgba(255,255,255,.7)"
         }
-      }, "›")), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("div", {
+      }, "›"), me && /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 9,
+          color: "rgba(255,255,255,.5)",
+          fontWeight: 600
+        }
+      }, "+5 Pkt"))), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: "rgba(255,255,255,.05)",
           border: "1px solid rgba(255,255,255,.1)",
@@ -5883,24 +5823,31 @@
         paddingTop: 16,
         borderTop: `1px solid ${C.border}`
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
-      onClick: () => {
-        markNewsRead(viewNews.id);
-        setViewNews(null);
-      },
-      style: {
-        flex: 1,
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 10,
-        padding: "12px",
-        color: C.muted,
-        fontSize: 13,
-        fontWeight: 700,
-        cursor: "pointer",
-        fontFamily: "'Barlow',sans-serif"
-      }
-    }, "✓ Gelesen"), /*#__PURE__*/_react.default.createElement("button", {
+    }, (() => {
+      const alreadyR = JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").includes(String(viewNews.id));
+      return /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => {
+          markNewsRead(viewNews.id);
+          setViewNews(null);
+        },
+        style: {
+          flex: 1,
+          background: alreadyR ? C.card : `${C.green}18`,
+          border: `1px solid ${alreadyR ? C.border : C.green + "44"}`,
+          borderRadius: 10,
+          padding: "12px",
+          color: alreadyR ? C.muted : C.green,
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6
+        }
+      }, alreadyR ? "✓ Gelesen" : "✓ Gelesen · +10 🏆");
+    })(), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => setNewsState(p => ({
         ...p,
         [viewNews.id]: p[viewNews.id] === "remind" ? undefined : "remind"
@@ -8493,7 +8440,8 @@
       }, welcome.body))));
     })(), (() => {
       const dbNews = (window._dbNews || []).filter(n => n && !DEMO_NEWS.find(d => d.id === String(n.id)));
-      const items = [...dbNews, ...DEMO_NEWS].filter(n => n.type !== "welcome" && newsState[n.id] !== "read").sort((a, b) => new Date(b.date) - new Date(a.date));
+      const readPts = JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]");
+      const items = [...dbNews, ...DEMO_NEWS].filter(n => n.type !== "welcome" && newsState[n.id] !== "read" && !readPts.includes(String(n.id))).sort((a, b) => new Date(b.date) - new Date(a.date));
       if (!items.length) return null;
       return /*#__PURE__*/_react.default.createElement("div", {
         style: {
@@ -8640,7 +8588,12 @@
         fontSize: 11,
         color: C.muted
       }
-    }, "Schaltet QR-Code, Logbuch und Events frei")) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
+    }, "Schaltet QR-Code, Logbuch und Events frei · ", /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: C.gold,
+        fontWeight: 700
+      }
+    }, "+50 Pkt"))) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
       key: v.id,
       style: {
         background: C.card,
@@ -10520,6 +10473,33 @@
           }
         }, rv.baujahr));
       }).filter(Boolean)));
+    })(), (() => {
+      const pending = JSON.parse(localStorage.getItem("pcn_scan_requests") || "[]").filter(key => !getScanConfirmed().includes(key));
+      if (!pending.length) return null;
+      return /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: `${C.gold}11`,
+          border: `1px solid ${C.gold}33`,
+          borderRadius: 12,
+          padding: "13px 16px",
+          marginBottom: 12
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          fontWeight: 800,
+          color: C.gold,
+          textTransform: "uppercase",
+          letterSpacing: 1.5,
+          marginBottom: 8
+        }
+      }, "📱 QR-Scans — Bestätigung ausstehend (", pending.length, ")"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: C.muted,
+          lineHeight: 1.6
+        }
+      }, "Du hast ", pending.length, " Fahrzeug", pending.length > 1 ? "e" : "", " gescannt. Sobald der Besitzer bestätigt, erhältst du +10 Punkte je Scan. Die Bestätigung erfolgt automatisch über den Admin-Chat des Besitzers."));
     })(), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
@@ -11316,7 +11296,62 @@
         color: C.muted,
         lineHeight: 1.7
       }
-    }, "💡 Stufen: 100 Pkt = Bronze · 300 Pkt = Silber · 600 Pkt = Gold · 1.000 Pkt = Platin · 2.000 Pkt = Legend"), /*#__PURE__*/_react.default.createElement("button", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginBottom: 8,
+        fontWeight: 700,
+        color: C.gold
+      }
+    }, "🏆 Punktestufen"), [["Bronze", "100"], ["Silber", "300"], ["Gold", "600"], ["Platin", "1.000"], ["Legend", "2.000"]].map(([n, p]) => /*#__PURE__*/_react.default.createElement("div", {
+      key: n,
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        padding: "4px 0",
+        borderBottom: `1px solid ${C.border}`
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: C.white
+      }
+    }, n), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: C.gold
+      }
+    }, "ab ", p, " Pkt"))), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginTop: 12,
+        marginBottom: 6,
+        fontWeight: 700,
+        color: "#aaa"
+      }
+    }, "Punkte erhalten für:"), [["🚗", "Fahrzeug anlegen", "50 Pkt"], ["📋", "Logbuch-Eintrag", "10 Pkt"], ["🏁", "Event (bestätigt)", "100 Pkt"], ["💬", "Nachricht senden", "5 Pkt"], ["📰", "News lesen", "10 Pkt"], ["👁", "Fahrzeugakte ansehen", "2 Pkt"], ["📱", "QR-Scan bestätigt", "10 Pkt"]].map(([i, l, p]) => /*#__PURE__*/_react.default.createElement("div", {
+      key: l,
+      style: {
+        display: "flex",
+        gap: 8,
+        padding: "4px 0",
+        borderBottom: `1px solid ${C.border}`,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        width: 20,
+        textAlign: "center"
+      }
+    }, i), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        flex: 1,
+        color: C.white,
+        fontSize: 12
+      }
+    }, l), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: C.green,
+        fontWeight: 700,
+        fontSize: 12
+      }
+    }, p)))), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         width: "100%",
