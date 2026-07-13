@@ -502,14 +502,21 @@ function rContent(el){
   </div>
   <div class="card">
     <div class="sec-title">📋 Templates</div>
-    ${[{icon:"🏁",t:"Clubabend-Erinnerung",b:"Liebe Mitglieder,\n\nnächsten [WOCHENTAG] findet unser monatlicher Clubabend im Kesselchen statt — ab [UHRZEIT] Uhr.\n\nBis bald,\nEuer PCN-Vorstand"},
-      {icon:"🚗",t:"TrackDay-Anmeldung",b:"Liebe Motorsport-Freunde,\n\ndie Anmeldung für den [DATUM] TrackDay auf der [STRECKE] ist offen!\n\nMax. [ANZAHL] Plätze · [PREIS]\n\nJetzt in der App anmelden!"},
-      {icon:"📢",t:"Allgemeine Ankündigung",b:"Liebe Mitglieder,\n\n[INHALT]\n\nMit sportlichen Grüßen,\nEuer PCN-Vorstand"}
-    ].map(x=>`<div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
-      <span style="font-size:20px;flex-shrink:0">${x.icon}</span>
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${x.t}</div></div>
-      <button class="btn btn-sm btn-ghost" onclick="useTpl(${JSON.stringify(x.t)},${JSON.stringify(x.b)})">Verwenden</button>
-    </div>`).join("")}
+    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
+      <span style="font-size:20px;flex-shrink:0">🏁</span>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">Clubabend-Erinnerung</div></div>
+      <button class="btn btn-sm btn-ghost" onclick="useTpl(0)">Verwenden</button>
+    </div>
+    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
+      <span style="font-size:20px;flex-shrink:0">🚗</span>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">TrackDay-Anmeldung</div></div>
+      <button class="btn btn-sm btn-ghost" onclick="useTpl(1)">Verwenden</button>
+    </div>
+    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
+      <span style="font-size:20px;flex-shrink:0">📢</span>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">Allgemeine Ankündigung</div></div>
+      <button class="btn btn-sm btn-ghost" onclick="useTpl(2)">Verwenden</button>
+    </div>
   </div>`;
 }
 
@@ -533,15 +540,33 @@ function rSettings(el){
 
 // Actions
 async function togglePaid(id,isPaid){
+  // Optimistic update — update local state immediately
+  DB.members = DB.members.map(m=>m.id===id?{...m,beitrag_bezahlt:!isPaid}:m);
+  updateBadges(); renderTab(currentTab);
+  // Then persist to DB
   const{error}=await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:!isPaid})});
-  if(error){toast("Fehler","err");await loadAll();return;}
+  if(error){
+    // Revert on error
+    DB.members = DB.members.map(m=>m.id===id?{...m,beitrag_bezahlt:isPaid}:m);
+    toast("Fehler: Konnte nicht gespeichert werden","err");
+    updateBadges(); renderTab(currentTab);
+    return;
+  }
   if(!isPaid) sendAdminMsg(id,"Dein Mitgliedsbeitrag "+new Date().getFullYear()+" wurde als bezahlt verbucht. Vielen Dank!","💳");
-  toast(isPaid?"Offen markiert":"✓ Bezahlt verbucht"); await loadAll();
+  toast(isPaid?"Offen markiert":"✓ Bezahlt verbucht");
 }
 async function toggleRole(id,isMember){
-  await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:isMember?"guest":"member"})});
+  // Optimistic update
+  DB.members = DB.members.map(m=>m.id===id?{...m,role:isMember?"guest":"member"}:m);
+  updateBadges(); renderTab(currentTab);
+  const{error}=await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:isMember?"guest":"member"})});
+  if(error){
+    DB.members = DB.members.map(m=>m.id===id?{...m,role:isMember?"member":"guest"}:m);
+    toast("Fehler","err"); updateBadges(); renderTab(currentTab);
+    return;
+  }
   if(!isMember) sendAdminMsg(id,"Willkommen als Mitglied im Porsche Club Nürburgring! 🏎️ Dein Konto wurde freigeschaltet.","🎉");
-  toast(isMember?"Als Gast gesetzt":"✓ Mitglied freigegeben + Nachricht"); await loadAll();
+  toast(isMember?"Als Gast gesetzt":"✓ Mitglied freigegeben + Nachricht");
 }
 async function upgradeMember(id){
   await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:"member"})});
@@ -601,9 +626,15 @@ async function saveEvent(){
 }
 async function delEvent(id,name){if(!confirm(`"${name}" löschen?`)) return;await api(`events?id=eq.${id}`,{method:"DELETE"});toast("Gelöscht");await loadAll();}
 
-function useTpl(title,body){
+const TEMPLATES = [
+  {t:"Clubabend-Erinnerung", b:"Liebe Mitglieder,\n\nnächsten [WOCHENTAG] findet unser monatlicher Clubabend im Kesselchen statt — ab [UHRZEIT] Uhr.\n\nBis bald,\nEuer PCN-Vorstand"},
+  {t:"TrackDay-Anmeldung", b:"Liebe Motorsport-Freunde,\n\ndie Anmeldung für den [DATUM] TrackDay auf der [STRECKE] ist offen!\n\nMax. [ANZAHL] Plätze · [PREIS]\n\nJetzt in der App anmelden!"},
+  {t:"Allgemeine Ankündigung", b:"Liebe Mitglieder,\n\n[INHALT]\n\nMit sportlichen Grüßen,\nEuer PCN-Vorstand"},
+];
+function useTpl(idx){
+  const tpl=TEMPLATES[idx]; if(!tpl) return;
   const s=document.getElementById("nl-sub"),b=document.getElementById("nl-body");
-  if(s)s.value=title;if(b)b.value=body;
+  if(s)s.value=tpl.t; if(b)b.value=tpl.b;
   toast("Template eingefügt — bitte [PLATZHALTER] ersetzen");
 }
 async function publishNL(){
