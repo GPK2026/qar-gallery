@@ -492,8 +492,9 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                 </select>
               </>
             )}
-            <button className="btn" onClick={()=>onJoin(ev.id,selV,selC)} style={{width:"100%",padding:"14px",fontSize:15}}>
-              Anmelden →
+            <button className="btn" onClick={()=>onJoin(ev.id,selV,selC)} style={{width:"100%",padding:"14px",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <span>Anmelden →</span>
+              <span style={{fontSize:10,opacity:.7,fontWeight:600}}>+100 Pkt bei Bestätigung</span>
             </button>
           </div>
         )}
@@ -652,7 +653,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           if(m.isSystem) return (
             <div key={m.id} style={{textAlign:"center",fontSize:10,color:"#444",margin:"4px 0"}}>— {m.text} —</div>
           );
-          const mine = m.from===me?.id;
+          const mine = m.from===me?.id || m.from_id===me?.id;
           const isAdminMsg = m.isSystem || m.from==="00000000-0000-0000-0000-000000000000" || (thread.id?.startsWith("admin-") && m.from!==me?.id);
           // Parse payload for scan requests
           let scanPayload = null;
@@ -2350,64 +2351,19 @@ function PCNInner() {
 
             {/* CHAT — always visible for visitors (non-owners), opens anonymous chat */}
             {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
-
-              // ── QR-Scan Punkte Block ──────────────────────────────────────────
-              (()=>{
-                const isOwner = me&&(v.userId===me.id||v.owner===me.email);
-                if(isOwner) return null;
-                const vid = v.id||v.qarId;
-                const scanKey = me ? `${me.id}:${vid}` : null;
-                const alreadyConf = scanKey && getScanConfirmed().includes(scanKey);
-                const alreadyReq  = scanKey && JSON.parse(localStorage.getItem("pcn_scan_requests")||"[]").includes(scanKey);
-                const alreadyView = getViewedVehicles().includes(vid);
-                return (
-                  <div style={{marginBottom:12}}>
-                    {/* View points */}
-                    <div style={{background:`${C.blue}11`,border:`1px solid ${C.blue}22`,borderRadius:10,padding:"9px 13px",marginBottom:8,display:"flex",gap:8,alignItems:"center"}}>
-                      <span style={{fontSize:16}}>👁</span>
-                      <div style={{fontSize:12,color:alreadyView?C.muted:C.blue,fontWeight:alreadyView?400:600}}>
-                        {alreadyView?"✓ +2 Punkte für Ansehen (bereits vergeben)":"+2 Punkte fürs Ansehen dieser Akte"}
-                      </div>
-                    </div>
-                    {/* Scan points */}
-                    {me&&v.userId&&(
-                      <div style={{background:alreadyConf?`${C.green}11`:`${C.gold}11`,border:`1px solid ${alreadyConf?C.green:C.gold}33`,borderRadius:10,padding:"11px 13px",display:"flex",gap:10,alignItems:"center"}}>
-                        <span style={{fontSize:20}}>{alreadyConf?"✅":"📱"}</span>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:13,fontWeight:700,color:alreadyConf?C.green:C.gold}}>
-                            {alreadyConf?"QR-Scan bestätigt · +10 Punkte":"QR-Code scannen · +10 Punkte"}
-                          </div>
-                          <div style={{fontSize:11,color:C.muted}}>
-                            {alreadyConf?"Bestätigt vom Fahrzeugbesitzer":alreadyReq?"⏳ Bestätigung ausstehend…":"Besitzer bestätigt deinen Scan (Anti-Cheat)"}
-                          </div>
-                        </div>
-                        {!alreadyConf&&!alreadyReq&&me&&(
-                          <button onClick={async()=>{
-                            const reqs=JSON.parse(localStorage.getItem("pcn_scan_requests")||"[]");
-                            reqs.push(scanKey); localStorage.setItem("pcn_scan_requests",JSON.stringify(reqs));
-                            await requestScanConfirm(v);
-                          }} style={{flexShrink:0,background:C.gold,color:"#111",fontWeight:800,fontSize:11,padding:"7px 11px",border:"none",borderRadius:7,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                            Anfragen
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()
-            )}
-
-            {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
               <button
                 onClick={()=>{ if(me){ startContact(v.id); } else { setContactAuthMode("guest"); setShowContactAuth(v.id); }}}
                 style={{display:"flex",alignItems:"center",gap:12,background:C.red,border:"none",
-                  borderRadius:12,padding:"14px 16px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#fff",width:"100%"}}>
+                  borderRadius:12,padding:"14px 16px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#fff",width:"100%",marginBottom:10}}>
                 <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>💬</div>
                 <div style={{flex:1,textAlign:"left"}}>
                   <div style={{fontWeight:800,fontSize:15}}>Nachricht an Fahrer(in) senden</div>
                   <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:1}}>Anonym · Besitzer antwortet per App</div>
                 </div>
-                <span style={{fontSize:20,color:"rgba(255,255,255,.7)"}}>›</span>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2,flexShrink:0}}>
+                  <span style={{fontSize:18,color:"rgba(255,255,255,.7)"}}>›</span>
+                  {me&&<span style={{fontSize:9,color:"rgba(255,255,255,.5)",fontWeight:600}}>+5 Pkt</span>}
+                </div>
               </button>
             )}
 
@@ -2765,11 +2721,19 @@ function PCNInner() {
           {viewNews.body}
         </div>
         <div style={{display:"flex",gap:10,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
-          <button onClick={()=>{markNewsRead(viewNews.id);setViewNews(null);}}
-            style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",
-              color:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-            ✓ Gelesen
-          </button>
+          {(()=>{
+            const alreadyR = JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").includes(String(viewNews.id));
+            return (
+              <button onClick={()=>{markNewsRead(viewNews.id);setViewNews(null);}}
+                style={{flex:1,background:alreadyR?C.card:`${C.green}18`,
+                  border:`1px solid ${alreadyR?C.border:C.green+"44"}`,
+                  borderRadius:10,padding:"12px",color:alreadyR?C.muted:C.green,
+                  fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                  display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                {alreadyR?"✓ Gelesen":"✓ Gelesen · +10 🏆"}
+              </button>
+            );
+          })()}
           <button onClick={()=>setNewsState(p=>({...p,[viewNews.id]:p[viewNews.id]==="remind"?undefined:"remind"}))}
             style={{flex:1,background:newsState[viewNews.id]==="remind"?`${C.amber}22`:C.card,
               border:`1px solid ${newsState[viewNews.id]==="remind"?C.amber+"44":C.border}`,
@@ -3707,8 +3671,9 @@ function PCNInner() {
 {/* Neuigkeiten — horizontal swipeable */}
               {(()=>{
                 const dbNews = (window._dbNews||[]).filter(n=>n&&!DEMO_NEWS.find(d=>d.id===String(n.id)));
+                const readPts = JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]");
                 const items = [...dbNews, ...DEMO_NEWS]
-                  .filter(n=>n.type!=="welcome" && newsState[n.id]!=="read")
+                  .filter(n=>n.type!=="welcome" && newsState[n.id]!=="read" && !readPts.includes(String(n.id)))
                   .sort((a,b)=>new Date(b.date)-new Date(a.date));
                 if(!items.length) return null;
                 return (
@@ -3755,7 +3720,7 @@ function PCNInner() {
                 <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center",cursor:"pointer"}} onClick={()=>setShowAddV(true)}>
                   <div style={{fontSize:32,marginBottom:8}}>🏎️</div>
                   <div style={{fontSize:13,color:C.white,fontWeight:600,marginBottom:4}}>Erstes Fahrzeug hinzufügen</div>
-                  <div style={{fontSize:11,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei</div>
+                  <div style={{fontSize:11,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+50 Pkt</span></div>
                 </div>
               ):myVehicles.map(v=>(
                 <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer",display:"flex"}}
@@ -4470,6 +4435,24 @@ function PCNInner() {
               );
             })()}
 
+            {/* Pending scan confirmations */}
+            {(()=>{
+              const pending = JSON.parse(localStorage.getItem("pcn_scan_requests")||"[]")
+                .filter(key=>!getScanConfirmed().includes(key));
+              if(!pending.length) return null;
+              return (
+                <div style={{background:`${C.gold}11`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:"13px 16px",marginBottom:12}}>
+                  <div style={{fontSize:11,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>
+                    📱 QR-Scans — Bestätigung ausstehend ({pending.length})
+                  </div>
+                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>
+                    Du hast {pending.length} Fahrzeug{pending.length>1?"e":""} gescannt. Sobald der Besitzer bestätigt, erhältst du +10 Punkte je Scan.
+                    Die Bestätigung erfolgt automatisch über den Admin-Chat des Besitzers.
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Scan stats */}
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px"}}>
               <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>📊 Meine Aktivität</div>
@@ -4740,7 +4723,21 @@ function PCNInner() {
               </div>
             ))}
             <div style={{marginTop:16,padding:"12px",background:`${C.gold}11`,borderRadius:10,fontSize:12,color:C.muted,lineHeight:1.7}}>
-              💡 Stufen: 100 Pkt = Bronze · 300 Pkt = Silber · 600 Pkt = Gold · 1.000 Pkt = Platin · 2.000 Pkt = Legend
+              <div style={{marginBottom:8,fontWeight:700,color:C.gold}}>🏆 Punktestufen</div>
+              {[["Bronze","100"],["Silber","300"],["Gold","600"],["Platin","1.000"],["Legend","2.000"]].map(([n,p])=>(
+                <div key={n} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <span style={{color:C.white}}>{n}</span><span style={{color:C.gold}}>ab {p} Pkt</span>
+                </div>
+              ))}
+              <div style={{marginTop:12,marginBottom:6,fontWeight:700,color:"#aaa"}}>Punkte erhalten für:</div>
+              {[["🚗","Fahrzeug anlegen","50 Pkt"],["📋","Logbuch-Eintrag","10 Pkt"],["🏁","Event (bestätigt)","100 Pkt"],
+                ["💬","Nachricht senden","5 Pkt"],["📰","News lesen","10 Pkt"],["👁","Fahrzeugakte ansehen","2 Pkt"],["📱","QR-Scan bestätigt","10 Pkt"]].map(([i,l,p])=>(
+                <div key={l} style={{display:"flex",gap:8,padding:"4px 0",borderBottom:`1px solid ${C.border}`,alignItems:"center"}}>
+                  <span style={{width:20,textAlign:"center"}}>{i}</span>
+                  <span style={{flex:1,color:C.white,fontSize:12}}>{l}</span>
+                  <span style={{color:C.green,fontWeight:700,fontSize:12}}>{p}</span>
+                </div>
+              ))}
             </div>
             <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,marginTop:16}}
               onClick={()=>setShowInfoModal(false)}>Verstanden ✓</button>
