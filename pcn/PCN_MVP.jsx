@@ -647,6 +647,9 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           );
           const mine = m.from===me?.id;
           const isAdminMsg = m.isSystem || m.from==="00000000-0000-0000-0000-000000000000" || (thread.id?.startsWith("admin-") && m.from!==me?.id);
+          // Parse payload for scan requests
+          let scanPayload = null;
+          try { const p=JSON.parse(m.payload||"{}"); if(p.type==="scan_request") scanPayload=p; } catch(e){}
           const senderUser = !mine ? Object.values(allUsers).find(u=>u.id===m.from) : null;
           const senderName = thread.isGroup ? (mine?"Du":senderUser?.name||"Mitglied") : null;
           const rawTs = m.created_at||m.createdAt||"";
@@ -674,6 +677,13 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                   padding:"11px 15px",userSelect:"none",WebkitUserSelect:"none",cursor:"pointer",
                   opacity:selectedMsg?.id===m.id?0.7:1,transition:"opacity .1s"}}>
                 <div style={{fontSize:15,color:"#fff",lineHeight:1.5}}>{m.text}</div>
+                {scanPayload&&me&&(me.id===thread.id?.replace("admin-",""))&&(
+                  <button onClick={()=>confirmScan(scanPayload.scannerId,scanPayload.vehicleId,scanPayload.scannerName)}
+                    style={{marginTop:10,background:C.green,border:"none",borderRadius:8,padding:"9px 14px",
+                      color:"#fff",fontWeight:800,fontSize:12,cursor:"pointer",fontFamily:"'Barlow',sans-serif",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                    ✅ Scan bestätigen — {scanPayload.scannerName||"Nutzer"} erhält +10 Punkte
+                  </button>
+                )}
                 <div style={{fontSize:10,color:mine?"rgba(255,255,255,.5)":C.muted,marginTop:4,textAlign:"right"}}>
                   {fullTs}
                 </div>
@@ -842,6 +852,81 @@ function PCNInner() {
   const unlockedFeatures = new Set(MILESTONES.filter(m=>m.check(appState)).flatMap(m=>m.unlocks));
 
   // Punkte-Berechnung: Basis-Aktivitäten + Events
+  // ── View/Scan points ─────────────────────────────────────────────────────────
+  const getViewedVehicles = () => { try { return JSON.parse(localStorage.getItem("pcn_viewed_vehicles")||"[]"); } catch(e){ return []; } };
+  const getScanConfirmed  = () => { try { return JSON.parse(localStorage.getItem("pcn_scan_confirmed")||"[]"); } catch(e){ return []; } };
+
+  // Award +2 pts for viewing a foreign vehicle (once per vehicle)
+  const awardViewPoints = (vehicleId) => {
+    if(!vehicleId || !me?.id) return;
+    const viewed = getViewedVehicles();
+    if(viewed.includes(vehicleId)) return;
+    viewed.push(vehicleId);
+    localStorage.setItem("pcn_viewed_vehicles", JSON.stringify(viewed));
+  };
+
+  // Request scan confirmation from owner — sends admin message
+  const requestScanConfirm = async (vehicle) => {
+    const ownerId = vehicle.userId || vehicle.user_id;
+    if(!ownerId || !me?.id || ownerId===me.id) return;
+    const DB = window.PCN_DB;
+    if(!DB) return;
+    // Create a pending scan request in threads
+    const threadId = "admin-" + ownerId;
+    const reqText = `🔍 QR-Scan-Bestätigung: ${me.name||"Ein Mitglied"} hat deinen ${vehicle.hersteller||""} ${vehicle.modell||""} (${vehicle.qarId||vehicle.qar_id||""}) gescannt. Bitte bestätige den Scan — der Nutzer erhält dann 10 Punkte.`;
+    // Send via DB
+    try {
+      const ex = await DB.threads.list(ownerId);
+      const hasThread = ex.data?.some(t=>t.id===threadId);
+      if(!hasThread) {
+        await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/threads",{
+          method:"POST",
+          headers:{"apikey":"sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED","Authorization":"Bearer sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED","Content-Type":"application/json"},
+          body:JSON.stringify({id:threadId,participants:[ownerId],vehicle_name:"Admin-Mitteilungen",anonymous:false,created_at:new Date().toISOString()})
+        });
+      }
+      // Include scan requester ID in payload so owner can confirm
+      await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/messages",{
+        method:"POST",
+        headers:{"apikey":"sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED","Authorization":"Bearer sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED","Content-Type":"application/json"},
+        body:JSON.stringify({
+          thread_id:threadId,
+          from_id:"00000000-0000-0000-0000-000000000000",
+          text:reqText,
+          is_system:true,
+          payload:JSON.stringify({type:"scan_request",scannerId:me.id,scannerName:me.name,vehicleId:vehicle.id,vehicleName:`${vehicle.hersteller||""} ${vehicle.modell||""}`,qarId:vehicle.qarId||vehicle.qar_id}),
+          created_at:new Date().toISOString()
+        })
+      });
+      toast_("Bestätigung angefragt — Fahrzeugbesitzer wird benachrichtigt 📨");
+    } catch(e) { console.log("Scan req err:", e); }
+  };
+
+  // Confirm scan — called when owner taps confirm (from their admin thread)
+  const confirmScan = async (scannerId, vehicleId, scannerName) => {
+    const confirmed = getScanConfirmed();
+    const key = `${scannerId}:${vehicleId}`;
+    if(confirmed.includes(key)) { toast_("Scan bereits bestätigt"); return; }
+    confirmed.push(key);
+    localStorage.setItem("pcn_scan_confirmed", JSON.stringify(confirmed));
+    // Send confirmation message to scanner
+    const threadId = "admin-" + scannerId;
+    try {
+      await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/messages",{
+        method:"POST",
+        headers:{"apikey":"sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED","Authorization":"Bearer sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED","Content-Type":"application/json"},
+        body:JSON.stringify({
+          thread_id:threadId, from_id:"00000000-0000-0000-0000-000000000000",
+          text:`✅ Dein QR-Scan wurde bestätigt! Du erhältst +10 Punkte für das Scannen des Fahrzeugs. 🏎️`,
+          is_system:true,
+          payload:JSON.stringify({type:"scan_confirmed",vehicleId,scannerId}),
+          created_at:new Date().toISOString()
+        })
+      });
+    } catch(e) {}
+    toast_("✓ Scan bestätigt — Nutzer erhält +10 Punkte");
+  };
+
   const calcPoints = () => {
     let pts = 0;
     pts += myVehicles.length * 50;             // 50 Punkte pro Fahrzeug
@@ -850,6 +935,10 @@ function PCNInner() {
     pts += myThreads.length * 5;               // 5 Punkte pro Nachricht
     // 10 Punkte pro gelesenen News-Artikel
     try { pts += JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length * 10; } catch(e){}
+    // 2 Punkte pro angesehenes fremdes Fahrzeug
+    try { pts += getViewedVehicles().length * 2; } catch(e){}
+    // 10 Punkte pro bestätigtem QR-Scan
+    try { pts += getScanConfirmed().length * 10; } catch(e){}
     return pts;
   };
   const myPoints = calcPoints();
@@ -1176,7 +1265,13 @@ function PCNInner() {
 
   // ── Track screen changes for analytics ───────────────────────────────────────
   useEffect(()=>{
-    if(screen==="public"&&publicV) track("qr_scan_public_view",{vehicle_id:publicV?.id,qar_id:publicV?.qarId});
+    if(screen==="public"&&publicV) {
+      track("qr_scan_public_view",{vehicle_id:publicV?.id,qar_id:publicV?.qarId});
+      // Award +2 pts for viewing foreign vehicle
+      if(publicV.userId!==me?.id && publicV.user_id!==me?.id) {
+        awardViewPoints(publicV.id||publicV.qarId);
+      }
+    }
   },[screen, publicV?.id]);
 
   // ── Live sync — vehicle data + status on public page ─────────────────────────
@@ -2210,6 +2305,54 @@ function PCNInner() {
             )}
 
             {/* CHAT — always visible for visitors (non-owners), opens anonymous chat */}
+            {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
+
+              // ── QR-Scan Punkte Block ──────────────────────────────────────────
+              (()=>{
+                const isOwner = me&&(v.userId===me.id||v.owner===me.email);
+                if(isOwner) return null;
+                const vid = v.id||v.qarId;
+                const scanKey = me ? `${me.id}:${vid}` : null;
+                const alreadyConf = scanKey && getScanConfirmed().includes(scanKey);
+                const alreadyReq  = scanKey && JSON.parse(localStorage.getItem("pcn_scan_requests")||"[]").includes(scanKey);
+                const alreadyView = getViewedVehicles().includes(vid);
+                return (
+                  <div style={{marginBottom:12}}>
+                    {/* View points */}
+                    <div style={{background:`${C.blue}11`,border:`1px solid ${C.blue}22`,borderRadius:10,padding:"9px 13px",marginBottom:8,display:"flex",gap:8,alignItems:"center"}}>
+                      <span style={{fontSize:16}}>👁</span>
+                      <div style={{fontSize:12,color:alreadyView?C.muted:C.blue,fontWeight:alreadyView?400:600}}>
+                        {alreadyView?"✓ +2 Punkte für Ansehen (bereits vergeben)":"+2 Punkte fürs Ansehen dieser Akte"}
+                      </div>
+                    </div>
+                    {/* Scan points */}
+                    {me&&v.userId&&(
+                      <div style={{background:alreadyConf?`${C.green}11`:`${C.gold}11`,border:`1px solid ${alreadyConf?C.green:C.gold}33`,borderRadius:10,padding:"11px 13px",display:"flex",gap:10,alignItems:"center"}}>
+                        <span style={{fontSize:20}}>{alreadyConf?"✅":"📱"}</span>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:700,color:alreadyConf?C.green:C.gold}}>
+                            {alreadyConf?"QR-Scan bestätigt · +10 Punkte":"QR-Code scannen · +10 Punkte"}
+                          </div>
+                          <div style={{fontSize:11,color:C.muted}}>
+                            {alreadyConf?"Bestätigt vom Fahrzeugbesitzer":alreadyReq?"⏳ Bestätigung ausstehend…":"Besitzer bestätigt deinen Scan (Anti-Cheat)"}
+                          </div>
+                        </div>
+                        {!alreadyConf&&!alreadyReq&&me&&(
+                          <button onClick={async()=>{
+                            const reqs=JSON.parse(localStorage.getItem("pcn_scan_requests")||"[]");
+                            reqs.push(scanKey); localStorage.setItem("pcn_scan_requests",JSON.stringify(reqs));
+                            await requestScanConfirm(v);
+                          }} style={{flexShrink:0,background:C.gold,color:"#111",fontWeight:800,fontSize:11,padding:"7px 11px",border:"none",borderRadius:7,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                            Anfragen
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
+            )}
+
             {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
               <button
                 onClick={()=>{ if(me){ startContact(v.id); } else { setContactAuthMode("guest"); setShowContactAuth(v.id); }}}
