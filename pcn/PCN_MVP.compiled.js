@@ -1830,6 +1830,13 @@ function PCNInner() {
   // ── Core state ──────────────────────────────────────────────────────────────
   const [screen, setScreen] = useState(() => window.__PCN_PRELOAD_SESSION__ ? "app" : "splash");
   const [tab, setTab] = useState("dashboard");
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("pcn_favorites") || "[]");
+    } catch (e) {
+      return [];
+    }
+  });
   const [me, setMe] = useState(() => window.__PCN_PRELOAD_SESSION__ || null);
   const [allUsers, setAllUsers] = useState({
     ...DEMO_USERS
@@ -2133,6 +2140,15 @@ function PCNInner() {
     return pts;
   };
   const myPoints = calcPoints();
+  const isFavorite = vehicleId => favorites.includes(vehicleId);
+  const toggleFavorite = vehicleId => {
+    setFavorites(prev => {
+      const next = prev.includes(vehicleId) ? prev.filter(id => id !== vehicleId) : [...prev, vehicleId];
+      localStorage.setItem("pcn_favorites", JSON.stringify(next));
+      if (!prev.includes(vehicleId)) toast_("❤️ Gespeichert");
+      return next;
+    });
+  };
   const TIERS = [{
     name: "Bronze",
     pts: 100
@@ -9242,13 +9258,34 @@ function PCNInner() {
             }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
               style: {
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                paddingRight: 12,
-                color: C.muted,
-                fontSize: 20
+                gap: 2,
+                paddingRight: 12
               },
-              children: "›"
-            }, void 0, false)]
+              children: [/*#__PURE__*/_jsxDEV("button", {
+                onClick: e => {
+                  e.stopPropagation();
+                  toggleFavorite(v.id);
+                },
+                style: {
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 22,
+                  padding: "2px 4px",
+                  lineHeight: 1,
+                  color: isFavorite(v.id) ? C.red : C.muted
+                },
+                children: isFavorite(v.id) ? "❤️" : "🤍"
+              }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
+                style: {
+                  fontSize: 16,
+                  color: C.muted
+                },
+                children: "›"
+              }, void 0, false)]
+            }, void 0, true)]
           }, v.id, true))]
         }, void 0, true), isDemo && /*#__PURE__*/_jsxDEV("div", {
           style: {
@@ -9367,13 +9404,34 @@ function PCNInner() {
             }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
               style: {
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                paddingRight: 12,
-                color: C.muted,
-                fontSize: 20
+                gap: 2,
+                paddingRight: 12
               },
-              children: "›"
-            }, void 0, false)]
+              children: [/*#__PURE__*/_jsxDEV("button", {
+                onClick: e => {
+                  e.stopPropagation();
+                  toggleFavorite(v.id);
+                },
+                style: {
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 22,
+                  padding: "2px 4px",
+                  lineHeight: 1,
+                  color: isFavorite(v.id) ? C.red : C.muted
+                },
+                children: isFavorite(v.id) ? "❤️" : "🤍"
+              }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
+                style: {
+                  fontSize: 16,
+                  color: C.muted
+                },
+                children: "›"
+              }, void 0, false)]
+            }, void 0, true)]
           }, v.id, true))]
         }, void 0, true), recentVehicles.length > 0 && /*#__PURE__*/_jsxDEV("div", {
           style: {
@@ -10833,6 +10891,407 @@ function PCNInner() {
             }, void 0, true)
           }, r.id, false);
         })]
+      }, void 0, true), tab === "community" && !isGuest && /*#__PURE__*/_jsxDEV("div", {
+        style: {
+          animation: "fadeIn .2s"
+        },
+        children: [/*#__PURE__*/_jsxDEV("div", {
+          style: {
+            fontFamily: "'Barlow Condensed',sans-serif",
+            fontSize: 24,
+            fontWeight: 900,
+            color: C.white,
+            marginBottom: 4
+          },
+          children: "Community"
+        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+          style: {
+            fontSize: 12,
+            color: C.muted,
+            marginBottom: 16
+          },
+          children: "Fahrzeuge die dich begeistern"
+        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+          style: {
+            marginBottom: 24
+          },
+          children: [/*#__PURE__*/_jsxDEV("div", {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 12
+            },
+            children: [/*#__PURE__*/_jsxDEV("span", {
+              style: {
+                fontSize: 18
+              },
+              children: "❤️"
+            }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+              style: {
+                fontSize: 11,
+                fontWeight: 800,
+                color: "#aaa",
+                textTransform: "uppercase",
+                letterSpacing: 1.5
+              },
+              children: ["Meine Favoriten (", favorites.length, ")"]
+            }, void 0, true)]
+          }, void 0, true), favorites.length === 0 ? /*#__PURE__*/_jsxDEV("div", {
+            style: {
+              background: C.card,
+              border: `1.5px dashed ${C.border}`,
+              borderRadius: 14,
+              padding: "32px 20px",
+              textAlign: "center"
+            },
+            children: [/*#__PURE__*/_jsxDEV("div", {
+              style: {
+                fontSize: 40,
+                marginBottom: 10
+              },
+              children: "🤍"
+            }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+              style: {
+                fontSize: 14,
+                color: C.white,
+                fontWeight: 600,
+                marginBottom: 6
+              },
+              children: "Noch keine Favoriten"
+            }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+              style: {
+                fontSize: 12,
+                color: C.muted,
+                lineHeight: 1.6
+              },
+              children: "Tippe auf das ❤️ bei einer Fahrzeugakte um sie hier zu speichern"
+            }, void 0, false)]
+          }, void 0, true) : /*#__PURE__*/_jsxDEV("div", {
+            children: favorites.map(fid => {
+              const fv = Object.values(vehicles).find(v => v.id === fid);
+              if (!fv) return null;
+              const isOwn = fv.userId === me?.id || fv.owner === me?.email;
+              const DEFp = typeof fv.privacy === "string" ? JSON.parse(fv.privacy || "{}") : fv.privacy || {};
+              return /*#__PURE__*/_jsxDEV("div", {
+                style: {
+                  background: C.card,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 14,
+                  marginBottom: 10,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  display: "flex"
+                },
+                onClick: () => {
+                  if (isOwn) {
+                    setViewV(fv);
+                    setScreen("vehicle");
+                  } else {
+                    setPublicV({
+                      ...fv,
+                      privacy: {
+                        ...DEF_PRIVACY,
+                        ...DEFp
+                      }
+                    });
+                    setScreen("public");
+                  }
+                },
+                children: [/*#__PURE__*/_jsxDEV("div", {
+                  style: {
+                    width: 90,
+                    height: 90,
+                    overflow: "hidden",
+                    background: "#111",
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  },
+                  children: fv.image ? /*#__PURE__*/_jsxDEV("img", {
+                    src: fv.image,
+                    alt: "",
+                    style: {
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover"
+                    },
+                    onError: e => e.target.style.display = "none"
+                  }, void 0, false) : /*#__PURE__*/_jsxDEV("span", {
+                    style: {
+                      fontSize: 28
+                    },
+                    children: "🏎️"
+                  }, void 0, false)
+                }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+                  style: {
+                    padding: "12px 13px",
+                    flex: 1,
+                    minWidth: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center"
+                  },
+                  children: [/*#__PURE__*/_jsxDEV("div", {
+                    style: {
+                      fontWeight: 700,
+                      fontSize: 15,
+                      color: C.white
+                    },
+                    children: [fv.hersteller, " ", fv.modell]
+                  }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
+                    style: {
+                      fontSize: 11,
+                      color: C.muted,
+                      marginTop: 4
+                    },
+                    children: [fv.baujahr, " · ", fv.farbe]
+                  }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
+                    style: {
+                      display: "flex",
+                      gap: 6,
+                      marginTop: 5,
+                      alignItems: "center",
+                      flexWrap: "wrap"
+                    },
+                    children: [/*#__PURE__*/_jsxDEV("span", {
+                      style: {
+                        background: "#fff",
+                        border: "1.5px solid #222",
+                        borderRadius: 4,
+                        padding: "1px 7px",
+                        fontSize: 10,
+                        fontWeight: 800,
+                        color: "#111",
+                        letterSpacing: 1,
+                        fontFamily: "Arial,sans-serif"
+                      },
+                      children: fmtKz(fv.kennzeichen, fv.baujahr)
+                    }, void 0, false), !isOwn && /*#__PURE__*/_jsxDEV("span", {
+                      style: {
+                        fontSize: 10,
+                        color: C.muted
+                      },
+                      children: "Mitglied"
+                    }, void 0, false), isOwn && /*#__PURE__*/_jsxDEV("span", {
+                      style: {
+                        fontSize: 10,
+                        color: C.green,
+                        fontWeight: 700
+                      },
+                      children: "Mein Fahrzeug"
+                    }, void 0, false)]
+                  }, void 0, true)]
+                }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingRight: 12,
+                    gap: 4
+                  },
+                  children: [/*#__PURE__*/_jsxDEV("button", {
+                    onClick: e => {
+                      e.stopPropagation();
+                      toggleFavorite(fid);
+                    },
+                    style: {
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: 22,
+                      padding: "4px",
+                      color: C.red
+                    },
+                    children: "❤️"
+                  }, void 0, false), /*#__PURE__*/_jsxDEV("span", {
+                    style: {
+                      fontSize: 16,
+                      color: C.muted
+                    },
+                    children: "›"
+                  }, void 0, false)]
+                }, void 0, true)]
+              }, fid, true);
+            }).filter(Boolean)
+          }, void 0, false)]
+        }, void 0, true), (() => {
+          const recent = JSON.parse(localStorage.getItem("pcn_recent_vehicles") || "[]").filter(id => !favorites.includes(id));
+          if (!recent.length) return null;
+          return /*#__PURE__*/_jsxDEV("div", {
+            style: {
+              marginBottom: 20
+            },
+            children: [/*#__PURE__*/_jsxDEV("div", {
+              style: {
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12
+              },
+              children: [/*#__PURE__*/_jsxDEV("span", {
+                style: {
+                  fontSize: 16
+                },
+                children: "👁"
+              }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+                style: {
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: "#aaa",
+                  textTransform: "uppercase",
+                  letterSpacing: 1.5
+                },
+                children: "Zuletzt angesehen"
+              }, void 0, false)]
+            }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
+              style: {
+                display: "flex",
+                gap: 10,
+                overflowX: "auto",
+                paddingBottom: 8,
+                WebkitOverflowScrolling: "touch"
+              },
+              children: recent.slice(0, 8).map(id => {
+                const rv = Object.values(vehicles).find(v => v.id === id);
+                if (!rv) return null;
+                const DEFp2 = typeof rv.privacy === "string" ? JSON.parse(rv.privacy || "{}") : rv.privacy || {};
+                return /*#__PURE__*/_jsxDEV("div", {
+                  onClick: () => {
+                    setPublicV({
+                      ...rv,
+                      privacy: {
+                        ...DEF_PRIVACY,
+                        ...DEFp2
+                      }
+                    });
+                    setScreen("public");
+                  },
+                  style: {
+                    flexShrink: 0,
+                    width: 120,
+                    cursor: "pointer"
+                  },
+                  children: [/*#__PURE__*/_jsxDEV("div", {
+                    style: {
+                      width: 120,
+                      height: 80,
+                      borderRadius: 10,
+                      overflow: "hidden",
+                      background: "#111",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: 6,
+                      position: "relative"
+                    },
+                    children: [rv.image ? /*#__PURE__*/_jsxDEV("img", {
+                      src: rv.image,
+                      alt: "",
+                      style: {
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover"
+                      }
+                    }, void 0, false) : /*#__PURE__*/_jsxDEV("span", {
+                      style: {
+                        fontSize: 28
+                      },
+                      children: "🏎️"
+                    }, void 0, false), /*#__PURE__*/_jsxDEV("button", {
+                      onClick: e => {
+                        e.stopPropagation();
+                        toggleFavorite(id);
+                      },
+                      style: {
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        background: "rgba(0,0,0,.6)",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: 24,
+                        height: 24,
+                        cursor: "pointer",
+                        fontSize: 13,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: isFavorite(id) ? C.red : "#fff"
+                      },
+                      children: isFavorite(id) ? "❤" : "🤍"
+                    }, void 0, false)]
+                  }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
+                    style: {
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: C.white,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    },
+                    children: [rv.hersteller, " ", rv.modell]
+                  }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
+                    style: {
+                      fontSize: 9,
+                      color: C.muted
+                    },
+                    children: rv.baujahr
+                  }, void 0, false)]
+                }, id, true);
+              }).filter(Boolean)
+            }, void 0, false)]
+          }, void 0, true);
+        })(), /*#__PURE__*/_jsxDEV("div", {
+          style: {
+            background: C.card,
+            border: `1px solid ${C.border}`,
+            borderRadius: 12,
+            padding: "14px 16px"
+          },
+          children: [/*#__PURE__*/_jsxDEV("div", {
+            style: {
+              fontSize: 11,
+              fontWeight: 800,
+              color: "#aaa",
+              textTransform: "uppercase",
+              letterSpacing: 1.5,
+              marginBottom: 12
+            },
+            children: "📊 Meine Aktivität"
+          }, void 0, false), [["❤️", "Favoriten", favorites.length + " Fahrzeuge"], ["👁", "Angesehen", getViewedVehicles().length + " Akten · +" + getViewedVehicles().length * 2 + " Pkt"], ["📱", "QR-Scans bestätigt", getScanConfirmed().length + " · +" + getScanConfirmed().length * 10 + " Pkt"]].map(([icon, label, val]) => /*#__PURE__*/_jsxDEV("div", {
+            style: {
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              padding: "8px 0",
+              borderBottom: `1px solid ${C.border}`
+            },
+            children: [/*#__PURE__*/_jsxDEV("span", {
+              style: {
+                fontSize: 18,
+                width: 24,
+                textAlign: "center"
+              },
+              children: icon
+            }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+              style: {
+                flex: 1,
+                fontSize: 13,
+                color: C.white
+              },
+              children: label
+            }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+              style: {
+                fontSize: 12,
+                color: C.muted
+              },
+              children: val
+            }, void 0, false)]
+          }, label, true))]
+        }, void 0, true)]
       }, void 0, true), tab === "profile" && !isGuest && /*#__PURE__*/_jsxDEV("div", {
         style: {
           animation: "fadeIn .2s"
@@ -12357,7 +12816,7 @@ function PCNInner() {
           className: "lbl",
           children: "Scan"
         }, void 0, false)]
-      }, void 0, true), (isGuest ? [["messages", "💬", "Chats"]] : [["dashboard", "🏠", "Start"], ["events", "🏁", "Events"], ["messages", "💬", "Chats"], ["reminders", "🔔", "Termine"], ["profile", "👤", "Profil"]]).map(([id, icon, label]) => /*#__PURE__*/_jsxDEV("button", {
+      }, void 0, true), (isGuest ? [["messages", "💬", "Chats"]] : [["dashboard", "🏠", "Start"], ["events", "🏁", "Events"], ["community", "❤️", "Community"], ["messages", "💬", "Chats"], ["profile", "👤", "Profil"]]).map(([id, icon, label]) => /*#__PURE__*/_jsxDEV("button", {
         className: `tab-btn ${tab === id ? "on" : ""}`,
         onClick: () => setTab(id),
         children: [id === "messages" && unreadCount > 0 && /*#__PURE__*/_jsxDEV("div", {
