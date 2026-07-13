@@ -535,7 +535,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
   );
 }
 
-function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead, onViewVehicle, onUpgrade, onDeleteMessage, onDeleteThread}) {
+function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead, onViewVehicle, onUpgrade, onDeleteMessage, onDeleteThread, onConfirmScan}) {
   const [msg, setMsg] = useState("");
   const [selectedMsg, setSelectedMsg] = useState(null); // for delete menu
   const endRef = useRef(null);
@@ -677,8 +677,8 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                   padding:"11px 15px",userSelect:"none",WebkitUserSelect:"none",cursor:"pointer",
                   opacity:selectedMsg?.id===m.id?0.7:1,transition:"opacity .1s"}}>
                 <div style={{fontSize:15,color:"#fff",lineHeight:1.5}}>{m.text}</div>
-                {scanPayload&&me&&(me.id===thread.id?.replace("admin-",""))&&(
-                  <button onClick={()=>confirmScan(scanPayload.scannerId,scanPayload.vehicleId,scanPayload.scannerName)}
+                {scanPayload&&me&&(
+                  <button onClick={()=>onConfirmScan&&onConfirmScan(scanPayload.scannerId,scanPayload.vehicleId,scanPayload.scannerName)}
                     style={{marginTop:10,background:C.green,border:"none",borderRadius:8,padding:"9px 14px",
                       color:"#fff",fontWeight:800,fontSize:12,cursor:"pointer",fontFamily:"'Barlow',sans-serif",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     ✅ Scan bestätigen — {scanPayload.scannerName||"Nutzer"} erhält +10 Punkte
@@ -3581,6 +3581,7 @@ function PCNInner() {
             if(DB) try{ await DB.threads.deleteMessage(msgId); }catch(e){}
           }}
           onDeleteThread={(threadId)=>setConfirmDeleteThread(threadId)}
+          onConfirmScan={confirmScan}
           onUpgrade={()=>{
             setLoginForm({mode:"register",code:"",name:me?.name||"",email:me?.email||""});
             setScreen("splash");
