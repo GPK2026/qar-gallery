@@ -8636,28 +8636,12 @@
     }, (logbook[v.id] || []).length, " Einträge"))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
-        gap: 2,
-        paddingRight: 12
+        paddingRight: 14
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
-      onClick: e => {
-        e.stopPropagation();
-        toggleFavorite(v.id);
-      },
+    }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        fontSize: 22,
-        padding: "2px 4px",
-        lineHeight: 1,
-        color: isFavorite(v.id) ? C.red : C.muted
-      }
-    }, isFavorite(v.id) ? "❤️" : "🤍"), /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 16,
+        fontSize: 18,
         color: C.muted
       }
     }, "›"))))), isDemo && /*#__PURE__*/_react.default.createElement("div", {
@@ -8696,7 +8680,7 @@
         });
         setScreen("public");
       }
-    }, "                    ", /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         width: 90,
         height: 90,
@@ -8705,7 +8689,8 @@
         flexShrink: 0,
         display: "flex",
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent: "center",
+        position: "relative"
       }
     }, v.image ? /*#__PURE__*/_react.default.createElement("img", {
       src: v.image,
@@ -8720,7 +8705,30 @@
       style: {
         fontSize: 28
       }
-    }, "🏎️")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🏎️"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        toggleFavorite(v.id);
+      },
+      style: {
+        position: "absolute",
+        top: 5,
+        right: 5,
+        background: "rgba(0,0,0,.55)",
+        border: "none",
+        borderRadius: "50%",
+        width: 26,
+        height: 26,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 14,
+        lineHeight: 1,
+        backdropFilter: "blur(4px)",
+        WebkitTapHighlightColor: "transparent"
+      }
+    }, isFavorite(v.id) ? "❤️" : "🤍")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         padding: "12px 13px",
         flex: 1,
@@ -8769,28 +8777,12 @@
     }, "Peter K."))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
-        gap: 2,
-        paddingRight: 12
+        paddingRight: 14
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
-      onClick: e => {
-        e.stopPropagation();
-        toggleFavorite(v.id);
-      },
+    }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        fontSize: 22,
-        padding: "2px 4px",
-        lineHeight: 1,
-        color: isFavorite(v.id) ? C.red : C.muted
-      }
-    }, isFavorite(v.id) ? "❤️" : "🤍"), /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 16,
+        fontSize: 18,
         color: C.muted
       }
     }, "›"))))), recentVehicles.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
@@ -11881,13 +11873,3 @@
     }, "Mitglied"))));
   }
 });
-
-// Explicit browser global assignment (fallback for scope edge cases)
-if (typeof window !== "undefined" && typeof window.PCN_MVP === "undefined") {
-  try {
-    // Try to get from the UMD exports
-    if (typeof exports !== "undefined" && exports.default) {
-      window.PCN_MVP = exports;
-    }
-  } catch(e) {}
-}
