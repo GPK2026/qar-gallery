@@ -175,7 +175,21 @@ function doLogout(){sessionStorage.removeItem("pcn_adm");location.reload();}
 
 async function api(path,opts={}){
   try{
-    const r=await fetch(SB+"/"+path,{...opts,headers:{"apikey":KEY,"Authorization":"Bearer "+KEY,"Content-Type":"application/json","Prefer":"return=representation",...(opts.headers||{})}});
+    const isPatch = opts.method==="PATCH" || opts.method==="DELETE";
+    const headers = {
+      "apikey":KEY,
+      "Authorization":"Bearer "+KEY,
+      "Content-Type":"application/json",
+      ...(isPatch ? {} : {"Prefer":"return=representation"}),
+      ...(opts.headers||{})
+    };
+    const r=await fetch(SB+"/"+path,{...opts,headers});
+    if(isPatch||opts.method==="DELETE"){
+      // PATCH/DELETE: 200/204 = success, anything else = error
+      if(r.ok) return {data:null};
+      const d=await r.json().catch(()=>({}));
+      return {data:null,error:d};
+    }
     const d=await r.json().catch(()=>({}));
     return r.ok?{data:d}:{data:null,error:d};
   }catch(e){return{data:null,error:e.message};}
@@ -545,12 +559,13 @@ async function togglePaid(id,isPaid){
   if(error){
     // Revert on error
     DB.members = DB.members.map(m=>m.id===id?{...m,beitrag_bezahlt:isPaid}:m);
-    toast("Fehler: Konnte nicht gespeichert werden","err");
+    toast("Fehler: "+JSON.stringify(error).substring(0,80),"err"); console.error("PATCH error:",error);
     updateBadges(); renderTab(currentTab);
     return;
   }
   if(!isPaid) sendAdminMsg(id,"Dein Mitgliedsbeitrag "+new Date().getFullYear()+" wurde als bezahlt verbucht. Vielen Dank!","💳");
   toast(isPaid?"Offen markiert":"✓ Bezahlt verbucht");
+  await loadAll();
 }
 async function toggleRole(id,isMember){
   // Optimistic update
@@ -559,11 +574,12 @@ async function toggleRole(id,isMember){
   const{error}=await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:isMember?"guest":"member"})});
   if(error){
     DB.members = DB.members.map(m=>m.id===id?{...m,role:isMember?"member":"guest"}:m);
-    toast("Fehler","err"); updateBadges(); renderTab(currentTab);
+    toast("Fehler: "+JSON.stringify(error).substring(0,60),"err"); console.error("Role error:",error); updateBadges(); renderTab(currentTab);
     return;
   }
   if(!isMember) sendAdminMsg(id,"Willkommen als Mitglied im Porsche Club Nürburgring! 🏎️ Dein Konto wurde freigeschaltet.","🎉");
   toast(isMember?"Als Gast gesetzt":"✓ Mitglied freigegeben + Nachricht");
+  await loadAll();
 }
 async function upgradeMember(id){
   await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:"member"})});
