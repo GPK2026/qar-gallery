@@ -8,14 +8,16 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ── Users ────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS users (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name        TEXT NOT NULL,
-  email       TEXT UNIQUE NOT NULL,
-  club_code   TEXT,
-  role        TEXT DEFAULT 'member',
-  member_nr   TEXT,
-  created_at  TIMESTAMPTZ DEFAULT NOW(),
-  last_seen   TIMESTAMPTZ DEFAULT NOW()
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name             TEXT NOT NULL,
+  email            TEXT UNIQUE NOT NULL,
+  club_code        TEXT,
+  role             TEXT DEFAULT 'member',
+  member_nr        TEXT,
+  beitrag_bezahlt  BOOLEAN DEFAULT FALSE,
+  beitrag_datum    TIMESTAMPTZ,
+  created_at       TIMESTAMPTZ DEFAULT NOW(),
+  last_seen        TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ── Vehicles ─────────────────────────────────────────────────────────────────
