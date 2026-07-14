@@ -1892,7 +1892,10 @@
     }; // full newsletter detail // {id: "read"|"remind"}
     const [showInfoModal, setShowInfoModal] = (0, _react.useState)(false);
     const [showFeatureDetail, setShowFeatureDetail] = (0, _react.useState)(null); // false | 'features' | 'points'
-    const [eventsView, setEventsView] = (0, _react.useState)("list"); // "list" | "calendar"
+    const [eventsView, setEventsView] = (0, _react.useState)("calendar"); // "list" | "calendar"
+    const [demoBannerClosed, setDemoBannerClosed] = (0, _react.useState)(false);
+    const [communitySearch, setCommunitySearch] = (0, _react.useState)("");
+    const [communityFilter, setCommunityFilter] = (0, _react.useState)("all");
     const [calMonth, setCalMonth] = (0, _react.useState)(new Date());
     const [profileForm, setProfileForm] = (0, _react.useState)({});
     const [showContactAuth, setShowContactAuth] = (0, _react.useState)(null); // vehicleId — triggers login/register/guest sheet
@@ -1908,6 +1911,7 @@
     const [vehicleStatus, setVehicleStatus] = (0, _react.useState)({}); // {vehicleId: [{id,text,icon,expiresAt}]}
     const [showStatusPicker, setShowStatusPicker] = (0, _react.useState)(null); // vehicleId
     const [statusCustom, setStatusCustom] = (0, _react.useState)("");
+    const [statusTick, setStatusTick] = (0, _react.useState)(0); // increments every 30s to force re-render
     const [statusCustomMins, setStatusCustomMins] = (0, _react.useState)(30);
     const [statusUseDate, setStatusUseDate] = (0, _react.useState)(false); // true = exact datetime, false = duration
     const [statusDateTime, setStatusDateTime] = (0, _react.useState)(""); // ISO datetime for exact end
@@ -2552,6 +2556,12 @@
         return updated;
       });
     }, [screen, publicV?.id]);
+
+    // ── Live-Status Countdown-Ticker ──────────────────────────────────────────
+    (0, _react.useEffect)(() => {
+      const interval = setInterval(() => setStatusTick(t => t + 1), 30000); // every 30s
+      return () => clearInterval(interval);
+    }, []);
 
     // ── Track screen changes for analytics ───────────────────────────────────────
     (0, _react.useEffect)(() => {
@@ -3345,8 +3355,14 @@
         // Clear session news cache — will be reloaded fresh
         window._dbNews = null;
         // Always reset demo threads — fresh every login
-        localStorage.removeItem("pcn_deleted_threads");
-        setThreads(JSON.parse(JSON.stringify(DEMO_THREADS)));
+        // Keep deleted threads list — user intentionally deleted them
+        // setThreads: only add demo threads that user hasn't deleted
+        const deletedIds = JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
+        const freshThreads = {};
+        Object.entries(JSON.parse(JSON.stringify(DEMO_THREADS))).forEach(([k, v]) => {
+          if (!deletedIds.includes(k)) freshThreads[k] = v;
+        });
+        setThreads(freshThreads);
         setReminders([{
           id: "R1",
           vehicleId: "V001",
@@ -5327,12 +5343,12 @@
           }, s.text), /*#__PURE__*/_react.default.createElement("div", {
             style: {
               fontSize: 10,
-              color: C.muted
+              color: remaining !== null && remaining < 10 ? "#ef4444" : C.muted
             }
-          }, remaining !== null ? remaining < 60 ? `Noch ${remaining} Min` : `Bis ${expDate.toLocaleTimeString("de-DE", {
+          }, statusTick >= 0 && remaining !== null ? remaining <= 0 ? "⚠️ Abgelaufen" : remaining < 60 ? `⏱ Noch ${remaining} Min` : `⏱ Bis ${expDate.toLocaleTimeString("de-DE", {
             hour: "2-digit",
             minute: "2-digit"
-          })} Uhr` : "Dauerhaft")), /*#__PURE__*/_react.default.createElement("div", {
+          })} Uhr` : "⏳ Dauerhaft aktiv")), /*#__PURE__*/_react.default.createElement("div", {
             style: {
               display: "flex",
               gap: 4,
@@ -8333,20 +8349,37 @@
       style: {
         animation: "fadeIn .2s"
       }
-    }, isDemo && /*#__PURE__*/_react.default.createElement("div", {
+    }, isDemo && !demoBannerClosed && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: "#6b7fff18",
         border: "1px solid #6b7fff44",
         borderRadius: 12,
         padding: "13px 16px",
-        marginBottom: 16
+        marginBottom: 16,
+        position: "relative"
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setDemoBannerClosed(true),
+      style: {
+        position: "absolute",
+        top: 10,
+        right: 12,
+        background: "none",
+        border: "none",
+        color: "#666",
+        fontSize: 18,
+        cursor: "pointer",
+        padding: "0 2px",
+        lineHeight: 1,
+        fontFamily: "sans-serif"
+      }
+    }, "✕"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         gap: 10,
         alignItems: "center",
-        marginBottom: 8
+        marginBottom: 8,
+        paddingRight: 24
       }
     }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
@@ -8366,7 +8399,7 @@
         color: "#bbb",
         lineHeight: 1.7
       }
-    }, "Alle Funktionen der Plattform sind vollständig implementiert und hier erlebbar — Events, Chat, Fahrzeugakte, QR-Code, Punkte und Admin-Dashboard."), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Alle Funktionen sind vollständig erlebbar — Events, Chat, Fahrzeugakte, QR-Code, Punkte und Admin-Dashboard."), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginTop: 8,
         background: "#ffffff12",
@@ -8385,7 +8418,7 @@
         fontSize: 11,
         color: "#aaa"
       }
-    }, "Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt — Änderungen sind nicht dauerhaft gespeichert."))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt."))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
       }
@@ -8598,11 +8631,10 @@
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
-        borderRadius: 12,
-        marginBottom: 10,
+        borderRadius: 14,
+        marginBottom: 12,
         overflow: "hidden",
-        cursor: "pointer",
-        display: "flex"
+        cursor: "pointer"
       },
       onClick: () => {
         setViewV(v);
@@ -8610,14 +8642,14 @@
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        width: 90,
-        height: 90,
+        width: "100%",
+        height: 160,
         overflow: "hidden",
         background: "#111",
-        flexShrink: 0,
         display: "flex",
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent: "center",
+        position: "relative"
       }
     }, v.image ? /*#__PURE__*/_react.default.createElement("img", {
       src: v.image,
@@ -8630,63 +8662,61 @@
       onError: e => e.target.style.display = "none"
     }) : /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        fontSize: 28
+        fontSize: 48
       }
-    }, "🏎️")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🏎️"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        padding: "12px 13px",
-        flex: 1,
-        minWidth: 0,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center"
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontWeight: 700,
-        fontSize: 15,
-        color: C.white
-      }
-    }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 6,
-        marginTop: 5,
-        alignItems: "center",
-        flexWrap: "wrap"
+        position: "absolute",
+        bottom: 10,
+        left: 12
       }
     }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
         background: "#fff",
         border: "1.5px solid #222",
         borderRadius: 4,
-        padding: "1px 7px",
-        fontSize: 10,
+        padding: "2px 9px",
+        fontSize: 11,
         fontWeight: 800,
         color: "#111",
         letterSpacing: 1,
-        fontFamily: "Arial,sans-serif"
+        fontFamily: "Arial,sans-serif",
+        boxShadow: "0 1px 4px rgba(0,0,0,.4)"
       }
-    }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/_react.default.createElement("span", {
+    }, fmtKz(v.kennzeichen, v.baujahr)))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 10,
+        padding: "12px 14px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontWeight: 700,
+        fontSize: 16,
+        color: C.white
+      }
+    }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginTop: 3,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 11,
         color: C.muted
       }
     }, v.baujahr), (logbook[v.id] || []).length > 0 && /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        fontSize: 9,
+        fontSize: 10,
         color: C.green,
         fontWeight: 700
       }
-    }, (logbook[v.id] || []).length, " Einträge"))), /*#__PURE__*/_react.default.createElement("div", {
+    }, "📋 ", (logbook[v.id] || []).length, " Einträge"))), /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        display: "flex",
-        alignItems: "center",
-        paddingRight: 14
-      }
-    }, /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 18,
+        fontSize: 20,
         color: C.muted
       }
     }, "›"))))), isDemo && /*#__PURE__*/_react.default.createElement("div", {
@@ -8695,14 +8725,32 @@
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
         fontSize: 11,
         fontWeight: 800,
         color: "#aaa",
         textTransform: "uppercase",
-        letterSpacing: 1.5,
-        marginBottom: 10
+        letterSpacing: 1.5
       }
-    }, "🚗 Neueste Mitglieder-Fahrzeuge"), displayVehicles.filter(v => !myVehicles.find(m => m.id === v.id)).map(v => /*#__PURE__*/_react.default.createElement("div", {
+    }, "🚗 Neueste Mitglieder-Fahrzeuge"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setTab("community"),
+      style: {
+        background: "none",
+        border: "none",
+        color: C.red,
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        padding: "2px 0"
+      }
+    }, "Alle ansehen →")), displayVehicles.filter(v => !myVehicles.find(m => m.id === v.id)).slice(0, 3).map(v => /*#__PURE__*/_react.default.createElement("div", {
       key: v.id,
       style: {
         background: C.card,
@@ -10170,9 +10218,209 @@
       style: {
         fontSize: 12,
         color: C.muted,
-        marginBottom: 16
+        marginBottom: 12
       }
     }, "Fahrzeuge die dich begeistern"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginBottom: 20
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/_react.default.createElement("input", {
+      className: "inp",
+      placeholder: "🔍  Hersteller, Modell, Kennzeichen…",
+      value: communitySearch || "",
+      onChange: e => setCommunitySearch(e.target.value),
+      style: {
+        flex: 1,
+        fontSize: 14,
+        padding: "10px 12px"
+      }
+    }), /*#__PURE__*/_react.default.createElement("select", {
+      className: "inp",
+      value: communityFilter || "all",
+      onChange: e => setCommunityFilter(e.target.value),
+      style: {
+        width: "auto",
+        minWidth: 100,
+        fontSize: 13,
+        padding: "10px 8px"
+      }
+    }, /*#__PURE__*/_react.default.createElement("option", {
+      value: "all"
+    }, "Alle"), /*#__PURE__*/_react.default.createElement("option", {
+      value: "porsche"
+    }, "Porsche"), /*#__PURE__*/_react.default.createElement("option", {
+      value: "favoriten"
+    }, "❤️ Favoriten"))), (() => {
+      const allVehicles = Object.values(vehicles).filter(v => v.userId !== me?.id && v.owner !== me?.email);
+      const q = (communitySearch || "").toLowerCase();
+      const f = communityFilter || "all";
+      const filtered = allVehicles.filter(v => {
+        if (f === "favoriten" && !isFavorite(v.id)) return false;
+        if (f === "porsche" && !(v.hersteller || "").toLowerCase().includes("porsche")) return false;
+        if (q) return `${v.hersteller || ""} ${v.modell || ""} ${v.kennzeichen || ""} ${v.baujahr || ""}`.toLowerCase().includes(q);
+        return true;
+      });
+      if (!filtered.length && !allVehicles.length) return /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: C.card,
+          border: `1.5px dashed ${C.border}`,
+          borderRadius: 12,
+          padding: "28px",
+          textAlign: "center"
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 32,
+          marginBottom: 8
+        }
+      }, "🏎️"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 13,
+          color: C.muted
+        }
+      }, "Noch keine anderen Fahrzeuge im Club erfasst"));
+      if (!filtered.length) return /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          textAlign: "center",
+          padding: "24px 0",
+          color: C.muted,
+          fontSize: 13
+        }
+      }, "Keine Fahrzeuge für diese Suche gefunden");
+      return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: C.muted,
+          fontWeight: 700,
+          letterSpacing: 1.5,
+          textTransform: "uppercase",
+          marginBottom: 10
+        }
+      }, filtered.length, " Fahrzeug", filtered.length !== 1 ? "e" : "", " ", q || f !== "all" ? "gefunden" : "im Club"), filtered.map(v => {
+        const priv = typeof v.privacy === "string" ? JSON.parse(v.privacy || "{}") : v.privacy || {};
+        return /*#__PURE__*/_react.default.createElement("div", {
+          key: v.id,
+          style: {
+            background: C.card,
+            border: `1px solid ${isFavorite(v.id) ? C.red + "44" : C.border}`,
+            borderRadius: 12,
+            marginBottom: 10,
+            overflow: "hidden",
+            cursor: "pointer",
+            display: "flex"
+          },
+          onClick: () => {
+            setPublicV({
+              ...v,
+              privacy: {
+                ...DEF_PRIVACY,
+                ...priv
+              }
+            });
+            setScreen("public");
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            width: 88,
+            height: 88,
+            overflow: "hidden",
+            background: "#111",
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative"
+          }
+        }, v.image ? /*#__PURE__*/_react.default.createElement("img", {
+          src: v.image,
+          alt: "",
+          style: {
+            width: "100%",
+            height: "100%",
+            objectFit: "cover"
+          },
+          onError: e => e.target.style.display = "none"
+        }) : /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 28
+          }
+        }, "🏎️"), /*#__PURE__*/_react.default.createElement("button", {
+          onClick: e => {
+            e.stopPropagation();
+            toggleFavorite(v.id);
+          },
+          style: {
+            position: "absolute",
+            top: 4,
+            right: 4,
+            background: "rgba(0,0,0,.6)",
+            border: "none",
+            borderRadius: "50%",
+            width: 24,
+            height: 24,
+            cursor: "pointer",
+            fontSize: 13,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }
+        }, isFavorite(v.id) ? "❤️" : "🤍")), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            padding: "11px 12px",
+            flex: 1,
+            minWidth: 0
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontWeight: 700,
+            fontSize: 14,
+            color: C.white,
+            marginBottom: 3
+          }
+        }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 6,
+            flexWrap: "wrap",
+            alignItems: "center"
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            background: "#fff",
+            border: "1.5px solid #222",
+            borderRadius: 3,
+            padding: "1px 6px",
+            fontSize: 10,
+            fontWeight: 800,
+            color: "#111",
+            letterSpacing: 1,
+            fontFamily: "Arial,sans-serif"
+          }
+        }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 10,
+            color: C.muted
+          }
+        }, v.baujahr))), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            display: "flex",
+            alignItems: "center",
+            paddingRight: 14
+          }
+        }, /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 18,
+            color: C.muted
+          }
+        }, "›")));
+      }));
+    })()), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 24
       }
@@ -10763,7 +11011,7 @@
         gridTemplateColumns: "1fr 1fr",
         gap: 10
       }
-    }, [["🚗", "Fahrzeuge", myVehicles.length], ["📋", "Logbuch", Object.values(logbook).flat().length], ["🏁", "Events", myParticipations.length], ["💬", "Nachrichten", myThreads.length]].map(([icon, label, val]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, [["🚗", "Fahrzeuge", myVehicles.length, "im System"], ["📋", "Logbuch", Object.values(logbook).flat().length, "Einträge"], ["🏁", "Events", myParticipations.filter(p => p.status === "confirmed").length, "bestätigt"], ["💬", "Chats", myThreads.length, "aktive Konversationen"], ["❤️", "Favoriten", favorites.length, "gespeicherte Fahrzeuge"], ["👁", "Angesehen", getViewedVehicles().length, "fremde Akten · +" + getViewedVehicles().length * 2 + " Pkt"], ["📱", "QR-Scans", getScanConfirmed().length, "bestätigt · +" + getScanConfirmed().length * 10 + " Pkt"], ["📰", "News", JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length, "gelesen · +" + JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length * 10 + " Pkt"]].map(([icon, label, val, sub]) => /*#__PURE__*/_react.default.createElement("div", {
       key: label,
       style: {
         background: C.black,
@@ -10773,23 +11021,31 @@
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 22,
-        marginBottom: 4
+        fontSize: 20,
+        marginBottom: 3
       }
     }, icon), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: 800,
         color: C.white,
-        fontFamily: "'Barlow Condensed',sans-serif"
+        fontFamily: "'Barlow Condensed',sans-serif",
+        lineHeight: 1
       }
     }, val), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
-        marginTop: 2
+        marginTop: 2,
+        fontWeight: 600
       }
-    }, label))))), /*#__PURE__*/_react.default.createElement("div", {
+    }, label), sub && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: "#444",
+        marginTop: 1
+      }
+    }, sub))))), /*#__PURE__*/_react.default.createElement("div", {
       className: "card",
       style: {
         padding: 16,
