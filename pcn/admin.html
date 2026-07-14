@@ -555,7 +555,7 @@ async function togglePaid(id,isPaid){
   DB.members = DB.members.map(m=>m.id===id?{...m,beitrag_bezahlt:!isPaid}:m);
   updateBadges(); renderTab(currentTab);
   // Then persist to DB
-  const{error}=await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:!isPaid})});
+  const{error}=await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({beitrag_bezahlt:!isPaid, beitrag_datum: !isPaid?new Date().toISOString():null})});
   if(error){
     // Revert on error
     DB.members = DB.members.map(m=>m.id===id?{...m,beitrag_bezahlt:isPaid}:m);
