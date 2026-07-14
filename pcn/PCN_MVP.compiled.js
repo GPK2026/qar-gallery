@@ -523,6 +523,90 @@
         pub_phone: true,
         marktwert: true
       }
+    },
+    "V005": {
+      id: "V005",
+      qarId: "QAR-B5H2N8QT",
+      userId: "c2000000-0000-0000-0000-000000000005",
+      owner: "community5@pcn.de",
+      hersteller: "Porsche",
+      modell: "911 Carrera RS 2.7",
+      baujahr: "1973",
+      kraftstoff: "Benzin",
+      getriebe: "5-Gang manuell",
+      farbe: "Grand Prix Weiß",
+      kennzeichen: "AW-RS 273",
+      fin: "9113600123",
+      phone: "",
+      kilometerstand: "89400",
+      tuev_faelligkeit: "08/2026",
+      marktwert: "780000",
+      zustand: "2",
+      besonderheiten: "Leichtbau · Entenbürzel · Matching Numbers · Ori-Lack",
+      image: "https://images.unsplash.com/photo-1611821064430-0d40291d0f0b?w=800&q=80",
+      images: ["https://images.unsplash.com/photo-1611821064430-0d40291d0f0b?w=800&q=80"],
+      ownerName: "Andreas W.",
+      privacy: {
+        ...DEF_PRIVACY,
+        pub_events: true,
+        pub_gallery: true
+      }
+    },
+    "V006": {
+      id: "V006",
+      qarId: "QAR-J7K4L1MW",
+      userId: "c2000000-0000-0000-0000-000000000006",
+      owner: "community6@pcn.de",
+      hersteller: "Porsche",
+      modell: "356 Speedster",
+      baujahr: "1957",
+      kraftstoff: "Benzin",
+      getriebe: "4-Gang manuell",
+      farbe: "Silbermetallic",
+      kennzeichen: "MYK-56 S",
+      fin: "84001456",
+      phone: "",
+      kilometerstand: "112300",
+      tuev_faelligkeit: "05/2027",
+      marktwert: "320000",
+      zustand: "2",
+      besonderheiten: "Vollrestauration 2019 · Nummerngleich · Historie lückenlos",
+      image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
+      images: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80"],
+      ownerName: "Sabine H.",
+      privacy: {
+        ...DEF_PRIVACY,
+        pub_events: true,
+        pub_gallery: true
+      }
+    },
+    "V007": {
+      id: "V007",
+      qarId: "QAR-D9F6G3XP",
+      userId: "c2000000-0000-0000-0000-000000000007",
+      owner: "community7@pcn.de",
+      hersteller: "Porsche",
+      modell: "Cayman GT4 RS",
+      baujahr: "2023",
+      kraftstoff: "Benzin",
+      getriebe: "PDK",
+      farbe: "Arktisgrau",
+      kennzeichen: "NR-GT 4",
+      fin: "WP0ZZZ98 ...",
+      phone: "",
+      kilometerstand: "8900",
+      tuev_faelligkeit: "03/2027",
+      marktwert: "185000",
+      zustand: "1",
+      besonderheiten: "Weissach-Paket · Clubsport · Trackday-Setup Nordschleife",
+      image: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
+      images: ["https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80"],
+      ownerName: "Thomas R.",
+      privacy: {
+        ...DEF_PRIVACY,
+        pub_events: true,
+        pub_gallery: true
+      }
     }
   };
   const DEMO_LOGBOOK = {
@@ -1894,6 +1978,7 @@
     const [showFeatureDetail, setShowFeatureDetail] = (0, _react.useState)(null); // false | 'features' | 'points'
     const [eventsView, setEventsView] = (0, _react.useState)("calendar"); // "list" | "calendar"
     const [demoBannerClosed, setDemoBannerClosed] = (0, _react.useState)(false);
+    const [demoBannerVisible, setDemoBannerVisible] = (0, _react.useState)(false);
     const [communitySearch, setCommunitySearch] = (0, _react.useState)("");
     const [communityFilter, setCommunityFilter] = (0, _react.useState)("all");
     const [calMonth, setCalMonth] = (0, _react.useState)(new Date());
@@ -2562,6 +2647,13 @@
       const interval = setInterval(() => setStatusTick(t => t + 1), 30000); // every 30s
       return () => clearInterval(interval);
     }, []);
+
+    // ── Demo-Popup nach 3 Sekunden ────────────────────────────────────────────
+    (0, _react.useEffect)(() => {
+      if (!isDemo || demoBannerClosed) return;
+      const t = setTimeout(() => setDemoBannerVisible(true), 3000);
+      return () => clearTimeout(t);
+    }, [isDemo, demoBannerClosed]);
 
     // ── Track screen changes for analytics ───────────────────────────────────────
     (0, _react.useEffect)(() => {
@@ -3471,6 +3563,7 @@
     select option{background:#191919}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:${C.border};border-radius:99px}
     @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
     @keyframes scanline{0%{top:4px}50%{top:calc(100% - 6px)}100%{top:4px}}
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -8349,76 +8442,7 @@
       style: {
         animation: "fadeIn .2s"
       }
-    }, isDemo && !demoBannerClosed && /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        background: "#6b7fff18",
-        border: "1px solid #6b7fff44",
-        borderRadius: 12,
-        padding: "13px 16px",
-        marginBottom: 16,
-        position: "relative"
-      }
-    }, /*#__PURE__*/_react.default.createElement("button", {
-      onClick: () => setDemoBannerClosed(true),
-      style: {
-        position: "absolute",
-        top: 10,
-        right: 12,
-        background: "none",
-        border: "none",
-        color: "#666",
-        fontSize: 18,
-        cursor: "pointer",
-        padding: "0 2px",
-        lineHeight: 1,
-        fontFamily: "sans-serif"
-      }
-    }, "✕"), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 10,
-        alignItems: "center",
-        marginBottom: 8,
-        paddingRight: 24
-      }
-    }, /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 18
-      }
-    }, "🎭"), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontFamily: "'Barlow Condensed',sans-serif",
-        fontSize: 17,
-        fontWeight: 900,
-        color: "#6b7fff",
-        letterSpacing: .5
-      }
-    }, "Demo-Modus — Max Mustermann")), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: "#bbb",
-        lineHeight: 1.7
-      }
-    }, "Alle Funktionen sind vollständig erlebbar — Events, Chat, Fahrzeugakte, QR-Code, Punkte und Admin-Dashboard."), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        marginTop: 8,
-        background: "#ffffff12",
-        borderRadius: 7,
-        padding: "7px 10px",
-        display: "flex",
-        gap: 7,
-        alignItems: "center"
-      }
-    }, /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 13
-      }
-    }, "🔄"), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: "#aaa"
-      }
-    }, "Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt."))), /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
       }
@@ -8897,7 +8921,8 @@
         gap: 10,
         overflowX: "auto",
         scrollbarWidth: "none",
-        paddingBottom: 4
+        paddingBottom: 4,
+        paddingTop: 8
       }
     }, recentVehicles.map(rv => /*#__PURE__*/_react.default.createElement("div", {
       key: rv.id,
@@ -8906,36 +8931,7 @@
         width: 130,
         position: "relative"
       }
-    }, /*#__PURE__*/_react.default.createElement("button", {
-      onClick: e => {
-        e.stopPropagation();
-        setRecentVehicles(prev => {
-          const updated = prev.filter(v => v.id !== rv.id);
-          localStorage.setItem("pcn_recent_vehicles", JSON.stringify(updated));
-          return updated;
-        });
-      },
-      style: {
-        position: "absolute",
-        top: -6,
-        right: -6,
-        zIndex: 10,
-        width: 20,
-        height: 20,
-        borderRadius: "50%",
-        background: "#333",
-        border: `1.5px solid ${C.border}`,
-        color: "#aaa",
-        fontSize: 10,
-        fontWeight: 900,
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        lineHeight: 1,
-        fontFamily: "sans-serif"
-      }
-    }, "✕"), /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
       onClick: () => {
         const full = vehicles[rv.id] || DEMO_VEHICLES[rv.id];
         if (full) {
@@ -8994,7 +8990,38 @@
         height: "100%",
         fontSize: 28
       }
-    }, "🚗")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🚗"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        setRecentVehicles(prev => {
+          const updated = prev.filter(v => v.id !== rv.id);
+          localStorage.setItem("pcn_recent_vehicles", JSON.stringify(updated));
+          return updated;
+        });
+      },
+      style: {
+        position: "absolute",
+        top: 5,
+        right: 5,
+        zIndex: 10,
+        width: 22,
+        height: 22,
+        borderRadius: "50%",
+        background: "rgba(0,0,0,.6)",
+        border: "none",
+        backdropFilter: "blur(4px)",
+        color: "#fff",
+        fontSize: 11,
+        fontWeight: 900,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        lineHeight: 1,
+        fontFamily: "sans-serif",
+        WebkitTapHighlightColor: "transparent"
+      }
+    }, "✕")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         padding: "7px 8px"
       }
@@ -9021,17 +9048,19 @@
       style: {
         flexShrink: 0,
         width: 44,
-        height: "100%",
         background: "none",
         border: `1px dashed ${C.border}`,
         borderRadius: 10,
-        color: "#333",
+        color: "#555",
         cursor: "pointer",
         fontSize: 16,
-        alignSelf: "stretch",
-        minHeight: 120
-      }
-    }, "✕"))), /*#__PURE__*/_react.default.createElement("div", {
+        minHeight: 119,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      },
+      title: "Alle entfernen"
+    }, "🗑"))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 8
       }
@@ -10295,14 +10324,42 @@
       }, "Keine Fahrzeuge für diese Suche gefunden");
       return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
         style: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
           fontSize: 10,
           color: C.muted,
           fontWeight: 700,
           letterSpacing: 1.5,
-          textTransform: "uppercase",
-          marginBottom: 10
+          textTransform: "uppercase"
         }
-      }, filtered.length, " Fahrzeug", filtered.length !== 1 ? "e" : "", " ", q || f !== "all" ? "gefunden" : "im Club"), filtered.map(v => {
+      }, filtered.length, " von ", allVehicles.length, " Fahrzeug", allVehicles.length !== 1 ? "en" : "", " ", q || f !== "all" ? "· gefiltert" : "im Club"), (q || f !== "all") && /*#__PURE__*/_react.default.createElement("button", {
+        onClick: () => {
+          setCommunitySearch("");
+          setCommunityFilter("all");
+        },
+        style: {
+          background: "none",
+          border: "none",
+          color: C.red,
+          fontSize: 11,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif"
+        }
+      }, "Zurücksetzen")), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          maxHeight: 420,
+          overflowY: "auto",
+          scrollbarWidth: "thin",
+          marginRight: -4,
+          paddingRight: 4
+        }
+      }, filtered.map(v => {
         const priv = typeof v.privacy === "string" ? JSON.parse(v.privacy || "{}") : v.privacy || {};
         return /*#__PURE__*/_react.default.createElement("div", {
           key: v.id,
@@ -10407,7 +10464,13 @@
             fontSize: 10,
             color: C.muted
           }
-        }, v.baujahr))), /*#__PURE__*/_react.default.createElement("div", {
+        }, v.baujahr), v.ownerName && /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 10,
+            color: C.gold,
+            fontWeight: 700
+          }
+        }, v.ownerName))), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             display: "flex",
             alignItems: "center",
@@ -10419,7 +10482,7 @@
             color: C.muted
           }
         }, "›")));
-      }));
+      })));
     })()), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 24
@@ -11005,20 +11068,34 @@
         letterSpacing: 2,
         marginBottom: 12
       }
-    }, "Statistiken"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Statistiken · zum Öffnen tippen"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 10
       }
-    }, [["🚗", "Fahrzeuge", myVehicles.length, "im System"], ["📋", "Logbuch", Object.values(logbook).flat().length, "Einträge"], ["🏁", "Events", myParticipations.filter(p => p.status === "confirmed").length, "bestätigt"], ["💬", "Chats", myThreads.length, "aktive Konversationen"], ["❤️", "Favoriten", favorites.length, "gespeicherte Fahrzeuge"], ["👁", "Angesehen", getViewedVehicles().length, "fremde Akten · +" + getViewedVehicles().length * 2 + " Pkt"], ["📱", "QR-Scans", getScanConfirmed().length, "bestätigt · +" + getScanConfirmed().length * 10 + " Pkt"], ["📰", "News", JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length, "gelesen · +" + JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length * 10 + " Pkt"]].map(([icon, label, val, sub]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, [["🚗", "Fahrzeuge", myVehicles.length, "im System", () => setTab("dashboard")], ["📋", "Logbuch", Object.values(logbook).flat().length, "Einträge", () => {
+      if (myVehicles[0]) {
+        setViewV(myVehicles[0]);
+        setScreen("vehicle");
+      } else setTab("dashboard");
+    }], ["🏁", "Events", myParticipations.filter(p => p.status === "confirmed").length, "bestätigt", () => setTab("events")], ["💬", "Chats", myThreads.length, "aktive Chats", () => setTab("messages")], ["❤️", "Favoriten", favorites.length, "gespeichert", () => setTab("community")], ["👁", "Angesehen", getViewedVehicles().length, "Akten · +" + getViewedVehicles().length * 2 + " Pkt", () => setTab("community")], ["📱", "QR-Scans", getScanConfirmed().length, "bestätigt · +" + getScanConfirmed().length * 10 + " Pkt", () => setTab("community")], ["📰", "News", JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length, "gelesen · +" + JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length * 10 + " Pkt", () => setTab("dashboard")]].map(([icon, label, val, sub, onTap]) => /*#__PURE__*/_react.default.createElement("button", {
       key: label,
+      onClick: onTap,
       style: {
         background: C.black,
         borderRadius: 10,
         padding: "12px",
-        textAlign: "center"
-      }
+        textAlign: "center",
+        border: `1px solid ${C.border}`,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        WebkitTapHighlightColor: "transparent",
+        position: "relative",
+        transition: "border-color .15s"
+      },
+      onMouseEnter: e => e.currentTarget.style.borderColor = C.red,
+      onMouseLeave: e => e.currentTarget.style.borderColor = C.border
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 20,
@@ -11042,10 +11119,18 @@
     }, label), sub && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 9,
-        color: "#444",
+        color: "#555",
         marginTop: 1
       }
-    }, sub))))), /*#__PURE__*/_react.default.createElement("div", {
+    }, sub), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        position: "absolute",
+        top: 8,
+        right: 9,
+        fontSize: 11,
+        color: "#444"
+      }
+    }, "›"))))), /*#__PURE__*/_react.default.createElement("div", {
       className: "card",
       style: {
         padding: 16,
@@ -11248,7 +11333,100 @@
         setScreen("splash");
         setTab("dashboard");
       }
-    }, "Abmelden"))), showFeatureDetail && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Abmelden"))), isDemo && demoBannerVisible && !demoBannerClosed && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        zIndex: 800,
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        paddingTop: 72,
+        pointerEvents: "none"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      onClick: e => e.stopPropagation(),
+      style: {
+        pointerEvents: "auto",
+        background: "linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)",
+        border: "1.5px solid #6b7fff55",
+        borderRadius: 16,
+        padding: "20px 20px 18px",
+        width: "calc(100% - 32px)",
+        maxWidth: 400,
+        boxShadow: "0 12px 40px rgba(0,0,0,.65)",
+        position: "relative",
+        animation: "slideDown .3s ease"
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => {
+        setDemoBannerClosed(true);
+        setDemoBannerVisible(false);
+      },
+      style: {
+        position: "absolute",
+        top: 12,
+        right: 14,
+        background: "none",
+        border: "none",
+        color: "#666",
+        fontSize: 20,
+        cursor: "pointer",
+        padding: "0 2px",
+        lineHeight: 1,
+        fontFamily: "sans-serif",
+        fontWeight: 700
+      }
+    }, "✕"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10,
+        alignItems: "center",
+        marginBottom: 10,
+        paddingRight: 28
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 22
+      }
+    }, "🎭"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 19,
+        fontWeight: 900,
+        color: "#6b7fff",
+        letterSpacing: .5
+      }
+    }, "Demo-Modus aktiv")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#ccc",
+        lineHeight: 1.65,
+        marginBottom: 10
+      }
+    }, "Du bist als ", /*#__PURE__*/_react.default.createElement("strong", {
+      style: {
+        color: "#fff"
+      }
+    }, "Max Mustermann"), " unterwegs. Alle Funktionen sind vollständig erlebbar — QR-Code, Events, Chat, Punkte und Admin-Dashboard."), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: "#ffffff0a",
+        borderRadius: 8,
+        padding: "8px 12px",
+        display: "flex",
+        gap: 8,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 12
+      }
+    }, "🔄"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#777"
+      }
+    }, "Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt.")))), showFeatureDetail && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "fixed",
         inset: 0,
