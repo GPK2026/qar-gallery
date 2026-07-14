@@ -245,6 +245,36 @@ const DEMO_VEHICLES = {
       "https://www.secret-classics.com/wp-content/uploads/2023/10/image-1-1-1024x683.jpeg",
     ],
     privacy:{...DEF_PRIVACY, pub_events:true, pub_gallery:true, pub_phone:true, marktwert:true}},
+  "V005":{id:"V005",qarId:"QAR-B5H2N8QT",userId:"c2000000-0000-0000-0000-000000000005",owner:"community5@pcn.de",
+    hersteller:"Porsche",modell:"911 Carrera RS 2.7",baujahr:"1973",
+    kraftstoff:"Benzin",getriebe:"5-Gang manuell",farbe:"Grand Prix Weiß",
+    kennzeichen:"AW-RS 273",fin:"9113600123",phone:"",
+    kilometerstand:"89400",tuev_faelligkeit:"08/2026",marktwert:"780000",zustand:"2",
+    besonderheiten:"Leichtbau · Entenbürzel · Matching Numbers · Ori-Lack",
+    image:"https://images.unsplash.com/photo-1611821064430-0d40291d0f0b?w=800&q=80",
+    images:["https://images.unsplash.com/photo-1611821064430-0d40291d0f0b?w=800&q=80"],
+    ownerName:"Andreas W.",
+    privacy:{...DEF_PRIVACY, pub_events:true, pub_gallery:true}},
+  "V006":{id:"V006",qarId:"QAR-J7K4L1MW",userId:"c2000000-0000-0000-0000-000000000006",owner:"community6@pcn.de",
+    hersteller:"Porsche",modell:"356 Speedster",baujahr:"1957",
+    kraftstoff:"Benzin",getriebe:"4-Gang manuell",farbe:"Silbermetallic",
+    kennzeichen:"MYK-56 S",fin:"84001456",phone:"",
+    kilometerstand:"112300",tuev_faelligkeit:"05/2027",marktwert:"320000",zustand:"2",
+    besonderheiten:"Vollrestauration 2019 · Nummerngleich · Historie lückenlos",
+    image:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80",
+    images:["https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80"],
+    ownerName:"Sabine H.",
+    privacy:{...DEF_PRIVACY, pub_events:true, pub_gallery:true}},
+  "V007":{id:"V007",qarId:"QAR-D9F6G3XP",userId:"c2000000-0000-0000-0000-000000000007",owner:"community7@pcn.de",
+    hersteller:"Porsche",modell:"Cayman GT4 RS",baujahr:"2023",
+    kraftstoff:"Benzin",getriebe:"PDK",farbe:"Arktisgrau",
+    kennzeichen:"NR-GT 4",fin:"WP0ZZZ98 ...",phone:"",
+    kilometerstand:"8900",tuev_faelligkeit:"03/2027",marktwert:"185000",zustand:"1",
+    besonderheiten:"Weissach-Paket · Clubsport · Trackday-Setup Nordschleife",
+    image:"https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80",
+    images:["https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=800&q=80"],
+    ownerName:"Thomas R.",
+    privacy:{...DEF_PRIVACY, pub_events:true, pub_gallery:true}},
 };
 
 const DEMO_LOGBOOK = {
@@ -826,6 +856,7 @@ function PCNInner() {
   const [showFeatureDetail, setShowFeatureDetail] = useState(null); // false | 'features' | 'points'
   const [eventsView, setEventsView] = useState("calendar"); // "list" | "calendar"
   const [demoBannerClosed, setDemoBannerClosed] = useState(false);
+  const [demoBannerVisible, setDemoBannerVisible] = useState(false);
   const [communitySearch, setCommunitySearch] = useState("");
   const [communityFilter, setCommunityFilter] = useState("all");
   const [calMonth, setCalMonth] = useState(new Date());
@@ -1295,6 +1326,13 @@ function PCNInner() {
     const interval = setInterval(()=>setStatusTick(t=>t+1), 30000); // every 30s
     return ()=>clearInterval(interval);
   },[]);
+
+  // ── Demo-Popup nach 3 Sekunden ────────────────────────────────────────────
+  useEffect(()=>{
+    if(!isDemo || demoBannerClosed) return;
+    const t = setTimeout(()=>setDemoBannerVisible(true), 3000);
+    return ()=>clearTimeout(t);
+  },[isDemo, demoBannerClosed]);
 
   // ── Track screen changes for analytics ───────────────────────────────────────
   useEffect(()=>{
@@ -1839,6 +1877,7 @@ function PCNInner() {
     select option{background:#191919}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:${C.border};border-radius:99px}
     @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
     @keyframes scanline{0%{top:4px}50%{top:calc(100% - 6px)}100%{top:4px}}
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -3649,25 +3688,7 @@ function PCNInner() {
         {tab==="dashboard"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
 
-            {/* ── Demo-Hinweis — schließbar ── */}
-            {isDemo&&!demoBannerClosed&&(
-              <div style={{background:"#6b7fff18",border:"1px solid #6b7fff44",borderRadius:12,padding:"13px 16px",marginBottom:16,position:"relative"}}>
-                <button onClick={()=>setDemoBannerClosed(true)}
-                  style={{position:"absolute",top:10,right:12,background:"none",border:"none",
-                    color:"#666",fontSize:18,cursor:"pointer",padding:"0 2px",lineHeight:1,fontFamily:"sans-serif"}}>✕</button>
-                <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:8,paddingRight:24}}>
-                  <span style={{fontSize:18}}>🎭</span>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:900,color:"#6b7fff",letterSpacing:.5}}>Demo-Modus — Max Mustermann</div>
-                </div>
-                <div style={{fontSize:12,color:"#bbb",lineHeight:1.7}}>
-                  Alle Funktionen sind vollständig erlebbar — Events, Chat, Fahrzeugakte, QR-Code, Punkte und Admin-Dashboard.
-                </div>
-                <div style={{marginTop:8,background:"#ffffff12",borderRadius:7,padding:"7px 10px",display:"flex",gap:7,alignItems:"center"}}>
-                  <span style={{fontSize:13}}>🔄</span>
-                  <div style={{fontSize:11,color:"#aaa"}}>Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt.</div>
-                </div>
-              </div>
-            )}
+            {/* Demo-Hinweis erscheint als Popup-Overlay nach 3 Sekunden — siehe globaler Overlay-Bereich */}
             {/* ── 1. Infos & Neuigkeiten ── */}
             <div style={{marginBottom:20}}>
               <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>📰 Infos & Neuigkeiten</div>
@@ -3824,27 +3845,9 @@ function PCNInner() {
               {recentVehicles.length>0&&(
                 <div style={{marginBottom:18}}>
                   <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>🕐 Zuletzt angesehen</div>
-                  <div style={{display:"flex",gap:10,overflowX:"auto",scrollbarWidth:"none",paddingBottom:4}}>
+                  <div style={{display:"flex",gap:10,overflowX:"auto",scrollbarWidth:"none",paddingBottom:4,paddingTop:8}}>
                     {recentVehicles.map(rv=>(
                       <div key={rv.id} style={{flexShrink:0,width:130,position:"relative"}}>
-                        {/* ✕ per Kachel */}
-                        <button
-                          onClick={e=>{
-                            e.stopPropagation();
-                            setRecentVehicles(prev=>{
-                              const updated=prev.filter(v=>v.id!==rv.id);
-                              localStorage.setItem("pcn_recent_vehicles",JSON.stringify(updated));
-                              return updated;
-                            });
-                          }}
-                          style={{position:"absolute",top:-6,right:-6,zIndex:10,
-                            width:20,height:20,borderRadius:"50%",
-                            background:"#333",border:`1.5px solid ${C.border}`,
-                            color:"#aaa",fontSize:10,fontWeight:900,
-                            cursor:"pointer",display:"flex",alignItems:"center",
-                            justifyContent:"center",lineHeight:1,fontFamily:"sans-serif"}}>
-                          ✕
-                        </button>
                         <div
                           onClick={()=>{
                             const full = vehicles[rv.id]||DEMO_VEHICLES[rv.id];
@@ -3863,6 +3866,25 @@ function PCNInner() {
                             {rv.image
                               ? <img src={rv.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
                               : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",fontSize:28}}>🚗</div>}
+                            {/* ✕ sitzt sauber in der oberen rechten Ecke des Bildes */}
+                            <button
+                              onClick={e=>{
+                                e.stopPropagation();
+                                setRecentVehicles(prev=>{
+                                  const updated=prev.filter(v=>v.id!==rv.id);
+                                  localStorage.setItem("pcn_recent_vehicles",JSON.stringify(updated));
+                                  return updated;
+                                });
+                              }}
+                              style={{position:"absolute",top:5,right:5,zIndex:10,
+                                width:22,height:22,borderRadius:"50%",
+                                background:"rgba(0,0,0,.6)",border:"none",backdropFilter:"blur(4px)",
+                                color:"#fff",fontSize:11,fontWeight:900,
+                                cursor:"pointer",display:"flex",alignItems:"center",
+                                justifyContent:"center",lineHeight:1,fontFamily:"sans-serif",
+                                WebkitTapHighlightColor:"transparent"}}>
+                              ✕
+                            </button>
                           </div>
                           <div style={{padding:"7px 8px"}}>
                             <div style={{fontSize:11,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
@@ -3872,9 +3894,11 @@ function PCNInner() {
                       </div>
                     ))}
                     <button onClick={()=>{setRecentVehicles([]);localStorage.removeItem("pcn_recent_vehicles");}}
-                      style={{flexShrink:0,width:44,height:"100%",background:"none",border:`1px dashed ${C.border}`,
-                        borderRadius:10,color:"#333",cursor:"pointer",fontSize:16,alignSelf:"stretch",minHeight:120}}>
-                      ✕
+                      style={{flexShrink:0,width:44,background:"none",border:`1px dashed ${C.border}`,
+                        borderRadius:10,color:"#555",cursor:"pointer",fontSize:16,minHeight:119,
+                        display:"flex",alignItems:"center",justifyContent:"center"}}
+                      title="Alle entfernen">
+                      🗑
                     </button>
                   </div>
                 </div>
@@ -4396,9 +4420,18 @@ function PCNInner() {
                 );
                 return (
                   <div>
-                    <div style={{fontSize:10,color:C.muted,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}}>
-                      {filtered.length} Fahrzeug{filtered.length!==1?"e":""} {q||f!=="all"?"gefunden":"im Club"}
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                      <div style={{fontSize:10,color:C.muted,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase"}}>
+                        {filtered.length} von {allVehicles.length} Fahrzeug{allVehicles.length!==1?"en":""} {q||f!=="all"?"· gefiltert":"im Club"}
+                      </div>
+                      {(q||f!=="all")&&(
+                        <button onClick={()=>{setCommunitySearch("");setCommunityFilter("all");}}
+                          style={{background:"none",border:"none",color:C.red,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                          Zurücksetzen
+                        </button>
+                      )}
                     </div>
+                    <div style={{maxHeight:420,overflowY:"auto",scrollbarWidth:"thin",marginRight:-4,paddingRight:4}}>
                     {filtered.map(v=>{
                       const priv=typeof v.privacy==="string"?JSON.parse(v.privacy||"{}"):(v.privacy||{});
                       return (
@@ -4419,6 +4452,7 @@ function PCNInner() {
                                 {fmtKz(v.kennzeichen,v.baujahr)}
                               </span>
                               <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
+                              {v.ownerName&&<span style={{fontSize:10,color:C.gold,fontWeight:700}}>{v.ownerName}</span>}
                             </div>
                           </div>
                           <div style={{display:"flex",alignItems:"center",paddingRight:14}}>
@@ -4427,6 +4461,7 @@ function PCNInner() {
                         </div>
                       );
                     })}
+                    </div>
                   </div>
                 );
               })()}
@@ -4629,24 +4664,30 @@ function PCNInner() {
 
             {/* ── Statistiken ── */}
             <div className="card" style={{padding:16,marginBottom:12}}>
-              <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Statistiken</div>
+              <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Statistiken · zum Öffnen tippen</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 {[
-                  ["🚗","Fahrzeuge",myVehicles.length,"im System"],
-                  ["📋","Logbuch",Object.values(logbook).flat().length,"Einträge"],
-                  ["🏁","Events",myParticipations.filter(p=>p.status==="confirmed").length,"bestätigt"],
-                  ["💬","Chats",myThreads.length,"aktive Konversationen"],
-                  ["❤️","Favoriten",favorites.length,"gespeicherte Fahrzeuge"],
-                  ["👁","Angesehen",getViewedVehicles().length,"fremde Akten · +"+getViewedVehicles().length*2+" Pkt"],
-                  ["📱","QR-Scans",getScanConfirmed().length,"bestätigt · +"+getScanConfirmed().length*10+" Pkt"],
-                  ["📰","News",JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length,"gelesen · +"+JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length*10+" Pkt"],
-                ].map(([icon,label,val,sub])=>(
-                  <div key={label} style={{background:C.black,borderRadius:10,padding:"12px",textAlign:"center"}}>
+                  ["🚗","Fahrzeuge",myVehicles.length,"im System",()=>setTab("dashboard")],
+                  ["📋","Logbuch",Object.values(logbook).flat().length,"Einträge",()=>{ if(myVehicles[0]){setViewV(myVehicles[0]);setScreen("vehicle");} else setTab("dashboard"); }],
+                  ["🏁","Events",myParticipations.filter(p=>p.status==="confirmed").length,"bestätigt",()=>setTab("events")],
+                  ["💬","Chats",myThreads.length,"aktive Chats",()=>setTab("messages")],
+                  ["❤️","Favoriten",favorites.length,"gespeichert",()=>setTab("community")],
+                  ["👁","Angesehen",getViewedVehicles().length,"Akten · +"+getViewedVehicles().length*2+" Pkt",()=>setTab("community")],
+                  ["📱","QR-Scans",getScanConfirmed().length,"bestätigt · +"+getScanConfirmed().length*10+" Pkt",()=>setTab("community")],
+                  ["📰","News",JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length,"gelesen · +"+JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length*10+" Pkt",()=>setTab("dashboard")],
+                ].map(([icon,label,val,sub,onTap])=>(
+                  <button key={label} onClick={onTap}
+                    style={{background:C.black,borderRadius:10,padding:"12px",textAlign:"center",
+                      border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                      WebkitTapHighlightColor:"transparent",position:"relative",transition:"border-color .15s"}}
+                    onMouseEnter={e=>e.currentTarget.style.borderColor=C.red}
+                    onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
                     <div style={{fontSize:20,marginBottom:3}}>{icon}</div>
                     <div style={{fontSize:24,fontWeight:800,color:C.white,fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>{val}</div>
                     <div style={{fontSize:11,color:C.muted,marginTop:2,fontWeight:600}}>{label}</div>
-                    {sub&&<div style={{fontSize:9,color:"#444",marginTop:1}}>{sub}</div>}
-                  </div>
+                    {sub&&<div style={{fontSize:9,color:"#555",marginTop:1}}>{sub}</div>}
+                    <span style={{position:"absolute",top:8,right:9,fontSize:11,color:"#444"}}>›</span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -4719,6 +4760,37 @@ function PCNInner() {
       </div>
 
       {/* overlays moved to each screen */}
+
+      {/* ── Demo-Popup Overlay (erscheint nach 3 Sekunden, legt sich über die Seite) ── */}
+      {isDemo&&demoBannerVisible&&!demoBannerClosed&&(
+        <div style={{position:"fixed",inset:0,zIndex:800,display:"flex",alignItems:"flex-start",
+          justifyContent:"center",paddingTop:72,pointerEvents:"none"}}>
+          <div onClick={e=>e.stopPropagation()}
+            style={{pointerEvents:"auto",background:"linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)",
+              border:"1.5px solid #6b7fff55",borderRadius:16,padding:"20px 20px 18px",
+              width:"calc(100% - 32px)",maxWidth:400,boxShadow:"0 12px 40px rgba(0,0,0,.65)",
+              position:"relative",animation:"slideDown .3s ease"}}>
+            <button onClick={()=>{setDemoBannerClosed(true);setDemoBannerVisible(false);}}
+              style={{position:"absolute",top:12,right:14,background:"none",border:"none",
+                color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,
+                fontFamily:"sans-serif",fontWeight:700}}>✕</button>
+            <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:10,paddingRight:28}}>
+              <span style={{fontSize:22}}>🎭</span>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:900,
+                color:"#6b7fff",letterSpacing:.5}}>Demo-Modus aktiv</div>
+            </div>
+            <div style={{fontSize:13,color:"#ccc",lineHeight:1.65,marginBottom:10}}>
+              Du bist als <strong style={{color:"#fff"}}>Max Mustermann</strong> unterwegs.
+              Alle Funktionen sind vollständig erlebbar — QR-Code, Events, Chat, Punkte und Admin-Dashboard.
+            </div>
+            <div style={{background:"#ffffff0a",borderRadius:8,padding:"8px 12px",
+              display:"flex",gap:8,alignItems:"center"}}>
+              <span style={{fontSize:12}}>🔄</span>
+              <div style={{fontSize:11,color:"#777"}}>Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt.</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Feature Detail Modal ── */}
       {showFeatureDetail&&(
