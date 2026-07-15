@@ -160,9 +160,15 @@
   </div>
 </div>
 <div id="toast"></div>
+<script src="pcn_config.js"></script>
 <script>
-const SB="https://xsyuhfleesstrchcwspg.supabase.co/rest/v1";
-const KEY=atob("ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5oemVYVm9abXhsWlhOemRISmphR04zYzNCbklpd2ljbTlzWlNJNkluTmxjblpwWTJWZmNtOXNaU0lzSW1saGRDSTZNVGM0TWpjek1EWTFPU3dpWlhod0lqb3lNRGs0TXpBMk5qVTVmUS5rQnFyVzk3N1pqTWZySFY1blJsMnpid3ZiSUczVzhUXy14MVdsZGl1alFj");
+const SB = ((window.PCN_CONFIG && window.PCN_CONFIG.supabaseUrl) || "https://xsyuhfleesstrchcwspg.supabase.co") + "/rest/v1";
+// Öffentlicher anon-Key — bewusst kein service_role.
+// Die Admin-Console braucht keine erhöhten Rechte: alle Operationen laufen
+// über RLS-Policies. Damit kann selbst jemand, der diesen Key ausliest,
+// nichts, was die App nicht ohnehin darf — insbesondere KEINE privaten
+// Chats zwischen Mitgliedern lesen.
+const KEY = (window.PCN_CONFIG && window.PCN_CONFIG.supabaseKey) || "";
 const ADMIN="PCN-ADMIN-2026";
 const EUR=95;
 // ── Punktesystem — synchron mit PCN_MVP.jsx ──
@@ -1385,6 +1391,21 @@ async function runFullDiagnostics(){
     } catch(e){
       add("fail","KI-Proxy nicht erreichbar", String(e.message).slice(0,60)); failCount++;
     }
+  }
+
+  // ── 7. Sicherheitsprüfung ──
+  const keyPayload = (()=>{
+    try{ return JSON.parse(atob((KEY||"").split(".")[1]||"")); }catch(e){ return null; }
+  })();
+  if(keyPayload?.role === "service_role"){
+    add("fail","⚠ service_role-Key im Browser","Umgeht alle Sicherheitsregeln — jeder kann alle Daten lesen und löschen");
+    failCount++;
+  } else if(keyPayload?.role === "anon" || (KEY||"").startsWith("sb_publishable")){
+    add("ok","Sicherer Schlüssel (anon)","Kann nur was die Policies erlauben");
+    okCount++;
+  } else if(!KEY){
+    add("fail","Kein Schlüssel konfiguriert","pcn_config.js prüfen");
+    failCount++;
   }
 
   // ── Fazit ──
