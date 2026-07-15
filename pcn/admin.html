@@ -160,7 +160,8 @@ const KEY=atob("ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lK
 const ADMIN="PCN-ADMIN-2026";
 const EUR=95;
 const TIERS=[{n:"Bronze",p:100},{n:"Silber",p:300},{n:"Gold",p:600},{n:"Platin",p:1000},{n:"Legend",p:2000}];
-let DB={members:[],events:[],vehicles:[],participants:[]};
+const ADMIN_UUID="00000000-0000-0000-0000-000000000000";
+let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[]};
 let currentTab="dashboard";
 
 function doLogin(){
@@ -198,16 +199,24 @@ async function api(path,opts={}){
 async function loadAll(){
   toast("Lädt…");
   try{
-    const [m,e,v,p]=await Promise.all([
+    const [m,e,v,p,msg]=await Promise.all([
       api("users?select=*&order=created_at.desc&limit=200"),
       api("events?select=*&order=date.asc&limit=100"),
       api("vehicles?select=*&order=created_at.desc&limit=200"),
       api("participants?select=*&order=registered_at.desc&limit=500"),
+      api("messages?select=*&order=created_at.desc&limit=200").catch(()=>({data:[]})),
     ]);
     if(m.data&&Array.isArray(m.data)) DB.members=m.data;
     if(e.data&&Array.isArray(e.data)) DB.events=e.data;
     if(v.data&&Array.isArray(v.data)) DB.vehicles=v.data;
     if(p.data&&Array.isArray(p.data)) DB.participants=p.data;
+    // Ungelesene Nachrichten AN den Admin (für Dringlichkeiten)
+    if(msg.data&&Array.isArray(msg.data)){
+      DB.unreadMsgs = msg.data.filter(x=>
+        x.from_id!==ADMIN_UUID && !x.read_at &&
+        (x.thread_id||"").startsWith("admin-")
+      );
+    } else DB.unreadMsgs=[];
     updateBadges(); renderTab(currentTab);
     toast(`✓ ${DB.members.length} Mitglieder · ${DB.events.length} Events`);
   }catch(err){toast("Ladefehler","err"); renderTab(currentTab);}
@@ -246,6 +255,94 @@ function calcPts(id){const v=DB.vehicles.filter(x=>x.user_id===id).length;const 
 function getTier(pts){return TIERS.filter(t=>pts>=t.p).slice(-1)[0]||null;}
 function tierBadge(pts){const t=getTier(pts);return t?`<span class="tier t-${t.n.toLowerCase()}">${t.n}</span>`:`<span class="b b-gray">—</span>`;}
 
+// ═══════════════════════════════════════════════════════════════════
+// DRINGLICHKEITEN — sammelt automatisch alles was Aufmerksamkeit braucht
+// ═══════════════════════════════════════════════════════════════════
+function collectUrgencies({aktive,gaeste,offen,pending,next}){
+  const u=[];
+  const today=new Date(); today.setHours(0,0,0,0);
+  const RED="#ef4444", AMBER="#f59e0b", BLUE="#5b8fff", GOLD="#C8A96E", GREEN="#22c55e";
+
+  // 1. Ungelesene Nachrichten von Mitgliedern (via separatem Load)
+  if(DB.unreadMsgs&&DB.unreadMsgs.length){
+    const senders=[...new Set(DB.unreadMsgs.map(m=>{
+      const mem=DB.members.find(x=>x.id===m.from_id); return mem?.name||"Unbekannt";
+    }))];
+    u.push({icon:"💬",color:BLUE,title:`${DB.unreadMsgs.length} ungelesene Nachricht${DB.unreadMsgs.length!==1?"en":""}`,
+      detail:`Von: ${senders.slice(0,3).join(", ")}${senders.length>3?` +${senders.length-3} weitere`:""}`,
+      action:`showTab('content')`, actionLabel:"Öffnen"});
+  }
+
+  // 2. Gäste warten auf Freigabe
+  if(gaeste.length){
+    u.push({icon:"👤",color:AMBER,title:`${gaeste.length} ${gaeste.length!==1?"Gäste warten":"Gast wartet"} auf Freigabe`,
+      detail:gaeste.slice(0,3).map(g=>g.name).join(", ")+(gaeste.length>3?` +${gaeste.length-3} weitere`:""),
+      action:`showTab('members')`, actionLabel:"Prüfen"});
+  }
+
+  // 3. Offene Event-Anmeldungen
+  if(pending.length){
+    u.push({icon:"🏁",color:AMBER,title:`${pending.length} Event-Anmeldung${pending.length!==1?"en":""} offen`,
+      detail:"Warten auf Bestätigung durch den Vorstand",
+      action:`showTab('events')`, actionLabel:"Bestätigen"});
+  }
+
+  // 4. Überfällige Beiträge (Stichtag: 31.03.)
+  const deadline=new Date(today.getFullYear(),2,31);
+  if(offen.length && today>deadline){
+    const daysOver=Math.floor((today-deadline)/864e5);
+    u.push({icon:"💸",color:RED,title:`${offen.length} Beitrag${offen.length!==1?"szahlungen":"szahlung"} überfällig`,
+      detail:`Stichtag war 31.03. · ${daysOver} Tage überfällig · €${offen.length*EUR} ausstehend`,
+      action:`showTab('payments')`, actionLabel:"Ansehen"});
+  } else if(offen.length){
+    u.push({icon:"💳",color:AMBER,title:`${offen.length} Beitrag${offen.length!==1?"szahlungen":"szahlung"} offen`,
+      detail:`€${offen.length*EUR} ausstehend · Stichtag 31.03.${today.getFullYear()}`,
+      action:`showTab('payments')`, actionLabel:"Ansehen"});
+  }
+
+  // 5. Geburtstage (heute + nächste 7 Tage) — benötigt Spalte "geburtstag"
+  const bdays=DB.members.filter(m=>m.geburtstag).map(m=>{
+    const bd=new Date(m.geburtstag);
+    if(isNaN(bd)) return null;
+    const nx=new Date(today.getFullYear(),bd.getMonth(),bd.getDate());
+    if(nx<today) nx.setFullYear(nx.getFullYear()+1);
+    const days=Math.round((nx-today)/864e5);
+    const age=nx.getFullYear()-bd.getFullYear();
+    return {m,days,age};
+  }).filter(x=>x&&x.days<=7).sort((a,b)=>a.days-b.days);
+
+  bdays.forEach(({m,days,age})=>{
+    const when=days===0?"heute":days===1?"morgen":`in ${days} Tagen`;
+    const round=age%10===0||age===18||age===25;
+    u.push({icon:"🎂",color:round?GOLD:GREEN,
+      title:`${m.name} hat ${when} Geburtstag${round?` — ${age}. (rund!)`:""}`,
+      detail:`Wird ${age} Jahre alt${days===0?" · heute gratulieren!":""}`,
+      action:`openDirectMsg('${m.id}','${(m.name||"").replace(/'/g,"\\'")}')`, actionLabel:"Gratulieren"});
+  });
+
+  // 6. Event steht bevor mit unbestätigten Anmeldungen
+  next.slice(0,3).forEach(ev=>{
+    const d=Math.round((new Date(ev.date)-today)/864e5);
+    if(d<0||d>3) return;
+    const evPending=pending.filter(p=>p.event_id===ev.id);
+    if(evPending.length){
+      u.push({icon:"⚠️",color:RED,title:`"${ev.name}" ${d===0?"heute":d===1?"morgen":"in "+d+" Tagen"} — ${evPending.length} unbestätigt`,
+        detail:"Anmeldungen sollten vor dem Event bestätigt sein",
+        action:`showTab('events')`, actionLabel:"Jetzt"});
+    }
+  });
+
+  // 7. Mitglieder ohne Fahrzeug
+  const noVehicle=aktive.filter(m=>!DB.vehicles.some(v=>v.user_id===m.id));
+  if(noVehicle.length>=3){
+    u.push({icon:"🚗",color:BLUE,title:`${noVehicle.length} Mitglieder ohne Fahrzeug`,
+      detail:"Onboarding unvollständig — ggf. Erinnerung senden",
+      action:`showTab('members')`, actionLabel:"Ansehen"});
+  }
+
+  return u;
+}
+
 function rDashboard(el){
   const aktive=DB.members.filter(m=>m.role==="member");
   const gaeste=DB.members.filter(m=>m.role==="guest");
@@ -266,8 +363,37 @@ function rDashboard(el){
   for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;const label=d.toLocaleString("de-DE",{month:"short"});const paid=DB.members.filter(m=>m.beitrag_bezahlt&&m.created_at?.startsWith(key)).length*EUR;months.push({label,paid});}
   const maxP=Math.max(...months.map(m=>m.paid),1);
 
+  // ── DRINGLICHKEITEN sammeln ──────────────────────────────────────────────
+  const urgent = collectUrgencies({aktive,gaeste,offen,pending,next});
+
   el.innerHTML=`
 <div class="page-title">📊 Dashboard</div>
+
+${urgent.length?`<div class="card" style="border-color:#ef444455;background:linear-gradient(180deg,#ef44440a,transparent)">
+  <div class="sec-title" style="color:#ef4444;display:flex;align-items:center;gap:8px">
+    🔔 Dringlichkeiten
+    <span style="background:#ef4444;color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px">${urgent.length}</span>
+  </div>
+  ${urgent.map(u=>`
+    <div style="display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #131313">
+      <div style="width:30px;height:30px;border-radius:8px;background:${u.color}22;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${u.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:2px">${u.title}</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5">${u.detail}</div>
+      </div>
+      ${u.action?`<button onclick="${u.action}" style="flex-shrink:0;background:${u.color};border:none;border-radius:6px;padding:6px 11px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">${u.actionLabel}</button>`:""}
+    </div>`).join("")}
+  <div style="font-size:10px;color:#444;padding-top:10px">Automatisch erkannt · aktualisiert sich mit jedem Laden</div>
+</div>`:`<div class="card" style="border-color:#22c55e33">
+  <div style="display:flex;gap:10px;align-items:center;padding:4px 0">
+    <span style="font-size:20px">✓</span>
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--green)">Alles im grünen Bereich</div>
+      <div style="font-size:11px;color:var(--muted)">Keine offenen Dringlichkeiten</div>
+    </div>
+  </div>
+</div>`}
+
 <div class="stat-grid">
   ${stat(aktive.length,"Mitglieder",`+${newM.filter(m=>m.role==="member").length} neu (30d)`,"var(--white)","members")}
   ${stat(gaeste.length,"Gäste",gaeste.length?"Freigabe ausstehend":"Alle freigegeben","var(--amber)","members")}
@@ -356,25 +482,58 @@ function filterMembers(){
     const isMember=m.role==="member",isPaid=!!m.beitrag_bezahlt;
     const vCount=DB.vehicles.filter(v=>v.user_id===m.id).length;
     const pts=calcPts(m.id);
-    return `<div class="mrow">
-      <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+    const open=openMembers.has(m.id);
+    return `<div class="mrow" style="padding:0;overflow:hidden">
+      <!-- Kopfzeile: nur Name + Status-Punkte, klickbar -->
+      <div onclick="toggleMemberOpen('${m.id}')" style="display:flex;gap:10px;align-items:center;padding:13px 14px;cursor:pointer;user-select:none">
         <div style="width:34px;height:34px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${(m.name||"?")[0].toUpperCase()}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
-          <div style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.email||""}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:1px">Nr: ${m.member_nr||"—"} · Seit: ${fmt(m.created_at)} · ${vCount} Fzg · ${pts} Pkt ${tierBadge(pts)}</div>
+          <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
+        </div>
+        <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+          ${!isMember?`<span style="font-size:9px;font-weight:800;color:var(--amber);background:#f59e0b22;padding:2px 6px;border-radius:4px">GAST</span>`:""}
+          <span title="${isPaid?"Beitrag bezahlt":"Beitrag offen"}" style="width:9px;height:9px;border-radius:50%;background:${isPaid?"var(--green)":"#ef4444"};flex-shrink:0"></span>
+          <span style="font-size:14px;color:var(--muted);transform:rotate(${open?"90":"0"}deg);transition:transform .2s;display:inline-block">›</span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:8px;border-top:1px solid var(--border)">
-        <div><div class="lbl" style="margin-bottom:6px">Mitgliedsstatus</div>
-          <label class="tgl-wrap"><span class="tgl"><input type="checkbox" ${isMember?"checked":""} onchange="toggleRole('${m.id}',${isMember})"><span class="tgl-slider"></span></span>
-          <span style="font-size:12px;font-weight:700;color:${isMember?"var(--green)":"var(--amber)"}">${isMember?"Mitglied":"Gast"}</span></label></div>
-        <div><div class="lbl" style="margin-bottom:6px">Beitrag 2026</div>
-          <label class="tgl-wrap"><span class="tgl"><input type="checkbox" ${isPaid?"checked":""} onchange="togglePaid('${m.id}',${isPaid})"><span class="tgl-slider"></span></span>
-          <span style="font-size:12px;font-weight:700;color:${isPaid?"var(--green)":"#ef4444"}">${isPaid?"Bezahlt":"Offen"}</span></label></div>
-      </div>
+      <!-- Aufgeklappt: alle Details + Aktionen -->
+      ${open?`
+      <div style="padding:0 14px 14px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--muted);padding:10px 0 12px;line-height:1.7">
+          ${m.email||"—"}<br>
+          Nr: ${m.member_nr||"—"} · Seit: ${fmt(m.created_at)} · ${vCount} Fzg · ${pts} Pkt ${tierBadge(pts)}
+          ${m.beitrag_datum?`<br>Beitrag bezahlt am: ${fmt(m.beitrag_datum)}`:""}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-bottom:12px">
+          <div><div class="lbl" style="margin-bottom:6px">Mitgliedsstatus</div>
+            <label class="tgl-wrap"><span class="tgl"><input type="checkbox" ${isMember?"checked":""} onchange="toggleRole('${m.id}',${isMember})"><span class="tgl-slider"></span></span>
+            <span style="font-size:12px;font-weight:700;color:${isMember?"var(--green)":"var(--amber)"}">${isMember?"Mitglied":"Gast"}</span></label></div>
+          <div><div class="lbl" style="margin-bottom:6px">Beitrag ${new Date().getFullYear()}</div>
+            <label class="tgl-wrap"><span class="tgl"><input type="checkbox" ${isPaid?"checked":""} onchange="togglePaid('${m.id}',${isPaid})"><span class="tgl-slider"></span></span>
+            <span style="font-size:12px;font-weight:700;color:${isPaid?"var(--green)":"#ef4444"}">${isPaid?"Bezahlt":"Offen"}</span></label></div>
+        </div>
+        <button onclick="openDirectMsg('${m.id}','${(m.name||"").replace(/'/g,"\\'")}')"
+          style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px">
+          💬 Direktnachricht senden
+        </button>
+      </div>`:""}
     </div>`;
   }).join("")||`<div style="color:var(--muted);text-align:center;padding:20px">Keine Ergebnisse</div>`;
+}
+
+// ── Aufklapp-Status der Mitgliederkarten ──
+const openMembers = new Set();
+function toggleMemberOpen(id){
+  if(openMembers.has(id)) openMembers.delete(id); else openMembers.add(id);
+  renderTab(currentTab);
+}
+
+// ── Direktnachricht an Mitglied ──
+function openDirectMsg(id, name){
+  const txt = prompt(`Direktnachricht an ${name}:`);
+  if(!txt || !txt.trim()) return;
+  sendAdminMsg(id, txt.trim(), "📣");
+  toast(`✓ Nachricht an ${name} gesendet`);
 }
 
 function rPayments(el){
