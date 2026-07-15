@@ -160,8 +160,8 @@ const KEY=atob("ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lK
 const ADMIN="PCN-ADMIN-2026";
 const EUR=95;
 // ── Punktesystem — synchron mit PCN_MVP.jsx ──
-const PTS_PER_EUR=911;                           // 911 Punkte = 1 €
-const POINT_RATE=1/PTS_PER_EUR;
+const PTS_PER_UNIT=911, EUR_PER_UNIT=3;          // 911 Punkte = 3 € (je 1 € pro Partie)
+const POINT_RATE=EUR_PER_UNIT/PTS_PER_UNIT;
 const ptsToEur=(p)=>p*POINT_RATE;
 const POINTS={qr_scan:150,view_akte:25,vehicle_added:500,vehicle_complete:750,
   logbook:150,photo:50,event_confirmed:1000,message:50,news_read:25,
@@ -601,7 +601,7 @@ function rPoints(el){
   <!-- Punkte-Haftung: was der Club bei Einlösung schuldet -->
   <div class="card" style="margin-bottom:12px;border-color:#C8A96E44">
     <div class="sec-title" style="color:var(--gold)">💰 Punkte-Übersicht</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
       <div>
         <div style="font-size:22px;font-weight:900;color:var(--gold);font-family:'Barlow Condensed',sans-serif">${totalPts.toLocaleString("de-DE")}</div>
         <div style="font-size:9px;color:var(--muted);text-transform:uppercase">Punkte gesamt</div>
@@ -615,9 +615,23 @@ function rPoints(el){
         <div style="font-size:9px;color:var(--muted);text-transform:uppercase">Ø pro Mitglied</div>
       </div>
     </div>
+    <!-- 3-Wege-Split: was jede Partie trägt -->
+    <div style="background:#0d0d0d;border-radius:8px;padding:11px;margin-bottom:10px">
+      <div style="font-size:9px;color:#555;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
+        Aufteilung — je ein Drittel
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        ${[["🏢","Sponsor"],["🏁","Club"],["📱","QAR.Gallery"]].map(([i,n])=>`
+          <div style="background:#151515;border-radius:6px;padding:8px;text-align:center">
+            <div style="font-size:13px;margin-bottom:2px">${i}</div>
+            <div style="font-size:9px;color:#666;margin-bottom:3px">${n}</div>
+            <div style="font-size:15px;font-weight:900;color:var(--gold);font-family:'Barlow Condensed',sans-serif">€${(totalEur/3).toFixed(2).replace(".",",")}</div>
+          </div>`).join("")}
+      </div>
+    </div>
     <div style="font-size:10px;color:#555;line-height:1.6;padding-top:8px;border-top:1px solid var(--border)">
-      Kurs: <strong style="color:#888">911 Punkte = 1 €</strong> · 1 Punkt ≈ 0,11 Cent<br>
-      Der Gegenwert entspricht der theoretischen Verbindlichkeit bei vollständiger Einlösung aller Punkte.
+      Kurs: <strong style="color:#888">911 Punkte = 3 €</strong> — je 1 € pro Partie · 1 Punkt ≈ 0,33 Cent<br>
+      Theoretische Verbindlichkeit bei vollständiger Einlösung. <strong style="color:#777">Der Split ist noch nicht final verhandelt.</strong>
     </div>
   </div>
 
