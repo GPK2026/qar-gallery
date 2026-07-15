@@ -615,23 +615,44 @@ function rPoints(el){
         <div style="font-size:9px;color:var(--muted);text-transform:uppercase">Ø pro Mitglied</div>
       </div>
     </div>
-    <!-- 3-Wege-Split: was jede Partie trägt -->
+    <!-- Wer trägt die Prämien — Marktplatz-Modell -->
     <div style="background:#0d0d0d;border-radius:8px;padding:11px;margin-bottom:10px">
       <div style="font-size:9px;color:#555;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
-        Aufteilung — je ein Drittel
+        Wer trägt die Prämie bei Einlösung
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        ${[["🏢","Sponsor"],["🏁","Club"],["📱","QAR.Gallery"]].map(([i,n])=>`
-          <div style="background:#151515;border-radius:6px;padding:8px;text-align:center">
-            <div style="font-size:13px;margin-bottom:2px">${i}</div>
-            <div style="font-size:9px;color:#666;margin-bottom:3px">${n}</div>
-            <div style="font-size:15px;font-weight:900;color:var(--gold);font-family:'Barlow Condensed',sans-serif">€${(totalEur/3).toFixed(2).replace(".",",")}</div>
-          </div>`).join("")}
+      ${[["🏢","Porsche Store","60%",0.60,"Cap, Merch, Zubehör"],
+         ["🏁","Eventorganisator","20%",0.20,"Rabatt Startgebühr"],
+         ["🔧","Drittanbieter","10%",0.10,"Werkstatt, Reifen"],
+         ["👕","Club","10%",0.10,"Club-Merch, Sticker"]].map(([i,n,pc,f,d])=>`
+        <div style="display:flex;gap:9px;align-items:center;padding:5px 0;border-bottom:1px solid #151515">
+          <span style="font-size:13px;width:18px;text-align:center">${i}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;color:#bbb;font-weight:600">${n}</div>
+            <div style="font-size:9px;color:#555">${d}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:13px;font-weight:900;color:${n==="Club"?"var(--gold)":"#666"};font-family:'Barlow Condensed',sans-serif">€${(totalEur*f).toFixed(2).replace(".",",")}</div>
+            <div style="font-size:8px;color:#444">${pc}</div>
+          </div>
+        </div>`).join("")}
+      <div style="display:flex;gap:9px;align-items:center;padding:7px 0 2px">
+        <span style="font-size:13px;width:18px;text-align:center">📱</span>
+        <div style="flex:1;font-size:11px;color:#666">QAR.Gallery</div>
+        <div style="font-size:12px;font-weight:700;color:var(--green)">€0,00 — keine Haftung</div>
+      </div>
+    </div>
+    <div style="background:#22c55e0d;border:1px solid #22c55e33;border-radius:7px;padding:9px 11px;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:2px">
+        ✓ Der Club trägt nur ${(totalEur*0.10).toFixed(2).replace(".",",")} €
+      </div>
+      <div style="font-size:10px;color:#666;line-height:1.5">
+        Die Hauptlast tragen die Einlösepartner — für Porsche ist jede Einlösung ein
+        Neukunde im Store, kein Zuschuss.
       </div>
     </div>
     <div style="font-size:10px;color:#555;line-height:1.6;padding-top:8px;border-top:1px solid var(--border)">
-      Kurs: <strong style="color:#888">911 Punkte = 3 €</strong> — je 1 € pro Partie · 1 Punkt ≈ 0,33 Cent<br>
-      Theoretische Verbindlichkeit bei vollständiger Einlösung. <strong style="color:#777">Der Split ist noch nicht final verhandelt.</strong>
+      Kurs: <strong style="color:#888">911 Punkte = 3 €</strong> · 1 Punkt ≈ 0,33 Cent<br>
+      Theoretische Verbindlichkeit bei vollständiger Einlösung. <strong style="color:#777">Partner-Konditionen noch in Verhandlung.</strong>
     </div>
   </div>
 
