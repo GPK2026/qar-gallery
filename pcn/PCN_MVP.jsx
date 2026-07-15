@@ -438,6 +438,16 @@ const TIERS = [
   {name:"Legend", pts:50000, icon:"🏁", color:"#D5001C"},
 ];
 
+// ── Admin-Thread: deterministische UUID pro Mitglied ─────────────────────────
+// threads.id ist ein UUID-Feld — ein Präfix wie "admin-xyz" wird von der DB
+// abgelehnt. Diese Funktion erzeugt eine gültige, stabile UUID je User.
+const ADMIN_UUID = "00000000-0000-0000-0000-000000000000";
+const adminThreadId = (userId) => {
+  const tail = String(userId||"").replace(/-/g,"").slice(-12).padStart(12,"0");
+  return `ad000000-0000-4000-8000-${tail}`;
+};
+const isAdminThreadId = (id) => String(id||"").startsWith("ad000000-0000-4000-8000-");
+
 const STATUS_PRESETS = [
   {icon:"🏁", text:"Komme gleich zurück",  mins:15},
   {icon:"⏱️", text:"Bin in 5 Min zurück",  mins:5},
@@ -640,9 +650,9 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
   const endRef = useRef(null);
   const rootRef = useRef(null);
   const threadParticipants = thread.participants||[];
-  const isAdminThread = thread.id?.startsWith("admin-");
+  const isAdminThread = isAdminThreadId(thread.id);
   const other = isAdminThread
-    ? {name:"Admin-Mitteilungen"}
+    ? {name:"PCN Vorstand"}
     : Object.values(allUsers).find(u=>threadParticipants.includes(u.id)&&u.id!==me?.id)||{name:thread.isGroup?thread.name:"Mitglied"};
   const v = vehicles[thread.vehicleId];
   const isGuest = me?.role === "guest";
@@ -690,7 +700,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           </div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontWeight:800,fontSize:16,color:C.white,lineHeight:1.2}}>
-              {isAdminThread?"Admin-Mitteilungen":thread.isGroup?thread.name:thread.anonymous?"🔒 Anonyme Nachricht":other.name}
+              {isAdminThread?"📣 PCN Vorstand":thread.isGroup?thread.name:thread.anonymous?"🔒 Anonyme Nachricht":other.name}
             </div>
             <div style={{fontSize:12,color:C.muted,marginTop:2}}>
               {thread.isGroup
@@ -745,7 +755,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
             <div key={m.id} style={{textAlign:"center",fontSize:10,color:"#444",margin:"4px 0"}}>— {m.text} —</div>
           );
           const mine = m.from===me?.id || m.from_id===me?.id;
-          const isAdminMsg = m.isSystem || m.from==="00000000-0000-0000-0000-000000000000" || (thread.id?.startsWith("admin-") && m.from!==me?.id);
+          const isAdminMsg = m.isSystem || m.from===ADMIN_UUID || (isAdminThreadId(thread.id) && m.from!==me?.id);
           // Parse payload for scan requests
           let scanPayload = null;
           try { const p=JSON.parse(m.payload||"{}"); if(p.type==="scan_request") scanPayload=p; } catch(e){}
@@ -980,7 +990,7 @@ function PCNInner() {
     const DB = window.PCN_DB;
     if(!DB) return;
     // Create a pending scan request in threads
-    const threadId = "admin-" + ownerId;
+    const threadId = adminThreadId(ownerId);
     const reqText = `🔍 QR-Scan-Bestätigung: ${me.name||"Ein Mitglied"} hat deinen ${vehicle.hersteller||""} ${vehicle.modell||""} (${vehicle.qarId||vehicle.qar_id||""}) gescannt. Bitte bestätige den Scan — der Nutzer erhält dann 10 Punkte.`;
     // Send via DB
     try {
@@ -990,7 +1000,7 @@ function PCNInner() {
         await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/threads",{
           method:"POST",
           headers:{"apikey":"sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED","Authorization":"Bearer sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED","Content-Type":"application/json"},
-          body:JSON.stringify({id:threadId,participants:[ownerId],vehicle_name:"Admin-Mitteilungen",anonymous:false,created_at:new Date().toISOString()})
+          body:JSON.stringify({id:threadId,participants:[ownerId,ADMIN_UUID],vehicle_name:"PCN Vorstand",anonymous:false,created_at:new Date().toISOString()})
         });
       }
       // Include scan requester ID in payload so owner can confirm
@@ -1018,7 +1028,7 @@ function PCNInner() {
     confirmed.push(key);
     localStorage.setItem("pcn_scan_confirmed", JSON.stringify(confirmed));
     // Send confirmation message to scanner
-    const threadId = "admin-" + scannerId;
+    const threadId = adminThreadId(scannerId);
     try {
       await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/messages",{
         method:"POST",
