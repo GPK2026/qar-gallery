@@ -1062,6 +1062,16 @@ function rContent(el){
 
 function rSettings(el){
   el.innerHTML=`<div class="page-title">⚙️ Einstellungen</div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="sec-title">📨 Nachrichten-Diagnose</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+      Prüft ob Admin-Nachrichten korrekt in der Datenbank landen und bei den Mitgliedern ankommen.
+    </div>
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="runMsgDiagnostics()">🔍 Verbindung prüfen</button>
+    <div id="diag-out" style="font-size:11px;line-height:1.7"></div>
+  </div>
+
   <div class="card" style="margin-bottom:12px;border-color:#f59e0b44">
     <div class="sec-title" style="color:var(--amber)">🔄 Demo zurücksetzen</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Löscht Demo-Chat, Demo-Nachrichten und Demo-Teilnehmer aus der DB.</div>
@@ -1076,6 +1086,74 @@ function rSettings(el){
     ${[["Supabase","✓ Verbunden","var(--green)"],["Mitglieder",DB.members.length+" gesamt","var(--white)"],["Fahrzeuge",DB.vehicles.length+" gesamt","var(--white)"],["App","qar.gallery/pcn/","var(--muted)"],["Club-Code","PCN2026","var(--gold)"]].map(([k,v,c])=>`
       <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #131313;font-size:13px"><span style="color:var(--muted)">${k}</span><span style="color:${c}">${v}</span></div>`).join("")}
   </div>`;
+}
+
+// ── Diagnose: kommen Admin-Nachrichten in der DB an? ──
+async function runMsgDiagnostics(){
+  const out=document.getElementById("diag-out");
+  if(!out) return;
+  const log=[];
+  const line=(ok,txt,detail)=>{
+    log.push(`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #131313">
+      <span style="flex-shrink:0">${ok===null?"⏳":ok?"✅":"❌"}</span>
+      <div style="flex:1"><div style="color:${ok===false?"#ef4444":"#ccc"}">${txt}</div>
+      ${detail?`<div style="color:#555;font-size:10px;margin-top:2px">${detail}</div>`:""}</div>
+    </div>`);
+    out.innerHTML=log.join("");
+  };
+
+  out.innerHTML='<div style="color:#666">Prüfe…</div>';
+  log.length=0;
+
+  // 1. Threads-Tabelle lesbar?
+  const th = await api("threads?select=id,participants,vehicle_name&limit=200");
+  if(th.error){ line(false,"Threads nicht lesbar", JSON.stringify(th.error).slice(0,90)); return; }
+  const allThreads = th.data||[];
+  line(true, `${allThreads.length} Threads in der DB`);
+
+  // 2. Admin-Threads (neues Format)
+  const adminThreads = allThreads.filter(t=>String(t.id||"").startsWith("ad000000-0000-4000-8000-"));
+  line(adminThreads.length>0, `${adminThreads.length} Admin-Threads (gültiges UUID-Format)`,
+    adminThreads.length===0?"Noch keine Admin-Nachricht gesendet — oder alle fehlgeschlagen":"");
+
+  // 3. Verwaiste Threads im alten Format?
+  const broken = allThreads.filter(t=>String(t.id||"").startsWith("admin-"));
+  if(broken.length) line(false, `${broken.length} Threads im alten, defekten Format`, "Diese sollten gelöscht werden");
+
+  // 4. Nachrichten vorhanden?
+  const ms = await api("messages?select=id,thread_id,from_id,text,created_at&order=created_at.desc&limit=100");
+  if(ms.error){ line(false,"Messages nicht lesbar", JSON.stringify(ms.error).slice(0,90)); return; }
+  const adminMsgs=(ms.data||[]).filter(m=>m.from_id===ADMIN_UUID);
+  line(adminMsgs.length>0, `${adminMsgs.length} Admin-Nachrichten in der DB`,
+    adminMsgs.length?`Zuletzt: ${new Date(adminMsgs[0].created_at).toLocaleString("de-DE")}`:"Keine gefunden");
+
+  // 5. Zuordnung prüfen: hat jede Admin-Nachricht einen gültigen Thread mit Empfänger?
+  let orphans=0, ok=0;
+  adminMsgs.forEach(m=>{
+    const t=allThreads.find(x=>x.id===m.thread_id);
+    if(!t){ orphans++; return; }
+    const hasMember=(t.participants||[]).some(p=>p!==ADMIN_UUID);
+    if(hasMember) ok++; else orphans++;
+  });
+  line(orphans===0, `${ok} Nachrichten korrekt zugeordnet${orphans?`, ${orphans} verwaist`:""}`,
+    orphans?"Verwaiste Nachrichten erreichen kein Mitglied":"");
+
+  // 6. Live-Test
+  line(null, "Live-Test: sende Testnachricht an dich selbst…");
+  const testUser = DB.members[0];
+  if(!testUser){ line(false,"Kein Mitglied für Test vorhanden"); return; }
+  const res = await sendAdminMsg(testUser.id, "🔧 Diagnose-Testnachricht — kann ignoriert werden.", "🔧");
+  if(res?.error){
+    line(false, "Testnachricht fehlgeschlagen", JSON.stringify(res.error).slice(0,110));
+  } else {
+    // Verifizieren dass sie wirklich da ist
+    const tid = adminThreadId(testUser.id);
+    const check = await api(`messages?thread_id=eq.${tid}&order=created_at.desc&limit=1`);
+    const found = check.data?.length>0;
+    line(found, found
+      ? `Testnachricht an ${testUser.name} gespeichert und verifiziert`
+      : "Testnachricht gesendet, aber nicht in der DB auffindbar");
+  }
 }
 
 // Actions
