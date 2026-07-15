@@ -1625,6 +1625,84 @@ function PCNInner() {
   },[scannerOpen,scannerStatus]);
 
   // ── Actions ──────────────────────────────────────────────────────────────────
+  // ── KI-Fotoanalyse: Fahrzeugdaten aus Bild erkennen ─────────────────────
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeResult, setAnalyzeResult] = useState(null); // {fields, confidence}
+
+  const analyzeVehiclePhoto = async (dataUrl) => {
+    if(!dataUrl) return;
+    setAnalyzing(true);
+    setAnalyzeResult(null);
+    try {
+      // dataURL → base64 + media type
+      const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);
+      if(!m){ throw new Error("Bildformat nicht lesbar"); }
+      const mediaType = m[1], b64 = m[2];
+
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-sonnet-4-6",
+          max_tokens:1000,
+          messages:[{
+            role:"user",
+            content:[
+              { type:"image", source:{ type:"base64", media_type:mediaType, data:b64 } },
+              { type:"text", text:
+`Analysiere dieses Fahrzeugfoto. Antworte AUSSCHLIESSLICH mit JSON, ohne Markdown, ohne Erklärung.
+
+{
+  "hersteller": "z.B. Porsche | null wenn unklar",
+  "modell": "z.B. 911 Carrera S, Cayman GT4 | null",
+  "baujahr": "Schätzung als Jahr oder Zeitraum, z.B. 2019 | null",
+  "farbe": "deutsche Farbbezeichnung, z.B. Guards Rot, Pythongrün | null",
+  "kennzeichen": "exakt wie lesbar, Format AW-PC 718 | null wenn nicht lesbar",
+  "kraftstoff": "Benzin | Diesel | Elektro | Hybrid | null",
+  "confidence": { "modell": 0-100, "farbe": 0-100, "kennzeichen": 0-100 },
+  "hinweis": "kurzer Hinweis falls etwas unsicher ist, sonst null"
+}
+
+Wichtig:
+- Nur eintragen was du wirklich siehst. Im Zweifel null.
+- Beim Modell so genau wie möglich (Generation/Variante wenn erkennbar).
+- Farbe: bei Porsche die offizielle Bezeichnung wenn erkennbar, sonst normale Farbe.
+- Kennzeichen nur wenn zweifelsfrei lesbar.` }
+            ]
+          }]
+        })
+      });
+      if(!res.ok) throw new Error("Analyse fehlgeschlagen ("+res.status+")");
+      const data = await res.json();
+      const raw = (data.content||[]).map(c=>c.type==="text"?c.text:"").join("").trim();
+      const clean = raw.replace(/```json|```/g,"").trim();
+      const parsed = JSON.parse(clean);
+
+      // Nur Felder übernehmen die leer sind — keine Nutzereingaben überschreiben
+      const fields = {};
+      ["hersteller","modell","baujahr","farbe","kennzeichen","kraftstoff"].forEach(k=>{
+        if(parsed[k] && !addVForm[k]) fields[k] = String(parsed[k]);
+      });
+      setAnalyzeResult({ fields, confidence: parsed.confidence||{}, hinweis: parsed.hinweis, all: parsed });
+      if(!Object.keys(fields).length){
+        toast_("Keine neuen Daten erkannt — Felder sind bereits ausgefüllt");
+      }
+    } catch(e) {
+      console.error("Fotoanalyse:", e);
+      toast_("Analyse nicht möglich — bitte manuell eintragen","err");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const applyAnalysis = () => {
+    if(!analyzeResult?.fields) return;
+    setAddVForm(p=>({...p, ...analyzeResult.fields}));
+    const n = Object.keys(analyzeResult.fields).length;
+    setAnalyzeResult(null);
+    toast_(`${n} Feld${n!==1?"er":""} übernommen — bitte prüfen`);
+  };
+
   const addVehicle = async () => {
     if(!addVForm.modell||!addVForm.kennzeichen) return toast_("Modell und Kennzeichen angeben","err");
     const DB=window.PCN_DB;
@@ -1648,6 +1726,7 @@ function PCNInner() {
       : { ...newV, id:"V"+Date.now() }; // Fallback: local ID
     setVehicles(prev=>({...prev,[vehicle.id]:vehicle}));
     setShowAddV(false);
+    setAnalyzeResult(null); setAnalyzing(false);
     setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[]});
     toast_("Fahrzeug hinzugefügt ✓ · QAR-ID: "+vehicle.qarId);
   };
@@ -5439,9 +5518,15 @@ function PCNInner() {
 
       {/* Add Vehicle Sheet */}
       {showAddV&&(
-        <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddV(false);}}>
+        <div className="overlay" onClick={e=>{if(e.target===e.currentTarget){setShowAddV(false);setAnalyzeResult(null);setAnalyzing(false);}}}>
           <div className="sheet">
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:14}}>Fahrzeug hinzufügen</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>Fahrzeug hinzufügen</div>
+            {!(addVForm.images||[]).length&&(
+              <div style={{fontSize:12,color:C.gold,marginBottom:12,lineHeight:1.5}}>
+                ✨ Lade ein Foto hoch — Modell, Farbe und Kennzeichen werden automatisch erkannt.
+              </div>
+            )}
+            {(addVForm.images||[]).length>0&&<div style={{marginBottom:12}}/>}
             {/* Multi-photo upload */}
             <div style={{marginBottom:10}}>
               <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:6}}>
@@ -5453,13 +5538,84 @@ function PCNInner() {
                   </div>
                 ))}
                 <label style={{width:70,height:70,background:C.card,border:`1px dashed ${C.border}`,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,gap:2}}>
-                  <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>setAddVForm(p=>({...p,images:[...(p.images||[]),url]})))}/>
+                  <input type="file" accept="image/*" style={{display:"none"}}
+                    onChange={e=>handleImageUpload(e.target.files[0],url=>{
+                      setAddVForm(p=>{
+                        const imgs=[...(p.images||[]),url];
+                        // Beim ERSTEN Foto automatisch analysieren
+                        if(imgs.length===1) setTimeout(()=>analyzeVehiclePhoto(url), 100);
+                        return {...p,images:imgs};
+                      });
+                    })}/>
                   <span style={{fontSize:20}}>📷</span>
                   <span style={{fontSize:9,color:C.muted}}>Foto</span>
                 </label>
               </div>
-              <div style={{fontSize:11,color:C.muted}}>Mehrere Fotos möglich — erstes Foto = Titelbild</div>
+              <div style={{fontSize:11,color:C.muted}}>
+                Mehrere Fotos möglich — erstes Foto = Titelbild
+                {(addVForm.images||[]).length>0&&!analyzing&&!analyzeResult&&(
+                  <button onClick={()=>analyzeVehiclePhoto(addVForm.images[0])}
+                    style={{background:"none",border:"none",color:C.gold,fontSize:11,fontWeight:700,cursor:"pointer",padding:"0 0 0 6px",fontFamily:"'Barlow',sans-serif"}}>
+                    ✨ Erneut analysieren
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* ── KI-Analyse läuft ── */}
+            {analyzing&&(
+              <div style={{background:`${C.gold}12`,border:`1px solid ${C.gold}33`,borderRadius:10,
+                padding:"12px 14px",marginBottom:10,display:"flex",gap:10,alignItems:"center"}}>
+                <div style={{width:16,height:16,border:`2px solid ${C.gold}44`,borderTopColor:C.gold,
+                  borderRadius:"50%",animation:"spin .7s linear infinite",flexShrink:0}}/>
+                <div style={{fontSize:13,color:C.gold,fontWeight:600}}>Foto wird analysiert…</div>
+              </div>
+            )}
+
+            {/* ── KI-Analyse Ergebnis ── */}
+            {analyzeResult&&Object.keys(analyzeResult.fields||{}).length>0&&(
+              <div style={{background:`${C.gold}10`,border:`1px solid ${C.gold}44`,borderRadius:10,
+                padding:"13px 14px",marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
+                  <div style={{fontSize:12,fontWeight:800,color:C.gold,letterSpacing:.3}}>✨ Aus dem Foto erkannt</div>
+                  <button onClick={()=>setAnalyzeResult(null)}
+                    style={{background:"none",border:"none",color:"#666",fontSize:16,cursor:"pointer",padding:0,lineHeight:1}}>✕</button>
+                </div>
+                {Object.entries(analyzeResult.fields).map(([k,v])=>{
+                  const labels={hersteller:"Hersteller",modell:"Modell",baujahr:"Baujahr",
+                    farbe:"Farbe",kennzeichen:"Kennzeichen",kraftstoff:"Kraftstoff"};
+                  const conf=analyzeResult.confidence?.[k];
+                  return (
+                    <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      padding:"5px 0",borderBottom:`1px solid ${C.border}`}}>
+                      <span style={{fontSize:12,color:C.muted}}>{labels[k]||k}</span>
+                      <div style={{display:"flex",gap:7,alignItems:"center"}}>
+                        <span style={{fontSize:13,color:C.white,fontWeight:600}}>{v}</span>
+                        {conf!=null&&(
+                          <span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:4,
+                            background:conf>=80?`${C.green}22`:conf>=50?`${C.gold}22`:"#66666622",
+                            color:conf>=80?C.green:conf>=50?C.gold:"#888"}}>
+                            {conf}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {analyzeResult.hinweis&&(
+                  <div style={{fontSize:11,color:"#888",marginTop:8,lineHeight:1.5}}>ℹ️ {analyzeResult.hinweis}</div>
+                )}
+                <button onClick={applyAnalysis}
+                  style={{width:"100%",marginTop:11,background:C.gold,border:"none",borderRadius:8,
+                    padding:"10px",color:"#0a0a0a",fontSize:13,fontWeight:800,cursor:"pointer",
+                    fontFamily:"'Barlow',sans-serif"}}>
+                  Übernehmen &amp; prüfen ✓
+                </button>
+                <div style={{fontSize:10,color:"#555",textAlign:"center",marginTop:6,lineHeight:1.4}}>
+                  Vorschlag der KI — bitte immer kontrollieren
+                </div>
+              </div>
+            )}
             {[["Modell *","modell","Cayman GT4"],["Kennzeichen *","kennzeichen","AW-PC 718"],["Baujahr","baujahr","2023"],["Farbe","farbe","Pythongrün"]].map(([ph,key,ex])=>(
               <input key={key} className="inp" placeholder={`${ph} (z.B. ${ex})`} style={{marginBottom:8}}
                 value={addVForm[key]||""} onChange={e=>setAddVForm(p=>({...p,[key]:e.target.value}))}/>
