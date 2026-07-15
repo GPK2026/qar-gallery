@@ -510,7 +510,9 @@ const PCN_STORAGE = (() => {
       if(!users||users.length===0) return { error: "Kein Account mit dieser E-Mail" };
       const u = users[0];
       const session = { id:u.id, name:u.name, email:u.email, role:u.role,
-        memberNr:u.member_nr, avatar:u.avatar||"", city:u.city||"", bio:u.bio||"" };
+        memberNr:u.member_nr, avatar:u.avatar||"", city:u.city||"", bio:u.bio||"",
+        beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
+        createdAt: u.created_at||"" };
       localStorage.setItem("pcn_session", JSON.stringify(session));
       await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
       return { data: session };
@@ -533,6 +535,7 @@ const PCN_STORAGE = (() => {
         id: u.id, email: u.email, name: u.name, role: u.role,
         memberNr: u.member_nr, avatar: u.avatar||"",
         city: u.city||"", bio: u.bio||"", phone: u.phone||"",
+        beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
         notifications: { events:true, messages:true },
         createdAt: u.created_at||"",
       };
@@ -549,6 +552,26 @@ const PCN_STORAGE = (() => {
     async getSession() {
       try { return { data: JSON.parse(localStorage.getItem("pcn_session")) }; }
       catch { return { data: null }; }
+    },
+    // Lädt den Nutzer frisch aus der DB und aktualisiert die Session
+    // (damit Admin-Änderungen wie Beitragsstatus/Rolle beim Mitglied ankommen)
+    async refreshSession() {
+      let sess = null;
+      try { sess = JSON.parse(localStorage.getItem("pcn_session")); } catch { return { data: null }; }
+      if(!sess || !sess.email) return { data: sess };
+      const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(sess.email));
+      if(error || !users || !users.length) return { data: sess };
+      const u = users[0];
+      const updated = {
+        ...sess,
+        name: u.name||sess.name, role: u.role||sess.role,
+        memberNr: u.member_nr||sess.memberNr,
+        beitrag_bezahlt: !!u.beitrag_bezahlt,
+        beitrag_datum: u.beitrag_datum||null,
+        createdAt: u.created_at||sess.createdAt||"",
+      };
+      localStorage.setItem("pcn_session", JSON.stringify(updated));
+      return { data: updated };
     },
     async logout() {
       localStorage.removeItem("pcn_session"); return { data: true };
@@ -818,6 +841,7 @@ const PCN_STORAGE = (() => {
       verifyOtp:         (email, token)           => db.verifyOtp         ? db.verifyOtp(email, token)       : { error:"Not supported" },
       exchangeToken:     (token)                  => db.exchangeToken     ? db.exchangeToken(token)          : { error:"Not supported" },
       session:  ()   => db.getSession(),
+      refresh:  ()   => db.refreshSession ? db.refreshSession() : db.getSession(),
       logout:   ()   => db.logout(),
     },
     vehicles: {
