@@ -894,6 +894,78 @@
   }];
 
   // ─── Status Presets ──────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PUNKTESYSTEM — zentrale Werte-Definition
+  // Kurs: 1 Punkt = 0,0911 Cent · 1 € = 1.098 Punkte (die 911 steckt drin 🏁)
+  // Priorisierung: 1. Community · 2. Fahrzeugpflege · 3. Aktivität · 4. Treue
+  // ═══════════════════════════════════════════════════════════════════════════
+  const POINT_RATE = 0.000911; // € pro Punkt
+  const ptsToEur = p => p * POINT_RATE; // Punkte → Euro
+  const eurToPts = e => Math.round(e / POINT_RATE);
+  const POINTS = {
+    // ── PRIO 1: Community fördern ──
+    qr_scan: 150,
+    // QR-Scan bestätigt — echte Begegnung, höchster Wert
+    view_akte: 25,
+    // fremde Fahrzeugakte angesehen (einmalig je Fahrzeug)
+
+    // ── PRIO 2: Fahrzeugpflege belohnen ──
+    vehicle_added: 500,
+    // Fahrzeug angelegt
+    vehicle_complete: 750,
+    // Akte vollständig gepflegt (Bonus)
+    logbook: 150,
+    // Logbuch-Eintrag
+    photo: 50,
+    // Foto hochgeladen (max. 10 zählen)
+
+    // ── PRIO 3: Aktivität belohnen ──
+    event_confirmed: 1000,
+    // bestätigte Event-Teilnahme
+    message: 50,
+    // Konversation geführt
+    news_read: 25,
+    // Club-News gelesen
+
+    // ── PRIO 4: Treue belohnen ──
+    member_year: 500,
+    // pro vollem Mitgliedsjahr
+    beitrag_paid: 300,
+    // Beitrag des Jahres bezahlt
+
+    // ── Geschenke des Clubs ──
+    birthday: 200,
+    // Geburtstag
+    birthday_round: 911 // runder Geburtstag (18, 25, 30, 40, 50…) 🏁
+  };
+
+  // Tier-Schwellen — an neue Punktehöhe angepasst
+  const TIERS = [{
+    name: "Bronze",
+    pts: 1000,
+    icon: "🥉",
+    color: "#CD7F32"
+  }, {
+    name: "Silber",
+    pts: 5000,
+    icon: "🥈",
+    color: "#C0C0C0"
+  }, {
+    name: "Gold",
+    pts: 12000,
+    icon: "🥇",
+    color: "#C8A96E"
+  }, {
+    name: "Platin",
+    pts: 25000,
+    icon: "💎",
+    color: "#E5E4E2"
+  }, {
+    name: "Legend",
+    pts: 50000,
+    icon: "🏁",
+    color: "#D5001C"
+  }];
   const STATUS_PRESETS = [{
     icon: "🏁",
     text: "Komme gleich zurück",
@@ -1086,7 +1158,7 @@
         color: C.amber,
         lineHeight: 1.6
       }
-    }, "⏳ Deine Anmeldung wird vom Admin geprüft und bestätigt.", /*#__PURE__*/_react.default.createElement("br", null), "Nach Bestätigung erhältst du ", /*#__PURE__*/_react.default.createElement("b", null, "+100 Punkte"), " und eine Startnummer."), myReg.status === "confirmed" && /*#__PURE__*/_react.default.createElement("div", {
+    }, "⏳ Deine Anmeldung wird vom Admin geprüft und bestätigt.", /*#__PURE__*/_react.default.createElement("br", null), "Nach Bestätigung erhältst du ", /*#__PURE__*/_react.default.createElement("b", null, "+1.000 Punkte"), " und eine Startnummer."), myReg.status === "confirmed" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
@@ -1296,7 +1368,7 @@
         opacity: .7,
         fontWeight: 600
       }
-    }, "+100 Pkt bei Bestätigung"))), !myReg && !isPast && spotsLeft <= 0 && /*#__PURE__*/_react.default.createElement("div", {
+    }, "+1.000 Pkt bei Bestätigung"))), !myReg && !isPast && spotsLeft <= 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
@@ -2149,27 +2221,90 @@
       } catch (e) {}
       toast_("✓ Scan bestätigt — Nutzer erhält +10 Punkte");
     };
+
+    // Prüft ob eine Fahrzeugakte vollständig gepflegt ist
+    const isVehicleComplete = v => {
+      if (!v) return false;
+      const required = ["hersteller", "modell", "baujahr", "kennzeichen", "farbe", "kraftstoff", "getriebe"];
+      const hasFields = required.every(f => v[f] && String(v[f]).trim());
+      const hasImage = !!(v.image || (v.images || []).length);
+      const hasStory = !!(v.besonderheiten && v.besonderheiten.trim());
+      return hasFields && hasImage && hasStory;
+    };
     const calcPoints = () => {
       let pts = 0;
-      pts += myVehicles.length * 50; // 50 Punkte pro Fahrzeug
-      pts += Object.values(logbook).flat().length * 10; // 10 Punkte pro Logbuch-Eintrag
-      pts += myParticipations.filter(p => p.status === "confirmed").length * 100; // 100 Punkte nur bei bestätigter Teilnahme
-      pts += myThreads.length * 5; // 5 Punkte pro Nachricht
-      // 10 Punkte pro gelesenen News-Artikel
+      const V = POINTS;
+
+      // ── PRIO 1: Community (Scans, Kontakte) ──
       try {
-        pts += JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length * 10;
+        pts += getScanConfirmed().length * V.qr_scan;
       } catch (e) {}
-      // 2 Punkte pro angesehenes fremdes Fahrzeug
       try {
-        pts += getViewedVehicles().length * 2;
+        pts += getViewedVehicles().length * V.view_akte;
       } catch (e) {}
-      // 10 Punkte pro bestätigtem QR-Scan
+
+      // ── PRIO 2: Fahrzeugpflege (Akte, Doku) ──
+      pts += myVehicles.length * V.vehicle_added;
+      myVehicles.forEach(v => {
+        if (isVehicleComplete(v)) pts += V.vehicle_complete;
+        const imgs = (v.images || []).length || (v.image ? 1 : 0);
+        pts += Math.min(imgs, 10) * V.photo; // max 10 Fotos zählen
+      });
+      pts += Object.values(logbook).flat().length * V.logbook;
+
+      // ── PRIO 3: Aktivität (Events, Nachrichten, News) ──
+      pts += myParticipations.filter(p => p.status === "confirmed").length * V.event_confirmed;
+      pts += myThreads.length * V.message;
       try {
-        pts += getScanConfirmed().length * 10;
+        pts += JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length * V.news_read;
+      } catch (e) {}
+
+      // ── PRIO 4: Treue (Mitgliedsjahre, Beitrag) ──
+      if (me?.createdAt) {
+        const years = Math.floor((Date.now() - new Date(me.createdAt)) / (365.25 * 864e5));
+        pts += Math.max(0, years) * V.member_year;
+      }
+      if (me?.beitrag_bezahlt) pts += V.beitrag_paid;
+
+      // ── Bonus: Geburtstag (einmal pro Jahr, automatisch) ──
+      try {
+        const bdayPts = JSON.parse(localStorage.getItem("pcn_bday_pts") || "[]");
+        bdayPts.forEach(entry => {
+          pts += entry.pts || 0;
+        });
       } catch (e) {}
       return pts;
     };
     const myPoints = calcPoints();
+
+    // ── Geburtstags-Punkte automatisch gutschreiben ──────────────────────────
+    (0, _react.useEffect)(() => {
+      if (!me?.geburtstag || isDemo) return;
+      const bd = new Date(me.geburtstag);
+      if (isNaN(bd)) return;
+      const today = new Date();
+      const isBirthday = bd.getDate() === today.getDate() && bd.getMonth() === today.getMonth();
+      if (!isBirthday) return;
+      const year = today.getFullYear();
+      let awarded = [];
+      try {
+        awarded = JSON.parse(localStorage.getItem("pcn_bday_pts") || "[]");
+      } catch (e) {}
+      if (awarded.some(a => a.year === year)) return; // schon gutgeschrieben
+
+      const age = year - bd.getFullYear();
+      const isRound = age % 10 === 0 || age === 18 || age === 25;
+      const pts = isRound ? POINTS.birthday_round : POINTS.birthday;
+      awarded.push({
+        year,
+        pts,
+        age
+      });
+      localStorage.setItem("pcn_bday_pts", JSON.stringify(awarded));
+      setTimeout(() => {
+        toast_(isRound ? `🎂 Alles Gute zum ${age}. Geburtstag! +${pts} Punkte vom PCN 🎉` : `🎂 Herzlichen Glückwunsch! +${pts} Punkte vom PCN`);
+      }, 1200);
+    }, [me?.geburtstag, me?.id]);
     const isFavorite = vehicleId => favorites.includes(vehicleId);
     const toggleFavorite = vehicleId => {
       setFavorites(prev => {
@@ -2179,26 +2314,10 @@
         return next;
       });
     };
-    const TIERS = [{
-      name: "Bronze",
-      pts: 100
-    }, {
-      name: "Silber",
-      pts: 300
-    }, {
-      name: "Gold",
-      pts: 600
-    }, {
-      name: "Platin",
-      pts: 1000
-    }, {
-      name: "Legend",
-      pts: 2000
-    }];
     const currentTier = TIERS.filter(t => myPoints >= t.pts).slice(-1)[0] || null;
     const nextTier = TIERS.find(t => myPoints < t.pts) || {
       name: "Legend",
-      pts: 2000
+      pts: 50000
     };
     const prevTierPts = currentTier?.pts || 0;
     const pointsToNext = nextTier.pts;
@@ -4941,7 +5060,7 @@
           color: "rgba(255,255,255,.5)",
           fontWeight: 600
         }
-      }, "+5 Pkt"))), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("div", {
+      }, "+50 Pkt"))), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: "rgba(255,255,255,.05)",
           border: "1px solid rgba(255,255,255,.1)",
@@ -8744,7 +8863,7 @@
         color: C.gold,
         fontWeight: 700
       }
-    }, "+50 Pkt"))) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
+    }, "+500 Pkt"))) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
       key: v.id,
       style: {
         background: C.card,
@@ -10921,7 +11040,7 @@
         letterSpacing: 1.5,
         marginBottom: 12
       }
-    }, "📊 Meine Aktivität"), [["❤️", "Favoriten", favorites.length + " Fahrzeuge"], ["👁", "Angesehen", getViewedVehicles().length + " Akten · +" + getViewedVehicles().length * 2 + " Pkt"], ["📱", "QR-Scans bestätigt", getScanConfirmed().length + " · +" + getScanConfirmed().length * 10 + " Pkt"]].map(([icon, label, val]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, "📊 Meine Aktivität"), [["❤️", "Favoriten", favorites.length + " Fahrzeuge"], ["👁", "Angesehen", getViewedVehicles().length + " Akten · +" + (getViewedVehicles().length * POINTS.view_akte).toLocaleString("de-DE") + " Pkt"], ["📱", "QR-Scans bestätigt", getScanConfirmed().length + " · +" + (getScanConfirmed().length * POINTS.qr_scan).toLocaleString("de-DE") + " Pkt"]].map(([icon, label, val]) => /*#__PURE__*/_react.default.createElement("div", {
       key: label,
       style: {
         display: "flex",
@@ -11069,7 +11188,7 @@
         fontWeight: 900,
         color: C.gold
       }
-    }, myPoints), /*#__PURE__*/_react.default.createElement("span", {
+    }, myPoints.toLocaleString("de-DE")), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 15,
         color: C.muted
@@ -11100,7 +11219,7 @@
         fontWeight: 700,
         color: C.gold
       }
-    }, nextTier.name, " · ", pointsToNext, " Pkt"))), /*#__PURE__*/_react.default.createElement("div", {
+    }, nextTier.icon || "", " ", nextTier.name, " · ", (nextTier.pts - myPoints).toLocaleString("de-DE"), " Pkt"))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         height: 8,
         background: "rgba(255,255,255,.1)",
@@ -11117,11 +11236,28 @@
       }
     })), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 11,
-        color: C.muted,
-        marginTop: 6
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 8
       }
-    }, "🏁 ", myParticipations.length, " Events · 🚗 ", myVehicles.length, " Fahrzeuge · 📋 ", Object.values(logbook).flat().length, " Logbuch-Einträge")), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted
+      }
+    }, currentTier ? /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: currentTier.color,
+        fontWeight: 700
+      }
+    }, currentTier.icon, " ", currentTier.name) : /*#__PURE__*/_react.default.createElement("span", null, "Noch keine Stufe"), " · ", "🏁 ", myParticipations.length, " Events · 🚗 ", myVehicles.length, " Fzg"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.gold,
+        fontWeight: 700
+      }
+    }, "≈ ", ptsToEur(myPoints).toFixed(2).replace(".", ","), " € Gegenwert"))), me?.role === "guest" && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginTop: 14,
         paddingTop: 12,
@@ -11173,7 +11309,7 @@
         setViewV(myVehicles[0]);
         setScreen("vehicle");
       } else setTab("dashboard");
-    }], ["🏁", "Events", myParticipations.filter(p => p.status === "confirmed").length, "bestätigt", () => setTab("events")], ["💬", "Chats", myThreads.length, "aktive Chats", () => setTab("messages")], ["❤️", "Favoriten", favorites.length, "gespeichert", () => setTab("community")], ["👁", "Angesehen", getViewedVehicles().length, "Akten · +" + getViewedVehicles().length * 2 + " Pkt", () => setTab("community")], ["📱", "QR-Scans", getScanConfirmed().length, "bestätigt · +" + getScanConfirmed().length * 10 + " Pkt", () => setTab("community")], ["📰", "News", JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length, "gelesen · +" + JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length * 10 + " Pkt", () => setTab("dashboard")]].map(([icon, label, val, sub, onTap]) => /*#__PURE__*/_react.default.createElement("button", {
+    }], ["🏁", "Events", myParticipations.filter(p => p.status === "confirmed").length, "bestätigt", () => setTab("events")], ["💬", "Chats", myThreads.length, "aktive Chats", () => setTab("messages")], ["❤️", "Favoriten", favorites.length, "gespeichert", () => setTab("community")], ["👁", "Angesehen", getViewedVehicles().length, "Akten · +" + (getViewedVehicles().length * POINTS.view_akte).toLocaleString("de-DE") + " Pkt", () => setTab("community")], ["📱", "QR-Scans", getScanConfirmed().length, "bestätigt · +" + (getScanConfirmed().length * POINTS.qr_scan).toLocaleString("de-DE") + " Pkt", () => setTab("community")], ["📰", "News", JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length, "gelesen · +" + (JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length * POINTS.news_read).toLocaleString("de-DE") + " Pkt", () => setTab("dashboard")]].map(([icon, label, val, sub, onTap]) => /*#__PURE__*/_react.default.createElement("button", {
       key: label,
       onClick: onTap,
       style: {
@@ -11769,7 +11905,7 @@
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "24px"
+        padding: "20px"
       },
       onClick: () => setShowInfoModal(false)
     }, /*#__PURE__*/_react.default.createElement("div", {
@@ -11777,9 +11913,11 @@
         background: C.dark,
         border: `1px solid ${C.border}`,
         borderRadius: 20,
-        padding: "28px 24px",
-        maxWidth: 380,
+        padding: "24px 20px",
+        maxWidth: 400,
         width: "100%",
+        maxHeight: "85vh",
+        overflowY: "auto",
         animation: "fadeIn .2s"
       },
       onClick: e => e.stopPropagation()
@@ -11789,120 +11927,189 @@
         fontSize: 26,
         fontWeight: 900,
         color: C.white,
-        marginBottom: 6
+        marginBottom: 4
       }
-    }, "🏆 Punktesystem"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🏆 Das PCN-Punktesystem"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 14,
+        fontSize: 13,
         color: C.muted,
-        lineHeight: 1.7,
-        marginBottom: 20
+        lineHeight: 1.65,
+        marginBottom: 16
       }
-    }, "Sammle Punkte durch Aktivitäten und schalte neue Funktionen frei:"), [["🚗", "Fahrzeug anlegen", "50 Punkte pro Fahrzeug"], ["📋", "Logbuch-Eintrag", "10 Punkte pro Eintrag"], ["🏁", "Event-Teilnahme", "100 Punkte pro Veranstaltung"], ["💬", "Nachricht senden", "5 Punkte pro Nachricht"], ["👥", "Mitglied werben", "200 Punkte pro Neumitglied"]].map(([icon, label, pts]) => /*#__PURE__*/_react.default.createElement("div", {
-      key: label,
+    }, "Punkte belohnen echtes Club-Leben — Begegnungen, gepflegte Fahrzeuge, Teilnahme."), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        display: "flex",
-        gap: 12,
-        alignItems: "center",
-        padding: "10px 0",
-        borderBottom: `1px solid ${C.border}`
-      }
-    }, /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 22,
-        flexShrink: 0,
-        width: 32,
-        textAlign: "center"
-      }
-    }, icon), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        flex: 1
+        background: `${C.gold}12`,
+        border: `1px solid ${C.gold}33`,
+        borderRadius: 12,
+        padding: "14px",
+        marginBottom: 18
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 15,
-        fontWeight: 600,
-        color: C.white
-      }
-    }, label)), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 15,
-        fontWeight: 800,
-        color: C.gold,
-        flexShrink: 0
-      }
-    }, pts))), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        marginTop: 16,
-        padding: "12px",
-        background: `${C.gold}11`,
-        borderRadius: 10,
-        fontSize: 12,
-        color: C.muted,
-        lineHeight: 1.7
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        marginBottom: 8,
-        fontWeight: 700,
-        color: C.gold
-      }
-    }, "🏆 Punktestufen"), [["Bronze", "100"], ["Silber", "300"], ["Gold", "600"], ["Platin", "1.000"], ["Legend", "2.000"]].map(([n, p]) => /*#__PURE__*/_react.default.createElement("div", {
-      key: n,
       style: {
         display: "flex",
         justifyContent: "space-between",
-        padding: "4px 0",
-        borderBottom: `1px solid ${C.border}`
+        alignItems: "center",
+        marginBottom: 6
       }
     }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        color: C.white
-      }
-    }, n), /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        color: C.gold
-      }
-    }, "ab ", p, " Pkt"))), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        marginTop: 12,
-        marginBottom: 6,
+        fontSize: 12,
         fontWeight: 700,
-        color: "#aaa"
+        color: C.gold,
+        letterSpacing: .5
       }
-    }, "Punkte erhalten für:"), [["🚗", "Fahrzeug anlegen", "50 Pkt"], ["📋", "Logbuch-Eintrag", "10 Pkt"], ["🏁", "Event (bestätigt)", "100 Pkt"], ["💬", "Nachricht senden", "5 Pkt"], ["📰", "News lesen", "10 Pkt"], ["👁", "Fahrzeugakte ansehen", "2 Pkt"], ["📱", "QR-Scan bestätigt", "10 Pkt"]].map(([i, l, p]) => /*#__PURE__*/_react.default.createElement("div", {
+    }, "WECHSELKURS"), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: "#666"
+      }
+    }, "🏁 mit 911 im Kurs")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 18,
+        fontWeight: 900,
+        color: C.white,
+        fontFamily: "'Barlow Condensed',sans-serif"
+      }
+    }, "1 Punkt = 0,0911 Cent"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginTop: 3
+      }
+    }, "1 € = 1.098 Punkte · Dein Stand: ", myPoints.toLocaleString("de-DE"), " Pkt ≈ ", ptsToEur(myPoints).toFixed(2).replace(".", ","), " €")), [{
+      group: "👥 Community — am wertvollsten",
+      color: "#5b8fff",
+      items: [["📱", "QR-Scan bestätigt", "+" + POINTS.qr_scan], ["👁", "Fremde Akte ansehen", "+" + POINTS.view_akte]]
+    }, {
+      group: "🚗 Fahrzeugpflege",
+      color: C.gold,
+      items: [["🚗", "Fahrzeug anlegen", "+" + POINTS.vehicle_added], ["✨", "Akte vollständig gepflegt", "+" + POINTS.vehicle_complete], ["📋", "Logbuch-Eintrag", "+" + POINTS.logbook], ["📸", "Foto hochgeladen", "+" + POINTS.photo]]
+    }, {
+      group: "🏁 Aktivität",
+      color: C.red,
+      items: [["🏁", "Event bestätigt", "+" + POINTS.event_confirmed], ["💬", "Konversation geführt", "+" + POINTS.message], ["📰", "Club-News gelesen", "+" + POINTS.news_read]]
+    }, {
+      group: "🤝 Treue",
+      color: C.green,
+      items: [["📅", "Pro Mitgliedsjahr", "+" + POINTS.member_year], ["💳", "Beitrag bezahlt", "+" + POINTS.beitrag_paid]]
+    }, {
+      group: "🎁 Geschenke des Clubs",
+      color: "#e879f9",
+      items: [["🎂", "Geburtstag", "+" + POINTS.birthday], ["🎉", "Runder Geburtstag", "+" + POINTS.birthday_round]]
+    }].map(sec => /*#__PURE__*/_react.default.createElement("div", {
+      key: sec.group,
+      style: {
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 800,
+        color: sec.color,
+        letterSpacing: .5,
+        marginBottom: 6
+      }
+    }, sec.group), sec.items.map(([i, l, p]) => /*#__PURE__*/_react.default.createElement("div", {
       key: l,
       style: {
         display: "flex",
-        gap: 8,
-        padding: "4px 0",
+        gap: 9,
+        padding: "6px 0",
         borderBottom: `1px solid ${C.border}`,
         alignItems: "center"
       }
     }, /*#__PURE__*/_react.default.createElement("span", {
       style: {
         width: 20,
-        textAlign: "center"
+        textAlign: "center",
+        fontSize: 14
       }
     }, i), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         flex: 1,
-        color: C.white,
-        fontSize: 12
+        color: "#ddd",
+        fontSize: 13
       }
     }, l), /*#__PURE__*/_react.default.createElement("span", {
       style: {
-        color: C.green,
-        fontWeight: 700,
-        fontSize: 12
+        color: C.gold,
+        fontWeight: 800,
+        fontSize: 13,
+        fontFamily: "'Barlow Condensed',sans-serif"
       }
-    }, p)))), /*#__PURE__*/_react.default.createElement("button", {
+    }, p))))), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: "#ffffff06",
+        borderRadius: 12,
+        padding: "14px",
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 800,
+        color: "#aaa",
+        letterSpacing: .5,
+        marginBottom: 8
+      }
+    }, "🏆 STUFEN"), TIERS.map(t => /*#__PURE__*/_react.default.createElement("div", {
+      key: t.name,
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        padding: "5px 0",
+        borderBottom: `1px solid ${C.border}`,
+        alignItems: "center",
+        opacity: myPoints >= t.pts ? 1 : .45
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: t.color,
+        fontWeight: 700,
+        fontSize: 13
+      }
+    }, t.icon, " ", t.name), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: myPoints >= t.pts ? C.green : C.muted,
+        fontSize: 12,
+        fontWeight: 600
+      }
+    }, myPoints >= t.pts ? "✓ erreicht" : `ab ${t.pts.toLocaleString("de-DE")} Pkt`)))), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: `${C.red}0d`,
+        border: `1px solid ${C.red}33`,
+        borderRadius: 12,
+        padding: "14px",
+        marginBottom: 16
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 800,
+        color: C.red,
+        marginBottom: 6
+      }
+    }, "🛍️ Punkte einlösen"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#aaa",
+        lineHeight: 1.7
+      }
+    }, "Gesammelte Punkte sollen künftig bei Partnern des Clubs einlösbar sein — unter anderem im ", /*#__PURE__*/_react.default.createElement("strong", {
+      style: {
+        color: "#ddd"
+      }
+    }, "Porsche Store"), ", bei Club-Merchandise oder als Rabatt auf Event-Gebühren.", /*#__PURE__*/_react.default.createElement("br", null), /*#__PURE__*/_react.default.createElement("br", null), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: "#666",
+        fontSize: 11
+      }
+    }, "Die Einlösung befindet sich in Abstimmung mit dem Vorstand und den Partnern. Deine Punkte verfallen nicht — sie werden vollständig übertragen."))), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         width: "100%",
         padding: "14px",
-        fontSize: 15,
-        marginTop: 16
+        fontSize: 15
       },
       onClick: () => setShowInfoModal(false)
     }, "Verstanden ✓"))), showEditProfile && /*#__PURE__*/_react.default.createElement("div", {
