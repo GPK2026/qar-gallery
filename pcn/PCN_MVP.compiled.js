@@ -999,6 +999,16 @@
     icon: "🏁",
     color: "#D5001C"
   }];
+
+  // ── Admin-Thread: deterministische UUID pro Mitglied ─────────────────────────
+  // threads.id ist ein UUID-Feld — ein Präfix wie "admin-xyz" wird von der DB
+  // abgelehnt. Diese Funktion erzeugt eine gültige, stabile UUID je User.
+  const ADMIN_UUID = "00000000-0000-0000-0000-000000000000";
+  const adminThreadId = userId => {
+    const tail = String(userId || "").replace(/-/g, "").slice(-12).padStart(12, "0");
+    return `ad000000-0000-4000-8000-${tail}`;
+  };
+  const isAdminThreadId = id => String(id || "").startsWith("ad000000-0000-4000-8000-");
   const STATUS_PRESETS = [{
     icon: "🏁",
     text: "Komme gleich zurück",
@@ -1518,9 +1528,9 @@
     const endRef = (0, _react.useRef)(null);
     const rootRef = (0, _react.useRef)(null);
     const threadParticipants = thread.participants || [];
-    const isAdminThread = thread.id?.startsWith("admin-");
+    const isAdminThread = isAdminThreadId(thread.id);
     const other = isAdminThread ? {
-      name: "Admin-Mitteilungen"
+      name: "PCN Vorstand"
     } : Object.values(allUsers).find(u => threadParticipants.includes(u.id) && u.id !== me?.id) || {
       name: thread.isGroup ? thread.name : "Mitglied"
     };
@@ -1625,7 +1635,7 @@
         color: C.white,
         lineHeight: 1.2
       }
-    }, isAdminThread ? "Admin-Mitteilungen" : thread.isGroup ? thread.name : thread.anonymous ? "🔒 Anonyme Nachricht" : other.name), /*#__PURE__*/_react.default.createElement("div", {
+    }, isAdminThread ? "📣 PCN Vorstand" : thread.isGroup ? thread.name : thread.anonymous ? "🔒 Anonyme Nachricht" : other.name), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
@@ -1737,7 +1747,7 @@
         }
       }, "— ", m.text, " —");
       const mine = m.from === me?.id || m.from_id === me?.id;
-      const isAdminMsg = m.isSystem || m.from === "00000000-0000-0000-0000-000000000000" || thread.id?.startsWith("admin-") && m.from !== me?.id;
+      const isAdminMsg = m.isSystem || m.from === ADMIN_UUID || isAdminThreadId(thread.id) && m.from !== me?.id;
       // Parse payload for scan requests
       let scanPayload = null;
       try {
@@ -2165,7 +2175,7 @@
       const DB = window.PCN_DB;
       if (!DB) return;
       // Create a pending scan request in threads
-      const threadId = "admin-" + ownerId;
+      const threadId = adminThreadId(ownerId);
       const reqText = `🔍 QR-Scan-Bestätigung: ${me.name || "Ein Mitglied"} hat deinen ${vehicle.hersteller || ""} ${vehicle.modell || ""} (${vehicle.qarId || vehicle.qar_id || ""}) gescannt. Bitte bestätige den Scan — der Nutzer erhält dann 10 Punkte.`;
       // Send via DB
       try {
@@ -2181,8 +2191,8 @@
             },
             body: JSON.stringify({
               id: threadId,
-              participants: [ownerId],
-              vehicle_name: "Admin-Mitteilungen",
+              participants: [ownerId, ADMIN_UUID],
+              vehicle_name: "PCN Vorstand",
               anonymous: false,
               created_at: new Date().toISOString()
             })
@@ -2229,7 +2239,7 @@
       confirmed.push(key);
       localStorage.setItem("pcn_scan_confirmed", JSON.stringify(confirmed));
       // Send confirmation message to scanner
-      const threadId = "admin-" + scannerId;
+      const threadId = adminThreadId(scannerId);
       try {
         await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/messages", {
           method: "POST",
