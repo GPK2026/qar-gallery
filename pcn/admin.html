@@ -1079,13 +1079,58 @@ async function confirmParticipant(partId,eventId){
   toast("✓ Bestätigt + Nachricht gesendet"); await loadAll();
 }
 async function cancelParticipant(partId,eventId){
-  if(!confirm("Anmeldung stornieren?")) return;
-  await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"cancelled"})});
-  const part=DB.participants.find(p=>p.id===partId),ev=DB.events.find(e=>e.id===eventId);
-  if(part?.user_id&&ev) sendAdminMsg(part.user_id,`Deine Anmeldung für "${ev.name}" wurde leider storniert.`,"❌");
-  toast("Storniert + Nachricht gesendet"); await loadAll();
+  const part=DB.participants.find(p=>p.id===partId);
+  const ev=DB.events.find(e=>e.id===eventId);
+  const mem=DB.members.find(m=>m.id===part?.user_id);
+  confirmDanger({
+    title:"Anmeldung stornieren?",
+    body:`Die Anmeldung von <strong style="color:#ddd">${mem?.name||"diesem Mitglied"}</strong> für "${ev?.name||"das Event"}" wird storniert.`,
+    warn:`Das Mitglied erhält automatisch eine Nachricht über die Stornierung.${part?.status==="confirmed"?"<br>Die Teilnahme war bereits <strong>bestätigt</strong> — die Punkte entfallen.":""}`,
+    confirmLabel:"Stornieren",
+    onConfirm: async()=>{
+      await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"cancelled"})});
+      if(part?.user_id&&ev) sendAdminMsg(part.user_id,`Deine Anmeldung für "${ev.name}" wurde leider storniert.`,"❌");
+      toast("Storniert + Nachricht gesendet"); await loadAll();
+    }
+  });
 }
-async function delMember(id,name){if(!confirm(`${name} löschen?`)) return;await api(`users?id=eq.${id}`,{method:"DELETE"});toast("Gelöscht");await loadAll();}
+// ── Sicherheits-Dialog für kritische Aktionen ──
+function confirmDanger({title, body, warn, confirmLabel, onConfirm}){
+  const wrap=document.createElement("div");
+  wrap.id="danger-modal";
+  wrap.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px";
+  wrap.innerHTML=`
+    <div style="background:#111;border:1px solid #ef444455;border-radius:16px;max-width:420px;width:100%;padding:22px;animation:sheetUp .2s ease">
+      <div style="font-size:18px;font-weight:800;color:#ef4444;margin-bottom:8px">⚠ ${title}</div>
+      <div style="font-size:13px;color:#bbb;line-height:1.65;margin-bottom:${warn?"12px":"18px"}">${body}</div>
+      ${warn?`<div style="background:#ef44440d;border:1px solid #ef444433;border-radius:9px;padding:11px;margin-bottom:18px;font-size:12px;color:#e88;line-height:1.6">${warn}</div>`:""}
+      <div style="display:flex;gap:8px">
+        <button onclick="closeDanger()" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:12px;color:#aaa;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Abbrechen</button>
+        <button id="danger-go" style="flex:1;background:#ef4444;border:none;border-radius:9px;padding:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">${confirmLabel}</button>
+      </div>
+    </div>`;
+  wrap.onclick=(e)=>{ if(e.target===wrap) closeDanger(); };
+  document.body.appendChild(wrap);
+  document.getElementById("danger-go").onclick=()=>{ closeDanger(); onConfirm(); };
+}
+function closeDanger(){ document.getElementById("danger-modal")?.remove(); }
+
+async function delMember(id,name){
+  const veh=DB.vehicles.filter(v=>v.user_id===id).length;
+  const parts=DB.participants.filter(p=>p.user_id===id).length;
+  const pts=calcPts(id);
+  confirmDanger({
+    title:`${name} löschen?`,
+    body:`Das Mitglied wird dauerhaft aus der Datenbank entfernt. Diese Aktion kann <strong style="color:#ddd">nicht rückgängig</strong> gemacht werden.`,
+    warn:`Dabei gehen verloren:<br>• ${veh} Fahrzeug${veh!==1?"e":""} inkl. Akte und Logbuch<br>• ${parts} Event-Anmeldung${parts!==1?"en":""}<br>• ${pts.toLocaleString("de-DE")} Punkte (≈ ${ptsToEur(pts).toFixed(2).replace(".",",")} €)<br>• Alle Chatverläufe`,
+    confirmLabel:"Endgültig löschen",
+    onConfirm: async()=>{
+      await api(`users?id=eq.${id}`,{method:"DELETE"});
+      toast(`${name} gelöscht`);
+      await loadAll();
+    }
+  });
+}
 
 function toggleEvForm(){
   const f=document.getElementById("ev-form");f.classList.toggle("hidden");
@@ -1123,7 +1168,23 @@ async function saveEvent(){
   else{await api("events",{method:"POST",body:JSON.stringify({...payload,created_at:new Date().toISOString()})});toast("✓ Event erstellt");}
   toggleEvForm(); await loadAll();
 }
-async function delEvent(id,name){if(!confirm(`"${name}" löschen?`)) return;await api(`events?id=eq.${id}`,{method:"DELETE"});toast("Gelöscht");await loadAll();}
+async function delEvent(id,name){
+  const parts=DB.participants.filter(p=>p.event_id===id&&p.status!=="cancelled");
+  const conf=parts.filter(p=>p.status==="confirmed").length;
+  confirmDanger({
+    title:`"${name}" löschen?`,
+    body:`Das Event wird dauerhaft entfernt. Diese Aktion kann <strong style="color:#ddd">nicht rückgängig</strong> gemacht werden.`,
+    warn: parts.length
+      ? `<strong style="color:#ff9">${parts.length} Anmeldung${parts.length!==1?"en":""}</strong> gehen verloren${conf?`, davon ${conf} bereits bestätigt`:""}.<br>Die Mitglieder werden <strong>nicht</strong> automatisch informiert — ggf. vorher eine Nachricht senden.`
+      : null,
+    confirmLabel:"Event löschen",
+    onConfirm: async()=>{
+      await api(`events?id=eq.${id}`,{method:"DELETE"});
+      toast("Event gelöscht");
+      await loadAll();
+    }
+  });
+}
 
 const TEMPLATES = [
   {t:"Clubabend-Erinnerung", b:"Liebe Mitglieder,\n\nnächsten [WOCHENTAG] findet unser monatlicher Clubabend im Kesselchen statt — ab [UHRZEIT] Uhr.\n\nBis bald,\nEuer PCN-Vorstand"},
@@ -1139,17 +1200,66 @@ function useTpl(idx){
 async function publishNL(){
   const sub=document.getElementById("nl-sub")?.value,body=document.getElementById("nl-body")?.value;
   if(!sub||!body){toast("Betreff + Inhalt erforderlich","err");return;}
-  if(!confirm("Newsletter veröffentlichen?")) return;
-  await api("news",{method:"POST",body:JSON.stringify({title:sub,body,type:"newsletter",icon:"📬",pinned:true,created_at:new Date().toISOString(),author:"PCN Vorstand"})}).catch(()=>{});
-  toast("✓ Newsletter veröffentlicht · erscheint im App-Feed");
+  if(/\[[A-ZÄÖÜ]+\]/.test(sub+body)){
+    toast("Bitte alle [PLATZHALTER] ersetzen","err"); return;
+  }
+  const reach=DB.members.filter(m=>m.role==="member").length;
+  confirmPublish({
+    title:"Newsletter veröffentlichen?",
+    reach,
+    preview:sub,
+    onConfirm: async()=>{
+      await api("news",{method:"POST",body:JSON.stringify({title:sub,body,type:"newsletter",icon:"📬",pinned:true,created_at:new Date().toISOString(),author:"PCN Vorstand"})}).catch(()=>{});
+      toast("✓ Newsletter veröffentlicht · erscheint im App-Feed");
+      ["nl-sub","nl-body"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+    }
+  });
 }
+
+// Bestätigung vor Veröffentlichung — zeigt Reichweite
+function confirmPublish({title, reach, preview, onConfirm}){
+  const wrap=document.createElement("div");
+  wrap.id="pub-modal";
+  wrap.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px";
+  wrap.innerHTML=`
+    <div style="background:#111;border:1px solid var(--border);border-radius:16px;max-width:420px;width:100%;padding:22px;animation:sheetUp .2s ease">
+      <div style="font-size:18px;font-weight:800;color:var(--txt);margin-bottom:10px">📬 ${title}</div>
+      <div style="background:#0d0d0d;border-radius:9px;padding:11px;margin-bottom:12px">
+        <div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Betreff</div>
+        <div style="font-size:13px;color:#ddd;font-weight:600">${preview}</div>
+      </div>
+      <div style="background:#5b8fff0d;border:1px solid #5b8fff33;border-radius:9px;padding:11px;margin-bottom:18px">
+        <div style="font-size:13px;color:#8ab;line-height:1.6">
+          Erscheint sofort im App-Feed von <strong style="color:#fff">${reach} Mitglied${reach!==1?"ern":""}</strong>.
+          Ein Zurückholen ist nicht möglich.
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closePub()" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:12px;color:#aaa;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Nochmal prüfen</button>
+        <button id="pub-go" style="flex:1;background:var(--red);border:none;border-radius:9px;padding:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Veröffentlichen</button>
+      </div>
+    </div>`;
+  wrap.onclick=(e)=>{ if(e.target===wrap) closePub(); };
+  document.body.appendChild(wrap);
+  document.getElementById("pub-go").onclick=()=>{ closePub(); onConfirm(); };
+}
+function closePub(){ document.getElementById("pub-modal")?.remove(); }
+
 async function publishNews(){
   const title=document.getElementById("nf-title")?.value,body=document.getElementById("nf-body")?.value;
   const type=document.getElementById("nf-type")?.value||"news",pinned=document.getElementById("nf-pin")?.checked;
   if(!title){toast("Titel erforderlich","err");return;}
-  await api("news",{method:"POST",body:JSON.stringify({title,body,type,pinned,icon:type==="news"?"📰":type==="tip"?"💡":"🎉",created_at:new Date().toISOString(),author:"PCN Vorstand"})}).catch(()=>{});
-  toast("✓ Artikel veröffentlicht");
-  ["nf-title","nf-body"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  const reach=DB.members.filter(m=>m.role==="member").length;
+  confirmPublish({
+    title:"Artikel veröffentlichen?",
+    reach,
+    preview:title,
+    onConfirm: async()=>{
+      await api("news",{method:"POST",body:JSON.stringify({title,body,type,pinned,icon:type==="news"?"📰":type==="tip"?"💡":"🎉",created_at:new Date().toISOString(),author:"PCN Vorstand"})}).catch(()=>{});
+      toast("✓ Artikel veröffentlicht");
+      ["nf-title","nf-body"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+    }
+  });
 }
 function exportCSV(){
   const a=DB.members.filter(m=>m.role==="member");
