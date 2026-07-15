@@ -3034,6 +3034,7 @@
         phone: me?.phone || "",
         city: me?.city || "",
         bio: me?.bio || "",
+        geburtstag: me?.geburtstag || "",
         avatar: me?.avatar || "",
         notifications_events: me?.notifications?.events !== false,
         notifications_messages: me?.notifications?.messages !== false
@@ -3048,9 +3049,10 @@
       const updated = {
         ...me,
         name: profileForm.name.trim(),
-        phone: profileForm.phone.trim(),
-        city: profileForm.city.trim(),
-        bio: profileForm.bio.trim(),
+        phone: (profileForm.phone || "").trim(),
+        city: (profileForm.city || "").trim(),
+        bio: (profileForm.bio || "").trim(),
+        geburtstag: profileForm.geburtstag || null,
         avatar: profileForm.avatar || me?.avatar || "",
         notifications: {
           events: profileForm.notifications_events,
@@ -3065,7 +3067,16 @@
       if (DB && me?.id) {
         try {
           const cfg = window.PCN_CONFIG || {};
-          await fetch(`${cfg.supabaseUrl}/rest/v1/users?id=eq.${me.id}`, {
+          // Nur Felder senden die es in der DB gibt — Fehler bei fehlenden Spalten abfangen
+          const payload = {
+            name: updated.name,
+            phone: updated.phone || null,
+            city: updated.city || null,
+            bio: updated.bio || null,
+            geburtstag: updated.geburtstag || null,
+            avatar: updated.avatar || null
+          };
+          const res = await fetch(`${cfg.supabaseUrl}/rest/v1/users?id=eq.${me.id}`, {
             method: "PATCH",
             headers: {
               "apikey": cfg.supabaseKey,
@@ -3073,10 +3084,23 @@
               "Content-Type": "application/json",
               "Prefer": "return=minimal"
             },
-            body: JSON.stringify({
-              name: updated.name
-            })
+            body: JSON.stringify(payload)
           });
+          // Falls eine Spalte fehlt (PGRST204): nur den Namen speichern als Fallback
+          if (!res.ok) {
+            await fetch(`${cfg.supabaseUrl}/rest/v1/users?id=eq.${me.id}`, {
+              method: "PATCH",
+              headers: {
+                "apikey": cfg.supabaseKey,
+                "Authorization": "Bearer " + cfg.supabaseKey,
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+              },
+              body: JSON.stringify({
+                name: updated.name
+              })
+            });
+          }
         } catch (e) {
           console.warn("Supabase patch skipped:", e);
         }
@@ -12084,7 +12108,59 @@
       style: {
         marginBottom: 8
       }
-    }), /*#__PURE__*/_react.default.createElement("textarea", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 9,
+        padding: "10px 14px",
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 6
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 12,
+        color: "#aaa",
+        fontWeight: 600
+      }
+    }, "🎂 Geburtstag"), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 9,
+        color: "#555"
+      }
+    }, "optional")), /*#__PURE__*/_react.default.createElement("input", {
+      type: "date",
+      value: profileForm.geburtstag || "",
+      max: new Date().toISOString().slice(0, 10),
+      onChange: e => setProfileForm(p => ({
+        ...p,
+        geburtstag: e.target.value
+      })),
+      style: {
+        width: "100%",
+        background: "#1a1a1a",
+        border: `1px solid ${C.border}`,
+        borderRadius: 7,
+        padding: "9px 11px",
+        color: C.white,
+        fontSize: 14,
+        fontFamily: "'Barlow',sans-serif",
+        outline: "none"
+      }
+    }), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#555",
+        marginTop: 5,
+        lineHeight: 1.5
+      }
+    }, "Nur für den Vorstand sichtbar — damit der Club dir gratulieren kann. Wird nicht öffentlich angezeigt.")), /*#__PURE__*/_react.default.createElement("textarea", {
       className: "inp",
       placeholder: "Kurzbeschreibung (optional, z.B. Porsche-Fan seit 2010, Nordschleife-Enthusiast)",
       rows: 2,
