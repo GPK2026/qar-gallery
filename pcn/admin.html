@@ -222,7 +222,7 @@ async function loadAll(){
     if(msg.data&&Array.isArray(msg.data)){
       DB.unreadMsgs = msg.data.filter(x=>
         x.from_id!==ADMIN_UUID && !x.read_at &&
-        (x.thread_id||"").startsWith("admin-")
+        (x.thread_id||"").startsWith("ad000000-0000-4000-8000-")
       );
     } else DB.unreadMsgs=[];
     updateBadges(); renderTab(currentTab);
@@ -674,21 +674,28 @@ function toggleMemberOpen(id){
 let msgModalState = { id:null, name:"", icon:"📣", templates:[] };
 
 // Vorlagen je Handlungsbedarf
+// text = eigenständige Nachricht · body = Baustein für kombinierte Nachricht
 function reminderTemplates(name, year){
   const first = (name||"").split(" ")[0] || name;
   return {
     guest: { icon:"👋", label:"Gast begrüßen",
-      text:`Hallo ${first}, schön dass du dich beim PCN registriert hast! Dein Zugang wird gerade geprüft — melde dich gerne bei Fragen.` },
+      text:`Hallo ${first}, schön dass du dich beim PCN registriert hast! Dein Zugang wird gerade geprüft — melde dich gerne bei Fragen.`,
+      body:`Dein Zugang wird gerade geprüft — wir schalten dich in Kürze frei.` },
     unpaid: { icon:"💳", label:"Beitrag erinnern",
-      text:`Hallo ${first}, dein Mitgliedsbeitrag ${year} ist noch offen. Bitte überweise ihn bei Gelegenheit — bei Fragen einfach melden. Danke!` },
+      text:`Hallo ${first}, dein Mitgliedsbeitrag ${year} ist noch offen. Bitte überweise ihn bei Gelegenheit — bei Fragen einfach melden. Danke!`,
+      body:`Dein Mitgliedsbeitrag ${year} ist noch offen. Bitte überweise ihn bei Gelegenheit.` },
     novehicle: { icon:"🚗", label:"Fahrzeug anlegen",
-      text:`Hallo ${first}, du hast noch kein Fahrzeug in deiner Akte angelegt. Damit schaltest du QR-Code, Logbuch und Events frei — und bekommst 500 Punkte. Schau mal rein!` },
+      text:`Hallo ${first}, du hast noch kein Fahrzeug in deiner Akte angelegt. Damit schaltest du QR-Code, Logbuch und Events frei — und bekommst 500 Punkte. Schau mal rein!`,
+      body:`Du hast noch kein Fahrzeug angelegt. Damit schaltest du QR-Code, Logbuch und Events frei — und bekommst 500 Punkte.` },
     incomplete: { icon:"📋", label:"Akte vervollständigen",
-      text:`Hallo ${first}, deine Fahrzeugakte ist fast fertig! Es fehlen noch ein paar Angaben. Eine vollständige Akte bringt dir 750 Bonuspunkte — und macht beim QR-Scan richtig was her.` },
+      text:`Hallo ${first}, deine Fahrzeugakte ist fast fertig! Es fehlen noch ein paar Angaben. Eine vollständige Akte bringt dir 750 Bonuspunkte — und macht beim QR-Scan richtig was her.`,
+      body:`Deine Fahrzeugakte ist fast fertig — es fehlen noch ein paar Angaben. Eine vollständige Akte bringt 750 Bonuspunkte.` },
     nobday: { icon:"🎂", label:"Geburtstag erfragen",
-      text:`Hallo ${first}, magst du deinen Geburtstag im Profil hinterlegen? Dann können wir dir gratulieren — und es gibt 200 Punkte geschenkt. Nur für den Vorstand sichtbar.` },
+      text:`Hallo ${first}, magst du deinen Geburtstag im Profil hinterlegen? Dann können wir dir gratulieren — und es gibt 200 Punkte geschenkt. Nur für den Vorstand sichtbar.`,
+      body:`Magst du deinen Geburtstag im Profil hinterlegen? Dann können wir gratulieren — und es gibt 200 Punkte. Nur für den Vorstand sichtbar.` },
     bday: { icon:"🎉", label:"Gratulieren",
-      text:`Alles Gute zum Geburtstag, ${first}! 🎉 Der ganze Porsche Club Nürburgring wünscht dir ein großartiges neues Lebensjahr — und immer freie Fahrt auf der Nordschleife.` },
+      text:`Alles Gute zum Geburtstag, ${first}! 🎉 Der ganze Porsche Club Nürburgring wünscht dir ein großartiges neues Lebensjahr — und immer freie Fahrt auf der Nordschleife.`,
+      body:`Alles Gute zum Geburtstag! Der ganze PCN wünscht dir ein großartiges neues Lebensjahr.` },
   };
 }
 
@@ -700,10 +707,13 @@ function openMsgModal(id, name, presetKeys){
   const keys = (presetKeys||"").split(",").filter(k=>k && all[k]);
   const tpls = order.filter(k=>keys.includes(k)).map(k=>({key:k,...all[k]}));
 
-  msgModalState = { id, name, icon: tpls[0]?.icon || "📣", templates: tpls };
+  // Bei mehreren Themen: alle vorausgewählt und zu EINER Nachricht kombiniert
+  const multi = tpls.length > 1;
+  const selected = new Set(multi ? tpls.map(t=>t.key) : tpls.slice(0,1).map(t=>t.key));
 
-  const first = (name||"").split(" ")[0] || name;
-  const initial = tpls[0]?.text || "";
+  msgModalState = { id, name, icon: tpls[0]?.icon || "📣", templates: tpls, selected, multi };
+
+  const initial = buildCombinedText(name, tpls, selected);
 
   const wrap = document.createElement("div");
   wrap.id = "msg-modal";
@@ -720,18 +730,22 @@ function openMsgModal(id, name, presetKeys){
 
       ${tpls.length?`
       <div style="margin-bottom:12px">
-        <div class="lbl" style="margin-bottom:7px">Vorlage wählen</div>
+        <div class="lbl" style="margin-bottom:7px">
+          ${multi?`Themen wählen — werden zu <strong style="color:var(--gold)">einer Nachricht</strong> kombiniert`:"Vorlage"}
+        </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${tpls.map((t,i)=>`
-            <button onclick="applyTemplate('${t.key}')" id="tpl-${t.key}"
-              style="background:${i===0?"var(--gold)":"#1a1a1a"};border:1px solid ${i===0?"var(--gold)":"var(--border)"};border-radius:7px;padding:7px 11px;color:${i===0?"#000":"#aaa"};font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">
-              ${t.icon} ${t.label}
-            </button>`).join("")}
+          ${tpls.map(t=>{
+            const on = selected.has(t.key);
+            return `<button onclick="toggleTemplate('${t.key}')" id="tpl-${t.key}"
+              style="background:${on?"var(--gold)":"#1a1a1a"};border:1px solid ${on?"var(--gold)":"var(--border)"};border-radius:7px;padding:7px 11px;color:${on?"#000":"#aaa"};font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">
+              ${on&&multi?"✓ ":""}${t.icon} ${t.label}
+            </button>`;
+          }).join("")}
         </div>
       </div>`:""}
 
       <div class="lbl" style="margin-bottom:6px">Nachricht</div>
-      <textarea id="msg-text" rows="7" placeholder="Deine Nachricht…"
+      <textarea id="msg-text" rows="8" placeholder="Deine Nachricht…"
         style="width:100%;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--txt);font-size:15px;line-height:1.6;font-family:inherit;resize:vertical;outline:none;-webkit-appearance:none">${initial}</textarea>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;margin-bottom:14px">
         <span id="msg-count" style="font-size:10px;color:#555">${initial.length} Zeichen</span>
@@ -758,26 +772,50 @@ function openMsgModal(id, name, presetKeys){
   if(!initial) setTimeout(()=>ta.focus(), 120);
 }
 
-function updateMsgCount(){
-  const ta=document.getElementById("msg-text"), c=document.getElementById("msg-count");
-  if(ta&&c) c.textContent = ta.value.length+" Zeichen";
+// Baut aus mehreren Vorlagen eine zusammenhängende Nachricht
+function buildCombinedText(name, tpls, selected){
+  const chosen = tpls.filter(t=>selected.has(t.key));
+  if(!chosen.length) return "";
+  if(chosen.length===1) return chosen[0].text;
+
+  const first = (name||"").split(" ")[0] || name;
+  // Einleitung + Punkte als Liste + Abschluss
+  const points = chosen.map(t=>`${t.icon} ${t.body}`).join("\n\n");
+  return `Hallo ${first},\n\nzwei, drei Dinge von unserer Seite:\n\n${points}\n\nBei Fragen melde dich gerne jederzeit.\n\nSportliche Grüße\nDein PCN-Vorstand`
+    .replace("zwei, drei Dinge", chosen.length===2?"zwei Dinge":chosen.length===3?"drei Dinge":"ein paar Dinge");
 }
 
-function applyTemplate(key){
-  const t = msgModalState.templates.find(x=>x.key===key);
-  if(!t) return;
+function toggleTemplate(key){
+  const st = msgModalState;
+  if(!st.multi){
+    // Einzelmodus: umschalten
+    st.selected = new Set([key]);
+  } else {
+    if(st.selected.has(key)) st.selected.delete(key);
+    else st.selected.add(key);
+    if(!st.selected.size) st.selected.add(key); // mind. eins
+  }
+  // Text neu bauen
   const ta = document.getElementById("msg-text");
-  if(ta){ ta.value = t.text; updateMsgCount(); }
-  msgModalState.icon = t.icon;
-  // Buttons visuell umschalten
-  msgModalState.templates.forEach(x=>{
-    const b=document.getElementById("tpl-"+x.key);
+  if(ta){ ta.value = buildCombinedText(st.name, st.templates, st.selected); updateMsgCount(); }
+  // Icon: erstes gewähltes
+  const firstSel = st.templates.find(t=>st.selected.has(t.key));
+  st.icon = firstSel?.icon || "📣";
+  // Buttons aktualisieren
+  st.templates.forEach(t=>{
+    const b=document.getElementById("tpl-"+t.key);
     if(!b) return;
-    const on = x.key===key;
+    const on = st.selected.has(t.key);
     b.style.background = on?"var(--gold)":"#1a1a1a";
     b.style.borderColor = on?"var(--gold)":"var(--border)";
     b.style.color = on?"#000":"#aaa";
+    b.innerHTML = `${on&&st.multi?"✓ ":""}${t.icon} ${t.label}`;
   });
+}
+
+function updateMsgCount(){
+  const ta=document.getElementById("msg-text"), c=document.getElementById("msg-count");
+  if(ta&&c) c.textContent = ta.value.length+" Zeichen";
 }
 
 function closeMsgModal(){
@@ -786,14 +824,19 @@ function closeMsgModal(){
   document.body.style.overflow="";
 }
 
-function submitMsgModal(){
+async function submitMsgModal(){
   const ta=document.getElementById("msg-text");
   const txt=(ta?.value||"").trim();
   if(!txt){ toast("Bitte Text eingeben","err"); ta?.focus(); return; }
   const {id,name,icon}=msgModalState;
-  sendAdminMsg(id, txt, icon||"📣");
+  const res = await sendAdminMsg(id, txt, icon||"📣");
+  if(res?.error){
+    toast("Fehler: "+JSON.stringify(res.error).substring(0,60),"err");
+    return;
+  }
   closeMsgModal();
   toast(`✓ Nachricht an ${(name||"").split(" ")[0]} gesendet`);
+  await loadAll();
 }
 
 // ── Einstiegspunkte ──
@@ -1277,13 +1320,41 @@ async function resetDemo(){
   }
   toast("✓ Demo zurückgesetzt — App neu laden");
 }
+// Deterministische Admin-Thread-UUID pro Mitglied.
+// Fester Namespace + letzte 12 Hex-Zeichen der User-UUID
+// → gleiche User-ID ergibt immer dieselbe Thread-ID, gültiges UUID-Format.
+function adminThreadId(userId){
+  const tail = String(userId||"").replace(/-/g,"").slice(-12).padStart(12,"0");
+  return `ad000000-0000-4000-8000-${tail}`;
+}
+
 async function sendAdminMsg(userId,text,icon="📋"){
-  const threadId="admin-"+userId;
+  const threadId = adminThreadId(userId);
   try{
-    const ex=await api("threads?id=eq."+threadId);
-    if(!ex.data?.length) await api("threads",{method:"POST",body:JSON.stringify({id:threadId,participants:[userId],vehicle_name:"Admin-Mitteilungen",anonymous:false,created_at:new Date().toISOString()})});
-    await api("messages",{method:"POST",body:JSON.stringify({thread_id:threadId,from_id:"00000000-0000-0000-0000-000000000000",text:icon+" "+text,is_system:true,created_at:new Date().toISOString()})});
-  }catch(e){}
+    const ex = await api("threads?id=eq."+threadId);
+    if(!ex.data?.length){
+      const t = await api("threads",{method:"POST",body:JSON.stringify({
+        id: threadId,
+        participants: [userId, ADMIN_UUID],
+        vehicle_name: "PCN Vorstand",
+        anonymous: false,
+        created_at: new Date().toISOString()
+      })});
+      if(t.error){ console.error("Thread-Anlage fehlgeschlagen:",t.error); return {error:t.error}; }
+    }
+    const m = await api("messages",{method:"POST",body:JSON.stringify({
+      thread_id: threadId,
+      from_id: ADMIN_UUID,
+      text: icon+" "+text,
+      is_system: true,
+      created_at: new Date().toISOString()
+    })});
+    if(m.error){ console.error("Nachricht fehlgeschlagen:",m.error); return {error:m.error}; }
+    return {ok:true};
+  }catch(e){
+    console.error("sendAdminMsg:",e);
+    return {error:e.message};
+  }
 }
 if(sessionStorage.getItem("pcn_adm")==="1"){
   document.getElementById("login-wrap").style.display="none";
