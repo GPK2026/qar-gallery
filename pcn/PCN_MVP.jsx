@@ -1267,13 +1267,14 @@ function PCNInner() {
   };
 
   // ── Image upload ─────────────────────────────────────────────────────────────
-  const handleImageUpload = (file, onDone) => {
+  const handleImageUpload = (file, onDone, onHighRes) => {
     if(!file) return;
     setImgUploading(true);
     const reader = new FileReader();
     reader.onload = e => {
       const img = new Image();
       img.onload = () => {
+        // Speicherversion: klein (600px) — spart Platz und Ladezeit
         const MAX=600, scale=Math.min(1,MAX/img.width,MAX/img.height);
         const canvas=document.createElement("canvas");
         canvas.width=Math.round(img.width*scale);
@@ -1282,6 +1283,19 @@ function PCNInner() {
         ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high";
         ctx.drawImage(img,0,0,canvas.width,canvas.height);
         const dataUrl=canvas.toDataURL("image/jpeg",0.72);
+
+        // Analyseversion: groß (1600px, Q92) — Kennzeichen bleibt lesbar
+        if(onHighRes){
+          const HMAX=1600, hs=Math.min(1,HMAX/img.width,HMAX/img.height);
+          const hc=document.createElement("canvas");
+          hc.width=Math.round(img.width*hs);
+          hc.height=Math.round(img.height*hs);
+          const hctx=hc.getContext("2d");
+          hctx.imageSmoothingEnabled=true; hctx.imageSmoothingQuality="high";
+          hctx.drawImage(img,0,0,hc.width,hc.height);
+          onHighRes(hc.toDataURL("image/jpeg",0.92));
+        }
+
         onDone(dataUrl); setImgUploading(false);
         toast_(`Bild geladen ✓ (${Math.round(dataUrl.length*.75/1024)} KB)`);
       };
@@ -1625,18 +1639,29 @@ function PCNInner() {
   },[scannerOpen,scannerStatus]);
 
   // ── Actions ──────────────────────────────────────────────────────────────────
-  // ── KI-Fotoanalyse: Fahrzeugdaten aus Bild erkennen ─────────────────────
+  // ── KI-Fotoanalyse (BETA) — Fahrzeugdaten aus Bild erkennen ─────────────
+  // Noch nicht zuverlässig genug für ein Bezahlfeature. Wir messen still die
+  // Trefferquote (pcn_ai_stats) und entscheiden mit Daten, ob/wann es reif ist.
   const [analyzing, setAnalyzing] = useState(false);
-  const [analyzeResult, setAnalyzeResult] = useState(null); // {fields, confidence}
+  const [analyzeResult, setAnalyzeResult] = useState(null);
+  const [analyzeHiRes, setAnalyzeHiRes] = useState(null); // hochauflösende Version fürs Erkennen
 
-  const analyzeVehiclePhoto = async (dataUrl) => {
-    if(!dataUrl) return;
-    setAnalyzing(true);
-    setAnalyzeResult(null);
+  const trackAI = (ok, fieldCount) => {
     try {
-      // dataURL → base64 + media type
-      const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);
-      if(!m){ throw new Error("Bildformat nicht lesbar"); }
+      const s = JSON.parse(localStorage.getItem("pcn_ai_stats")||'{"runs":0,"ok":0,"fields":0}');
+      s.runs++; if(ok) s.ok++; s.fields += fieldCount||0;
+      localStorage.setItem("pcn_ai_stats", JSON.stringify(s));
+    } catch(e){}
+  };
+
+  const analyzeVehiclePhoto = async (dataUrl, attempt=1) => {
+    const src = analyzeHiRes || dataUrl;
+    if(!src) return;
+    setAnalyzing(true);
+    if(attempt===1) setAnalyzeResult(null);
+    try {
+      const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(src);
+      if(!m) throw new Error("Bildformat nicht lesbar");
       const mediaType = m[1], b64 = m[2];
 
       const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -1655,9 +1680,9 @@ function PCNInner() {
 {
   "hersteller": "z.B. Porsche | null wenn unklar",
   "modell": "z.B. 911 Carrera S, Cayman GT4 | null",
-  "baujahr": "Schätzung als Jahr oder Zeitraum, z.B. 2019 | null",
+  "baujahr": "Schätzung als Jahr, z.B. 2019 | null",
   "farbe": "deutsche Farbbezeichnung, z.B. Guards Rot, Pythongrün | null",
-  "kennzeichen": "exakt wie lesbar, Format AW-PC 718 | null wenn nicht lesbar",
+  "kennzeichen": "exakt wie lesbar, Format AW-PC 718 | null wenn nicht sicher lesbar",
   "kraftstoff": "Benzin | Diesel | Elektro | Hybrid | null",
   "confidence": { "modell": 0-100, "farbe": 0-100, "kennzeichen": 0-100 },
   "hinweis": "kurzer Hinweis falls etwas unsicher ist, sonst null"
@@ -1666,30 +1691,46 @@ function PCNInner() {
 Wichtig:
 - Nur eintragen was du wirklich siehst. Im Zweifel null.
 - Beim Modell so genau wie möglich (Generation/Variante wenn erkennbar).
-- Farbe: bei Porsche die offizielle Bezeichnung wenn erkennbar, sonst normale Farbe.
-- Kennzeichen nur wenn zweifelsfrei lesbar.` }
+- Kennzeichen NUR wenn zweifelsfrei lesbar — lieber null als geraten.
+- confidence ehrlich einschätzen: unter 50 heißt "unsicher".` }
             ]
           }]
         })
       });
-      if(!res.ok) throw new Error("Analyse fehlgeschlagen ("+res.status+")");
+      if(!res.ok) throw new Error("HTTP "+res.status);
       const data = await res.json();
       const raw = (data.content||[]).map(c=>c.type==="text"?c.text:"").join("").trim();
       const clean = raw.replace(/```json|```/g,"").trim();
       const parsed = JSON.parse(clean);
 
-      // Nur Felder übernehmen die leer sind — keine Nutzereingaben überschreiben
+      // Nur leere Felder befüllen — und nur wenn confidence ausreicht
       const fields = {};
+      const conf = parsed.confidence||{};
       ["hersteller","modell","baujahr","farbe","kennzeichen","kraftstoff"].forEach(k=>{
-        if(parsed[k] && !addVForm[k]) fields[k] = String(parsed[k]);
+        if(!parsed[k] || addVForm[k]) return;
+        // Kennzeichen nur ab 70% — falsche Kennzeichen sind schlimmer als keine
+        if(k==="kennzeichen" && (conf.kennzeichen??0) < 70) return;
+        fields[k] = String(parsed[k]);
       });
-      setAnalyzeResult({ fields, confidence: parsed.confidence||{}, hinweis: parsed.hinweis, all: parsed });
-      if(!Object.keys(fields).length){
-        toast_("Keine neuen Daten erkannt — Felder sind bereits ausgefüllt");
+
+      const n = Object.keys(fields).length;
+      trackAI(n>0, n);
+
+      if(!n){
+        // Automatischer 2. Versuch mit anderem Foto, falls vorhanden
+        const imgs = addVForm.images||[];
+        if(attempt===1 && imgs.length>1){
+          setTimeout(()=>analyzeVehiclePhoto(imgs[1], 2), 200);
+          return;
+        }
+        setAnalyzeResult({ fields:{}, empty:true });
+        return;
       }
+      setAnalyzeResult({ fields, confidence:conf, hinweis:parsed.hinweis });
     } catch(e) {
       console.error("Fotoanalyse:", e);
-      toast_("Analyse nicht möglich — bitte manuell eintragen","err");
+      trackAI(false, 0);
+      setAnalyzeResult({ fields:{}, failed:true });
     } finally {
       setAnalyzing(false);
     }
@@ -1726,7 +1767,7 @@ Wichtig:
       : { ...newV, id:"V"+Date.now() }; // Fallback: local ID
     setVehicles(prev=>({...prev,[vehicle.id]:vehicle}));
     setShowAddV(false);
-    setAnalyzeResult(null); setAnalyzing(false);
+    setAnalyzeResult(null); setAnalyzing(false); setAnalyzeHiRes(null);
     setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[]});
     toast_("Fahrzeug hinzugefügt ✓ · QAR-ID: "+vehicle.qarId);
   };
@@ -5518,15 +5559,17 @@ Wichtig:
 
       {/* Add Vehicle Sheet */}
       {showAddV&&(
-        <div className="overlay" onClick={e=>{if(e.target===e.currentTarget){setShowAddV(false);setAnalyzeResult(null);setAnalyzing(false);}}}>
+        <div className="overlay" onClick={e=>{if(e.target===e.currentTarget){setShowAddV(false);setAnalyzeResult(null);setAnalyzing(false);setAnalyzeHiRes(null);}}}>
           <div className="sheet">
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>Fahrzeug hinzufügen</div>
             {!(addVForm.images||[]).length&&(
-              <div style={{fontSize:12,color:C.gold,marginBottom:12,lineHeight:1.5}}>
-                ✨ Lade ein Foto hoch — Modell, Farbe und Kennzeichen werden automatisch erkannt.
+              <div style={{fontSize:12,color:C.muted,marginBottom:12,lineHeight:1.5}}>
+                ✨ Lade ein Foto hoch — wir versuchen Modell, Farbe und Kennzeichen zu erkennen.
+                <span style={{color:"#666"}}> Klappt nicht immer, Beta.</span>
               </div>
             )}
             {(addVForm.images||[]).length>0&&<div style={{marginBottom:12}}/>}
+
             {/* Multi-photo upload */}
             <div style={{marginBottom:10}}>
               <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:6}}>
@@ -5539,27 +5582,20 @@ Wichtig:
                 ))}
                 <label style={{width:70,height:70,background:C.card,border:`1px dashed ${C.border}`,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,gap:2}}>
                   <input type="file" accept="image/*" style={{display:"none"}}
-                    onChange={e=>handleImageUpload(e.target.files[0],url=>{
-                      setAddVForm(p=>{
+                    onChange={e=>handleImageUpload(
+                      e.target.files[0],
+                      url=>setAddVForm(p=>{
                         const imgs=[...(p.images||[]),url];
-                        // Beim ERSTEN Foto automatisch analysieren
-                        if(imgs.length===1) setTimeout(()=>analyzeVehiclePhoto(url), 100);
+                        if(imgs.length===1) setTimeout(()=>analyzeVehiclePhoto(url), 150);
                         return {...p,images:imgs};
-                      });
-                    })}/>
+                      }),
+                      hi=>setAnalyzeHiRes(hi)   // hochauflösende Version für die Erkennung
+                    )}/>
                   <span style={{fontSize:20}}>📷</span>
                   <span style={{fontSize:9,color:C.muted}}>Foto</span>
                 </label>
               </div>
-              <div style={{fontSize:11,color:C.muted}}>
-                Mehrere Fotos möglich — erstes Foto = Titelbild
-                {(addVForm.images||[]).length>0&&!analyzing&&!analyzeResult&&(
-                  <button onClick={()=>analyzeVehiclePhoto(addVForm.images[0])}
-                    style={{background:"none",border:"none",color:C.gold,fontSize:11,fontWeight:700,cursor:"pointer",padding:"0 0 0 6px",fontFamily:"'Barlow',sans-serif"}}>
-                    ✨ Erneut analysieren
-                  </button>
-                )}
-              </div>
+              <div style={{fontSize:11,color:C.muted}}>Mehrere Fotos möglich — erstes Foto = Titelbild</div>
             </div>
 
             {/* ── KI-Analyse läuft ── */}
@@ -5572,12 +5608,43 @@ Wichtig:
               </div>
             )}
 
+            {/* ── Analyse: nichts erkannt oder Fehler ── */}
+            {analyzeResult&&(analyzeResult.empty||analyzeResult.failed)&&!analyzing&&(
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,
+                padding:"12px 14px",marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,color:"#aaa",fontWeight:600,marginBottom:3}}>
+                      {analyzeResult.failed?"Analyse nicht möglich":"Nichts sicher erkannt"}
+                    </div>
+                    <div style={{fontSize:11,color:"#666",lineHeight:1.5}}>
+                      Bitte manuell eintragen. Tipp: Seitenansicht bei Tageslicht, Kennzeichen frontal.
+                    </div>
+                  </div>
+                  <button onClick={()=>setAnalyzeResult(null)}
+                    style={{background:"none",border:"none",color:"#555",fontSize:15,cursor:"pointer",padding:0,lineHeight:1}}>✕</button>
+                </div>
+                {(addVForm.images||[]).length>0&&(
+                  <button onClick={()=>analyzeVehiclePhoto(addVForm.images[0])}
+                    style={{width:"100%",marginTop:9,background:"transparent",border:`1px solid ${C.border}`,
+                      borderRadius:7,padding:"8px",color:"#888",fontSize:12,fontWeight:600,cursor:"pointer",
+                      fontFamily:"'Barlow',sans-serif"}}>
+                    ↻ Nochmal versuchen
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* ── KI-Analyse Ergebnis ── */}
             {analyzeResult&&Object.keys(analyzeResult.fields||{}).length>0&&(
               <div style={{background:`${C.gold}10`,border:`1px solid ${C.gold}44`,borderRadius:10,
                 padding:"13px 14px",marginBottom:10}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
-                  <div style={{fontSize:12,fontWeight:800,color:C.gold,letterSpacing:.3}}>✨ Aus dem Foto erkannt</div>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <span style={{fontSize:12,fontWeight:800,color:C.gold,letterSpacing:.3}}>✨ Aus dem Foto erkannt</span>
+                    <span style={{fontSize:8,fontWeight:800,letterSpacing:.5,color:"#0a0a0a",
+                      background:C.gold,padding:"1px 5px",borderRadius:3}}>BETA</span>
+                  </div>
                   <button onClick={()=>setAnalyzeResult(null)}
                     style={{background:"none",border:"none",color:"#666",fontSize:16,cursor:"pointer",padding:0,lineHeight:1}}>✕</button>
                 </div>
