@@ -512,6 +512,7 @@ const PCN_STORAGE = (() => {
       const session = { id:u.id, name:u.name, email:u.email, role:u.role,
         memberNr:u.member_nr, avatar:u.avatar||"", city:u.city||"", bio:u.bio||"",
         beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
+        geburtstag: u.geburtstag||"", phone: u.phone||"",
         createdAt: u.created_at||"" };
       localStorage.setItem("pcn_session", JSON.stringify(session));
       await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
@@ -536,6 +537,7 @@ const PCN_STORAGE = (() => {
         memberNr: u.member_nr, avatar: u.avatar||"",
         city: u.city||"", bio: u.bio||"", phone: u.phone||"",
         beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
+        geburtstag: u.geburtstag||"",
         notifications: { events:true, messages:true },
         createdAt: u.created_at||"",
       };
@@ -568,6 +570,7 @@ const PCN_STORAGE = (() => {
         memberNr: u.member_nr||sess.memberNr,
         beitrag_bezahlt: !!u.beitrag_bezahlt,
         beitrag_datum: u.beitrag_datum||null,
+        geburtstag: u.geburtstag||sess.geburtstag||"",
         createdAt: u.created_at||sess.createdAt||"",
       };
       localStorage.setItem("pcn_session", JSON.stringify(updated));
