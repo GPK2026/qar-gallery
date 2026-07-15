@@ -1040,7 +1040,7 @@ function rEvents(el){
 // WICHTIG: Nur eigene Konversationen sichtbar. Private Chats zwischen
 // Mitgliedern bleiben für den Admin unsichtbar (Datenschutzversprechen).
 // ═══════════════════════════════════════════════════════════════════
-const CLUB_CHANNEL_ID = "c1ub0000-0000-4000-8000-000000000001";
+const CLUB_CHANNEL_ID = "c1b00000-0000-4000-8000-000000000001";
 let openChatId = null;
 
 function rMessages(el){
@@ -1605,7 +1605,9 @@ async function resetDemo(){
 // Fester Namespace + letzte 12 Hex-Zeichen der User-UUID
 // → gleiche User-ID ergibt immer dieselbe Thread-ID, gültiges UUID-Format.
 function adminThreadId(userId){
-  const tail = String(userId||"").replace(/-/g,"").slice(-12).padStart(12,"0");
+  // Nur Hex-Zeichen behalten — Aliase wie "u1" würden sonst ungültige UUIDs erzeugen
+  const hex = String(userId||"").toLowerCase().replace(/[^0-9a-f]/g,"");
+  const tail = hex.slice(-12).padStart(12,"0");
   return `ad000000-0000-4000-8000-${tail}`;
 }
 
