@@ -4522,7 +4522,14 @@ function PCNInner() {
                       e.stopPropagation();
                       if(!window.confirm("Chat löschen?")) return;
                       const DB=window.PCN_DB;
-                      if(DB) await DB.threads.delete(t.id).catch(()=>{});
+                      if(DB){
+                        const res = await DB.threads.delete(t.id).catch(e=>({error:e.message}));
+                        if(res?.error){
+                          console.error("Chat-Löschung fehlgeschlagen:", res.error);
+                          toast_("Löschen fehlgeschlagen: "+String(res.error).slice(0,50),"err");
+                          return;
+                        }
+                      }
                       setThreads(prev=>{const n={...prev};delete n[t.id];return n;});
                       setDeletedThreadIds(prev=>{
                         const updated=[...new Set([...prev, t.id])];
@@ -4534,6 +4541,7 @@ function PCNInner() {
                         localStorage.setItem("pcn_guest_threads",JSON.stringify(updated));
                         return updated;
                       });
+                      toast_("Chat gelöscht");
                     }}
                     style={{background:"none",border:"none",color:"#444",cursor:"pointer",
                       fontSize:17,padding:"4px 6px",flexShrink:0}}>
