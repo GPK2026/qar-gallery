@@ -132,6 +132,7 @@
       <div class="nav-item" data-tab="points" onclick="showTab('points')">🏆 Punkte</div>
       <div class="nav-sec">Events & Inhalt</div>
       <div class="nav-item" data-tab="events" onclick="showTab('events')">🏁 Events <span class="nbadge hidden" id="sb-ev"></span></div>
+      <div class="nav-item" data-tab="messages" onclick="showTab('messages')">💬 Nachrichten <span class="nbadge hidden" id="sb-msg"></span></div>
       <div class="nav-item" data-tab="content" onclick="showTab('content')">📰 Content</div>
       <div class="nav-sec">System</div>
       <div class="nav-item" data-tab="settings" onclick="showTab('settings')">⚙️ Einstellungen</div>
@@ -142,14 +143,16 @@
       <div id="tab-payments" class="hidden"></div>
       <div id="tab-points" class="hidden"></div>
       <div id="tab-events" class="hidden"></div>
+      <div id="tab-messages" class="hidden"></div>
       <div id="tab-content" class="hidden"></div>
       <div id="tab-settings" class="hidden"></div>
     </main>
   </div>
   <div id="tabbar">
-    <button class="tbt active" data-tab="dashboard" onclick="showTab('dashboard')"><span>📊</span><span>Dashboard</span></button>
+    <button class="tbt active" data-tab="dashboard" onclick="showTab('dashboard')"><span>📊</span><span>Dash</span></button>
     <button class="tbt" data-tab="members" onclick="showTab('members')"><span>👥</span><span>Mitglieder</span><span class="tbt-badge hidden" id="tb-guests"></span></button>
-    <button class="tbt" data-tab="payments" onclick="showTab('payments')"><span>💳</span><span>Zahlungen</span><span class="tbt-badge hidden" id="tb-pay"></span></button>
+    <button class="tbt" data-tab="messages" onclick="showTab('messages')"><span>💬</span><span>Chats</span><span class="tbt-badge hidden" id="tb-msg"></span></button>
+    <button class="tbt" data-tab="payments" onclick="showTab('payments')"><span>💳</span><span>Beiträge</span><span class="tbt-badge hidden" id="tb-pay"></span></button>
     <button class="tbt" data-tab="events" onclick="showTab('events')"><span>🏁</span><span>Events</span><span class="tbt-badge hidden" id="tb-ev"></span></button>
     <button class="tbt" data-tab="points" onclick="showTab('points')"><span>🏆</span><span>Punkte</span></button>
     <button class="tbt" data-tab="content" onclick="showTab('content')"><span>📰</span><span>Content</span></button>
@@ -171,7 +174,7 @@ const POINTS={qr_scan:150,view_akte:25,vehicle_added:500,vehicle_complete:750,
   member_year:500,beitrag_paid:300,birthday:200,birthday_round:911};
 const TIERS=[{n:"Bronze",p:1000},{n:"Silber",p:5000},{n:"Gold",p:12000},{n:"Platin",p:25000},{n:"Legend",p:50000}];
 const ADMIN_UUID="00000000-0000-0000-0000-000000000000";
-let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[]};
+let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[],adminThreads:[]};
 let currentTab="dashboard";
 
 function doLogin(){
@@ -227,6 +230,16 @@ async function loadAll(){
         (x.thread_id||"").startsWith("ad000000-0000-4000-8000-")
       );
     } else DB.unreadMsgs=[];
+
+    // Admin-Threads (Vorstand ↔ Mitglied + Club-Kanal) inkl. Nachrichten laden
+    // Datenschutz: NUR Threads mit Admin als Teilnehmer — keine Member-zu-Member Chats
+    const th = await api(`threads?participants=cs.{${ADMIN_UUID}}&select=*,messages(*)&order=created_at.desc`);
+    if(th.data&&Array.isArray(th.data)){
+      DB.adminThreads = th.data.map(t=>({
+        ...t,
+        messages:(t.messages||[]).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))
+      }));
+    } else DB.adminThreads=[];
     updateBadges(); renderTab(currentTab);
     toast(`✓ ${DB.members.length} Mitglieder · ${DB.events.length} Events`);
   }catch(err){toast("Ladefehler","err"); renderTab(currentTab);}
@@ -236,7 +249,8 @@ function updateBadges(){
   const g=DB.members.filter(m=>m.role==="guest").length;
   const p=DB.members.filter(m=>m.role==="member"&&!m.beitrag_bezahlt).length;
   const pe=DB.participants.filter(p=>p.status==="pending").length;
-  [["sb-guests","tb-guests",g],["sb-pay","tb-pay",p],["sb-ev","tb-ev",pe]].forEach(([s,t,n])=>{
+  const msg=(DB.unreadMsgs||[]).length;
+  [["sb-guests","tb-guests",g],["sb-pay","tb-pay",p],["sb-ev","tb-ev",pe],["sb-msg","tb-msg",msg]].forEach(([s,t,n])=>{
     [s,t].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=n;el.classList.toggle("hidden",!n);}});
   });
 }
@@ -253,7 +267,7 @@ function showTab(id){
 function renderTab(id){
   const el=document.getElementById("tab-"+id);
   if(!el||el.classList.contains("hidden")) return;
-  ({dashboard:rDashboard,members:rMembers,payments:rPayments,points:rPoints,events:rEvents,content:rContent,settings:rSettings}[id]||function(){})(el);
+  ({dashboard:rDashboard,members:rMembers,payments:rPayments,points:rPoints,events:rEvents,messages:rMessages,content:rContent,settings:rSettings}[id]||function(){})(el);
 }
 
 const fmt=d=>d?new Date(d).toLocaleDateString("de-DE",{day:"2-digit",month:"short",year:"2-digit"}):"—";
@@ -293,7 +307,7 @@ function collectUrgencies({aktive,gaeste,offen,pending,next}){
     }))];
     u.push({icon:"💬",color:BLUE,title:`${DB.unreadMsgs.length} ungelesene Nachricht${DB.unreadMsgs.length!==1?"en":""}`,
       detail:`Von: ${senders.slice(0,3).join(", ")}${senders.length>3?` +${senders.length-3} weitere`:""}`,
-      action:`showTab('content')`, actionLabel:"Öffnen"});
+      action:`showTab('messages')`, actionLabel:"Öffnen"});
   }
 
   // 2. Gäste warten auf Freigabe
@@ -1019,6 +1033,193 @@ function rEvents(el){
           </div>`;}).join("")}
       </div>`:""}
     </div>`;}).join("")||`<div style="color:var(--muted);text-align:center;padding:20px">Keine Events</div>`}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NACHRICHTEN — Vorstand ↔ Mitglied + Club-Kanal
+// WICHTIG: Nur eigene Konversationen sichtbar. Private Chats zwischen
+// Mitgliedern bleiben für den Admin unsichtbar (Datenschutzversprechen).
+// ═══════════════════════════════════════════════════════════════════
+const CLUB_CHANNEL_ID = "c1ub0000-0000-4000-8000-000000000001";
+let openChatId = null;
+
+function rMessages(el){
+  const threads = (DB.adminThreads||[]);
+  const club = threads.find(t=>t.id===CLUB_CHANNEL_ID);
+  const direct = threads.filter(t=>t.id!==CLUB_CHANNEL_ID)
+    .sort((a,b)=>{
+      const al=(a.messages||[]).slice(-1)[0], bl=(b.messages||[]).slice(-1)[0];
+      return new Date(bl?.created_at||0)-new Date(al?.created_at||0);
+    });
+
+  const unreadTotal = direct.reduce((s,t)=>s+(t.messages||[]).filter(m=>m.from_id!==ADMIN_UUID&&!m.read_at).length,0);
+
+  el.innerHTML=`<div class="page-title">💬 Nachrichten ${unreadTotal?`<span style="background:var(--red);color:#fff;font-size:11px;font-weight:800;padding:2px 7px;border-radius:99px;vertical-align:middle">${unreadTotal} neu</span>`:""}</div>
+
+  <!-- Club-Kanal -->
+  <div class="card" style="margin-bottom:12px;border-color:#D5001C44">
+    <div class="sec-title" style="color:var(--red)">📢 Club-Kanal</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:11px">
+      Erreicht alle ${DB.members.filter(m=>m.role==="member").length} Mitglieder gleichzeitig — erscheint als Gruppenchat in der App.
+    </div>
+    ${club&&(club.messages||[]).length?`
+      <div style="background:#0d0d0d;border-radius:8px;padding:10px;margin-bottom:10px;max-height:150px;overflow-y:auto">
+        ${(club.messages||[]).slice(-4).map(m=>{
+          const sender=DB.members.find(x=>x.id===m.from_id);
+          const isAdm=m.from_id===ADMIN_UUID;
+          return `<div style="padding:5px 0;border-bottom:1px solid #151515">
+            <div style="font-size:10px;color:${isAdm?"var(--gold)":"#666"};font-weight:700">${isAdm?"📣 Vorstand":sender?.name||"Mitglied"} · ${fmtTime(m.created_at)}</div>
+            <div style="font-size:12px;color:#ccc;margin-top:2px">${escapeHtml(m.text)}</div>
+          </div>`;
+        }).join("")}
+      </div>`:`<div style="font-size:11px;color:#555;padding:8px 0 12px">Noch keine Nachrichten im Club-Kanal</div>`}
+    <button onclick="openClubMsgModal()" style="width:100%;background:var(--red);border:none;border-radius:8px;padding:11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
+      📢 An alle Mitglieder senden
+    </button>
+  </div>
+
+  <!-- Direktnachrichten -->
+  <div class="card">
+    <div class="sec-title">Vorstand ↔ Mitglied</div>
+    <div style="font-size:11px;color:#555;line-height:1.6;margin-bottom:12px">
+      🔒 Nur deine eigenen Konversationen. Chats zwischen Mitgliedern sind nicht einsehbar.
+    </div>
+    ${direct.length?direct.map(t=>{
+      const memberId=(t.participants||[]).find(p=>p!==ADMIN_UUID);
+      const m=DB.members.find(x=>x.id===memberId);
+      const msgs=t.messages||[];
+      const last=msgs.slice(-1)[0];
+      const unread=msgs.filter(x=>x.from_id!==ADMIN_UUID&&!x.read_at).length;
+      const open=openChatId===t.id;
+      return `<div style="border:1px solid ${unread?"var(--red)":"var(--border)"};border-radius:10px;margin-bottom:8px;overflow:hidden">
+        <div onclick="toggleChat('${t.id}')" style="display:flex;gap:10px;align-items:center;padding:11px;cursor:pointer;background:${unread?"#D5001C08":"transparent"}">
+          <div style="width:32px;height:32px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">${(m?.name||"?")[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;color:var(--txt)">${m?.name||"Unbekannt"}</div>
+            <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              ${last?`${last.from_id===ADMIN_UUID?"Du: ":""}${escapeHtml(last.text).slice(0,60)}`:"Keine Nachricht"}
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+            ${unread?`<span style="background:var(--red);color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px">${unread}</span>`:""}
+            <span style="font-size:9px;color:#555">${last?fmtTime(last.created_at):""}</span>
+            <span style="font-size:13px;color:var(--muted);transform:rotate(${open?"90":"0"}deg);display:inline-block">›</span>
+          </div>
+        </div>
+        ${open?`
+        <div style="border-top:1px solid var(--border);padding:11px;background:#0a0a0a">
+          <div style="max-height:280px;overflow-y:auto;margin-bottom:10px">
+            ${msgs.length?msgs.map(x=>{
+              const isAdm=x.from_id===ADMIN_UUID;
+              return `<div style="display:flex;justify-content:${isAdm?"flex-end":"flex-start"};margin-bottom:7px">
+                <div style="max-width:80%;background:${isAdm?"#C8A96E22":"#1a1a1a"};border:1px solid ${isAdm?"#C8A96E44":"var(--border)"};border-radius:10px;padding:8px 11px">
+                  <div style="font-size:9px;color:${isAdm?"var(--gold)":"#666"};font-weight:700;margin-bottom:2px">${isAdm?"📣 Vorstand":m?.name||"Mitglied"}</div>
+                  <div style="font-size:13px;color:#ddd;line-height:1.5;white-space:pre-wrap;word-break:break-word">${escapeHtml(x.text)}</div>
+                  <div style="font-size:9px;color:#555;margin-top:3px;text-align:right">${fmtTime(x.created_at)}</div>
+                </div>
+              </div>`;
+            }).join(""):`<div style="text-align:center;color:#555;font-size:11px;padding:16px">Noch keine Nachrichten</div>`}
+          </div>
+          <button onclick="event.stopPropagation();openDirectMsg('${memberId}','${(m?.name||"").replace(/'/g,"\\'")}')"
+            style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:9px;color:var(--txt);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
+            ✍️ Antworten
+          </button>
+        </div>`:""}
+      </div>`;
+    }).join(""):`<div style="text-align:center;color:#555;font-size:12px;padding:24px">
+      Noch keine Konversationen.<br><span style="font-size:11px">Nachrichten entstehen über Mitglieder → Reminder senden.</span>
+    </div>`}
+  </div>`;
+}
+
+function toggleChat(id){
+  openChatId = openChatId===id ? null : id;
+  renderTab("messages");
+  // Als gelesen markieren
+  if(openChatId){
+    const t=(DB.adminThreads||[]).find(x=>x.id===id);
+    const unread=(t?.messages||[]).filter(m=>m.from_id!==ADMIN_UUID&&!m.read_at);
+    if(unread.length){
+      api(`messages?thread_id=eq.${id}&from_id=neq.${ADMIN_UUID}`,
+        {method:"PATCH",body:JSON.stringify({read_at:new Date().toISOString()})}).then(()=>loadAll());
+    }
+  }
+}
+
+function fmtTime(ts){
+  if(!ts) return "";
+  const d=new Date(ts); if(isNaN(d)) return "";
+  const today=new Date();
+  const isToday=d.toDateString()===today.toDateString();
+  return isToday ? d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})
+                 : d.toLocaleDateString("de-DE",{day:"2-digit",month:"short"});
+}
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// ── Club-Kanal: Nachricht an alle ──
+function openClubMsgModal(){
+  const reach=DB.members.filter(m=>m.role==="member").length;
+  msgModalState={ id:CLUB_CHANNEL_ID, name:"alle Mitglieder", icon:"📢", templates:[], selected:new Set(), multi:false, isClub:true };
+  const wrap=document.createElement("div");
+  wrap.id="msg-modal";
+  wrap.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9000;display:flex;align-items:flex-end;justify-content:center";
+  wrap.innerHTML=`
+    <div style="background:#111;border-top:1px solid var(--border);border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:18px 16px calc(18px + env(safe-area-inset-bottom));animation:sheetUp .22s ease">
+      <div style="width:36px;height:4px;background:#333;border-radius:99px;margin:0 auto 14px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div style="font-size:17px;font-weight:800;color:var(--txt)">📢 An alle Mitglieder</div>
+        <button onclick="closeMsgModal()" style="background:none;border:none;color:#666;font-size:22px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Erscheint im Club-Kanal von ${reach} Mitgliedern</div>
+      <div class="lbl" style="margin-bottom:6px">Nachricht</div>
+      <textarea id="msg-text" rows="7" placeholder="z.B. Der Clubabend am Freitag beginnt um 19 Uhr…"
+        style="width:100%;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--txt);font-size:15px;line-height:1.6;font-family:inherit;resize:vertical;outline:none"></textarea>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;margin-bottom:14px">
+        <span id="msg-count" style="font-size:10px;color:#555">0 Zeichen</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeMsgModal()" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:13px;color:#999;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Abbrechen</button>
+        <button onclick="submitClubMsg()" style="flex:2;background:var(--red);border:none;border-radius:9px;padding:13px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">An alle senden →</button>
+      </div>
+    </div>`;
+  wrap.onclick=(e)=>{ if(e.target===wrap) closeMsgModal(); };
+  document.body.appendChild(wrap);
+  document.body.style.overflow="hidden";
+  const ta=document.getElementById("msg-text");
+  ta.addEventListener("input",updateMsgCount);
+  setTimeout(()=>ta.focus(),120);
+}
+
+async function submitClubMsg(){
+  const ta=document.getElementById("msg-text");
+  const txt=(ta?.value||"").trim();
+  if(!txt){ toast("Bitte Text eingeben","err"); ta?.focus(); return; }
+  const memberIds=DB.members.filter(m=>m.role==="member").map(m=>m.id);
+  try{
+    // Club-Thread anlegen falls nicht vorhanden
+    const ex=await api("threads?id=eq."+CLUB_CHANNEL_ID);
+    if(!ex.data?.length){
+      const t=await api("threads",{method:"POST",body:JSON.stringify({
+        id:CLUB_CHANNEL_ID, participants:[...memberIds,ADMIN_UUID],
+        vehicle_name:"PCN Club-Kanal", anonymous:false, created_at:new Date().toISOString()
+      })});
+      if(t.error){ toast("Fehler: "+JSON.stringify(t.error).slice(0,60),"err"); return; }
+    } else {
+      // Teilnehmer aktualisieren (neue Mitglieder ergänzen)
+      await api("threads?id=eq."+CLUB_CHANNEL_ID,{method:"PATCH",
+        body:JSON.stringify({participants:[...memberIds,ADMIN_UUID]})});
+    }
+    const m=await api("messages",{method:"POST",body:JSON.stringify({
+      thread_id:CLUB_CHANNEL_ID, from_id:ADMIN_UUID,
+      text:"📢 "+txt, is_system:true, created_at:new Date().toISOString()
+    })});
+    if(m.error){ toast("Fehler: "+JSON.stringify(m.error).slice(0,60),"err"); return; }
+    closeMsgModal();
+    toast(`✓ An ${memberIds.length} Mitglieder gesendet`);
+    await loadAll();
+  }catch(e){ toast("Fehler: "+e.message,"err"); }
 }
 
 function rContent(el){
