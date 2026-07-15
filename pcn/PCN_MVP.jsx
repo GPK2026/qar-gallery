@@ -443,11 +443,13 @@ const TIERS = [
 // abgelehnt. Diese Funktion erzeugt eine gültige, stabile UUID je User.
 const ADMIN_UUID = "00000000-0000-0000-0000-000000000000";
 const adminThreadId = (userId) => {
-  const tail = String(userId||"").replace(/-/g,"").slice(-12).padStart(12,"0");
+  // Nur Hex-Zeichen behalten — Aliase wie "u1" würden sonst ungültige UUIDs erzeugen
+  const hex = String(userId||"").toLowerCase().replace(/[^0-9a-f]/g,"");
+  const tail = hex.slice(-12).padStart(12,"0");
   return `ad000000-0000-4000-8000-${tail}`;
 };
 const isAdminThreadId = (id) => String(id||"").startsWith("ad000000-0000-4000-8000-");
-const CLUB_CHANNEL_ID = "c1ub0000-0000-4000-8000-000000000001";
+const CLUB_CHANNEL_ID = "c1b00000-0000-4000-8000-000000000001";
 
 const STATUS_PRESETS = [
   {icon:"🏁", text:"Komme gleich zurück",  mins:15},
