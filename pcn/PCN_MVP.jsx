@@ -447,6 +447,7 @@ const adminThreadId = (userId) => {
   return `ad000000-0000-4000-8000-${tail}`;
 };
 const isAdminThreadId = (id) => String(id||"").startsWith("ad000000-0000-4000-8000-");
+const CLUB_CHANNEL_ID = "c1ub0000-0000-4000-8000-000000000001";
 
 const STATUS_PRESETS = [
   {icon:"🏁", text:"Komme gleich zurück",  mins:15},
@@ -650,10 +651,11 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
   const endRef = useRef(null);
   const rootRef = useRef(null);
   const threadParticipants = thread.participants||[];
+  const isClubChannel = thread.id === CLUB_CHANNEL_ID || thread.isGroup;
   const isAdminThread = isAdminThreadId(thread.id);
   const other = isAdminThread
     ? {name:"PCN Vorstand"}
-    : Object.values(allUsers).find(u=>threadParticipants.includes(u.id)&&u.id!==me?.id)||{name:thread.isGroup?thread.name:"Mitglied"};
+    : Object.values(allUsers).find(u=>threadParticipants.includes(u.id)&&u.id!==me?.id)||{name:isClubChannel?(thread.name||"PCN Mitglieder"):"Mitglied"};
   const v = vehicles[thread.vehicleId];
   const isGuest = me?.role === "guest";
   const longPressTimer = useRef(null);
@@ -689,26 +691,27 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
     <div ref={rootRef} style={{height:"100vh",background:C.black,display:"flex",flexDirection:"column",position:"fixed",inset:0}}>
       {/* ── Chat Header ── */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",flexShrink:0}}>
-        <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:thread.isGroup?6:0}}>
+        <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:isClubChannel?6:0}}>
           <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:22,padding:0,lineHeight:1,flexShrink:0}}>←</button>
           {/* Avatar */}
-          <div style={{width:44,height:44,borderRadius:thread.isGroup?"12px":"50%",
-            background:isAdminThread?`${C.gold}22`:thread.isGroup?C.red:thread.anonymous?"#1a1a2e":`${C.red}22`,
+          <div style={{width:44,height:44,borderRadius:isClubChannel?"12px":"50%",
+            background:isAdminThread?`${C.gold}22`:isClubChannel?C.red:thread.anonymous?"#1a1a2e":`${C.red}22`,
             color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",
-            fontWeight:800,fontSize:thread.isGroup?22:17,flexShrink:0}}>
-{isAdminThread?"📋":thread.isGroup?"🏎️":thread.anonymous?"🔒":other.name[0]?.toUpperCase()}
+            fontWeight:800,fontSize:isClubChannel?22:17,flexShrink:0}}>
+{isAdminThread?"📣":isClubChannel?"🏎️":thread.anonymous?"🔒":other.name[0]?.toUpperCase()}
           </div>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontWeight:800,fontSize:16,color:C.white,lineHeight:1.2}}>
-              {isAdminThread?"📣 PCN Vorstand":thread.isGroup?thread.name:thread.anonymous?"🔒 Anonyme Nachricht":other.name}
+              {isAdminThread?"📣 PCN Vorstand":isClubChannel?(thread.name||"PCN Mitglieder"):thread.anonymous?"🔒 Anonyme Nachricht":other.name}
             </div>
             <div style={{fontSize:12,color:C.muted,marginTop:2}}>
-              {thread.isGroup
-                ? `${threadParticipants.length} Mitglieder`
+              {isClubChannel
+                ? `${threadParticipants.filter(p=>p!==ADMIN_UUID).length} Mitglieder`
+                : isAdminThread ? "Offizielle Mitteilung"
                 : v?`Re: ${v.hersteller} ${v.modell}`:"Direktnachricht"}
             </div>
           </div>
-          {!thread.isGroup&&v&&(
+          {!isClubChannel&&v&&(
             <button className="btn sm ghost" onClick={()=>onViewVehicle(v)} style={{fontSize:12,flexShrink:0}}>Akte →</button>
           )}
           {onDeleteThread&&(
@@ -716,7 +719,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           )}
         </div>
         {/* Group member avatars */}
-        {thread.isGroup&&(
+        {isClubChannel&&(
           <div style={{display:"flex",gap:6,paddingLeft:56,alignItems:"center"}}>
             {threadParticipants.slice(0,5).map(uid=>{
               const u=allUsers[uid]||{name:"?"};
@@ -765,7 +768,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           // Absendername: bei Gruppen immer, bei Admin-Nachrichten "PCN Vorstand"
           const senderName = isAdminMsg && !mine
             ? "📣 PCN Vorstand"
-            : thread.isGroup ? (mine?"Du":senderUser?.name||"Mitglied") : null;
+            : isClubChannel ? (mine?"Du":senderUser?.name||"Mitglied") : null;
           const rawTs = m.created_at||m.createdAt||"";
           const tsDate = rawTs ? new Date(rawTs) : null;
           const today = new Date();
@@ -4417,25 +4420,40 @@ function PCNInner() {
             )}
 
             {/* ── Group Channel — nur für Mitglieder ── */}
-            {!isGuest&&(
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>📡 Club-Kanal</div>
-              <div style={{background:`linear-gradient(135deg, #1a0a0a, #200808)`,border:`2px solid ${C.red}44`,borderRadius:14,padding:"14px",cursor:"pointer",display:"flex",gap:14,alignItems:"center"}}
-                onClick={()=>{ setActiveThread("GROUP_PCN"); setScreen("chat"); }}>
-                <div style={{width:52,height:52,borderRadius:14,background:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>🏎️</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
-                    <span style={{fontWeight:800,fontSize:16,color:C.white}}>PCN Mitglieder</span>
-                    <span style={{background:C.red,color:"#fff",borderRadius:99,padding:"2px 8px",fontSize:11,fontWeight:800}}>1</span>
-                  </div>
-                  <div style={{fontSize:12,color:`${C.red}99`,marginBottom:2}}>Gruppen-Kanal · {DEMO_GROUP.participants.length} Mitglieder</div>
-                  <div style={{fontSize:13,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                    Thomas: Wer fährt mit dem Anhänger?
+            {!isGuest&&(()=>{
+              // Echten Club-Kanal aus der DB nutzen, Demo als Fallback
+              const liveClub = threads[CLUB_CHANNEL_ID];
+              const clubThread = liveClub || (isDemo ? DEMO_GROUP : null);
+              if(!clubThread) return null;
+              const clubMsgs = (clubThread.messages||[]).filter(m=>!m.isSystem||m.from===ADMIN_UUID);
+              const lastClub = clubMsgs.slice(-1)[0];
+              const unreadClub = clubMsgs.filter(m=>m.from!==me?.id&&!m.read).length;
+              const memberCount = (clubThread.participants||[]).filter(p=>p!==ADMIN_UUID).length;
+              const lastSender = lastClub && lastClub.from!==ADMIN_UUID
+                ? (Object.values(allUsers).find(u=>u.id===lastClub.from)?.name||"Mitglied")
+                : null;
+              return (
+                <div style={{marginBottom:16}}>
+                  <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>📡 Club-Kanal</div>
+                  <div style={{background:`linear-gradient(135deg, #1a0a0a, #200808)`,border:`2px solid ${C.red}44`,borderRadius:14,padding:"14px",cursor:"pointer",display:"flex",gap:14,alignItems:"center"}}
+                    onClick={()=>{ setActiveThread(liveClub?CLUB_CHANNEL_ID:"GROUP_PCN"); setScreen("chat"); }}>
+                    <div style={{width:52,height:52,borderRadius:14,background:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>🏎️</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                        <span style={{fontWeight:800,fontSize:16,color:C.white}}>PCN Mitglieder</span>
+                        {unreadClub>0&&<span style={{background:C.red,color:"#fff",borderRadius:99,padding:"2px 8px",fontSize:11,fontWeight:800}}>{unreadClub}</span>}
+                      </div>
+                      <div style={{fontSize:12,color:`${C.red}99`,marginBottom:2}}>Gruppen-Kanal · {memberCount} Mitglieder</div>
+                      <div style={{fontSize:13,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                        {lastClub
+                          ? `${lastSender?lastSender+": ":lastClub.from===ADMIN_UUID?"📣 Vorstand: ":""}${lastClub.text}`
+                          : "Noch keine Nachrichten"}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            )}
+              );
+            })()}
 
             {/* ── Direktnachrichten — nur für Mitglieder ── */}
             {!isGuest&&(
@@ -4457,6 +4475,7 @@ function PCNInner() {
               const realMsgs = (t) => t.messages.filter(m=>!m.isSystem || m.from===ADMIN_UUID);
               const filtered = myThreads
                 .filter(t => {
+                  if(t.id === CLUB_CHANNEL_ID) return false; // Club-Kanal wird oben angezeigt
                   const hasMsg = realMsgs(t).length > 0;
                   const key = t.vehicleId || t.id;
                   if(!hasMsg && seen.has(key)) return false;
