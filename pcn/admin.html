@@ -1263,6 +1263,132 @@ function rContent(el){
   </div>`;
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// VOLLSTÄNDIGER SELBSTTEST
+// Testet jede Operation die die App braucht — mit echten Schreibvorgängen,
+// die anschließend wieder aufgeräumt werden.
+// ═══════════════════════════════════════════════════════════════════
+async function runFullDiagnostics(){
+  const out=document.getElementById("full-diag");
+  if(!out) return;
+  const rows=[];
+  const render=()=>{ out.innerHTML=rows.join(""); };
+  const add=(status,label,detail)=>{
+    const icon = status==="ok"?"✅" : status==="warn"?"⚠️" : status==="run"?"⏳" : "❌";
+    const col  = status==="ok"?"#ccc" : status==="warn"?"var(--amber)" : status==="run"?"#666" : "#ef4444";
+    rows.push(`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #131313">
+      <span style="flex-shrink:0">${icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="color:${col}">${label}</div>
+        ${detail?`<div style="color:#555;font-size:10px;margin-top:1px;word-break:break-word">${detail}</div>`:""}
+      </div></div>`);
+    render();
+  };
+  const errText=(e)=>{
+    const s = typeof e==="string"?e:JSON.stringify(e||"");
+    if(s.includes("PGRST204")) return "Spalte fehlt in der DB";
+    if(s.includes("42501")||s.toLowerCase().includes("policy")) return "RLS-Policy blockiert";
+    if(s.includes("22P02")) return "Ungültiges Format (z.B. UUID)";
+    return s.slice(0,80);
+  };
+
+  out.innerHTML='<div style="color:#666;padding:6px 0">Test läuft…</div>';
+  rows.length=0;
+
+  const testUser = DB.members[0];
+  if(!testUser){ add("fail","Kein Mitglied vorhanden","Test benötigt mindestens ein Mitglied"); return; }
+
+  let okCount=0, failCount=0;
+  const check=(res,label,detail)=>{
+    if(res?.error){ add("fail",label,errText(res.error)); failCount++; return false; }
+    add("ok",label,detail); okCount++; return true;
+  };
+
+  // ── 1. Lesen ──
+  for(const [tbl,label] of [["users","Mitglieder"],["vehicles","Fahrzeuge"],["events","Events"],
+                             ["participants","Anmeldungen"],["threads","Chats"],["messages","Nachrichten"]]){
+    const r = await api(`${tbl}?select=id&limit=1`);
+    check(r, `Lesen: ${label}`);
+  }
+
+  // ── 2. Profil ändern (users UPDATE) ──
+  const origName = testUser.name;
+  const upd = await api(`users?id=eq.${testUser.id}`,{method:"PATCH",body:JSON.stringify({name:origName})});
+  check(upd, "Profil speichern (users UPDATE)", upd?.error?"Profil-Änderungen der Mitglieder werden nicht gespeichert":"");
+
+  // ── 3. Fahrzeug anlegen + löschen ──
+  const testVid = "TEST"+Date.now();
+  const vIns = await api("vehicles",{method:"POST",body:JSON.stringify({
+    id:testVid, qar_id:"QAR-TEST"+Date.now().toString().slice(-4), user_id:testUser.id,
+    hersteller:"Testfahrzeug", modell:"Diagnose", images:[], phone:null,
+    privacy:{}, created_at:new Date().toISOString(), updated_at:new Date().toISOString()
+  })});
+  if(check(vIns,"Fahrzeug anlegen (vehicles INSERT)", vIns?.error?"Mitglieder können kein Fahrzeug anlegen":"")){
+    const vUpd = await api(`vehicles?id=eq.${testVid}`,{method:"PATCH",body:JSON.stringify({farbe:"Testfarbe"})});
+    check(vUpd,"Fahrzeug ändern (vehicles UPDATE)");
+    // Logbuch
+    const lIns = await api("logbook",{method:"POST",body:JSON.stringify({
+      vehicle_id:testVid, date:new Date().toISOString().slice(0,10), type:"Diagnose", km:"1", created_at:new Date().toISOString()
+    })});
+    check(lIns,"Logbuch-Eintrag (logbook INSERT)", lIns?.error?"Mitglieder können nichts ins Logbuch eintragen":"");
+    if(!lIns?.error) await api(`logbook?vehicle_id=eq.${testVid}`,{method:"DELETE"}).catch(()=>{});
+    // Live-Status
+    const sIns = await api("vehicle_status",{method:"POST",body:JSON.stringify({
+      vehicle_id:testVid, text:"Diagnose-Test", icon:"🔧",
+      expires_at:new Date(Date.now()+60000).toISOString(), created_at:new Date().toISOString()
+    })});
+    check(sIns,"Live-Status setzen (vehicle_status)", sIns?.error?"Live-Status funktioniert nicht":"");
+    if(!sIns?.error) await api(`vehicle_status?vehicle_id=eq.${testVid}`,{method:"DELETE"}).catch(()=>{});
+    // Aufräumen
+    const vDel = await api(`vehicles?id=eq.${testVid}`,{method:"DELETE"});
+    check(vDel,"Fahrzeug löschen (vehicles DELETE)");
+    // Verifizieren
+    const gone = await api(`vehicles?id=eq.${testVid}&select=id`);
+    if(gone.data?.length){ add("fail","Löschung wirkungslos","Zeile existiert noch — DELETE-Policy fehlt"); failCount++; }
+  }
+
+  // ── 4. Event-Anmeldung ──
+  const ev = DB.events[0];
+  if(ev){
+    const pIns = await api("participants",{method:"POST",body:JSON.stringify({
+      event_id:ev.id, user_id:testUser.id, vehicle_id:null, class:"Diagnose",
+      status:"pending", registered_at:new Date().toISOString()
+    })});
+    if(check(pIns,"Event-Anmeldung (participants INSERT)", pIns?.error?"Mitglieder können sich nicht anmelden":"")){
+      const pid = Array.isArray(pIns.data)?pIns.data[0]?.id:pIns.data?.id;
+      if(pid){
+        const pUpd = await api(`participants?id=eq.${pid}`,{method:"PATCH",body:JSON.stringify({status:"confirmed"})});
+        check(pUpd,"Anmeldung bestätigen (participants UPDATE)", pUpd?.error?"Admin kann Anmeldungen nicht bestätigen":"");
+        await api(`participants?id=eq.${pid}`,{method:"DELETE"}).catch(()=>{});
+      }
+    }
+  } else add("warn","Event-Anmeldung übersprungen","Kein Event vorhanden");
+
+  // ── 5. Nachrichten ──
+  const mRes = await sendAdminMsg(testUser.id, "🔬 Selbsttest — kann ignoriert werden.", "🔬");
+  if(check({error:mRes?.error},"Admin-Nachricht senden")){
+    const tid = adminThreadId(testUser.id);
+    const found = await api(`messages?thread_id=eq.${tid}&order=created_at.desc&limit=1`);
+    if(!found.data?.length){ add("fail","Nachricht nicht auffindbar","Gesendet, aber nicht in der DB"); failCount++; }
+    else { add("ok","Nachricht verifiziert","Kommt beim Mitglied an"); okCount++; }
+  }
+
+  // ── Fazit ──
+  const total = okCount+failCount;
+  rows.push(`<div style="margin-top:12px;padding:11px;border-radius:8px;
+    background:${failCount?"#ef44440d":"#22c55e0d"};border:1px solid ${failCount?"#ef444433":"#22c55e33"}">
+    <div style="font-size:12px;font-weight:800;color:${failCount?"#ef4444":"var(--green)"};margin-bottom:3px">
+      ${failCount ? `${failCount} von ${total} Tests fehlgeschlagen` : `Alle ${total} Tests bestanden ✓`}
+    </div>
+    <div style="font-size:10px;color:#666;line-height:1.5">
+      ${failCount
+        ? 'Bitte <strong style="color:#888">fix_all_rls_policies.sql</strong> im Supabase SQL-Editor ausführen.'
+        : "Alle Datenbank-Operationen funktionieren. Die App ist voll einsatzbereit."}
+    </div>
+  </div>`);
+  render();
+}
+
 // ── KI-Fotoerkennung: Reifeprüfung ──
 function showAIStats(){
   const out=document.getElementById("ai-stats");
@@ -1298,6 +1424,16 @@ function showAIStats(){
 
 function rSettings(el){
   el.innerHTML=`<div class="page-title">⚙️ Einstellungen</div>
+
+  <div class="card" style="margin-bottom:12px;border-color:#5b8fff44">
+    <div class="sec-title" style="color:#5b8fff">🔬 System-Selbsttest</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+      Prüft alle Datenbank-Operationen die die App braucht — Schreiben, Ändern, Löschen.
+      Findet blockierte Policies und fehlende Spalten, bevor Mitglieder darüber stolpern.
+    </div>
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="runFullDiagnostics()">🔬 Vollständigen Test starten</button>
+    <div id="full-diag" style="font-size:11px;line-height:1.6"></div>
+  </div>
 
   <div class="card" style="margin-bottom:12px">
     <div class="sec-title">✨ KI-Fotoerkennung <span style="font-size:9px;font-weight:800;background:var(--gold);color:#000;padding:1px 5px;border-radius:3px;vertical-align:middle">BETA</span></div>
