@@ -614,14 +614,38 @@ const PCN_STORAGE = (() => {
         images: vehicle.images||[], phone: vehicle.phone||null,
         privacy:vehicle.privacy||{}, updated_at:now(),
       };
+      // Entfernt Felder, die die DB nicht kennt (PGRST204) und versucht es erneut
+      const stripUnknown = (r, err) => {
+        const msg = typeof err==="string" ? err : JSON.stringify(err||"");
+        const m = msg.match(/'([a-z_]+)' column/i) || msg.match(/column "?([a-z_]+)"?/i);
+        if(!m || !(m[1] in r)) return null;
+        const clone = {...r};
+        delete clone[m[1]];
+        console.warn("Spalte '"+m[1]+"' fehlt in der DB — wird übersprungen. Bitte fix_vehicle_columns.sql ausführen.");
+        return clone;
+      };
+
       if(vehicle.id) {
-        const res = await supabase._patch("vehicles","id=eq."+vehicle.id, row);
+        let res = await supabase._patch("vehicles","id=eq."+vehicle.id, row);
+        let attempt = row;
+        for(let i=0; i<3 && res.error; i++){
+          const next = stripUnknown(attempt, res.error);
+          if(!next) break;
+          attempt = next;
+          res = await supabase._patch("vehicles","id=eq."+vehicle.id, attempt);
+        }
         if(res.error) return res;
-        // Return merged object if DB doesn't return full row
-        return { data: res.data ? supabase._mapVehicle(Array.isArray(res.data)?res.data[0]:res.data) : supabase._mapVehicle(row) };
+        return { data: res.data ? supabase._mapVehicle(Array.isArray(res.data)?res.data[0]:res.data) : supabase._mapVehicle(attempt) };
       }
       row.created_at = now();
-      const res = await supabase._post("vehicles", row);
+      let res = await supabase._post("vehicles", row);
+      let attempt = row;
+      for(let i=0; i<3 && res.error; i++){
+        const next = stripUnknown(attempt, res.error);
+        if(!next) break;
+        attempt = next;
+        res = await supabase._post("vehicles", attempt);
+      }
       if(res.error) return res;
       const saved = Array.isArray(res.data) ? res.data[0] : res.data;
       return { data: supabase._mapVehicle(saved||row) };
