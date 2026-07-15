@@ -1996,6 +1996,7 @@
     const [vehicleStatus, setVehicleStatus] = (0, _react.useState)({}); // {vehicleId: [{id,text,icon,expiresAt}]}
     const [showStatusPicker, setShowStatusPicker] = (0, _react.useState)(null); // vehicleId
     const [statusCustom, setStatusCustom] = (0, _react.useState)("");
+    const [statusPresetIcon, setStatusPresetIcon] = (0, _react.useState)(null); // icon from preset selection
     const [statusTick, setStatusTick] = (0, _react.useState)(0); // increments every 30s to force re-render
     const [statusCustomMins, setStatusCustomMins] = (0, _react.useState)(30);
     const [statusUseDate, setStatusUseDate] = (0, _react.useState)(false); // true = exact datetime, false = duration
@@ -2243,6 +2244,9 @@
       setShowStatusPicker(null);
       setStatusCustom("");
       setStatusEditSlot(null);
+      setStatusPresetIcon(null);
+      setStatusDateTime("");
+      setStatusUseDate(false);
       toast_(`Status gesetzt: "${text}"`);
     };
     const clearStatus = async (vehicleId, slotId = null) => {
@@ -5361,6 +5365,10 @@
           if (e.target === e.currentTarget) {
             setShowStatusPicker(null);
             setStatusEditSlot(null);
+            setStatusCustom("");
+            setStatusPresetIcon(null);
+            setStatusUseDate(false);
+            setStatusDateTime("");
           }
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
@@ -5451,8 +5459,10 @@
             onClick: () => {
               setStatusCustom(s.text);
               setStatusEditSlot(s.id);
+              setStatusPresetIcon(s.icon || null);
+              setStatusUseDate(false);
               const rem = s.expiresAt ? Math.ceil((s.expiresAt - Date.now()) / 60000) : 30;
-              setStatusCustomMins(rem);
+              setStatusCustomMins(Math.min(480, Math.max(5, rem)));
             },
             style: {
               background: C.card,
@@ -5489,23 +5499,32 @@
         }, "+ Weiteren Status hinzufügen:"));
       })(), (getActiveStatus(showStatusPicker) || []).length < 3 && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
         style: {
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#aaa",
+          marginBottom: 8
+        }
+      }, "⚡ Schnellauswahl"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
           display: "flex",
           flexDirection: "column",
           gap: 8,
-          marginBottom: 14
+          marginBottom: 16
         }
       }, STATUS_PRESETS.map((p, i) => /*#__PURE__*/_react.default.createElement("button", {
         key: i,
-        onClick: () => setStatus(showStatusPicker, {
-          ...p,
-          mins: statusCustomMins || p.mins
-        }),
+        onClick: () => {
+          setStatusCustom(p.text);
+          setStatusPresetIcon(p.icon);
+          setStatusCustomMins(p.mins || 30);
+          setStatusUseDate(false);
+        },
         style: {
           display: "flex",
           gap: 12,
           alignItems: "center",
-          background: C.card,
-          border: `1px solid ${C.border}`,
+          background: statusCustom === p.text ? C.red + "22" : C.card,
+          border: `1px solid ${statusCustom === p.text ? C.red : C.border}`,
           borderRadius: 12,
           padding: "12px",
           cursor: "pointer",
@@ -5532,7 +5551,12 @@
           fontSize: 10,
           color: C.muted
         }
-      }, "Aktiv für ", statusCustomMins || p.mins, " Min"))))), /*#__PURE__*/_react.default.createElement("div", {
+      }, "Vorschlag: ", p.mins, " Min · Dauer unten anpassbar")), statusCustom === p.text && /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 16,
+          color: C.red
+        }
+      }, "✓")))), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: C.card,
           border: `1px solid ${C.border}`,
@@ -5547,7 +5571,7 @@
           color: "#aaa",
           marginBottom: 8
         }
-      }, "✏️ Eigener Status"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "✏️ Status-Text"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           gap: 8,
@@ -5557,11 +5581,9 @@
         className: "inp",
         placeholder: "z.B. Bin beim Einlass...",
         value: statusCustom,
-        onChange: e => setStatusCustom(e.target.value),
-        onKeyDown: e => {
-          if (e.key === "Enter" && statusCustom.trim()) setStatus(showStatusPicker, {
-            icon: "💬"
-          }, statusCustom);
+        onChange: e => {
+          setStatusCustom(e.target.value);
+          setStatusPresetIcon(null);
         },
         style: {
           flex: 1
@@ -5569,9 +5591,16 @@
       })), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           borderTop: `1px solid ${C.border}`,
-          paddingTop: 10
+          paddingTop: 12
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 11,
+          fontWeight: 700,
+          color: C.gold,
+          marginBottom: 10
+        }
+      }, "⏱ Wie lange soll der Status angezeigt werden?"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           display: "flex",
           gap: 8,
@@ -5645,7 +5674,30 @@
           color: "#555",
           marginTop: 3
         }
-      }, /*#__PURE__*/_react.default.createElement("span", null, "5m"), /*#__PURE__*/_react.default.createElement("span", null, "30m"), /*#__PURE__*/_react.default.createElement("span", null, "1h"), /*#__PURE__*/_react.default.createElement("span", null, "4h"), /*#__PURE__*/_react.default.createElement("span", null, "8h"))) : /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+      }, /*#__PURE__*/_react.default.createElement("span", null, "5m"), /*#__PURE__*/_react.default.createElement("span", null, "30m"), /*#__PURE__*/_react.default.createElement("span", null, "1h"), /*#__PURE__*/_react.default.createElement("span", null, "4h"), /*#__PURE__*/_react.default.createElement("span", null, "8h")), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 6,
+          marginTop: 10,
+          flexWrap: "wrap"
+        }
+      }, [["15 Min", 15], ["30 Min", 30], ["1 Std", 60], ["2 Std", 120], ["Ganzer Tag", 480]].map(([lbl, mn]) => /*#__PURE__*/_react.default.createElement("button", {
+        key: mn,
+        onClick: () => setStatusCustomMins(mn),
+        style: {
+          flex: "1 1 auto",
+          background: statusCustomMins === mn ? C.red : "#1a1a1a",
+          border: `1px solid ${statusCustomMins === mn ? C.red : C.border}`,
+          borderRadius: 7,
+          padding: "6px 4px",
+          color: statusCustomMins === mn ? "#fff" : C.muted,
+          fontSize: 11,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "'Barlow',sans-serif",
+          whiteSpace: "nowrap"
+        }
+      }, lbl)))) : /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: C.muted,
@@ -5669,16 +5721,16 @@
         }
       }))), /*#__PURE__*/_react.default.createElement("button", {
         className: "btn",
-        disabled: !statusCustom.trim(),
+        disabled: !statusCustom.trim() || statusUseDate && !statusDateTime,
         onClick: () => {
           if (statusCustom.trim()) setStatus(showStatusPicker, {
-            icon: "💬"
+            icon: statusPresetIcon || "💬"
           }, statusCustom);
         },
         style: {
           width: "100%",
-          marginTop: 12,
-          opacity: statusCustom.trim() ? 1 : .4
+          marginTop: 14,
+          opacity: statusCustom.trim() && (!statusUseDate || statusDateTime) ? 1 : .4
         }
       }, statusEditSlot ? "Status aktualisieren" : "Status setzen"))), (getActiveStatus(showStatusPicker) || []).length > 0 && /*#__PURE__*/_react.default.createElement("button", {
         className: "btn ghost",
