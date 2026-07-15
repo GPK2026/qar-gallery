@@ -877,6 +877,8 @@ const PCN_STORAGE = (() => {
       create: (participants, vid, vname)  => db.createThread(participants, vid, vname),
       send:   (tid, uid, text)            => db.sendMessage(tid, uid, text),
       read:   (tid, uid)                  => db.markRead(tid, uid),
+      delete: (tid)                       => db.deleteThread ? db.deleteThread(tid) : Promise.resolve({error:"not supported"}),
+      deleteMessage: (mid)                => db.deleteMessage ? db.deleteMessage(mid) : Promise.resolve({error:"not supported"}),
     },
     stats: (uid) => db.getStats(uid),
   };
