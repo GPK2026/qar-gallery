@@ -3118,6 +3118,16 @@
       } catch (e) {}
     };
     const analyzeVehiclePhoto = async (dataUrl, attempt = 1) => {
+      // Braucht einen serverseitigen Proxy (API-Key darf nicht in den Client).
+      // Ohne konfigurierten Endpoint bleibt das Feature deaktiviert.
+      const endpoint = (window.PCN_CONFIG || {}).aiProxyUrl;
+      if (!endpoint) {
+        setAnalyzeResult({
+          fields: {},
+          notConfigured: true
+        });
+        return;
+      }
       const src = analyzeHiRes || dataUrl;
       if (!src) return;
       setAnalyzing(true);
@@ -3127,7 +3137,7 @@
         if (!m) throw new Error("Bildformat nicht lesbar");
         const mediaType = m[1],
           b64 = m[2];
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -12868,7 +12878,7 @@ Wichtig:
         color: C.white,
         marginBottom: 4
       }
-    }, "Fahrzeug hinzufügen"), !(addVForm.images || []).length && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Fahrzeug hinzufügen"), !(addVForm.images || []).length && (window.PCN_CONFIG || {}).aiProxyUrl && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
@@ -12951,7 +12961,7 @@ Wichtig:
       },
       onChange: e => handleImageUpload(e.target.files[0], url => setAddVForm(p => {
         const imgs = [...(p.images || []), url];
-        if (imgs.length === 1) setTimeout(() => analyzeVehiclePhoto(url), 150);
+        if (imgs.length === 1 && (window.PCN_CONFIG || {}).aiProxyUrl) setTimeout(() => analyzeVehiclePhoto(url), 150);
         return {
           ...p,
           images: imgs
@@ -12999,7 +13009,50 @@ Wichtig:
         color: C.gold,
         fontWeight: 600
       }
-    }, "Foto wird analysiert…")), analyzeResult && (analyzeResult.empty || analyzeResult.failed) && !analyzing && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Foto wird analysiert…")), analyzeResult && analyzeResult.notConfigured && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        marginBottom: 10,
+        display: "flex",
+        gap: 9,
+        alignItems: "flex-start"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 14,
+        flexShrink: 0
+      }
+    }, "🔧"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#999",
+        fontWeight: 600,
+        marginBottom: 2
+      }
+    }, "Fotoerkennung noch nicht aktiv"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#666",
+        lineHeight: 1.5
+      }
+    }, "Wird gerade eingerichtet — bitte Felder manuell ausfüllen.")), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setAnalyzeResult(null),
+      style: {
+        background: "none",
+        border: "none",
+        color: "#555",
+        fontSize: 14,
+        cursor: "pointer",
+        padding: 0
+      }
+    }, "✕")), analyzeResult && (analyzeResult.empty || analyzeResult.failed) && !analyzing && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
         border: `1px solid ${C.border}`,
