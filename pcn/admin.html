@@ -160,7 +160,8 @@ const KEY=atob("ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lK
 const ADMIN="PCN-ADMIN-2026";
 const EUR=95;
 // ── Punktesystem — synchron mit PCN_MVP.jsx ──
-const POINT_RATE=0.000911;                       // 1 Punkt = 0,0911 Cent
+const PTS_PER_EUR=911;                           // 911 Punkte = 1 €
+const POINT_RATE=1/PTS_PER_EUR;
 const ptsToEur=(p)=>p*POINT_RATE;
 const POINTS={qr_scan:150,view_akte:25,vehicle_added:500,vehicle_complete:750,
   logbook:150,photo:50,event_confirmed:1000,message:50,news_read:25,
@@ -615,7 +616,7 @@ function rPoints(el){
       </div>
     </div>
     <div style="font-size:10px;color:#555;line-height:1.6;padding-top:8px;border-top:1px solid var(--border)">
-      Kurs: 1 Punkt = 0,0911 Cent · 1 € = 1.098 Punkte<br>
+      Kurs: <strong style="color:#888">911 Punkte = 1 €</strong> · 1 Punkt ≈ 0,11 Cent<br>
       Der Gegenwert entspricht der theoretischen Verbindlichkeit bei vollständiger Einlösung aller Punkte.
     </div>
   </div>
