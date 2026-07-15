@@ -870,6 +870,7 @@ function PCNInner() {
   const [vehicleStatus, setVehicleStatus] = useState({}); // {vehicleId: [{id,text,icon,expiresAt}]}
   const [showStatusPicker, setShowStatusPicker] = useState(null); // vehicleId
   const [statusCustom, setStatusCustom]   = useState("");
+  const [statusPresetIcon, setStatusPresetIcon] = useState(null); // icon from preset selection
   const [statusTick, setStatusTick]        = useState(0); // increments every 30s to force re-render
   const [statusCustomMins, setStatusCustomMins] = useState(30);
   const [statusUseDate, setStatusUseDate] = useState(false);  // true = exact datetime, false = duration
@@ -1038,7 +1039,7 @@ function PCNInner() {
     broadcastStatus(vehicleId, slot);
     const DB = window.PCN_DB;
     if(DB) await DB.vehicles.setStatus(vehicleId, slot).catch(()=>{});
-    setShowStatusPicker(null); setStatusCustom(""); setStatusEditSlot(null);
+    setShowStatusPicker(null); setStatusCustom(""); setStatusEditSlot(null); setStatusPresetIcon(null); setStatusDateTime(""); setStatusUseDate(false);
     toast_(`Status gesetzt: "${text}"`);
   };
 
@@ -2586,7 +2587,7 @@ function PCNInner() {
 
       {/* ── OVERLAYS (rendered in every screen) ── */}
       {showStatusPicker&&(
-        <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget){setShowStatusPicker(null);setStatusEditSlot(null);}}}>
+        <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget){setShowStatusPicker(null);setStatusEditSlot(null);setStatusCustom("");setStatusPresetIcon(null);setStatusUseDate(false);setStatusDateTime("");}}}>
           <div className="sheet" style={{maxHeight:"92vh",overflowY:"auto"}}>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:2}}>📍 Live-Status</div>
             <div style={{fontSize:11,color:C.muted,marginBottom:14}}>Bis zu 3 Status-Infos — sichtbar beim QR-Scan</div>
@@ -2618,8 +2619,10 @@ function PCNInner() {
                           <button onClick={()=>{
                             setStatusCustom(s.text);
                             setStatusEditSlot(s.id);
+                            setStatusPresetIcon(s.icon||null);
+                            setStatusUseDate(false);
                             const rem = s.expiresAt ? Math.ceil((s.expiresAt-Date.now())/60000) : 30;
-                            setStatusCustomMins(rem);
+                            setStatusCustomMins(Math.min(480, Math.max(5, rem)));
                           }} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✏️</button>
                           <button onClick={()=>{clearStatus(showStatusPicker,s.id);toast_("Status gelöscht");}}
                             style={{background:"#ef444418",border:"1px solid #ef444433",borderRadius:6,padding:"4px 8px",color:"#ef4444",fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✕</button>
@@ -2635,32 +2638,37 @@ function PCNInner() {
             {/* ── Neuer Status (nur wenn < 3 aktive) ── */}
             {(getActiveStatus(showStatusPicker)||[]).length<3&&(
               <>
-                {/* Preset Buttons */}
-                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
+                {/* Preset Buttons — füllen das Textfeld, Dauer wird danach abgefragt */}
+                <div style={{fontSize:11,fontWeight:700,color:"#aaa",marginBottom:8}}>⚡ Schnellauswahl</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
                   {STATUS_PRESETS.map((p,i)=>(
-                    <button key={i} onClick={()=>setStatus(showStatusPicker,{...p,mins:statusCustomMins||p.mins})}
-                      style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                    <button key={i} onClick={()=>{setStatusCustom(p.text);setStatusPresetIcon(p.icon);setStatusCustomMins(p.mins||30);setStatusUseDate(false);}}
+                      style={{display:"flex",gap:12,alignItems:"center",
+                        background:statusCustom===p.text?C.red+"22":C.card,
+                        border:`1px solid ${statusCustom===p.text?C.red:C.border}`,
+                        borderRadius:12,padding:"12px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
                       <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
                       <div style={{flex:1}}>
                         <div style={{fontSize:13,fontWeight:700,color:C.white}}>{p.text}</div>
-                        <div style={{fontSize:10,color:C.muted}}>Aktiv für {statusCustomMins||p.mins} Min</div>
+                        <div style={{fontSize:10,color:C.muted}}>Vorschlag: {p.mins} Min · Dauer unten anpassbar</div>
                       </div>
+                      {statusCustom===p.text&&<span style={{fontSize:16,color:C.red}}>✓</span>}
                     </button>
                   ))}
                 </div>
 
-                {/* Eigener Text */}
+                {/* Eigener Text + Dauer — gilt für Schnellauswahl UND eigenen Text */}
                 <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",marginBottom:12}}>
-                  <div style={{fontSize:11,fontWeight:700,color:"#aaa",marginBottom:8}}>✏️ Eigener Status</div>
+                  <div style={{fontSize:11,fontWeight:700,color:"#aaa",marginBottom:8}}>✏️ Status-Text</div>
                   <div style={{display:"flex",gap:8,marginBottom:12}}>
                     <input className="inp" placeholder="z.B. Bin beim Einlass..." value={statusCustom}
-                      onChange={e=>setStatusCustom(e.target.value)}
-                      onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬"},statusCustom);}}
+                      onChange={e=>{setStatusCustom(e.target.value);setStatusPresetIcon(null);}}
                       style={{flex:1}}/>
                   </div>
 
-                  {/* Zeiteinstellung */}
-                  <div style={{borderTop:`1px solid ${C.border}`,paddingTop:10}}>
+                  {/* ── Dauer-Abfrage: Wie lange soll der Status angezeigt werden? ── */}
+                  <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.gold,marginBottom:10}}>⏱ Wie lange soll der Status angezeigt werden?</div>
                     <div style={{display:"flex",gap:8,marginBottom:10}}>
                       <button onClick={()=>setStatusUseDate(false)}
                         style={{flex:1,background:!statusUseDate?C.red:"#1a1a1a",border:`1px solid ${!statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:!statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
@@ -2687,6 +2695,18 @@ function PCNInner() {
                         <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#555",marginTop:3}}>
                           <span>5m</span><span>30m</span><span>1h</span><span>4h</span><span>8h</span>
                         </div>
+                        {/* Schnellwahl-Chips für gängige Dauern */}
+                        <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
+                          {[["15 Min",15],["30 Min",30],["1 Std",60],["2 Std",120],["Ganzer Tag",480]].map(([lbl,mn])=>(
+                            <button key={mn} onClick={()=>setStatusCustomMins(mn)}
+                              style={{flex:"1 1 auto",background:statusCustomMins===mn?C.red:"#1a1a1a",
+                                border:`1px solid ${statusCustomMins===mn?C.red:C.border}`,borderRadius:7,
+                                padding:"6px 4px",color:statusCustomMins===mn?"#fff":C.muted,fontSize:11,fontWeight:700,
+                                cursor:"pointer",fontFamily:"'Barlow',sans-serif",whiteSpace:"nowrap"}}>
+                              {lbl}
+                            </button>
+                          ))}
+                        </div>
                       </>
                     ):(
                       <>
@@ -2700,9 +2720,9 @@ function PCNInner() {
                     )}
                   </div>
 
-                  <button className="btn" disabled={!statusCustom.trim()}
-                    onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬"},statusCustom);}}
-                    style={{width:"100%",marginTop:12,opacity:statusCustom.trim()?1:.4}}>
+                  <button className="btn" disabled={!statusCustom.trim()||(statusUseDate&&!statusDateTime)}
+                    onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:statusPresetIcon||"💬"},statusCustom);}}
+                    style={{width:"100%",marginTop:14,opacity:(statusCustom.trim()&&(!statusUseDate||statusDateTime))?1:.4}}>
                     {statusEditSlot?"Status aktualisieren":"Status setzen"}
                   </button>
                 </div>
