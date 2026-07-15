@@ -502,6 +502,7 @@ function filterMembers(){
         <div style="font-size:11px;color:var(--muted);padding:10px 0 12px;line-height:1.7">
           ${m.email||"—"}<br>
           Nr: ${m.member_nr||"—"} · Seit: ${fmt(m.created_at)} · ${vCount} Fzg · ${pts} Pkt ${tierBadge(pts)}
+          ${m.geburtstag?`<br>🎂 Geburtstag: ${new Date(m.geburtstag).toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"})}`:""}
           ${m.beitrag_datum?`<br>Beitrag bezahlt am: ${fmt(m.beitrag_datum)}`:""}
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-bottom:12px">
