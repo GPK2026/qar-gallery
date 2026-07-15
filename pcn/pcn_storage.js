@@ -761,7 +761,14 @@ const PCN_STORAGE = (() => {
     async deleteThread(threadId) {
       // Delete messages first, then thread
       await supabase._delete("messages","thread_id=eq."+threadId);
-      return await supabase._delete("threads","id=eq."+threadId);
+      const res = await supabase._delete("threads","id=eq."+threadId);
+      if(res.error) return res;
+      // Verifizieren: RLS blockiert still mit 204 — prüfen ob wirklich weg
+      const check = await supabase._q("threads","?id=eq."+threadId+"&select=id");
+      if(check.data && check.data.length){
+        return { error: "Löschung von der Datenbank blockiert (fehlende DELETE-Policy)" };
+      }
+      return { data: true };
     },
     async deleteMessage(msgId) {
       return await supabase._delete("messages","id=eq."+msgId);
