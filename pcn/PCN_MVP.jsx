@@ -379,12 +379,13 @@ const LOCKED_FEATURES = [
 // ─── Status Presets ──────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
 // PUNKTESYSTEM — zentrale Werte-Definition
-// Kurs: 1 Punkt = 0,0911 Cent · 1 € = 1.098 Punkte (die 911 steckt drin 🏁)
+// Kurs: 911 Punkte = 1 € (1 Punkt ≈ 0,11 Cent) — die 911 ist der Kurs 🏁
 // Priorisierung: 1. Community · 2. Fahrzeugpflege · 3. Aktivität · 4. Treue
 // ═══════════════════════════════════════════════════════════════════════════
-const POINT_RATE = 0.000911;              // € pro Punkt
-const ptsToEur = (p) => p * POINT_RATE;   // Punkte → Euro
-const eurToPts = (e) => Math.round(e / POINT_RATE);
+const PTS_PER_EUR = 911;                       // 911 Punkte = 1 €
+const POINT_RATE = 1/PTS_PER_EUR;              // € pro Punkt
+const ptsToEur = (p) => p * POINT_RATE;
+const eurToPts = (e) => Math.round(e * PTS_PER_EUR);
 
 const POINTS = {
   // ── PRIO 1: Community fördern ──
@@ -1065,6 +1066,22 @@ function PCNInner() {
     return pts;
   };
   const myPoints = calcPoints();
+
+  // ── Punktezähler-Animation: erkennt Zuwachs und zeigt +X ──────────────────
+  const [pointsPulse, setPointsPulse] = useState(false);
+  const [pointsDelta, setPointsDelta] = useState(0);
+  const prevPointsRef = useRef(null);
+  useEffect(()=>{
+    if(prevPointsRef.current === null){ prevPointsRef.current = myPoints; return; }
+    const diff = myPoints - prevPointsRef.current;
+    prevPointsRef.current = myPoints;
+    if(diff <= 0) return;
+    setPointsDelta(diff);
+    setPointsPulse(true);
+    const t1 = setTimeout(()=>setPointsPulse(false), 900);
+    const t2 = setTimeout(()=>setPointsDelta(0), 1800);
+    return ()=>{ clearTimeout(t1); clearTimeout(t2); };
+  },[myPoints]);
 
   // ── Geburtstags-Punkte automatisch gutschreiben ──────────────────────────
   useEffect(()=>{
@@ -2013,6 +2030,7 @@ function PCNInner() {
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:${C.border};border-radius:99px}
     @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes floatUp{0%{opacity:0;transform:translateY(4px) scale(.85)}18%{opacity:1;transform:translateY(-2px) scale(1.15)}100%{opacity:0;transform:translateY(-22px) scale(1)}}
     @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
     @keyframes scanline{0%{top:4px}50%{top:calc(100% - 6px)}100%{top:4px}}
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -3805,11 +3823,41 @@ function PCNInner() {
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
       {ScannerOverlay}
 
-      {/* Nav */}
-      <div style={{background:"#ffffff",borderBottom:`3px solid ${C.red}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
-        <img src={LOGO_SMALL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:32,objectFit:"contain",background:"transparent"}}/>
-        <div style={{textAlign:"right"}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#1a1a1a"}}>{me?.name}</div>
+      {/* Nav — mit permanentem Punktezähler */}
+      <div style={{background:"#ffffff",borderBottom:`3px solid ${C.red}`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,gap:10}}>
+        <img src={LOGO_SMALL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:32,objectFit:"contain",background:"transparent",flexShrink:0}}/>
+
+        {/* Punktezähler — immer sichtbar, tippbar */}
+        {!isGuest&&(
+          <button onClick={()=>setShowInfoModal("points")}
+            style={{display:"flex",alignItems:"center",gap:7,background:pointsPulse?"#C8A96E22":"#f5f2ec",
+              border:`1.5px solid ${pointsPulse?C.gold:"#e2ddd3"}`,borderRadius:99,
+              padding:"5px 11px 5px 8px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+              flexShrink:0,transition:"all .3s ease",
+              transform:pointsPulse?"scale(1.06)":"scale(1)",
+              boxShadow:pointsPulse?`0 0 12px ${C.gold}55`:"none"}}>
+            <span style={{fontSize:14,lineHeight:1}}>{currentTier?.icon||"🏆"}</span>
+            <div style={{textAlign:"left",lineHeight:1.15}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,
+                color:pointsPulse?"#8a6d1f":"#1a1a1a",letterSpacing:.3}}>
+                {myPoints.toLocaleString("de-DE")}
+              </div>
+              <div style={{fontSize:8,color:"#999",fontWeight:600,letterSpacing:.5,textTransform:"uppercase"}}>
+                Punkte
+              </div>
+            </div>
+            {pointsDelta>0&&(
+              <span style={{position:"absolute",marginLeft:52,marginTop:-26,fontSize:11,fontWeight:900,
+                color:C.green,animation:"floatUp 1.8s ease-out forwards",pointerEvents:"none",
+                fontFamily:"'Barlow Condensed',sans-serif",whiteSpace:"nowrap"}}>
+                +{pointsDelta.toLocaleString("de-DE")}
+              </span>
+            )}
+          </button>
+        )}
+
+        <div style={{textAlign:"right",minWidth:0}}>
+          <div style={{fontSize:13,fontWeight:700,color:"#1a1a1a",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{me?.name}</div>
           <div style={{fontSize:10,color:"#888"}}>{me?.memberNr}</div>
         </div>
       </div>
@@ -3827,10 +3875,8 @@ function PCNInner() {
               Du bist als Gast angemeldet und kannst Nachrichten an Fahrzeughalter senden.<br/>
               Für alle Club-Features benötigst du ein Mitgliedskonto.
             </div>
-            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,marginBottom:10}}
-              onClick={()=>{setScreen("splash");setLoginForm(p=>({...p,mode:"register"}));}}
+            <button onClick={()=>{setScreen("splash");setLoginForm(p=>({...p,mode:"register"}));}}
               style={{background:"none",border:`1.5px solid ${C.red}`,borderRadius:10,padding:"12px",color:C.red,cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif",width:"100%",marginBottom:10}}>
-              🏁 Jetzt Mitglied werden
               🏁 Jetzt Mitglied werden
             </button>
             <button onClick={()=>{setMe(null);setScreen("splash");}}
@@ -5086,12 +5132,14 @@ function PCNInner() {
             <div style={{background:`${C.gold}12`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:"14px",marginBottom:18}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                 <span style={{fontSize:12,fontWeight:700,color:C.gold,letterSpacing:.5}}>WECHSELKURS</span>
-                <span style={{fontSize:10,color:"#666"}}>🏁 mit 911 im Kurs</span>
+                <span style={{fontSize:10,color:"#666"}}>🏁 der Kurs ist die 911</span>
               </div>
-              <div style={{fontSize:18,fontWeight:900,color:C.white,fontFamily:"'Barlow Condensed',sans-serif"}}>
-                1 Punkt = 0,0911 Cent
+              <div style={{fontSize:22,fontWeight:900,color:C.white,fontFamily:"'Barlow Condensed',sans-serif"}}>
+                911 Punkte = 1 €
               </div>
-              <div style={{fontSize:11,color:C.muted,marginTop:3}}>1 € = 1.098 Punkte · Dein Stand: {myPoints.toLocaleString("de-DE")} Pkt ≈ {ptsToEur(myPoints).toFixed(2).replace(".",",")} €</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:3}}>
+                Dein Stand: {myPoints.toLocaleString("de-DE")} Pkt ≈ <span style={{color:C.gold,fontWeight:700}}>{ptsToEur(myPoints).toFixed(2).replace(".",",")} €</span>
+              </div>
             </div>
 
             {/* Punktequellen nach Priorität */}
@@ -5117,7 +5165,7 @@ function PCNInner() {
               ]},
               {group:"🎁 Geschenke des Clubs", color:"#e879f9", items:[
                 ["🎂","Geburtstag","+"+POINTS.birthday],
-                ["🎉","Runder Geburtstag","+"+POINTS.birthday_round],
+                ["🎉","Runder Geburtstag (= 1 €)","+"+POINTS.birthday_round],
               ]},
             ].map(sec=>(
               <div key={sec.group} style={{marginBottom:14}}>
