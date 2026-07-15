@@ -896,15 +896,45 @@
   // ─── Status Presets ──────────────────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════════════════
   // PUNKTESYSTEM — zentrale Werte-Definition
-  // Kurs: 911 Punkte = 3 € — drei Partien teilen sich die Prämie:
-  //       Sponsor · Club · QAR.Gallery → je 1 € pro 911 Punkte 🏁
+  // Kurs: 911 Punkte = 3 € 🏁
+  //
+  // MARKTPLATZ-MODELL: Die Prämie trägt der Einlösepartner —
+  //   Porsche Store, Eventorganisator oder Drittanbieter.
+  //   Für sie ist die Einlösung ein Neukundenkanal, kein Zuschuss.
+  //   Der Club trägt nur einen kleinen Beitrag (Club-eigene Prämien).
+  //   QAR.Gallery stellt die Infrastruktur und haftet nicht für Prämien —
+  //   steuert aber eigene Awards mit selbst bestimmtem Budget.
+  //
   // Priorisierung: 1. Community · 2. Fahrzeugpflege · 3. Aktivität · 4. Treue
   // ═══════════════════════════════════════════════════════════════════════════
   const PTS_PER_UNIT = 911; // 911 Punkte
-  const EUR_PER_UNIT = 3; // = 3 € (1 € je Partie)
+  const EUR_PER_UNIT = 3; // = 3 €
   const POINT_RATE = EUR_PER_UNIT / PTS_PER_UNIT; // € pro Punkt ≈ 0,329 ct
   const ptsToEur = p => p * POINT_RATE;
   const eurToPts = e => Math.round(e / POINT_RATE);
+
+  // Wo Punkte eingelöst werden können — und wer die Prämie trägt
+  const REDEEM_PARTNERS = [{
+    icon: "🏢",
+    name: "Porsche Store",
+    desc: "Cap, Merchandise, Modellautos, Zubehör",
+    who: "Porsche"
+  }, {
+    icon: "🏁",
+    name: "Event-Rabatte",
+    desc: "Startgebühr TrackDay, Ausfahrten",
+    who: "Veranstalter"
+  }, {
+    icon: "🔧",
+    name: "Partner",
+    desc: "Werkstatt, Versicherung, Reifen",
+    who: "Drittanbieter"
+  }, {
+    icon: "👕",
+    name: "Club-Shop",
+    desc: "PCN-Merch, QR-Sticker, Plaketten",
+    who: "Club"
+  }];
   const POINTS = {
     // ── PRIO 1: Community fördern ──
     qr_scan: 150,
@@ -12055,59 +12085,14 @@
       style: {
         fontSize: 11,
         color: C.muted,
-        marginTop: 3,
-        marginBottom: 10
+        marginTop: 3
       }
     }, "Dein Stand: ", myPoints.toLocaleString("de-DE"), " Pkt ≈ ", /*#__PURE__*/_react.default.createElement("span", {
       style: {
         color: C.gold,
         fontWeight: 700
       }
-    }, ptsToEur(myPoints).toFixed(2).replace(".", ","), " €")), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        borderTop: `1px solid ${C.gold}22`,
-        paddingTop: 10
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 10,
-        color: "#888",
-        marginBottom: 7,
-        fontWeight: 600
-      }
-    }, "Getragen von drei Partien — je 1 €:"), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 6
-      }
-    }, [["🏢", "Sponsor"], ["🏁", "Club"], ["📱", "QAR"]].map(([i, n]) => /*#__PURE__*/_react.default.createElement("div", {
-      key: n,
-      style: {
-        flex: 1,
-        background: "#ffffff08",
-        borderRadius: 7,
-        padding: "7px 4px",
-        textAlign: "center"
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 13,
-        marginBottom: 2
-      }
-    }, i), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 9,
-        color: "#999",
-        fontWeight: 600
-      }
-    }, n), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.gold,
-        fontWeight: 800,
-        fontFamily: "'Barlow Condensed',sans-serif"
-      }
-    }, "1 €")))))), [{
+    }, ptsToEur(myPoints).toFixed(2).replace(".", ","), " €"))), [{
       group: "👥 Community — am wertvollsten",
       color: "#5b8fff",
       items: [["📱", "QR-Scan bestätigt", "+" + POINTS.qr_scan], ["👁", "Fremde Akte ansehen", "+" + POINTS.view_akte]]
@@ -12220,18 +12205,44 @@
         color: C.red,
         marginBottom: 8
       }
-    }, "🛍️ Punkte einlösen"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🛍️ Wo du einlösen kannst"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 12,
-        color: "#aaa",
-        lineHeight: 1.7,
-        marginBottom: 10
+        marginBottom: 12
       }
-    }, "Gesammelte Punkte sollen künftig bei Partnern des Clubs einlösbar sein — unter anderem im ", /*#__PURE__*/_react.default.createElement("strong", {
+    }, REDEEM_PARTNERS.map(p => /*#__PURE__*/_react.default.createElement("div", {
+      key: p.name,
       style: {
+        display: "flex",
+        gap: 10,
+        alignItems: "flex-start",
+        padding: "8px 0",
+        borderBottom: `1px solid ${C.border}`
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 16,
+        flexShrink: 0,
+        width: 22,
+        textAlign: "center"
+      }
+    }, p.icon), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
         color: "#ddd"
       }
-    }, "Porsche Store"), ", bei Club-Merchandise oder als Rabatt auf Event-Gebühren."), /*#__PURE__*/_react.default.createElement("div", {
+    }, p.name), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#777",
+        lineHeight: 1.4
+      }
+    }, p.desc))))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: "#00000044",
         borderRadius: 8,
@@ -12277,7 +12288,37 @@
         fontSize: 11,
         lineHeight: 1.6
       }
-    }, "Beispielwerte · Die Einlösung befindet sich in Abstimmung mit dem Vorstand und den Partnern. Deine Punkte verfallen nicht — sie werden vollständig übertragen.")), /*#__PURE__*/_react.default.createElement("button", {
+    }, "Beispielwerte · Die Einlösung wird gerade mit den Partnern abgestimmt. Deine Punkte verfallen nicht — sie werden vollständig übertragen.")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: "#5b8fff0d",
+        border: "1px solid #5b8fff33",
+        borderRadius: 12,
+        padding: "14px",
+        marginBottom: 16
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 800,
+        color: "#5b8fff",
+        marginBottom: 8
+      }
+    }, "🏆 Awards & Aktionen"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#aaa",
+        lineHeight: 1.7
+      }
+    }, "Regelmäßig gibt es besondere Aktionen — ", /*#__PURE__*/_react.default.createElement("strong", {
+      style: {
+        color: "#ddd"
+      }
+    }, "doppelte Punkte"), " an Eventtagen, Bonuspunkte für die beste Fahrzeugakte des Monats oder für Mitglieder, die neue Enthusiasten in den Club holen.", /*#__PURE__*/_react.default.createElement("br", null), /*#__PURE__*/_react.default.createElement("br", null), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: "#666",
+        fontSize: 11
+      }
+    }, "Aktionen werden im News-Feed angekündigt."))), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         width: "100%",
