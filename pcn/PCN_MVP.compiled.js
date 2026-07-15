@@ -2561,13 +2561,14 @@
     };
 
     // ── Image upload ─────────────────────────────────────────────────────────────
-    const handleImageUpload = (file, onDone) => {
+    const handleImageUpload = (file, onDone, onHighRes) => {
       if (!file) return;
       setImgUploading(true);
       const reader = new FileReader();
       reader.onload = e => {
         const img = new Image();
         img.onload = () => {
+          // Speicherversion: klein (600px) — spart Platz und Ladezeit
           const MAX = 600,
             scale = Math.min(1, MAX / img.width, MAX / img.height);
           const canvas = document.createElement("canvas");
@@ -2578,6 +2579,20 @@
           ctx.imageSmoothingQuality = "high";
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+
+          // Analyseversion: groß (1600px, Q92) — Kennzeichen bleibt lesbar
+          if (onHighRes) {
+            const HMAX = 1600,
+              hs = Math.min(1, HMAX / img.width, HMAX / img.height);
+            const hc = document.createElement("canvas");
+            hc.width = Math.round(img.width * hs);
+            hc.height = Math.round(img.height * hs);
+            const hctx = hc.getContext("2d");
+            hctx.imageSmoothingEnabled = true;
+            hctx.imageSmoothingQuality = "high";
+            hctx.drawImage(img, 0, 0, hc.width, hc.height);
+            onHighRes(hc.toDataURL("image/jpeg", 0.92));
+          }
           onDone(dataUrl);
           setImgUploading(false);
           toast_(`Bild geladen ✓ (${Math.round(dataUrl.length * .75 / 1024)} KB)`);
@@ -3086,20 +3101,30 @@
     }, [scannerOpen, scannerStatus]);
 
     // ── Actions ──────────────────────────────────────────────────────────────────
-    // ── KI-Fotoanalyse: Fahrzeugdaten aus Bild erkennen ─────────────────────
+    // ── KI-Fotoanalyse (BETA) — Fahrzeugdaten aus Bild erkennen ─────────────
+    // Noch nicht zuverlässig genug für ein Bezahlfeature. Wir messen still die
+    // Trefferquote (pcn_ai_stats) und entscheiden mit Daten, ob/wann es reif ist.
     const [analyzing, setAnalyzing] = (0, _react.useState)(false);
-    const [analyzeResult, setAnalyzeResult] = (0, _react.useState)(null); // {fields, confidence}
+    const [analyzeResult, setAnalyzeResult] = (0, _react.useState)(null);
+    const [analyzeHiRes, setAnalyzeHiRes] = (0, _react.useState)(null); // hochauflösende Version fürs Erkennen
 
-    const analyzeVehiclePhoto = async dataUrl => {
-      if (!dataUrl) return;
-      setAnalyzing(true);
-      setAnalyzeResult(null);
+    const trackAI = (ok, fieldCount) => {
       try {
-        // dataURL → base64 + media type
-        const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);
-        if (!m) {
-          throw new Error("Bildformat nicht lesbar");
-        }
+        const s = JSON.parse(localStorage.getItem("pcn_ai_stats") || '{"runs":0,"ok":0,"fields":0}');
+        s.runs++;
+        if (ok) s.ok++;
+        s.fields += fieldCount || 0;
+        localStorage.setItem("pcn_ai_stats", JSON.stringify(s));
+      } catch (e) {}
+    };
+    const analyzeVehiclePhoto = async (dataUrl, attempt = 1) => {
+      const src = analyzeHiRes || dataUrl;
+      if (!src) return;
+      setAnalyzing(true);
+      if (attempt === 1) setAnalyzeResult(null);
+      try {
+        const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(src);
+        if (!m) throw new Error("Bildformat nicht lesbar");
         const mediaType = m[1],
           b64 = m[2];
         const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -3126,9 +3151,9 @@
 {
   "hersteller": "z.B. Porsche | null wenn unklar",
   "modell": "z.B. 911 Carrera S, Cayman GT4 | null",
-  "baujahr": "Schätzung als Jahr oder Zeitraum, z.B. 2019 | null",
+  "baujahr": "Schätzung als Jahr, z.B. 2019 | null",
   "farbe": "deutsche Farbbezeichnung, z.B. Guards Rot, Pythongrün | null",
-  "kennzeichen": "exakt wie lesbar, Format AW-PC 718 | null wenn nicht lesbar",
+  "kennzeichen": "exakt wie lesbar, Format AW-PC 718 | null wenn nicht sicher lesbar",
   "kraftstoff": "Benzin | Diesel | Elektro | Hybrid | null",
   "confidence": { "modell": 0-100, "farbe": 0-100, "kennzeichen": 0-100 },
   "hinweis": "kurzer Hinweis falls etwas unsicher ist, sonst null"
@@ -3137,35 +3162,54 @@
 Wichtig:
 - Nur eintragen was du wirklich siehst. Im Zweifel null.
 - Beim Modell so genau wie möglich (Generation/Variante wenn erkennbar).
-- Farbe: bei Porsche die offizielle Bezeichnung wenn erkennbar, sonst normale Farbe.
-- Kennzeichen nur wenn zweifelsfrei lesbar.`
+- Kennzeichen NUR wenn zweifelsfrei lesbar — lieber null als geraten.
+- confidence ehrlich einschätzen: unter 50 heißt "unsicher".`
               }]
             }]
           })
         });
-        if (!res.ok) throw new Error("Analyse fehlgeschlagen (" + res.status + ")");
+        if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
         const raw = (data.content || []).map(c => c.type === "text" ? c.text : "").join("").trim();
         const clean = raw.replace(/```json|```/g, "").trim();
         const parsed = JSON.parse(clean);
 
-        // Nur Felder übernehmen die leer sind — keine Nutzereingaben überschreiben
+        // Nur leere Felder befüllen — und nur wenn confidence ausreicht
         const fields = {};
+        const conf = parsed.confidence || {};
         ["hersteller", "modell", "baujahr", "farbe", "kennzeichen", "kraftstoff"].forEach(k => {
-          if (parsed[k] && !addVForm[k]) fields[k] = String(parsed[k]);
+          if (!parsed[k] || addVForm[k]) return;
+          // Kennzeichen nur ab 70% — falsche Kennzeichen sind schlimmer als keine
+          if (k === "kennzeichen" && (conf.kennzeichen ?? 0) < 70) return;
+          fields[k] = String(parsed[k]);
         });
+        const n = Object.keys(fields).length;
+        trackAI(n > 0, n);
+        if (!n) {
+          // Automatischer 2. Versuch mit anderem Foto, falls vorhanden
+          const imgs = addVForm.images || [];
+          if (attempt === 1 && imgs.length > 1) {
+            setTimeout(() => analyzeVehiclePhoto(imgs[1], 2), 200);
+            return;
+          }
+          setAnalyzeResult({
+            fields: {},
+            empty: true
+          });
+          return;
+        }
         setAnalyzeResult({
           fields,
-          confidence: parsed.confidence || {},
-          hinweis: parsed.hinweis,
-          all: parsed
+          confidence: conf,
+          hinweis: parsed.hinweis
         });
-        if (!Object.keys(fields).length) {
-          toast_("Keine neuen Daten erkannt — Felder sind bereits ausgefüllt");
-        }
       } catch (e) {
         console.error("Fotoanalyse:", e);
-        toast_("Analyse nicht möglich — bitte manuell eintragen", "err");
+        trackAI(false, 0);
+        setAnalyzeResult({
+          fields: {},
+          failed: true
+        });
       } finally {
         setAnalyzing(false);
       }
@@ -3220,6 +3264,7 @@ Wichtig:
       setShowAddV(false);
       setAnalyzeResult(null);
       setAnalyzing(false);
+      setAnalyzeHiRes(null);
       setAddVForm({
         hersteller: "Porsche",
         modell: "",
@@ -12810,6 +12855,7 @@ Wichtig:
           setShowAddV(false);
           setAnalyzeResult(null);
           setAnalyzing(false);
+          setAnalyzeHiRes(null);
         }
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
@@ -12825,11 +12871,15 @@ Wichtig:
     }, "Fahrzeug hinzufügen"), !(addVForm.images || []).length && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 12,
-        color: C.gold,
+        color: C.muted,
         marginBottom: 12,
         lineHeight: 1.5
       }
-    }, "✨ Lade ein Foto hoch — Modell, Farbe und Kennzeichen werden automatisch erkannt."), (addVForm.images || []).length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+    }, "✨ Lade ein Foto hoch — wir versuchen Modell, Farbe und Kennzeichen zu erkennen.", /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: "#666"
+      }
+    }, " Klappt nicht immer, Beta.")), (addVForm.images || []).length > 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 12
       }
@@ -12899,17 +12949,15 @@ Wichtig:
       style: {
         display: "none"
       },
-      onChange: e => handleImageUpload(e.target.files[0], url => {
-        setAddVForm(p => {
-          const imgs = [...(p.images || []), url];
-          // Beim ERSTEN Foto automatisch analysieren
-          if (imgs.length === 1) setTimeout(() => analyzeVehiclePhoto(url), 100);
-          return {
-            ...p,
-            images: imgs
-          };
-        });
-      })
+      onChange: e => handleImageUpload(e.target.files[0], url => setAddVForm(p => {
+        const imgs = [...(p.images || []), url];
+        if (imgs.length === 1) setTimeout(() => analyzeVehiclePhoto(url), 150);
+        return {
+          ...p,
+          images: imgs
+        };
+      }), hi => setAnalyzeHiRes(hi) // hochauflösende Version für die Erkennung
+      )
     }), /*#__PURE__*/_react.default.createElement("span", {
       style: {
         fontSize: 20
@@ -12924,19 +12972,7 @@ Wichtig:
         fontSize: 11,
         color: C.muted
       }
-    }, "Mehrere Fotos möglich — erstes Foto = Titelbild", (addVForm.images || []).length > 0 && !analyzing && !analyzeResult && /*#__PURE__*/_react.default.createElement("button", {
-      onClick: () => analyzeVehiclePhoto(addVForm.images[0]),
-      style: {
-        background: "none",
-        border: "none",
-        color: C.gold,
-        fontSize: 11,
-        fontWeight: 700,
-        cursor: "pointer",
-        padding: "0 0 0 6px",
-        fontFamily: "'Barlow',sans-serif"
-      }
-    }, "✨ Erneut analysieren"))), analyzing && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Mehrere Fotos möglich — erstes Foto = Titelbild")), analyzing && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: `${C.gold}12`,
         border: `1px solid ${C.gold}33`,
@@ -12963,7 +12999,65 @@ Wichtig:
         color: C.gold,
         fontWeight: 600
       }
-    }, "Foto wird analysiert…")), analyzeResult && Object.keys(analyzeResult.fields || {}).length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Foto wird analysiert…")), analyzeResult && (analyzeResult.empty || analyzeResult.failed) && !analyzing && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#aaa",
+        fontWeight: 600,
+        marginBottom: 3
+      }
+    }, analyzeResult.failed ? "Analyse nicht möglich" : "Nichts sicher erkannt"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#666",
+        lineHeight: 1.5
+      }
+    }, "Bitte manuell eintragen. Tipp: Seitenansicht bei Tageslicht, Kennzeichen frontal.")), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setAnalyzeResult(null),
+      style: {
+        background: "none",
+        border: "none",
+        color: "#555",
+        fontSize: 15,
+        cursor: "pointer",
+        padding: 0,
+        lineHeight: 1
+      }
+    }, "✕")), (addVForm.images || []).length > 0 && /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => analyzeVehiclePhoto(addVForm.images[0]),
+      style: {
+        width: "100%",
+        marginTop: 9,
+        background: "transparent",
+        border: `1px solid ${C.border}`,
+        borderRadius: 7,
+        padding: "8px",
+        color: "#888",
+        fontSize: 12,
+        fontWeight: 600,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif"
+      }
+    }, "↻ Nochmal versuchen")), analyzeResult && Object.keys(analyzeResult.fields || {}).length > 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: `${C.gold}10`,
         border: `1px solid ${C.gold}44`,
@@ -12980,12 +13074,28 @@ Wichtig:
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
+        display: "flex",
+        gap: 6,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
         fontSize: 12,
         fontWeight: 800,
         color: C.gold,
         letterSpacing: .3
       }
-    }, "✨ Aus dem Foto erkannt"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "✨ Aus dem Foto erkannt"), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 8,
+        fontWeight: 800,
+        letterSpacing: .5,
+        color: "#0a0a0a",
+        background: C.gold,
+        padding: "1px 5px",
+        borderRadius: 3
+      }
+    }, "BETA")), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => setAnalyzeResult(null),
       style: {
         background: "none",
