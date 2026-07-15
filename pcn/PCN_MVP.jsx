@@ -377,6 +377,49 @@ const LOCKED_FEATURES = [
 ];
 
 // ─── Status Presets ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// PUNKTESYSTEM — zentrale Werte-Definition
+// Kurs: 1 Punkt = 0,0911 Cent · 1 € = 1.098 Punkte (die 911 steckt drin 🏁)
+// Priorisierung: 1. Community · 2. Fahrzeugpflege · 3. Aktivität · 4. Treue
+// ═══════════════════════════════════════════════════════════════════════════
+const POINT_RATE = 0.000911;              // € pro Punkt
+const ptsToEur = (p) => p * POINT_RATE;   // Punkte → Euro
+const eurToPts = (e) => Math.round(e / POINT_RATE);
+
+const POINTS = {
+  // ── PRIO 1: Community fördern ──
+  qr_scan:          150,   // QR-Scan bestätigt — echte Begegnung, höchster Wert
+  view_akte:         25,   // fremde Fahrzeugakte angesehen (einmalig je Fahrzeug)
+
+  // ── PRIO 2: Fahrzeugpflege belohnen ──
+  vehicle_added:    500,   // Fahrzeug angelegt
+  vehicle_complete: 750,   // Akte vollständig gepflegt (Bonus)
+  logbook:          150,   // Logbuch-Eintrag
+  photo:             50,   // Foto hochgeladen (max. 10 zählen)
+
+  // ── PRIO 3: Aktivität belohnen ──
+  event_confirmed: 1000,   // bestätigte Event-Teilnahme
+  message:           50,   // Konversation geführt
+  news_read:         25,   // Club-News gelesen
+
+  // ── PRIO 4: Treue belohnen ──
+  member_year:      500,   // pro vollem Mitgliedsjahr
+  beitrag_paid:     300,   // Beitrag des Jahres bezahlt
+
+  // ── Geschenke des Clubs ──
+  birthday:         200,   // Geburtstag
+  birthday_round:   911,   // runder Geburtstag (18, 25, 30, 40, 50…) 🏁
+};
+
+// Tier-Schwellen — an neue Punktehöhe angepasst
+const TIERS = [
+  {name:"Bronze", pts:1000,  icon:"🥉", color:"#CD7F32"},
+  {name:"Silber", pts:5000,  icon:"🥈", color:"#C0C0C0"},
+  {name:"Gold",   pts:12000, icon:"🥇", color:"#C8A96E"},
+  {name:"Platin", pts:25000, icon:"💎", color:"#E5E4E2"},
+  {name:"Legend", pts:50000, icon:"🏁", color:"#D5001C"},
+];
+
 const STATUS_PRESETS = [
   {icon:"🏁", text:"Komme gleich zurück",  mins:15},
   {icon:"⏱️", text:"Bin in 5 Min zurück",  mins:5},
@@ -451,7 +494,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
             {myReg.status==="pending"&&(
               <div style={{background:`${C.amber}18`,borderRadius:8,padding:"10px 12px",marginBottom:12,fontSize:12,color:C.amber,lineHeight:1.6}}>
                 ⏳ Deine Anmeldung wird vom Admin geprüft und bestätigt.<br/>
-                Nach Bestätigung erhältst du <b>+100 Punkte</b> und eine Startnummer.
+                Nach Bestätigung erhältst du <b>+1.000 Punkte</b> und eine Startnummer.
               </div>
             )}
             {myReg.status==="confirmed"&&(
@@ -524,7 +567,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
             )}
             <button className="btn" onClick={()=>onJoin(ev.id,selV,selC)} style={{width:"100%",padding:"14px",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
               <span>Anmelden →</span>
-              <span style={{fontSize:10,opacity:.7,fontWeight:600}}>+100 Pkt bei Bestätigung</span>
+              <span style={{fontSize:10,opacity:.7,fontWeight:600}}>+1.000 Pkt bei Bestätigung</span>
             </button>
           </div>
         )}
@@ -974,21 +1017,81 @@ function PCNInner() {
     toast_("✓ Scan bestätigt — Nutzer erhält +10 Punkte");
   };
 
+  // Prüft ob eine Fahrzeugakte vollständig gepflegt ist
+  const isVehicleComplete = (v) => {
+    if(!v) return false;
+    const required = ["hersteller","modell","baujahr","kennzeichen","farbe","kraftstoff","getriebe"];
+    const hasFields = required.every(f => v[f] && String(v[f]).trim());
+    const hasImage = !!(v.image || (v.images||[]).length);
+    const hasStory = !!(v.besonderheiten && v.besonderheiten.trim());
+    return hasFields && hasImage && hasStory;
+  };
+
   const calcPoints = () => {
     let pts = 0;
-    pts += myVehicles.length * 50;             // 50 Punkte pro Fahrzeug
-    pts += Object.values(logbook).flat().length * 10; // 10 Punkte pro Logbuch-Eintrag
-    pts += myParticipations.filter(p=>p.status==="confirmed").length * 100; // 100 Punkte nur bei bestätigter Teilnahme
-    pts += myThreads.length * 5;               // 5 Punkte pro Nachricht
-    // 10 Punkte pro gelesenen News-Artikel
-    try { pts += JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length * 10; } catch(e){}
-    // 2 Punkte pro angesehenes fremdes Fahrzeug
-    try { pts += getViewedVehicles().length * 2; } catch(e){}
-    // 10 Punkte pro bestätigtem QR-Scan
-    try { pts += getScanConfirmed().length * 10; } catch(e){}
+    const V = POINTS;
+
+    // ── PRIO 1: Community (Scans, Kontakte) ──
+    try { pts += getScanConfirmed().length * V.qr_scan; } catch(e){}
+    try { pts += getViewedVehicles().length * V.view_akte; } catch(e){}
+
+    // ── PRIO 2: Fahrzeugpflege (Akte, Doku) ──
+    pts += myVehicles.length * V.vehicle_added;
+    myVehicles.forEach(v=>{
+      if(isVehicleComplete(v)) pts += V.vehicle_complete;
+      const imgs = (v.images||[]).length || (v.image?1:0);
+      pts += Math.min(imgs, 10) * V.photo;   // max 10 Fotos zählen
+    });
+    pts += Object.values(logbook).flat().length * V.logbook;
+
+    // ── PRIO 3: Aktivität (Events, Nachrichten, News) ──
+    pts += myParticipations.filter(p=>p.status==="confirmed").length * V.event_confirmed;
+    pts += myThreads.length * V.message;
+    try { pts += JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length * V.news_read; } catch(e){}
+
+    // ── PRIO 4: Treue (Mitgliedsjahre, Beitrag) ──
+    if(me?.createdAt){
+      const years = Math.floor((Date.now()-new Date(me.createdAt))/(365.25*864e5));
+      pts += Math.max(0, years) * V.member_year;
+    }
+    if(me?.beitrag_bezahlt) pts += V.beitrag_paid;
+
+    // ── Bonus: Geburtstag (einmal pro Jahr, automatisch) ──
+    try {
+      const bdayPts = JSON.parse(localStorage.getItem("pcn_bday_pts")||"[]");
+      bdayPts.forEach(entry => { pts += entry.pts||0; });
+    } catch(e){}
+
     return pts;
   };
   const myPoints = calcPoints();
+
+  // ── Geburtstags-Punkte automatisch gutschreiben ──────────────────────────
+  useEffect(()=>{
+    if(!me?.geburtstag || isDemo) return;
+    const bd = new Date(me.geburtstag);
+    if(isNaN(bd)) return;
+    const today = new Date();
+    const isBirthday = bd.getDate()===today.getDate() && bd.getMonth()===today.getMonth();
+    if(!isBirthday) return;
+
+    const year = today.getFullYear();
+    let awarded = [];
+    try { awarded = JSON.parse(localStorage.getItem("pcn_bday_pts")||"[]"); } catch(e){}
+    if(awarded.some(a=>a.year===year)) return; // schon gutgeschrieben
+
+    const age = year - bd.getFullYear();
+    const isRound = age%10===0 || age===18 || age===25;
+    const pts = isRound ? POINTS.birthday_round : POINTS.birthday;
+
+    awarded.push({year, pts, age});
+    localStorage.setItem("pcn_bday_pts", JSON.stringify(awarded));
+    setTimeout(()=>{
+      toast_(isRound
+        ? `🎂 Alles Gute zum ${age}. Geburtstag! +${pts} Punkte vom PCN 🎉`
+        : `🎂 Herzlichen Glückwunsch! +${pts} Punkte vom PCN`);
+    }, 1200);
+  },[me?.geburtstag, me?.id]);
 
   const isFavorite = (vehicleId) => favorites.includes(vehicleId);
   const toggleFavorite = (vehicleId) => {
@@ -1001,15 +1104,8 @@ function PCNInner() {
       return next;
     });
   };
-  const TIERS = [
-    {name:"Bronze",  pts:100},
-    {name:"Silber",  pts:300},
-    {name:"Gold",    pts:600},
-    {name:"Platin",  pts:1000},
-    {name:"Legend",  pts:2000},
-  ];
   const currentTier = TIERS.filter(t=>myPoints>=t.pts).slice(-1)[0]||null;
-  const nextTier = TIERS.find(t=>myPoints<t.pts)||{name:"Legend",pts:2000};
+  const nextTier = TIERS.find(t=>myPoints<t.pts)||{name:"Legend",pts:50000};
   const prevTierPts = currentTier?.pts||0;
   const pointsToNext = nextTier.pts;
   const pointsProgress = Math.min(100, Math.round(((myPoints-prevTierPts)/(nextTier.pts-prevTierPts))*100));
@@ -2456,7 +2552,7 @@ function PCNInner() {
                 </div>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2,flexShrink:0}}>
                   <span style={{fontSize:18,color:"rgba(255,255,255,.7)"}}>›</span>
-                  {me&&<span style={{fontSize:9,color:"rgba(255,255,255,.5)",fontWeight:600}}>+5 Pkt</span>}
+                  {me&&<span style={{fontSize:9,color:"rgba(255,255,255,.5)",fontWeight:600}}>+50 Pkt</span>}
                 </div>
               </button>
             )}
@@ -3820,7 +3916,7 @@ function PCNInner() {
                 <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center",cursor:"pointer"}} onClick={()=>setShowAddV(true)}>
                   <div style={{fontSize:32,marginBottom:8}}>🏎️</div>
                   <div style={{fontSize:13,color:C.white,fontWeight:600,marginBottom:4}}>Erstes Fahrzeug hinzufügen</div>
-                  <div style={{fontSize:11,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+50 Pkt</span></div>
+                  <div style={{fontSize:11,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+500 Pkt</span></div>
                 </div>
               ):myVehicles.map(v=>(
                 <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,marginBottom:12,overflow:"hidden",cursor:"pointer"}}
@@ -4653,8 +4749,8 @@ function PCNInner() {
               <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>📊 Meine Aktivität</div>
               {[
                 ["❤️","Favoriten",favorites.length+" Fahrzeuge"],
-                ["👁","Angesehen",getViewedVehicles().length+" Akten · +"+(getViewedVehicles().length*2)+" Pkt"],
-                ["📱","QR-Scans bestätigt",getScanConfirmed().length+" · +"+(getScanConfirmed().length*10)+" Pkt"],
+                ["👁","Angesehen",getViewedVehicles().length+" Akten · +"+(getViewedVehicles().length*POINTS.view_akte).toLocaleString("de-DE")+" Pkt"],
+                ["📱","QR-Scans bestätigt",getScanConfirmed().length+" · +"+(getScanConfirmed().length*POINTS.qr_scan).toLocaleString("de-DE")+" Pkt"],
               ].map(([icon,label,val])=>(
                 <div key={label} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
                   <span style={{fontSize:18,width:24,textAlign:"center"}}>{icon}</span>
@@ -4693,22 +4789,33 @@ function PCNInner() {
               <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid rgba(255,255,255,.1)`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,color:C.gold}}>{myPoints}</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,color:C.gold}}>{myPoints.toLocaleString("de-DE")}</span>
                     <span style={{fontSize:15,color:C.muted}}>Punkte</span>
                     <button onClick={()=>setShowInfoModal("points")}
                       style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,padding:0,lineHeight:1}}>ℹ️</button>
                   </div>
                   <div style={{textAlign:"right"}}>
                     <div style={{fontSize:12,color:C.muted}}>Nächste Stufe</div>
-                    <div style={{fontSize:15,fontWeight:700,color:C.gold}}>{nextTier.name} · {pointsToNext} Pkt</div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.gold}}>
+                      {nextTier.icon||""} {nextTier.name} · {(nextTier.pts-myPoints).toLocaleString("de-DE")} Pkt
+                    </div>
                   </div>
                 </div>
                 {/* Progress bar */}
                 <div style={{height:8,background:"rgba(255,255,255,.1)",borderRadius:99,overflow:"hidden"}}>
                   <div style={{height:"100%",width:`${pointsProgress}%`,background:`linear-gradient(90deg, ${C.red}, ${C.gold})`,borderRadius:99,transition:"width .6s ease"}}/>
                 </div>
-                <div style={{fontSize:11,color:C.muted,marginTop:6}}>
-                  🏁 {myParticipations.length} Events · 🚗 {myVehicles.length} Fahrzeuge · 📋 {Object.values(logbook).flat().length} Logbuch-Einträge
+                {/* Gegenwert + aktuelle Stufe */}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+                  <div style={{fontSize:11,color:C.muted}}>
+                    {currentTier
+                      ? <span style={{color:currentTier.color,fontWeight:700}}>{currentTier.icon} {currentTier.name}</span>
+                      : <span>Noch keine Stufe</span>}
+                    {" · "}🏁 {myParticipations.length} Events · 🚗 {myVehicles.length} Fzg
+                  </div>
+                  <div style={{fontSize:11,color:C.gold,fontWeight:700}}>
+                    ≈ {ptsToEur(myPoints).toFixed(2).replace(".",",")} € Gegenwert
+                  </div>
                 </div>
               </div>
 
@@ -4730,9 +4837,9 @@ function PCNInner() {
                   ["🏁","Events",myParticipations.filter(p=>p.status==="confirmed").length,"bestätigt",()=>setTab("events")],
                   ["💬","Chats",myThreads.length,"aktive Chats",()=>setTab("messages")],
                   ["❤️","Favoriten",favorites.length,"gespeichert",()=>setTab("community")],
-                  ["👁","Angesehen",getViewedVehicles().length,"Akten · +"+getViewedVehicles().length*2+" Pkt",()=>setTab("community")],
-                  ["📱","QR-Scans",getScanConfirmed().length,"bestätigt · +"+getScanConfirmed().length*10+" Pkt",()=>setTab("community")],
-                  ["📰","News",JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length,"gelesen · +"+JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length*10+" Pkt",()=>setTab("dashboard")],
+                  ["👁","Angesehen",getViewedVehicles().length,"Akten · +"+(getViewedVehicles().length*POINTS.view_akte).toLocaleString("de-DE")+" Pkt",()=>setTab("community")],
+                  ["📱","QR-Scans",getScanConfirmed().length,"bestätigt · +"+(getScanConfirmed().length*POINTS.qr_scan).toLocaleString("de-DE")+" Pkt",()=>setTab("community")],
+                  ["📰","News",JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length,"gelesen · +"+(JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length*POINTS.news_read).toLocaleString("de-DE")+" Pkt",()=>setTab("dashboard")],
                 ].map(([icon,label,val,sub,onTap])=>(
                   <button key={label} onClick={onTap}
                     style={{background:C.black,borderRadius:10,padding:"12px",textAlign:"center",
@@ -4964,49 +5071,98 @@ function PCNInner() {
 
       {/* ── POINTS INFO MODAL ── */}
       {showInfoModal==="points"&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
           onClick={()=>setShowInfoModal(false)}>
-          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"28px 24px",maxWidth:380,width:"100%",animation:"fadeIn .2s"}}
+          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:6}}>
-              🏆 Punktesystem
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:4}}>
+              🏆 Das PCN-Punktesystem
             </div>
-            <div style={{fontSize:14,color:C.muted,lineHeight:1.7,marginBottom:20}}>
-              Sammle Punkte durch Aktivitäten und schalte neue Funktionen frei:
+            <div style={{fontSize:13,color:C.muted,lineHeight:1.65,marginBottom:16}}>
+              Punkte belohnen echtes Club-Leben — Begegnungen, gepflegte Fahrzeuge, Teilnahme.
             </div>
+
+            {/* Kurs-Box */}
+            <div style={{background:`${C.gold}12`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:"14px",marginBottom:18}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                <span style={{fontSize:12,fontWeight:700,color:C.gold,letterSpacing:.5}}>WECHSELKURS</span>
+                <span style={{fontSize:10,color:"#666"}}>🏁 mit 911 im Kurs</span>
+              </div>
+              <div style={{fontSize:18,fontWeight:900,color:C.white,fontFamily:"'Barlow Condensed',sans-serif"}}>
+                1 Punkt = 0,0911 Cent
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginTop:3}}>1 € = 1.098 Punkte · Dein Stand: {myPoints.toLocaleString("de-DE")} Pkt ≈ {ptsToEur(myPoints).toFixed(2).replace(".",",")} €</div>
+            </div>
+
+            {/* Punktequellen nach Priorität */}
             {[
-              ["🚗","Fahrzeug anlegen","50 Punkte pro Fahrzeug"],
-              ["📋","Logbuch-Eintrag","10 Punkte pro Eintrag"],
-              ["🏁","Event-Teilnahme","100 Punkte pro Veranstaltung"],
-              ["💬","Nachricht senden","5 Punkte pro Nachricht"],
-              ["👥","Mitglied werben","200 Punkte pro Neumitglied"],
-            ].map(([icon,label,pts])=>(
-              <div key={label} style={{display:"flex",gap:12,alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
-                <span style={{fontSize:22,flexShrink:0,width:32,textAlign:"center"}}>{icon}</span>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:15,fontWeight:600,color:C.white}}>{label}</div>
-                </div>
-                <div style={{fontSize:15,fontWeight:800,color:C.gold,flexShrink:0}}>{pts}</div>
+              {group:"👥 Community — am wertvollsten", color:"#5b8fff", items:[
+                ["📱","QR-Scan bestätigt","+"+POINTS.qr_scan],
+                ["👁","Fremde Akte ansehen","+"+POINTS.view_akte],
+              ]},
+              {group:"🚗 Fahrzeugpflege", color:C.gold, items:[
+                ["🚗","Fahrzeug anlegen","+"+POINTS.vehicle_added],
+                ["✨","Akte vollständig gepflegt","+"+POINTS.vehicle_complete],
+                ["📋","Logbuch-Eintrag","+"+POINTS.logbook],
+                ["📸","Foto hochgeladen","+"+POINTS.photo],
+              ]},
+              {group:"🏁 Aktivität", color:C.red, items:[
+                ["🏁","Event bestätigt","+"+POINTS.event_confirmed],
+                ["💬","Konversation geführt","+"+POINTS.message],
+                ["📰","Club-News gelesen","+"+POINTS.news_read],
+              ]},
+              {group:"🤝 Treue", color:C.green, items:[
+                ["📅","Pro Mitgliedsjahr","+"+POINTS.member_year],
+                ["💳","Beitrag bezahlt","+"+POINTS.beitrag_paid],
+              ]},
+              {group:"🎁 Geschenke des Clubs", color:"#e879f9", items:[
+                ["🎂","Geburtstag","+"+POINTS.birthday],
+                ["🎉","Runder Geburtstag","+"+POINTS.birthday_round],
+              ]},
+            ].map(sec=>(
+              <div key={sec.group} style={{marginBottom:14}}>
+                <div style={{fontSize:11,fontWeight:800,color:sec.color,letterSpacing:.5,marginBottom:6}}>{sec.group}</div>
+                {sec.items.map(([i,l,p])=>(
+                  <div key={l} style={{display:"flex",gap:9,padding:"6px 0",borderBottom:`1px solid ${C.border}`,alignItems:"center"}}>
+                    <span style={{width:20,textAlign:"center",fontSize:14}}>{i}</span>
+                    <span style={{flex:1,color:"#ddd",fontSize:13}}>{l}</span>
+                    <span style={{color:C.gold,fontWeight:800,fontSize:13,fontFamily:"'Barlow Condensed',sans-serif"}}>{p}</span>
+                  </div>
+                ))}
               </div>
             ))}
-            <div style={{marginTop:16,padding:"12px",background:`${C.gold}11`,borderRadius:10,fontSize:12,color:C.muted,lineHeight:1.7}}>
-              <div style={{marginBottom:8,fontWeight:700,color:C.gold}}>🏆 Punktestufen</div>
-              {[["Bronze","100"],["Silber","300"],["Gold","600"],["Platin","1.000"],["Legend","2.000"]].map(([n,p])=>(
-                <div key={n} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:`1px solid ${C.border}`}}>
-                  <span style={{color:C.white}}>{n}</span><span style={{color:C.gold}}>ab {p} Pkt</span>
-                </div>
-              ))}
-              <div style={{marginTop:12,marginBottom:6,fontWeight:700,color:"#aaa"}}>Punkte erhalten für:</div>
-              {[["🚗","Fahrzeug anlegen","50 Pkt"],["📋","Logbuch-Eintrag","10 Pkt"],["🏁","Event (bestätigt)","100 Pkt"],
-                ["💬","Nachricht senden","5 Pkt"],["📰","News lesen","10 Pkt"],["👁","Fahrzeugakte ansehen","2 Pkt"],["📱","QR-Scan bestätigt","10 Pkt"]].map(([i,l,p])=>(
-                <div key={l} style={{display:"flex",gap:8,padding:"4px 0",borderBottom:`1px solid ${C.border}`,alignItems:"center"}}>
-                  <span style={{width:20,textAlign:"center"}}>{i}</span>
-                  <span style={{flex:1,color:C.white,fontSize:12}}>{l}</span>
-                  <span style={{color:C.green,fontWeight:700,fontSize:12}}>{p}</span>
+
+            {/* Stufen */}
+            <div style={{background:"#ffffff06",borderRadius:12,padding:"14px",marginBottom:14}}>
+              <div style={{fontSize:11,fontWeight:800,color:"#aaa",letterSpacing:.5,marginBottom:8}}>🏆 STUFEN</div>
+              {TIERS.map(t=>(
+                <div key={t.name} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",
+                  borderBottom:`1px solid ${C.border}`,alignItems:"center",
+                  opacity:myPoints>=t.pts?1:.45}}>
+                  <span style={{color:t.color,fontWeight:700,fontSize:13}}>{t.icon} {t.name}</span>
+                  <span style={{color:myPoints>=t.pts?C.green:C.muted,fontSize:12,fontWeight:600}}>
+                    {myPoints>=t.pts?"✓ erreicht":`ab ${t.pts.toLocaleString("de-DE")} Pkt`}
+                  </span>
                 </div>
               ))}
             </div>
-            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,marginTop:16}}
+
+            {/* Einlösen */}
+            <div style={{background:`${C.red}0d`,border:`1px solid ${C.red}33`,borderRadius:12,padding:"14px",marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:800,color:C.red,marginBottom:6}}>🛍️ Punkte einlösen</div>
+              <div style={{fontSize:12,color:"#aaa",lineHeight:1.7}}>
+                Gesammelte Punkte sollen künftig bei Partnern des Clubs einlösbar sein —
+                unter anderem im <strong style={{color:"#ddd"}}>Porsche Store</strong>, bei Club-Merchandise
+                oder als Rabatt auf Event-Gebühren.
+                <br/><br/>
+                <span style={{color:"#666",fontSize:11}}>
+                  Die Einlösung befindet sich in Abstimmung mit dem Vorstand und den Partnern.
+                  Deine Punkte verfallen nicht — sie werden vollständig übertragen.
+                </span>
+              </div>
+            </div>
+
+            <button className="btn" style={{width:"100%",padding:"14px",fontSize:15}}
               onClick={()=>setShowInfoModal(false)}>Verstanden ✓</button>
           </div>
         </div>
