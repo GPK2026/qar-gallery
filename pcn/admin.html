@@ -1373,6 +1373,20 @@ async function runFullDiagnostics(){
     else { add("ok","Nachricht verifiziert","Kommt beim Mitglied an"); okCount++; }
   }
 
+  // ── 6. KI-Proxy (optional) ──
+  const aiUrl = (window.PCN_CONFIG||{}).aiProxyUrl;
+  if(!aiUrl){
+    add("warn","KI-Fotoanalyse nicht eingerichtet","Optional — siehe AI_SETUP.md. Mitglieder tragen Daten manuell ein.");
+  } else {
+    try {
+      const r = await fetch(aiUrl, {method:"OPTIONS"});
+      if(r.ok||r.status===204){ add("ok","KI-Proxy erreichbar", aiUrl.slice(0,50)+"…"); okCount++; }
+      else { add("fail","KI-Proxy antwortet nicht","HTTP "+r.status); failCount++; }
+    } catch(e){
+      add("fail","KI-Proxy nicht erreichbar", String(e.message).slice(0,60)); failCount++;
+    }
+  }
+
   // ── Fazit ──
   const total = okCount+failCount;
   rows.push(`<div style="margin-top:12px;padding:11px;border-radius:8px;
