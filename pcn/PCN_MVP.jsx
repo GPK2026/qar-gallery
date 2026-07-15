@@ -1221,7 +1221,8 @@ function PCNInner() {
         }
       }
       const DB=window.PCN_DB; if(!DB) return;
-      const {data:session}=await DB.auth.session();
+      // refresh() liest frisch aus der DB (Beitragsstatus, Rolle) statt nur localStorage
+      const {data:session}=await (DB.auth.refresh?DB.auth.refresh():DB.auth.session());
       if(session){ await refreshAll(session); setScreen("app"); }
     })();
   },[]);
@@ -1334,6 +1335,17 @@ function PCNInner() {
     const t = setTimeout(()=>setDemoBannerVisible(true), 3000);
     return ()=>clearTimeout(t);
   },[isDemo, demoBannerClosed]);
+
+  // ── Beitragsstatus aktualisieren wenn Profil geöffnet wird ────────────────
+  useEffect(()=>{
+    if(tab!=="profile" || isDemo || !me?.email) return;
+    const DB=window.PCN_DB; if(!DB||!DB.auth.refresh) return;
+    DB.auth.refresh().then(({data})=>{
+      if(data && (data.beitrag_bezahlt!==me.beitrag_bezahlt || data.role!==me.role)){
+        setMe(prev=>({...prev, ...data}));
+      }
+    }).catch(()=>{});
+  },[tab]);
 
   // ── Track screen changes for analytics ───────────────────────────────────────
   useEffect(()=>{
@@ -4729,45 +4741,70 @@ function PCNInner() {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>💳 Wallet & Mitgliedschaft</div>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                <div style={{background:C.black,borderRadius:10,padding:"12px"}}>
-                  <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Mitglied seit</div>
-                  <div style={{fontSize:15,fontWeight:700,color:C.white}}>{me?.createdAt?new Date(me.createdAt).toLocaleDateString("de-DE",{month:"short",year:"numeric"}):"2026"}</div>
-                </div>
-                <div style={{background:C.black,borderRadius:10,padding:"12px"}}>
-                  <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Jahresbeitrag</div>
-                  <div style={{fontSize:15,fontWeight:700,color:C.green}}>✓ Bezahlt</div>
-                </div>
-              </div>
-              <div style={{background:`${C.border}44`,borderRadius:12,padding:"14px",marginBottom:10}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div>
-                    <div style={{fontSize:14,fontWeight:700,color:C.white}}>PCN Mitgliedschaft</div>
-                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>Gültig bis: 31.12.2026</div>
-                  </div>
-                  <div style={{background:C.green,borderRadius:6,padding:"4px 10px",fontSize:12,fontWeight:800,color:"#fff"}}>AKTIV</div>
-                </div>
-              </div>
-              <button className="btn ghost" style={{width:"100%",fontSize:14,padding:"12px",borderColor:C.gold,color:C.gold}}
-                onClick={async()=>{
-                  // Stripe Checkout — opens Stripe hosted payment page
-                  // Replace STRIPE_LINK with your actual Stripe Payment Link
-                  const STRIPE_LINK = "https://buy.stripe.com/test_placeholder";
-                  const params = new URLSearchParams({
-                    prefilled_email: me?.email||"",
-                    client_reference_id: me?.id||"",
-                  });
-                  // In production: open Stripe link with prefilled member data
-                  // For now: show setup info
-                  toast_("Stripe-Integration bereit. Bitte Stripe Payment Link in pcn_config.js eintragen.");
-                  // Uncomment when Stripe link is ready:
-                  // window.open(STRIPE_LINK+"?"+params.toString(), "_blank");
-                }}>
-                💳 Mitgliedsbeitrag bezahlen
-              </button>
-              <div style={{fontSize:10,color:"#444",textAlign:"center",marginTop:6}}>
-                Sichere Zahlung via Stripe · SEPA · Kreditkarte
-              </div>
+              {(()=>{
+                const isPaid = !!(me?.beitrag_bezahlt ?? me?.beitragBezahlt);
+                const paidDate = me?.beitrag_datum ? new Date(me.beitrag_datum) : null;
+                const year = new Date().getFullYear();
+                return (
+                  <>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                      <div style={{background:C.black,borderRadius:10,padding:"12px"}}>
+                        <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Mitglied seit</div>
+                        <div style={{fontSize:15,fontWeight:700,color:C.white}}>{me?.createdAt?new Date(me.createdAt).toLocaleDateString("de-DE",{month:"short",year:"numeric"}):"2026"}</div>
+                      </div>
+                      <div style={{background:C.black,borderRadius:10,padding:"12px"}}>
+                        <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Beitrag {year}</div>
+                        <div style={{fontSize:15,fontWeight:700,color:isPaid?C.green:"#ef4444"}}>
+                          {isPaid?"✓ Bezahlt":"⚠ Offen"}
+                        </div>
+                        {isPaid&&paidDate&&(
+                          <div style={{fontSize:9,color:"#555",marginTop:2}}>am {paidDate.toLocaleDateString("de-DE")}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{background:isPaid?`${C.border}44`:"#ef444415",border:isPaid?"none":"1px solid #ef444433",borderRadius:12,padding:"14px",marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div>
+                          <div style={{fontSize:14,fontWeight:700,color:C.white}}>PCN Mitgliedschaft</div>
+                          <div style={{fontSize:12,color:C.muted,marginTop:2}}>
+                            {isPaid?`Gültig bis: 31.12.${year}`:`Beitrag ${year} noch offen`}
+                          </div>
+                        </div>
+                        <div style={{background:isPaid?C.green:"#ef4444",borderRadius:6,padding:"4px 10px",fontSize:12,fontWeight:800,color:"#fff"}}>
+                          {isPaid?"AKTIV":"OFFEN"}
+                        </div>
+                      </div>
+                    </div>
+                    {!isPaid&&(
+                      <>
+                        <button className="btn ghost" style={{width:"100%",fontSize:14,padding:"12px",borderColor:C.gold,color:C.gold}}
+                          onClick={async()=>{
+                            const STRIPE_LINK = (window.PCN_CONFIG&&window.PCN_CONFIG.STRIPE_LINK)||"";
+                            if(!STRIPE_LINK){
+                              toast_("Stripe-Zahlung noch nicht aktiviert — bitte per Überweisung zahlen.");
+                              return;
+                            }
+                            const params = new URLSearchParams({
+                              prefilled_email: me?.email||"",
+                              client_reference_id: me?.id||"",
+                            });
+                            window.open(STRIPE_LINK+"?"+params.toString(), "_blank");
+                          }}>
+                          💳 Mitgliedsbeitrag bezahlen
+                        </button>
+                        <div style={{fontSize:10,color:"#444",textAlign:"center",marginTop:6}}>
+                          Sichere Zahlung via Stripe · SEPA · Kreditkarte
+                        </div>
+                      </>
+                    )}
+                    {isPaid&&(
+                      <div style={{fontSize:11,color:C.green,textAlign:"center",padding:"8px 0"}}>
+                        ✓ Vielen Dank — dein Beitrag {year} ist verbucht.
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             <button className="btn ghost" style={{width:"100%",fontSize:15,padding:"14px"}} onClick={async()=>{
