@@ -379,13 +379,15 @@ const LOCKED_FEATURES = [
 // ─── Status Presets ──────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
 // PUNKTESYSTEM — zentrale Werte-Definition
-// Kurs: 911 Punkte = 1 € (1 Punkt ≈ 0,11 Cent) — die 911 ist der Kurs 🏁
+// Kurs: 911 Punkte = 3 € — drei Partien teilen sich die Prämie:
+//       Sponsor · Club · QAR.Gallery → je 1 € pro 911 Punkte 🏁
 // Priorisierung: 1. Community · 2. Fahrzeugpflege · 3. Aktivität · 4. Treue
 // ═══════════════════════════════════════════════════════════════════════════
-const PTS_PER_EUR = 911;                       // 911 Punkte = 1 €
-const POINT_RATE = 1/PTS_PER_EUR;              // € pro Punkt
+const PTS_PER_UNIT = 911;                      // 911 Punkte
+const EUR_PER_UNIT = 3;                        // = 3 € (1 € je Partie)
+const POINT_RATE = EUR_PER_UNIT/PTS_PER_UNIT;  // € pro Punkt ≈ 0,329 ct
 const ptsToEur = (p) => p * POINT_RATE;
-const eurToPts = (e) => Math.round(e * PTS_PER_EUR);
+const eurToPts = (e) => Math.round(e / POINT_RATE);
 
 const POINTS = {
   // ── PRIO 1: Community fördern ──
@@ -5128,17 +5130,30 @@ function PCNInner() {
               Punkte belohnen echtes Club-Leben — Begegnungen, gepflegte Fahrzeuge, Teilnahme.
             </div>
 
-            {/* Kurs-Box */}
+            {/* Kurs-Box mit Split-Erklärung */}
             <div style={{background:`${C.gold}12`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:"14px",marginBottom:18}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                 <span style={{fontSize:12,fontWeight:700,color:C.gold,letterSpacing:.5}}>WECHSELKURS</span>
-                <span style={{fontSize:10,color:"#666"}}>🏁 der Kurs ist die 911</span>
+                <span style={{fontSize:10,color:"#666"}}>🏁 die 911 im Kurs</span>
               </div>
               <div style={{fontSize:22,fontWeight:900,color:C.white,fontFamily:"'Barlow Condensed',sans-serif"}}>
-                911 Punkte = 1 €
+                911 Punkte = 3 €
               </div>
-              <div style={{fontSize:11,color:C.muted,marginTop:3}}>
+              <div style={{fontSize:11,color:C.muted,marginTop:3,marginBottom:10}}>
                 Dein Stand: {myPoints.toLocaleString("de-DE")} Pkt ≈ <span style={{color:C.gold,fontWeight:700}}>{ptsToEur(myPoints).toFixed(2).replace(".",",")} €</span>
+              </div>
+              {/* Der Split — drei Partien, je 1 € */}
+              <div style={{borderTop:`1px solid ${C.gold}22`,paddingTop:10}}>
+                <div style={{fontSize:10,color:"#888",marginBottom:7,fontWeight:600}}>Getragen von drei Partien — je 1 €:</div>
+                <div style={{display:"flex",gap:6}}>
+                  {[["🏢","Sponsor"],["🏁","Club"],["📱","QAR"]].map(([i,n])=>(
+                    <div key={n} style={{flex:1,background:"#ffffff08",borderRadius:7,padding:"7px 4px",textAlign:"center"}}>
+                      <div style={{fontSize:13,marginBottom:2}}>{i}</div>
+                      <div style={{fontSize:9,color:"#999",fontWeight:600}}>{n}</div>
+                      <div style={{fontSize:11,color:C.gold,fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif"}}>1 €</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -5165,7 +5180,7 @@ function PCNInner() {
               ]},
               {group:"🎁 Geschenke des Clubs", color:"#e879f9", items:[
                 ["🎂","Geburtstag","+"+POINTS.birthday],
-                ["🎉","Runder Geburtstag (= 1 €)","+"+POINTS.birthday_round],
+                ["🎉","Runder Geburtstag (= 3 €)","+"+POINTS.birthday_round],
               ]},
             ].map(sec=>(
               <div key={sec.group} style={{marginBottom:14}}>
@@ -5197,16 +5212,31 @@ function PCNInner() {
 
             {/* Einlösen */}
             <div style={{background:`${C.red}0d`,border:`1px solid ${C.red}33`,borderRadius:12,padding:"14px",marginBottom:16}}>
-              <div style={{fontSize:12,fontWeight:800,color:C.red,marginBottom:6}}>🛍️ Punkte einlösen</div>
-              <div style={{fontSize:12,color:"#aaa",lineHeight:1.7}}>
+              <div style={{fontSize:12,fontWeight:800,color:C.red,marginBottom:8}}>🛍️ Punkte einlösen</div>
+              <div style={{fontSize:12,color:"#aaa",lineHeight:1.7,marginBottom:10}}>
                 Gesammelte Punkte sollen künftig bei Partnern des Clubs einlösbar sein —
                 unter anderem im <strong style={{color:"#ddd"}}>Porsche Store</strong>, bei Club-Merchandise
                 oder als Rabatt auf Event-Gebühren.
-                <br/><br/>
-                <span style={{color:"#666",fontSize:11}}>
-                  Die Einlösung befindet sich in Abstimmung mit dem Vorstand und den Partnern.
-                  Deine Punkte verfallen nicht — sie werden vollständig übertragen.
-                </span>
+              </div>
+              {/* Prämien-Beispiele */}
+              <div style={{background:"#00000044",borderRadius:8,padding:"10px 11px",marginBottom:10}}>
+                <div style={{fontSize:9,color:"#666",fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:7}}>Beispiele</div>
+                {[["QR-Sticker",5.9],["Schlüsselanhänger",25],["Porsche Cap",35],["Modellauto 1:43",60]].map(([n,p])=>{
+                  const need = eurToPts(p);
+                  const have = myPoints>=need;
+                  return (
+                    <div key={n} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}>
+                      <span style={{fontSize:11,color:have?C.green:"#888"}}>{have?"✓ ":""}{n}</span>
+                      <span style={{fontSize:11,color:have?C.green:"#666",fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif"}}>
+                        {need.toLocaleString("de-DE")} Pkt
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{color:"#666",fontSize:11,lineHeight:1.6}}>
+                Beispielwerte · Die Einlösung befindet sich in Abstimmung mit dem Vorstand
+                und den Partnern. Deine Punkte verfallen nicht — sie werden vollständig übertragen.
               </div>
             </div>
 
