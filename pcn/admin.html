@@ -159,7 +159,13 @@ const SB="https://xsyuhfleesstrchcwspg.supabase.co/rest/v1";
 const KEY=atob("ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5oemVYVm9abXhsWlhOemRISmphR04zYzNCbklpd2ljbTlzWlNJNkluTmxjblpwWTJWZmNtOXNaU0lzSW1saGRDSTZNVGM0TWpjek1EWTFPU3dpWlhod0lqb3lNRGs0TXpBMk5qVTVmUS5rQnFyVzk3N1pqTWZySFY1blJsMnpid3ZiSUczVzhUXy14MVdsZGl1alFj");
 const ADMIN="PCN-ADMIN-2026";
 const EUR=95;
-const TIERS=[{n:"Bronze",p:100},{n:"Silber",p:300},{n:"Gold",p:600},{n:"Platin",p:1000},{n:"Legend",p:2000}];
+// ── Punktesystem — synchron mit PCN_MVP.jsx ──
+const POINT_RATE=0.000911;                       // 1 Punkt = 0,0911 Cent
+const ptsToEur=(p)=>p*POINT_RATE;
+const POINTS={qr_scan:150,view_akte:25,vehicle_added:500,vehicle_complete:750,
+  logbook:150,photo:50,event_confirmed:1000,message:50,news_read:25,
+  member_year:500,beitrag_paid:300,birthday:200,birthday_round:911};
+const TIERS=[{n:"Bronze",p:1000},{n:"Silber",p:5000},{n:"Gold",p:12000},{n:"Platin",p:25000},{n:"Legend",p:50000}];
 const ADMIN_UUID="00000000-0000-0000-0000-000000000000";
 let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[]};
 let currentTab="dashboard";
@@ -251,7 +257,20 @@ const fmtDate=d=>d?new Date(d).toLocaleDateString("de-DE",{day:"2-digit",month:"
 const daysLeft=d=>Math.ceil((new Date(d)-new Date())/86400000);
 function toast(msg,type="ok"){const el=document.getElementById("toast");el.textContent=msg;el.className=type==="err"?"err":"";el.style.display="block";clearTimeout(el._t);el._t=setTimeout(()=>el.style.display="none",3200);}
 function stat(val,lbl,sub,col,tab){return `<div class="stat" ${tab?`onclick="showTab('${tab}')"`:''}><div class="stat-val" style="color:${col}">${val}</div><div class="stat-lbl">${lbl}</div><div class="stat-sub">${sub}</div>${tab?`<div class="stat-arrow">→ ${tab}</div>`:''}</div>`;}
-function calcPts(id){const v=DB.vehicles.filter(x=>x.user_id===id).length;const c=DB.participants.filter(x=>x.user_id===id&&x.status==="confirmed").length;return v*50+c*100;}
+function calcPts(id){
+  const veh=DB.vehicles.filter(x=>x.user_id===id);
+  const conf=DB.participants.filter(x=>x.user_id===id&&x.status==="confirmed").length;
+  const mem=DB.members.find(m=>m.id===id);
+  let p=0;
+  p+=veh.length*POINTS.vehicle_added;
+  p+=conf*POINTS.event_confirmed;
+  if(mem?.beitrag_bezahlt) p+=POINTS.beitrag_paid;
+  if(mem?.created_at){
+    const y=Math.floor((Date.now()-new Date(mem.created_at))/(365.25*864e5));
+    p+=Math.max(0,y)*POINTS.member_year;
+  }
+  return p;
+}
 function getTier(pts){return TIERS.filter(t=>pts>=t.p).slice(-1)[0]||null;}
 function tierBadge(pts){const t=getTier(pts);return t?`<span class="tier t-${t.n.toLowerCase()}">${t.n}</span>`:`<span class="b b-gray">—</span>`;}
 
@@ -573,11 +592,38 @@ function rPoints(el){
   const aktive=DB.members.filter(m=>m.role==="member");
   const withPts=aktive.map(m=>({...m,pts:calcPts(m.id)})).sort((a,b)=>b.pts-a.pts);
   const maxPts=withPts[0]?.pts||100;
+  const totalPts=withPts.reduce((s,m)=>s+m.pts,0);
+  const totalEur=ptsToEur(totalPts);
+  const avgPts=aktive.length?Math.round(totalPts/aktive.length):0;
   el.innerHTML=`<div class="page-title">🏆 Punkte & Engagement</div>
+
+  <!-- Punkte-Haftung: was der Club bei Einlösung schuldet -->
+  <div class="card" style="margin-bottom:12px;border-color:#C8A96E44">
+    <div class="sec-title" style="color:var(--gold)">💰 Punkte-Übersicht</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <div style="font-size:22px;font-weight:900;color:var(--gold);font-family:'Barlow Condensed',sans-serif">${totalPts.toLocaleString("de-DE")}</div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase">Punkte gesamt</div>
+      </div>
+      <div>
+        <div style="font-size:22px;font-weight:900;color:var(--white);font-family:'Barlow Condensed',sans-serif">€${totalEur.toFixed(2).replace(".",",")}</div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase">Gegenwert gesamt</div>
+      </div>
+      <div>
+        <div style="font-size:22px;font-weight:900;color:var(--muted);font-family:'Barlow Condensed',sans-serif">${avgPts.toLocaleString("de-DE")}</div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase">Ø pro Mitglied</div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:#555;line-height:1.6;padding-top:8px;border-top:1px solid var(--border)">
+      Kurs: 1 Punkt = 0,0911 Cent · 1 € = 1.098 Punkte<br>
+      Der Gegenwert entspricht der theoretischen Verbindlichkeit bei vollständiger Einlösung aller Punkte.
+    </div>
+  </div>
+
   <div class="card" style="margin-bottom:12px">
     <div class="sec-title">Punktestufen</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-      ${TIERS.map(t=>`<span class="tier t-${t.n.toLowerCase()}">${t.n} · ${t.p}+</span>`).join("")}
+      ${TIERS.map(t=>`<span class="tier t-${t.n.toLowerCase()}">${t.n} · ${t.p.toLocaleString("de-DE")}+</span>`).join("")}
     </div>
     <div style="font-size:11px;color:var(--muted);line-height:1.7">
       🚗 Fahrzeug anlegen: 50 Pkt · 🏁 Event bestätigt: 100 Pkt · 📋 Logbuch: 10 Pkt · 💬 Nachricht: 5 Pkt · 📰 News gelesen: 10 Pkt
