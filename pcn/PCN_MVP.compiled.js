@@ -896,12 +896,13 @@
   // ─── Status Presets ──────────────────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════════════════
   // PUNKTESYSTEM — zentrale Werte-Definition
-  // Kurs: 1 Punkt = 0,0911 Cent · 1 € = 1.098 Punkte (die 911 steckt drin 🏁)
+  // Kurs: 911 Punkte = 1 € (1 Punkt ≈ 0,11 Cent) — die 911 ist der Kurs 🏁
   // Priorisierung: 1. Community · 2. Fahrzeugpflege · 3. Aktivität · 4. Treue
   // ═══════════════════════════════════════════════════════════════════════════
-  const POINT_RATE = 0.000911; // € pro Punkt
-  const ptsToEur = p => p * POINT_RATE; // Punkte → Euro
-  const eurToPts = e => Math.round(e / POINT_RATE);
+  const PTS_PER_EUR = 911; // 911 Punkte = 1 €
+  const POINT_RATE = 1 / PTS_PER_EUR; // € pro Punkt
+  const ptsToEur = p => p * POINT_RATE;
+  const eurToPts = e => Math.round(e * PTS_PER_EUR);
   const POINTS = {
     // ── PRIO 1: Community fördern ──
     qr_scan: 150,
@@ -2276,6 +2277,28 @@
       return pts;
     };
     const myPoints = calcPoints();
+
+    // ── Punktezähler-Animation: erkennt Zuwachs und zeigt +X ──────────────────
+    const [pointsPulse, setPointsPulse] = (0, _react.useState)(false);
+    const [pointsDelta, setPointsDelta] = (0, _react.useState)(0);
+    const prevPointsRef = (0, _react.useRef)(null);
+    (0, _react.useEffect)(() => {
+      if (prevPointsRef.current === null) {
+        prevPointsRef.current = myPoints;
+        return;
+      }
+      const diff = myPoints - prevPointsRef.current;
+      prevPointsRef.current = myPoints;
+      if (diff <= 0) return;
+      setPointsDelta(diff);
+      setPointsPulse(true);
+      const t1 = setTimeout(() => setPointsPulse(false), 900);
+      const t2 = setTimeout(() => setPointsDelta(0), 1800);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }, [myPoints]);
 
     // ── Geburtstags-Punkte automatisch gutschreiben ──────────────────────────
     (0, _react.useEffect)(() => {
@@ -3729,6 +3752,7 @@
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:${C.border};border-radius:99px}
     @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes floatUp{0%{opacity:0;transform:translateY(4px) scale(.85)}18%{opacity:1;transform:translateY(-2px) scale(1.15)}100%{opacity:0;transform:translateY(-22px) scale(1)}}
     @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
     @keyframes scanline{0%{top:4px}50%{top:calc(100% - 6px)}100%{top:4px}}
     @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -8552,7 +8576,8 @@
         justifyContent: "space-between",
         position: "sticky",
         top: 0,
-        zIndex: 100
+        zIndex: 100,
+        gap: 10
       }
     }, /*#__PURE__*/_react.default.createElement("img", {
       src: LOGO_SMALL,
@@ -8561,17 +8586,78 @@
       style: {
         height: 32,
         objectFit: "contain",
-        background: "transparent"
+        background: "transparent",
+        flexShrink: 0
       }
-    }), /*#__PURE__*/_react.default.createElement("div", {
+    }), !isGuest && /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setShowInfoModal("points"),
       style: {
-        textAlign: "right"
+        display: "flex",
+        alignItems: "center",
+        gap: 7,
+        background: pointsPulse ? "#C8A96E22" : "#f5f2ec",
+        border: `1.5px solid ${pointsPulse ? C.gold : "#e2ddd3"}`,
+        borderRadius: 99,
+        padding: "5px 11px 5px 8px",
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        flexShrink: 0,
+        transition: "all .3s ease",
+        transform: pointsPulse ? "scale(1.06)" : "scale(1)",
+        boxShadow: pointsPulse ? `0 0 12px ${C.gold}55` : "none"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 14,
+        lineHeight: 1
+      }
+    }, currentTier?.icon || "🏆"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        textAlign: "left",
+        lineHeight: 1.15
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 16,
+        fontWeight: 900,
+        color: pointsPulse ? "#8a6d1f" : "#1a1a1a",
+        letterSpacing: .3
+      }
+    }, myPoints.toLocaleString("de-DE")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 8,
+        color: "#999",
+        fontWeight: 600,
+        letterSpacing: .5,
+        textTransform: "uppercase"
+      }
+    }, "Punkte")), pointsDelta > 0 && /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        position: "absolute",
+        marginLeft: 52,
+        marginTop: -26,
+        fontSize: 11,
+        fontWeight: 900,
+        color: C.green,
+        animation: "floatUp 1.8s ease-out forwards",
+        pointerEvents: "none",
+        fontFamily: "'Barlow Condensed',sans-serif",
+        whiteSpace: "nowrap"
+      }
+    }, "+", pointsDelta.toLocaleString("de-DE"))), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        textAlign: "right",
+        minWidth: 0
       }
     }, /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 700,
-        color: "#1a1a1a"
+        color: "#1a1a1a",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap"
       }
     }, me?.name), /*#__PURE__*/_react.default.createElement("div", {
       style: {
@@ -8611,13 +8697,6 @@
         marginBottom: 24
       }
     }, "Du bist als Gast angemeldet und kannst Nachrichten an Fahrzeughalter senden.", /*#__PURE__*/_react.default.createElement("br", null), "Für alle Club-Features benötigst du ein Mitgliedskonto."), /*#__PURE__*/_react.default.createElement("button", {
-      className: "btn",
-      style: {
-        width: "100%",
-        padding: "14px",
-        fontSize: 15,
-        marginBottom: 10
-      },
       onClick: () => {
         setScreen("splash");
         setLoginForm(p => ({
@@ -8638,7 +8717,7 @@
         width: "100%",
         marginBottom: 10
       }
-    }, "🏁 Jetzt Mitglied werden 🏁 Jetzt Mitglied werden"), /*#__PURE__*/_react.default.createElement("button", {
+    }, "🏁 Jetzt Mitglied werden"), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => {
         setMe(null);
         setScreen("splash");
@@ -11963,20 +12042,25 @@
         fontSize: 10,
         color: "#666"
       }
-    }, "🏁 mit 911 im Kurs")), /*#__PURE__*/_react.default.createElement("div", {
+    }, "🏁 der Kurs ist die 911")), /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: 900,
         color: C.white,
         fontFamily: "'Barlow Condensed',sans-serif"
       }
-    }, "1 Punkt = 0,0911 Cent"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "911 Punkte = 1 €"), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginTop: 3
       }
-    }, "1 € = 1.098 Punkte · Dein Stand: ", myPoints.toLocaleString("de-DE"), " Pkt ≈ ", ptsToEur(myPoints).toFixed(2).replace(".", ","), " €")), [{
+    }, "Dein Stand: ", myPoints.toLocaleString("de-DE"), " Pkt ≈ ", /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        color: C.gold,
+        fontWeight: 700
+      }
+    }, ptsToEur(myPoints).toFixed(2).replace(".", ","), " €"))), [{
       group: "👥 Community — am wertvollsten",
       color: "#5b8fff",
       items: [["📱", "QR-Scan bestätigt", "+" + POINTS.qr_scan], ["👁", "Fremde Akte ansehen", "+" + POINTS.view_akte]]
@@ -11995,7 +12079,7 @@
     }, {
       group: "🎁 Geschenke des Clubs",
       color: "#e879f9",
-      items: [["🎂", "Geburtstag", "+" + POINTS.birthday], ["🎉", "Runder Geburtstag", "+" + POINTS.birthday_round]]
+      items: [["🎂", "Geburtstag", "+" + POINTS.birthday], ["🎉", "Runder Geburtstag (= 1 €)", "+" + POINTS.birthday_round]]
     }].map(sec => /*#__PURE__*/_react.default.createElement("div", {
       key: sec.group,
       style: {
