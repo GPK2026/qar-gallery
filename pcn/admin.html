@@ -297,7 +297,7 @@ function collectUrgencies({aktive,gaeste,offen,pending,next}){
   if(gaeste.length){
     u.push({icon:"👤",color:AMBER,title:`${gaeste.length} ${gaeste.length!==1?"Gäste warten":"Gast wartet"} auf Freigabe`,
       detail:gaeste.slice(0,3).map(g=>g.name).join(", ")+(gaeste.length>3?` +${gaeste.length-3} weitere`:""),
-      action:`showTab('members')`, actionLabel:"Prüfen"});
+      action:`showMembersFiltered('guest')`, actionLabel:"Prüfen"});
   }
 
   // 3. Offene Event-Anmeldungen
@@ -356,11 +356,30 @@ function collectUrgencies({aktive,gaeste,offen,pending,next}){
   const noVehicle=aktive.filter(m=>!DB.vehicles.some(v=>v.user_id===m.id));
   if(noVehicle.length>=3){
     u.push({icon:"🚗",color:BLUE,title:`${noVehicle.length} Mitglieder ohne Fahrzeug`,
-      detail:"Onboarding unvollständig — ggf. Erinnerung senden",
-      action:`showTab('members')`, actionLabel:"Ansehen"});
+      detail:"Onboarding unvollständig — Reminder senden",
+      action:`showMembersFiltered('novehicle')`, actionLabel:"Ansehen"});
+  }
+
+  // 8. Unvollständige Fahrzeugakten
+  const incompleteMembers=aktive.filter(m=>
+    DB.vehicles.some(v=>v.user_id===m.id&&(!v.image||!v.kennzeichen||!v.baujahr||!v.besonderheiten))
+  );
+  if(incompleteMembers.length>=2){
+    u.push({icon:"📋",color:GOLD,title:`${incompleteMembers.length} unvollständige Fahrzeugakten`,
+      detail:"Fehlende Fotos, Kennzeichen oder Geschichte — mindert QR-Wirkung",
+      action:`showMembersFiltered('incomplete')`, actionLabel:"Prüfen"});
   }
 
   return u;
+}
+
+// Springt in die Mitgliederliste mit vorgesetztem Filter
+function showMembersFiltered(filter){
+  showTab("members");
+  setTimeout(()=>{
+    const sel=document.getElementById("m-f");
+    if(sel){ sel.value=filter; filterMembers(); }
+  }, 60);
 }
 
 function rDashboard(el){
@@ -477,16 +496,37 @@ ${gaeste.length?`<div class="card">
 }
 
 function rMembers(el){
+  // Zähler für Handlungsbedarf-Filter
+  const cntIssues=DB.members.filter(m=>memberIssueKeys(m).length>0).length;
+  const cntNoVeh=DB.members.filter(m=>m.role==="member"&&!DB.vehicles.some(v=>v.user_id===m.id)).length;
+  const cntIncompl=DB.members.filter(m=>DB.vehicles.some(v=>v.user_id===m.id&&(!v.image||!v.kennzeichen||!v.baujahr||!v.besonderheiten))).length;
   el.innerHTML=`<div class="page-title">👥 Mitglieder <span style="font-size:13px;font-weight:400;color:var(--muted)">${DB.members.length}</span></div>
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
     <input id="m-q" placeholder="🔍 Name, E-Mail…" oninput="filterMembers()" style="flex:1;min-width:140px">
-    <select id="m-f" onchange="filterMembers()" style="width:auto;min-width:110px">
+    <select id="m-f" onchange="filterMembers()" style="width:auto;min-width:150px">
       <option value="all">Alle (${DB.members.length})</option>
       <option value="member">Mitglieder (${DB.members.filter(m=>m.role==="member").length})</option>
       <option value="guest">Gäste (${DB.members.filter(m=>m.role==="guest").length})</option>
+      <option value="issues">⚠ Handlungsbedarf (${cntIssues})</option>
+      <option value="unpaid">💳 Beitrag offen (${DB.members.filter(m=>m.role==="member"&&!m.beitrag_bezahlt).length})</option>
+      <option value="novehicle">🚗 Ohne Fahrzeug (${cntNoVeh})</option>
+      <option value="incomplete">📋 Unvollst. Akte (${cntIncompl})</option>
     </select>
   </div><div id="members-list"></div>`;
   filterMembers();
+}
+
+// ── Handlungsbedarf eines Mitglieds ermitteln (zentrale Logik) ──
+function memberIssueKeys(m){
+  const isMember=m.role==="member", isPaid=!!m.beitrag_bezahlt;
+  const veh=DB.vehicles.filter(v=>v.user_id===m.id);
+  const keys=[];
+  if(!isMember) keys.push("guest");
+  if(isMember&&veh.length===0) keys.push("novehicle");
+  if(isMember&&!isPaid) keys.push("unpaid");
+  if(veh.some(v=>!v.image||!v.kennzeichen||!v.baujahr||!v.besonderheiten)) keys.push("incomplete");
+  if(!m.geburtstag&&isMember) keys.push("nobday");
+  return keys;
 }
 
 function filterMembers(){
@@ -494,48 +534,126 @@ function filterMembers(){
   const f=document.getElementById("m-f")?.value||"all";
   const list=document.getElementById("members-list");if(!list)return;
   const filtered=DB.members.filter(m=>{
+    const keys=memberIssueKeys(m);
     if(f==="member"&&m.role!=="member")return false;
     if(f==="guest"&&m.role!=="guest")return false;
+    if(f==="issues"&&!keys.length)return false;
+    if(f==="unpaid"&&!keys.includes("unpaid"))return false;
+    if(f==="novehicle"&&!keys.includes("novehicle"))return false;
+    if(f==="incomplete"&&!keys.includes("incomplete"))return false;
     return !q||`${m.name||""} ${m.email||""} ${m.member_nr||""}`.toLowerCase().includes(q);
   });
   list.innerHTML=filtered.map(m=>{
     const isMember=m.role==="member",isPaid=!!m.beitrag_bezahlt;
-    const vCount=DB.vehicles.filter(v=>v.user_id===m.id).length;
+    const myVehicles=DB.vehicles.filter(v=>v.user_id===m.id);
+    const vCount=myVehicles.length;
     const pts=calcPts(m.id);
     const open=openMembers.has(m.id);
-    return `<div class="mrow" style="padding:0;overflow:hidden">
-      <!-- Kopfzeile: nur Name + Status-Punkte, klickbar -->
+
+    // ── Handlungsbedarf automatisch erkennen ──
+    const issues=[];
+    if(!isMember) issues.push({k:"guest",icon:"👤",label:"Gast — Freigabe offen",color:"var(--amber)"});
+    if(isMember&&vCount===0) issues.push({k:"novehicle",icon:"🚗",label:"Kein Fahrzeug angelegt",color:"#5b8fff"});
+    if(isMember&&!isPaid) issues.push({k:"unpaid",icon:"💳",label:`Beitrag ${new Date().getFullYear()} offen`,color:"#ef4444"});
+    // Unvollständige Akten prüfen
+    const incomplete=myVehicles.filter(v=>!v.image||!v.kennzeichen||!v.baujahr||!v.besonderheiten);
+    if(incomplete.length) issues.push({k:"incomplete",icon:"📋",label:`${incomplete.length} unvollständige Akte${incomplete.length!==1?"n":""}`,color:"var(--gold)"});
+    if(!m.geburtstag&&isMember) issues.push({k:"nobday",icon:"🎂",label:"Kein Geburtstag hinterlegt",color:"#666"});
+
+    const hasIssues=issues.length>0;
+    const critical=issues.some(i=>i.k==="unpaid"||i.k==="guest");
+
+    return `<div class="mrow" style="padding:0;overflow:hidden;border-left:3px solid ${critical?"#ef4444":hasIssues?"var(--gold)":"transparent"}">
+      <!-- Kopfzeile -->
       <div onclick="toggleMemberOpen('${m.id}')" style="display:flex;gap:10px;align-items:center;padding:13px 14px;cursor:pointer;user-select:none">
         <div style="width:34px;height:34px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${(m.name||"?")[0].toUpperCase()}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
+          ${hasIssues&&!open?`<div style="font-size:10px;color:${critical?"#ef4444":"var(--gold)"};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${issues.slice(0,2).map(i=>i.icon+" "+i.label).join(" · ")}${issues.length>2?` +${issues.length-2}`:""}
+          </div>`:""}
         </div>
         <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
-          ${!isMember?`<span style="font-size:9px;font-weight:800;color:var(--amber);background:#f59e0b22;padding:2px 6px;border-radius:4px">GAST</span>`:""}
-          <span title="${isPaid?"Beitrag bezahlt":"Beitrag offen"}" style="width:9px;height:9px;border-radius:50%;background:${isPaid?"var(--green)":"#ef4444"};flex-shrink:0"></span>
+          ${hasIssues?`<span style="background:${critical?"#ef4444":"var(--gold)"};color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px">${issues.length}</span>`:`<span style="color:var(--green);font-size:12px">✓</span>`}
           <span style="font-size:14px;color:var(--muted);transform:rotate(${open?"90":"0"}deg);transition:transform .2s;display:inline-block">›</span>
         </div>
       </div>
-      <!-- Aufgeklappt: alle Details + Aktionen -->
+
+      <!-- Aufgeklappt -->
       ${open?`
       <div style="padding:0 14px 14px;border-top:1px solid var(--border)">
-        <div style="font-size:11px;color:var(--muted);padding:10px 0 12px;line-height:1.7">
-          ${m.email||"—"}<br>
-          Nr: ${m.member_nr||"—"} · Seit: ${fmt(m.created_at)} · ${vCount} Fzg · ${pts} Pkt ${tierBadge(pts)}
-          ${m.geburtstag?`<br>🎂 Geburtstag: ${new Date(m.geburtstag).toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"})}`:""}
-          ${m.beitrag_datum?`<br>Beitrag bezahlt am: ${fmt(m.beitrag_datum)}`:""}
+
+        ${hasIssues?`
+        <!-- Handlungsbedarf-Block -->
+        <div style="background:${critical?"#ef44440d":"#C8A96E0d"};border:1px solid ${critical?"#ef444433":"#C8A96E33"};border-radius:9px;padding:11px;margin:12px 0">
+          <div style="font-size:10px;font-weight:800;color:${critical?"#ef4444":"var(--gold)"};letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
+            ⚠ Handlungsbedarf (${issues.length})
+          </div>
+          ${issues.map(i=>`
+            <div style="display:flex;gap:8px;align-items:center;padding:4px 0">
+              <span style="font-size:12px;width:16px;text-align:center">${i.icon}</span>
+              <span style="flex:1;font-size:12px;color:#bbb">${i.label}</span>
+            </div>`).join("")}
+          <button onclick="sendSmartReminder('${m.id}','${(m.name||"").replace(/'/g,"\\'")}','${issues.map(i=>i.k).join(",")}')"
+            style="width:100%;margin-top:9px;background:${critical?"#ef4444":"var(--gold)"};border:none;border-radius:7px;padding:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+            📣 Passenden Reminder senden
+          </button>
+        </div>`:`
+        <div style="background:#22c55e0d;border:1px solid #22c55e33;border-radius:9px;padding:10px;margin:12px 0;display:flex;gap:8px;align-items:center">
+          <span style="font-size:14px">✓</span>
+          <span style="font-size:12px;color:var(--green);font-weight:600">Alles vollständig — kein Handlungsbedarf</span>
+        </div>`}
+
+        <!-- Stammdaten -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          ${[["E-Mail",m.email||"—"],
+             ["Mitgliedsnr.",m.member_nr||"—"],
+             ["Seit",fmt(m.created_at)],
+             ["Geburtstag",m.geburtstag?new Date(m.geburtstag).toLocaleDateString("de-DE"):`<span style="color:#555">nicht hinterlegt</span>`],
+             ["Fahrzeuge",vCount?`${vCount} ${incomplete.length?`<span style="color:var(--gold)">(${incomplete.length} unvollst.)</span>`:`<span style="color:var(--green)">✓</span>`}`:`<span style="color:#5b8fff">keins</span>`],
+             ["Punkte",`${pts.toLocaleString("de-DE")} ${tierBadge(pts)}`]
+          ].map(([l,v])=>`
+            <div style="background:#0d0d0d;border-radius:7px;padding:8px 10px">
+              <div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">${l}</div>
+              <div style="font-size:12px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v}</div>
+            </div>`).join("")}
         </div>
+
+        ${vCount?`
+        <!-- Fahrzeugliste mit Vollständigkeit -->
+        <div style="margin-bottom:12px">
+          <div class="lbl" style="margin-bottom:6px">Fahrzeuge</div>
+          ${myVehicles.map(v=>{
+            const missing=[];
+            if(!v.image) missing.push("Foto");
+            if(!v.kennzeichen) missing.push("Kennzeichen");
+            if(!v.baujahr) missing.push("Baujahr");
+            if(!v.besonderheiten) missing.push("Geschichte");
+            const ok=missing.length===0;
+            return `<div style="display:flex;gap:8px;align-items:center;padding:7px 9px;background:#0d0d0d;border-radius:7px;margin-bottom:4px;border-left:2px solid ${ok?"var(--green)":"var(--gold)"}">
+              <span style="font-size:13px">${ok?"✓":"⚠"}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12px;color:#ccc;font-weight:600">${v.hersteller||""} ${v.modell||"—"}</div>
+                ${missing.length?`<div style="font-size:9px;color:var(--gold)">fehlt: ${missing.join(", ")}</div>`:`<div style="font-size:9px;color:#555">${v.kennzeichen||""}</div>`}
+              </div>
+            </div>`;
+          }).join("")}
+        </div>`:""}
+
+        <!-- Toggles -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-bottom:12px">
           <div><div class="lbl" style="margin-bottom:6px">Mitgliedsstatus</div>
             <label class="tgl-wrap"><span class="tgl"><input type="checkbox" ${isMember?"checked":""} onchange="toggleRole('${m.id}',${isMember})"><span class="tgl-slider"></span></span>
             <span style="font-size:12px;font-weight:700;color:${isMember?"var(--green)":"var(--amber)"}">${isMember?"Mitglied":"Gast"}</span></label></div>
           <div><div class="lbl" style="margin-bottom:6px">Beitrag ${new Date().getFullYear()}</div>
             <label class="tgl-wrap"><span class="tgl"><input type="checkbox" ${isPaid?"checked":""} onchange="togglePaid('${m.id}',${isPaid})"><span class="tgl-slider"></span></span>
-            <span style="font-size:12px;font-weight:700;color:${isPaid?"var(--green)":"#ef4444"}">${isPaid?"Bezahlt":"Offen"}</span></label></div>
+            <span style="font-size:12px;font-weight:700;color:${isPaid?"var(--green)":"#ef4444"}">${isPaid?"Bezahlt":"Offen"}</span>
+            ${m.beitrag_datum?`<span style="font-size:9px;color:#555;margin-left:4px">${fmt(m.beitrag_datum)}</span>`:""}</label></div>
         </div>
+
         <button onclick="openDirectMsg('${m.id}','${(m.name||"").replace(/'/g,"\\'")}')"
           style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px">
-          💬 Direktnachricht senden
+          💬 Freie Direktnachricht
         </button>
       </div>`:""}
     </div>`;
@@ -555,6 +673,48 @@ function openDirectMsg(id, name){
   if(!txt || !txt.trim()) return;
   sendAdminMsg(id, txt.trim(), "📣");
   toast(`✓ Nachricht an ${name} gesendet`);
+}
+
+// ── Smart Reminder — Text passend zum erkannten Handlungsbedarf ──
+function sendSmartReminder(id, name, issueKeys){
+  const keys = (issueKeys||"").split(",").filter(Boolean);
+  const first = name.split(" ")[0] || name;
+  const year = new Date().getFullYear();
+
+  // Vorlagen je Problem — Reihenfolge = Priorität
+  const templates = {
+    guest: {
+      icon: "👋",
+      text: `Hallo ${first}, schön dass du dich beim PCN registriert hast! Dein Zugang wird gerade geprüft — melde dich gerne bei Fragen.`
+    },
+    unpaid: {
+      icon: "💳",
+      text: `Hallo ${first}, dein Mitgliedsbeitrag ${year} ist noch offen. Bitte überweise ihn bei Gelegenheit — bei Fragen einfach melden. Danke!`
+    },
+    novehicle: {
+      icon: "🚗",
+      text: `Hallo ${first}, du hast noch kein Fahrzeug in deiner Akte angelegt. Damit schaltest du QR-Code, Logbuch und Events frei — und bekommst 500 Punkte. Schau mal rein!`
+    },
+    incomplete: {
+      icon: "📋",
+      text: `Hallo ${first}, deine Fahrzeugakte ist fast fertig! Es fehlen noch ein paar Angaben. Eine vollständige Akte bringt dir 750 Bonuspunkte — und macht beim QR-Scan richtig was her.`
+    },
+    nobday: {
+      icon: "🎂",
+      text: `Hallo ${first}, magst du deinen Geburtstag im Profil hinterlegen? Dann können wir dir gratulieren — und es gibt 200 Punkte geschenkt. Nur für den Vorstand sichtbar.`
+    },
+  };
+
+  // Wichtigstes Problem zuerst
+  const order = ["guest","unpaid","novehicle","incomplete","nobday"];
+  const primary = order.find(k=>keys.includes(k));
+  if(!primary){ openDirectMsg(id, name); return; }
+
+  const tpl = templates[primary];
+  const txt = prompt(`Reminder an ${name} — Text anpassen oder direkt senden:`, tpl.text);
+  if(!txt || !txt.trim()) return;
+  sendAdminMsg(id, txt.trim(), tpl.icon);
+  toast(`✓ Reminder an ${first} gesendet`);
 }
 
 function rPayments(el){
