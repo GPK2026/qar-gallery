@@ -1636,7 +1636,12 @@ function PCNInner() {
       privacy:{...DEF_PRIVACY},
     };
     const {data:saved,error}=await DB.vehicles.save(newV);
-    if(error){ toast_("Fehler beim Speichern: "+error,"err"); return; }
+    if(error){
+      const msg = typeof error==="string" ? error : (error.message||JSON.stringify(error));
+      console.error("Fahrzeug speichern fehlgeschlagen:", error);
+      toast_("Fehler: "+String(msg).slice(0,70),"err");
+      return;
+    }
     // Merge saved data (from DB) with local data — DB may not return all fields
     const vehicle = saved && saved.id
       ? { ...newV, ...saved }  // DB returned full object
