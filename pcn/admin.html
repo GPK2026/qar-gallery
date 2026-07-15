@@ -1263,8 +1263,51 @@ function rContent(el){
   </div>`;
 }
 
+// ── KI-Fotoerkennung: Reifeprüfung ──
+function showAIStats(){
+  const out=document.getElementById("ai-stats");
+  if(!out) return;
+  let s={runs:0,ok:0,fields:0};
+  try{ s=JSON.parse(localStorage.getItem("pcn_ai_stats")||'{"runs":0,"ok":0,"fields":0}'); }catch(e){}
+  if(!s.runs){
+    out.innerHTML=`<div style="color:#555;padding:8px 0">Noch keine Analysen auf diesem Gerät durchgeführt.</div>`;
+    return;
+  }
+  const rate=Math.round(s.ok/s.runs*100);
+  const avgFields=(s.fields/Math.max(1,s.ok)).toFixed(1);
+  const ready=rate>=80&&s.runs>=20;
+  out.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+      ${[["Versuche",s.runs,"#888"],["Trefferquote",rate+"%",rate>=80?"var(--green)":rate>=50?"var(--gold)":"#ef4444"],["Ø Felder",avgFields,"#888"]].map(([l,v,c])=>`
+        <div style="background:#0d0d0d;border-radius:7px;padding:9px;text-align:center">
+          <div style="font-size:17px;font-weight:900;color:${c};font-family:'Barlow Condensed',sans-serif">${v}</div>
+          <div style="font-size:9px;color:#555;text-transform:uppercase;margin-top:1px">${l}</div>
+        </div>`).join("")}
+    </div>
+    <div style="background:${ready?"#22c55e0d":"#f59e0b0d"};border:1px solid ${ready?"#22c55e33":"#f59e0b33"};border-radius:7px;padding:9px 11px">
+      <div style="font-size:11px;color:${ready?"var(--green)":"var(--amber)"};font-weight:700;margin-bottom:2px">
+        ${ready?"✓ Reif für Premium":"⏳ Noch nicht reif"}
+      </div>
+      <div style="font-size:10px;color:#666;line-height:1.5">
+        ${ready
+          ? "Trefferquote stabil über 80% bei ausreichend Versuchen — kann als Bezahlfeature freigegeben werden."
+          : `Kriterien: ≥80% Trefferquote (aktuell ${rate}%) und ≥20 Versuche (aktuell ${s.runs}). Nur lokale Daten dieses Geräts.`}
+      </div>
+    </div>`;
+}
+
 function rSettings(el){
   el.innerHTML=`<div class="page-title">⚙️ Einstellungen</div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="sec-title">✨ KI-Fotoerkennung <span style="font-size:9px;font-weight:800;background:var(--gold);color:#000;padding:1px 5px;border-radius:3px;vertical-align:middle">BETA</span></div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+      Erkennt Modell, Farbe und Kennzeichen aus dem Fahrzeugfoto. Aktuell kostenlos in der Testphase —
+      als Premium-Feature erst freigeben, wenn die Trefferquote stabil über 80% liegt.
+    </div>
+    <div id="ai-stats" style="font-size:11px"></div>
+    <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="showAIStats()">📊 Trefferquote anzeigen</button>
+  </div>
 
   <div class="card" style="margin-bottom:12px">
     <div class="sec-title">📨 Nachrichten-Diagnose</div>
