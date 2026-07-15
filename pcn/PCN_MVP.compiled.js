@@ -1737,17 +1737,20 @@
         gap: 8
       }
     }, thread.messages.map(m => {
-      if (m.isSystem) return /*#__PURE__*/_react.default.createElement("div", {
+      const mine = m.from === me?.id || m.from_id === me?.id;
+      const fromAdmin = m.from === ADMIN_UUID || m.from_id === ADMIN_UUID;
+      // Nur echte System-Hinweise zentriert — Admin-Nachrichten bekommen eine Blase
+      if (m.isSystem && !fromAdmin) return /*#__PURE__*/_react.default.createElement("div", {
         key: m.id,
         style: {
           textAlign: "center",
-          fontSize: 10,
-          color: "#444",
-          margin: "4px 0"
+          fontSize: 12,
+          color: "#666",
+          margin: "6px 0",
+          lineHeight: 1.5
         }
       }, "— ", m.text, " —");
-      const mine = m.from === me?.id || m.from_id === me?.id;
-      const isAdminMsg = m.isSystem || m.from === ADMIN_UUID || isAdminThreadId(thread.id) && m.from !== me?.id;
+      const isAdminMsg = fromAdmin || isAdminThreadId(thread.id) && !mine;
       // Parse payload for scan requests
       let scanPayload = null;
       try {
@@ -1755,7 +1758,8 @@
         if (p.type === "scan_request") scanPayload = p;
       } catch (e) {}
       const senderUser = !mine ? Object.values(allUsers).find(u => u.id === m.from) : null;
-      const senderName = thread.isGroup ? mine ? "Du" : senderUser?.name || "Mitglied" : null;
+      // Absendername: bei Gruppen immer, bei Admin-Nachrichten "PCN Vorstand"
+      const senderName = isAdminMsg && !mine ? "📣 PCN Vorstand" : thread.isGroup ? mine ? "Du" : senderUser?.name || "Mitglied" : null;
       const rawTs = m.created_at || m.createdAt || "";
       const tsDate = rawTs ? new Date(rawTs) : null;
       const today = new Date();
@@ -1780,9 +1784,10 @@
         }
       }, senderName && /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 11,
-          color: C.muted,
-          marginBottom: 2,
+          fontSize: 12,
+          fontWeight: 700,
+          color: isAdminMsg ? C.gold : C.muted,
+          marginBottom: 3,
           paddingLeft: 4
         }
       }, senderName), /*#__PURE__*/_react.default.createElement("div", {
@@ -1797,7 +1802,7 @@
           background: isAdminMsg ? `${C.gold}15` : mine ? C.red : "#1e1e1e",
           border: isAdminMsg ? `1px solid ${C.gold}44` : mine ? "none" : `1px solid ${C.border}`,
           borderRadius: isAdminMsg ? "12px" : mine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-          padding: "11px 15px",
+          padding: "12px 16px",
           userSelect: "none",
           WebkitUserSelect: "none",
           cursor: "pointer",
@@ -1806,9 +1811,11 @@
         }
       }, /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 15,
+          fontSize: 17,
           color: "#fff",
-          lineHeight: 1.5
+          lineHeight: 1.6,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word"
         }
       }, m.text), scanPayload && me && /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => onConfirmScan && onConfirmScan(scanPayload.scannerId, scanPayload.vehicleId, scanPayload.scannerName),
@@ -1817,10 +1824,10 @@
           background: C.green,
           border: "none",
           borderRadius: 8,
-          padding: "9px 14px",
+          padding: "11px 14px",
           color: "#fff",
           fontWeight: 800,
-          fontSize: 12,
+          fontSize: 13,
           cursor: "pointer",
           fontFamily: "'Barlow',sans-serif",
           width: "100%",
@@ -1829,11 +1836,11 @@
           justifyContent: "center",
           gap: 6
         }
-      }, "✅ Scan bestätigen — ", scanPayload.scannerName || "Nutzer", " erhält +10 Punkte"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "✅ Scan bestätigen — ", scanPayload.scannerName || "Nutzer", " erhält +150 Punkte"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
-          fontSize: 10,
-          color: mine ? "rgba(255,255,255,.5)" : C.muted,
-          marginTop: 4,
+          fontSize: 11,
+          color: mine ? "rgba(255,255,255,.55)" : C.muted,
+          marginTop: 5,
           textAlign: "right"
         }
       }, fullTs)));
@@ -10220,38 +10227,43 @@
     }, "Scanne einen QR-Code am Fahrzeug oder tippe auf „Kontakt\" in der Fahrzeugakte")) : (() => {
       // Filter out empty duplicate threads — keep only one per vehicleId + show threads with messages first
       const seen = new Set();
+      const realMsgs = t => t.messages.filter(m => !m.isSystem || m.from === ADMIN_UUID);
       const filtered = myThreads.filter(t => {
-        const hasMsg = t.messages.filter(m => !m.isSystem).length > 0;
+        const hasMsg = realMsgs(t).length > 0;
         const key = t.vehicleId || t.id;
         if (!hasMsg && seen.has(key)) return false;
         seen.add(key);
         return true;
       }).sort((a, b) => {
-        const aLast = a.messages.filter(m => !m.isSystem).pop();
-        const bLast = b.messages.filter(m => !m.isSystem).pop();
-        // Sort by created_at or createdAt timestamp, newest first
+        // Admin-Thread immer oben
+        const aAdm = isAdminThreadId(a.id),
+          bAdm = isAdminThreadId(b.id);
+        if (aAdm !== bAdm) return aAdm ? -1 : 1;
+        const aLast = realMsgs(a).pop();
+        const bLast = realMsgs(b).pop();
         const aTime = aLast ? new Date(aLast.created_at || aLast.createdAt || 0).getTime() : 0;
         const bTime = bLast ? new Date(bLast.created_at || bLast.createdAt || 0).getTime() : 0;
         return bTime - aTime;
       });
       return filtered.map(t => {
+        const isAdminT = isAdminThreadId(t.id);
         const other = Object.values(allUsers).find(u => (t.participants || []).includes(u.id) && u.id !== me?.id) || {
           name: "Mitglied"
         };
-        const last = t.messages.filter(m => !m.isSystem).pop();
-        const unread = t.messages.some(m => m.from !== me?.id && !m.read && !m.isSystem);
+        const last = t.messages.filter(m => !m.isSystem || m.from === ADMIN_UUID).pop();
+        const unread = t.messages.some(m => m.from !== me?.id && !m.read && (!m.isSystem || m.from === ADMIN_UUID));
         const tv = vehicles[t.vehicleId];
         // Fallback: try to get vehicle name from thread title or guestThreads
         const guestT = guestThreads.find(g => g.id === t.id);
         const vehicleName = tv ? `${tv.hersteller} ${tv.modell}` : t.vehicleName || guestT?.vehicleName || "";
-        const isAnon = t.anonymous;
-        // Title: vehicle name for anon threads, member name for direct messages
-        const title = isAnon && vehicleName ? vehicleName : isAnon ? "Anonyme Nachricht" : other.name;
+        const isAnon = t.anonymous && !isAdminT;
+        // Title: Admin > vehicle name for anon threads > member name
+        const title = isAdminT ? "PCN Vorstand" : isAnon && vehicleName ? vehicleName : isAnon ? "Anonyme Nachricht" : other.name;
         return /*#__PURE__*/_react.default.createElement("div", {
           key: t.id,
           style: {
             background: C.card,
-            border: `1.5px solid ${unread ? C.red + "55" : C.border}`,
+            border: `1.5px solid ${unread ? C.red + "55" : isAdminT ? C.gold + "44" : C.border}`,
             borderRadius: 14,
             padding: "13px 14px",
             marginBottom: 8,
@@ -10266,7 +10278,8 @@
             display: "flex",
             gap: 12,
             alignItems: "center",
-            cursor: "pointer"
+            cursor: "pointer",
+            minWidth: 0
           },
           onClick: () => {
             setActiveThread(t.id);
@@ -10278,16 +10291,16 @@
             height: 46,
             borderRadius: "50%",
             flexShrink: 0,
-            background: isAnon ? "#1a1a2e" : `${C.red}22`,
-            border: `2px solid ${isAnon ? "#3a3a5e" : C.red + "44"}`,
+            background: isAdminT ? `${C.gold}22` : isAnon ? "#1a1a2e" : `${C.red}22`,
+            border: `2px solid ${isAdminT ? C.gold + "55" : isAnon ? "#3a3a5e" : C.red + "44"}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: isAnon ? 20 : 17,
-            color: isAnon ? "#6b7fff" : C.red,
+            fontSize: isAdminT ? 20 : isAnon ? 20 : 17,
+            color: isAdminT ? C.gold : isAnon ? "#6b7fff" : C.red,
             fontWeight: 800
           }
-        }, isAnon ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
+        }, isAdminT ? "📣" : isAnon ? "🔒" : other.name[0]?.toUpperCase()), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             flex: 1,
             minWidth: 0
@@ -10302,8 +10315,8 @@
         }, /*#__PURE__*/_react.default.createElement("span", {
           style: {
             fontWeight: unread ? 800 : 700,
-            fontSize: 14,
-            color: C.white,
+            fontSize: 15,
+            color: isAdminT ? C.gold : C.white,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -10325,10 +10338,16 @@
           }
         }), /*#__PURE__*/_react.default.createElement("span", {
           style: {
-            fontSize: 10,
+            fontSize: 11,
             color: C.muted
           }
-        }, last?.ts || ""))), isAnon && /*#__PURE__*/_react.default.createElement("div", {
+        }, last?.ts || ""))), isAdminT && /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 11,
+            color: C.gold,
+            marginBottom: 2
+          }
+        }, "Offizielle Mitteilung"), isAnon && /*#__PURE__*/_react.default.createElement("div", {
           style: {
             fontSize: 11,
             color: "#6b7fff",
@@ -10336,7 +10355,7 @@
           }
         }, "🔒 Anonym · ", vehicleName || "Fahrzeuganfrage"), /*#__PURE__*/_react.default.createElement("div", {
           style: {
-            fontSize: 12,
+            fontSize: 13,
             color: unread ? C.white : C.muted,
             overflow: "hidden",
             textOverflow: "ellipsis",
