@@ -91,6 +91,7 @@
     .t-gold{background:#C8A96E22;color:var(--gold);border:1px solid #C8A96E44}
     .t-platin{background:#6b7fff22;color:var(--blue);border:1px solid #6b7fff44}
     .t-legend{background:#ef444422;color:#ef4444;border:1px solid #ef444433}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
   </style>
 </head>
 <body>
@@ -337,7 +338,7 @@ function collectUrgencies({aktive,gaeste,offen,pending,next}){
     u.push({icon:"🎂",color:round?GOLD:GREEN,
       title:`${m.name} hat ${when} Geburtstag${round?` — ${age}. (rund!)`:""}`,
       detail:`Wird ${age} Jahre alt${days===0?" · heute gratulieren!":""}`,
-      action:`openDirectMsg('${m.id}','${(m.name||"").replace(/'/g,"\\'")}')`, actionLabel:"Gratulieren"});
+      action:`openBirthdayMsg('${m.id}','${(m.name||"").replace(/'/g,"\\'")}')`, actionLabel:"Gratulieren"});
   });
 
   // 6. Event steht bevor mit unbestätigten Anmeldungen
@@ -667,55 +668,138 @@ function toggleMemberOpen(id){
   renderTab(currentTab);
 }
 
-// ── Direktnachricht an Mitglied ──
-function openDirectMsg(id, name){
-  const txt = prompt(`Direktnachricht an ${name}:`);
-  if(!txt || !txt.trim()) return;
-  sendAdminMsg(id, txt.trim(), "📣");
-  toast(`✓ Nachricht an ${name} gesendet`);
-}
+// ═══════════════════════════════════════════════════════════════════
+// NACHRICHTEN-MODAL — statt prompt(), mit großem Textfeld
+// ═══════════════════════════════════════════════════════════════════
+let msgModalState = { id:null, name:"", icon:"📣", templates:[] };
 
-// ── Smart Reminder — Text passend zum erkannten Handlungsbedarf ──
-function sendSmartReminder(id, name, issueKeys){
-  const keys = (issueKeys||"").split(",").filter(Boolean);
-  const first = name.split(" ")[0] || name;
-  const year = new Date().getFullYear();
-
-  // Vorlagen je Problem — Reihenfolge = Priorität
-  const templates = {
-    guest: {
-      icon: "👋",
-      text: `Hallo ${first}, schön dass du dich beim PCN registriert hast! Dein Zugang wird gerade geprüft — melde dich gerne bei Fragen.`
-    },
-    unpaid: {
-      icon: "💳",
-      text: `Hallo ${first}, dein Mitgliedsbeitrag ${year} ist noch offen. Bitte überweise ihn bei Gelegenheit — bei Fragen einfach melden. Danke!`
-    },
-    novehicle: {
-      icon: "🚗",
-      text: `Hallo ${first}, du hast noch kein Fahrzeug in deiner Akte angelegt. Damit schaltest du QR-Code, Logbuch und Events frei — und bekommst 500 Punkte. Schau mal rein!`
-    },
-    incomplete: {
-      icon: "📋",
-      text: `Hallo ${first}, deine Fahrzeugakte ist fast fertig! Es fehlen noch ein paar Angaben. Eine vollständige Akte bringt dir 750 Bonuspunkte — und macht beim QR-Scan richtig was her.`
-    },
-    nobday: {
-      icon: "🎂",
-      text: `Hallo ${first}, magst du deinen Geburtstag im Profil hinterlegen? Dann können wir dir gratulieren — und es gibt 200 Punkte geschenkt. Nur für den Vorstand sichtbar.`
-    },
+// Vorlagen je Handlungsbedarf
+function reminderTemplates(name, year){
+  const first = (name||"").split(" ")[0] || name;
+  return {
+    guest: { icon:"👋", label:"Gast begrüßen",
+      text:`Hallo ${first}, schön dass du dich beim PCN registriert hast! Dein Zugang wird gerade geprüft — melde dich gerne bei Fragen.` },
+    unpaid: { icon:"💳", label:"Beitrag erinnern",
+      text:`Hallo ${first}, dein Mitgliedsbeitrag ${year} ist noch offen. Bitte überweise ihn bei Gelegenheit — bei Fragen einfach melden. Danke!` },
+    novehicle: { icon:"🚗", label:"Fahrzeug anlegen",
+      text:`Hallo ${first}, du hast noch kein Fahrzeug in deiner Akte angelegt. Damit schaltest du QR-Code, Logbuch und Events frei — und bekommst 500 Punkte. Schau mal rein!` },
+    incomplete: { icon:"📋", label:"Akte vervollständigen",
+      text:`Hallo ${first}, deine Fahrzeugakte ist fast fertig! Es fehlen noch ein paar Angaben. Eine vollständige Akte bringt dir 750 Bonuspunkte — und macht beim QR-Scan richtig was her.` },
+    nobday: { icon:"🎂", label:"Geburtstag erfragen",
+      text:`Hallo ${first}, magst du deinen Geburtstag im Profil hinterlegen? Dann können wir dir gratulieren — und es gibt 200 Punkte geschenkt. Nur für den Vorstand sichtbar.` },
+    bday: { icon:"🎉", label:"Gratulieren",
+      text:`Alles Gute zum Geburtstag, ${first}! 🎉 Der ganze Porsche Club Nürburgring wünscht dir ein großartiges neues Lebensjahr — und immer freie Fahrt auf der Nordschleife.` },
   };
-
-  // Wichtigstes Problem zuerst
-  const order = ["guest","unpaid","novehicle","incomplete","nobday"];
-  const primary = order.find(k=>keys.includes(k));
-  if(!primary){ openDirectMsg(id, name); return; }
-
-  const tpl = templates[primary];
-  const txt = prompt(`Reminder an ${name} — Text anpassen oder direkt senden:`, tpl.text);
-  if(!txt || !txt.trim()) return;
-  sendAdminMsg(id, txt.trim(), tpl.icon);
-  toast(`✓ Reminder an ${first} gesendet`);
 }
+
+// Öffnet das Modal — mit oder ohne Vorlagen
+function openMsgModal(id, name, presetKeys){
+  const year = new Date().getFullYear();
+  const all = reminderTemplates(name, year);
+  const order = ["guest","unpaid","novehicle","incomplete","nobday","bday"];
+  const keys = (presetKeys||"").split(",").filter(k=>k && all[k]);
+  const tpls = order.filter(k=>keys.includes(k)).map(k=>({key:k,...all[k]}));
+
+  msgModalState = { id, name, icon: tpls[0]?.icon || "📣", templates: tpls };
+
+  const first = (name||"").split(" ")[0] || name;
+  const initial = tpls[0]?.text || "";
+
+  const wrap = document.createElement("div");
+  wrap.id = "msg-modal";
+  wrap.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9000;display:flex;align-items:flex-end;justify-content:center;padding:0";
+  wrap.innerHTML = `
+    <div id="msg-sheet" style="background:#111;border-top:1px solid var(--border);border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:18px 16px calc(18px + env(safe-area-inset-bottom));animation:sheetUp .22s ease">
+      <div style="width:36px;height:4px;background:#333;border-radius:99px;margin:0 auto 14px"></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div style="font-size:17px;font-weight:800;color:var(--txt)">Nachricht an ${name}</div>
+        <button onclick="closeMsgModal()" style="background:none;border:none;color:#666;font-size:22px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Landet direkt im persönlichen Chat des Mitglieds</div>
+
+      ${tpls.length?`
+      <div style="margin-bottom:12px">
+        <div class="lbl" style="margin-bottom:7px">Vorlage wählen</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${tpls.map((t,i)=>`
+            <button onclick="applyTemplate('${t.key}')" id="tpl-${t.key}"
+              style="background:${i===0?"var(--gold)":"#1a1a1a"};border:1px solid ${i===0?"var(--gold)":"var(--border)"};border-radius:7px;padding:7px 11px;color:${i===0?"#000":"#aaa"};font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">
+              ${t.icon} ${t.label}
+            </button>`).join("")}
+        </div>
+      </div>`:""}
+
+      <div class="lbl" style="margin-bottom:6px">Nachricht</div>
+      <textarea id="msg-text" rows="7" placeholder="Deine Nachricht…"
+        style="width:100%;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--txt);font-size:15px;line-height:1.6;font-family:inherit;resize:vertical;outline:none;-webkit-appearance:none">${initial}</textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;margin-bottom:14px">
+        <span id="msg-count" style="font-size:10px;color:#555">${initial.length} Zeichen</span>
+        <button onclick="document.getElementById('msg-text').value='';updateMsgCount()"
+          style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;font-family:inherit">Leeren</button>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button onclick="closeMsgModal()"
+          style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:13px;color:#999;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">
+          Abbrechen
+        </button>
+        <button onclick="submitMsgModal()"
+          style="flex:2;background:var(--red);border:none;border-radius:9px;padding:13px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
+          Senden →
+        </button>
+      </div>
+    </div>`;
+  wrap.onclick = (e)=>{ if(e.target===wrap) closeMsgModal(); };
+  document.body.appendChild(wrap);
+  document.body.style.overflow="hidden";
+  const ta = document.getElementById("msg-text");
+  ta.addEventListener("input", updateMsgCount);
+  if(!initial) setTimeout(()=>ta.focus(), 120);
+}
+
+function updateMsgCount(){
+  const ta=document.getElementById("msg-text"), c=document.getElementById("msg-count");
+  if(ta&&c) c.textContent = ta.value.length+" Zeichen";
+}
+
+function applyTemplate(key){
+  const t = msgModalState.templates.find(x=>x.key===key);
+  if(!t) return;
+  const ta = document.getElementById("msg-text");
+  if(ta){ ta.value = t.text; updateMsgCount(); }
+  msgModalState.icon = t.icon;
+  // Buttons visuell umschalten
+  msgModalState.templates.forEach(x=>{
+    const b=document.getElementById("tpl-"+x.key);
+    if(!b) return;
+    const on = x.key===key;
+    b.style.background = on?"var(--gold)":"#1a1a1a";
+    b.style.borderColor = on?"var(--gold)":"var(--border)";
+    b.style.color = on?"#000":"#aaa";
+  });
+}
+
+function closeMsgModal(){
+  const m=document.getElementById("msg-modal");
+  if(m) m.remove();
+  document.body.style.overflow="";
+}
+
+function submitMsgModal(){
+  const ta=document.getElementById("msg-text");
+  const txt=(ta?.value||"").trim();
+  if(!txt){ toast("Bitte Text eingeben","err"); ta?.focus(); return; }
+  const {id,name,icon}=msgModalState;
+  sendAdminMsg(id, txt, icon||"📣");
+  closeMsgModal();
+  toast(`✓ Nachricht an ${(name||"").split(" ")[0]} gesendet`);
+}
+
+// ── Einstiegspunkte ──
+function openDirectMsg(id, name){ openMsgModal(id, name, ""); }
+function sendSmartReminder(id, name, issueKeys){ openMsgModal(id, name, issueKeys); }
+function openBirthdayMsg(id, name){ openMsgModal(id, name, "bday"); }
 
 function rPayments(el){
   const a=DB.members.filter(m=>m.role==="member");
