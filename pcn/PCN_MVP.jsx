@@ -885,7 +885,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                   <button onClick={()=>onConfirmScan&&onConfirmScan(scanPayload.scannerId,scanPayload.vehicleId,scanPayload.scannerName)}
                     style={{marginTop:10,background:C.green,border:"none",borderRadius:8,padding:"11px 14px",
                       color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                    ✅ Scan bestätigen — {scanPayload.scannerName||"Nutzer"} erhält +150 Punkte
+                    ✅ Scan bestätigen — {scanPayload.scannerName||"Nutzer"} erhält +{POINTS.qr_scan} Punkte
                   </button>
                 )}
                 <div style={{fontSize:11,color:mine?"rgba(255,255,255,.55)":C.muted,marginTop:5,textAlign:"right"}}>
@@ -1084,9 +1084,13 @@ function PCNInner() {
   const isDemo = me?.id==="a0000000-0000-0000-0000-000000000001"||me?.id==="u2";
   const myVehicles = Object.values(vehicles).filter(v=>v.owner===me?.email||v.userId===me?.id||(isDemo&&v.id==="V001"));
   // In demo mode show all demo vehicles as "Neueste Fahrzeuge"
+  // "Neueste Mitglieder-Fahrzeuge" auf der Startseite — fremde Fahrzeuge,
+  // im Demo die festen Beispiele, sonst die zuletzt angelegten aus dem Club.
   const displayVehicles = isDemo
     ? Object.values(vehicles).filter(v=>["V001","V002","V003","V004"].includes(v.id))
-    : myVehicles;
+    : Object.values(vehicles)
+        .filter(v => v.userId!==me?.id && v.owner!==me?.id && v.owner!==me?.email)
+        .sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
   const myReminders = reminders.filter(r=>!r.done).sort((a,b)=>new Date(a.date)-new Date(b.date));
   const myParticipations = Object.values(participants).flat().filter(p=>p.userId===me?.id);
   const myThreads = Object.values(threads).filter(t=>(t.participants||[]).includes(me?.id) && !deletedThreadIds.includes(t.id));
@@ -1127,7 +1131,7 @@ function PCNInner() {
     if(!DB) return;
     // Create a pending scan request in threads
     const threadId = adminThreadId(ownerId);
-    const reqText = `🔍 QR-Scan-Bestätigung: ${me.name||"Ein Mitglied"} hat deinen ${vehicle.hersteller||""} ${vehicle.modell||""} (${vehicle.qarId||vehicle.qar_id||""}) gescannt. Bitte bestätige den Scan — der Nutzer erhält dann 10 Punkte.`;
+    const reqText = `🔍 QR-Scan-Bestätigung: ${me.name||"Ein Mitglied"} hat deinen ${vehicle.hersteller||""} ${vehicle.modell||""} (${vehicle.qarId||vehicle.qar_id||""}) gescannt. Bitte bestätige den Scan — der Nutzer erhält dann ${POINTS.qr_scan} Punkte.`;
     // Send via DB
     try {
       const ex = await DB.threads.list(ownerId);
@@ -1438,13 +1442,19 @@ function PCNInner() {
   const refreshAll = async (user) => {
     if(!user) return;
     const DB=window.PCN_DB; if(!DB) return;
-    const [vRes,remRes,evRes,thRes] = await Promise.all([
+    const [vRes,clubRes,remRes,evRes,thRes] = await Promise.all([
       DB.vehicles.list(user.id||user.email),
+      DB.vehicles.listClub ? DB.vehicles.listClub(200) : Promise.resolve({data:[]}),
       DB.reminders.list(user.id),
       DB.events.list(),
       DB.threads.list(user.id),
     ]);
-    const vMap={}; (vRes.data||[]).forEach(v=>vMap[v.id]=v); setVehicles(vMap);
+    // Eigene Fahrzeuge zuletzt einfügen — sie haben die vollständigen Daten,
+    // die Club-Liste liefert bewusst nur die unkritischen Felder.
+    const vMap={};
+    (clubRes.data||[]).forEach(v=>vMap[v.id]=v);
+    (vRes.data||[]).forEach(v=>vMap[v.id]=v);
+    setVehicles(vMap);
     const lMap={};
     await Promise.all((vRes.data||[]).map(async v=>{
       const r=await DB.logbook.list(v.id); lMap[v.id]=r.data||[];
@@ -3173,7 +3183,7 @@ Regeln:
                 </div>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2,flexShrink:0}}>
                   <span style={{fontSize:18,color:"rgba(255,255,255,.7)"}}>›</span>
-                  {me&&<span style={{fontSize:9,color:"rgba(255,255,255,.5)",fontWeight:600}}>+50 Pkt</span>}
+                  {me&&<span style={{fontSize:9,color:"rgba(255,255,255,.5)",fontWeight:600}}>+{POINTS.message} Pkt</span>}
                 </div>
               </button>
             )}
@@ -3562,7 +3572,7 @@ Regeln:
                   borderRadius:10,padding:"12px",color:alreadyR?C.muted:C.green,
                   fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
                   display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                {alreadyR?"✓ Gelesen":"✓ Gelesen · +10 🏆"}
+                {alreadyR?"✓ Gelesen":`✓ Gelesen · +${POINTS.news_read} 🏆`}
               </button>
             );
           })()}
@@ -4578,7 +4588,7 @@ Regeln:
                 <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center",cursor:"pointer"}} onClick={()=>setShowAddV(true)}>
                   <div style={{fontSize:32,marginBottom:8}}>🏎️</div>
                   <div style={{fontSize:13,color:C.white,fontWeight:600,marginBottom:4}}>Erstes Fahrzeug hinzufügen</div>
-                  <div style={{fontSize:11,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+500 Pkt</span></div>
+                  <div style={{fontSize:11,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+{POINTS.vehicle_added} Pkt</span></div>
                 </div>
               ):myVehicles.map(v=>(
                 <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,marginBottom:12,overflow:"hidden",cursor:"pointer"}}
@@ -4609,7 +4619,7 @@ Regeln:
             </div>
 
             {/* ── Neueste Mitglieder-Fahrzeuge: max 3, Rest in Community ── */}
-            {isDemo&&(
+            {displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).length>0&&(
               <div style={{marginBottom:20}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                   <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
