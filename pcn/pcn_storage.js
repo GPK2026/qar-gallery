@@ -15,6 +15,55 @@ const genQARId = () => { const C='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let id='QAR
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SICHERER SPEICHER — funktioniert auch in Safari Privat
+//
+// Safari im privaten Modus wirft bei jedem localStorage.setItem einen
+// QuotaExceededError. Ohne Abfangen bricht dadurch der komplette Login ab —
+// genau dieser Fehler hat Safari-Nutzer ausgesperrt.
+//
+// Fallback: In-Memory. Die Sitzung überlebt dann kein Neuladen, aber die App
+// funktioniert. Besser als gar kein Zugang.
+// ═══════════════════════════════════════════════════════════════════════════
+const _memStore = {};
+let _lsWorks = null;
+
+function lsAvailable(){
+  if(_lsWorks !== null) return _lsWorks;
+  try {
+    const k = "__pcn_test__";
+    window.localStorage.setItem(k, "1");
+    window.localStorage.removeItem(k);
+    _lsWorks = true;
+  } catch(e) {
+    console.warn("[Speicher] localStorage nicht verfügbar (privates Fenster?) — nutze Arbeitsspeicher");
+    _lsWorks = false;
+  }
+  return _lsWorks;
+}
+
+const safeStore = {
+  getItem(k){
+    if(lsAvailable()){
+      try { return window.localStorage.getItem(k); } catch(e){ return _memStore[k] ?? null; }
+    }
+    return _memStore[k] ?? null;
+  },
+  setItem(k, v){
+    _memStore[k] = String(v);           // immer auch im Speicher halten
+    if(lsAvailable()){
+      try { window.localStorage.setItem(k, v); }
+      catch(e){ /* Quota voll — Speicher reicht */ }
+    }
+  },
+  removeItem(k){
+    delete _memStore[k];
+    if(lsAvailable()){
+      try { window.localStorage.removeItem(k); } catch(e){}
+    }
+  },
+};
+
 const PCN_STORAGE = (() => {
 
   // ── CONFIG ─────────────────────────────────────────────────────────────────
@@ -42,11 +91,11 @@ const PCN_STORAGE = (() => {
   // ── LOCAL STORAGE BACKEND ──────────────────────────────────────────────────
   const local = {
     _load: () => {
-      try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }
+      try { return JSON.parse(safeStore.getItem(LS_KEY)) || {}; }
       catch { return {}; }
     },
     _save: (data) => {
-      try { localStorage.setItem(LS_KEY, JSON.stringify(data)); return true; }
+      try { safeStore.setItem(LS_KEY, JSON.stringify(data)); return true; }
       catch { return false; }
     },
     _get: (key) => { const d = local._load(); return d[key] ?? null; },
@@ -392,7 +441,7 @@ const PCN_STORAGE = (() => {
         token_expiry: supaUser.token_expiry || 0,
         createdAt: profile?.created_at || new Date().toISOString(),
       };
-      localStorage.setItem("pcn_session", JSON.stringify(session));
+      safeStore.setItem("pcn_session", JSON.stringify(session));
       return session;
     },
 
@@ -465,7 +514,7 @@ const PCN_STORAGE = (() => {
         await supabase._patch("users","email=eq."+encodeURIComponent(email),
           { name, club_code:clubCode, role:"member", member_nr:memberNr, converted_from_guest:true });
         const u = { id:ex.id, name, email, role:"member", memberNr, avatar:"" };
-        localStorage.setItem("pcn_session", JSON.stringify(u));
+        safeStore.setItem("pcn_session", JSON.stringify(u));
         return { data: u };
       }
 
@@ -486,7 +535,7 @@ const PCN_STORAGE = (() => {
         id: saved.id||("tmp-"+Date.now()), name, email,
         role:"member", memberNr: saved.member_nr||memberNr, avatar:"",
       };
-      localStorage.setItem("pcn_session", JSON.stringify(u));
+      safeStore.setItem("pcn_session", JSON.stringify(u));
       return { data: u };
     },
 
@@ -496,14 +545,14 @@ const PCN_STORAGE = (() => {
         const u = existing[0];
         if(u.role !== "guest") return { error: "E-Mail bereits als Mitglied registriert" };
         const session = { id:u.id, name:u.name, email:u.email, role:"guest", memberNr:null };
-        localStorage.setItem("pcn_session", JSON.stringify(session));
+        safeStore.setItem("pcn_session", JSON.stringify(session));
         return { data: session };
       }
       const user = { name, email, role:"guest", member_nr:null, guest_created_at:now() };
       const res = await supabase._post("users", user);
       if(res.error) return res;
       const u = { id:res.data.id, name, email, role:"guest", memberNr:null };
-      localStorage.setItem("pcn_session", JSON.stringify(u));
+      safeStore.setItem("pcn_session", JSON.stringify(u));
       return { data: u };
     },
 
@@ -523,7 +572,7 @@ const PCN_STORAGE = (() => {
         beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
         geburtstag: u.geburtstag||"", phone: u.phone||"",
         createdAt: u.created_at||"" };
-      localStorage.setItem("pcn_session", JSON.stringify(session));
+      safeStore.setItem("pcn_session", JSON.stringify(session));
       await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
       return { data: session };
 
@@ -556,7 +605,7 @@ const PCN_STORAGE = (() => {
         notifications: { events:true, messages:true },
         createdAt: u.created_at||"",
       };
-      localStorage.setItem("pcn_session", JSON.stringify(session));
+      safeStore.setItem("pcn_session", JSON.stringify(session));
       await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
       return { data: session };
     },
@@ -567,14 +616,14 @@ const PCN_STORAGE = (() => {
       return { data: { sent: true } };
     },
     async getSession() {
-      try { return { data: JSON.parse(localStorage.getItem("pcn_session")) }; }
+      try { return { data: JSON.parse(safeStore.getItem("pcn_session")) }; }
       catch { return { data: null }; }
     },
     // Lädt den Nutzer frisch aus der DB und aktualisiert die Session
     // (damit Admin-Änderungen wie Beitragsstatus/Rolle beim Mitglied ankommen)
     async refreshSession() {
       let sess = null;
-      try { sess = JSON.parse(localStorage.getItem("pcn_session")); } catch { return { data: null }; }
+      try { sess = JSON.parse(safeStore.getItem("pcn_session")); } catch { return { data: null }; }
       if(!sess || !sess.email) return { data: sess };
       const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(sess.email));
       if(error || !users || !users.length) return { data: sess };
@@ -588,11 +637,11 @@ const PCN_STORAGE = (() => {
         geburtstag: u.geburtstag||sess.geburtstag||"",
         createdAt: u.created_at||sess.createdAt||"",
       };
-      localStorage.setItem("pcn_session", JSON.stringify(updated));
+      safeStore.setItem("pcn_session", JSON.stringify(updated));
       return { data: updated };
     },
     async logout() {
-      localStorage.removeItem("pcn_session"); return { data: true };
+      safeStore.removeItem("pcn_session"); return { data: true };
     },
 
     // ── Field mapping: Supabase snake_case → App camelCase ──
@@ -883,7 +932,7 @@ const DEMO_USER_ID = "a0000000-0000-0000-0000-000000000001";
 const DEMO_IDS = [DEMO_USER_ID, "u1", "u2"];   // muss zu isDemo in PCN_MVP.jsx passen
 function isDemoSession(){
   try{
-    const s = JSON.parse(localStorage.getItem("pcn_session")||"null");
+    const s = JSON.parse(safeStore.getItem("pcn_session")||"null");
     return !!(s && (s.isDemo === true || DEMO_IDS.includes(s.id)));
   }catch(e){ return false; }
 }
