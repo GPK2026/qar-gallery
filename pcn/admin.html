@@ -1888,8 +1888,19 @@ async function saveEvent(){
   if(!name||!date){toast("Name + Datum erforderlich","err");return;}
   const editId=document.getElementById("ev-edit-id")?.value;
   const payload={name,date,location:document.getElementById("ev-loc")?.value,category:document.getElementById("ev-cat")?.value,entry_fee:document.getElementById("ev-fee")?.value,max_participants:parseInt(document.getElementById("ev-max")?.value)||50,description:document.getElementById("ev-desc")?.value};
-  if(editId){await api(`events?id=eq.${editId}`,{method:"PATCH",body:JSON.stringify(payload)});toast("✓ Event aktualisiert — App lädt beim nächsten Login");}
-  else{await api("events",{method:"POST",body:JSON.stringify({...payload,created_at:new Date().toISOString()})});toast("✓ Event erstellt");}
+  if(editId){
+    const r = await api(`events?id=eq.${editId}`,{method:"PATCH",body:JSON.stringify(payload)});
+    if(r.error){ toast("Fehler: "+JSON.stringify(r.error).slice(0,60),"err"); return; }
+    toast("✓ Event aktualisiert");
+  } else {
+    // events.id ist TEXT PRIMARY KEY ohne Default — muss gesetzt werden
+    const id = "EV" + Date.now().toString(36).toUpperCase();
+    const r = await api("events",{method:"POST",body:JSON.stringify({
+      id, ...payload, status:"upcoming", created_at:new Date().toISOString()
+    })});
+    if(r.error){ toast("Fehler: "+JSON.stringify(r.error).slice(0,60),"err"); return; }
+    toast("✓ Event erstellt");
+  }
   toggleEvForm(); await loadAll();
 }
 async function delEvent(id,name){
