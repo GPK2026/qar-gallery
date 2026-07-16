@@ -797,7 +797,7 @@ const PCN_STORAGE = (() => {
     async deleteMessage(msgId) {
       return await supabase._delete("messages","id=eq."+msgId);
     },
-    cancel: (regId) => supabase._delete("participants","id=eq."+regId),
+    cancel: (regId) => supabase._delete("participants","id=eq."+regId),  // via events.cancel gewrappt
     async getStats(userId) {
       const [v,r,p,t] = await Promise.all([
         supabase._q("vehicles","?user_id=eq."+userId+"&select=count"),
@@ -864,6 +864,36 @@ const PCN_STORAGE = (() => {
       return true; // local always works
     },
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DEMO-SCHUTZ — zentral, eine Ebene unter allen Schreibfunktionen
+//
+// Der Demo-Modus darf NIEMALS in die echte DB schreiben. Sonst landen
+// Testfahrzeuge, Testanmeldungen und Testnachrichten bei echten Mitgliedern.
+// Der Wächter sitzt bewusst hier statt in ~14 einzelnen Aufrufstellen —
+// eine vergessene Stelle würde sonst reichen.
+//
+// Lesen bleibt erlaubt: die Demo zeigt echte Community-Fahrzeuge.
+// ═══════════════════════════════════════════════════════════════════════════
+const DEMO_USER_ID = "a0000000-0000-0000-0000-000000000001";
+const DEMO_IDS = [DEMO_USER_ID, "u1", "u2"];   // muss zu isDemo in PCN_MVP.jsx passen
+function isDemoSession(){
+  try{
+    const s = JSON.parse(localStorage.getItem("pcn_session")||"null");
+    return !!(s && (s.isDemo === true || DEMO_IDS.includes(s.id)));
+  }catch(e){ return false; }
+}
+// Wrapper: blockt Schreibzugriffe im Demo-Modus, liefert plausible Antwort
+function guard(label, fn){
+  return function(...args){
+    if(isDemoSession()){
+      if(typeof console!=="undefined") console.info("[Demo] "+label+" — nicht in die DB geschrieben");
+      return Promise.resolve({ data:null, demo:true });
+    }
+    return fn(...args);
+  };
+}
+
+
     // Proxy all methods to selected backend
     auth: {
       register:          (name, email, code, pw) => db.register(name, email, code, pw),
@@ -880,36 +910,36 @@ const PCN_STORAGE = (() => {
     },
     vehicles: {
       list:       (uid)    => db.getVehicles(uid),
-      save:       (v)      => db.saveVehicle(v),
-      delete:     (id)     => db.deleteVehicle(id),
+      save:       guard("vehicles.save",   (v)      => db.saveVehicle(v)),
+      delete:     guard("vehicles.delete", (id)     => db.deleteVehicle(id)),
       getPublic:  (qarId)  => db.getPublicVehicle(qarId),
       getStatus:  (vid)    => db.getStatus(vid),
-      setStatus:  (vid, s) => db.setStatus(vid, s),
-      clearStatus:(vid)    => db.clearStatus(vid),
+      setStatus:  guard("vehicles.setStatus",   (vid, s) => db.setStatus(vid, s)),
+      clearStatus:guard("vehicles.clearStatus", (vid)    => db.clearStatus(vid)),
     },
     logbook: {
       list:  (vid)         => db.getLogbook(vid),
-      add:   (vid, entry)  => db.addLogEntry(vid, entry),
+      add:   guard("logbook.add", (vid, entry)  => db.addLogEntry(vid, entry)),
     },
     reminders: {
       list:  (uid)         => db.getReminders(uid),
-      save:  (uid, r)      => db.saveReminder(uid, r),
-      done:  (uid, id)     => db.doneReminder(uid, id),
+      save:  guard("reminders.save", (uid, r)      => db.saveReminder(uid, r)),
+      done:  guard("reminders.done", (uid, id)     => db.doneReminder(uid, id)),
     },
     events: {
       list:         ()              => db.getEvents(),
       participants: (eid)           => db.getParticipants(eid),
-      join:         (eid, uid, vid, cls) => db.joinEvent(eid, uid, vid, cls),
+      join:         guard("events.join", (eid, uid, vid, cls) => db.joinEvent(eid, uid, vid, cls)),
       history:      (vid)           => db.getEventHistory(vid),
     },
     threads: {
       list:   (uid)                       => db.getThreads(uid),
       get:    (tid)                       => db.getThread(tid),
-      create: (participants, vid, vname)  => db.createThread(participants, vid, vname),
-      send:   (tid, uid, text)            => db.sendMessage(tid, uid, text),
-      read:   (tid, uid)                  => db.markRead(tid, uid),
-      delete: (tid)                       => db.deleteThread ? db.deleteThread(tid) : Promise.resolve({error:"not supported"}),
-      deleteMessage: (mid)                => db.deleteMessage ? db.deleteMessage(mid) : Promise.resolve({error:"not supported"}),
+      create: guard("threads.create", (participants, vid, vname)  => db.createThread(participants, vid, vname)),
+      send:   guard("threads.send",   (tid, uid, text)            => db.sendMessage(tid, uid, text)),
+      read:   guard("threads.read",   (tid, uid)                  => db.markRead(tid, uid)),
+      delete: guard("threads.delete", (tid)                       => db.deleteThread ? db.deleteThread(tid) : Promise.resolve({error:"not supported"})),
+      deleteMessage: guard("threads.deleteMessage", (mid)          => db.deleteMessage ? db.deleteMessage(mid) : Promise.resolve({error:"not supported"})),
     },
     stats: (uid) => db.getStats(uid),
   };
