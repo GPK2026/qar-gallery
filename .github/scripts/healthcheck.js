@@ -82,9 +82,21 @@ async function q(path, opts = {}) {
   }
 
   // ── 1. Lesen: sind alle Tabellen erreichbar? ──
-  for (const t of ["users", "vehicles", "events", "participants", "threads", "messages", "news"]) {
+  // Pflicht-Tabellen: ohne die läuft nichts
+  for (const t of ["users", "vehicles", "events", "participants", "threads", "messages"]) {
     const r = await q(`${t}?select=id&limit=1`);
     r.error ? bad(`Lesen: ${t}`, r.error) : ok(`Lesen: ${t}`);
+  }
+  // Optionale Tabellen: fehlen nur einzelne Funktionen, kein Totalausfall
+  for (const [t, feature] of [["news", "Newsletter"], ["vehicle_status", "Live-Status"], ["logbook", "Logbuch"]]) {
+    const r = await q(`${t}?select=*&limit=1`);
+    if (!r.error) { ok(`Lesen: ${t}`); continue; }
+    const s = String(r.error);
+    if (/does not exist|PGRST205|42P01/.test(s)) {
+      results.push(`⚠ Tabelle "${t}" fehlt — ${feature} funktioniert nicht`);
+    } else {
+      bad(`Lesen: ${t}`, r.error);
+    }
   }
 
   // ── 2. Schreibtest an einem Wegwerf-Datensatz ──
