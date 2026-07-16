@@ -29,9 +29,15 @@ function bad(label, err) {
   let hint = "unbekannter Fehler";
   if (s.includes("PGRST204")) hint = "Spalte fehlt in der DB";
   else if (s.includes("42501") || /policy/i.test(s)) hint = "RLS-Policy blockiert";
+  else if (s.includes("42710")) hint = "Policy existiert bereits";
   else if (s.includes("22P02")) hint = "ungültiges Format (UUID?)";
   else if (s.includes("23503")) hint = "Fremdschlüssel-Verletzung";
+  else if (s.includes("23505")) hint = "Datensatz existiert bereits";
+  else if (/fetch failed|ENOTFOUND|ECONNREFUSED|network|timeout/i.test(s)) hint = "Datenbank nicht erreichbar (Netzwerk/DNS)";
+  else if (s.includes("401") || /JWT|apikey/i.test(s)) hint = "Zugangsdaten falsch — Secrets prüfen";
+  else if (s.includes("404")) hint = "Tabelle nicht gefunden";
   else if (s.includes("PGRST")) hint = "PostgREST-Fehler " + (s.match(/PGRST\d+/) || [""])[0];
+  else if (s) hint = s.slice(0, 60);   // Rest: Rohtext gekürzt, statt "unbekannt"
   results.push(`✗ ${label} — ${hint}`);
 }
 
@@ -51,6 +57,28 @@ async function q(path, opts = {}) {
 
 (async () => {
   console.log("Health-Check gestartet\n");
+
+  // ── 0. Verbindung überhaupt möglich? ──
+  const ping = await q("users?select=id&limit=1");
+  const pingErr = String(ping.error || "");
+  if (ping.error) {
+    // Proxy/Firewall blockiert (kein DB-Problem)
+    if (/not in allowlist|egress|proxy/i.test(pingErr)) {
+      console.log("✗ Zugriff durch Netzwerk-Proxy blockiert");
+      console.log("\n::error::Der Runner darf supabase.co nicht erreichen.");
+      process.exit(1);
+    }
+    if (/fetch failed|ENOTFOUND|ECONNREFUSED|timeout/i.test(pingErr)) {
+      console.log("✗ Datenbank nicht erreichbar");
+      console.log("\n::error::Keine Verbindung zu Supabase — SUPABASE_URL prüfen.");
+      process.exit(1);
+    }
+    if (/401|JWT|apikey|Invalid API key/i.test(pingErr)) {
+      console.log("✗ Zugangsdaten abgelehnt");
+      console.log("\n::error::SUPABASE_ANON_KEY falsch oder abgelaufen.");
+      process.exit(1);
+    }
+  }
 
   // ── 1. Lesen: sind alle Tabellen erreichbar? ──
   for (const t of ["users", "vehicles", "events", "participants", "threads", "messages", "news"]) {
