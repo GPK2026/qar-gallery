@@ -1210,32 +1210,37 @@
         padding: 16,
         marginBottom: 14
       }
-    }, [["📅", fmtDate(ev.date), "Datum"], ["📍", ev.location, "Ort"], ["💶", ev.entryFee || ev.price || "Kostenlos", "Eintritt"], ["👥", `${confirmedParts.length} / ${ev.maxParticipants || 100}`, "Bestätigte Teilnehmer"]].filter(([, v]) => v).map(([icon, val, label]) => /*#__PURE__*/_react.default.createElement("div", {
-      key: label,
-      style: {
-        display: "flex",
-        gap: 10,
-        marginBottom: 8,
-        alignItems: "center"
-      }
-    }, /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        width: 20,
-        textAlign: "center"
-      }
-    }, icon), /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 11,
-        color: C.muted,
-        minWidth: 60
-      }
-    }, label), /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 13,
-        color: C.white,
-        fontWeight: 600
-      }
-    }, val))), ev.description && /*#__PURE__*/_react.default.createElement("p", {
+    }, (() => {
+      const raw = String(ev.entryFee || ev.price || "").trim();
+      const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
+      const rows = [["📅", fmtDate(ev.date), "Datum", null], ["📍", ev.location, "Ort", null], ["💶", free ? "Kostenlos" : raw, "Eintritt", free ? C.green : C.gold], ["👥", `${confirmedParts.length} / ${ev.maxParticipants || 100}`, "Bestätigte Teilnehmer", null]];
+      return rows.filter(([, v]) => v).map(([icon, val, label, col]) => /*#__PURE__*/_react.default.createElement("div", {
+        key: label,
+        style: {
+          display: "flex",
+          gap: 10,
+          marginBottom: 8,
+          alignItems: "center"
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          width: 20,
+          textAlign: "center"
+        }
+      }, icon), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 11,
+          color: C.muted,
+          minWidth: 60
+        }
+      }, label), /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 13,
+          color: col || C.white,
+          fontWeight: col ? 800 : 600
+        }
+      }, val)));
+    })(), ev.description && /*#__PURE__*/_react.default.createElement("p", {
       style: {
         fontSize: 12,
         color: "#bbb",
@@ -1406,7 +1411,42 @@
         color: C.white,
         marginBottom: 4
       }
-    }, "Jetzt anmelden"), /*#__PURE__*/_react.default.createElement("div", {
+    }, "Jetzt anmelden"), (() => {
+      const raw = String(ev.entryFee || ev.price || "").trim();
+      const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
+      return /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          background: free ? `${C.green}12` : `${C.gold}12`,
+          border: `1px solid ${free ? C.green : C.gold}33`,
+          borderRadius: 8,
+          padding: "9px 12px",
+          marginBottom: 12,
+          display: "flex",
+          gap: 9,
+          alignItems: "center"
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 15
+        }
+      }, free ? "✓" : "💶"), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          flex: 1
+        }
+      }, /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 13,
+          fontWeight: 800,
+          color: free ? C.green : C.gold
+        }
+      }, free ? "Teilnahme kostenlos" : `Startgebühr: ${raw}`), !free && /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: "#888",
+          marginTop: 1
+        }
+      }, "Zahlung direkt beim Veranstalter vor Ort")));
+    })(), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
@@ -10398,7 +10438,30 @@ Regeln:
           fontSize: 12,
           fontWeight: 700
         }
-      }, ev.category), myReg ? /*#__PURE__*/_react.default.createElement("span", {
+      }, ev.category), (() => {
+        // Preis: leer oder "kostenlos"/"frei"/"0" → gratis
+        const raw = String(ev.entryFee || ev.price || "").trim();
+        const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
+        return free ? /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            background: `${C.green}22`,
+            color: C.green,
+            borderRadius: 6,
+            padding: "3px 9px",
+            fontSize: 12,
+            fontWeight: 800
+          }
+        }, "Kostenlos") : /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            background: `${C.gold}22`,
+            color: C.gold,
+            borderRadius: 6,
+            padding: "3px 9px",
+            fontSize: 12,
+            fontWeight: 800
+          }
+        }, "💶 ", raw);
+      })(), myReg ? /*#__PURE__*/_react.default.createElement("span", {
         style: {
           background: `${C.green}22`,
           color: C.green,
@@ -10675,9 +10738,22 @@ Regeln:
         }, ev.name), /*#__PURE__*/_react.default.createElement("div", {
           style: {
             fontSize: 12,
-            color: C.muted
+            color: C.muted,
+            display: "flex",
+            gap: 6,
+            alignItems: "center",
+            flexWrap: "wrap"
           }
-        }, ev.location)), myReg ? /*#__PURE__*/_react.default.createElement("span", {
+        }, /*#__PURE__*/_react.default.createElement("span", null, ev.location), (() => {
+          const raw = String(ev.entryFee || ev.price || "").trim();
+          const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
+          return /*#__PURE__*/_react.default.createElement("span", {
+            style: {
+              color: free ? C.green : C.gold,
+              fontWeight: 700
+            }
+          }, "· ", free ? "Kostenlos" : raw);
+        })())), myReg ? /*#__PURE__*/_react.default.createElement("span", {
           style: {
             background: `${C.green}22`,
             color: C.green,
