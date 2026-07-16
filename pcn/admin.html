@@ -1455,9 +1455,10 @@ async function runFullDiagnostics(){
     // Live-Status
     const sIns = await api("vehicle_status",{method:"POST",body:JSON.stringify({
       vehicle_id:testVid, text:"Diagnose-Test", icon:"🔧",
-      expires_at:new Date(Date.now()+60000).toISOString(), created_at:new Date().toISOString()
+      expires_at:new Date(Date.now()+60000).toISOString(), set_at:new Date().toISOString()
     })});
-    check(sIns,"Live-Status setzen (vehicle_status)", sIns?.error?"Live-Status funktioniert nicht":"");
+    check(sIns,"Live-Status setzen (vehicle_status)",
+      sIns?.error?"Tabelle fehlt? → add_vehicle_status_table.sql ausführen":"");
     if(!sIns?.error) await api(`vehicle_status?vehicle_id=eq.${testVid}`,{method:"DELETE"}).catch(()=>{});
     // Aufräumen
     const vDel = await api(`vehicles?id=eq.${testVid}`,{method:"DELETE"});
@@ -1469,9 +1470,10 @@ async function runFullDiagnostics(){
 
   // ── 4. Event-Anmeldung ──
   const ev = DB.events[0];
-  if(ev){
+  const anyVeh = DB.vehicles.find(v=>v.user_id===testUser.id) || DB.vehicles[0];
+  if(ev && anyVeh){
     const pIns = await api("participants",{method:"POST",body:JSON.stringify({
-      event_id:ev.id, user_id:testUser.id, vehicle_id:null, class:"Diagnose",
+      event_id:ev.id, user_id:testUser.id, vehicle_id:anyVeh.id, class:"Diagnose",
       status:"pending", registered_at:new Date().toISOString()
     })});
     if(check(pIns,"Event-Anmeldung (participants INSERT)", pIns?.error?"Mitglieder können sich nicht anmelden":"")){
@@ -1482,7 +1484,7 @@ async function runFullDiagnostics(){
         await api(`participants?id=eq.${pid}`,{method:"DELETE"}).catch(()=>{});
       }
     }
-  } else add("warn","Event-Anmeldung übersprungen","Kein Event vorhanden");
+  } else add("warn","Event-Anmeldung übersprungen", !ev?"Kein Event vorhanden":"Kein Fahrzeug vorhanden");
 
   // ── 5. Nachrichten ──
   const mRes = await sendAdminMsg(testUser.id, "🔬 Selbsttest — kann ignoriert werden.", "🔬");
