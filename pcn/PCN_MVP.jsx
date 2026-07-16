@@ -508,6 +508,61 @@ const STATUS_PRESETS = [
 
 // ─── Sub-components (proper React components — no hooks-in-render) ─────────────
 
+// ═══════════════════════════════════════════════════════════════════════════
+// KARUSSELL — horizontal wischbar mit Einrastpunkten
+//
+// Auf dem Handy ist Wischen natürlicher als Scrollen und zeigt mehr auf
+// weniger Fläche. Die Punkte unten sagen, wie viel noch kommt — ohne sie
+// weiß niemand, dass es weitergeht.
+// ═══════════════════════════════════════════════════════════════════════════
+function Carousel({items, renderItem, cardWidth=150, gap=10, emptyState=null}) {
+  const boxRef = useRef(null);
+  const [active, setActive] = useState(0);
+
+  if(!items || !items.length) return emptyState;
+
+  const onScroll = () => {
+    const el = boxRef.current; if(!el) return;
+    const i = Math.round(el.scrollLeft / (cardWidth + gap));
+    setActive(Math.max(0, Math.min(items.length-1, i)));
+  };
+  const scrollTo = (i) => {
+    const el = boxRef.current; if(!el) return;
+    el.scrollTo({ left: i*(cardWidth+gap), behavior:"smooth" });
+  };
+
+  const showDots = items.length > 2;
+
+  return (
+    <div>
+      <div ref={boxRef} onScroll={onScroll}
+        style={{display:"flex",gap,overflowX:"auto",scrollbarWidth:"none",
+          msOverflowStyle:"none",WebkitOverflowScrolling:"touch",
+          scrollSnapType:"x mandatory",paddingBottom:2,
+          // Rand rechts andeuten, dass es weitergeht
+          maskImage: items.length>2 ? "linear-gradient(90deg,#000 92%,transparent)" : "none",
+          WebkitMaskImage: items.length>2 ? "linear-gradient(90deg,#000 92%,transparent)" : "none"}}>
+        {items.map((item,i)=>(
+          <div key={item.id||i} style={{flexShrink:0,width:cardWidth,scrollSnapAlign:"start"}}>
+            {renderItem(item,i)}
+          </div>
+        ))}
+      </div>
+      {showDots&&(
+        <div style={{display:"flex",gap:5,justifyContent:"center",marginTop:9}}>
+          {items.map((_,i)=>(
+            <button key={i} onClick={()=>scrollTo(i)}
+              aria-label={`Zu Element ${i+1}`}
+              style={{width:active===i?16:5,height:5,borderRadius:99,border:"none",padding:0,
+                background:active===i?C.red:"#333",cursor:"pointer",
+                transition:"width .25s, background .25s"}}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin, onCancel, onViewVehicle}) {
   const [selV, setSelV] = useState(myVehicles[0]?.id||"");
   const [selC, setSelC] = useState((ev.classes||["Alle Modelle"])[0]);
@@ -4655,41 +4710,45 @@ Regeln:
                     Alle ansehen →
                   </button>
                 </div>
-                {displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).slice(0,3).map(v=>(
-                  <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer",display:"flex"}}
-                    onClick={()=>{
-                      // Open public view — respects privacy settings
-                      const priv = typeof v.privacy==="string" ? JSON.parse(v.privacy) : (v.privacy||{});
-                      setPublicV({...v, privacy:{...DEF_PRIVACY,...priv}});
-                      setScreen("public");
-                    }}>
-                    <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-                      {v.image?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:28}}>🏎️</span>}
-                      {/* Heart badge on photo — top right */}
-                      <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
-                        style={{position:"absolute",top:5,right:5,background:"rgba(0,0,0,.55)",
-                          border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",
-                          display:"flex",alignItems:"center",justifyContent:"center",
-                          fontSize:14,lineHeight:1,backdropFilter:"blur(4px)",
-                          WebkitTapHighlightColor:"transparent"}}>
-                        {isFavorite(v.id)?"❤️":"🤍"}
-                      </button>
-                    </div>
-                    <div style={{padding:"12px 13px",flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                      <div style={{fontWeight:700,fontSize:15,color:C.white}}>{v.hersteller} {v.modell}</div>
-                      <div style={{display:"flex",gap:6,marginTop:5,alignItems:"center",flexWrap:"wrap"}}>
-                        <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"1px 7px",fontSize:10,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif"}}>
-                          {fmtKz(v.kennzeichen,v.baujahr)}
-                        </span>
-                        <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
-                        <span style={{fontSize:9,color:C.gold,fontWeight:700}}>Peter K.</span>
+                <Carousel
+                  items={displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).slice(0,8)}
+                  cardWidth={150}
+                  renderItem={(v)=>{
+                    const owner = Object.values(allUsers).find(u=>u.id===v.userId);
+                    return (
+                      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,
+                        overflow:"hidden",cursor:"pointer"}}
+                        onClick={()=>{
+                          const priv = typeof v.privacy==="string" ? JSON.parse(v.privacy||"{}") : (v.privacy||{});
+                          setPublicV({...v, privacy:{...DEF_PRIVACY,...priv}});
+                          setScreen("public");
+                        }}>
+                        <div style={{height:100,overflow:"hidden",background:"#111",position:"relative",
+                          display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {v.image
+                            ?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                            :<span style={{fontSize:30}}>🏎️</span>}
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
+                            style={{position:"absolute",top:5,right:5,background:"rgba(0,0,0,.6)",
+                              border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",
+                              fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",
+                              backdropFilter:"blur(4px)",WebkitTapHighlightColor:"transparent"}}>
+                            {isFavorite(v.id)?"❤️":"🤍"}
+                          </button>
+                        </div>
+                        <div style={{padding:"9px 10px"}}>
+                          <div style={{fontWeight:700,fontSize:13,color:C.white,
+                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                            {v.hersteller} {v.modell}
+                          </div>
+                          <div style={{fontSize:10,color:C.muted,marginTop:2,
+                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                            {v.baujahr}{owner?.name?` · ${owner.name.split(" ")[0]}`:v.ownerName?` · ${v.ownerName}`:""}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",paddingRight:14}}>
-                      <span style={{fontSize:18,color:C.muted}}>›</span>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  }}/>
               </div>
             )}
 
@@ -5385,48 +5444,46 @@ Regeln:
                   </div>
                 </div>
               ):(
-                <div>
-                  {favorites.map(fid=>{
-                    const fv = Object.values(vehicles).find(v=>v.id===fid);
-                    if(!fv) return null;
+                <Carousel
+                  items={favorites.map(fid=>Object.values(vehicles).find(v=>v.id===fid)).filter(Boolean)}
+                  cardWidth={158}
+                  renderItem={(fv)=>{
                     const isOwn = fv.userId===me?.id||fv.owner===me?.email;
-                    const DEFp = typeof fv.privacy==="string"?JSON.parse(fv.privacy||"{}"):(fv.privacy||{});
+                    const priv = typeof fv.privacy==="string"?JSON.parse(fv.privacy||"{}"):(fv.privacy||{});
                     return (
-                      <div key={fid} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,marginBottom:10,
-                        overflow:"hidden",cursor:"pointer",display:"flex"}}
+                      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,
+                        overflow:"hidden",cursor:"pointer"}}
                         onClick={()=>{
                           if(isOwn){setViewV(fv);setScreen("vehicle");}
-                          else{setPublicV({...fv,privacy:{...DEF_PRIVACY,...DEFp}});setScreen("public");}
+                          else{setPublicV({...fv,privacy:{...DEF_PRIVACY,...priv}});setScreen("public");}
                         }}>
-                        <div style={{width:90,height:90,overflow:"hidden",background:"#111",flexShrink:0,
+                        <div style={{height:104,overflow:"hidden",background:"#111",position:"relative",
                           display:"flex",alignItems:"center",justifyContent:"center"}}>
                           {fv.image
                             ?<img src={fv.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
-                            :<span style={{fontSize:28}}>🏎️</span>}
-                        </div>
-                        <div style={{padding:"12px 13px",flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                          <div style={{fontWeight:700,fontSize:15,color:C.white}}>{fv.hersteller} {fv.modell}</div>
-                          <div style={{fontSize:11,color:C.muted,marginTop:4}}>{fv.baujahr} · {fv.farbe}</div>
-                          <div style={{display:"flex",gap:6,marginTop:5,alignItems:"center",flexWrap:"wrap"}}>
-                            <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"1px 7px",
-                              fontSize:10,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif"}}>
-                              {fmtKz(fv.kennzeichen,fv.baujahr)}
+                            :<span style={{fontSize:32}}>🏎️</span>}
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(fv.id);}}
+                            style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.65)",
+                              border:"none",borderRadius:"50%",width:28,height:28,cursor:"pointer",
+                              fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",
+                              backdropFilter:"blur(4px)"}}>❤️</button>
+                          {isOwn&&(
+                            <span style={{position:"absolute",bottom:6,left:6,background:`${C.green}dd`,
+                              color:"#fff",borderRadius:4,padding:"1px 6px",fontSize:9,fontWeight:800}}>
+                              Meins
                             </span>
-                            {!isOwn&&<span style={{fontSize:10,color:C.muted}}>Mitglied</span>}
-                            {isOwn&&<span style={{fontSize:10,color:C.green,fontWeight:700}}>Mein Fahrzeug</span>}
-                          </div>
+                          )}
                         </div>
-                        <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",paddingRight:12,gap:4}}>
-                          <button onClick={e=>{e.stopPropagation();toggleFavorite(fid);}}
-                            style={{background:"none",border:"none",cursor:"pointer",fontSize:22,padding:"4px",color:C.red}}>
-                            ❤️
-                          </button>
-                          <span style={{fontSize:16,color:C.muted}}>›</span>
+                        <div style={{padding:"9px 10px"}}>
+                          <div style={{fontWeight:700,fontSize:13,color:C.white,
+                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                            {fv.hersteller} {fv.modell}
+                          </div>
+                          <div style={{fontSize:10,color:C.muted,marginTop:2}}>{fv.baujahr} · {fv.farbe}</div>
                         </div>
                       </div>
                     );
-                  }).filter(Boolean)}
-                </div>
+                  }}/>
               )}
             </div>
 
