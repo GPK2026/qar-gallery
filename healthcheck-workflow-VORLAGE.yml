@@ -11,6 +11,13 @@ on:
     - cron: "0 6,18 * * *"     # 06:00 und 18:00 UTC
   workflow_dispatch:            # manuell auslösbar
 
+# Ohne diesen Block darf der Workflow keine Issues anlegen.
+# GitHub gibt seit 2023 standardmäßig nur Lesezugriff — das Anlegen
+# scheiterte deshalb mit "403 Resource not accessible by integration".
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -46,9 +53,11 @@ jobs:
 
       - name: Bei Fehler Issue anlegen
         if: failure()
+        continue-on-error: true        # Melden darf nicht selbst scheitern
         uses: actions/github-script@v7
         with:
           script: |
+            try {
             const title = "🔴 Health-Check fehlgeschlagen";
             const { data: issues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner, repo: context.repo.repo,
@@ -75,9 +84,15 @@ jobs:
                 title, body, labels: ["health-check"],
               });
             }
+            } catch(e) {
+              core.warning("Issue konnte nicht angelegt werden: " + e.message
+                + " — unter Settings → Actions → General → Workflow permissions"
+                + " auf 'Read and write' stellen.");
+            }
 
       - name: Issue schließen wenn wieder grün
         if: success()
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
