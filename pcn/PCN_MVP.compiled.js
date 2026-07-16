@@ -2180,6 +2180,10 @@
     });
     const [consent, setConsent] = (0, _react.useState)(false);
     const [showPrivacyInfo, setShowPrivacyInfo] = (0, _react.useState)(false);
+    const [showPwChange, setShowPwChange] = (0, _react.useState)(false);
+    const [pwNew, setPwNew] = (0, _react.useState)("");
+    const [pwConfirm, setPwConfirm] = (0, _react.useState)("");
+    const [pwSaving, setPwSaving] = (0, _react.useState)(false);
     const [loginPassword, setLoginPassword] = (0, _react.useState)("");
     const [showPassword, setShowPassword] = (0, _react.useState)(false);
     const [authLoading, setAuthLoading] = (0, _react.useState)(false);
@@ -2293,7 +2297,18 @@
     const myReminders = reminders.filter(r => !r.done).sort((a, b) => new Date(a.date) - new Date(b.date));
     const myParticipations = Object.values(participants).flat().filter(p => p.userId === me?.id);
     const myThreads = Object.values(threads).filter(t => (t.participants || []).includes(me?.id) && !deletedThreadIds.includes(t.id));
-    const unreadCount = myThreads.filter(t => t.messages.some(m => m.from !== me?.id && !m.read && !m.isSystem)).length;
+    // Ungelesene Chats — Admin-Nachrichten sind isSystem, müssen aber zählen
+    const unreadCount = myThreads.filter(t => t.messages.some(m => m.from !== me?.id && !m.read && (!m.isSystem || m.from === ADMIN_UUID))).length;
+
+    // Ungelesene News/Newsletter — sonst merkt niemand, dass etwas da ist
+    const unreadNews = (() => {
+      try {
+        const read = new Set(JSON.parse(store.getItem("pcn_news_seen") || "[]"));
+        return news.filter(n => !read.has(String(n.id))).length;
+      } catch (e) {
+        return 0;
+      }
+    })();
     const appState = {
       logbook,
       participants,
@@ -3123,6 +3138,21 @@
       return () => clearInterval(interval);
     }, []);
 
+    // ── News als gesehen markieren, wenn der Start-Tab offen ist ──────────────
+    // Der Badge verschwindet damit — nicht zu verwechseln mit "gelesen" für Punkte,
+    // die gibt es erst beim Öffnen des Artikels.
+    (0, _react.useEffect)(() => {
+      if (tab !== "dashboard" || !news.length) return;
+      const t = setTimeout(() => {
+        try {
+          const seen = new Set(JSON.parse(store.getItem("pcn_news_seen") || "[]"));
+          news.forEach(n => seen.add(String(n.id)));
+          store.setItem("pcn_news_seen", JSON.stringify([...seen]));
+        } catch (e) {}
+      }, 1200); // kurz warten — nur wenn wirklich hingeschaut wurde
+      return () => clearTimeout(t);
+    }, [tab, news.length]);
+
     // ── Demo-Popup nach 3 Sekunden ────────────────────────────────────────────
     (0, _react.useEffect)(() => {
       if (!isDemo || demoBannerClosed) return;
@@ -3816,6 +3846,55 @@ Regeln:
         notifications_messages: me?.notifications?.messages !== false
       });
       setShowEditProfile(true);
+    };
+
+    // ── Passwort ändern ────────────────────────────────────────────────────────
+    // Wichtig für vom Vorstand angelegte Accounts: die haben zunächst keins.
+    const changePassword = async () => {
+      if (pwNew.length < 6) {
+        toast_("Mindestens 6 Zeichen", "err");
+        return;
+      }
+      if (pwNew !== pwConfirm) {
+        toast_("Passwörter stimmen nicht überein", "err");
+        return;
+      }
+      if (isDemo) {
+        toast_("Im Demo-Modus nicht möglich", "err");
+        return;
+      }
+      setPwSaving(true);
+      try {
+        // Muss zur Registrierung passen (pcn_storage.js Z.505).
+        // HINWEIS: btoa ist kein Hash, sondern umkehrbares Base64 — für den Pilot
+        // hinnehmbar, vor dem Rollout durch Supabase Auth ersetzen.
+        const hash = btoa(encodeURIComponent(pwNew)).slice(0, 32);
+        const res = await fetch(`${sbUrl()}/rest/v1/users?id=eq.${me.id}`, {
+          method: "PATCH",
+          headers: {
+            ...sbHead(),
+            "Prefer": "return=minimal"
+          },
+          body: JSON.stringify({
+            pw_hash: hash
+          })
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          console.error("Passwort speichern:", t);
+          toast_(/PGRST204/.test(t) ? "Passwort-Feld fehlt in der Datenbank — bitte Vorstand melden" : "Speichern fehlgeschlagen", "err");
+          return;
+        }
+        setPwNew("");
+        setPwConfirm("");
+        setShowPwChange(false);
+        toast_("✓ Passwort geändert");
+      } catch (e) {
+        console.error(e);
+        toast_("Fehler beim Speichern", "err");
+      } finally {
+        setPwSaving(false);
+      }
     };
     const saveProfile = async () => {
       if (!profileForm.name.trim()) {
@@ -13823,7 +13902,81 @@ Regeln:
         resize: "none",
         fontFamily: "'Barlow',sans-serif"
       }
-    })), /*#__PURE__*/_react.default.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 9,
+        padding: "12px 14px",
+        marginTop: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setShowPwChange(p => !p),
+      style: {
+        background: "none",
+        border: "none",
+        width: "100%",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        cursor: "pointer",
+        padding: 0,
+        fontFamily: "'Barlow',sans-serif"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 13,
+        color: "#aaa",
+        fontWeight: 600
+      }
+    }, "🔒 Passwort ändern"), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 14,
+        color: C.muted,
+        transform: showPwChange ? "rotate(90deg)" : "none",
+        transition: "transform .2s"
+      }
+    }, "›")), showPwChange && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        marginTop: 12
+      }
+    }, /*#__PURE__*/_react.default.createElement("input", {
+      className: "inp",
+      type: "password",
+      placeholder: "Neues Passwort (mind. 6 Zeichen)",
+      value: pwNew,
+      onChange: e => setPwNew(e.target.value),
+      style: {
+        marginBottom: 8,
+        fontSize: 16
+      }
+    }), /*#__PURE__*/_react.default.createElement("input", {
+      className: "inp",
+      type: "password",
+      placeholder: "Neues Passwort wiederholen",
+      value: pwConfirm,
+      onChange: e => setPwConfirm(e.target.value),
+      style: {
+        marginBottom: 10,
+        fontSize: 16,
+        borderColor: pwConfirm && pwNew !== pwConfirm ? "#ef4444" : undefined
+      }
+    }), pwConfirm && pwNew !== pwConfirm && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#ef4444",
+        marginBottom: 8
+      }
+    }, "Passwörter stimmen nicht überein"), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn",
+      disabled: pwNew.length < 6 || pwNew !== pwConfirm || pwSaving,
+      onClick: changePassword,
+      style: {
+        width: "100%",
+        fontSize: 14,
+        opacity: pwNew.length >= 6 && pwNew === pwConfirm && !pwSaving ? 1 : .4
+      }
+    }, pwSaving ? "Speichert…" : "Passwort speichern")))), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 18
       }
@@ -14545,7 +14698,9 @@ Regeln:
       onClick: () => setTab(id)
     }, id === "messages" && unreadCount > 0 && /*#__PURE__*/_react.default.createElement("div", {
       className: "badge"
-    }, unreadCount), /*#__PURE__*/_react.default.createElement("span", {
+    }, unreadCount), id === "dashboard" && unreadNews > 0 && /*#__PURE__*/_react.default.createElement("div", {
+      className: "badge"
+    }, unreadNews), /*#__PURE__*/_react.default.createElement("span", {
       className: "ico"
     }, icon), /*#__PURE__*/_react.default.createElement("span", {
       className: "lbl"
