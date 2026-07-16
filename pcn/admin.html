@@ -1329,56 +1329,308 @@ function rPoints(el){
   </div>`;
 }
 
+let evView = "list";      // "list" | "calendar"
+let evOpenId = null;       // aufgeklapptes Event
+let evCalMonth = new Date();
+
+function setEvView(v){ evView = v; renderTab("events"); }
+function toggleEvDetail(id){ evOpenId = evOpenId===id ? null : id; renderTab("events"); }
+function evMonthShift(n){ evCalMonth = new Date(evCalMonth.getFullYear(), evCalMonth.getMonth()+n, 1); renderTab("events"); }
+
+// Kennzahlen für ein einzelnes Event
+function evKPIs(ev){
+  const parts = DB.participants.filter(p=>p.event_id===ev.id);
+  const conf  = parts.filter(p=>p.status==="confirmed");
+  const pend  = parts.filter(p=>p.status==="pending");
+  const canc  = parts.filter(p=>p.status==="cancelled");
+  const max   = ev.max_participants || 50;
+  const feeStr = String(ev.entry_fee||"").trim();
+  const free  = !feeStr || /^(kostenlos|frei|gratis|0)/i.test(feeStr);
+  const fee   = free ? 0 : (parseFloat(feeStr.replace(/[^0-9.,]/g,"").replace(",","."))||0);
+  const days  = daysLeft(ev.date);
+  const past  = new Date(ev.date) < new Date();
+  const vehs  = conf.map(p=>DB.vehicles.find(v=>v.id===p.vehicle_id)).filter(Boolean);
+  const models = [...new Set(vehs.map(v=>((v.hersteller||"")+" "+(v.modell||"")).trim()).filter(Boolean))];
+  return { parts, conf, pend, canc, max, fee, free, days, past, vehs, models,
+    auslastung: Math.round(conf.length/Math.max(1,max)*100),
+    umsatz: Math.round(conf.length*fee),
+    potenzial: Math.round(max*fee) };
+}
+
 function rEvents(el){
-  const sorted=[...DB.events].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  el.innerHTML=`<div class="page-title">🏁 Events</div>
-  <button class="btn" style="width:100%;margin-bottom:12px" onclick="toggleEvForm()">+ Neues Event</button>
-  <div id="ev-form" class="card hidden" style="margin-bottom:12px">
-    <div class="sec-title" id="ev-form-title">Neues Event</div>
-    <input type="hidden" id="ev-edit-id">
-    <div class="g2"><div class="field"><label class="lbl">Name *</label><input id="ev-name"></div><div class="field"><label class="lbl">Datum *</label><input id="ev-date" type="date"></div></div>
-    <div class="g2"><div class="field"><label class="lbl">Ort</label><input id="ev-loc"></div><div class="field"><label class="lbl">Kategorie</label><select id="ev-cat"><option>Clubabend</option><option>Trackday</option><option>Ausfahrt</option><option>Oldtimer</option><option>Rennsport</option><option>Saisonfahrt</option></select></div></div>
-    <div class="g2"><div class="field"><label class="lbl">Eintritt</label><input id="ev-fee" placeholder="z.B. € 95 / Kostenlos"></div><div class="field"><label class="lbl">Max. Plätze</label><input id="ev-max" type="number" placeholder="50"></div></div>
-    <div class="field"><label class="lbl">Beschreibung</label><textarea id="ev-desc" style="min-height:60px"></textarea></div>
-    <div class="row"><button class="btn" id="ev-save-btn" onclick="saveEvent()">✓ Speichern</button><button class="btn btn-ghost" onclick="toggleEvForm()">Abbrechen</button></div>
-  </div>
-  ${sorted.map(ev=>{
-    const past=new Date(ev.date)<new Date(),dl=daysLeft(ev.date);
-    const col=past?"var(--muted)":dl<=7?"#ef4444":dl<=30?"var(--amber)":"var(--green)";
-    const parts=DB.participants.filter(p=>p.event_id===ev.id);
-    const conf=parts.filter(p=>p.status==="confirmed"),pend=parts.filter(p=>p.status==="pending"),canc=parts.filter(p=>p.status==="cancelled");
-    return `<div class="mrow">
-      <div style="display:flex;gap:10px;align-items:flex-start">
-        <div style="min-width:36px;text-align:center;flex-shrink:0">
-          <div style="font-size:21px;font-weight:900;color:var(--red);font-family:'Barlow Condensed',sans-serif;line-height:1">${new Date(ev.date).getDate()}</div>
-          <div style="font-size:11px;color:var(--muted);text-transform:uppercase">${new Date(ev.date).toLocaleString("de-DE",{month:"short"})}</div>
-        </div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:16px;font-weight:700">${ev.name}</div>
-          <div style="font-size:13px;color:var(--muted)">${ev.location||""} · ${ev.category||""}${ev.entry_fee?" · "+ev.entry_fee:""}</div>
-          <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
-            ${conf.length?`<span class="b b-green">✓ ${conf.length} bestätigt</span>`:""}
-            ${pend.length?`<span class="b b-amber">🟡 ${pend.length} ausstehend</span>`:""}
-            ${canc.length?`<span class="b b-gray">✕ ${canc.length} abgesagt</span>`:""}
-            ${!parts.length?"<span style='font-size:12px;color:var(--muted)'>Keine Anmeldungen</span>":""}
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-          <span class="b" style="background:${col}22;color:${col};border:1px solid ${col}44">${past?"Vorbei":dl<=7?"Bald":"OK"}</span>
-          <button class="btn btn-sm" style="font-size:12px" onclick="editEvent('${ev.id}')">✏️ Edit</button>
-          <button class="btn btn-sm" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433;font-size:12px" onclick="delEvent('${ev.id}','${(ev.name||"").replace(/'/g,"\\'")}')">✕</button>
-        </div>
-      </div>
-      ${pend.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-        <div style="font-size:12px;color:var(--amber);text-transform:uppercase;font-weight:800;margin-bottom:6px">🟡 Ausstehend</div>
-        ${pend.map(p=>{const mem=DB.members.find(m=>m.id===p.user_id);const veh=DB.vehicles.find(v=>v.id===p.vehicle_id);
-          return `<div style="display:flex;gap:8px;align-items:center;padding:5px 0">
-            <div style="flex:1;font-size:14px"><b>${mem?.name||"—"}</b><span style="color:var(--muted)"> · ${veh?.hersteller||""} ${veh?.modell||""}${p.class?" · "+p.class:""}</span></div>
-            <button class="btn btn-sm btn-green" style="font-size:12px" onclick="confirmParticipant('${p.id}','${ev.id}')">✓</button>
-            <button class="btn btn-sm" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433;font-size:12px" onclick="cancelParticipant('${p.id}','${ev.id}')">✕</button>
-          </div>`;}).join("")}
-      </div>`:""}
-    </div>`;}).join("")||`<div style="color:var(--muted);text-align:center;padding:20px">Keine Events</div>`}`;
+  const sorted = [...DB.events].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const upcoming = sorted.filter(e=>new Date(e.date)>=new Date());
+  const pendTotal = DB.participants.filter(p=>p.status==="pending").length;
+  const umsatzTotal = sorted.reduce((s,ev)=>s+evKPIs(ev).umsatz,0);
+
+  el.innerHTML = '<div class="page-title">🏁 Events <span style="font-size:15px;font-weight:400;color:var(--muted)">'+DB.events.length+'</span></div>'
+
+  + '<div class="stat-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:12px">'
+  + stat(upcoming.length,"Anstehend","","var(--white)")
+  + stat(pendTotal,"Offene Anmeldungen","",pendTotal?"var(--amber)":"var(--muted)")
+  + stat("€"+umsatzTotal,"Startgelder","bestätigt","var(--green)")
+  + '</div>'
+
+  + '<div style="display:flex;gap:8px;margin-bottom:12px">'
+  + '<div style="display:flex;background:#0d0d0d;border-radius:8px;padding:3px;flex:1">'
+  + [["list","☰ Liste"],["calendar","📅 Kalender"]].map(function(x){
+      var v=x[0], l=x[1];
+      return '<button onclick="setEvView(\''+v+'\')" style="flex:1;background:'+(evView===v?"var(--red)":"transparent")
+        +';border:none;border-radius:6px;padding:9px;color:'+(evView===v?"#fff":"var(--muted)")
+        +';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s">'+l+'</button>';
+    }).join("")
+  + '</div>'
+  + '<button class="btn" style="flex-shrink:0" onclick="toggleEvForm()">+ Neu</button>'
+  + '</div>'
+
+  + '<div id="ev-form" class="card hidden" style="margin-bottom:12px">'
+  + '<div class="sec-title" id="ev-form-title">Neues Event</div>'
+  + '<input type="hidden" id="ev-edit-id">'
+  + '<div class="g2"><div class="field"><label class="lbl">Name *</label><input id="ev-name"></div><div class="field"><label class="lbl">Datum *</label><input id="ev-date" type="date"></div></div>'
+  + '<div class="g2"><div class="field"><label class="lbl">Ort</label><input id="ev-loc"></div><div class="field"><label class="lbl">Kategorie</label><select id="ev-cat"><option>Clubabend</option><option>Trackday</option><option>Ausfahrt</option><option>Oldtimer</option><option>Rennsport</option><option>Saisonfahrt</option></select></div></div>'
+  + '<div class="g2"><div class="field"><label class="lbl">Eintritt</label><input id="ev-fee" placeholder="z.B. € 95 / Kostenlos"></div><div class="field"><label class="lbl">Max. Plätze</label><input id="ev-max" type="number" placeholder="50"></div></div>'
+  + '<div class="field"><label class="lbl">Beschreibung</label><textarea id="ev-desc" style="min-height:60px"></textarea></div>'
+  + '<div class="row"><button class="btn" id="ev-save-btn" onclick="saveEvent()">✓ Speichern</button><button class="btn btn-ghost" onclick="toggleEvForm()">Abbrechen</button></div>'
+  + '</div>'
+
+  + (evView==="calendar" ? evCalendarHTML(sorted) : evListHTML(sorted));
+}
+
+// ── Listenansicht ──
+function evListHTML(sorted){
+  if(!sorted.length) return '<div class="card" style="text-align:center;padding:26px;color:var(--muted)">'
+    + '<div style="font-size:30px;margin-bottom:8px">🏁</div>Noch keine Events angelegt</div>';
+
+  return sorted.map(function(ev){
+    var k = evKPIs(ev);
+    var col = k.past?"var(--muted)":k.days<=7?"#ef4444":k.days<=30?"var(--amber)":"var(--green)";
+    var open = evOpenId===ev.id;
+    var name = (ev.name||"").replace(/'/g,"\\'");
+
+    var kpis = [["👥", k.conf.length+"/"+k.max, "bestätigt"], ["📊", k.auslastung+"%", "ausgelastet"]];
+    if(!k.free) kpis.push(["💶", "€"+k.umsatz, "von €"+k.potenzial]);
+    if(k.canc.length) kpis.push(["✕", k.canc.length, "storniert"]);
+
+    return '<div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;border-left:4px solid '+col+'">'
+      + '<div onclick="toggleEvDetail(\''+ev.id+'\')" style="padding:14px;cursor:pointer">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'
+          + '<div style="flex:1;min-width:0">'
+            + '<div style="display:flex;gap:7px;align-items:center;margin-bottom:4px;flex-wrap:wrap">'
+              + '<span style="background:#D5001C22;color:var(--red);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">'+(ev.category||"Event")+'</span>'
+              + (k.free
+                  ? '<span style="background:#22c55e22;color:var(--green);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">Kostenlos</span>'
+                  : '<span style="background:#C8A96E22;color:var(--gold);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">💶 '+ev.entry_fee+'</span>')
+              + (k.pend.length ? '<span style="background:#f59e0b22;color:var(--amber);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:800">'+k.pend.length+' offen</span>' : '')
+            + '</div>'
+            + '<div style="font-size:16px;font-weight:800;color:var(--txt);margin-bottom:2px">'+escapeHtml(ev.name||"")+'</div>'
+            + '<div style="font-size:12px;color:var(--muted)">'+fmt(ev.date)+' · '+escapeHtml(ev.location||"—")+'</div>'
+          + '</div>'
+          + '<div style="text-align:center;flex-shrink:0">'
+            + '<div style="font-size:20px;font-weight:900;color:'+col+';font-family:\'Barlow Condensed\',sans-serif;line-height:1">'
+              + (k.past?"✓":k.days<=0?"heute":k.days) + '</div>'
+            + '<div style="font-size:9px;color:#555">'+(k.past?"vorbei":k.days>0?"Tage":"")+'</div>'
+          + '</div>'
+          + '<span style="font-size:14px;color:var(--muted);transform:rotate('+(open?"90":"0")+'deg);transition:transform .2s;flex-shrink:0">›</span>'
+        + '</div>'
+
+        + '<div style="display:flex;gap:14px;margin-top:11px;padding-top:11px;border-top:1px solid #151515;flex-wrap:wrap">'
+        + kpis.map(function(x){
+            return '<div style="display:flex;gap:5px;align-items:baseline">'
+              + '<span style="font-size:11px">'+x[0]+'</span>'
+              + '<span style="font-size:14px;font-weight:800;color:var(--txt)">'+x[1]+'</span>'
+              + '<span style="font-size:10px;color:#555">'+x[2]+'</span></div>';
+          }).join("")
+        + '</div>'
+        + '<div style="height:4px;background:#1a1a1a;border-radius:99px;overflow:hidden;margin-top:9px">'
+          + '<div style="height:100%;width:'+Math.min(100,k.auslastung)+'%;background:'
+          + (k.auslastung>=80?"var(--green)":k.auslastung>=40?"var(--gold)":"#555")+';transition:width .4s"></div>'
+        + '</div>'
+      + '</div>'
+      + (open ? evDetailHTML(ev,k) : '')
+      + '</div>';
+  }).join("");
+}
+
+// ── Detailansicht ──
+function evDetailHTML(ev,k){
+  var name = (ev.name||"").replace(/'/g,"\\'");
+  var boxes = [
+    ["Bestätigt", k.conf.length, "var(--green)"],
+    ["Offen", k.pend.length, k.pend.length?"var(--amber)":"#555"],
+    ["Storniert", k.canc.length, k.canc.length?"#ef4444":"#555"],
+    ["Freie Plätze", Math.max(0,k.max-k.conf.length), "var(--white)"],
+  ];
+
+  var out = '<div style="border-top:1px solid var(--border);background:#0a0a0a;padding:14px">';
+
+  if(ev.description) out += '<div style="font-size:13px;color:#999;line-height:1.6;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #151515">'+escapeHtml(ev.description)+'</div>';
+
+  out += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:14px">'
+    + boxes.map(function(b){
+        return '<div style="background:#111;border-radius:7px;padding:9px;text-align:center">'
+          + '<div style="font-size:19px;font-weight:900;color:'+b[2]+';font-family:\'Barlow Condensed\',sans-serif;line-height:1">'+b[1]+'</div>'
+          + '<div style="font-size:10px;color:#555;margin-top:2px">'+b[0]+'</div></div>';
+      }).join("")
+    + '</div>';
+
+  if(k.models.length){
+    out += '<div style="margin-bottom:14px">'
+      + '<div class="lbl" style="margin-bottom:6px">Fahrzeuge am Start ('+k.models.length+' Modelle)</div>'
+      + '<div style="display:flex;gap:5px;flex-wrap:wrap">'
+      + k.models.slice(0,8).map(function(m){
+          return '<span style="background:#151515;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;color:#aaa">'+escapeHtml(m)+'</span>';
+        }).join("")
+      + (k.models.length>8 ? '<span style="font-size:11px;color:#555;padding:3px">+'+(k.models.length-8)+'</span>' : '')
+      + '</div></div>';
+  }
+
+  out += '<div class="lbl" style="margin-bottom:7px">Anmeldungen ('+k.parts.length+')</div>';
+  if(!k.parts.length){
+    out += '<div style="color:#555;font-size:12px;padding:8px 0">Noch keine Anmeldungen</div>';
+  } else {
+    out += k.parts.map(function(p){
+      var m = DB.members.find(function(x){return x.id===p.user_id;});
+      var v = DB.vehicles.find(function(x){return x.id===p.vehicle_id;});
+      var sc = p.status==="confirmed"?"var(--green)":p.status==="pending"?"var(--amber)":"#ef4444";
+      var sl = p.status==="confirmed"?"✓ Bestätigt":p.status==="pending"?"⏳ Offen":"✕ Storniert";
+      var s = '<div style="display:flex;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">'
+        + '<div style="width:28px;height:28px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">'+((m&&m.name?m.name:"?")[0].toUpperCase())+'</div>'
+        + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:13px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(m&&m.name?m.name:"Unbekannt")+(p.start_nr?" · #"+p.start_nr:"")+'</div>'
+          + '<div style="font-size:11px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(v?escapeHtml((v.hersteller||"")+" "+(v.modell||"")):"kein Fahrzeug")+(p.class?" · "+escapeHtml(p.class):"")+'</div>'
+        + '</div>'
+        + '<span style="font-size:10px;color:'+sc+';font-weight:700;flex-shrink:0">'+sl+'</span>';
+      if(p.status==="pending") s += '<button onclick="event.stopPropagation();confirmPart(\''+p.id+'\',\''+ev.id+'\')" style="background:var(--green);border:none;border-radius:5px;padding:5px 9px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">✓</button>';
+      if(p.status!=="cancelled") s += '<button onclick="event.stopPropagation();cancelParticipant(\''+p.id+'\',\''+ev.id+'\')" style="background:transparent;border:1px solid #ef444433;border-radius:5px;padding:5px 8px;color:#ef4444;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0">✕</button>';
+      return s + '</div>';
+    }).join("");
+  }
+
+  out += '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'
+    + '<button onclick="event.stopPropagation();editEvent(\''+ev.id+'\')" style="flex:1;min-width:110px;background:#1a1a1a;border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✏️ Bearbeiten</button>';
+  if(k.pend.length) out += '<button onclick="event.stopPropagation();confirmAllPending(\''+ev.id+'\')" style="flex:1;min-width:110px;background:var(--green);border:none;border-radius:7px;padding:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✓ Alle bestätigen ('+k.pend.length+')</button>';
+  out += '<button onclick="event.stopPropagation();delEvent(\''+ev.id+'\',\''+name+'\')" style="background:transparent;border:1px solid #ef444433;border-radius:7px;padding:10px 13px;color:#ef4444;font-size:13px;cursor:pointer;font-family:inherit">🗑</button>'
+    + '</div></div>';
+  return out;
+}
+
+// ── Kalenderansicht ──
+function evCalendarHTML(sorted){
+  var y = evCalMonth.getFullYear(), mo = evCalMonth.getMonth();
+  var first = new Date(y,mo,1);
+  var startDay = (first.getDay()+6)%7;                 // Montag = 0
+  var daysInMonth = new Date(y,mo+1,0).getDate();
+  var monthName = first.toLocaleDateString("de-DE",{month:"long",year:"numeric"});
+  var today = new Date(); today.setHours(0,0,0,0);
+
+  var evThisMonth = sorted.filter(function(e){
+    var d=new Date(e.date); return d.getFullYear()===y && d.getMonth()===mo;
+  });
+
+  var cells = [];
+  for(var i=0;i<startDay;i++) cells.push('<div></div>');
+  for(var d=1;d<=daysInMonth;d++){
+    var date = new Date(y,mo,d);
+    var isToday = date.getTime()===today.getTime();
+    var dayEvs = evThisMonth.filter(function(e){ return new Date(e.date).getDate()===d; });
+    var hasPend = dayEvs.some(function(e){ return evKPIs(e).pend.length>0; });
+    var bg = dayEvs.length ? (hasPend?"#f59e0b18":"#D5001C18") : isToday?"#1a1a1a":"transparent";
+    var br = isToday ? "var(--red)" : dayEvs.length ? (hasPend?"#f59e0b44":"#D5001C44") : "transparent";
+    var cell = '<div ' + (dayEvs.length ? 'onclick="toggleEvDetail(\''+dayEvs[0].id+'\')" ' : '')
+      + 'style="aspect-ratio:1;border-radius:7px;padding:4px;display:flex;flex-direction:column;'
+      + (dayEvs.length?'cursor:pointer;':'')
+      + 'background:'+bg+';border:1px solid '+br+'">'
+      + '<div style="font-size:11px;font-weight:'+(isToday?800:500)+';color:'
+      + (isToday?"var(--red)":dayEvs.length?"var(--txt)":"#444")+';text-align:center">'+d+'</div>';
+    if(dayEvs.length){
+      cell += '<div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:9px;color:'
+        + (hasPend?"var(--amber)":"var(--red)")+';font-weight:700;text-align:center;overflow:hidden;line-height:1.1">'
+        + (dayEvs.length>1 ? dayEvs.length+"×" : escapeHtml(dayEvs[0].name.split(" ")[0].slice(0,7)))
+        + '</div>';
+    }
+    cells.push(cell + '</div>');
+  }
+
+  var out = '<div class="card">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    + '<button onclick="evMonthShift(-1)" style="background:#1a1a1a;border:1px solid var(--border);border-radius:7px;width:34px;height:34px;color:var(--txt);font-size:15px;cursor:pointer;font-family:inherit">‹</button>'
+    + '<div style="font-size:16px;font-weight:800;color:var(--txt)">'+monthName+'</div>'
+    + '<button onclick="evMonthShift(1)" style="background:#1a1a1a;border:1px solid var(--border);border-radius:7px;width:34px;height:34px;color:var(--txt);font-size:15px;cursor:pointer;font-family:inherit">›</button>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:5px">'
+    + ["Mo","Di","Mi","Do","Fr","Sa","So"].map(function(x){
+        return '<div style="text-align:center;font-size:10px;color:#555;font-weight:700">'+x+'</div>';
+      }).join("")
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">'+cells.join("")+'</div>';
+
+  if(evThisMonth.length){
+    out += '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">'
+      + '<div class="lbl" style="margin-bottom:9px">'+evThisMonth.length+' Event'+(evThisMonth.length!==1?"s":"")+' in diesem Monat</div>'
+      + evThisMonth.map(function(ev){
+          var k = evKPIs(ev);
+          return '<div onclick="toggleEvDetail(\''+ev.id+'\')" style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #131313;cursor:pointer">'
+            + '<div style="width:36px;height:36px;border-radius:8px;background:#D5001C18;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+            + '<div style="font-size:14px;font-weight:800;color:var(--red);line-height:1">'+new Date(ev.date).getDate()+'</div></div>'
+            + '<div style="flex:1;min-width:0">'
+            + '<div style="font-size:14px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(ev.name||"")+'</div>'
+            + '<div style="font-size:11px;color:var(--muted)">'+k.conf.length+'/'+k.max+' · '+(k.free?"Kostenlos":escapeHtml(ev.entry_fee||""))+'</div>'
+            + '</div>'
+            + (k.pend.length?'<span style="background:#f59e0b22;color:var(--amber);border-radius:5px;padding:2px 7px;font-size:10px;font-weight:800;flex-shrink:0">'+k.pend.length+'</span>':'')
+            + '</div>';
+        }).join("")
+      + '</div>';
+  } else {
+    out += '<div style="text-align:center;padding:22px 0;color:#555;font-size:13px">Keine Events in diesem Monat</div>';
+  }
+
+  var openEv = evOpenId ? sorted.find(function(e){return e.id===evOpenId;}) : null;
+  if(openEv){
+    out += '<div style="margin-top:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+      + '<div style="padding:12px;background:#111;display:flex;justify-content:space-between;align-items:center">'
+      + '<div style="font-size:15px;font-weight:800;color:var(--txt)">'+escapeHtml(openEv.name||"")+'</div>'
+      + '<button onclick="toggleEvDetail(\''+openEv.id+'\')" style="background:none;border:none;color:#666;font-size:17px;cursor:pointer">✕</button>'
+      + '</div>'
+      + evDetailHTML(openEv, evKPIs(openEv))
+      + '</div>';
+  }
+
+  return out + '</div>';
+}
+
+// Einzelne Anmeldung bestätigen
+async function confirmPart(pid, eid){
+  const r = await api("participants?id=eq."+pid,{method:"PATCH",body:JSON.stringify({status:"confirmed"})});
+  if(r.error){ toast("Fehler: "+JSON.stringify(r.error).slice(0,50),"err"); return; }
+  const p = DB.participants.find(function(x){return x.id===pid;});
+  const ev = DB.events.find(function(e){return e.id===eid;});
+  if(p && p.user_id && ev) sendAdminMsg(p.user_id, 'Deine Anmeldung für "'+ev.name+'" ist bestätigt! Du erhältst '+POINTS.event_confirmed+' Punkte. 🏁', "✅");
+  toast("✓ Bestätigt");
+  await loadAll();
+}
+
+// Alle offenen Anmeldungen eines Events bestätigen
+async function confirmAllPending(eid){
+  const pend = DB.participants.filter(function(p){return p.event_id===eid && p.status==="pending";});
+  if(!pend.length) return;
+  const ev = DB.events.find(function(e){return e.id===eid;});
+  confirmPublish({
+    title: pend.length+" Anmeldungen bestätigen?",
+    reach: pend.length,
+    preview: ev ? ev.name : "Event",
+    onConfirm: async function(){
+      let ok=0;
+      for(const p of pend){
+        const r = await api("participants?id=eq."+p.id,{method:"PATCH",body:JSON.stringify({status:"confirmed"})});
+        if(!r.error){
+          ok++;
+          if(p.user_id && ev) sendAdminMsg(p.user_id, 'Deine Anmeldung für "'+ev.name+'" ist bestätigt! Du erhältst '+POINTS.event_confirmed+' Punkte. 🏁', "✅");
+        }
+      }
+      toast("✓ "+ok+" von "+pend.length+" bestätigt");
+      await loadAll();
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════
