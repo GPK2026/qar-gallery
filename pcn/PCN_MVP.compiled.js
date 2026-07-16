@@ -1107,6 +1107,84 @@
 
   // ─── Sub-components (proper React components — no hooks-in-render) ─────────────
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // KARUSSELL — horizontal wischbar mit Einrastpunkten
+  //
+  // Auf dem Handy ist Wischen natürlicher als Scrollen und zeigt mehr auf
+  // weniger Fläche. Die Punkte unten sagen, wie viel noch kommt — ohne sie
+  // weiß niemand, dass es weitergeht.
+  // ═══════════════════════════════════════════════════════════════════════════
+  function Carousel({
+    items,
+    renderItem,
+    cardWidth = 150,
+    gap = 10,
+    emptyState = null
+  }) {
+    const boxRef = (0, _react.useRef)(null);
+    const [active, setActive] = (0, _react.useState)(0);
+    if (!items || !items.length) return emptyState;
+    const onScroll = () => {
+      const el = boxRef.current;
+      if (!el) return;
+      const i = Math.round(el.scrollLeft / (cardWidth + gap));
+      setActive(Math.max(0, Math.min(items.length - 1, i)));
+    };
+    const scrollTo = i => {
+      const el = boxRef.current;
+      if (!el) return;
+      el.scrollTo({
+        left: i * (cardWidth + gap),
+        behavior: "smooth"
+      });
+    };
+    const showDots = items.length > 2;
+    return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+      ref: boxRef,
+      onScroll: onScroll,
+      style: {
+        display: "flex",
+        gap,
+        overflowX: "auto",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+        WebkitOverflowScrolling: "touch",
+        scrollSnapType: "x mandatory",
+        paddingBottom: 2,
+        // Rand rechts andeuten, dass es weitergeht
+        maskImage: items.length > 2 ? "linear-gradient(90deg,#000 92%,transparent)" : "none",
+        WebkitMaskImage: items.length > 2 ? "linear-gradient(90deg,#000 92%,transparent)" : "none"
+      }
+    }, items.map((item, i) => /*#__PURE__*/_react.default.createElement("div", {
+      key: item.id || i,
+      style: {
+        flexShrink: 0,
+        width: cardWidth,
+        scrollSnapAlign: "start"
+      }
+    }, renderItem(item, i)))), showDots && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 5,
+        justifyContent: "center",
+        marginTop: 9
+      }
+    }, items.map((_, i) => /*#__PURE__*/_react.default.createElement("button", {
+      key: i,
+      onClick: () => scrollTo(i),
+      "aria-label": `Zu Element ${i + 1}`,
+      style: {
+        width: active === i ? 16 : 5,
+        height: 5,
+        borderRadius: 99,
+        border: "none",
+        padding: 0,
+        background: active === i ? C.red : "#333",
+        cursor: "pointer",
+        transition: "width .25s, background .25s"
+      }
+    }))));
+  }
   function EventDetail({
     ev,
     me,
@@ -9930,135 +10008,100 @@ Regeln:
         fontFamily: "'Barlow',sans-serif",
         padding: "2px 0"
       }
-    }, "Alle ansehen →")), displayVehicles.filter(v => !myVehicles.find(m => m.id === v.id)).slice(0, 3).map(v => /*#__PURE__*/_react.default.createElement("div", {
-      key: v.id,
-      style: {
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 12,
-        marginBottom: 10,
-        overflow: "hidden",
-        cursor: "pointer",
-        display: "flex"
-      },
-      onClick: () => {
-        // Open public view — respects privacy settings
-        const priv = typeof v.privacy === "string" ? JSON.parse(v.privacy) : v.privacy || {};
-        setPublicV({
-          ...v,
-          privacy: {
-            ...DEF_PRIVACY,
-            ...priv
+    }, "Alle ansehen →")), /*#__PURE__*/_react.default.createElement(Carousel, {
+      items: displayVehicles.filter(v => !myVehicles.find(m => m.id === v.id)).slice(0, 8),
+      cardWidth: 150,
+      renderItem: v => {
+        const owner = Object.values(allUsers).find(u => u.id === v.userId);
+        return /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            background: C.card,
+            border: `1px solid ${C.border}`,
+            borderRadius: 12,
+            overflow: "hidden",
+            cursor: "pointer"
+          },
+          onClick: () => {
+            const priv = typeof v.privacy === "string" ? JSON.parse(v.privacy || "{}") : v.privacy || {};
+            setPublicV({
+              ...v,
+              privacy: {
+                ...DEF_PRIVACY,
+                ...priv
+              }
+            });
+            setScreen("public");
           }
-        });
-        setScreen("public");
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            height: 100,
+            overflow: "hidden",
+            background: "#111",
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }
+        }, v.image ? /*#__PURE__*/_react.default.createElement("img", {
+          src: v.image,
+          alt: "",
+          style: {
+            width: "100%",
+            height: "100%",
+            objectFit: "cover"
+          },
+          onError: e => e.target.style.display = "none"
+        }) : /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 30
+          }
+        }, "🏎️"), /*#__PURE__*/_react.default.createElement("button", {
+          onClick: e => {
+            e.stopPropagation();
+            toggleFavorite(v.id);
+          },
+          style: {
+            position: "absolute",
+            top: 5,
+            right: 5,
+            background: "rgba(0,0,0,.6)",
+            border: "none",
+            borderRadius: "50%",
+            width: 26,
+            height: 26,
+            cursor: "pointer",
+            fontSize: 13,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(4px)",
+            WebkitTapHighlightColor: "transparent"
+          }
+        }, isFavorite(v.id) ? "❤️" : "🤍")), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            padding: "9px 10px"
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontWeight: 700,
+            fontSize: 13,
+            color: C.white,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+          }
+        }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 10,
+            color: C.muted,
+            marginTop: 2,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+          }
+        }, v.baujahr, owner?.name ? ` · ${owner.name.split(" ")[0]}` : v.ownerName ? ` · ${v.ownerName}` : "")));
       }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        width: 90,
-        height: 90,
-        overflow: "hidden",
-        background: "#111",
-        flexShrink: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        position: "relative"
-      }
-    }, v.image ? /*#__PURE__*/_react.default.createElement("img", {
-      src: v.image,
-      alt: "",
-      style: {
-        width: "100%",
-        height: "100%",
-        objectFit: "cover"
-      },
-      onError: e => e.target.style.display = "none"
-    }) : /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 28
-      }
-    }, "🏎️"), /*#__PURE__*/_react.default.createElement("button", {
-      onClick: e => {
-        e.stopPropagation();
-        toggleFavorite(v.id);
-      },
-      style: {
-        position: "absolute",
-        top: 5,
-        right: 5,
-        background: "rgba(0,0,0,.55)",
-        border: "none",
-        borderRadius: "50%",
-        width: 26,
-        height: 26,
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 14,
-        lineHeight: 1,
-        backdropFilter: "blur(4px)",
-        WebkitTapHighlightColor: "transparent"
-      }
-    }, isFavorite(v.id) ? "❤️" : "🤍")), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        padding: "12px 13px",
-        flex: 1,
-        minWidth: 0,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center"
-      }
-    }, /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        fontWeight: 700,
-        fontSize: 15,
-        color: C.white
-      }
-    }, v.hersteller, " ", v.modell), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 6,
-        marginTop: 5,
-        alignItems: "center",
-        flexWrap: "wrap"
-      }
-    }, /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        background: "#fff",
-        border: "1.5px solid #222",
-        borderRadius: 4,
-        padding: "1px 7px",
-        fontSize: 10,
-        fontWeight: 800,
-        color: "#111",
-        letterSpacing: 1,
-        fontFamily: "Arial,sans-serif"
-      }
-    }, fmtKz(v.kennzeichen, v.baujahr)), /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 10,
-        color: C.muted
-      }
-    }, v.baujahr), /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 9,
-        color: C.gold,
-        fontWeight: 700
-      }
-    }, "Peter K."))), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        display: "flex",
-        alignItems: "center",
-        paddingRight: 14
-      }
-    }, /*#__PURE__*/_react.default.createElement("span", {
-      style: {
-        fontSize: 18,
-        color: C.muted
-      }
-    }, "›"))))), recentVehicles.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+    })), recentVehicles.length > 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 18
       }
@@ -11758,142 +11801,113 @@ Regeln:
         color: C.muted,
         lineHeight: 1.6
       }
-    }, "Tippe auf das ❤️ bei einer Fahrzeugakte um sie hier zu speichern")) : /*#__PURE__*/_react.default.createElement("div", null, favorites.map(fid => {
-      const fv = Object.values(vehicles).find(v => v.id === fid);
-      if (!fv) return null;
-      const isOwn = fv.userId === me?.id || fv.owner === me?.email;
-      const DEFp = typeof fv.privacy === "string" ? JSON.parse(fv.privacy || "{}") : fv.privacy || {};
-      return /*#__PURE__*/_react.default.createElement("div", {
-        key: fid,
-        style: {
-          background: C.card,
-          border: `1px solid ${C.border}`,
-          borderRadius: 14,
-          marginBottom: 10,
-          overflow: "hidden",
-          cursor: "pointer",
-          display: "flex"
-        },
-        onClick: () => {
-          if (isOwn) {
-            setViewV(fv);
-            setScreen("vehicle");
-          } else {
-            setPublicV({
-              ...fv,
-              privacy: {
-                ...DEF_PRIVACY,
-                ...DEFp
-              }
-            });
-            setScreen("public");
+    }, "Tippe auf das ❤️ bei einer Fahrzeugakte um sie hier zu speichern")) : /*#__PURE__*/_react.default.createElement(Carousel, {
+      items: favorites.map(fid => Object.values(vehicles).find(v => v.id === fid)).filter(Boolean),
+      cardWidth: 158,
+      renderItem: fv => {
+        const isOwn = fv.userId === me?.id || fv.owner === me?.email;
+        const priv = typeof fv.privacy === "string" ? JSON.parse(fv.privacy || "{}") : fv.privacy || {};
+        return /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            background: C.card,
+            border: `1px solid ${C.border}`,
+            borderRadius: 12,
+            overflow: "hidden",
+            cursor: "pointer"
+          },
+          onClick: () => {
+            if (isOwn) {
+              setViewV(fv);
+              setScreen("vehicle");
+            } else {
+              setPublicV({
+                ...fv,
+                privacy: {
+                  ...DEF_PRIVACY,
+                  ...priv
+                }
+              });
+              setScreen("public");
+            }
           }
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          width: 90,
-          height: 90,
-          overflow: "hidden",
-          background: "#111",
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
-        }
-      }, fv.image ? /*#__PURE__*/_react.default.createElement("img", {
-        src: fv.image,
-        alt: "",
-        style: {
-          width: "100%",
-          height: "100%",
-          objectFit: "cover"
-        },
-        onError: e => e.target.style.display = "none"
-      }) : /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 28
-        }
-      }, "🏎️")), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          padding: "12px 13px",
-          flex: 1,
-          minWidth: 0,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center"
-        }
-      }, /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontWeight: 700,
-          fontSize: 15,
-          color: C.white
-        }
-      }, fv.hersteller, " ", fv.modell), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          fontSize: 11,
-          color: C.muted,
-          marginTop: 4
-        }
-      }, fv.baujahr, " · ", fv.farbe), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          gap: 6,
-          marginTop: 5,
-          alignItems: "center",
-          flexWrap: "wrap"
-        }
-      }, /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          background: "#fff",
-          border: "1.5px solid #222",
-          borderRadius: 4,
-          padding: "1px 7px",
-          fontSize: 10,
-          fontWeight: 800,
-          color: "#111",
-          letterSpacing: 1,
-          fontFamily: "Arial,sans-serif"
-        }
-      }, fmtKz(fv.kennzeichen, fv.baujahr)), !isOwn && /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 10,
-          color: C.muted
-        }
-      }, "Mitglied"), isOwn && /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 10,
-          color: C.green,
-          fontWeight: 700
-        }
-      }, "Mein Fahrzeug"))), /*#__PURE__*/_react.default.createElement("div", {
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          paddingRight: 12,
-          gap: 4
-        }
-      }, /*#__PURE__*/_react.default.createElement("button", {
-        onClick: e => {
-          e.stopPropagation();
-          toggleFavorite(fid);
-        },
-        style: {
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          fontSize: 22,
-          padding: "4px",
-          color: C.red
-        }
-      }, "❤️"), /*#__PURE__*/_react.default.createElement("span", {
-        style: {
-          fontSize: 16,
-          color: C.muted
-        }
-      }, "›")));
-    }).filter(Boolean))), (() => {
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            height: 104,
+            overflow: "hidden",
+            background: "#111",
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }
+        }, fv.image ? /*#__PURE__*/_react.default.createElement("img", {
+          src: fv.image,
+          alt: "",
+          style: {
+            width: "100%",
+            height: "100%",
+            objectFit: "cover"
+          },
+          onError: e => e.target.style.display = "none"
+        }) : /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            fontSize: 32
+          }
+        }, "🏎️"), /*#__PURE__*/_react.default.createElement("button", {
+          onClick: e => {
+            e.stopPropagation();
+            toggleFavorite(fv.id);
+          },
+          style: {
+            position: "absolute",
+            top: 6,
+            right: 6,
+            background: "rgba(0,0,0,.65)",
+            border: "none",
+            borderRadius: "50%",
+            width: 28,
+            height: 28,
+            cursor: "pointer",
+            fontSize: 14,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(4px)"
+          }
+        }, "❤️"), isOwn && /*#__PURE__*/_react.default.createElement("span", {
+          style: {
+            position: "absolute",
+            bottom: 6,
+            left: 6,
+            background: `${C.green}dd`,
+            color: "#fff",
+            borderRadius: 4,
+            padding: "1px 6px",
+            fontSize: 9,
+            fontWeight: 800
+          }
+        }, "Meins")), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            padding: "9px 10px"
+          }
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontWeight: 700,
+            fontSize: 13,
+            color: C.white,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+          }
+        }, fv.hersteller, " ", fv.modell), /*#__PURE__*/_react.default.createElement("div", {
+          style: {
+            fontSize: 10,
+            color: C.muted,
+            marginTop: 2
+          }
+        }, fv.baujahr, " · ", fv.farbe)));
+      }
+    })), (() => {
       const recent = JSON.parse(store.getItem("pcn_recent_vehicles") || "[]").filter(id => !favorites.includes(id));
       if (!recent.length) return null;
       return /*#__PURE__*/_react.default.createElement("div", {
