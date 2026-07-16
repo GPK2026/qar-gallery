@@ -58,12 +58,31 @@ const C = {
 };
 
 // ─── Privacy defaults ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// PRIVACY BY DEFAULT (DSGVO Art. 25)
+//
+// Grundsatz: Nichts ist öffentlich, bis der Eigentümer es freigibt.
+// Ausnahme sind nur Angaben, die das Fahrzeug identifizieren ohne die Person
+// zu identifizieren — Hersteller, Modell, Baujahr. Ohne diese wäre eine
+// gescannte Akte leer und die Funktion sinnlos.
+//
+// NICHT per Default sichtbar — auch wenn es die Akte "leerer" macht:
+//   • kennzeichen  → personenbezogen, über Halterabfrage rückführbar
+//   • fin          → eindeutige Fahrzeug-ID, Missbrauchsrisiko
+//   • marktwert    → Einbruchsanreiz
+//   • pub_phone    → direkter Personenbezug
+//   • pub_gallery  → Fotos können Standort/Umfeld verraten
+//   • pub_logbook  → Bewegungs- und Werkstattprofil
+// ═══════════════════════════════════════════════════════════════════════════
 const DEF_PRIVACY = {
+  // Fahrzeug-Basisdaten — ohne Personenbezug, für die Akte notwendig
   hersteller:true, modell:true, baujahr:true, farbe:true,
-  kraftstoff:true, getriebe:true, kennzeichen:true,
+  kraftstoff:true, getriebe:true,
+  // Alles Weitere: erst nach bewusster Freigabe durch den Eigentümer
+  kennzeichen:false, fin:false, marktwert:false,
   kilometerstand:false, zustand:false, tuev_faelligkeit:false,
-  besonderheiten:true, fin:false, marktwert:false,
-  pub_logbook:false, pub_events:true, pub_phone:false, pub_gallery:true,
+  besonderheiten:false,
+  pub_logbook:false, pub_events:false, pub_phone:false, pub_gallery:false,
 };
 
 // ─── QR Code (Real, scannable — uses bundled qrcode.js library) ──────────────
@@ -897,6 +916,8 @@ function PCNInner() {
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [loginForm, setLoginForm] = useState({mode:"register",code:"",email:"",name:""});
+  const [consent, setConsent] = useState(false);
+  const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [loginPassword, setLoginPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
@@ -2440,16 +2461,40 @@ Wichtig:
                     {showPassword?"🙈":"👁"}
                   </button>
                 </div>
+
+                {/* ── Einwilligung (DSGVO Art. 6 Abs. 1 lit. a) ── */}
+                <div style={{background:C.card,border:`1px solid ${consent?C.green+"44":C.border}`,
+                  borderRadius:10,padding:"13px",marginBottom:14,transition:"border-color .2s"}}>
+                  <label style={{display:"flex",gap:10,alignItems:"flex-start",cursor:"pointer"}}>
+                    <input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}
+                      style={{width:18,height:18,marginTop:1,flexShrink:0,accentColor:C.red,cursor:"pointer"}}/>
+                    <div style={{fontSize:12,color:"#bbb",lineHeight:1.6}}>
+                      Ich stimme zu, dass der Porsche Club Nürburgring e.V. meine Daten
+                      zur Vereinsverwaltung speichert und verarbeitet.
+                      <div style={{fontSize:11,color:"#777",marginTop:6,lineHeight:1.6}}>
+                        <strong style={{color:"#999"}}>Nichts ist automatisch öffentlich.</strong> Du entscheidest
+                        pro Fahrzeug und pro Feld selbst, was beim QR-Scan sichtbar ist —
+                        Kennzeichen, FIN und Kontaktdaten sind standardmäßig verborgen.
+                      </div>
+                      <button onClick={e=>{e.preventDefault();setShowPrivacyInfo(true);}}
+                        style={{background:"none",border:"none",color:C.red,fontSize:11,fontWeight:700,
+                          cursor:"pointer",padding:"6px 0 0",fontFamily:"'Barlow',sans-serif",textDecoration:"underline"}}>
+                        Was wird gespeichert? →
+                      </button>
+                    </div>
+                  </label>
+                </div>
               </>
             )}
 
             <button className="btn" style={{width:"100%",padding:"14px",fontSize:15,
-              opacity:loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email&&loginPassword.length>=6&&!authLoading?1:.5}}
+              opacity:loginForm.code.toUpperCase()===CLUB_CODE&&loginForm.name&&loginForm.email&&loginPassword.length>=6&&consent&&!authLoading?1:.5}}
               onClick={async()=>{
                 if(loginForm.code.toUpperCase()!==CLUB_CODE) return toast_("Club-Code ungültig","err");
                 if(!loginForm.name.trim()) return toast_("Name eingeben","err");
                 if(!loginForm.email.trim()) return toast_("E-Mail eingeben","err");
                 if(loginPassword.length<6) return toast_("Passwort mind. 6 Zeichen","err");
+                if(!consent) return toast_("Bitte der Datenverarbeitung zustimmen","err");
                 if(authLoading) return;
                 const DB=window.PCN_DB;
                 if(!DB){ toast_("App nicht geladen — bitte Seite neu laden","err"); return; }
@@ -2463,6 +2508,19 @@ Wichtig:
                   clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
                   setAuthLoading(false); setAuthStep("");
                   if(error){toast_(error,"err");return;}
+                  // Einwilligung dokumentieren — ohne Nachweis ist sie rechtlich wertlos
+                  if(u?.id){
+                    const cfg=(window.PCN_CONFIG||{});
+                    fetch(`${cfg.supabaseUrl}/rest/v1/users?id=eq.${u.id}`,{
+                      method:"PATCH",
+                      headers:{apikey:cfg.supabaseKey,Authorization:"Bearer "+cfg.supabaseKey,
+                        "Content-Type":"application/json","Prefer":"return=minimal"},
+                      body:JSON.stringify({
+                        consent_at:new Date().toISOString(),
+                        consent_version:"pilot-2026-07",
+                      }),
+                    }).catch(e=>console.warn("Einwilligung nicht protokolliert:",e));
+                  }
                   const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
                   if(!stored.events||Object.keys(stored.events).length===0){
                     stored.events={}; localStorage.setItem("pcn_v1",JSON.stringify(stored));
@@ -5263,6 +5321,54 @@ Wichtig:
       </div>
 
       {/* overlays moved to each screen */}
+
+      {/* ── Datenschutz-Info beim Registrieren ── */}
+      {showPrivacyInfo&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",zIndex:900,
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>setShowPrivacyInfo(false)}>
+          <div onClick={e=>e.stopPropagation()}
+            style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
+              padding:"24px 20px",maxWidth:420,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
+              color:C.white,marginBottom:6}}>🔒 Deine Daten</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+              Kurz und ohne Juristendeutsch.
+            </div>
+
+            {[
+              {t:"Was gespeichert wird",
+               b:"Name, E-Mail und — sobald du es einträgst — dein Fahrzeug mit den Angaben, die du selbst eingibst. Optional Geburtstag, damit der Club gratulieren kann."},
+              {t:"Wer es sehen kann",
+               b:"Der Vorstand sieht Mitgliedsdaten, Fahrzeuge und Beitragsstatus. Deine privaten Chats mit anderen Mitgliedern sieht er nicht."},
+              {t:"Was öffentlich ist",
+               b:"Standardmäßig fast nichts. Beim QR-Scan sieht ein Fremder nur Hersteller, Modell, Baujahr und Farbe. Kennzeichen, FIN, Marktwert, Fotos und Kontaktdaten bleiben verborgen — bis du sie einzeln freigibst."},
+              {t:"Du behältst die Kontrolle",
+               b:"In jeder Fahrzeugakte gibt es einen Bereich „Sichtbarkeit\". Dort schaltest du jedes Feld einzeln an oder aus — jederzeit änderbar."},
+              {t:"Wo die Daten liegen",
+               b:"Auf Servern in Frankfurt am Main (Supabase, EU). Keine Übermittlung in Drittländer."},
+              {t:"Löschung",
+               b:"Du kannst jederzeit beim Vorstand die Löschung deines Kontos verlangen. Damit verschwinden alle deine Daten — Fahrzeuge, Logbuch, Nachrichten."},
+            ].map(({t,b})=>(
+              <div key={t} style={{marginBottom:14,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:4}}>{t}</div>
+                <div style={{fontSize:12,color:"#999",lineHeight:1.65}}>{b}</div>
+              </div>
+            ))}
+
+            <div style={{background:`${C.gold}0d`,border:`1px solid ${C.gold}33`,borderRadius:9,
+              padding:"11px 13px",marginBottom:16}}>
+              <div style={{fontSize:11,color:"#aaa",lineHeight:1.65}}>
+                <strong style={{color:C.gold}}>Pilotphase:</strong> Die Plattform wird gerade mit dem Vorstand
+                erprobt. Es kann Fehler geben — melde sie gerne. Deine Daten bleiben dabei erhalten.
+              </div>
+            </div>
+
+            <button className="btn" style={{width:"100%",padding:"13px"}}
+              onClick={()=>setShowPrivacyInfo(false)}>Verstanden</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Demo-Popup Overlay (erscheint nach 3 Sekunden, legt sich über die Seite) ── */}
       {isDemo&&demoBannerVisible&&!demoBannerClosed&&(
