@@ -2600,9 +2600,9 @@
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
 
-          // Analyseversion: groß (1600px, Q92) — Kennzeichen bleibt lesbar
+          // Analyseversion: groß (2000px, Q92) — Kennzeichen und Schein-Felder bleiben lesbar
           if (onHighRes) {
-            const HMAX = 1600,
+            const HMAX = 2000,
               hs = Math.min(1, HMAX / img.width, HMAX / img.height);
             const hc = document.createElement("canvas");
             hc.width = Math.round(img.width * hs);
@@ -3253,6 +3253,147 @@ Wichtig:
       const n = Object.keys(analyzeResult.fields).length;
       setAnalyzeResult(null);
       toast_(`${n} Feld${n !== 1 ? "er" : ""} übernommen — bitte prüfen`);
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FAHRZEUGSCHEIN-SCANNER (Zulassungsbescheinigung Teil I)
+    //
+    // Die Felder sind nach StVZO genormt — das macht die Erkennung deutlich
+    // zuverlässiger als ein Foto von der Seite. Wir lesen NUR Fahrzeugdaten.
+    //
+    // WICHTIG — Datenschutz: Der Schein enthält Halterdaten (Name, Anschrift,
+    // Geburtsdatum in Feld C). Die werden NICHT ausgelesen und NICHT gespeichert.
+    // Das Bild selbst verlässt den Speicher nach der Analyse wieder.
+    // ═══════════════════════════════════════════════════════════════════════════
+    const [scheinOpen, setScheinOpen] = (0, _react.useState)(false);
+    const [scheinBusy, setScheinBusy] = (0, _react.useState)(false);
+    const [scheinResult, setScheinResult] = (0, _react.useState)(null);
+    const analyzeSchein = async dataUrl => {
+      const endpoint = (window.PCN_CONFIG || {}).aiProxyUrl;
+      if (!endpoint) {
+        setScheinResult({
+          notConfigured: true
+        });
+        return;
+      }
+      setScheinBusy(true);
+      setScheinResult(null);
+      try {
+        const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);
+        if (!m) throw new Error("Bildformat nicht lesbar");
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-6",
+            max_tokens: 1200,
+            messages: [{
+              role: "user",
+              content: [{
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: m[1],
+                  data: m[2]
+                }
+              }, {
+                type: "text",
+                text: `Das ist eine deutsche Zulassungsbescheinigung Teil I (Fahrzeugschein).
+Lies die genormten Felder aus. Antworte AUSSCHLIESSLICH mit JSON, ohne Markdown.
+
+WICHTIG — Datenschutz: Ignoriere sämtliche Halterdaten (Felder C.1.1 bis C.4.3:
+Name, Vorname, Anschrift). Diese dürfen NICHT im Ergebnis erscheinen.
+
+Relevante Felder:
+  B     = Erstzulassung (Datum) → daraus das Baujahr
+  D.1   = Hersteller (z.B. PORSCHE)
+  D.2   = Typ/Variante/Version
+  D.3   = Handelsbezeichnung (z.B. 911 CARRERA S)
+  E     = Fahrzeug-Identifizierungsnummer (FIN)
+  P.3   = Kraftstoffart (z.B. BENZIN, DIESEL, ELEKTRO)
+  R     = Farbe
+  Kennzeichen steht oben im Feld "Amtliches Kennzeichen"
+
+{
+  "hersteller": "z.B. Porsche | null",
+  "modell": "aus D.3 Handelsbezeichnung, lesbar formatiert | null",
+  "baujahr": "Jahr aus Feld B, z.B. 2019 | null",
+  "kennzeichen": "Format AW-PC 718 | null",
+  "fin": "17-stellig aus Feld E | null",
+  "kraftstoff": "Benzin | Diesel | Elektro | Hybrid | null",
+  "farbe": "aus Feld R, deutsche Bezeichnung | null",
+  "erstzulassung": "vollständiges Datum aus B, Format TT.MM.JJJJ | null",
+  "confidence": { "modell": 0-100, "kennzeichen": 0-100, "fin": 0-100 },
+  "istFahrzeugschein": true/false,
+  "hinweis": "falls das Bild kein Fahrzeugschein ist oder Felder unlesbar sind"
+}
+
+Regeln:
+- Handelsbezeichnung lesbar machen: "911 CARRERA S" → "911 Carrera S"
+- FIN nur wenn alle 17 Zeichen sicher lesbar, sonst null
+- Bei Unsicherheit null statt Rateversuch
+- istFahrezugschein: false wenn es offensichtlich ein anderes Dokument ist`
+              }]
+            }]
+          })
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        const raw = (data.content || []).map(c => c.type === "text" ? c.text : "").join("").trim();
+        const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+        if (parsed.istFahrzeugschein === false) {
+          setScheinResult({
+            wrongDoc: true,
+            hinweis: parsed.hinweis
+          });
+          return;
+        }
+
+        // Nur leere Felder befüllen — Nutzereingaben bleiben unangetastet
+        const fields = {};
+        const conf = parsed.confidence || {};
+        ["hersteller", "modell", "baujahr", "kennzeichen", "fin", "kraftstoff", "farbe"].forEach(k => {
+          if (!parsed[k] || addVForm[k]) return;
+          if (k === "fin" && (conf.fin ?? 0) < 80) return; // FIN nur bei hoher Sicherheit
+          if (k === "kennzeichen" && (conf.kennzeichen ?? 0) < 70) return;
+          fields[k] = String(parsed[k]);
+        });
+        const n = Object.keys(fields).length;
+        trackAI(n > 0, n);
+        if (!n) {
+          setScheinResult({
+            empty: true
+          });
+          return;
+        }
+        setScheinResult({
+          fields,
+          confidence: conf,
+          hinweis: parsed.hinweis,
+          erstzulassung: parsed.erstzulassung
+        });
+      } catch (e) {
+        console.error("Fahrzeugschein:", e);
+        trackAI(false, 0);
+        setScheinResult({
+          failed: true
+        });
+      } finally {
+        setScheinBusy(false);
+      }
+    };
+    const applySchein = () => {
+      if (!scheinResult?.fields) return;
+      setAddVForm(p => ({
+        ...p,
+        ...scheinResult.fields
+      }));
+      const n = Object.keys(scheinResult.fields).length;
+      setScheinResult(null);
+      setScheinOpen(false);
+      toast_(`${n} Feld${n !== 1 ? "er" : ""} aus dem Fahrzeugschein übernommen`);
     };
     const addVehicle = async () => {
       if (!addVForm.modell || !addVForm.kennzeichen) return toast_("Modell und Kennzeichen angeben", "err");
@@ -12169,7 +12310,391 @@ Wichtig:
         setScreen("splash");
         setTab("dashboard");
       }
-    }, "Abmelden"))), showPrivacyInfo && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Abmelden"))), scheinOpen && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.92)",
+        zIndex: 950,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "18px"
+      },
+      onClick: e => {
+        if (e.target === e.currentTarget && !scheinBusy) {
+          setScheinOpen(false);
+          setScheinResult(null);
+        }
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      onClick: e => e.stopPropagation(),
+      style: {
+        background: C.dark,
+        border: `1px solid ${C.border}`,
+        borderRadius: 16,
+        padding: "22px 18px",
+        maxWidth: 440,
+        width: "100%",
+        maxHeight: "88vh",
+        overflowY: "auto"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 6
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 22,
+        fontWeight: 900,
+        color: C.white
+      }
+    }, "📄 Fahrzeugschein scannen"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginTop: 1
+      }
+    }, "Zulassungsbescheinigung Teil I")), !scheinBusy && /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => {
+        setScheinOpen(false);
+        setScheinResult(null);
+      },
+      style: {
+        background: "none",
+        border: "none",
+        color: "#666",
+        fontSize: 20,
+        cursor: "pointer",
+        padding: "0 2px",
+        lineHeight: 1
+      }
+    }, "✕")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: "#22c55e0d",
+        border: "1px solid #22c55e33",
+        borderRadius: 9,
+        padding: "10px 12px",
+        margin: "14px 0",
+        display: "flex",
+        gap: 9,
+        alignItems: "flex-start"
+      }
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 13,
+        flexShrink: 0
+      }
+    }, "🔒"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#8c8",
+        lineHeight: 1.6
+      }
+    }, "Es werden ", /*#__PURE__*/_react.default.createElement("strong", {
+      style: {
+        color: "#afa"
+      }
+    }, "nur Fahrzeugdaten"), " ausgelesen. Deine Halterdaten — Name, Anschrift, Geburtsdatum — werden ignoriert und nicht gespeichert. Das Bild wird nach der Analyse verworfen.")), !scheinBusy && !scheinResult && /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px dashed ${C.border}`,
+        borderRadius: 12,
+        padding: "24px 16px",
+        textAlign: "center",
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 38,
+        marginBottom: 8
+      }
+    }, "📄"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted,
+        lineHeight: 1.6,
+        marginBottom: 16
+      }
+    }, "Leg den Fahrzeugschein flach hin, gutes Licht,", /*#__PURE__*/_react.default.createElement("br", null), "das ganze Dokument im Bild."), /*#__PURE__*/_react.default.createElement("label", {
+      style: {
+        display: "inline-block",
+        background: C.gold,
+        color: "#0a0a0a",
+        borderRadius: 9,
+        padding: "12px 22px",
+        fontSize: 14,
+        fontWeight: 800,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif"
+      }
+    }, /*#__PURE__*/_react.default.createElement("input", {
+      type: "file",
+      accept: "image/*",
+      capture: "environment",
+      style: {
+        display: "none"
+      },
+      onChange: e => {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        handleImageUpload(f, () => {}, hi => analyzeSchein(hi));
+      }
+    }), "📷 Foto aufnehmen")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#555",
+        lineHeight: 1.6,
+        textAlign: "center"
+      }
+    }, "Tipp: Der Schein muss nicht perfekt gerade liegen — aber die Felder sollten scharf und ohne Blitzreflexion sein.")), scheinBusy && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        textAlign: "center",
+        padding: "32px 0"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        width: 28,
+        height: 28,
+        border: `3px solid ${C.gold}33`,
+        borderTopColor: C.gold,
+        borderRadius: "50%",
+        animation: "spin .7s linear infinite",
+        margin: "0 auto 14px"
+      }
+    }), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.gold,
+        fontWeight: 700,
+        marginBottom: 4
+      }
+    }, "Schein wird gelesen…"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#666"
+      }
+    }, "Felder B, D.1, D.3, E, P.3, R")), scheinResult?.notConfigured && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        padding: "16px"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#999",
+        fontWeight: 600,
+        marginBottom: 5
+      }
+    }, "🔧 Noch nicht aktiviert"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#666",
+        lineHeight: 1.6,
+        marginBottom: 14
+      }
+    }, "Der Scanner wird gerade eingerichtet. Bis dahin bitte die Felder unten manuell ausfüllen — dauert auch nur zwei Minuten."), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => {
+        setScheinOpen(false);
+        setScheinResult(null);
+      },
+      className: "btn ghost",
+      style: {
+        width: "100%",
+        fontSize: 13
+      }
+    }, "Manuell eintragen")), scheinResult?.wrongDoc && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        padding: "16px"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#e88",
+        fontWeight: 600,
+        marginBottom: 5
+      }
+    }, "Das sieht nicht nach einem Fahrzeugschein aus"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#666",
+        lineHeight: 1.6,
+        marginBottom: 14
+      }
+    }, scheinResult.hinweis || "Bitte die Zulassungsbescheinigung Teil I fotografieren."), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setScheinResult(null),
+      className: "btn ghost",
+      style: {
+        width: "100%",
+        fontSize: 13
+      }
+    }, "↻ Nochmal versuchen")), (scheinResult?.empty || scheinResult?.failed) && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        padding: "16px"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#999",
+        fontWeight: 600,
+        marginBottom: 5
+      }
+    }, scheinResult.failed ? "Analyse fehlgeschlagen" : "Nichts sicher gelesen"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#666",
+        lineHeight: 1.6,
+        marginBottom: 14
+      }
+    }, "Bessere Chancen: mehr Licht, näher ran, Blitz aus, Schein flach hinlegen."), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setScheinResult(null),
+      className: "btn ghost",
+      style: {
+        flex: 1,
+        fontSize: 13
+      }
+    }, "↻ Nochmal"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => {
+        setScheinOpen(false);
+        setScheinResult(null);
+      },
+      className: "btn ghost",
+      style: {
+        flex: 1,
+        fontSize: 13
+      }
+    }, "Manuell"))), scheinResult?.fields && Object.keys(scheinResult.fields).length > 0 && /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: `${C.green}0d`,
+        border: `1px solid ${C.green}33`,
+        borderRadius: 9,
+        padding: "9px 12px",
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.green,
+        fontWeight: 700
+      }
+    }, "✓ ", Object.keys(scheinResult.fields).length, " Felder gelesen")), Object.entries(scheinResult.fields).map(([k, v]) => {
+      const labels = {
+        hersteller: "Hersteller",
+        modell: "Modell",
+        baujahr: "Baujahr",
+        kennzeichen: "Kennzeichen",
+        fin: "FIN",
+        kraftstoff: "Kraftstoff",
+        farbe: "Farbe"
+      };
+      const conf = scheinResult.confidence?.[k];
+      return /*#__PURE__*/_react.default.createElement("div", {
+        key: k,
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "8px 0",
+          borderBottom: `1px solid ${C.border}`,
+          gap: 10
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 12,
+          color: C.muted,
+          flexShrink: 0
+        }
+      }, labels[k] || k), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
+          display: "flex",
+          gap: 7,
+          alignItems: "center",
+          minWidth: 0
+        }
+      }, /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 13,
+          color: C.white,
+          fontWeight: 600,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          fontFamily: k === "fin" ? "ui-monospace,monospace" : "inherit"
+        }
+      }, v), conf != null && /*#__PURE__*/_react.default.createElement("span", {
+        style: {
+          fontSize: 9,
+          fontWeight: 700,
+          padding: "1px 5px",
+          borderRadius: 4,
+          flexShrink: 0,
+          background: conf >= 80 ? `${C.green}22` : `${C.gold}22`,
+          color: conf >= 80 ? C.green : C.gold
+        }
+      }, conf, "%")));
+    }), scheinResult.erstzulassung && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#666",
+        marginTop: 8
+      }
+    }, "Erstzulassung laut Schein: ", scheinResult.erstzulassung), scheinResult.hinweis && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#888",
+        marginTop: 8,
+        lineHeight: 1.5
+      }
+    }, "ℹ️ ", scheinResult.hinweis), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: applySchein,
+      className: "btn",
+      style: {
+        width: "100%",
+        marginTop: 14,
+        background: C.gold,
+        color: "#0a0a0a",
+        fontWeight: 800,
+        padding: "12px"
+      }
+    }, "Übernehmen & prüfen ✓"), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => setScheinResult(null),
+      style: {
+        width: "100%",
+        marginTop: 7,
+        background: "none",
+        border: "none",
+        color: "#666",
+        fontSize: 11,
+        cursor: "pointer",
+        fontFamily: "'Barlow',sans-serif",
+        padding: "6px"
+      }
+    }, "↻ Nochmal scannen"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#555",
+        textAlign: "center",
+        marginTop: 8,
+        lineHeight: 1.4
+      }
+    }, "Bitte die Werte kurz kontrollieren — besonders FIN und Kennzeichen")))), showPrivacyInfo && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "fixed",
         inset: 0,
@@ -13253,18 +13778,65 @@ Wichtig:
         color: C.white,
         marginBottom: 4
       }
-    }, "Fahrzeug hinzufügen"), !(addVForm.images || []).length && (window.PCN_CONFIG || {}).aiProxyUrl && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Fahrzeug hinzufügen"), !(addVForm.modell || addVForm.kennzeichen) && /*#__PURE__*/_react.default.createElement("div", {
       style: {
-        fontSize: 12,
-        color: C.muted,
-        marginBottom: 12,
-        lineHeight: 1.5
+        marginTop: 10,
+        marginBottom: 14
       }
-    }, "✨ Lade ein Foto hoch — wir versuchen Modell, Farbe und Kennzeichen zu erkennen.", /*#__PURE__*/_react.default.createElement("span", {
+    }, /*#__PURE__*/_react.default.createElement("button", {
+      onClick: () => {
+        setScheinOpen(true);
+        setScheinResult(null);
+      },
       style: {
-        color: "#666"
+        width: "100%",
+        background: `linear-gradient(135deg, ${C.gold}22, ${C.gold}0a)`,
+        border: `1.5px solid ${C.gold}55`,
+        borderRadius: 12,
+        padding: "14px",
+        cursor: "pointer",
+        display: "flex",
+        gap: 12,
+        alignItems: "center",
+        fontFamily: "'Barlow',sans-serif",
+        textAlign: "left"
       }
-    }, " Klappt nicht immer, Beta.")), (addVForm.images || []).length > 0 && /*#__PURE__*/_react.default.createElement("div", {
+    }, /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 26,
+        flexShrink: 0
+      }
+    }, "📄"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 800,
+        color: C.gold,
+        marginBottom: 1
+      }
+    }, "Fahrzeugschein scannen"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#999",
+        lineHeight: 1.4
+      }
+    }, "Modell, Baujahr, Kennzeichen und FIN in Sekunden — statt abtippen")), /*#__PURE__*/_react.default.createElement("span", {
+      style: {
+        fontSize: 16,
+        color: C.gold,
+        flexShrink: 0
+      }
+    }, "→")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        textAlign: "center",
+        fontSize: 10,
+        color: "#555",
+        marginTop: 8
+      }
+    }, "oder unten manuell eintragen")), (addVForm.modell || addVForm.kennzeichen) && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 12
       }
