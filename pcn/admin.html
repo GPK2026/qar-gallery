@@ -1933,7 +1933,14 @@ async function publishNL(){
     reach,
     preview:sub,
     onConfirm: async()=>{
-      await api("news",{method:"POST",body:JSON.stringify({title:sub,body,type:"newsletter",icon:"📬",pinned:true,created_at:new Date().toISOString(),author:"PCN Vorstand"})}).catch(()=>{});
+      const res = await api("news",{method:"POST",body:JSON.stringify({title:sub,body,type:"newsletter",icon:"📬",pinned:true,created_at:new Date().toISOString(),author:"PCN Vorstand"})});
+      if(res.error){
+        const s = JSON.stringify(res.error);
+        toast(/relation.*does not exist|PGRST205/.test(s)
+          ? "Tabelle 'news' fehlt — add_news_table.sql ausführen"
+          : "Fehler: "+s.slice(0,60), "err");
+        return;
+      }
       toast("✓ Newsletter veröffentlicht · erscheint im App-Feed");
       ["nl-sub","nl-body"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
     }
@@ -1979,7 +1986,14 @@ async function publishNews(){
     reach,
     preview:title,
     onConfirm: async()=>{
-      await api("news",{method:"POST",body:JSON.stringify({title,body,type,pinned,icon:type==="news"?"📰":type==="tip"?"💡":"🎉",created_at:new Date().toISOString(),author:"PCN Vorstand"})}).catch(()=>{});
+      const res = await api("news",{method:"POST",body:JSON.stringify({title,body,type,pinned,icon:type==="news"?"📰":type==="tip"?"💡":"🎉",created_at:new Date().toISOString(),author:"PCN Vorstand"})});
+      if(res.error){
+        const s = JSON.stringify(res.error);
+        toast(/relation.*does not exist|PGRST205/.test(s)
+          ? "Tabelle 'news' fehlt — add_news_table.sql ausführen"
+          : "Fehler: "+s.slice(0,60), "err");
+        return;
+      }
       toast("✓ Artikel veröffentlicht");
       ["nf-title","nf-body"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
     }
