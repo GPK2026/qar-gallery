@@ -195,6 +195,7 @@ let currentTab="dashboard";
 function doLogin(){
   if(document.getElementById("code-inp").value.trim().toUpperCase()===ADMIN){
     sessionStorage.setItem("pcn_adm","1");
+    sessionStorage.setItem("pcn_adm_since", String(Date.now()));
     document.getElementById("login-wrap").style.display="none";
     document.getElementById("app").classList.remove("hidden");
     loadAll();
@@ -592,6 +593,15 @@ function rMembers(el){
 
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
     <input id="m-q" placeholder="🔍 Name, E-Mail…" oninput="filterMembers()" style="flex:1;min-width:140px">
+    <select id="m-sort" onchange="filterMembers()" style="width:auto;min-width:150px">
+      <option value="smart">⚡ Handlungsbedarf zuerst</option>
+      <option value="name">A–Z</option>
+      <option value="points">🏆 Meiste Punkte</option>
+      <option value="oldest">📅 Am längsten dabei</option>
+      <option value="newest">🆕 Neueste zuerst</option>
+      <option value="vehicles">🚗 Meiste Fahrzeuge</option>
+      <option value="bday">🎂 Nächster Geburtstag</option>
+    </select>
     <select id="m-f" onchange="filterMembers()" style="width:auto;min-width:150px">
       <option value="all">Alle (${DB.members.length})</option>
       <option value="member">Mitglieder (${DB.members.filter(m=>m.role==="member").length})</option>
@@ -718,6 +728,7 @@ Dein PCN-Vorstand`;
 
 // ── Handlungsbedarf eines Mitglieds ermitteln (zentrale Logik) ──
 function memberIssueKeys(m){
+  if(m.paused) return [];   // pausierte Accounts erzeugen keinen Handlungsbedarf
   const isMember=m.role==="member", isPaid=!!m.beitrag_bezahlt;
   const veh=DB.vehicles.filter(v=>v.user_id===m.id);
   const keys=[];
@@ -732,8 +743,9 @@ function memberIssueKeys(m){
 function filterMembers(){
   const q=(document.getElementById("m-q")?.value||"").toLowerCase();
   const f=document.getElementById("m-f")?.value||"all";
+  const sort=document.getElementById("m-sort")?.value||"smart";
   const list=document.getElementById("members-list");if(!list)return;
-  const filtered=DB.members.filter(m=>{
+  let filtered=DB.members.filter(m=>{
     const keys=memberIssueKeys(m);
     if(f==="member"&&m.role!=="member")return false;
     if(f==="guest"&&m.role!=="guest")return false;
@@ -743,6 +755,37 @@ function filterMembers(){
     if(f==="incomplete"&&!keys.includes("incomplete"))return false;
     return !q||`${m.name||""} ${m.email||""} ${m.member_nr||""}`.toLowerCase().includes(q);
   });
+  // ── Sortierung ──
+  const daysToBday = (m) => {
+    if(!m.geburtstag) return 9999;
+    const bd=new Date(m.geburtstag); if(isNaN(bd)) return 9999;
+    const t=new Date(); t.setHours(0,0,0,0);
+    const nx=new Date(t.getFullYear(),bd.getMonth(),bd.getDate());
+    if(nx<t) nx.setFullYear(nx.getFullYear()+1);
+    return Math.round((nx-t)/864e5);
+  };
+  const vehCount = (m) => DB.vehicles.filter(v=>v.user_id===m.id).length;
+
+  filtered.sort((a,b)=>{
+    switch(sort){
+      case "name":     return (a.name||"").localeCompare(b.name||"","de");
+      case "points":   return calcPts(b.id) - calcPts(a.id);
+      case "oldest":   return new Date(a.created_at||0) - new Date(b.created_at||0);
+      case "newest":   return new Date(b.created_at||0) - new Date(a.created_at||0);
+      case "vehicles": return vehCount(b) - vehCount(a);
+      case "bday":     return daysToBday(a) - daysToBday(b);
+      default: {
+        // Intelligent: kritisch zuerst, dann nach Anzahl Probleme, dann A–Z
+        const ka=memberIssueKeys(a), kb=memberIssueKeys(b);
+        const crit = (k)=> k.includes("unpaid")||k.includes("guest") ? 2 : k.length ? 1 : 0;
+        const ca=crit(ka), cb=crit(kb);
+        if(ca!==cb) return cb-ca;
+        if(ka.length!==kb.length) return kb.length-ka.length;
+        return (a.name||"").localeCompare(b.name||"","de");
+      }
+    }
+  });
+
   list.innerHTML=filtered.map(m=>{
     const isMember=m.role==="member",isPaid=!!m.beitrag_bezahlt;
     const myVehicles=DB.vehicles.filter(v=>v.user_id===m.id);
@@ -763,7 +806,19 @@ function filterMembers(){
     const hasIssues=issues.length>0;
     const critical=issues.some(i=>i.k==="unpaid"||i.k==="guest");
 
-    return `<div class="mrow" style="padding:0;overflow:hidden;border-left:3px solid ${critical?"#ef4444":hasIssues?"var(--gold)":"transparent"}">
+    // Statusfarbe am linken Rand — auf einen Blick erkennbar:
+    //   rot    = kritisch (Beitrag offen, Gast wartet)
+    //   orange = Onboarding unvollständig (kein Fahrzeug)
+    //   gold   = Kleinigkeiten fehlen (Akte, Geburtstag)
+    //   grün   = alles vollständig
+    const statusCol =
+      m.paused                      ? "#666"          :
+      critical                      ? "#ef4444"       :
+      issues.some(i=>i.k==="novehicle") ? "#f59e0b"   :
+      hasIssues                     ? "var(--gold)"   :
+                                      "var(--green)";
+
+    return `<div class="mrow" style="padding:0;overflow:hidden;border-left:4px solid ${statusCol};${m.paused?"opacity:.55":""}">
       <!-- Kopfzeile -->
       <div onclick="toggleMemberOpen('${m.id}')" style="display:flex;gap:10px;align-items:center;padding:13px 14px;cursor:pointer;user-select:none">
         <div style="width:34px;height:34px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">${(m.name||"?")[0].toUpperCase()}</div>
@@ -874,6 +929,40 @@ let msgModalState = { id:null, name:"", icon:"📣", templates:[] };
 
 // Vorlagen je Handlungsbedarf
 // text = eigenständige Nachricht · body = Baustein für kombinierte Nachricht
+// ── Account pausieren / reaktivieren ──
+// Sinnvoller als Löschen: Daten bleiben erhalten, nur die Sichtbarkeit endet.
+async function togglePause(id, isPaused, name){
+  const first = (name||"").split(" ")[0];
+  if(isPaused){
+    const r = await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({paused:false})});
+    if(r.error){
+      const s=JSON.stringify(r.error);
+      toast(/PGRST204/.test(s) ? "Spalte 'paused' fehlt — add_paused_column.sql ausfuehren" : "Fehler","err");
+      return;
+    }
+    toast(`\u2713 ${first} wieder aktiv`);
+    sendAdminMsg(id, "Dein Zugang wurde wieder aktiviert. Willkommen zurueck!", "\u25B6\uFE0F");
+    await loadAll();
+    return;
+  }
+  confirmDanger({
+    title: name + " pausieren?",
+    body: 'Der Account bleibt bestehen, ist aber <strong style="color:#ddd">nicht mehr oeffentlich sichtbar</strong>: Fahrzeuge verschwinden aus der Community, QR-Scans zeigen nichts an.',
+    warn: first + " kann sich weiterhin anmelden und die eigenen Daten sehen. Jederzeit umkehrbar.",
+    confirmLabel: "Pausieren",
+    onConfirm: async()=>{
+      const r = await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({paused:true})});
+      if(r.error){
+        const s=JSON.stringify(r.error);
+        toast(/PGRST204/.test(s) ? "Spalte 'paused' fehlt — add_paused_column.sql ausfuehren" : "Fehler","err");
+        return;
+      }
+      toast(first + " pausiert");
+      await loadAll();
+    }
+  });
+}
+
 function reminderTemplates(name, year){
   const first = (name||"").split(" ")[0] || name;
   return {
@@ -1044,35 +1133,109 @@ function sendSmartReminder(id, name, issueKeys){ openMsgModal(id, name, issueKey
 function openBirthdayMsg(id, name){ openMsgModal(id, name, "bday"); }
 
 function rPayments(el){
-  const a=DB.members.filter(m=>m.role==="member");
-  const b=a.filter(m=>m.beitrag_bezahlt),o=a.filter(m=>!m.beitrag_bezahlt);
-  el.innerHTML=`<div class="page-title">💳 Zahlungen</div>
+  const YEAR = new Date().getFullYear();
+  const DEADLINE = new Date(YEAR, 2, 31);          // Stichtag 31.03.
+  const today = new Date(); today.setHours(0,0,0,0);
+  const overdue = today > DEADLINE;
+  const daysOver = overdue ? Math.floor((today-DEADLINE)/864e5) : 0;
+
+  const a = DB.members.filter(m=>m.role==="member" && !m.paused);
+  const b = a.filter(m=>m.beitrag_bezahlt);
+  const o = a.filter(m=>!m.beitrag_bezahlt);
+  const paused = DB.members.filter(m=>m.role==="member" && m.paused);
+
+  // Zahlungen dieses Jahr vs. Altlasten
+  const paidThisYear = b.filter(m => m.beitrag_datum && new Date(m.beitrag_datum).getFullYear()===YEAR);
+  const paidUnknown  = b.filter(m => !m.beitrag_datum);
+
+  const fmtFull = (d) => {
+    if(!d) return null;
+    const x = new Date(d); if(isNaN(x)) return null;
+    return x.toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"});
+  };
+
+  el.innerHTML=`<div class="page-title">💳 Beiträge <span style="font-size:15px;font-weight:400;color:var(--muted)">${YEAR}</span></div>
+
+  <!-- Stichtag-Hinweis -->
+  <div class="card" style="margin-bottom:12px;border-color:${overdue&&o.length?"#ef444444":"var(--border)"}">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:${overdue&&o.length?"#ef4444":"var(--txt)"}">
+          ${overdue&&o.length ? `⚠ Stichtag seit ${daysOver} Tagen überschritten` : `Stichtag: 31.03.${YEAR}`}
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">
+          Jahresbeitrag € ${EUR} pro Mitglied${paused.length?` · ${paused.length} pausiert (nicht berechnet)`:""}
+        </div>
+      </div>
+      <button class="btn btn-sm btn-ghost" onclick="exportCSV()">📥 CSV</button>
+    </div>
+  </div>
+
   <div class="stat-grid" style="grid-template-columns:1fr 1fr 1fr">
     ${stat(b.length,"Bezahlt","€"+b.length*EUR,"var(--green)")}
-    ${stat(o.length,"Offen","€"+o.length*EUR,"#ef4444")}
-    ${stat(a.length,"Gesamt","€"+a.length*EUR+" Soll","var(--white)")}
+    ${stat(o.length,"Offen","€"+o.length*EUR,o.length?(overdue?"#ef4444":"var(--amber)"):"var(--muted)")}
+    ${stat(a.length,"Soll","€"+a.length*EUR,"var(--white)")}
   </div>
-  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-    <button class="btn btn-sm btn-ghost" onclick="exportCSV()">📥 CSV</button>
-  </div>
+
+  <!-- OFFEN -->
   <div class="card" style="margin-bottom:12px">
-    <div class="sec-title" style="color:#ef4444">Offen (${o.length})</div>
-    ${o.length===0?"<div style='color:var(--green);font-size:15px'>✓ Alle bezahlt</div>":
-      o.map(m=>`<div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #131313">
-        <div style="width:30px;height:30px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:14px">${(m.name||"?")[0].toUpperCase()}</div>
-        <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
-        <div style="font-size:12px;color:var(--muted)">${m.email||""}· € ${EUR}</div></div>
-        <label class="tgl-wrap"><span class="tgl"><input type="checkbox" onchange="togglePaid('${m.id}',false)"><span class="tgl-slider"></span></span><span style="font-size:13px;font-weight:700;color:#ef4444">Offen</span></label>
-      </div>`).join("")}
+    <div class="sec-title" style="color:${o.length?"#ef4444":"var(--green)"}">
+      ${o.length?`Offen (${o.length})`:"✓ Alle Beiträge bezahlt"}
+    </div>
+    ${o.length===0 ? `<div style="color:var(--green);font-size:14px;padding:4px 0">Nichts zu tun.</div>` :
+      o.map(m=>{
+        const seit = m.created_at ? Math.floor((today-new Date(m.created_at))/864e5) : null;
+        const neu = seit!==null && seit < 30;
+        return `<div style="display:flex;gap:11px;align-items:center;padding:11px 0;border-bottom:1px solid #131313">
+        <div style="width:34px;height:34px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:14px">${(m.name||"?")[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${m.name||"—"}${neu?`<span style="font-size:10px;background:#5b8fff22;color:#5b8fff;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:700">NEU</span>`:""}
+          </div>
+          <div style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${m.member_nr||"—"} · Mitglied seit ${fmt(m.created_at)} · € ${EUR}
+          </div>
+        </div>
+        <label class="tgl-wrap" style="flex-shrink:0"><span class="tgl"><input type="checkbox" onchange="togglePaid('${m.id}',false)"><span class="tgl-slider"></span></span></label>
+      </div>`;}).join("")}
   </div>
-  <div class="card">
+
+  <!-- BEZAHLT -->
+  <div class="card" style="margin-bottom:12px">
     <div class="sec-title" style="color:var(--green)">Bezahlt (${b.length})</div>
-    ${b.map(m=>`<div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #131313">
-      <div style="width:30px;height:30px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:14px">${(m.name||"?")[0].toUpperCase()}</div>
-      <div style="flex:1;min-width:0;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
-      <label class="tgl-wrap"><span class="tgl"><input type="checkbox" checked onchange="togglePaid('${m.id}',true)"><span class="tgl-slider"></span></span><span style="font-size:13px;font-weight:700;color:var(--green)">Bezahlt</span></label>
+    ${b.length===0 ? `<div style="color:#555;font-size:13px;padding:4px 0">Noch keine Zahlung verbucht.</div>` :
+      b.map(m=>{
+        const datum = fmtFull(m.beitrag_datum);
+        const jahr = m.beitrag_datum ? new Date(m.beitrag_datum).getFullYear() : null;
+        const alt = jahr && jahr < YEAR;
+        return `<div style="display:flex;gap:11px;align-items:center;padding:11px 0;border-bottom:1px solid #131313">
+        <div style="width:34px;height:34px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:14px">${(m.name||"?")[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
+          <div style="font-size:12px;color:${alt?"var(--amber)":"var(--muted)"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${datum ? `✓ ${datum}${alt?` — für ${jahr}!`:""}` : `<span style="color:#666">Kein Zahlungsdatum hinterlegt</span>`}
+          </div>
+        </div>
+        <label class="tgl-wrap" style="flex-shrink:0"><span class="tgl"><input type="checkbox" checked onchange="togglePaid('${m.id}',true)"><span class="tgl-slider"></span></span></label>
+      </div>`;}).join("")}
+    ${paidUnknown.length ? `
+      <div style="background:#f59e0b0d;border:1px solid #f59e0b33;border-radius:7px;padding:10px;margin-top:10px;font-size:12px;color:var(--amber);line-height:1.6">
+        ${paidUnknown.length} Zahlung${paidUnknown.length!==1?"en":""} ohne Datum — vermutlich vor Einführung der Zeiterfassung verbucht.
+        Zum Korrigieren: Toggle aus und wieder an.
+      </div>`:""}
+  </div>
+
+  ${paused.length ? `
+  <div class="card">
+    <div class="sec-title" style="color:#666">Pausiert (${paused.length})</div>
+    <div style="font-size:12px;color:#555;line-height:1.6;margin-bottom:10px">
+      Werden nicht zum Soll gezählt.
+    </div>
+    ${paused.map(m=>`<div style="display:flex;gap:11px;align-items:center;padding:8px 0;border-bottom:1px solid #131313;opacity:.6">
+      <div style="width:28px;height:28px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">⏸</div>
+      <div style="flex:1;font-size:14px;color:#999">${m.name||"—"}</div>
     </div>`).join("")}
-  </div>`;
+  </div>`:""}`;
 }
 
 function rPoints(el){
@@ -1644,52 +1807,179 @@ function showAIStats(){
 }
 
 function rSettings(el){
-  el.innerHTML=`<div class="page-title">⚙️ Einstellungen</div>
+  const admName = sessionStorage.getItem("pcn_adm_name") || "Vorstand";
+  const since = sessionStorage.getItem("pcn_adm_since");
+  const loginTime = since ? new Date(parseInt(since)).toLocaleString("de-DE",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}) : "—";
+  const keyPayload = (()=>{ try{ return JSON.parse(atob((KEY||"").split(".")[1]||"")); }catch(e){ return null; } })();
+  const keyRole = keyPayload?.role || ((KEY||"").startsWith("sb_publishable") ? "anon" : "unbekannt");
 
-  <div class="card" style="margin-bottom:12px;border-color:#5b8fff44">
-    <div class="sec-title" style="color:#5b8fff">🔬 System-Selbsttest</div>
-    <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:12px">
-      Prüft alle Datenbank-Operationen die die App braucht — Schreiben, Ändern, Löschen.
-      Findet blockierte Policies und fehlende Spalten, bevor Mitglieder darüber stolpern.
+  el.innerHTML=`<div class="page-title">⚙️ System</div>
+
+  <!-- 1. SYSTEMSTATUS — das Wichtigste zuerst -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="sec-title">📊 Systemstatus</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px">
+      ${[
+        ["Mitglieder", DB.members.filter(m=>m.role==="member").length, "var(--white)"],
+        ["Gäste", DB.members.filter(m=>m.role==="guest").length, DB.members.filter(m=>m.role==="guest").length?"var(--amber)":"var(--muted)"],
+        ["Fahrzeuge", DB.vehicles.length, "var(--white)"],
+        ["Events", DB.events.length, "var(--white)"],
+      ].map(([l,v,c])=>`
+        <div style="background:#0d0d0d;border-radius:8px;padding:11px;text-align:center">
+          <div style="font-size:23px;font-weight:900;color:${c};font-family:'Barlow Condensed',sans-serif;line-height:1">${v}</div>
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-top:3px">${l}</div>
+        </div>`).join("")}
     </div>
-    <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="runFullDiagnostics()">🔬 Vollständigen Test starten</button>
-    <div id="full-diag" style="font-size:13px;line-height:1.6"></div>
+    ${[
+      ["Datenbank", "✓ Verbunden", "var(--green)"],
+      ["Schlüssel", keyRole==="service_role" ? "⚠ service_role — unsicher!" : "✓ anon (sicher)", keyRole==="service_role"?"#ef4444":"var(--green)"],
+      ["App", "qar.gallery/pcn/", "var(--muted)"],
+      ["Club-Code", "PCN2026", "var(--gold)"],
+      ["Punkte-Kurs", "911 Punkte = 3 €", "var(--gold)"],
+    ].map(([k,v,c])=>`
+      <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #131313;font-size:14px">
+        <span style="color:var(--muted)">${k}</span><span style="color:${c}">${v}</span>
+      </div>`).join("")}
   </div>
 
-  <div class="card" style="margin-bottom:12px">
-    <div class="sec-title">✨ KI-Fotoerkennung <span style="font-size:12px;font-weight:800;background:var(--gold);color:#000;padding:1px 5px;border-radius:3px;vertical-align:middle">BETA</span></div>
-    <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:12px">
-      Erkennt Modell, Farbe und Kennzeichen aus dem Fahrzeugfoto. Aktuell kostenlos in der Testphase —
-      als Premium-Feature erst freigeben, wenn die Trefferquote stabil über 80% liegt.
+  <!-- 2. ADMIN & ROLLEN -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="sec-title">👤 Zugang</div>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
+      <div style="width:42px;height:42px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏁</div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:700;color:var(--txt)">${admName}</div>
+        <div style="font-size:12px;color:var(--muted)">Angemeldet seit ${loginTime}</div>
+      </div>
+      <button onclick="doLogout()" style="background:#1a1a1a;border:1px solid var(--border);border-radius:7px;padding:9px 14px;color:#999;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Abmelden</button>
     </div>
-    <div id="ai-stats" style="font-size:13px"></div>
+
+    <div class="lbl" style="margin-bottom:8px">Berechtigungen</div>
+    ${[
+      ["👥","Mitglieder verwalten","Freigeben, bearbeiten, deaktivieren"],
+      ["💳","Beiträge verbuchen","Zahlungsstatus setzen"],
+      ["🏁","Events verwalten","Anlegen, bestätigen, stornieren"],
+      ["📰","Inhalte veröffentlichen","Newsletter und Beiträge"],
+      ["💬","Mitglieder anschreiben","Direktnachrichten und Club-Kanal"],
+    ].map(([i,t,d])=>`
+      <div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid #131313">
+        <span style="font-size:14px;width:20px;text-align:center;flex-shrink:0">${i}</span>
+        <div style="flex:1">
+          <div style="font-size:13px;color:#ccc">${t}</div>
+          <div style="font-size:11px;color:#555">${d}</div>
+        </div>
+        <span style="color:var(--green);font-size:13px;flex-shrink:0">✓</span>
+      </div>`).join("")}
+
+    <div style="background:#5b8fff0d;border:1px solid #5b8fff33;border-radius:8px;padding:11px;margin-top:12px">
+      <div style="font-size:12px;color:#8ab;line-height:1.6">
+        <strong style="color:#adf">Ein Zugang für alle:</strong> Derzeit teilt sich der Vorstand einen Admin-Code.
+        Getrennte Konten mit abgestuften Rechten — etwa Kassenwart nur für Beiträge — sind vorbereitet,
+        aber erst mit echter Anmeldung sinnvoll. Steht vor dem Rollout an.
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. AKTIVITÄTS-LOGBUCH -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="sec-title">📋 Letzte Aktivitäten</div>
+    <div style="font-size:12px;color:#555;line-height:1.6;margin-bottom:12px">
+      Was zuletzt im Club passiert ist — aus den Daten abgeleitet.
+    </div>
+    <div id="activity-log" style="font-size:13px"></div>
+  </div>
+
+  <!-- 4. SELBSTTEST -->
+  <div class="card" style="margin-bottom:14px;border-color:#5b8fff44">
+    <div class="sec-title" style="color:#5b8fff">🔬 System-Selbsttest</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+      Prüft alle Datenbank-Operationen mit echten Schreibvorgängen und räumt hinterher auf.
+    </div>
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="runFullDiagnostics()">🔬 Vollständigen Test starten</button>
+    <div id="full-diag" style="font-size:12px;line-height:1.6"></div>
+  </div>
+
+  <!-- 5. NACHRICHTEN-DIAGNOSE -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="sec-title">📨 Nachrichten-Diagnose</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+      Prüft ob Admin-Nachrichten korrekt bei den Mitgliedern ankommen.
+    </div>
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="runMsgDiagnostics()">🔍 Verbindung prüfen</button>
+    <div id="diag-out" style="font-size:12px;line-height:1.7"></div>
+  </div>
+
+  <!-- 6. KI-FOTOERKENNUNG -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="sec-title">✨ KI-Fotoerkennung <span style="font-size:11px;font-weight:800;background:var(--gold);color:#000;padding:1px 5px;border-radius:3px;vertical-align:middle">BETA</span></div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+      Erkennt Modell, Farbe und Kennzeichen aus Fotos. Als Premium-Feature erst freigeben,
+      wenn die Trefferquote stabil über 80% liegt.
+    </div>
+    <div id="ai-stats" style="font-size:12px"></div>
     <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="showAIStats()">📊 Trefferquote anzeigen</button>
   </div>
 
-  <div class="card" style="margin-bottom:12px">
-    <div class="sec-title">📨 Nachrichten-Diagnose</div>
-    <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:12px">
-      Prüft ob Admin-Nachrichten korrekt in der Datenbank landen und bei den Mitgliedern ankommen.
+  <!-- 7. DATENSCHUTZ -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="sec-title">🔒 Datenschutz</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7">
+      Chat-Nachrichten zwischen Mitgliedern sind hier <b style="color:var(--white)">nicht einsehbar</b>.
+      Sichtbar für den Vorstand: Mitgliedsdaten, Fahrzeuge, Events, Beitragsstand, Punkte
+      und die eigenen Konversationen.
     </div>
-    <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="runMsgDiagnostics()">🔍 Verbindung prüfen</button>
-    <div id="diag-out" style="font-size:13px;line-height:1.7"></div>
   </div>
 
-  <div class="card" style="margin-bottom:12px;border-color:#f59e0b44">
+  <!-- 8. DEMO ZURÜCKSETZEN — ganz unten, weil selten und riskant -->
+  <div class="card" style="border-color:#f59e0b44">
     <div class="sec-title" style="color:var(--amber)">🔄 Demo zurücksetzen</div>
-    <div style="font-size:14px;color:var(--muted);margin-bottom:12px">Löscht Demo-Chat, Demo-Nachrichten und Demo-Teilnehmer aus der DB.</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+      Löscht Demo-Chat, Demo-Nachrichten und Demo-Teilnehmer aus der Datenbank.
+      Echte Mitgliederdaten bleiben unberührt.
+    </div>
     <button class="btn btn-amber" style="width:100%" onclick="resetDemo()">🔄 Demo-Daten zurücksetzen</button>
-  </div>
-  <div class="card" style="margin-bottom:12px">
-    <div class="sec-title">Datenschutz-Hinweis</div>
-    <div style="font-size:14px;color:var(--muted);line-height:1.7">⚠️ Chat-Nachrichten zwischen Mitgliedern sind hier <b style="color:var(--white)">nicht einsehbar</b>. Sichtbar für den Admin: Mitgliedsdaten, Fahrzeuge, Events, Beitragsstand, Punkte.</div>
-  </div>
-  <div class="card">
-    <div class="sec-title">Systemstatus</div>
-    ${[["Supabase","✓ Verbunden","var(--green)"],["Mitglieder",DB.members.length+" gesamt","var(--white)"],["Fahrzeuge",DB.vehicles.length+" gesamt","var(--white)"],["App","qar.gallery/pcn/","var(--muted)"],["Club-Code","PCN2026","var(--gold)"]].map(([k,v,c])=>`
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #131313;font-size:15px"><span style="color:var(--muted)">${k}</span><span style="color:${c}">${v}</span></div>`).join("")}
   </div>`;
+
+  renderActivityLog();
 }
+
+// ── Aktivitäts-Logbuch: aus vorhandenen Daten abgeleitet ──
+function renderActivityLog(){
+  const out = document.getElementById("activity-log");
+  if(!out) return;
+  const acts = [];
+
+  DB.members.slice(0,20).forEach(m=>{
+    if(m.created_at) acts.push({t:new Date(m.created_at), icon:"👤",
+      txt:`${m.name} ist beigetreten`, col:"#5b8fff"});
+    if(m.beitrag_datum) acts.push({t:new Date(m.beitrag_datum), icon:"💳",
+      txt:`${m.name} — Beitrag verbucht`, col:"var(--green)"});
+  });
+  DB.vehicles.slice(0,20).forEach(v=>{
+    const owner = DB.members.find(m=>m.id===v.user_id);
+    if(v.created_at) acts.push({t:new Date(v.created_at), icon:"🚗",
+      txt:`${owner?.name||"Mitglied"} — ${v.hersteller||""} ${v.modell||""} angelegt`, col:"var(--gold)"});
+  });
+  DB.participants.slice(0,20).forEach(p=>{
+    const mem = DB.members.find(m=>m.id===p.user_id);
+    const ev = DB.events.find(e=>e.id===p.event_id);
+    if(p.registered_at && ev) acts.push({t:new Date(p.registered_at), icon:"🏁",
+      txt:`${mem?.name||"Mitglied"} — angemeldet für ${ev.name}`, col:"var(--muted)"});
+  });
+
+  const sorted = acts.filter(a=>!isNaN(a.t)).sort((a,b)=>b.t-a.t).slice(0,12);
+  if(!sorted.length){
+    out.innerHTML = `<div style="color:#555;padding:10px 0;font-size:12px">Noch keine Aktivitäten</div>`;
+    return;
+  }
+  out.innerHTML = sorted.map(a=>`
+    <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">
+      <span style="font-size:14px;width:20px;text-align:center;flex-shrink:0">${a.icon}</span>
+      <span style="flex:1;color:#bbb;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.txt}</span>
+      <span style="font-size:11px;color:#555;flex-shrink:0">${fmtTime(a.t.toISOString())}</span>
+    </div>`).join("");
+}
+
 
 // ── Diagnose: kommen Admin-Nachrichten in der DB an? ──
 async function runMsgDiagnostics(){
