@@ -158,24 +158,42 @@
   };
 
   // ─── Privacy defaults ─────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PRIVACY BY DEFAULT (DSGVO Art. 25)
+  //
+  // Grundsatz: Nichts ist öffentlich, bis der Eigentümer es freigibt.
+  // Ausnahme sind nur Angaben, die das Fahrzeug identifizieren ohne die Person
+  // zu identifizieren — Hersteller, Modell, Baujahr. Ohne diese wäre eine
+  // gescannte Akte leer und die Funktion sinnlos.
+  //
+  // NICHT per Default sichtbar — auch wenn es die Akte "leerer" macht:
+  //   • kennzeichen  → personenbezogen, über Halterabfrage rückführbar
+  //   • fin          → eindeutige Fahrzeug-ID, Missbrauchsrisiko
+  //   • marktwert    → Einbruchsanreiz
+  //   • pub_phone    → direkter Personenbezug
+  //   • pub_gallery  → Fotos können Standort/Umfeld verraten
+  //   • pub_logbook  → Bewegungs- und Werkstattprofil
+  // ═══════════════════════════════════════════════════════════════════════════
   const DEF_PRIVACY = {
+    // Fahrzeug-Basisdaten — ohne Personenbezug, für die Akte notwendig
     hersteller: true,
     modell: true,
     baujahr: true,
     farbe: true,
     kraftstoff: true,
     getriebe: true,
-    kennzeichen: true,
+    // Alles Weitere: erst nach bewusster Freigabe durch den Eigentümer
+    kennzeichen: false,
+    fin: false,
+    marktwert: false,
     kilometerstand: false,
     zustand: false,
     tuev_faelligkeit: false,
-    besonderheiten: true,
-    fin: false,
-    marktwert: false,
+    besonderheiten: false,
     pub_logbook: false,
-    pub_events: true,
+    pub_events: false,
     pub_phone: false,
-    pub_gallery: true
+    pub_gallery: false
   };
 
   // ─── QR Code (Real, scannable — uses bundled qrcode.js library) ──────────────
@@ -2031,6 +2049,8 @@
       email: "",
       name: ""
     });
+    const [consent, setConsent] = (0, _react.useState)(false);
+    const [showPrivacyInfo, setShowPrivacyInfo] = (0, _react.useState)(false);
     const [loginPassword, setLoginPassword] = (0, _react.useState)("");
     const [showPassword, setShowPassword] = (0, _react.useState)(false);
     const [authLoading, setAuthLoading] = (0, _react.useState)(false);
@@ -4577,19 +4597,81 @@ Wichtig:
         fontSize: 16,
         color: C.muted
       }
-    }, showPassword ? "🙈" : "👁"))), /*#__PURE__*/_react.default.createElement("button", {
+    }, showPassword ? "🙈" : "👁")), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${consent ? C.green + "44" : C.border}`,
+        borderRadius: 10,
+        padding: "13px",
+        marginBottom: 14,
+        transition: "border-color .2s"
+      }
+    }, /*#__PURE__*/_react.default.createElement("label", {
+      style: {
+        display: "flex",
+        gap: 10,
+        alignItems: "flex-start",
+        cursor: "pointer"
+      }
+    }, /*#__PURE__*/_react.default.createElement("input", {
+      type: "checkbox",
+      checked: consent,
+      onChange: e => setConsent(e.target.checked),
+      style: {
+        width: 18,
+        height: 18,
+        marginTop: 1,
+        flexShrink: 0,
+        accentColor: C.red,
+        cursor: "pointer"
+      }
+    }), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#bbb",
+        lineHeight: 1.6
+      }
+    }, "Ich stimme zu, dass der Porsche Club Nürburgring e.V. meine Daten zur Vereinsverwaltung speichert und verarbeitet.", /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#777",
+        marginTop: 6,
+        lineHeight: 1.6
+      }
+    }, /*#__PURE__*/_react.default.createElement("strong", {
+      style: {
+        color: "#999"
+      }
+    }, "Nichts ist automatisch öffentlich."), " Du entscheidest pro Fahrzeug und pro Feld selbst, was beim QR-Scan sichtbar ist — Kennzeichen, FIN und Kontaktdaten sind standardmäßig verborgen."), /*#__PURE__*/_react.default.createElement("button", {
+      onClick: e => {
+        e.preventDefault();
+        setShowPrivacyInfo(true);
+      },
+      style: {
+        background: "none",
+        border: "none",
+        color: C.red,
+        fontSize: 11,
+        fontWeight: 700,
+        cursor: "pointer",
+        padding: "6px 0 0",
+        fontFamily: "'Barlow',sans-serif",
+        textDecoration: "underline"
+      }
+    }, "Was wird gespeichert? →"))))), /*#__PURE__*/_react.default.createElement("button", {
       className: "btn",
       style: {
         width: "100%",
         padding: "14px",
         fontSize: 15,
-        opacity: loginForm.code.toUpperCase() === CLUB_CODE && loginForm.name && loginForm.email && loginPassword.length >= 6 && !authLoading ? 1 : .5
+        opacity: loginForm.code.toUpperCase() === CLUB_CODE && loginForm.name && loginForm.email && loginPassword.length >= 6 && consent && !authLoading ? 1 : .5
       },
       onClick: async () => {
         if (loginForm.code.toUpperCase() !== CLUB_CODE) return toast_("Club-Code ungültig", "err");
         if (!loginForm.name.trim()) return toast_("Name eingeben", "err");
         if (!loginForm.email.trim()) return toast_("E-Mail eingeben", "err");
         if (loginPassword.length < 6) return toast_("Passwort mind. 6 Zeichen", "err");
+        if (!consent) return toast_("Bitte der Datenverarbeitung zustimmen", "err");
         if (authLoading) return;
         const DB = window.PCN_DB;
         if (!DB) {
@@ -4614,6 +4696,23 @@ Wichtig:
           if (error) {
             toast_(error, "err");
             return;
+          }
+          // Einwilligung dokumentieren — ohne Nachweis ist sie rechtlich wertlos
+          if (u?.id) {
+            const cfg = window.PCN_CONFIG || {};
+            fetch(`${cfg.supabaseUrl}/rest/v1/users?id=eq.${u.id}`, {
+              method: "PATCH",
+              headers: {
+                apikey: cfg.supabaseKey,
+                Authorization: "Bearer " + cfg.supabaseKey,
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+              },
+              body: JSON.stringify({
+                consent_at: new Date().toISOString(),
+                consent_version: "pilot-2026-07"
+              })
+            }).catch(e => console.warn("Einwilligung nicht protokolliert:", e));
           }
           const stored = JSON.parse(localStorage.getItem("pcn_v1") || "{}");
           if (!stored.events || Object.keys(stored.events).length === 0) {
@@ -12070,7 +12169,112 @@ Wichtig:
         setScreen("splash");
         setTab("dashboard");
       }
-    }, "Abmelden"))), isDemo && demoBannerVisible && !demoBannerClosed && /*#__PURE__*/_react.default.createElement("div", {
+    }, "Abmelden"))), showPrivacyInfo && /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.88)",
+        zIndex: 900,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px"
+      },
+      onClick: () => setShowPrivacyInfo(false)
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      onClick: e => e.stopPropagation(),
+      style: {
+        background: C.dark,
+        border: `1px solid ${C.border}`,
+        borderRadius: 16,
+        padding: "24px 20px",
+        maxWidth: 420,
+        width: "100%",
+        maxHeight: "85vh",
+        overflowY: "auto"
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontFamily: "'Barlow Condensed',sans-serif",
+        fontSize: 24,
+        fontWeight: 900,
+        color: C.white,
+        marginBottom: 6
+      }
+    }, "🔒 Deine Daten"), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted,
+        marginBottom: 18,
+        lineHeight: 1.6
+      }
+    }, "Kurz und ohne Juristendeutsch."), [{
+      t: "Was gespeichert wird",
+      b: "Name, E-Mail und — sobald du es einträgst — dein Fahrzeug mit den Angaben, die du selbst eingibst. Optional Geburtstag, damit der Club gratulieren kann."
+    }, {
+      t: "Wer es sehen kann",
+      b: "Der Vorstand sieht Mitgliedsdaten, Fahrzeuge und Beitragsstatus. Deine privaten Chats mit anderen Mitgliedern sieht er nicht."
+    }, {
+      t: "Was öffentlich ist",
+      b: "Standardmäßig fast nichts. Beim QR-Scan sieht ein Fremder nur Hersteller, Modell, Baujahr und Farbe. Kennzeichen, FIN, Marktwert, Fotos und Kontaktdaten bleiben verborgen — bis du sie einzeln freigibst."
+    }, {
+      t: "Du behältst die Kontrolle",
+      b: "In jeder Fahrzeugakte gibt es einen Bereich „Sichtbarkeit\". Dort schaltest du jedes Feld einzeln an oder aus — jederzeit änderbar."
+    }, {
+      t: "Wo die Daten liegen",
+      b: "Auf Servern in Frankfurt am Main (Supabase, EU). Keine Übermittlung in Drittländer."
+    }, {
+      t: "Löschung",
+      b: "Du kannst jederzeit beim Vorstand die Löschung deines Kontos verlangen. Damit verschwinden alle deine Daten — Fahrzeuge, Logbuch, Nachrichten."
+    }].map(({
+      t,
+      b
+    }) => /*#__PURE__*/_react.default.createElement("div", {
+      key: t,
+      style: {
+        marginBottom: 14,
+        paddingBottom: 14,
+        borderBottom: `1px solid ${C.border}`
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: C.white,
+        marginBottom: 4
+      }
+    }, t), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#999",
+        lineHeight: 1.65
+      }
+    }, b))), /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        background: `${C.gold}0d`,
+        border: `1px solid ${C.gold}33`,
+        borderRadius: 9,
+        padding: "11px 13px",
+        marginBottom: 16
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#aaa",
+        lineHeight: 1.65
+      }
+    }, /*#__PURE__*/_react.default.createElement("strong", {
+      style: {
+        color: C.gold
+      }
+    }, "Pilotphase:"), " Die Plattform wird gerade mit dem Vorstand erprobt. Es kann Fehler geben — melde sie gerne. Deine Daten bleiben dabei erhalten.")), /*#__PURE__*/_react.default.createElement("button", {
+      className: "btn",
+      style: {
+        width: "100%",
+        padding: "13px"
+      },
+      onClick: () => setShowPrivacyInfo(false)
+    }, "Verstanden"))), isDemo && demoBannerVisible && !demoBannerClosed && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         position: "fixed",
         inset: 0,
