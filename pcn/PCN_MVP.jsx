@@ -709,7 +709,40 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
   const isGuest = me?.role === "guest";
   const longPressTimer = useRef(null);
 
-  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[thread.messages]);
+  // ── Scroll-Verhalten wie in WhatsApp ──────────────────────────────────────
+  // Nur automatisch nach unten springen, wenn der Nutzer ohnehin unten ist.
+  // Wer nach oben gescrollt hat, um ältere Nachrichten zu lesen, wird nicht
+  // weggerissen — bekommt stattdessen einen Pfeil-Button.
+  const scrollBoxRef = useRef(null);
+  const [atBottom, setAtBottom] = useState(true);
+  const [newBelow, setNewBelow] = useState(0);
+  const lastCountRef = useRef(thread.messages.length);
+
+  const checkAtBottom = () => {
+    const el = scrollBoxRef.current;
+    if(!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    setAtBottom(nearBottom);
+    if(nearBottom) setNewBelow(0);
+  };
+
+  const jumpToBottom = () => {
+    endRef.current?.scrollIntoView({behavior:"smooth"});
+    setNewBelow(0);
+  };
+
+  useEffect(()=>{
+    const count = thread.messages.length;
+    const grew = count > lastCountRef.current;
+    lastCountRef.current = count;
+    if(!grew){
+      // Erstes Öffnen: ohne Animation ans Ende
+      endRef.current?.scrollIntoView({block:"end"});
+      return;
+    }
+    if(atBottom) endRef.current?.scrollIntoView({behavior:"smooth"});
+    else setNewBelow(n => n + 1);   // oben am Lesen → nur zählen
+  },[thread.messages.length]);
   useEffect(()=>{ if(onMarkRead) onMarkRead(thread.id); },[thread.id]);
 
   const startLongPress = (m) => {
@@ -801,7 +834,8 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
         </div>
       )}
 
-      <div style={{flex:1,overflowY:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:8}}>
+      <div ref={scrollBoxRef} onScroll={checkAtBottom}
+        style={{flex:1,overflowY:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:8,position:"relative"}}>
         {thread.messages.map(m=>{
           const mine = m.from===me?.id || m.from_id===me?.id;
           const fromAdmin = m.from===ADMIN_UUID || m.from_id===ADMIN_UUID;
@@ -863,6 +897,30 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
         })}
         <div ref={endRef}/>
       </div>
+
+      {/* ── Springen-Button — erscheint nur wenn man oben liest ── */}
+      {!atBottom&&(
+        <button onClick={jumpToBottom}
+          style={{position:"absolute",right:16,bottom:96,zIndex:20,
+            width:46,height:46,borderRadius:"50%",
+            background:newBelow>0?C.red:"rgba(30,30,30,.95)",
+            border:`1px solid ${newBelow>0?C.red:C.border}`,
+            color:"#fff",fontSize:20,cursor:"pointer",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            boxShadow:"0 4px 14px rgba(0,0,0,.5)",
+            backdropFilter:"blur(8px)",transition:"background .2s",
+            fontFamily:"'Barlow',sans-serif"}}>
+          ↓
+          {newBelow>0&&(
+            <span style={{position:"absolute",top:-5,right:-5,background:"#fff",color:C.red,
+              borderRadius:99,minWidth:20,height:20,fontSize:11,fontWeight:900,
+              display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px",
+              border:`2px solid ${C.dark}`}}>
+              {newBelow>9?"9+":newBelow}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* ── Message delete menu (WhatsApp style) ── */}
       {selectedMsg&&(
@@ -1452,9 +1510,11 @@ function PCNInner() {
     })();
   },[]);
 
-  // ── Realtime message sync — WebSocket first, polling fallback ────────────────
+  // ── Live-Sync: Nachrichten, News, Profil, Fahrzeuge ─────────────────────────
+  // Ohne das merkt ein Mitglied nichts von Newslettern, Beitragsfreigaben oder
+  // Admin-Nachrichten, bis es die App neu lädt.
   useEffect(()=>{
-    if(!me?.id) return;
+    if(!me?.id || isDemo) return;
     const DB=window.PCN_DB; if(!DB) return;
     let cleanup=null;
 
@@ -1468,10 +1528,72 @@ function PCNInner() {
       });
     };
 
-    const startPolling = () => {
-      const iv=setInterval(refreshThreads, 15000);
-      cleanup=()=>clearInterval(iv);
+    // News/Newsletter — erscheinen sonst erst nach Neuladen
+    const refreshNews = async () => {
+      try {
+        const r = await fetch(`${sbUrl()}/rest/v1/news?select=*&order=created_at.desc&limit=20`,
+          { headers: sbHead() });
+        if(!r.ok) return;
+        const rows = await r.json();
+        setNews(prev => {
+          const known = new Set(prev.map(n=>n.id));
+          const fresh = rows.filter(n=>!known.has(n.id));
+          if(fresh.length && prev.length){
+            toast_(`📰 ${fresh.length} neue${fresh.length>1?" Beiträge":"r Beitrag"} im Club-Feed`);
+          }
+          return rows;
+        });
+      } catch(e){}
     };
+
+    // Profil — Beitragsstatus, Rolle, Freischaltung durch den Vorstand
+    const refreshProfile = async () => {
+      if(!DB.auth.refresh) return;
+      try {
+        const {data} = await DB.auth.refresh();
+        if(!data) return;
+        setMe(prev => {
+          if(!prev) return prev;
+          const paidChanged = !!data.beitrag_bezahlt !== !!prev.beitrag_bezahlt;
+          const roleChanged = data.role !== prev.role;
+          if(paidChanged && data.beitrag_bezahlt) toast_("💳 Dein Beitrag wurde als bezahlt verbucht");
+          if(roleChanged && data.role === "member") toast_("🎉 Du wurdest als Mitglied freigeschaltet!");
+          return (paidChanged || roleChanged) ? {...prev, ...data} : prev;
+        });
+      } catch(e){}
+    };
+
+    // Fahrzeuge — falls der Vorstand etwas ändert oder von anderem Gerät gepflegt wird
+    const refreshVehicles = async () => {
+      try {
+        const {data} = await DB.vehicles.list(me.id);
+        if(!data) return;
+        setVehicles(prev => {
+          const next = {...prev};
+          data.forEach(v => { next[v.id] = v; });
+          return next;
+        });
+      } catch(e){}
+    };
+
+    const refreshAllLive = () => {
+      refreshThreads();
+      refreshNews();
+      refreshProfile();
+      refreshVehicles();
+    };
+
+    const startPolling = () => {
+      // Nachrichten häufiger, Rest gemächlicher — spart Anfragen
+      const ivMsg = setInterval(refreshThreads, 15000);
+      const ivRest = setInterval(()=>{ refreshNews(); refreshProfile(); refreshVehicles(); }, 45000);
+      cleanup=()=>{ clearInterval(ivMsg); clearInterval(ivRest); };
+    };
+
+    // Beim Zurückkommen in den Tab sofort aktualisieren
+    const onVisible = () => { if(!document.hidden) refreshAllLive(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const origCleanup = () => document.removeEventListener("visibilitychange", onVisible);
 
     const tryRealtime = () => {
       try {
@@ -1481,26 +1603,45 @@ function PCNInner() {
           .replace("https://","wss://").replace("http://","ws://")
           +"/realtime/v1/websocket?apikey="+cfg.supabaseKey+"&vsn=1.0.0";
         const ws=new WebSocket(wsUrl);
-        let alive=true;
+        let alive=true, hb=null;
         ws.onopen=()=>{
+          // Auf alles lauschen, was das Mitglied betrifft — nicht nur Nachrichten
           ws.send(JSON.stringify({
-            topic:"realtime:public:messages",event:"phx_join",
+            topic:"realtime:public",event:"phx_join",
             payload:{config:{broadcast:{ack:false},presence:{key:""},
-              postgres_changes:[{event:"INSERT",schema:"public",table:"messages"}]}},
+              postgres_changes:[
+                {event:"INSERT", schema:"public", table:"messages"},
+                {event:"INSERT", schema:"public", table:"news"},
+                {event:"UPDATE", schema:"public", table:"users"},
+                {event:"*",      schema:"public", table:"vehicles"},
+              ]}},
             ref:"1"
           }));
+          // Heartbeat — sonst trennt Supabase nach ~60s
+          hb = setInterval(()=>{
+            if(ws.readyState===1) ws.send(JSON.stringify({topic:"phoenix",event:"heartbeat",payload:{},ref:"hb"}));
+          }, 30000);
         };
         ws.onmessage=(e)=>{
-          try{const d=JSON.parse(e.data);if(d.event==="postgres_changes")refreshThreads();}catch(err){}
+          try{
+            const d=JSON.parse(e.data);
+            if(d.event!=="postgres_changes") return;
+            const tbl = d.payload?.data?.table;
+            if(tbl==="messages") refreshThreads();
+            else if(tbl==="news") refreshNews();
+            else if(tbl==="users") refreshProfile();
+            else if(tbl==="vehicles") refreshVehicles();
+            else refreshAllLive();
+          }catch(err){}
         };
-        ws.onerror=()=>{alive=false;ws.close();startPolling();};
-        ws.onclose=()=>{if(alive){alive=false;startPolling();}};
-        cleanup=()=>{alive=false;ws.readyState===1&&ws.close();};
+        ws.onerror=()=>{alive=false;if(hb)clearInterval(hb);ws.close();startPolling();};
+        ws.onclose=()=>{if(alive){alive=false;if(hb)clearInterval(hb);startPolling();}};
+        cleanup=()=>{alive=false;if(hb)clearInterval(hb);ws.readyState===1&&ws.close();};
         return true;
       } catch(e){return false;}
     };
 
-    refreshThreads();
+    refreshAllLive();
     if(!tryRealtime()) startPolling();
 
     // Fast polling when user is actively in chat screen (3s)
@@ -1510,8 +1651,8 @@ function PCNInner() {
       // Will be set by screen change — see below
     };
 
-    return ()=>{ cleanup&&cleanup(); if(fastPoll) clearInterval(fastPoll); };
-  },[me?.id]);
+    return ()=>{ cleanup&&cleanup(); origCleanup(); if(fastPoll) clearInterval(fastPoll); };
+  },[me?.id, isDemo]);
 
   // ── Fast polling (3s) when actively viewing a chat ────────────────────────
   useEffect(()=>{
@@ -4071,44 +4212,6 @@ Regeln:
         )}
 
       {/* ── OVERLAYS (rendered in every screen) ── */}
-        {showStatusPicker&&(
-          <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowStatusPicker(null);}}>
-            <div className="sheet">
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>📍 Live-Status setzen</div>
-              <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Sichtbar wenn jemand deinen QR-Code scannt</div>
-              <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
-                {STATUS_PRESETS.map((p,i)=>(
-                  <button key={i} onClick={()=>setStatus(showStatusPicker,p)}
-                    style={{display:"flex",gap:12,alignItems:"center",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
-                    <span style={{fontSize:24,flexShrink:0}}>{p.icon}</span>
-                    <div>
-                      <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.text}</div>
-                      <div style={{fontSize:11,color:C.muted}}>Läuft ab nach {p.mins} Min</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginBottom:10}}>
-                <div style={{fontSize:11,color:C.muted,marginBottom:8}}>Eigener Text</div>
-                <div style={{display:"flex",gap:8}}>
-                  <input className="inp" placeholder="z.B. Bin gleich beim Einlass..." value={statusCustom}
-                    onChange={e=>setStatusCustom(e.target.value)}
-                    onKeyDown={e=>{if(e.key==="Enter"&&statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
-                    style={{flex:1}}/>
-                  <button className="btn" disabled={!statusCustom.trim()}
-                    onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:"💬",mins:30},statusCustom);}}
-                    style={{flexShrink:0,opacity:statusCustom.trim()?1:.4}}>OK</button>
-                </div>
-              </div>
-              {(getActiveStatus(showStatusPicker)||[]).length>0&&(
-                <button className="btn ghost" style={{width:"100%",marginTop:4,color:"#ef4444",borderColor:"#ef444444"}}
-                  onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Status gelöscht");}}>
-                  Alle Status löschen
-                </button>
-              )}
-            </div>
-          </div>
-        )}
         {lightbox&&(
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:600,display:"flex",flexDirection:"column"}}
             onClick={()=>setLightbox(null)}>
