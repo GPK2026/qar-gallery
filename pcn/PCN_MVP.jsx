@@ -1761,6 +1761,17 @@ Wichtig:
       image:(addVForm.images||[])[0]||"",
       privacy:{...DEF_PRIVACY},
     };
+    // Demo-Modus: nur lokal — nichts in die echte DB schreiben
+    if(isDemo){
+      const demoV = {...newV, id:"DEMO_"+Date.now().toString(36)};
+      setVehicles(p=>({...p,[demoV.id]:demoV}));
+      setShowAddV(false);
+      setAnalyzeResult(null); setAnalyzing(false); setAnalyzeHiRes(null);
+      setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[]});
+      toast_(`${demoV.hersteller} ${demoV.modell} angelegt ✓ (+${POINTS.vehicle_added} Pkt)`);
+      return;
+    }
+
     const {data:saved,error}=await DB.vehicles.save(newV);
     if(error){
       const msg = typeof error==="string" ? error : (error.message||JSON.stringify(error));
@@ -1924,7 +1935,7 @@ Wichtig:
     setVehicles(prev=>({...prev,[v.id]:updated}));
     if(viewV?.id===v.id) setViewV(updated);
     const DB = window.PCN_DB;
-    if(DB) await DB.vehicles.save(updated);
+    if(DB && !isDemo) await DB.vehicles.save(updated);
     setShowEditVehicle(null);
     toast_("Fahrzeugdaten gespeichert ✓");
   };
