@@ -22,9 +22,12 @@ const PCN_STORAGE = (() => {
   const BACKEND = "supabase"; // "local" | "supabase" | "api"  ← active: Supabase
 
   // Credentials loaded from pcn_config.js (not in git) — see pcn_config.example.js
-  const cfg         = (typeof window !== "undefined" && window.PCN_CONFIG) || {};
-  const SUPABASE_URL = cfg.supabaseUrl || "";
-  const SUPABASE_KEY = cfg.supabaseKey || "";
+  // WICHTIG: Nicht beim Laden einfrieren. Wenn pcn_storage.js vor pcn_config.js
+  // ausgewertet wird — je nach Browser und Cache-Reihenfolge möglich — wären
+  // URL und Key für immer leer und die App liefe still im Local-Modus.
+  const _cfg = () => (typeof window !== "undefined" && window.PCN_CONFIG) || {};
+  const SUPABASE_URL_get = () => _cfg().supabaseUrl || "";
+  const SUPABASE_KEY_get = () => _cfg().supabaseKey || "";
 
   // API endpoint (for custom backend)
   const API_BASE      = ""; // e.g. "https://api.qar.gallery/v1"
@@ -318,35 +321,35 @@ const PCN_STORAGE = (() => {
 
   // ── SUPABASE BACKEND ─────────────────────────────────────────────────────────
   // Full REST implementation — matches local backend API exactly
-  // Switch: set BACKEND = "supabase" and fill SUPABASE_URL + SUPABASE_KEY
+  // Switch: set BACKEND = "supabase" and fill SUPABASE_URL_get() + SUPABASE_KEY_get()
   const supabase = {
     _h: () => ({
       "Content-Type": "application/json",
-      "apikey": SUPABASE_KEY,
-      "Authorization": "Bearer " + SUPABASE_KEY,
+      "apikey": SUPABASE_KEY_get(),
+      "Authorization": "Bearer " + SUPABASE_KEY_get(),
       "Prefer": "return=representation",
     }),
     _q: async (table, params="") => {
-      const r = await fetch(SUPABASE_URL+"/rest/v1/"+table+params, { headers: supabase._h() });
+      const r = await fetch(SUPABASE_URL_get()+"/rest/v1/"+table+params, { headers: supabase._h() });
       if(!r.ok) return { error: await r.text() };
       return { data: await r.json() };
     },
     _post: async (table, body) => {
-      const r = await fetch(SUPABASE_URL+"/rest/v1/"+table, {
+      const r = await fetch(SUPABASE_URL_get()+"/rest/v1/"+table, {
         method:"POST", headers: supabase._h(), body: JSON.stringify(body)
       });
       if(!r.ok) return { error: await r.text() };
       const d = await r.json(); return { data: Array.isArray(d)?d[0]:d };
     },
     _patch: async (table, filter, body) => {
-      const r = await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+filter, {
+      const r = await fetch(SUPABASE_URL_get()+"/rest/v1/"+table+"?"+filter, {
         method:"PATCH", headers: supabase._h(), body: JSON.stringify(body)
       });
       if(!r.ok) return { error: await r.text() };
       const d = await r.json(); return { data: Array.isArray(d)?d[0]:d };
     },
     _delete: async (table, filter) => {
-      const r = await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+filter, {
+      const r = await fetch(SUPABASE_URL_get()+"/rest/v1/"+table+"?"+filter, {
         method:"DELETE", headers: supabase._h()
       });
       if(!r.ok) return { error: await r.text() };
@@ -358,13 +361,13 @@ const PCN_STORAGE = (() => {
     //       URL contains access_token → we exchange for session → user is logged in
     // For demo/dev: falls back to direct email lookup (no real email sent)
 
-    _authUrl: () => SUPABASE_URL.replace("/rest/v1","").replace("rest/v1","") + "/auth/v1",
+    _authUrl: () => SUPABASE_URL_get().replace("/rest/v1","").replace("rest/v1","") + "/auth/v1",
 
     async _supabaseAuthFetch(path, body) {
-      const base = SUPABASE_URL.replace("/rest/v1","");
+      const base = SUPABASE_URL_get().replace("/rest/v1","");
       const r = await fetch(base + "/auth/v1" + path, {
         method: "POST",
-        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
+        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY_get() },
         body: JSON.stringify(body),
       });
       const d = await r.json();
@@ -395,10 +398,10 @@ const PCN_STORAGE = (() => {
 
     // Send magic link — Supabase emails a login link to the user
     async sendMagicLink(email, redirectTo) {
-      const base = SUPABASE_URL.replace("/rest/v1","");
+      const base = SUPABASE_URL_get().replace("/rest/v1","");
       const r = await fetch(base + "/auth/v1/otp", {
         method: "POST",
-        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
+        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY_get() },
         body: JSON.stringify({
           email,
           create_user: true,
@@ -413,10 +416,10 @@ const PCN_STORAGE = (() => {
 
     // Verify OTP token from magic link URL
     async verifyOtp(email, token) {
-      const base = SUPABASE_URL.replace("/rest/v1","");
+      const base = SUPABASE_URL_get().replace("/rest/v1","");
       const r = await fetch(base + "/auth/v1/verify", {
         method: "POST",
-        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY },
+        headers: { "Content-Type":"application/json", "apikey": SUPABASE_KEY_get() },
         body: JSON.stringify({ email, token, type: "magiclink" }),
       });
       const d = await r.json().catch(()=>({}));
@@ -434,9 +437,9 @@ const PCN_STORAGE = (() => {
     async exchangeToken(accessToken) {
       // When user clicks magic link → browser gets #access_token=... in URL
       // We store it and use it for all future requests
-      const base = SUPABASE_URL.replace("/rest/v1","");
+      const base = SUPABASE_URL_get().replace("/rest/v1","");
       const r = await fetch(base + "/auth/v1/user", {
-        headers: { "Authorization": "Bearer " + accessToken, "apikey": SUPABASE_KEY }
+        headers: { "Authorization": "Bearer " + accessToken, "apikey": SUPABASE_KEY_get() }
       });
       if(!r.ok) return { error: "Token ungültig" };
       const supaUser = await r.json();
@@ -506,7 +509,13 @@ const PCN_STORAGE = (() => {
 
     async login(email) {
       const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
-      if(error) return { error };
+      if(error){
+        console.error("[Login] DB-Abfrage fehlgeschlagen:", error);
+        const s = String(error);
+        if(/apikey|JWT|401/i.test(s)) return { error: "App-Zugangsdaten ungültig — Seite neu laden (Strg+Shift+R)" };
+        if(/Failed to fetch|NetworkError/i.test(s)) return { error: "Keine Verbindung zur Datenbank" };
+        return { error: "Anmeldung fehlgeschlagen: " + s.slice(0,60) };
+      }
       if(!users||users.length===0) return { error: "Kein Account mit dieser E-Mail" };
       const u = users[0];
       const session = { id:u.id, name:u.name, email:u.email, role:u.role,
@@ -523,7 +532,13 @@ const PCN_STORAGE = (() => {
     async loginWithPassword(email, password) {
       // MVP: check password against pw_hash in our users table (no Supabase Auth)
       const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
-      if(error) return { error };
+      if(error){
+        console.error("[Login] DB-Abfrage fehlgeschlagen:", error);
+        const s = String(error);
+        if(/apikey|JWT|401/i.test(s)) return { error: "App-Zugangsdaten ungültig — Seite neu laden (Strg+Shift+R)" };
+        if(/Failed to fetch|NetworkError/i.test(s)) return { error: "Keine Verbindung zur Datenbank" };
+        return { error: "Anmeldung fehlgeschlagen: " + s.slice(0,60) };
+      }
       if(!users||users.length===0) return { error: "Kein Account mit dieser E-Mail" };
       const u = users[0];
       // Check password hash
@@ -854,16 +869,6 @@ const PCN_STORAGE = (() => {
   const backends = { local, supabase, api };
   const db = backends[BACKEND] || local;
 
-  // ── PUBLIC API ─────────────────────────────────────────────────────────────
-  return {
-    // Info
-    backend: BACKEND,
-    isConfigured: () => {
-      if(BACKEND === "supabase") return !!(SUPABASE_URL && SUPABASE_KEY);
-      if(BACKEND === "api")      return !!API_BASE;
-      return true; // local always works
-    },
-
 // ═══════════════════════════════════════════════════════════════════════════
 // DEMO-SCHUTZ — zentral, eine Ebene unter allen Schreibfunktionen
 //
@@ -893,8 +898,17 @@ function guard(label, fn){
   };
 }
 
+  // ── PUBLIC API ─────────────────────────────────────────────────────────────
+  return {
+    // Info
+    backend: BACKEND,
+    isConfigured: () => {
+      if(BACKEND === "supabase") return !!(SUPABASE_URL_get() && SUPABASE_KEY_get());
+      if(BACKEND === "api")      return !!API_BASE;
+      return true; // local always works
+    },
 
-    // Proxy all methods to selected backend
+// Proxy all methods to selected backend
     auth: {
       register:          (name, email, code, pw) => db.register(name, email, code, pw),
       registerGuest:     (name, email)            => db.registerGuest(name, email),
