@@ -682,7 +682,16 @@ const PCN_STORAGE = (() => {
       const res = await supabase._q("vehicles",
         "?select=" + cols + "&order=created_at.desc&limit=" + (limit||200));
       if(res.error) return res;
-      return { data: (res.data||[]).map(supabase._mapVehicle) };
+      const list = (res.data||[]).map(supabase._mapVehicle);
+      // Fahrzeuge pausierter Mitglieder ausblenden
+      try {
+        const u = await supabase._q("users","?select=id,paused&paused=eq.true");
+        if(u.data && u.data.length){
+          const off = new Set(u.data.map(x=>x.id));
+          return { data: list.filter(v => !off.has(v.userId)) };
+        }
+      } catch(e){ /* Spalte fehlt noch — dann eben alle zeigen */ }
+      return { data: list };
     },
     async saveVehicle(vehicle) {
       const row = {
