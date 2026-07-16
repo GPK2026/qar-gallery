@@ -605,6 +605,18 @@ function rMembers(el){
   filterMembers();
 }
 
+// Einladungstext in die Zwischenablage
+function copyInvite(btn){
+  const txt = window._lastInvite || "";
+  if(!txt) return;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const orig = btn.textContent;
+    btn.textContent = "✓ Kopiert";
+    btn.style.color = "var(--green)";
+    setTimeout(()=>{ btn.textContent = orig; btn.style.color = ""; }, 1800);
+  }).catch(()=>toast("Kopieren nicht möglich","err"));
+}
+
 // ── Mitglied direkt anlegen (für Pilotgruppe) ──
 async function createMember(){
   const name=(document.getElementById("inv-name")?.value||"").trim();
@@ -650,12 +662,54 @@ async function createMember(){
       "🎉");
   }
 
-  say(`<div style="background:#22c55e0d;border:1px solid #22c55e33;border-radius:7px;padding:10px">
-    <div style="color:var(--green);font-weight:700;margin-bottom:4px">✓ ${name} angelegt · ${nr}</div>
-    <div style="color:#888;font-size:12px;line-height:1.6">
-      Login: <strong style="color:#aaa">qar.gallery/pcn</strong> mit <strong style="color:#aaa">${mail}</strong><br>
-      ${welcome?"Willkommensnachricht wurde gesendet.":"Ohne Willkommensnachricht angelegt."}
+  // Einladungstext — fertig zum Verschicken
+  const first = name.split(" ")[0];
+  const invite =
+`Hallo ${first},
+
+dein Zugang zum Porsche Club Nürburgring ist eingerichtet.
+
+So kommst du rein:
+1. Öffne qar.gallery/pcn auf dem Handy
+2. Tippe auf "Mitglied werden"
+3. Club-Code: PCN2026
+4. E-Mail: ${mail}
+5. Passwort selbst festlegen
+
+Danach kannst du dein Fahrzeug anlegen — damit schaltest du QR-Code, Logbuch und Events frei.
+
+Deine Mitgliedsnummer: ${nr}
+
+Sportliche Grüße
+Dein PCN-Vorstand`;
+
+  const mailtoHref = "mailto:" + encodeURIComponent(mail)
+    + "?subject=" + encodeURIComponent("Dein Zugang zum Porsche Club Nürburgring")
+    + "&body=" + encodeURIComponent(invite);
+
+  window._lastInvite = invite;   // für den Kopieren-Button
+
+  say(`<div style="background:#22c55e0d;border:1px solid #22c55e33;border-radius:8px;padding:12px">
+    <div style="color:var(--green);font-weight:700;margin-bottom:8px;font-size:14px">✓ ${name} angelegt · ${nr}</div>
+    <div style="color:#888;font-size:13px;line-height:1.6;margin-bottom:12px">
+      Der Account ist aktiv. ${welcome?"Die Willkommensnachricht liegt in der App bereit — aber ":""}${first} weiß noch nichts davon.
+      <strong style="color:#bbb">Schick die Einladung raus:</strong>
     </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="${mailtoHref}" style="flex:1;min-width:130px;background:var(--red);color:#fff;text-decoration:none;
+        border-radius:8px;padding:11px;font-size:13px;font-weight:700;text-align:center;display:block">
+        ✉️ E-Mail öffnen
+      </a>
+      <button onclick="copyInvite(this)" style="flex:1;min-width:130px;background:#1a1a1a;border:1px solid var(--border);
+        border-radius:8px;padding:11px;color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
+        📋 Text kopieren
+      </button>
+    </div>
+    <details style="margin-top:10px">
+      <summary style="font-size:12px;color:#666;cursor:pointer">Text ansehen</summary>
+      <pre style="background:#0d0d0d;border-radius:6px;padding:10px;margin-top:6px;font-size:11px;
+        color:#999;white-space:pre-wrap;font-family:inherit;line-height:1.5">${invite.replace(/</g,"&lt;")}</pre>
+    </details>
   </div>`);
 
   ["inv-name","inv-mail"].forEach(id=>{const e=document.getElementById(id); if(e) e.value="";});
@@ -1191,6 +1245,13 @@ function rMessages(el){
     <div style="font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:11px">
       Erreicht alle ${DB.members.filter(m=>m.role==="member").length} Mitglieder gleichzeitig — erscheint als Gruppenchat in der App.
     </div>
+    ${!club?`
+      <div style="background:#1a1a1a;border:1px dashed var(--border);border-radius:8px;padding:14px;margin-bottom:10px;text-align:center">
+        <div style="font-size:13px;color:#888;line-height:1.6">
+          Der Club-Kanal wird beim ersten Senden automatisch angelegt.<br>
+          <span style="font-size:12px;color:#555">Alle Mitglieder sehen ihn dann als Gruppenchat in der App.</span>
+        </div>
+      </div>`:""}
     ${club&&(club.messages||[]).length?`
       <div style="background:#0d0d0d;border-radius:8px;padding:10px;margin-bottom:10px;max-height:150px;overflow-y:auto">
         ${(club.messages||[]).slice(-4).map(m=>{
