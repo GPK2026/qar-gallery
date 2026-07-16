@@ -4136,6 +4136,57 @@ Wichtig:
               })()}
             </div>
 
+            {/* ── Onboarding-Checkliste — nur bis alles erledigt ist ── */}
+            {!isGuest&&!isDemo&&(()=>{
+              const hasVehicle = myVehicles.length>0;
+              const hasComplete = myVehicles.some(v=>isVehicleComplete(v));
+              const hasBday = !!me?.geburtstag;
+              const hasEvent = myParticipations.length>0;
+              const steps = [
+                {done:hasVehicle,  icon:"🚗", label:"Fahrzeug anlegen",       hint:"Schaltet QR-Code, Logbuch und Events frei", pts:POINTS.vehicle_added, go:()=>setShowAddV(true)},
+                {done:hasComplete, icon:"✨", label:"Akte vervollständigen",  hint:"Foto, Kennzeichen, Baujahr und Geschichte", pts:POINTS.vehicle_complete, go:()=>{ if(myVehicles[0]){setViewV(myVehicles[0]);setScreen("vehicle");} else setShowAddV(true); }},
+                {done:hasBday,     icon:"🎂", label:"Geburtstag hinterlegen", hint:"Nur für den Vorstand sichtbar", pts:POINTS.birthday, go:()=>openEditProfile()},
+                {done:hasEvent,    icon:"🏁", label:"Für ein Event anmelden", hint:"Beim nächsten Termin dabei sein", pts:POINTS.event_confirmed, go:()=>setTab("events")},
+              ];
+              const doneCount = steps.filter(s=>s.done).length;
+              if(doneCount===steps.length) return null;   // fertig → ausblenden
+              return (
+                <div style={{background:`linear-gradient(135deg, ${C.gold}0d, transparent)`,
+                  border:`1px solid ${C.gold}33`,borderRadius:14,padding:"15px",marginBottom:16}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:800,color:C.gold}}>Willkommen im PCN 🏁</div>
+                      <div style={{fontSize:11,color:C.muted,marginTop:1}}>Noch {steps.length-doneCount} Schritt{steps.length-doneCount!==1?"e":""} bis alles eingerichtet ist</div>
+                    </div>
+                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.gold}}>
+                      {doneCount}/{steps.length}
+                    </div>
+                  </div>
+                  <div style={{height:4,background:"#ffffff10",borderRadius:99,overflow:"hidden",marginBottom:12}}>
+                    <div style={{height:"100%",width:`${doneCount/steps.length*100}%`,background:C.gold,borderRadius:99,transition:"width .5s ease"}}/>
+                  </div>
+                  {steps.map(s=>(
+                    <button key={s.label} onClick={s.done?undefined:s.go} disabled={s.done}
+                      style={{width:"100%",display:"flex",gap:11,alignItems:"center",padding:"9px 0",
+                        borderBottom:`1px solid ${C.border}`,background:"none",border:"none",
+                        borderBottomStyle:"solid",cursor:s.done?"default":"pointer",textAlign:"left",
+                        opacity:s.done?.45:1,fontFamily:"'Barlow',sans-serif"}}>
+                      <span style={{fontSize:15,width:22,textAlign:"center",flexShrink:0}}>{s.done?"✓":s.icon}</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:600,color:s.done?C.muted:C.white,
+                          textDecoration:s.done?"line-through":"none"}}>{s.label}</div>
+                        {!s.done&&<div style={{fontSize:10,color:"#666",marginTop:1}}>{s.hint}</div>}
+                      </div>
+                      {!s.done&&(
+                        <span style={{fontSize:11,color:C.gold,fontWeight:700,flexShrink:0,
+                          fontFamily:"'Barlow Condensed',sans-serif"}}>+{s.pts.toLocaleString("de-DE")}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+
             {/* ── 2. Meine Fahrzeuge ── */}
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
