@@ -306,6 +306,51 @@
   }
 
   // ─── Demo Data ────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SICHERER SPEICHER — Safari Privat wirft bei localStorage.setItem
+  // einen QuotaExceededError. Ungeschützt bricht dadurch der Login ab.
+  // Fallback: Arbeitsspeicher. Überlebt kein Neuladen, aber die App läuft.
+  // ═══════════════════════════════════════════════════════════════════════════
+  const _mem = {};
+  let _lsOk = null;
+  const lsAvailable = () => {
+    if (_lsOk !== null) return _lsOk;
+    try {
+      localStorage.setItem("__t__", "1");
+      localStorage.removeItem("__t__");
+      _lsOk = true;
+    } catch (e) {
+      console.warn("[Speicher] Privates Fenster? Nutze Arbeitsspeicher.");
+      _lsOk = false;
+    }
+    return _lsOk;
+  };
+  const store = {
+    getItem: k => {
+      if (lsAvailable()) {
+        try {
+          return localStorage.getItem(k);
+        } catch (e) {}
+      }
+      return _mem[k] ?? null;
+    },
+    setItem: (k, v) => {
+      _mem[k] = String(v);
+      if (lsAvailable()) {
+        try {
+          localStorage.setItem(k, v);
+        } catch (e) {}
+      }
+    },
+    removeItem: k => {
+      delete _mem[k];
+      if (lsAvailable()) {
+        try {
+          localStorage.removeItem(k);
+        } catch (e) {}
+      }
+    }
+  };
   const CLUB_CODE = "PCN2026";
   // Sponsor config — set in pcn_config.js: window.PCN_SPONSOR = {name:"Porschezentrum Koblenz", url:"https://...", logo:"https://..."}
   const SPONSOR = {
@@ -2008,7 +2053,7 @@
     const [tab, setTab] = (0, _react.useState)("dashboard");
     const [favorites, setFavorites] = (0, _react.useState)(() => {
       try {
-        return JSON.parse(localStorage.getItem("pcn_favorites") || "[]");
+        return JSON.parse(store.getItem("pcn_favorites") || "[]");
       } catch (e) {
         return [];
       }
@@ -2027,14 +2072,14 @@
     const [activeThread, setActiveThread] = (0, _react.useState)(null);
     const [guestThreads, setGuestThreads] = (0, _react.useState)(() => {
       try {
-        return JSON.parse(localStorage.getItem("pcn_guest_threads") || "[]");
+        return JSON.parse(store.getItem("pcn_guest_threads") || "[]");
       } catch (e) {
         return [];
       }
     });
     const [deletedThreadIds, setDeletedThreadIds] = (0, _react.useState)(() => {
       try {
-        return JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
+        return JSON.parse(store.getItem("pcn_deleted_threads") || "[]");
       } catch (e) {
         return [];
       }
@@ -2044,7 +2089,7 @@
     const [publicV, setPublicV] = (0, _react.useState)(null);
     const [recentVehicles, setRecentVehicles] = (0, _react.useState)(() => {
       try {
-        return JSON.parse(localStorage.getItem("pcn_recent_vehicles") || "[]");
+        return JSON.parse(store.getItem("pcn_recent_vehicles") || "[]");
       } catch (e) {
         return [];
       }
@@ -2103,7 +2148,7 @@
     const [profileImgUploading, setProfileImgUploading] = (0, _react.useState)(false);
     const [newsState, setNewsState] = (0, _react.useState)(() => {
       try {
-        return JSON.parse(localStorage.getItem("pcn_news_state") || "{}");
+        return JSON.parse(store.getItem("pcn_news_state") || "{}");
       } catch (e) {
         return {};
       }
@@ -2115,14 +2160,14 @@
           ...p,
           [id]: "read"
         };
-        localStorage.setItem("pcn_news_state", JSON.stringify(updated));
+        store.setItem("pcn_news_state", JSON.stringify(updated));
         return updated;
       });
       // Add points for reading — 10 pts per article
       const readKey = "pcn_news_read_pts";
-      const already = JSON.parse(localStorage.getItem(readKey) || "[]");
+      const already = JSON.parse(store.getItem(readKey) || "[]");
       if (!already.includes(id)) {
-        localStorage.setItem(readKey, JSON.stringify([...already, id]));
+        store.setItem(readKey, JSON.stringify([...already, id]));
         toast_(`✓ Gelesen · +${POINTS.news_read} Punkte 🏆`);
       } else {
         toast_("✓ Als gelesen markiert");
@@ -2185,14 +2230,14 @@
     // ── View/Scan points ─────────────────────────────────────────────────────────
     const getViewedVehicles = () => {
       try {
-        return JSON.parse(localStorage.getItem("pcn_viewed_vehicles") || "[]");
+        return JSON.parse(store.getItem("pcn_viewed_vehicles") || "[]");
       } catch (e) {
         return [];
       }
     };
     const getScanConfirmed = () => {
       try {
-        return JSON.parse(localStorage.getItem("pcn_scan_confirmed") || "[]");
+        return JSON.parse(store.getItem("pcn_scan_confirmed") || "[]");
       } catch (e) {
         return [];
       }
@@ -2204,7 +2249,7 @@
       const viewed = getViewedVehicles();
       if (viewed.includes(vehicleId)) return;
       viewed.push(vehicleId);
-      localStorage.setItem("pcn_viewed_vehicles", JSON.stringify(viewed));
+      store.setItem("pcn_viewed_vehicles", JSON.stringify(viewed));
     };
 
     // Request scan confirmation from owner — sends admin message
@@ -2268,7 +2313,7 @@
         return;
       }
       confirmed.push(key);
-      localStorage.setItem("pcn_scan_confirmed", JSON.stringify(confirmed));
+      store.setItem("pcn_scan_confirmed", JSON.stringify(confirmed));
       // Bestätigung an den Scanner — Demo-Modus schreibt nicht in die echte DB,
       // Zugangsdaten kommen aus der Config statt hardcoded im Quelltext.
       if (!isDemo) {
@@ -2336,7 +2381,7 @@
       pts += myParticipations.filter(p => p.status === "confirmed").length * V.event_confirmed;
       pts += myThreads.length * V.message;
       try {
-        pts += JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length * V.news_read;
+        pts += JSON.parse(store.getItem("pcn_news_read_pts") || "[]").length * V.news_read;
       } catch (e) {}
 
       // ── PRIO 4: Treue (Mitgliedsjahre, Beitrag) ──
@@ -2348,7 +2393,7 @@
 
       // ── Bonus: Geburtstag (einmal pro Jahr, automatisch) ──
       try {
-        const bdayPts = JSON.parse(localStorage.getItem("pcn_bday_pts") || "[]");
+        const bdayPts = JSON.parse(store.getItem("pcn_bday_pts") || "[]");
         bdayPts.forEach(entry => {
           pts += entry.pts || 0;
         });
@@ -2390,7 +2435,7 @@
       const year = today.getFullYear();
       let awarded = [];
       try {
-        awarded = JSON.parse(localStorage.getItem("pcn_bday_pts") || "[]");
+        awarded = JSON.parse(store.getItem("pcn_bday_pts") || "[]");
       } catch (e) {}
       if (awarded.some(a => a.year === year)) return; // schon gutgeschrieben
 
@@ -2402,7 +2447,7 @@
         pts,
         age
       });
-      localStorage.setItem("pcn_bday_pts", JSON.stringify(awarded));
+      store.setItem("pcn_bday_pts", JSON.stringify(awarded));
       setTimeout(() => {
         toast_(isRound ? `🎂 Alles Gute zum ${age}. Geburtstag! +${pts} Punkte vom PCN 🎉` : `🎂 Herzlichen Glückwunsch! +${pts} Punkte vom PCN`);
       }, 1200);
@@ -2411,7 +2456,7 @@
     const toggleFavorite = vehicleId => {
       setFavorites(prev => {
         const next = prev.includes(vehicleId) ? prev.filter(id => id !== vehicleId) : [...prev, vehicleId];
-        localStorage.setItem("pcn_favorites", JSON.stringify(next));
+        store.setItem("pcn_favorites", JSON.stringify(next));
         if (!prev.includes(vehicleId)) toast_("❤️ Gespeichert");
         return next;
       });
@@ -2878,7 +2923,7 @@
       setRecentVehicles(prev => {
         const filtered = prev.filter(v => v.id !== entry.id);
         const updated = [entry, ...filtered].slice(0, 10);
-        localStorage.setItem("pcn_recent_vehicles", JSON.stringify(updated));
+        store.setItem("pcn_recent_vehicles", JSON.stringify(updated));
         return updated;
       });
     }, [screen, publicV?.id]);
@@ -3136,11 +3181,11 @@
 
     const trackAI = (ok, fieldCount) => {
       try {
-        const s = JSON.parse(localStorage.getItem("pcn_ai_stats") || '{"runs":0,"ok":0,"fields":0}');
+        const s = JSON.parse(store.getItem("pcn_ai_stats") || '{"runs":0,"ok":0,"fields":0}');
         s.runs++;
         if (ok) s.ok++;
         s.fields += fieldCount || 0;
-        localStorage.setItem("pcn_ai_stats", JSON.stringify(s));
+        store.setItem("pcn_ai_stats", JSON.stringify(s));
       } catch (e) {}
     };
     const analyzeVehiclePhoto = async (dataUrl, attempt = 1) => {
@@ -3603,7 +3648,7 @@ Regeln:
       };
       setMe(updated);
       // Persist session locally (always)
-      localStorage.setItem("pcn_session", JSON.stringify(updated));
+      store.setItem("pcn_session", JSON.stringify(updated));
       // Patch in Supabase if active
       const DB = window.PCN_DB;
       if (DB && me?.id) {
@@ -3925,7 +3970,7 @@ Regeln:
         };
         setGuestThreads(prev => {
           const updated = [gThread, ...prev.filter(x => x.id !== t.id)].slice(0, 10);
-          localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
+          store.setItem("pcn_guest_threads", JSON.stringify(updated));
           return updated;
         });
       }
@@ -3991,7 +4036,7 @@ Regeln:
       const DB = window.PCN_DB;
       if (DB && DB.backend === "local") {
         // Local backend: seed via localStorage directly (fast path)
-        const stored = JSON.parse(localStorage.getItem("pcn_v1") || "{}");
+        const stored = JSON.parse(store.getItem("pcn_v1") || "{}");
         stored.users = {
           ...stored.users,
           ...DEMO_USERS
@@ -4023,7 +4068,7 @@ Regeln:
             done: false
           }]
         };
-        localStorage.setItem("pcn_v1", JSON.stringify(stored));
+        store.setItem("pcn_v1", JSON.stringify(stored));
         await refreshAll(DEMO_USERS.u1);
       } else {
         // Supabase/API backend: demo runs purely in-memory, not persisted to DB
@@ -4037,7 +4082,7 @@ Regeln:
         // Always reset demo threads — fresh every login
         // Keep deleted threads list — user intentionally deleted them
         // setThreads: only add demo threads that user hasn't deleted
-        const deletedIds = JSON.parse(localStorage.getItem("pcn_deleted_threads") || "[]");
+        const deletedIds = JSON.parse(store.getItem("pcn_deleted_threads") || "[]");
         const freshThreads = {};
         Object.entries(JSON.parse(JSON.stringify(DEMO_THREADS))).forEach(([k, v]) => {
           if (!deletedIds.includes(k)) freshThreads[k] = v;
@@ -4861,10 +4906,10 @@ Regeln:
               })
             }).catch(e => console.warn("Einwilligung nicht protokolliert:", e));
           }
-          const stored = JSON.parse(localStorage.getItem("pcn_v1") || "{}");
+          const stored = JSON.parse(store.getItem("pcn_v1") || "{}");
           if (!stored.events || Object.keys(stored.events).length === 0) {
             stored.events = {};
-            localStorage.setItem("pcn_v1", JSON.stringify(stored));
+            store.setItem("pcn_v1", JSON.stringify(stored));
           }
           track("member_register", {
             club_code: loginForm.code
@@ -6649,7 +6694,7 @@ Regeln:
         borderTop: `1px solid ${C.border}`
       }
     }, (() => {
-      const alreadyR = JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").includes(String(viewNews.id));
+      const alreadyR = JSON.parse(store.getItem("pcn_news_read_pts") || "[]").includes(String(viewNews.id));
       return /*#__PURE__*/_react.default.createElement("button", {
         onClick: () => {
           markNewsRead(viewNews.id);
@@ -9268,7 +9313,7 @@ Regeln:
       }, welcome.body))));
     })(), (() => {
       const dbNews = (window._dbNews || []).filter(n => n && !DEMO_NEWS.find(d => d.id === String(n.id)));
-      const readPts = JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]");
+      const readPts = JSON.parse(store.getItem("pcn_news_read_pts") || "[]");
       const items = [...dbNews, ...DEMO_NEWS].filter(n => n.type !== "welcome" && newsState[n.id] !== "read" && !readPts.includes(String(n.id))).sort((a, b) => new Date(b.date) - new Date(a.date));
       if (!items.length) return null;
       return /*#__PURE__*/_react.default.createElement("div", {
@@ -9910,7 +9955,7 @@ Regeln:
         e.stopPropagation();
         setRecentVehicles(prev => {
           const updated = prev.filter(v => v.id !== rv.id);
-          localStorage.setItem("pcn_recent_vehicles", JSON.stringify(updated));
+          store.setItem("pcn_recent_vehicles", JSON.stringify(updated));
           return updated;
         });
       },
@@ -9958,7 +10003,7 @@ Regeln:
     }, rv.kennzeichen || rv.qarId))))), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => {
         setRecentVehicles([]);
-        localStorage.removeItem("pcn_recent_vehicles");
+        store.removeItem("pcn_recent_vehicles");
       },
       style: {
         flexShrink: 0,
@@ -10971,12 +11016,12 @@ Regeln:
             });
             setDeletedThreadIds(prev => {
               const updated = [...new Set([...prev, t.id])];
-              localStorage.setItem("pcn_deleted_threads", JSON.stringify(updated));
+              store.setItem("pcn_deleted_threads", JSON.stringify(updated));
               return updated;
             });
             setGuestThreads(prev => {
               const updated = prev.filter(x => x.id !== t.id);
-              localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
+              store.setItem("pcn_guest_threads", JSON.stringify(updated));
               return updated;
             });
             toast_("Chat gelöscht");
@@ -11617,7 +11662,7 @@ Regeln:
         }
       }, "›")));
     }).filter(Boolean))), (() => {
-      const recent = JSON.parse(localStorage.getItem("pcn_recent_vehicles") || "[]").filter(id => !favorites.includes(id));
+      const recent = JSON.parse(store.getItem("pcn_recent_vehicles") || "[]").filter(id => !favorites.includes(id));
       if (!recent.length) return null;
       return /*#__PURE__*/_react.default.createElement("div", {
         style: {
@@ -11734,7 +11779,7 @@ Regeln:
         }, rv.baujahr));
       }).filter(Boolean)));
     })(), (() => {
-      const pending = JSON.parse(localStorage.getItem("pcn_scan_requests") || "[]").filter(key => !getScanConfirmed().includes(key));
+      const pending = JSON.parse(store.getItem("pcn_scan_requests") || "[]").filter(key => !getScanConfirmed().includes(key));
       if (!pending.length) return null;
       return /*#__PURE__*/_react.default.createElement("div", {
         style: {
@@ -12045,7 +12090,7 @@ Regeln:
         setViewV(myVehicles[0]);
         setScreen("vehicle");
       } else setTab("dashboard");
-    }], ["🏁", "Events", myParticipations.filter(p => p.status === "confirmed").length, "bestätigt", () => setTab("events")], ["💬", "Chats", myThreads.length, "aktive Chats", () => setTab("messages")], ["❤️", "Favoriten", favorites.length, "gespeichert", () => setTab("community")], ["👁", "Angesehen", getViewedVehicles().length, "Akten · +" + (getViewedVehicles().length * POINTS.view_akte).toLocaleString("de-DE") + " Pkt", () => setTab("community")], ["📱", "QR-Scans", getScanConfirmed().length, "bestätigt · +" + (getScanConfirmed().length * POINTS.qr_scan).toLocaleString("de-DE") + " Pkt", () => setTab("community")], ["📰", "News", JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length, "gelesen · +" + (JSON.parse(localStorage.getItem("pcn_news_read_pts") || "[]").length * POINTS.news_read).toLocaleString("de-DE") + " Pkt", () => setTab("dashboard")]].map(([icon, label, val, sub, onTap]) => /*#__PURE__*/_react.default.createElement("button", {
+    }], ["🏁", "Events", myParticipations.filter(p => p.status === "confirmed").length, "bestätigt", () => setTab("events")], ["💬", "Chats", myThreads.length, "aktive Chats", () => setTab("messages")], ["❤️", "Favoriten", favorites.length, "gespeichert", () => setTab("community")], ["👁", "Angesehen", getViewedVehicles().length, "Akten · +" + (getViewedVehicles().length * POINTS.view_akte).toLocaleString("de-DE") + " Pkt", () => setTab("community")], ["📱", "QR-Scans", getScanConfirmed().length, "bestätigt · +" + (getScanConfirmed().length * POINTS.qr_scan).toLocaleString("de-DE") + " Pkt", () => setTab("community")], ["📰", "News", JSON.parse(store.getItem("pcn_news_read_pts") || "[]").length, "gelesen · +" + (JSON.parse(store.getItem("pcn_news_read_pts") || "[]").length * POINTS.news_read).toLocaleString("de-DE") + " Pkt", () => setTab("dashboard")]].map(([icon, label, val, sub, onTap]) => /*#__PURE__*/_react.default.createElement("button", {
       key: label,
       onClick: onTap,
       style: {
