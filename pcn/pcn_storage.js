@@ -778,8 +778,25 @@ const PCN_STORAGE = (() => {
     },
 
     // ── Events ──
+    // Feld-Mapping: DB snake_case → App camelCase
+    // Ohne das kommt entry_fee nie in der App an — der Preis blieb unsichtbar.
+    _mapEvent: (row) => row ? ({
+      id: row.id, name: row.name, subtitle: row.subtitle,
+      date: row.date, endDate: row.end_date,
+      location: row.location, category: row.category,
+      description: row.description,
+      maxParticipants: row.max_participants,
+      entryFee: row.entry_fee,
+      classes: row.classes || [],
+      sponsors: row.sponsors || [],
+      organizerId: row.organizer_id,
+      status: row.status || "upcoming",
+      createdAt: row.created_at,
+    }) : null,
     async getEvents() {
-      return await supabase._q("events","?order=date.asc");
+      const res = await supabase._q("events","?order=date.asc");
+      if(res.error) return res;
+      return { data: (res.data||[]).map(supabase._mapEvent) };
     },
     _mapParticipant: (p) => p ? ({
       id: p.id, eventId: p.event_id, userId: p.user_id, vehicleId: p.vehicle_id,
