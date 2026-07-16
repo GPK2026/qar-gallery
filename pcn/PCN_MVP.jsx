@@ -1113,6 +1113,7 @@ function PCNInner() {
     try { return JSON.parse(store.getItem("pcn_news_state")||"{}"); } catch(e){ return {}; }
   });
   const [viewNews, setViewNews] = useState(null);
+  const [newsTick, setNewsTick] = useState(0);   // erzwingt Re-Render wenn window._dbNews sich ändert
   const markNewsRead = (id) => {
     setNewsState(p=>{
       const updated = {...p,[id]:"read"};
@@ -1184,7 +1185,8 @@ function PCNInner() {
   const unreadNews = (() => {
     try {
       const read = new Set(JSON.parse(store.getItem("pcn_news_seen")||"[]"));
-      return news.filter(n => !read.has(String(n.id))).length;
+      const all = [...(window._dbNews||[]), ...DEMO_NEWS];
+      return all.filter(n => n && !read.has(String(n.id))).length;
     } catch(e){ return 0; }
   })();
   const appState = {logbook,participants,vehicles,me};
@@ -1634,21 +1636,29 @@ function PCNInner() {
       });
     };
 
-    // News/Newsletter — erscheinen sonst erst nach Neuladen
+    // News/Newsletter — erscheinen sonst erst nach Neuladen.
+    // Die App hält sie in window._dbNews (kein React-State), deshalb
+    // stoßen wir danach ein Re-Render über newsTick an.
     const refreshNews = async () => {
       try {
         const r = await fetch(`${sbUrl()}/rest/v1/news?select=*&order=created_at.desc&limit=20`,
           { headers: sbHead() });
         if(!r.ok) return;
         const rows = await r.json();
-        setNews(prev => {
-          const known = new Set(prev.map(n=>n.id));
-          const fresh = rows.filter(n=>!known.has(n.id));
-          if(fresh.length && prev.length){
-            toast_(`📰 ${fresh.length} neue${fresh.length>1?" Beiträge":"r Beitrag"} im Club-Feed`);
-          }
-          return rows;
-        });
+        if(!Array.isArray(rows)) return;
+        const mapped = rows.map(n=>({
+          id:n.id, type:n.type||"news", icon:n.icon||"📰",
+          title:n.title, body:n.body||"", date:n.created_at?.slice(0,10)||"",
+          author:n.author, pinned:n.pinned||false,
+        }));
+        const before = (window._dbNews||[]).length;
+        const known = new Set((window._dbNews||[]).map(n=>String(n.id)));
+        const fresh = mapped.filter(n=>!known.has(String(n.id)));
+        window._dbNews = mapped;
+        if(fresh.length && before>0){
+          toast_(`📰 ${fresh.length} neue${fresh.length>1?" Beiträge":"r Beitrag"} im Club-Feed`);
+        }
+        if(fresh.length || before!==mapped.length) setNewsTick(t=>t+1);
       } catch(e){}
     };
 
@@ -1805,16 +1815,19 @@ function PCNInner() {
   // Der Badge verschwindet damit — nicht zu verwechseln mit "gelesen" für Punkte,
   // die gibt es erst beim Öffnen des Artikels.
   useEffect(()=>{
-    if(tab!=="dashboard" || !news.length) return;
+    if(tab!=="dashboard") return;
     const t = setTimeout(()=>{
       try {
+        const all = [...(window._dbNews||[]), ...DEMO_NEWS];
+        if(!all.length) return;
         const seen = new Set(JSON.parse(store.getItem("pcn_news_seen")||"[]"));
-        news.forEach(n=>seen.add(String(n.id)));
+        all.forEach(n=>{ if(n) seen.add(String(n.id)); });
         store.setItem("pcn_news_seen", JSON.stringify([...seen]));
+        setNewsTick(t=>t+1);   // Badge neu berechnen
       } catch(e){}
     }, 1200);   // kurz warten — nur wenn wirklich hingeschaut wurde
     return ()=>clearTimeout(t);
-  },[tab, news.length]);
+  },[tab, newsTick]);
 
   // ── Demo-Popup nach 3 Sekunden ────────────────────────────────────────────
   useEffect(()=>{
