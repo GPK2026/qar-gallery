@@ -183,6 +183,13 @@ const PCN_STORAGE = (() => {
     },
 
     // ── Vehicles ──
+    async getClubVehicles(limit) {
+      const all = local._get("vehicles") || {};
+      const list = Object.values(all)
+        .sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0))
+        .slice(0, limit||200);
+      return { data: list };
+    },
     async getVehicles(userId) {
       const all = local._get("vehicles") || {};
       // Match by userId OR owner email (handles both registration methods)
@@ -665,6 +672,18 @@ const PCN_STORAGE = (() => {
       if(res.error) return res;
       return { data: (res.data||[]).map(supabase._mapVehicle) };
     },
+    // Alle Fahrzeuge des Clubs — für Community-Tab und "Neueste Fahrzeuge".
+    // Sensible Felder werden serverseitig gar nicht erst angefragt: FIN,
+    // Kilometerstand und Marktwert haben in einer Übersicht nichts zu suchen.
+    // Was beim Antippen sichtbar ist, entscheidet weiterhin die Privacy-Einstellung.
+    async getClubVehicles(limit) {
+      const cols = "id,qar_id,user_id,hersteller,modell,baujahr,farbe,kennzeichen,"
+                 + "image,images,besonderheiten,privacy,created_at";
+      const res = await supabase._q("vehicles",
+        "?select=" + cols + "&order=created_at.desc&limit=" + (limit||200));
+      if(res.error) return res;
+      return { data: (res.data||[]).map(supabase._mapVehicle) };
+    },
     async saveVehicle(vehicle) {
       const row = {
         id: vehicle.id||("V"+uid()), qar_id: vehicle.qarId||genQARId(),
@@ -973,6 +992,7 @@ function guard(label, fn){
     },
     vehicles: {
       list:       (uid)    => db.getVehicles(uid),
+      listClub:   (limit)  => db.getClubVehicles ? db.getClubVehicles(limit) : Promise.resolve({data:[]}),
       save:       guard("vehicles.save",   (v)      => db.saveVehicle(v)),
       delete:     guard("vehicles.delete", (id)     => db.deleteVehicle(id)),
       getPublic:  (qarId)  => db.getPublicVehicle(qarId),
