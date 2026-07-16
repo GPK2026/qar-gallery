@@ -456,6 +456,39 @@ ${urgent.length?`<div class="card" style="border-color:#ef444455;background:line
   </div>
 </div>`}
 
+${(()=>{
+  // Onboarding-Fortschritt — zeigt wie weit die Mitglieder wirklich sind
+  const mem = DB.members.filter(m=>m.role==="member");
+  if(!mem.length) return "";
+  const withVeh = mem.filter(m=>DB.vehicles.some(v=>v.user_id===m.id));
+  const complete = mem.filter(m=>DB.vehicles.some(v=>v.user_id===m.id&&v.image&&v.kennzeichen&&v.baujahr&&v.besonderheiten));
+  const withBday = mem.filter(m=>m.geburtstag);
+  const rows = [
+    ["🚗","Fahrzeug angelegt",   withVeh.length,  mem.length],
+    ["✨","Akte vollständig",    complete.length, mem.length],
+    ["🎂","Geburtstag hinterlegt",withBday.length, mem.length],
+  ];
+  return `<div class="card" style="margin-bottom:12px">
+    <div class="sec-title">📈 Onboarding-Fortschritt</div>
+    <div style="font-size:11px;color:#555;line-height:1.6;margin-bottom:12px">
+      Der wichtigste Frühindikator: Ohne gepflegte Akten funktioniert weder QR noch Community.
+    </div>
+    ${rows.map(([ic,lb,n,total])=>{
+      const p = Math.round(n/Math.max(1,total)*100);
+      const col = p>=70?"var(--green)":p>=40?"var(--amber)":"#ef4444";
+      return `<div style="margin-bottom:11px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:12px;color:#bbb">${ic} ${lb}</span>
+          <span style="font-size:12px;font-weight:700;color:${col}">${n}/${total} · ${p}%</span>
+        </div>
+        <div style="height:5px;background:#1a1a1a;border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${p}%;background:${col};border-radius:99px;transition:width .4s"></div>
+        </div>
+      </div>`;
+    }).join("")}
+  </div>`;
+})()}
+
 <div class="stat-grid">
   ${stat(aktive.length,"Mitglieder",`+${newM.filter(m=>m.role==="member").length} neu (30d)`,"var(--white)","members")}
   ${stat(gaeste.length,"Gäste",gaeste.length?"Freigabe ausstehend":"Alle freigegeben","var(--amber)","members")}
@@ -524,6 +557,30 @@ function rMembers(el){
   const cntNoVeh=DB.members.filter(m=>m.role==="member"&&!DB.vehicles.some(v=>v.user_id===m.id)).length;
   const cntIncompl=DB.members.filter(m=>DB.vehicles.some(v=>v.user_id===m.id&&(!v.image||!v.kennzeichen||!v.baujahr||!v.besonderheiten))).length;
   el.innerHTML=`<div class="page-title">👥 Mitglieder <span style="font-size:13px;font-weight:400;color:var(--muted)">${DB.members.length}</span></div>
+
+  <!-- Pilotgruppe anlegen -->
+  <div class="card" style="margin-bottom:12px;border-color:#C8A96E44">
+    <div class="sec-title" style="color:var(--gold)">🚀 Mitglied anlegen</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:12px">
+      Legt einen echten Account an — die Person kann sich sofort mit ihrer E-Mail einloggen
+      und ihr Fahrzeug eintragen. Ideal für die Pilotgruppe im Vorstand.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <input id="inv-name" class="inp" placeholder="Vor- und Nachname">
+      <input id="inv-mail" class="inp" placeholder="E-Mail" type="email">
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:#aaa;cursor:pointer">
+        <input type="checkbox" id="inv-welcome" checked style="width:auto;margin:0">
+        Willkommensnachricht senden
+      </label>
+    </div>
+    <button class="btn" style="width:100%;background:var(--gold);color:#000" onclick="createMember()">
+      + Mitglied anlegen
+    </button>
+    <div id="inv-out" style="font-size:11px;margin-top:9px;line-height:1.6"></div>
+  </div>
+
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
     <input id="m-q" placeholder="🔍 Name, E-Mail…" oninput="filterMembers()" style="flex:1;min-width:140px">
     <select id="m-f" onchange="filterMembers()" style="width:auto;min-width:150px">
@@ -537,6 +594,63 @@ function rMembers(el){
     </select>
   </div><div id="members-list"></div>`;
   filterMembers();
+}
+
+// ── Mitglied direkt anlegen (für Pilotgruppe) ──
+async function createMember(){
+  const name=(document.getElementById("inv-name")?.value||"").trim();
+  const mail=(document.getElementById("inv-mail")?.value||"").trim().toLowerCase();
+  const welcome=document.getElementById("inv-welcome")?.checked;
+  const out=document.getElementById("inv-out");
+  const say=(html)=>{ if(out) out.innerHTML=html; };
+
+  if(!name||!mail){ say('<span style="color:#ef4444">Name und E-Mail erforderlich</span>'); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(mail)){ say('<span style="color:#ef4444">E-Mail sieht nicht gültig aus</span>'); return; }
+
+  // Doppelte vermeiden
+  const exists = DB.members.find(m=>(m.email||"").toLowerCase()===mail);
+  if(exists){ say(`<span style="color:var(--amber)">${exists.name} nutzt diese E-Mail bereits</span>`); return; }
+
+  say('<span style="color:#666">Wird angelegt…</span>');
+
+  // Mitgliedsnummer: PCN-XXXX, kollisionsfrei
+  let nr, tries=0;
+  do{ nr = "PCN-"+Math.floor(1000+Math.random()*9000); tries++; }
+  while(DB.members.some(m=>m.member_nr===nr) && tries<20);
+
+  const res = await api("users",{method:"POST",body:JSON.stringify({
+    name, email:mail, club_code:"PCN2026", role:"member", member_nr:nr,
+    beitrag_bezahlt:false, created_at:new Date().toISOString(),
+  })});
+
+  if(res.error){
+    say(`<span style="color:#ef4444">Fehler: ${JSON.stringify(res.error).slice(0,70)}</span>`);
+    return;
+  }
+
+  const created = Array.isArray(res.data)?res.data[0]:res.data;
+  const uid = created?.id;
+
+  if(welcome && uid){
+    await sendAdminMsg(uid,
+      `Willkommen beim Porsche Club Nürburgring, ${name.split(" ")[0]}! 🏎️\n\n`+
+      `Dein Zugang ist freigeschaltet. Melde dich einfach mit dieser E-Mail-Adresse an — `+
+      `ein Passwort brauchst du nicht.\n\n`+
+      `Als Erstes: Leg dein Fahrzeug an. Damit schaltest du QR-Code, Logbuch und `+
+      `Events frei — und bekommst ${POINTS.vehicle_added} Punkte.`,
+      "🎉");
+  }
+
+  say(`<div style="background:#22c55e0d;border:1px solid #22c55e33;border-radius:7px;padding:10px">
+    <div style="color:var(--green);font-weight:700;margin-bottom:4px">✓ ${name} angelegt · ${nr}</div>
+    <div style="color:#888;font-size:10px;line-height:1.6">
+      Login: <strong style="color:#aaa">qar.gallery/pcn</strong> mit <strong style="color:#aaa">${mail}</strong><br>
+      ${welcome?"Willkommensnachricht wurde gesendet.":"Ohne Willkommensnachricht angelegt."}
+    </div>
+  </div>`);
+
+  ["inv-name","inv-mail"].forEach(id=>{const e=document.getElementById(id); if(e) e.value="";});
+  await loadAll();
 }
 
 // ── Handlungsbedarf eines Mitglieds ermitteln (zentrale Logik) ──
