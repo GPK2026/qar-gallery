@@ -1021,6 +1021,14 @@
   // ── Admin-Thread: deterministische UUID pro Mitglied ─────────────────────────
   // threads.id ist ein UUID-Feld — ein Präfix wie "admin-xyz" wird von der DB
   // abgelehnt. Diese Funktion erzeugt eine gültige, stabile UUID je User.
+  // ── Supabase-Direktzugriff (für Stellen ohne Storage-Layer) ─────────────────
+  const sbUrl = () => (window.PCN_CONFIG || {}).supabaseUrl || "";
+  const sbKey = () => (window.PCN_CONFIG || {}).supabaseKey || "";
+  const sbHead = () => ({
+    "apikey": sbKey(),
+    "Authorization": "Bearer " + sbKey(),
+    "Content-Type": "application/json"
+  });
   const ADMIN_UUID = "00000000-0000-0000-0000-000000000000";
   const adminThreadId = userId => {
     // Nur Hex-Zeichen behalten — Aliase wie "u1" würden sonst ungültige UUIDs erzeugen
@@ -2115,7 +2123,7 @@
       const already = JSON.parse(localStorage.getItem(readKey) || "[]");
       if (!already.includes(id)) {
         localStorage.setItem(readKey, JSON.stringify([...already, id]));
-        toast_("✓ Gelesen · +10 Punkte 🏆");
+        toast_(`✓ Gelesen · +${POINTS.news_read} Punkte 🏆`);
       } else {
         toast_("✓ Als gelesen markiert");
       }
@@ -2213,13 +2221,9 @@
         const ex = await DB.threads.list(ownerId);
         const hasThread = ex.data?.some(t => t.id === threadId);
         if (!hasThread) {
-          await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/threads", {
+          await fetch(`${sbUrl()}/rest/v1/threads`, {
             method: "POST",
-            headers: {
-              "apikey": "sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED",
-              "Authorization": "Bearer sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED",
-              "Content-Type": "application/json"
-            },
+            headers: sbHead(),
             body: JSON.stringify({
               id: threadId,
               participants: [ownerId, ADMIN_UUID],
@@ -2230,13 +2234,9 @@
           });
         }
         // Include scan requester ID in payload so owner can confirm
-        await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/messages", {
+        await fetch(`${sbUrl()}/rest/v1/messages`, {
           method: "POST",
-          headers: {
-            "apikey": "sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED",
-            "Authorization": "Bearer sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED",
-            "Content-Type": "application/json"
-          },
+          headers: sbHead(),
           body: JSON.stringify({
             thread_id: threadId,
             from_id: "00000000-0000-0000-0000-000000000000",
@@ -2269,31 +2269,37 @@
       }
       confirmed.push(key);
       localStorage.setItem("pcn_scan_confirmed", JSON.stringify(confirmed));
-      // Send confirmation message to scanner
-      const threadId = adminThreadId(scannerId);
-      try {
-        await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/messages", {
-          method: "POST",
-          headers: {
-            "apikey": "sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED",
-            "Authorization": "Bearer sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            thread_id: threadId,
-            from_id: "00000000-0000-0000-0000-000000000000",
-            text: `✅ Dein QR-Scan wurde bestätigt! Du erhältst +10 Punkte für das Scannen des Fahrzeugs. 🏎️`,
-            is_system: true,
-            payload: JSON.stringify({
-              type: "scan_confirmed",
-              vehicleId,
-              scannerId
-            }),
-            created_at: new Date().toISOString()
-          })
-        });
-      } catch (e) {}
-      toast_("✓ Scan bestätigt — Nutzer erhält +10 Punkte");
+      // Bestätigung an den Scanner — Demo-Modus schreibt nicht in die echte DB,
+      // Zugangsdaten kommen aus der Config statt hardcoded im Quelltext.
+      if (!isDemo) {
+        const threadId = adminThreadId(scannerId);
+        const cfg = window.PCN_CONFIG || {};
+        try {
+          await fetch(`${cfg.supabaseUrl}/rest/v1/messages`, {
+            method: "POST",
+            headers: {
+              "apikey": cfg.supabaseKey,
+              "Authorization": "Bearer " + cfg.supabaseKey,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              thread_id: threadId,
+              from_id: ADMIN_UUID,
+              text: `✅ Dein QR-Scan wurde bestätigt! Du erhältst +${POINTS.qr_scan} Punkte. 🏎️`,
+              is_system: true,
+              payload: JSON.stringify({
+                type: "scan_confirmed",
+                vehicleId,
+                scannerId
+              }),
+              created_at: new Date().toISOString()
+            })
+          });
+        } catch (e) {
+          console.warn("Scan-Bestätigung nicht zugestellt:", e);
+        }
+      }
+      toast_(`✓ Scan bestätigt — Nutzer erhält +${POINTS.qr_scan} Punkte`);
     };
 
     // Prüft ob eine Fahrzeugakte vollständig gepflegt ist
@@ -4060,10 +4066,10 @@ Regeln:
         if (DB) {
           // Fetch news from Supabase (session only — not persisted)
           try {
-            const newsResp = await fetch("https://xsyuhfleesstrchcwspg.supabase.co/rest/v1/news?select=*&order=created_at.desc&limit=20", {
+            const newsResp = await fetch(`${sbUrl()}/rest/v1/news?select=*&order=created_at.desc&limit=20`, {
               headers: {
-                "apikey": "sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED",
-                "Authorization": "Bearer sb_publishable_xmmKWwXaQliEBAOIFPM8ig_srQP3zED"
+                "apikey": sbKey(),
+                "Authorization": "Bearer " + sbKey()
               }
             });
             if (newsResp.ok) {
@@ -11753,7 +11759,7 @@ Regeln:
           color: C.muted,
           lineHeight: 1.6
         }
-      }, "Du hast ", pending.length, " Fahrzeug", pending.length > 1 ? "e" : "", " gescannt. Sobald der Besitzer bestätigt, erhältst du +10 Punkte je Scan. Die Bestätigung erfolgt automatisch über den Admin-Chat des Besitzers."));
+      }, "Du hast ", pending.length, " Fahrzeug", pending.length > 1 ? "e" : "", " gescannt. Sobald der Besitzer bestätigt, erhältst du +", POINTS.qr_scan.toLocaleString("de-DE"), " Punkte je Scan. Die Bestätigung erfolgt automatisch über den Admin-Chat des Besitzers."));
     })(), /*#__PURE__*/_react.default.createElement("div", {
       style: {
         background: C.card,
