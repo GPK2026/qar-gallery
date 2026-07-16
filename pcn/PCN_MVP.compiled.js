@@ -1946,7 +1946,7 @@
           justifyContent: "center",
           gap: 6
         }
-      }, "✅ Scan bestätigen — ", scanPayload.scannerName || "Nutzer", " erhält +150 Punkte"), /*#__PURE__*/_react.default.createElement("div", {
+      }, "✅ Scan bestätigen — ", scanPayload.scannerName || "Nutzer", " erhält +", POINTS.qr_scan, " Punkte"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
           fontSize: 11,
           color: mine ? "rgba(255,255,255,.55)" : C.muted,
@@ -2293,7 +2293,9 @@
     const isDemo = me?.id === "a0000000-0000-0000-0000-000000000001" || me?.id === "u2";
     const myVehicles = Object.values(vehicles).filter(v => v.owner === me?.email || v.userId === me?.id || isDemo && v.id === "V001");
     // In demo mode show all demo vehicles as "Neueste Fahrzeuge"
-    const displayVehicles = isDemo ? Object.values(vehicles).filter(v => ["V001", "V002", "V003", "V004"].includes(v.id)) : myVehicles;
+    // "Neueste Mitglieder-Fahrzeuge" auf der Startseite — fremde Fahrzeuge,
+    // im Demo die festen Beispiele, sonst die zuletzt angelegten aus dem Club.
+    const displayVehicles = isDemo ? Object.values(vehicles).filter(v => ["V001", "V002", "V003", "V004"].includes(v.id)) : Object.values(vehicles).filter(v => v.userId !== me?.id && v.owner !== me?.id && v.owner !== me?.email).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     const myReminders = reminders.filter(r => !r.done).sort((a, b) => new Date(a.date) - new Date(b.date));
     const myParticipations = Object.values(participants).flat().filter(p => p.userId === me?.id);
     const myThreads = Object.values(threads).filter(t => (t.participants || []).includes(me?.id) && !deletedThreadIds.includes(t.id));
@@ -2351,7 +2353,7 @@
       if (!DB) return;
       // Create a pending scan request in threads
       const threadId = adminThreadId(ownerId);
-      const reqText = `🔍 QR-Scan-Bestätigung: ${me.name || "Ein Mitglied"} hat deinen ${vehicle.hersteller || ""} ${vehicle.modell || ""} (${vehicle.qarId || vehicle.qar_id || ""}) gescannt. Bitte bestätige den Scan — der Nutzer erhält dann 10 Punkte.`;
+      const reqText = `🔍 QR-Scan-Bestätigung: ${me.name || "Ein Mitglied"} hat deinen ${vehicle.hersteller || ""} ${vehicle.modell || ""} (${vehicle.qarId || vehicle.qar_id || ""}) gescannt. Bitte bestätige den Scan — der Nutzer erhält dann ${POINTS.qr_scan} Punkte.`;
       // Send via DB
       try {
         const ex = await DB.threads.list(ownerId);
@@ -2769,8 +2771,13 @@
       if (!user) return;
       const DB = window.PCN_DB;
       if (!DB) return;
-      const [vRes, remRes, evRes, thRes] = await Promise.all([DB.vehicles.list(user.id || user.email), DB.reminders.list(user.id), DB.events.list(), DB.threads.list(user.id)]);
+      const [vRes, clubRes, remRes, evRes, thRes] = await Promise.all([DB.vehicles.list(user.id || user.email), DB.vehicles.listClub ? DB.vehicles.listClub(200) : Promise.resolve({
+        data: []
+      }), DB.reminders.list(user.id), DB.events.list(), DB.threads.list(user.id)]);
+      // Eigene Fahrzeuge zuletzt einfügen — sie haben die vollständigen Daten,
+      // die Club-Liste liefert bewusst nur die unkritischen Felder.
       const vMap = {};
+      (clubRes.data || []).forEach(v => vMap[v.id] = v);
       (vRes.data || []).forEach(v => vMap[v.id] = v);
       setVehicles(vMap);
       const lMap = {};
@@ -5876,7 +5883,7 @@ Regeln:
           color: "rgba(255,255,255,.5)",
           fontWeight: 600
         }
-      }, "+50 Pkt"))), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("div", {
+      }, "+", POINTS.message, " Pkt"))), (!me || v.owner !== me.email && v.userId !== me.id) && /*#__PURE__*/_react.default.createElement("div", {
         style: {
           background: "rgba(255,255,255,.05)",
           border: "1px solid rgba(255,255,255,.1)",
@@ -6984,7 +6991,7 @@ Regeln:
           justifyContent: "center",
           gap: 6
         }
-      }, alreadyR ? "✓ Gelesen" : "✓ Gelesen · +10 🏆");
+      }, alreadyR ? "✓ Gelesen" : `✓ Gelesen · +${POINTS.news_read} 🏆`);
     })(), /*#__PURE__*/_react.default.createElement("button", {
       onClick: () => setNewsState(p => ({
         ...p,
@@ -9759,7 +9766,7 @@ Regeln:
         color: C.gold,
         fontWeight: 700
       }
-    }, "+500 Pkt"))) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
+    }, "+", POINTS.vehicle_added, " Pkt"))) : myVehicles.map(v => /*#__PURE__*/_react.default.createElement("div", {
       key: v.id,
       style: {
         background: C.card,
@@ -9852,7 +9859,7 @@ Regeln:
         fontSize: 20,
         color: C.muted
       }
-    }, "›"))))), isDemo && /*#__PURE__*/_react.default.createElement("div", {
+    }, "›"))))), displayVehicles.filter(v => !myVehicles.find(m => m.id === v.id)).length > 0 && /*#__PURE__*/_react.default.createElement("div", {
       style: {
         marginBottom: 20
       }
