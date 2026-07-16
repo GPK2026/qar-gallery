@@ -189,7 +189,7 @@ const POINTS={qr_scan:150,view_akte:25,vehicle_added:500,vehicle_complete:750,
   member_year:500,beitrag_paid:300,birthday:200,birthday_round:911};
 const TIERS=[{n:"Bronze",p:1000},{n:"Silber",p:5000},{n:"Gold",p:12000},{n:"Platin",p:25000},{n:"Legend",p:50000}];
 const ADMIN_UUID="00000000-0000-0000-0000-000000000000";
-let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[],adminThreads:[]};
+let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[],adminThreads:[],news:[]};
 let currentTab="dashboard";
 
 function doLogin(){
@@ -228,13 +228,16 @@ async function api(path,opts={}){
 async function loadAll(){
   toast("Lädt…");
   try{
-    const [m,e,v,p,msg]=await Promise.all([
+    const [m,e,v,p,msg,nw]=await Promise.all([
       api("users?select=*&order=created_at.desc&limit=200"),
       api("events?select=*&order=date.asc&limit=100"),
       api("vehicles?select=*&order=created_at.desc&limit=200"),
       api("participants?select=*&order=registered_at.desc&limit=500"),
       api("messages?select=*&order=created_at.desc&limit=200").catch(()=>({data:[]})),
+      api("news?select=*&order=pinned.desc,created_at.desc&limit=50").catch(()=>({data:[]})),
     ]);
+    // news ist optional — fehlt die Tabelle, bleibt der Feed leer statt zu crashen
+    DB.news = (nw && Array.isArray(nw.data)) ? nw.data : [];
     if(m.data&&Array.isArray(m.data)) DB.members=m.data;
     if(e.data&&Array.isArray(e.data)) DB.events=e.data;
     if(v.data&&Array.isArray(v.data)) DB.vehicles=v.data;
@@ -1827,52 +1830,211 @@ async function submitClubMsg(){
   }catch(e){ toast("Fehler: "+e.message,"err"); }
 }
 
-function rContent(el){
-  el.innerHTML=`<div class="page-title">📰 Content</div>
-  <div class="card" style="margin-bottom:12px">
-    <div class="sec-title">📬 Newsletter</div>
-    <div class="field"><label class="lbl">Betreff</label><input id="nl-sub" value="Newsletter ${new Date().toLocaleString("de-DE",{month:"long",year:"numeric"})}"></div>
-    <div class="field"><label class="lbl">Inhalt</label><textarea id="nl-body" style="min-height:180px" placeholder="Liebe Mitglieder..."></textarea></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-      <span style="font-size:14px;color:var(--muted)">📨 ${DB.members.filter(m=>m.role==="member").length} Empfänger</span>
-      <button class="btn" onclick="publishNL()">📬 Veröffentlichen</button>
-    </div>
-  </div>
-  <div class="card" style="margin-bottom:12px">
-    <div class="sec-title">📰 News-Artikel</div>
-    <div class="g2" style="margin-bottom:10px">
-      <div class="field"><label class="lbl">Typ</label><select id="nf-type"><option value="news">📰 Neuigkeit</option><option value="tip">💡 Tipp</option><option value="welcome">🎉 Ankündigung</option></select></div>
-      <div style="display:flex;align-items:center;gap:8px;padding-top:16px"><input type="checkbox" id="nf-pin" style="width:16px;height:16px;accent-color:var(--red)"><label for="nf-pin" style="font-size:15px;color:var(--white);cursor:pointer">Als NEU markieren</label></div>
-    </div>
-    <div class="field"><label class="lbl">Titel *</label><input id="nf-title" placeholder="z.B. Neue Kooperation mit Porsche Zentrum Koblenz"></div>
-    <div class="field"><label class="lbl">Text</label><textarea id="nf-body" style="min-height:80px"></textarea></div>
-    <button class="btn" onclick="publishNews()">📰 Veröffentlichen</button>
-  </div>
-  <div class="card">
-    <div class="sec-title">📋 Templates</div>
-    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
-      <span style="font-size:21px;flex-shrink:0">🏁</span>
-      <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">Clubabend-Erinnerung</div></div>
-      <button class="btn btn-sm btn-ghost" onclick="useTpl(0)">Verwenden</button>
-    </div>
-    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
-      <span style="font-size:21px;flex-shrink:0">🚗</span>
-      <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">TrackDay-Anmeldung</div></div>
-      <button class="btn btn-sm btn-ghost" onclick="useTpl(1)">Verwenden</button>
-    </div>
-    <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
-      <span style="font-size:21px;flex-shrink:0">📢</span>
-      <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">Allgemeine Ankündigung</div></div>
-      <button class="btn btn-sm btn-ghost" onclick="useTpl(2)">Verwenden</button>
-    </div>
-  </div>`;
+// ── Vorlagen: Platzhalter in [KLAMMERN] werden beim Öffnen abgefragt ──
+const TEMPLATES = [
+  { icon:"🍺", t:"Clubabend-Erinnerung", cat:"Termin",
+    sub:"Clubabend am [WOCHENTAG]",
+    b:"Liebe Mitglieder,\n\nnächsten [WOCHENTAG] findet unser monatlicher Clubabend im Kesselchen statt — ab [UHRZEIT] Uhr.\n\nWir freuen uns auf euch!\n\nSportliche Grüße\nEuer PCN-Vorstand" },
+  { icon:"🏁", t:"TrackDay-Anmeldung", cat:"Event",
+    sub:"TrackDay [DATUM] — Anmeldung offen",
+    b:"Liebe Motorsport-Freunde,\n\ndie Anmeldung für den TrackDay am [DATUM] auf der [STRECKE] ist ab sofort offen.\n\n• Plätze: [ANZAHL]\n• Startgebühr: [PREIS]\n• Anmeldeschluss: [FRIST]\n\nAnmeldung direkt in der App unter Events.\n\nSportliche Grüße\nEuer PCN-Vorstand" },
+  { icon:"🛣️", t:"Ausfahrt ankündigen", cat:"Event",
+    sub:"Ausfahrt am [DATUM]",
+    b:"Liebe Mitglieder,\n\nam [DATUM] geht es gemeinsam auf Tour: [ROUTE].\n\n• Treffpunkt: [TREFFPUNKT]\n• Abfahrt: [UHRZEIT] Uhr\n• Dauer: ca. [DAUER]\n\nAnmeldung in der App — wir freuen uns auf zahlreiche Teilnahme!\n\nSportliche Grüße\nEuer PCN-Vorstand" },
+  { icon:"💳", t:"Beitrag erinnern", cat:"Verwaltung",
+    sub:"Mitgliedsbeitrag [JAHR]",
+    b:"Liebe Mitglieder,\n\nder Jahresbeitrag [JAHR] ist bis zum 31.03. fällig.\n\n• Betrag: [BETRAG]\n• IBAN: [IBAN]\n• Verwendungszweck: Mitgliedsnummer\n\nWer bereits überwiesen hat, kann diese Nachricht ignorieren. Den Status seht ihr in der App unter Profil.\n\nDanke und sportliche Grüße\nEuer PCN-Vorstand" },
+  { icon:"📋", t:"Einladung Mitgliederversammlung", cat:"Verwaltung",
+    sub:"Einladung zur Mitgliederversammlung am [DATUM]",
+    b:"Liebe Mitglieder,\n\nhiermit laden wir euch herzlich zur ordentlichen Mitgliederversammlung ein.\n\n• Datum: [DATUM]\n• Uhrzeit: [UHRZEIT] Uhr\n• Ort: [ORT]\n\nTagesordnung:\n1. Begrüßung\n2. Bericht des Vorstands\n3. Kassenbericht\n4. [WEITERER PUNKT]\n5. Verschiedenes\n\nAnträge bitte bis [FRIST] einreichen.\n\nSportliche Grüße\nEuer PCN-Vorstand" },
+  { icon:"🎉", t:"Neues Mitglied begrüßen", cat:"Community",
+    sub:"Willkommen im PCN!",
+    b:"Liebe Mitglieder,\n\nwir freuen uns, [NAME] als neues Mitglied im Porsche Club Nürburgring begrüßen zu dürfen!\n\n[NAME] fährt einen [FAHRZEUG] und ist [BESONDERHEIT].\n\nHerzlich willkommen — wir freuen uns auf gemeinsame Kilometer!\n\nSportliche Grüße\nEuer PCN-Vorstand" },
+  { icon:"💡", t:"Tipp des Monats", cat:"Community",
+    sub:"[THEMA]",
+    b:"Liebe Mitglieder,\n\nunser Tipp diesen Monat: [THEMA]\n\n[INHALT]\n\nHabt ihr eigene Erfahrungen dazu? Schreibt sie gerne in den Club-Kanal.\n\nSportliche Grüße\nEuer PCN-Vorstand" },
+  { icon:"📣", t:"Freie Ankündigung", cat:"Sonstiges",
+    sub:"[BETREFF]",
+    b:"Liebe Mitglieder,\n\n[INHALT]\n\nSportliche Grüße\nEuer PCN-Vorstand" },
+];
+
+let tplOpen = null;
+
+function toggleTpl(i){
+  tplOpen = tplOpen===i ? null : i;
+  renderTab("content");
+  if(tplOpen!==null){
+    setTimeout(function(){
+      const el = document.getElementById("tpl-body-"+i);
+      if(el){ el.focus(); el.setSelectionRange(0,0); }
+    }, 80);
+  }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// VOLLSTÄNDIGER SELBSTTEST
-// Testet jede Operation die die App braucht — mit echten Schreibvorgängen,
-// die anschließend wieder aufgeräumt werden.
-// ═══════════════════════════════════════════════════════════════════
+// Zählt offene Platzhalter im Text
+function countPlaceholders(txt){
+  const m = String(txt||"").match(/\[[A-ZÄÖÜ\s]+\]/g);
+  return m ? [...new Set(m)] : [];
+}
+
+function rContent(el){
+  const cats = [...new Set(TEMPLATES.map(t=>t.cat))];
+  const newsCount = (DB.news||[]).length;
+
+  let out = '<div class="page-title">📰 Content</div>'
+    + '<div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px">'
+    + 'Vorlage antippen, Platzhalter ersetzen, veröffentlichen. Erscheint sofort im App-Feed aller Mitglieder.'
+    + '</div>';
+
+  // Vorlagen nach Kategorie
+  cats.forEach(function(cat){
+    out += '<div class="lbl" style="margin:16px 0 8px">' + cat + '</div>';
+    TEMPLATES.forEach(function(tpl, i){
+      if(tpl.cat !== cat) return;
+      const open = tplOpen === i;
+      out += '<div class="card" style="margin-bottom:8px;padding:0;overflow:hidden;'
+        + 'border-color:' + (open ? "var(--red)" : "var(--border)") + '">'
+
+        // Kopfzeile
+        + '<div onclick="toggleTpl(' + i + ')" style="display:flex;gap:11px;align-items:center;padding:13px 14px;cursor:pointer">'
+        + '<span style="font-size:19px;flex-shrink:0">' + tpl.icon + '</span>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:14px;font-weight:700;color:var(--txt)">' + tpl.t + '</div>'
+        + (open ? '' : '<div style="font-size:11px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+            + escapeHtml(tpl.b.split("\n")[2] || tpl.b.split("\n")[0]) + '</div>')
+        + '</div>'
+        + '<span style="font-size:14px;color:var(--muted);transform:rotate(' + (open?"90":"0") + 'deg);transition:transform .2s;flex-shrink:0">›</span>'
+        + '</div>';
+
+      // Aufgeklappt: direkt bearbeitbar
+      if(open){
+        const ph = countPlaceholders(tpl.sub + " " + tpl.b);
+        out += '<div style="border-top:1px solid var(--border);background:#0a0a0a;padding:14px">';
+
+        if(ph.length){
+          out += '<div style="background:#f59e0b0d;border:1px solid #f59e0b33;border-radius:7px;padding:9px 11px;margin-bottom:12px">'
+            + '<div style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:5px">'
+            + ph.length + ' Platzhalter ersetzen:</div>'
+            + '<div style="display:flex;gap:5px;flex-wrap:wrap">'
+            + ph.map(function(p){
+                return '<span style="background:#f59e0b18;color:var(--amber);border-radius:4px;padding:2px 7px;font-size:10px;font-family:ui-monospace,monospace">' + p + '</span>';
+              }).join("")
+            + '</div></div>';
+        }
+
+        out += '<div class="field"><label class="lbl">Betreff</label>'
+          + '<input id="tpl-sub-' + i + '" value="' + escapeHtml(tpl.sub) + '" oninput="tplCheck(' + i + ')"></div>'
+          + '<div class="field"><label class="lbl">Inhalt</label>'
+          + '<textarea id="tpl-body-' + i + '" style="min-height:220px;line-height:1.6" oninput="tplCheck(' + i + ')">'
+          + escapeHtml(tpl.b) + '</textarea></div>'
+
+          + '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">'
+          + '<label style="display:flex;gap:7px;align-items:center;font-size:12px;color:#aaa;cursor:pointer">'
+          + '<input type="checkbox" id="tpl-pin-' + i + '" style="width:auto;min-height:auto;margin:0"> Oben anpinnen</label>'
+          + '<span id="tpl-warn-' + i + '" style="font-size:11px;color:var(--amber);margin-left:auto"></span>'
+          + '</div>'
+
+          + '<div style="display:flex;gap:8px">'
+          + '<button class="btn btn-ghost" style="flex:1" onclick="toggleTpl(' + i + ')">Abbrechen</button>'
+          + '<button class="btn" style="flex:2" onclick="publishTpl(' + i + ')">📤 Veröffentlichen</button>'
+          + '</div></div>';
+      }
+      out += '</div>';
+    });
+  });
+
+  // Veröffentlichte Beiträge
+  out += '<div class="lbl" style="margin:20px 0 8px">Veröffentlicht' + (newsCount ? ' (' + newsCount + ')' : '') + '</div>'
+    + '<div class="card">' + newsListHTML() + '</div>';
+
+  el.innerHTML = out;
+}
+
+// Live-Warnung bei offenen Platzhaltern
+function tplCheck(i){
+  const s = document.getElementById("tpl-sub-"+i);
+  const b = document.getElementById("tpl-body-"+i);
+  const w = document.getElementById("tpl-warn-"+i);
+  if(!w) return;
+  const ph = countPlaceholders((s?s.value:"") + " " + (b?b.value:""));
+  w.textContent = ph.length ? "⚠ " + ph.length + " Platzhalter offen" : "✓ bereit";
+  w.style.color = ph.length ? "var(--amber)" : "var(--green)";
+}
+
+async function publishTpl(i){
+  const tpl = TEMPLATES[i];
+  const sub = (document.getElementById("tpl-sub-"+i)||{}).value || "";
+  const body = (document.getElementById("tpl-body-"+i)||{}).value || "";
+  const pinned = (document.getElementById("tpl-pin-"+i)||{}).checked || false;
+
+  if(!sub.trim() || !body.trim()){ toast("Betreff und Inhalt erforderlich","err"); return; }
+
+  const ph = countPlaceholders(sub + " " + body);
+  if(ph.length){
+    toast("Noch " + ph.length + " Platzhalter offen: " + ph.slice(0,2).join(", "), "err");
+    return;
+  }
+
+  const reach = DB.members.filter(function(m){ return m.role==="member" && !m.paused; }).length;
+  confirmPublish({
+    title: "Veröffentlichen?",
+    reach: reach,
+    preview: sub,
+    onConfirm: async function(){
+      const res = await api("news",{method:"POST",body:JSON.stringify({
+        title: sub.trim(), body: body.trim(),
+        type: tpl.cat==="Event" ? "event" : tpl.cat==="Verwaltung" ? "newsletter" : "news",
+        icon: tpl.icon, pinned: pinned,
+        created_at: new Date().toISOString(), author: "PCN Vorstand",
+      })});
+      if(res.error){
+        const s = JSON.stringify(res.error);
+        toast(/does not exist|PGRST205/.test(s)
+          ? "Tabelle 'news' fehlt — add_news_table.sql ausführen"
+          : "Fehler: " + s.slice(0,60), "err");
+        return;
+      }
+      tplOpen = null;
+      toast("✓ Veröffentlicht — erscheint im App-Feed");
+      await loadAll();
+    }
+  });
+}
+
+// Liste der veröffentlichten Beiträge
+function newsListHTML(){
+  const news = DB.news || [];
+  if(!news.length) return '<div style="color:#555;font-size:13px;padding:6px 0">Noch nichts veröffentlicht.</div>';
+  return news.slice(0,15).map(function(n){
+    return '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #131313">'
+      + '<span style="font-size:16px;flex-shrink:0;width:22px;text-align:center">' + (n.icon||"📰") + '</span>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:600;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+      + escapeHtml(n.title||"") + (n.pinned ? ' <span style="color:var(--gold);font-size:10px">📌</span>' : '') + '</div>'
+      + '<div style="font-size:11px;color:#555">' + fmtTime(n.created_at) + ' · ' + (n.author||"Vorstand") + '</div>'
+      + '</div>'
+      + '<button onclick="delNews(\'' + n.id + '\',\'' + String(n.title||"").replace(/'/g,"\\'") + '\')" '
+      + 'style="background:none;border:none;color:#444;font-size:14px;cursor:pointer;flex-shrink:0;padding:2px 4px">🗑</button>'
+      + '</div>';
+  }).join("");
+}
+
+async function delNews(id, title){
+  confirmDanger({
+    title: "Beitrag löschen?",
+    body: '"' + escapeHtml(title) + '" wird aus dem App-Feed entfernt.',
+    warn: "Mitglieder, die ihn bereits gelesen haben, behalten ihre Punkte.",
+    confirmLabel: "Löschen",
+    onConfirm: async function(){
+      const r = await api("news?id=eq."+id,{method:"DELETE"});
+      if(r.error){ toast("Fehler: "+JSON.stringify(r.error).slice(0,50),"err"); return; }
+      toast("Beitrag gelöscht");
+      await loadAll();
+    }
+  });
+}
+
+
 async function runFullDiagnostics(){
   const out=document.getElementById("full-diag");
   if(!out) return;
@@ -2463,44 +2625,8 @@ async function delEvent(id,name){
   });
 }
 
-const TEMPLATES = [
-  {t:"Clubabend-Erinnerung", b:"Liebe Mitglieder,\n\nnächsten [WOCHENTAG] findet unser monatlicher Clubabend im Kesselchen statt — ab [UHRZEIT] Uhr.\n\nBis bald,\nEuer PCN-Vorstand"},
-  {t:"TrackDay-Anmeldung", b:"Liebe Motorsport-Freunde,\n\ndie Anmeldung für den [DATUM] TrackDay auf der [STRECKE] ist offen!\n\nMax. [ANZAHL] Plätze · [PREIS]\n\nJetzt in der App anmelden!"},
-  {t:"Allgemeine Ankündigung", b:"Liebe Mitglieder,\n\n[INHALT]\n\nMit sportlichen Grüßen,\nEuer PCN-Vorstand"},
-];
-function useTpl(idx){
-  const tpl=TEMPLATES[idx]; if(!tpl) return;
-  const s=document.getElementById("nl-sub"),b=document.getElementById("nl-body");
-  if(s)s.value=tpl.t; if(b)b.value=tpl.b;
-  toast("Template eingefügt — bitte [PLATZHALTER] ersetzen");
-}
-async function publishNL(){
-  const sub=document.getElementById("nl-sub")?.value,body=document.getElementById("nl-body")?.value;
-  if(!sub||!body){toast("Betreff + Inhalt erforderlich","err");return;}
-  if(/\[[A-ZÄÖÜ]+\]/.test(sub+body)){
-    toast("Bitte alle [PLATZHALTER] ersetzen","err"); return;
-  }
-  const reach=DB.members.filter(m=>m.role==="member").length;
-  confirmPublish({
-    title:"Newsletter veröffentlichen?",
-    reach,
-    preview:sub,
-    onConfirm: async()=>{
-      const res = await api("news",{method:"POST",body:JSON.stringify({title:sub,body,type:"newsletter",icon:"📬",pinned:true,created_at:new Date().toISOString(),author:"PCN Vorstand"})});
-      if(res.error){
-        const s = JSON.stringify(res.error);
-        toast(/relation.*does not exist|PGRST205/.test(s)
-          ? "Tabelle 'news' fehlt — add_news_table.sql ausführen"
-          : "Fehler: "+s.slice(0,60), "err");
-        return;
-      }
-      toast("✓ Newsletter veröffentlicht · erscheint im App-Feed");
-      ["nl-sub","nl-body"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
-    }
-  });
-}
 
-// Bestätigung vor Veröffentlichung — zeigt Reichweite
+
 function confirmPublish({title, reach, preview, onConfirm}){
   const wrap=document.createElement("div");
   wrap.id="pub-modal";
@@ -2529,29 +2655,7 @@ function confirmPublish({title, reach, preview, onConfirm}){
 }
 function closePub(){ document.getElementById("pub-modal")?.remove(); }
 
-async function publishNews(){
-  const title=document.getElementById("nf-title")?.value,body=document.getElementById("nf-body")?.value;
-  const type=document.getElementById("nf-type")?.value||"news",pinned=document.getElementById("nf-pin")?.checked;
-  if(!title){toast("Titel erforderlich","err");return;}
-  const reach=DB.members.filter(m=>m.role==="member").length;
-  confirmPublish({
-    title:"Artikel veröffentlichen?",
-    reach,
-    preview:title,
-    onConfirm: async()=>{
-      const res = await api("news",{method:"POST",body:JSON.stringify({title,body,type,pinned,icon:type==="news"?"📰":type==="tip"?"💡":"🎉",created_at:new Date().toISOString(),author:"PCN Vorstand"})});
-      if(res.error){
-        const s = JSON.stringify(res.error);
-        toast(/relation.*does not exist|PGRST205/.test(s)
-          ? "Tabelle 'news' fehlt — add_news_table.sql ausführen"
-          : "Fehler: "+s.slice(0,60), "err");
-        return;
-      }
-      toast("✓ Artikel veröffentlicht");
-      ["nf-title","nf-body"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
-    }
-  });
-}
+
 function exportCSV(){
   const a=DB.members.filter(m=>m.role==="member");
   const rows=[["Name","E-Mail","Nr.","Status","Betrag"],...a.map(m=>[m.name||"",m.email||"",m.member_nr||"",m.beitrag_bezahlt?"Bezahlt":"Offen",EUR+" EUR"])];
