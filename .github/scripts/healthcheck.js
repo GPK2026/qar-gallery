@@ -31,6 +31,7 @@ function bad(label, err) {
   else if (s.includes("42501") || /policy/i.test(s)) hint = "RLS-Policy blockiert";
   else if (s.includes("42710")) hint = "Policy existiert bereits";
   else if (s.includes("22P02")) hint = "ungültiges Format (UUID?)";
+  else if (s.includes("23502")) hint = "Pflichtfeld fehlt";
   else if (s.includes("23503")) hint = "Fremdschlüssel-Verletzung";
   else if (s.includes("23505")) hint = "Datensatz existiert bereits";
   else if (/fetch failed|ENOTFOUND|ECONNREFUSED|network|timeout/i.test(s)) hint = "Datenbank nicht erreichbar (Netzwerk/DNS)";
@@ -146,7 +147,7 @@ async function q(path, opts = {}) {
         body: JSON.stringify({
           vehicle_id: testId, text: "Healthcheck", icon: "🔧",
           expires_at: new Date(Date.now() + 60000).toISOString(),
-          created_at: new Date().toISOString(),
+          set_at: new Date().toISOString(),
         }),
       });
       sIns.error ? bad("Live-Status setzen (vehicle_status)", sIns.error) : ok("Live-Status setzen (vehicle_status)");
