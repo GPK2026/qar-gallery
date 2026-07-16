@@ -8,57 +8,66 @@
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     :root{--red:#D5001C;--dark:#080808;--card:#111;--border:#1e1e1e;--muted:#555;--white:#f0f0f0;--green:#22c55e;--amber:#f59e0b;--gold:#C8A96E;--blue:#6b7fff}
-    body{background:var(--dark);color:var(--white);font-family:'Barlow',sans-serif;min-height:100vh;font-size:14px}
+    body{background:var(--dark);color:var(--white);font-family:'Barlow',sans-serif;min-height:100vh;font-size:16px;line-height:1.6}
     #hdr{background:#fff;border-bottom:3px solid var(--red);padding:0 14px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
     .hdr-lb{background:var(--red);padding:3px 8px;border-radius:4px;line-height:1.1}
-    .hdr-lb div:first-child{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:900;color:rgba(255,255,255,.7);letter-spacing:1px}
-    .hdr-lb div:last-child{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:#fff}
-    .hdr-badge{font-size:8px;background:var(--red);color:#fff;padding:1px 5px;border-radius:2px;font-weight:800}
+    .hdr-lb div:first-child{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:900;color:rgba(255,255,255,.7);letter-spacing:1px}
+    .hdr-lb div:last-child{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;color:#fff}
+    .hdr-badge{font-size:11px;background:var(--red);color:#fff;padding:1px 5px;border-radius:2px;font-weight:800}
     #tabbar{display:flex;background:#0a0a0a;border-top:1px solid var(--border);position:fixed;bottom:0;left:0;right:0;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
-    .tbt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 1px;cursor:pointer;font-size:8px;font-weight:700;color:var(--muted);border:none;background:none;gap:2px;position:relative;font-family:'Barlow',sans-serif}
+    .tbt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 2px;cursor:pointer;font-size:11px;min-height:56px;font-weight:700;color:var(--muted);border:none;background:none;gap:2px;position:relative;font-family:'Barlow',sans-serif}
     .tbt span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .tbt span:first-child{font-size:17px}
+    .tbt span:first-child{font-size:18px}
     .tbt.active{color:var(--red)}
-    .tbt-badge{position:absolute;top:3px;right:calc(50% - 14px);background:var(--red);color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;min-width:14px;text-align:center}
+    .tbt-badge{position:absolute;top:3px;right:calc(50% - 14px);background:var(--red);color:#fff;font-size:11px;font-weight:800;padding:1px 4px;border-radius:3px;min-width:14px;text-align:center}
     #sidebar{display:none}
     #layout{display:block}
     #main{padding:14px;padding-bottom:80px}
     @media(min-width:768px){
       #tabbar{display:none}
       #layout{display:flex;min-height:calc(100vh - 52px)}
-      #sidebar{display:block;width:185px;background:#0a0a0a;border-right:1px solid var(--border);padding:10px 0;flex-shrink:0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
-      #main{padding:20px;padding-bottom:20px;flex:1}
-      .nav-sec{font-size:9px;font-weight:800;color:#2a2a2a;letter-spacing:2px;text-transform:uppercase;padding:12px 16px 4px}
-      .nav-item{display:flex;align-items:center;gap:8px;padding:9px 16px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);border-left:2px solid transparent}
-      .nav-item:hover{color:var(--white);background:#111}
-      .nav-item.active{color:var(--white);border-left-color:var(--red);background:#111}
-      .nbadge{background:var(--red);color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:auto}
+      #sidebar{display:block;width:225px;background:#0a0a0a;border-right:1px solid var(--border);padding:14px 0;flex-shrink:0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
+      /* Inhalt zentriert und auf lesbare Breite begrenzt — sonst läuft Text
+         auf breiten Monitoren über die ganze Fläche und wird anstrengend */
+      #main{padding:28px 32px;flex:1;max-width:1100px;margin:0 auto;width:100%}
+      .nav-sec{font-size:12px;font-weight:800;color:#3a3a3a;letter-spacing:2px;text-transform:uppercase;padding:16px 18px 6px}
+      .nav-item{display:flex;align-items:center;gap:10px;padding:12px 18px;cursor:pointer;font-size:15px;font-weight:600;color:var(--muted);border-left:3px solid transparent;transition:background .12s}
+      .nav-item:hover{color:var(--white);background:#141414}
+      .nav-item.active{color:var(--white);border-left-color:var(--red);background:#141414}
+      .nbadge{background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:auto}
+      /* Desktop: mehr Luft in Karten */
+      .card{padding:22px}
+      .page-title{font-size:30px}
     }
-    .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
-    .sec-title{font-size:9px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px}
-    .page-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;margin-bottom:16px}
+    /* Sehr große Bildschirme: noch etwas mehr Platz */
+    @media(min-width:1400px){
+      #main{max-width:1200px;padding:32px 40px}
+    }
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px}
+    .sec-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px}
+    .page-title{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:900;margin-bottom:16px}
     .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
     @media(min-width:600px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
     .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:border-color .15s}
     .stat:hover{border-color:#333}
-    .stat-val{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;line-height:1}
-    .stat-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
-    .stat-sub{font-size:10px;margin-top:3px;color:var(--muted)}
-    .stat-arrow{font-size:9px;color:var(--red);margin-top:3px;font-weight:700}
-    input,select,textarea{background:#1a1a1a;border:1px solid var(--border);border-radius:7px;padding:10px 11px;color:var(--white);font-size:14px;font-family:'Barlow',sans-serif;outline:none;width:100%;-webkit-appearance:none}
+    .stat-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;line-height:1}
+    .stat-lbl{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+    .stat-sub{font-size:12px;margin-top:3px;color:var(--muted)}
+    .stat-arrow{font-size:12px;color:var(--red);margin-top:3px;font-weight:700}
+    input,select,textarea{background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:13px 13px;color:var(--white);font-size:16px;min-height:46px;font-family:'Barlow',sans-serif;outline:none;width:100%;-webkit-appearance:none}
     input:focus,select:focus,textarea:focus{border-color:var(--red)}
-    .lbl{font-size:9px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+    .lbl{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
     .field{margin-bottom:12px}
     .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     @media(max-width:480px){.g2{grid-template-columns:1fr}}
-    .btn{background:var(--red);border:none;border-radius:7px;padding:10px 14px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif}
+    .btn{background:var(--red);border:none;border-radius:8px;padding:13px 18px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;min-height:46px}
     .btn:active{opacity:.8}
-    .btn-sm{padding:5px 10px;font-size:11px;border-radius:5px}
+    .btn-sm{padding:5px 10px;font-size:13px;border-radius:5px}
     .btn-ghost{background:none;border:1px solid var(--border);color:var(--muted)}
     .btn-green{background:#16a34a}
     .btn-amber{background:#d97706}
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .b{display:inline-block;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:800;white-space:nowrap}
+    .b{display:inline-block;padding:2px 7px;border-radius:3px;font-size:12px;font-weight:800;white-space:nowrap}
     .b-green{background:#16a34a22;color:var(--green);border:1px solid #16a34a33}
     .b-red{background:#ef444422;color:#ef4444;border:1px solid #ef444433}
     .b-amber{background:#f59e0b22;color:var(--amber);border:1px solid #f59e0b33}
@@ -70,23 +79,23 @@
     .chart-bar-row{display:flex;gap:4px;align-items:flex-end;height:100px}
     .chart-bar{flex:1;border-radius:4px 4px 0 0;min-width:16px;position:relative;cursor:default}
     .chart-bar:hover .chart-tip{display:block}
-    .chart-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:9px;padding:3px 6px;border-radius:4px;white-space:nowrap;margin-bottom:3px;z-index:10}
+    .chart-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:12px;padding:3px 6px;border-radius:4px;white-space:nowrap;margin-bottom:3px;z-index:10}
     .chart-labels{display:flex;gap:4px}
-    .chart-label{flex:1;text-align:center;font-size:8px;color:var(--muted);margin-top:3px}
+    .chart-label{flex:1;text-align:center;font-size:11px;color:var(--muted);margin-top:3px}
     #login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
     #login-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:340px}
-    #toast{display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#111;border:1px solid var(--green);color:var(--green);padding:8px 16px;border-radius:7px;font-size:13px;font-weight:700;z-index:9999;white-space:nowrap;max-width:90vw}
+    #toast{display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#111;border:1px solid var(--green);color:var(--green);padding:8px 16px;border-radius:7px;font-size:15px;font-weight:700;z-index:9999;white-space:nowrap;max-width:90vw}
     #toast.err{border-color:#ef4444;color:#ef4444}
     @media(min-width:768px){#toast{bottom:24px}}
     .hidden{display:none!important}
     .tgl-wrap{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
-    .tgl{position:relative;width:44px;height:24px;flex-shrink:0}
+    .tgl{position:relative;width:52px;height:30px;flex-shrink:0}
     .tgl input{opacity:0;width:0;height:0;position:absolute}
-    .tgl-slider{position:absolute;inset:0;background:#333;border-radius:12px;transition:.2s}
-    .tgl-slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+    .tgl-slider{position:absolute;inset:0;background:#333;border-radius:15px;transition:.2s;cursor:pointer}
+    .tgl-slider:before{content:"";position:absolute;height:24px;width:24px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
     .tgl input:checked+.tgl-slider{background:var(--green)}
-    .tgl input:checked+.tgl-slider:before{transform:translateX(20px)}
-    .tier{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800}
+    .tgl input:checked+.tgl-slider:before{transform:translateX(22px)}
+    .tier{display:inline-block;padding:2px 7px;border-radius:4px;font-size:12px;font-weight:800}
     .t-bronze{background:#cd7f3222;color:#cd7f32;border:1px solid #cd7f3244}
     .t-silber{background:#aaa2;color:#aaa;border:1px solid #aaa4}
     .t-gold{background:#C8A96E22;color:var(--gold);border:1px solid #C8A96E44}
@@ -101,11 +110,11 @@
 <div id="login-wrap">
   <div id="login-card">
     <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;margin-bottom:18px"><img src="data:image/jpeg;base64,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REBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEQ8FHTVL6qQwUnm/Kk9yDJU1jjJ1FKNuTmeTV56ivxntTc92P8ARfOsp7eBEA58hGTgbyskNwikeGEOY4nADgqMfUV7z5dS1o/NH+i+i2tcczyySHx3Lf3AZyMBR89TJUyGCj3/AJUnIIPEzooHdRRRNdOd2cZwtiio2042nHalPF3uXulpWUzMN3uPFx5rYUBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREHxw2mkd4wo6lc6jm7LKPJc7LHjmpJR1Se010ULP6I7TndyD7cIXMJq4ZNh7BvzzC1TVNqKhksxDGRDOObitmpLqyr7O0kRR73kc/BbTaOnDtsQtyqNQ9fcDzip+fe5b0MLIYwyNuAP2rIAigIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiIMdRIIYXyH5I3KLppH09NJUBof1nygd7T4rZur8xshYfLkdwHcvU1A2Rpa15aHAeSOGRwKD1bYeqpw473SeUSVtrRo55Wy9mqANto3OHMLeQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBalXVOicIom7czuA7ltqOnjqIa108MQl224Hggxkmnm62pPW1LvMY35KyiOvqP4yQQN7m8Vko6V7JDPUO2pXd3yVuKjWpaNkDzIXGSQjG05bKIoCIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIg//Z" style="height:56px;max-width:100%;object-fit:contain"></div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;margin-bottom:4px">Club-Administration</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Nur für autorisierte Vorstandsmitglieder</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:23px;font-weight:900;margin-bottom:4px">Club-Administration</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:20px">Nur für autorisierte Vorstandsmitglieder</div>
     <div class="field"><label class="lbl">Admin-Code</label><input type="password" id="code-inp" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <button class="btn" style="width:100%;padding:13px;font-size:15px" onclick="doLogin()">Anmelden →</button>
-    <div style="font-size:11px;color:#222;text-align:center;margin-top:16px">Powered by <span style="color:var(--gold)">QAR.Gallery</span></div>
+    <button class="btn" style="width:100%;padding:13px;font-size:16px" onclick="doLogin()">Anmelden →</button>
+    <div style="font-size:13px;color:#222;text-align:center;margin-top:16px">Powered by <span style="color:var(--gold)">QAR.Gallery</span></div>
   </div>
 </div>
 
@@ -114,12 +123,12 @@
   <div id="hdr">
     <div style="display:flex;align-items:center;gap:10px">
       <img src="data:image/png;base64,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" style="height:32px;object-fit:contain">
-      <div><div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;color:#111">ADMIN</div><span class="hdr-badge">VORSTAND</span></div>
+      <div><div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:#111">ADMIN</div><span class="hdr-badge">VORSTAND</span></div>
     </div>
     <div style="display:flex;gap:6px">
-      <button class="btn btn-sm btn-ghost" style="border-color:#ddd;color:#555;font-size:11px" onclick="resetDemo()" title="Demo zurücksetzen">🔄 Demo</button>
-      <button class="btn btn-sm btn-ghost" style="border-color:#ddd;color:#555;font-size:11px" onclick="loadAll()">↺</button>
-      <button class="btn btn-sm btn-ghost" style="border-color:#ddd;color:#555;font-size:11px" onclick="doLogout()">✕</button>
+      <button class="btn btn-sm btn-ghost" style="border-color:#ddd;color:#555;font-size:13px" onclick="resetDemo()" title="Demo zurücksetzen">🔄 Demo</button>
+      <button class="btn btn-sm btn-ghost" style="border-color:#ddd;color:#555;font-size:13px" onclick="loadAll()">↺</button>
+      <button class="btn btn-sm btn-ghost" style="border-color:#ddd;color:#555;font-size:13px" onclick="doLogout()">✕</button>
     </div>
   </div>
   <div id="layout">
@@ -434,24 +443,24 @@ function rDashboard(el){
 ${urgent.length?`<div class="card" style="border-color:#ef444455;background:linear-gradient(180deg,#ef44440a,transparent)">
   <div class="sec-title" style="color:#ef4444;display:flex;align-items:center;gap:8px">
     🔔 Dringlichkeiten
-    <span style="background:#ef4444;color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px">${urgent.length}</span>
+    <span style="background:#ef4444;color:#fff;font-size:12px;font-weight:800;padding:2px 7px;border-radius:99px">${urgent.length}</span>
   </div>
   ${urgent.map(u=>`
     <div style="display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #131313">
-      <div style="width:30px;height:30px;border-radius:8px;background:${u.color}22;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${u.icon}</div>
+      <div style="width:30px;height:30px;border-radius:8px;background:${u.color}22;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${u.icon}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:2px">${u.title}</div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.5">${u.detail}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--txt);margin-bottom:2px">${u.title}</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.5">${u.detail}</div>
       </div>
-      ${u.action?`<button onclick="${u.action}" style="flex-shrink:0;background:${u.color};border:none;border-radius:6px;padding:6px 11px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">${u.actionLabel}</button>`:""}
+      ${u.action?`<button onclick="${u.action}" style="flex-shrink:0;background:${u.color};border:none;border-radius:6px;padding:6px 11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">${u.actionLabel}</button>`:""}
     </div>`).join("")}
-  <div style="font-size:10px;color:#444;padding-top:10px">Automatisch erkannt · aktualisiert sich mit jedem Laden</div>
+  <div style="font-size:12px;color:#444;padding-top:10px">Automatisch erkannt · aktualisiert sich mit jedem Laden</div>
 </div>`:`<div class="card" style="border-color:#22c55e33">
   <div style="display:flex;gap:10px;align-items:center;padding:4px 0">
-    <span style="font-size:20px">✓</span>
+    <span style="font-size:21px">✓</span>
     <div>
-      <div style="font-size:13px;font-weight:700;color:var(--green)">Alles im grünen Bereich</div>
-      <div style="font-size:11px;color:var(--muted)">Keine offenen Dringlichkeiten</div>
+      <div style="font-size:15px;font-weight:700;color:var(--green)">Alles im grünen Bereich</div>
+      <div style="font-size:13px;color:var(--muted)">Keine offenen Dringlichkeiten</div>
     </div>
   </div>
 </div>`}
@@ -470,7 +479,7 @@ ${(()=>{
   ];
   return `<div class="card" style="margin-bottom:12px">
     <div class="sec-title">📈 Onboarding-Fortschritt</div>
-    <div style="font-size:11px;color:#555;line-height:1.6;margin-bottom:12px">
+    <div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:12px">
       Der wichtigste Frühindikator: Ohne gepflegte Akten funktioniert weder QR noch Community.
     </div>
     ${rows.map(([ic,lb,n,total])=>{
@@ -478,8 +487,8 @@ ${(()=>{
       const col = p>=70?"var(--green)":p>=40?"var(--amber)":"#ef4444";
       return `<div style="margin-bottom:11px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-size:12px;color:#bbb">${ic} ${lb}</span>
-          <span style="font-size:12px;font-weight:700;color:${col}">${n}/${total} · ${p}%</span>
+          <span style="font-size:14px;color:#bbb">${ic} ${lb}</span>
+          <span style="font-size:14px;font-weight:700;color:${col}">${n}/${total} · ${p}%</span>
         </div>
         <div style="height:5px;background:#1a1a1a;border-radius:99px;overflow:hidden">
           <div style="height:100%;width:${p}%;background:${col};border-radius:99px;transition:width .4s"></div>
@@ -504,9 +513,9 @@ ${(()=>{
 <div class="card">
   <div class="sec-title">📈 Einnahmen 6 Monate</div>
   <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap">
-    <div><div style="font-size:22px;font-weight:900;color:var(--gold);font-family:'Barlow Condensed',sans-serif">€${gesamt.toLocaleString("de-DE")}</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase">Gesamt</div></div>
-    <div><div style="font-size:22px;font-weight:900;color:var(--green);font-family:'Barlow Condensed',sans-serif">€${beitragsE.toLocaleString("de-DE")}</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase">Beiträge</div></div>
-    <div><div style="font-size:22px;font-weight:900;color:var(--blue);font-family:'Barlow Condensed',sans-serif">€${eventE.toLocaleString("de-DE")}</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase">Events</div></div>
+    <div><div style="font-size:23px;font-weight:900;color:var(--gold);font-family:'Barlow Condensed',sans-serif">€${gesamt.toLocaleString("de-DE")}</div><div style="font-size:12px;color:var(--muted);text-transform:uppercase">Gesamt</div></div>
+    <div><div style="font-size:23px;font-weight:900;color:var(--green);font-family:'Barlow Condensed',sans-serif">€${beitragsE.toLocaleString("de-DE")}</div><div style="font-size:12px;color:var(--muted);text-transform:uppercase">Beiträge</div></div>
+    <div><div style="font-size:23px;font-weight:900;color:var(--blue);font-family:'Barlow Condensed',sans-serif">€${eventE.toLocaleString("de-DE")}</div><div style="font-size:12px;color:var(--muted);text-transform:uppercase">Events</div></div>
   </div>
   <div class="chart-bar-row">
     ${months.map(m=>{const h=Math.max(6,Math.round(m.paid/maxP*100));return `<div class="chart-bar" style="height:${h}%;background:linear-gradient(180deg,var(--gold),#a07840)"><div class="chart-tip">€${m.paid}</div></div>`;}).join("")}
@@ -518,34 +527,34 @@ ${pending.length?`<div class="card" style="border-color:#f59e0b44">
   <div class="sec-title" style="color:var(--amber)">🟡 Offene Anmeldungen (${pending.length})</div>
   ${pending.slice(0,5).map(p=>{const mem=DB.members.find(m=>m.id===p.user_id);const ev=DB.events.find(e=>e.id===p.event_id);const veh=DB.vehicles.find(v=>v.id===p.vehicle_id);
     return `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mem?.name||"—"} → ${ev?.name||"—"}</div>
-      <div style="font-size:10px;color:var(--muted)">${veh?.hersteller||""} ${veh?.modell||""}${p.class?" · "+p.class:""}</div></div>
+      <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mem?.name||"—"} → ${ev?.name||"—"}</div>
+      <div style="font-size:12px;color:var(--muted)">${veh?.hersteller||""} ${veh?.modell||""}${p.class?" · "+p.class:""}</div></div>
       <button class="btn btn-sm btn-green" onclick="confirmParticipant('${p.id}','${p.event_id}')">✓</button>
       <button class="btn btn-sm" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433" onclick="cancelParticipant('${p.id}','${p.event_id}')">✕</button>
     </div>`;}).join("")}
-  ${pending.length>5?`<div style="font-size:11px;color:var(--muted);margin-top:6px;cursor:pointer" onclick="showTab('events')">+${pending.length-5} weitere →</div>`:""}
+  ${pending.length>5?`<div style="font-size:13px;color:var(--muted);margin-top:6px;cursor:pointer" onclick="showTab('events')">+${pending.length-5} weitere →</div>`:""}
 </div>`:""}
 
 ${gaeste.length?`<div class="card">
   <div class="sec-title">⏳ Gäste (${gaeste.length})</div>
   ${gaeste.slice(0,4).map(m=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">
     <div style="width:32px;height:32px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">${(m.name||"?")[0].toUpperCase()}</div>
-    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
-    <div style="font-size:10px;color:var(--muted)">${m.email||""}</div></div>
-    <label class="tgl-wrap"><span class="tgl"><input type="checkbox" onchange="upgradeMember('${m.id}')"><span class="tgl-slider"></span></span><span style="font-size:11px;color:var(--amber);font-weight:700">Gast</span></label>
+    <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
+    <div style="font-size:12px;color:var(--muted)">${m.email||""}</div></div>
+    <label class="tgl-wrap"><span class="tgl"><input type="checkbox" onchange="upgradeMember('${m.id}')"><span class="tgl-slider"></span></span><span style="font-size:13px;color:var(--amber);font-weight:700">Gast</span></label>
   </div>`).join("")}
 </div>`:""}
 
 <div class="card">
   <div class="sec-title">🏁 Nächste Events</div>
-  ${next.length===0?"<div style='color:var(--muted);font-size:13px'>Keine Events geplant</div>":
+  ${next.length===0?"<div style='color:var(--muted);font-size:15px'>Keine Events geplant</div>":
     next.slice(0,5).map(ev=>{const dl=daysLeft(ev.date);const col=dl<=7?"var(--red)":dl<=30?"var(--amber)":"var(--green)";
       const pts=DB.participants.filter(p=>p.event_id===ev.id);const c=pts.filter(p=>p.status==="confirmed").length;const pe=pts.filter(p=>p.status==="pending").length;
       return `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">
-        <div style="min-width:32px;text-align:center"><div style="font-size:18px;font-weight:900;color:var(--red);font-family:'Barlow Condensed',sans-serif;line-height:1">${new Date(ev.date).getDate()}</div>
-        <div style="font-size:8px;color:var(--muted);text-transform:uppercase">${new Date(ev.date).toLocaleString("de-DE",{month:"short"})}</div></div>
-        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ev.name}</div>
-        <div style="display:flex;gap:4px;margin-top:2px">${c?`<span class="b b-green" style="font-size:8px">✓${c}</span>`:""}${pe?`<span class="b b-amber" style="font-size:8px">🟡${pe}</span>`:""}</div></div>
+        <div style="min-width:32px;text-align:center"><div style="font-size:19px;font-weight:900;color:var(--red);font-family:'Barlow Condensed',sans-serif;line-height:1">${new Date(ev.date).getDate()}</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase">${new Date(ev.date).toLocaleString("de-DE",{month:"short"})}</div></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ev.name}</div>
+        <div style="display:flex;gap:4px;margin-top:2px">${c?`<span class="b b-green" style="font-size:11px">✓${c}</span>`:""}${pe?`<span class="b b-amber" style="font-size:11px">🟡${pe}</span>`:""}</div></div>
         <span class="b" style="background:${col}22;color:${col};border:1px solid ${col}44;flex-shrink:0">${dl>0?dl+"d":"Heute"}</span>
       </div>`;}).join("")}
 </div>`;
@@ -556,12 +565,12 @@ function rMembers(el){
   const cntIssues=DB.members.filter(m=>memberIssueKeys(m).length>0).length;
   const cntNoVeh=DB.members.filter(m=>m.role==="member"&&!DB.vehicles.some(v=>v.user_id===m.id)).length;
   const cntIncompl=DB.members.filter(m=>DB.vehicles.some(v=>v.user_id===m.id&&(!v.image||!v.kennzeichen||!v.baujahr||!v.besonderheiten))).length;
-  el.innerHTML=`<div class="page-title">👥 Mitglieder <span style="font-size:13px;font-weight:400;color:var(--muted)">${DB.members.length}</span></div>
+  el.innerHTML=`<div class="page-title">👥 Mitglieder <span style="font-size:15px;font-weight:400;color:var(--muted)">${DB.members.length}</span></div>
 
   <!-- Pilotgruppe anlegen -->
   <div class="card" style="margin-bottom:12px;border-color:#C8A96E44">
     <div class="sec-title" style="color:var(--gold)">🚀 Mitglied anlegen</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:12px">
+    <div style="font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:12px">
       Legt einen echten Account an — die Person kann sich sofort mit ihrer E-Mail einloggen
       und ihr Fahrzeug eintragen. Ideal für die Pilotgruppe im Vorstand.
     </div>
@@ -570,7 +579,7 @@ function rMembers(el){
       <input id="inv-mail" class="inp" placeholder="E-Mail" type="email">
     </div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-      <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:#aaa;cursor:pointer">
+      <label style="display:flex;gap:6px;align-items:center;font-size:14px;color:#aaa;cursor:pointer">
         <input type="checkbox" id="inv-welcome" checked style="width:auto;margin:0">
         Willkommensnachricht senden
       </label>
@@ -578,7 +587,7 @@ function rMembers(el){
     <button class="btn" style="width:100%;background:var(--gold);color:#000" onclick="createMember()">
       + Mitglied anlegen
     </button>
-    <div id="inv-out" style="font-size:11px;margin-top:9px;line-height:1.6"></div>
+    <div id="inv-out" style="font-size:13px;margin-top:9px;line-height:1.6"></div>
   </div>
 
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
@@ -643,7 +652,7 @@ async function createMember(){
 
   say(`<div style="background:#22c55e0d;border:1px solid #22c55e33;border-radius:7px;padding:10px">
     <div style="color:var(--green);font-weight:700;margin-bottom:4px">✓ ${name} angelegt · ${nr}</div>
-    <div style="color:#888;font-size:10px;line-height:1.6">
+    <div style="color:#888;font-size:12px;line-height:1.6">
       Login: <strong style="color:#aaa">qar.gallery/pcn</strong> mit <strong style="color:#aaa">${mail}</strong><br>
       ${welcome?"Willkommensnachricht wurde gesendet.":"Ohne Willkommensnachricht angelegt."}
     </div>
@@ -703,16 +712,16 @@ function filterMembers(){
     return `<div class="mrow" style="padding:0;overflow:hidden;border-left:3px solid ${critical?"#ef4444":hasIssues?"var(--gold)":"transparent"}">
       <!-- Kopfzeile -->
       <div onclick="toggleMemberOpen('${m.id}')" style="display:flex;gap:10px;align-items:center;padding:13px 14px;cursor:pointer;user-select:none">
-        <div style="width:34px;height:34px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${(m.name||"?")[0].toUpperCase()}</div>
+        <div style="width:34px;height:34px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">${(m.name||"?")[0].toUpperCase()}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
-          ${hasIssues&&!open?`<div style="font-size:10px;color:${critical?"#ef4444":"var(--gold)"};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          <div style="font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
+          ${hasIssues&&!open?`<div style="font-size:12px;color:${critical?"#ef4444":"var(--gold)"};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
             ${issues.slice(0,2).map(i=>i.icon+" "+i.label).join(" · ")}${issues.length>2?` +${issues.length-2}`:""}
           </div>`:""}
         </div>
         <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
-          ${hasIssues?`<span style="background:${critical?"#ef4444":"var(--gold)"};color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px">${issues.length}</span>`:`<span style="color:var(--green);font-size:12px">✓</span>`}
-          <span style="font-size:14px;color:var(--muted);transform:rotate(${open?"90":"0"}deg);transition:transform .2s;display:inline-block">›</span>
+          ${hasIssues?`<span style="background:${critical?"#ef4444":"var(--gold)"};color:#fff;font-size:12px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px">${issues.length}</span>`:`<span style="color:var(--green);font-size:14px">✓</span>`}
+          <span style="font-size:15px;color:var(--muted);transform:rotate(${open?"90":"0"}deg);transition:transform .2s;display:inline-block">›</span>
         </div>
       </div>
 
@@ -723,22 +732,22 @@ function filterMembers(){
         ${hasIssues?`
         <!-- Handlungsbedarf-Block -->
         <div style="background:${critical?"#ef44440d":"#C8A96E0d"};border:1px solid ${critical?"#ef444433":"#C8A96E33"};border-radius:9px;padding:11px;margin:12px 0">
-          <div style="font-size:10px;font-weight:800;color:${critical?"#ef4444":"var(--gold)"};letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:800;color:${critical?"#ef4444":"var(--gold)"};letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
             ⚠ Handlungsbedarf (${issues.length})
           </div>
           ${issues.map(i=>`
             <div style="display:flex;gap:8px;align-items:center;padding:4px 0">
-              <span style="font-size:12px;width:16px;text-align:center">${i.icon}</span>
-              <span style="flex:1;font-size:12px;color:#bbb">${i.label}</span>
+              <span style="font-size:14px;width:16px;text-align:center">${i.icon}</span>
+              <span style="flex:1;font-size:14px;color:#bbb">${i.label}</span>
             </div>`).join("")}
           <button onclick="sendSmartReminder('${m.id}','${(m.name||"").replace(/'/g,"\\'")}','${issues.map(i=>i.k).join(",")}')"
-            style="width:100%;margin-top:9px;background:${critical?"#ef4444":"var(--gold)"};border:none;border-radius:7px;padding:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+            style="width:100%;margin-top:9px;background:${critical?"#ef4444":"var(--gold)"};border:none;border-radius:7px;padding:9px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
             📣 Passenden Reminder senden
           </button>
         </div>`:`
         <div style="background:#22c55e0d;border:1px solid #22c55e33;border-radius:9px;padding:10px;margin:12px 0;display:flex;gap:8px;align-items:center">
-          <span style="font-size:14px">✓</span>
-          <span style="font-size:12px;color:var(--green);font-weight:600">Alles vollständig — kein Handlungsbedarf</span>
+          <span style="font-size:15px">✓</span>
+          <span style="font-size:14px;color:var(--green);font-weight:600">Alles vollständig — kein Handlungsbedarf</span>
         </div>`}
 
         <!-- Stammdaten -->
@@ -751,8 +760,8 @@ function filterMembers(){
              ["Punkte",`${pts.toLocaleString("de-DE")} ${tierBadge(pts)}`]
           ].map(([l,v])=>`
             <div style="background:#0d0d0d;border-radius:7px;padding:8px 10px">
-              <div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">${l}</div>
-              <div style="font-size:12px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v}</div>
+              <div style="font-size:12px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">${l}</div>
+              <div style="font-size:14px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v}</div>
             </div>`).join("")}
         </div>
 
@@ -768,10 +777,10 @@ function filterMembers(){
             if(!v.besonderheiten) missing.push("Geschichte");
             const ok=missing.length===0;
             return `<div style="display:flex;gap:8px;align-items:center;padding:7px 9px;background:#0d0d0d;border-radius:7px;margin-bottom:4px;border-left:2px solid ${ok?"var(--green)":"var(--gold)"}">
-              <span style="font-size:13px">${ok?"✓":"⚠"}</span>
+              <span style="font-size:15px">${ok?"✓":"⚠"}</span>
               <div style="flex:1;min-width:0">
-                <div style="font-size:12px;color:#ccc;font-weight:600">${v.hersteller||""} ${v.modell||"—"}</div>
-                ${missing.length?`<div style="font-size:9px;color:var(--gold)">fehlt: ${missing.join(", ")}</div>`:`<div style="font-size:9px;color:#555">${v.kennzeichen||""}</div>`}
+                <div style="font-size:14px;color:#ccc;font-weight:600">${v.hersteller||""} ${v.modell||"—"}</div>
+                ${missing.length?`<div style="font-size:12px;color:var(--gold)">fehlt: ${missing.join(", ")}</div>`:`<div style="font-size:12px;color:#555">${v.kennzeichen||""}</div>`}
               </div>
             </div>`;
           }).join("")}
@@ -781,15 +790,15 @@ function filterMembers(){
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-bottom:12px">
           <div><div class="lbl" style="margin-bottom:6px">Mitgliedsstatus</div>
             <label class="tgl-wrap"><span class="tgl"><input type="checkbox" ${isMember?"checked":""} onchange="toggleRole('${m.id}',${isMember})"><span class="tgl-slider"></span></span>
-            <span style="font-size:12px;font-weight:700;color:${isMember?"var(--green)":"var(--amber)"}">${isMember?"Mitglied":"Gast"}</span></label></div>
+            <span style="font-size:14px;font-weight:700;color:${isMember?"var(--green)":"var(--amber)"}">${isMember?"Mitglied":"Gast"}</span></label></div>
           <div><div class="lbl" style="margin-bottom:6px">Beitrag ${new Date().getFullYear()}</div>
             <label class="tgl-wrap"><span class="tgl"><input type="checkbox" ${isPaid?"checked":""} onchange="togglePaid('${m.id}',${isPaid})"><span class="tgl-slider"></span></span>
-            <span style="font-size:12px;font-weight:700;color:${isPaid?"var(--green)":"#ef4444"}">${isPaid?"Bezahlt":"Offen"}</span>
-            ${m.beitrag_datum?`<span style="font-size:9px;color:#555;margin-left:4px">${fmt(m.beitrag_datum)}</span>`:""}</label></div>
+            <span style="font-size:14px;font-weight:700;color:${isPaid?"var(--green)":"#ef4444"}">${isPaid?"Bezahlt":"Offen"}</span>
+            ${m.beitrag_datum?`<span style="font-size:12px;color:#555;margin-left:4px">${fmt(m.beitrag_datum)}</span>`:""}</label></div>
         </div>
 
         <button onclick="openDirectMsg('${m.id}','${(m.name||"").replace(/'/g,"\\'")}')"
-          style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px">
+          style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--txt);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px">
           💬 Freie Direktnachricht
         </button>
       </div>`:""}
@@ -859,10 +868,10 @@ function openMsgModal(id, name, presetKeys){
       <div style="width:36px;height:4px;background:#333;border-radius:99px;margin:0 auto 14px"></div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <div style="font-size:17px;font-weight:800;color:var(--txt)">Nachricht an ${name}</div>
-        <button onclick="closeMsgModal()" style="background:none;border:none;color:#666;font-size:22px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+        <div style="font-size:18px;font-weight:800;color:var(--txt)">Nachricht an ${name}</div>
+        <button onclick="closeMsgModal()" style="background:none;border:none;color:#666;font-size:23px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Landet direkt im persönlichen Chat des Mitglieds</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Landet direkt im persönlichen Chat des Mitglieds</div>
 
       ${tpls.length?`
       <div style="margin-bottom:12px">
@@ -873,7 +882,7 @@ function openMsgModal(id, name, presetKeys){
           ${tpls.map(t=>{
             const on = selected.has(t.key);
             return `<button onclick="toggleTemplate('${t.key}')" id="tpl-${t.key}"
-              style="background:${on?"var(--gold)":"#1a1a1a"};border:1px solid ${on?"var(--gold)":"var(--border)"};border-radius:7px;padding:7px 11px;color:${on?"#000":"#aaa"};font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">
+              style="background:${on?"var(--gold)":"#1a1a1a"};border:1px solid ${on?"var(--gold)":"var(--border)"};border-radius:7px;padding:7px 11px;color:${on?"#000":"#aaa"};font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
               ${on&&multi?"✓ ":""}${t.icon} ${t.label}
             </button>`;
           }).join("")}
@@ -882,20 +891,20 @@ function openMsgModal(id, name, presetKeys){
 
       <div class="lbl" style="margin-bottom:6px">Nachricht</div>
       <textarea id="msg-text" rows="8" placeholder="Deine Nachricht…"
-        style="width:100%;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--txt);font-size:15px;line-height:1.6;font-family:inherit;resize:vertical;outline:none;-webkit-appearance:none">${initial}</textarea>
+        style="width:100%;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--txt);font-size:16px;line-height:1.6;font-family:inherit;resize:vertical;outline:none;-webkit-appearance:none">${initial}</textarea>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;margin-bottom:14px">
-        <span id="msg-count" style="font-size:10px;color:#555">${initial.length} Zeichen</span>
+        <span id="msg-count" style="font-size:12px;color:#555">${initial.length} Zeichen</span>
         <button onclick="document.getElementById('msg-text').value='';updateMsgCount()"
-          style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;font-family:inherit">Leeren</button>
+          style="background:none;border:none;color:#555;font-size:13px;cursor:pointer;font-family:inherit">Leeren</button>
       </div>
 
       <div style="display:flex;gap:8px">
         <button onclick="closeMsgModal()"
-          style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:13px;color:#999;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">
+          style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:13px;color:#999;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">
           Abbrechen
         </button>
         <button onclick="submitMsgModal()"
-          style="flex:2;background:var(--red);border:none;border-radius:9px;padding:13px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
+          style="flex:2;background:var(--red);border:none;border-radius:9px;padding:13px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">
           Senden →
         </button>
       </div>
@@ -994,20 +1003,20 @@ function rPayments(el){
   </div>
   <div class="card" style="margin-bottom:12px">
     <div class="sec-title" style="color:#ef4444">Offen (${o.length})</div>
-    ${o.length===0?"<div style='color:var(--green);font-size:13px'>✓ Alle bezahlt</div>":
+    ${o.length===0?"<div style='color:var(--green);font-size:15px'>✓ Alle bezahlt</div>":
       o.map(m=>`<div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #131313">
-        <div style="width:30px;height:30px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:12px">${(m.name||"?")[0].toUpperCase()}</div>
-        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
-        <div style="font-size:10px;color:var(--muted)">${m.email||""}· € ${EUR}</div></div>
-        <label class="tgl-wrap"><span class="tgl"><input type="checkbox" onchange="togglePaid('${m.id}',false)"><span class="tgl-slider"></span></span><span style="font-size:11px;font-weight:700;color:#ef4444">Offen</span></label>
+        <div style="width:30px;height:30px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:14px">${(m.name||"?")[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
+        <div style="font-size:12px;color:var(--muted)">${m.email||""}· € ${EUR}</div></div>
+        <label class="tgl-wrap"><span class="tgl"><input type="checkbox" onchange="togglePaid('${m.id}',false)"><span class="tgl-slider"></span></span><span style="font-size:13px;font-weight:700;color:#ef4444">Offen</span></label>
       </div>`).join("")}
   </div>
   <div class="card">
     <div class="sec-title" style="color:var(--green)">Bezahlt (${b.length})</div>
     ${b.map(m=>`<div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #131313">
-      <div style="width:30px;height:30px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:12px">${(m.name||"?")[0].toUpperCase()}</div>
-      <div style="flex:1;min-width:0;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
-      <label class="tgl-wrap"><span class="tgl"><input type="checkbox" checked onchange="togglePaid('${m.id}',true)"><span class="tgl-slider"></span></span><span style="font-size:11px;font-weight:700;color:var(--green)">Bezahlt</span></label>
+      <div style="width:30px;height:30px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:14px">${(m.name||"?")[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"}</div>
+      <label class="tgl-wrap"><span class="tgl"><input type="checkbox" checked onchange="togglePaid('${m.id}',true)"><span class="tgl-slider"></span></span><span style="font-size:13px;font-weight:700;color:var(--green)">Bezahlt</span></label>
     </div>`).join("")}
   </div>`;
 }
@@ -1026,21 +1035,21 @@ function rPoints(el){
     <div class="sec-title" style="color:var(--gold)">💰 Punkte-Übersicht</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
       <div>
-        <div style="font-size:22px;font-weight:900;color:var(--gold);font-family:'Barlow Condensed',sans-serif">${totalPts.toLocaleString("de-DE")}</div>
-        <div style="font-size:9px;color:var(--muted);text-transform:uppercase">Punkte gesamt</div>
+        <div style="font-size:23px;font-weight:900;color:var(--gold);font-family:'Barlow Condensed',sans-serif">${totalPts.toLocaleString("de-DE")}</div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase">Punkte gesamt</div>
       </div>
       <div>
-        <div style="font-size:22px;font-weight:900;color:var(--white);font-family:'Barlow Condensed',sans-serif">€${totalEur.toFixed(2).replace(".",",")}</div>
-        <div style="font-size:9px;color:var(--muted);text-transform:uppercase">Gegenwert gesamt</div>
+        <div style="font-size:23px;font-weight:900;color:var(--white);font-family:'Barlow Condensed',sans-serif">€${totalEur.toFixed(2).replace(".",",")}</div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase">Gegenwert gesamt</div>
       </div>
       <div>
-        <div style="font-size:22px;font-weight:900;color:var(--muted);font-family:'Barlow Condensed',sans-serif">${avgPts.toLocaleString("de-DE")}</div>
-        <div style="font-size:9px;color:var(--muted);text-transform:uppercase">Ø pro Mitglied</div>
+        <div style="font-size:23px;font-weight:900;color:var(--muted);font-family:'Barlow Condensed',sans-serif">${avgPts.toLocaleString("de-DE")}</div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase">Ø pro Mitglied</div>
       </div>
     </div>
     <!-- Wer trägt die Prämien — Marktplatz-Modell -->
     <div style="background:#0d0d0d;border-radius:8px;padding:11px;margin-bottom:10px">
-      <div style="font-size:9px;color:#555;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
+      <div style="font-size:12px;color:#555;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
         Wer trägt die Prämie bei Einlösung
       </div>
       ${[["🏢","Porsche Store","60%",0.60,"Cap, Merch, Zubehör"],
@@ -1048,32 +1057,32 @@ function rPoints(el){
          ["🔧","Drittanbieter","10%",0.10,"Werkstatt, Reifen"],
          ["👕","Club","10%",0.10,"Club-Merch, Sticker"]].map(([i,n,pc,f,d])=>`
         <div style="display:flex;gap:9px;align-items:center;padding:5px 0;border-bottom:1px solid #151515">
-          <span style="font-size:13px;width:18px;text-align:center">${i}</span>
+          <span style="font-size:15px;width:18px;text-align:center">${i}</span>
           <div style="flex:1;min-width:0">
-            <div style="font-size:11px;color:#bbb;font-weight:600">${n}</div>
-            <div style="font-size:9px;color:#555">${d}</div>
+            <div style="font-size:13px;color:#bbb;font-weight:600">${n}</div>
+            <div style="font-size:12px;color:#555">${d}</div>
           </div>
           <div style="text-align:right;flex-shrink:0">
-            <div style="font-size:13px;font-weight:900;color:${n==="Club"?"var(--gold)":"#666"};font-family:'Barlow Condensed',sans-serif">€${(totalEur*f).toFixed(2).replace(".",",")}</div>
-            <div style="font-size:8px;color:#444">${pc}</div>
+            <div style="font-size:15px;font-weight:900;color:${n==="Club"?"var(--gold)":"#666"};font-family:'Barlow Condensed',sans-serif">€${(totalEur*f).toFixed(2).replace(".",",")}</div>
+            <div style="font-size:11px;color:#444">${pc}</div>
           </div>
         </div>`).join("")}
       <div style="display:flex;gap:9px;align-items:center;padding:7px 0 2px">
-        <span style="font-size:13px;width:18px;text-align:center">📱</span>
-        <div style="flex:1;font-size:11px;color:#666">QAR.Gallery</div>
-        <div style="font-size:12px;font-weight:700;color:var(--green)">€0,00 — keine Haftung</div>
+        <span style="font-size:15px;width:18px;text-align:center">📱</span>
+        <div style="flex:1;font-size:13px;color:#666">QAR.Gallery</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green)">€0,00 — keine Haftung</div>
       </div>
     </div>
     <div style="background:#22c55e0d;border:1px solid #22c55e33;border-radius:7px;padding:9px 11px;margin-bottom:10px">
-      <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:2px">
+      <div style="font-size:13px;color:var(--green);font-weight:700;margin-bottom:2px">
         ✓ Der Club trägt nur ${(totalEur*0.10).toFixed(2).replace(".",",")} €
       </div>
-      <div style="font-size:10px;color:#666;line-height:1.5">
+      <div style="font-size:12px;color:#666;line-height:1.5">
         Die Hauptlast tragen die Einlösepartner — für Porsche ist jede Einlösung ein
         Neukunde im Store, kein Zuschuss.
       </div>
     </div>
-    <div style="font-size:10px;color:#555;line-height:1.6;padding-top:8px;border-top:1px solid var(--border)">
+    <div style="font-size:12px;color:#555;line-height:1.6;padding-top:8px;border-top:1px solid var(--border)">
       Kurs: <strong style="color:#888">911 Punkte = 3 €</strong> · 1 Punkt ≈ 0,33 Cent<br>
       Theoretische Verbindlichkeit bei vollständiger Einlösung. <strong style="color:#777">Partner-Konditionen noch in Verhandlung.</strong>
     </div>
@@ -1084,7 +1093,7 @@ function rPoints(el){
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
       ${TIERS.map(t=>`<span class="tier t-${t.n.toLowerCase()}">${t.n} · ${t.p.toLocaleString("de-DE")}+</span>`).join("")}
     </div>
-    <div style="font-size:11px;color:var(--muted);line-height:1.7">
+    <div style="font-size:13px;color:var(--muted);line-height:1.7">
       🚗 Fahrzeug anlegen: 50 Pkt · 🏁 Event bestätigt: 100 Pkt · 📋 Logbuch: 10 Pkt · 💬 Nachricht: 5 Pkt · 📰 News gelesen: 10 Pkt
     </div>
   </div>
@@ -1092,13 +1101,13 @@ function rPoints(el){
     <div class="sec-title">Rangliste (${aktive.length})</div>
     ${withPts.map((m,i)=>{const t=getTier(m.pts);const pct=Math.round(m.pts/Math.max(maxPts,1)*100);
       return `<div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #131313">
-        <div style="min-width:24px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:${i===0?"var(--gold)":i===1?"#aaa":i===2?"#cd7f32":"var(--muted)"};flex-shrink:0">${i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1)}</div>
-        <div style="width:30px;height:30px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${(m.name||"?")[0].toUpperCase()}</div>
+        <div style="min-width:24px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:900;color:${i===0?"var(--gold)":i===1?"#aaa":i===2?"#cd7f32":"var(--muted)"};flex-shrink:0">${i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1)}</div>
+        <div style="width:30px;height:30px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">${(m.name||"?")[0].toUpperCase()}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"} ${t?`<span class="tier t-${t.n.toLowerCase()}">${t.n}</span>`:""}</div>
+          <div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||"—"} ${t?`<span class="tier t-${t.n.toLowerCase()}">${t.n}</span>`:""}</div>
           <div style="height:4px;background:#1a1a1a;border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:2px"></div></div>
         </div>
-        <div style="flex-shrink:0;text-align:right"><div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--gold)">${m.pts}</div><div style="font-size:9px;color:var(--muted)">Punkte</div></div>
+        <div style="flex-shrink:0;text-align:right"><div style="font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:900;color:var(--gold)">${m.pts}</div><div style="font-size:12px;color:var(--muted)">Punkte</div></div>
       </div>`;}).join("")||"<div style='color:var(--muted)'>Keine Mitglieder</div>"}
   </div>`;
 }
@@ -1124,32 +1133,32 @@ function rEvents(el){
     return `<div class="mrow">
       <div style="display:flex;gap:10px;align-items:flex-start">
         <div style="min-width:36px;text-align:center;flex-shrink:0">
-          <div style="font-size:20px;font-weight:900;color:var(--red);font-family:'Barlow Condensed',sans-serif;line-height:1">${new Date(ev.date).getDate()}</div>
-          <div style="font-size:8px;color:var(--muted);text-transform:uppercase">${new Date(ev.date).toLocaleString("de-DE",{month:"short"})}</div>
+          <div style="font-size:21px;font-weight:900;color:var(--red);font-family:'Barlow Condensed',sans-serif;line-height:1">${new Date(ev.date).getDate()}</div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase">${new Date(ev.date).toLocaleString("de-DE",{month:"short"})}</div>
         </div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:700">${ev.name}</div>
-          <div style="font-size:11px;color:var(--muted)">${ev.location||""} · ${ev.category||""}${ev.entry_fee?" · "+ev.entry_fee:""}</div>
+          <div style="font-size:16px;font-weight:700">${ev.name}</div>
+          <div style="font-size:13px;color:var(--muted)">${ev.location||""} · ${ev.category||""}${ev.entry_fee?" · "+ev.entry_fee:""}</div>
           <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
             ${conf.length?`<span class="b b-green">✓ ${conf.length} bestätigt</span>`:""}
             ${pend.length?`<span class="b b-amber">🟡 ${pend.length} ausstehend</span>`:""}
             ${canc.length?`<span class="b b-gray">✕ ${canc.length} abgesagt</span>`:""}
-            ${!parts.length?"<span style='font-size:10px;color:var(--muted)'>Keine Anmeldungen</span>":""}
+            ${!parts.length?"<span style='font-size:12px;color:var(--muted)'>Keine Anmeldungen</span>":""}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
           <span class="b" style="background:${col}22;color:${col};border:1px solid ${col}44">${past?"Vorbei":dl<=7?"Bald":"OK"}</span>
-          <button class="btn btn-sm" style="font-size:10px" onclick="editEvent('${ev.id}')">✏️ Edit</button>
-          <button class="btn btn-sm" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433;font-size:10px" onclick="delEvent('${ev.id}','${(ev.name||"").replace(/'/g,"\\'")}')">✕</button>
+          <button class="btn btn-sm" style="font-size:12px" onclick="editEvent('${ev.id}')">✏️ Edit</button>
+          <button class="btn btn-sm" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433;font-size:12px" onclick="delEvent('${ev.id}','${(ev.name||"").replace(/'/g,"\\'")}')">✕</button>
         </div>
       </div>
       ${pend.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-        <div style="font-size:9px;color:var(--amber);text-transform:uppercase;font-weight:800;margin-bottom:6px">🟡 Ausstehend</div>
+        <div style="font-size:12px;color:var(--amber);text-transform:uppercase;font-weight:800;margin-bottom:6px">🟡 Ausstehend</div>
         ${pend.map(p=>{const mem=DB.members.find(m=>m.id===p.user_id);const veh=DB.vehicles.find(v=>v.id===p.vehicle_id);
           return `<div style="display:flex;gap:8px;align-items:center;padding:5px 0">
-            <div style="flex:1;font-size:12px"><b>${mem?.name||"—"}</b><span style="color:var(--muted)"> · ${veh?.hersteller||""} ${veh?.modell||""}${p.class?" · "+p.class:""}</span></div>
-            <button class="btn btn-sm btn-green" style="font-size:10px" onclick="confirmParticipant('${p.id}','${ev.id}')">✓</button>
-            <button class="btn btn-sm" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433;font-size:10px" onclick="cancelParticipant('${p.id}','${ev.id}')">✕</button>
+            <div style="flex:1;font-size:14px"><b>${mem?.name||"—"}</b><span style="color:var(--muted)"> · ${veh?.hersteller||""} ${veh?.modell||""}${p.class?" · "+p.class:""}</span></div>
+            <button class="btn btn-sm btn-green" style="font-size:12px" onclick="confirmParticipant('${p.id}','${ev.id}')">✓</button>
+            <button class="btn btn-sm" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433;font-size:12px" onclick="cancelParticipant('${p.id}','${ev.id}')">✕</button>
           </div>`;}).join("")}
       </div>`:""}
     </div>`;}).join("")||`<div style="color:var(--muted);text-align:center;padding:20px">Keine Events</div>`}`;
@@ -1174,12 +1183,12 @@ function rMessages(el){
 
   const unreadTotal = direct.reduce((s,t)=>s+(t.messages||[]).filter(m=>m.from_id!==ADMIN_UUID&&!m.read_at).length,0);
 
-  el.innerHTML=`<div class="page-title">💬 Nachrichten ${unreadTotal?`<span style="background:var(--red);color:#fff;font-size:11px;font-weight:800;padding:2px 7px;border-radius:99px;vertical-align:middle">${unreadTotal} neu</span>`:""}</div>
+  el.innerHTML=`<div class="page-title">💬 Nachrichten ${unreadTotal?`<span style="background:var(--red);color:#fff;font-size:13px;font-weight:800;padding:2px 7px;border-radius:99px;vertical-align:middle">${unreadTotal} neu</span>`:""}</div>
 
   <!-- Club-Kanal -->
   <div class="card" style="margin-bottom:12px;border-color:#D5001C44">
     <div class="sec-title" style="color:var(--red)">📢 Club-Kanal</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:11px">
+    <div style="font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:11px">
       Erreicht alle ${DB.members.filter(m=>m.role==="member").length} Mitglieder gleichzeitig — erscheint als Gruppenchat in der App.
     </div>
     ${club&&(club.messages||[]).length?`
@@ -1188,12 +1197,12 @@ function rMessages(el){
           const sender=DB.members.find(x=>x.id===m.from_id);
           const isAdm=m.from_id===ADMIN_UUID;
           return `<div style="padding:5px 0;border-bottom:1px solid #151515">
-            <div style="font-size:10px;color:${isAdm?"var(--gold)":"#666"};font-weight:700">${isAdm?"📣 Vorstand":sender?.name||"Mitglied"} · ${fmtTime(m.created_at)}</div>
-            <div style="font-size:12px;color:#ccc;margin-top:2px">${escapeHtml(m.text)}</div>
+            <div style="font-size:12px;color:${isAdm?"var(--gold)":"#666"};font-weight:700">${isAdm?"📣 Vorstand":sender?.name||"Mitglied"} · ${fmtTime(m.created_at)}</div>
+            <div style="font-size:14px;color:#ccc;margin-top:2px">${escapeHtml(m.text)}</div>
           </div>`;
         }).join("")}
-      </div>`:`<div style="font-size:11px;color:#555;padding:8px 0 12px">Noch keine Nachrichten im Club-Kanal</div>`}
-    <button onclick="openClubMsgModal()" style="width:100%;background:var(--red);border:none;border-radius:8px;padding:11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
+      </div>`:`<div style="font-size:13px;color:#555;padding:8px 0 12px">Noch keine Nachrichten im Club-Kanal</div>`}
+    <button onclick="openClubMsgModal()" style="width:100%;background:var(--red);border:none;border-radius:8px;padding:11px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">
       📢 An alle Mitglieder senden
     </button>
   </div>
@@ -1201,7 +1210,7 @@ function rMessages(el){
   <!-- Direktnachrichten -->
   <div class="card">
     <div class="sec-title">Vorstand ↔ Mitglied</div>
-    <div style="font-size:11px;color:#555;line-height:1.6;margin-bottom:12px">
+    <div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:12px">
       🔒 Nur deine eigenen Konversationen. Chats zwischen Mitgliedern sind nicht einsehbar.
     </div>
     ${direct.length?direct.map(t=>{
@@ -1213,17 +1222,17 @@ function rMessages(el){
       const open=openChatId===t.id;
       return `<div style="border:1px solid ${unread?"var(--red)":"var(--border)"};border-radius:10px;margin-bottom:8px;overflow:hidden">
         <div onclick="toggleChat('${t.id}')" style="display:flex;gap:10px;align-items:center;padding:11px;cursor:pointer;background:${unread?"#D5001C08":"transparent"}">
-          <div style="width:32px;height:32px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">${(m?.name||"?")[0].toUpperCase()}</div>
+          <div style="width:32px;height:32px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">${(m?.name||"?")[0].toUpperCase()}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:700;color:var(--txt)">${m?.name||"Unbekannt"}</div>
-            <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            <div style="font-size:15px;font-weight:700;color:var(--txt)">${m?.name||"Unbekannt"}</div>
+            <div style="font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
               ${last?`${last.from_id===ADMIN_UUID?"Du: ":""}${escapeHtml(last.text).slice(0,60)}`:"Keine Nachricht"}
             </div>
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-            ${unread?`<span style="background:var(--red);color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px">${unread}</span>`:""}
-            <span style="font-size:9px;color:#555">${last?fmtTime(last.created_at):""}</span>
-            <span style="font-size:13px;color:var(--muted);transform:rotate(${open?"90":"0"}deg);display:inline-block">›</span>
+            ${unread?`<span style="background:var(--red);color:#fff;font-size:12px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px">${unread}</span>`:""}
+            <span style="font-size:12px;color:#555">${last?fmtTime(last.created_at):""}</span>
+            <span style="font-size:15px;color:var(--muted);transform:rotate(${open?"90":"0"}deg);display:inline-block">›</span>
           </div>
         </div>
         ${open?`
@@ -1233,21 +1242,21 @@ function rMessages(el){
               const isAdm=x.from_id===ADMIN_UUID;
               return `<div style="display:flex;justify-content:${isAdm?"flex-end":"flex-start"};margin-bottom:7px">
                 <div style="max-width:80%;background:${isAdm?"#C8A96E22":"#1a1a1a"};border:1px solid ${isAdm?"#C8A96E44":"var(--border)"};border-radius:10px;padding:8px 11px">
-                  <div style="font-size:9px;color:${isAdm?"var(--gold)":"#666"};font-weight:700;margin-bottom:2px">${isAdm?"📣 Vorstand":m?.name||"Mitglied"}</div>
-                  <div style="font-size:13px;color:#ddd;line-height:1.5;white-space:pre-wrap;word-break:break-word">${escapeHtml(x.text)}</div>
-                  <div style="font-size:9px;color:#555;margin-top:3px;text-align:right">${fmtTime(x.created_at)}</div>
+                  <div style="font-size:12px;color:${isAdm?"var(--gold)":"#666"};font-weight:700;margin-bottom:2px">${isAdm?"📣 Vorstand":m?.name||"Mitglied"}</div>
+                  <div style="font-size:15px;color:#ddd;line-height:1.5;white-space:pre-wrap;word-break:break-word">${escapeHtml(x.text)}</div>
+                  <div style="font-size:12px;color:#555;margin-top:3px;text-align:right">${fmtTime(x.created_at)}</div>
                 </div>
               </div>`;
-            }).join(""):`<div style="text-align:center;color:#555;font-size:11px;padding:16px">Noch keine Nachrichten</div>`}
+            }).join(""):`<div style="text-align:center;color:#555;font-size:13px;padding:16px">Noch keine Nachrichten</div>`}
           </div>
           <button onclick="event.stopPropagation();openDirectMsg('${memberId}','${(m?.name||"").replace(/'/g,"\\'")}')"
-            style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:9px;color:var(--txt);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
+            style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:9px;color:var(--txt);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">
             ✍️ Antworten
           </button>
         </div>`:""}
       </div>`;
-    }).join(""):`<div style="text-align:center;color:#555;font-size:12px;padding:24px">
-      Noch keine Konversationen.<br><span style="font-size:11px">Nachrichten entstehen über Mitglieder → Reminder senden.</span>
+    }).join(""):`<div style="text-align:center;color:#555;font-size:14px;padding:24px">
+      Noch keine Konversationen.<br><span style="font-size:13px">Nachrichten entstehen über Mitglieder → Reminder senden.</span>
     </div>`}
   </div>`;
 }
@@ -1289,19 +1298,19 @@ function openClubMsgModal(){
     <div style="background:#111;border-top:1px solid var(--border);border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:18px 16px calc(18px + env(safe-area-inset-bottom));animation:sheetUp .22s ease">
       <div style="width:36px;height:4px;background:#333;border-radius:99px;margin:0 auto 14px"></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <div style="font-size:17px;font-weight:800;color:var(--txt)">📢 An alle Mitglieder</div>
-        <button onclick="closeMsgModal()" style="background:none;border:none;color:#666;font-size:22px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+        <div style="font-size:18px;font-weight:800;color:var(--txt)">📢 An alle Mitglieder</div>
+        <button onclick="closeMsgModal()" style="background:none;border:none;color:#666;font-size:23px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Erscheint im Club-Kanal von ${reach} Mitgliedern</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Erscheint im Club-Kanal von ${reach} Mitgliedern</div>
       <div class="lbl" style="margin-bottom:6px">Nachricht</div>
       <textarea id="msg-text" rows="7" placeholder="z.B. Der Clubabend am Freitag beginnt um 19 Uhr…"
-        style="width:100%;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--txt);font-size:15px;line-height:1.6;font-family:inherit;resize:vertical;outline:none"></textarea>
+        style="width:100%;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--txt);font-size:16px;line-height:1.6;font-family:inherit;resize:vertical;outline:none"></textarea>
       <div style="display:flex;justify-content:space-between;margin-top:6px;margin-bottom:14px">
-        <span id="msg-count" style="font-size:10px;color:#555">0 Zeichen</span>
+        <span id="msg-count" style="font-size:12px;color:#555">0 Zeichen</span>
       </div>
       <div style="display:flex;gap:8px">
-        <button onclick="closeMsgModal()" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:13px;color:#999;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Abbrechen</button>
-        <button onclick="submitClubMsg()" style="flex:2;background:var(--red);border:none;border-radius:9px;padding:13px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">An alle senden →</button>
+        <button onclick="closeMsgModal()" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:13px;color:#999;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Abbrechen</button>
+        <button onclick="submitClubMsg()" style="flex:2;background:var(--red);border:none;border-radius:9px;padding:13px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">An alle senden →</button>
       </div>
     </div>`;
   wrap.onclick=(e)=>{ if(e.target===wrap) closeMsgModal(); };
@@ -1349,7 +1358,7 @@ function rContent(el){
     <div class="field"><label class="lbl">Betreff</label><input id="nl-sub" value="Newsletter ${new Date().toLocaleString("de-DE",{month:"long",year:"numeric"})}"></div>
     <div class="field"><label class="lbl">Inhalt</label><textarea id="nl-body" style="min-height:180px" placeholder="Liebe Mitglieder..."></textarea></div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-      <span style="font-size:12px;color:var(--muted)">📨 ${DB.members.filter(m=>m.role==="member").length} Empfänger</span>
+      <span style="font-size:14px;color:var(--muted)">📨 ${DB.members.filter(m=>m.role==="member").length} Empfänger</span>
       <button class="btn" onclick="publishNL()">📬 Veröffentlichen</button>
     </div>
   </div>
@@ -1357,7 +1366,7 @@ function rContent(el){
     <div class="sec-title">📰 News-Artikel</div>
     <div class="g2" style="margin-bottom:10px">
       <div class="field"><label class="lbl">Typ</label><select id="nf-type"><option value="news">📰 Neuigkeit</option><option value="tip">💡 Tipp</option><option value="welcome">🎉 Ankündigung</option></select></div>
-      <div style="display:flex;align-items:center;gap:8px;padding-top:16px"><input type="checkbox" id="nf-pin" style="width:16px;height:16px;accent-color:var(--red)"><label for="nf-pin" style="font-size:13px;color:var(--white);cursor:pointer">Als NEU markieren</label></div>
+      <div style="display:flex;align-items:center;gap:8px;padding-top:16px"><input type="checkbox" id="nf-pin" style="width:16px;height:16px;accent-color:var(--red)"><label for="nf-pin" style="font-size:15px;color:var(--white);cursor:pointer">Als NEU markieren</label></div>
     </div>
     <div class="field"><label class="lbl">Titel *</label><input id="nf-title" placeholder="z.B. Neue Kooperation mit Porsche Zentrum Koblenz"></div>
     <div class="field"><label class="lbl">Text</label><textarea id="nf-body" style="min-height:80px"></textarea></div>
@@ -1366,18 +1375,18 @@ function rContent(el){
   <div class="card">
     <div class="sec-title">📋 Templates</div>
     <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
-      <span style="font-size:20px;flex-shrink:0">🏁</span>
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">Clubabend-Erinnerung</div></div>
+      <span style="font-size:21px;flex-shrink:0">🏁</span>
+      <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">Clubabend-Erinnerung</div></div>
       <button class="btn btn-sm btn-ghost" onclick="useTpl(0)">Verwenden</button>
     </div>
     <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
-      <span style="font-size:20px;flex-shrink:0">🚗</span>
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">TrackDay-Anmeldung</div></div>
+      <span style="font-size:21px;flex-shrink:0">🚗</span>
+      <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">TrackDay-Anmeldung</div></div>
       <button class="btn btn-sm btn-ghost" onclick="useTpl(1)">Verwenden</button>
     </div>
     <div style="background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
-      <span style="font-size:20px;flex-shrink:0">📢</span>
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">Allgemeine Ankündigung</div></div>
+      <span style="font-size:21px;flex-shrink:0">📢</span>
+      <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">Allgemeine Ankündigung</div></div>
       <button class="btn btn-sm btn-ghost" onclick="useTpl(2)">Verwenden</button>
     </div>
   </div>`;
@@ -1400,7 +1409,7 @@ async function runFullDiagnostics(){
       <span style="flex-shrink:0">${icon}</span>
       <div style="flex:1;min-width:0">
         <div style="color:${col}">${label}</div>
-        ${detail?`<div style="color:#555;font-size:10px;margin-top:1px;word-break:break-word">${detail}</div>`:""}
+        ${detail?`<div style="color:#555;font-size:12px;margin-top:1px;word-break:break-word">${detail}</div>`:""}
       </div></div>`);
     render();
   };
@@ -1528,10 +1537,10 @@ async function runFullDiagnostics(){
   const total = okCount+failCount;
   rows.push(`<div style="margin-top:12px;padding:11px;border-radius:8px;
     background:${failCount?"#ef44440d":"#22c55e0d"};border:1px solid ${failCount?"#ef444433":"#22c55e33"}">
-    <div style="font-size:12px;font-weight:800;color:${failCount?"#ef4444":"var(--green)"};margin-bottom:3px">
+    <div style="font-size:14px;font-weight:800;color:${failCount?"#ef4444":"var(--green)"};margin-bottom:3px">
       ${failCount ? `${failCount} von ${total} Tests fehlgeschlagen` : `Alle ${total} Tests bestanden ✓`}
     </div>
-    <div style="font-size:10px;color:#666;line-height:1.5">
+    <div style="font-size:12px;color:#666;line-height:1.5">
       ${failCount
         ? 'Bitte <strong style="color:#888">fix_all_rls_policies.sql</strong> im Supabase SQL-Editor ausführen.'
         : "Alle Datenbank-Operationen funktionieren. Die App ist voll einsatzbereit."}
@@ -1557,15 +1566,15 @@ function showAIStats(){
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
       ${[["Versuche",s.runs,"#888"],["Trefferquote",rate+"%",rate>=80?"var(--green)":rate>=50?"var(--gold)":"#ef4444"],["Ø Felder",avgFields,"#888"]].map(([l,v,c])=>`
         <div style="background:#0d0d0d;border-radius:7px;padding:9px;text-align:center">
-          <div style="font-size:17px;font-weight:900;color:${c};font-family:'Barlow Condensed',sans-serif">${v}</div>
-          <div style="font-size:9px;color:#555;text-transform:uppercase;margin-top:1px">${l}</div>
+          <div style="font-size:18px;font-weight:900;color:${c};font-family:'Barlow Condensed',sans-serif">${v}</div>
+          <div style="font-size:12px;color:#555;text-transform:uppercase;margin-top:1px">${l}</div>
         </div>`).join("")}
     </div>
     <div style="background:${ready?"#22c55e0d":"#f59e0b0d"};border:1px solid ${ready?"#22c55e33":"#f59e0b33"};border-radius:7px;padding:9px 11px">
-      <div style="font-size:11px;color:${ready?"var(--green)":"var(--amber)"};font-weight:700;margin-bottom:2px">
+      <div style="font-size:13px;color:${ready?"var(--green)":"var(--amber)"};font-weight:700;margin-bottom:2px">
         ${ready?"✓ Reif für Premium":"⏳ Noch nicht reif"}
       </div>
-      <div style="font-size:10px;color:#666;line-height:1.5">
+      <div style="font-size:12px;color:#666;line-height:1.5">
         ${ready
           ? "Trefferquote stabil über 80% bei ausreichend Versuchen — kann als Bezahlfeature freigegeben werden."
           : `Kriterien: ≥80% Trefferquote (aktuell ${rate}%) und ≥20 Versuche (aktuell ${s.runs}). Nur lokale Daten dieses Geräts.`}
@@ -1578,46 +1587,46 @@ function rSettings(el){
 
   <div class="card" style="margin-bottom:12px;border-color:#5b8fff44">
     <div class="sec-title" style="color:#5b8fff">🔬 System-Selbsttest</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+    <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:12px">
       Prüft alle Datenbank-Operationen die die App braucht — Schreiben, Ändern, Löschen.
       Findet blockierte Policies und fehlende Spalten, bevor Mitglieder darüber stolpern.
     </div>
     <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="runFullDiagnostics()">🔬 Vollständigen Test starten</button>
-    <div id="full-diag" style="font-size:11px;line-height:1.6"></div>
+    <div id="full-diag" style="font-size:13px;line-height:1.6"></div>
   </div>
 
   <div class="card" style="margin-bottom:12px">
-    <div class="sec-title">✨ KI-Fotoerkennung <span style="font-size:9px;font-weight:800;background:var(--gold);color:#000;padding:1px 5px;border-radius:3px;vertical-align:middle">BETA</span></div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+    <div class="sec-title">✨ KI-Fotoerkennung <span style="font-size:12px;font-weight:800;background:var(--gold);color:#000;padding:1px 5px;border-radius:3px;vertical-align:middle">BETA</span></div>
+    <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:12px">
       Erkennt Modell, Farbe und Kennzeichen aus dem Fahrzeugfoto. Aktuell kostenlos in der Testphase —
       als Premium-Feature erst freigeben, wenn die Trefferquote stabil über 80% liegt.
     </div>
-    <div id="ai-stats" style="font-size:11px"></div>
+    <div id="ai-stats" style="font-size:13px"></div>
     <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="showAIStats()">📊 Trefferquote anzeigen</button>
   </div>
 
   <div class="card" style="margin-bottom:12px">
     <div class="sec-title">📨 Nachrichten-Diagnose</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+    <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:12px">
       Prüft ob Admin-Nachrichten korrekt in der Datenbank landen und bei den Mitgliedern ankommen.
     </div>
     <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="runMsgDiagnostics()">🔍 Verbindung prüfen</button>
-    <div id="diag-out" style="font-size:11px;line-height:1.7"></div>
+    <div id="diag-out" style="font-size:13px;line-height:1.7"></div>
   </div>
 
   <div class="card" style="margin-bottom:12px;border-color:#f59e0b44">
     <div class="sec-title" style="color:var(--amber)">🔄 Demo zurücksetzen</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Löscht Demo-Chat, Demo-Nachrichten und Demo-Teilnehmer aus der DB.</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:12px">Löscht Demo-Chat, Demo-Nachrichten und Demo-Teilnehmer aus der DB.</div>
     <button class="btn btn-amber" style="width:100%" onclick="resetDemo()">🔄 Demo-Daten zurücksetzen</button>
   </div>
   <div class="card" style="margin-bottom:12px">
     <div class="sec-title">Datenschutz-Hinweis</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.7">⚠️ Chat-Nachrichten zwischen Mitgliedern sind hier <b style="color:var(--white)">nicht einsehbar</b>. Sichtbar für den Admin: Mitgliedsdaten, Fahrzeuge, Events, Beitragsstand, Punkte.</div>
+    <div style="font-size:14px;color:var(--muted);line-height:1.7">⚠️ Chat-Nachrichten zwischen Mitgliedern sind hier <b style="color:var(--white)">nicht einsehbar</b>. Sichtbar für den Admin: Mitgliedsdaten, Fahrzeuge, Events, Beitragsstand, Punkte.</div>
   </div>
   <div class="card">
     <div class="sec-title">Systemstatus</div>
     ${[["Supabase","✓ Verbunden","var(--green)"],["Mitglieder",DB.members.length+" gesamt","var(--white)"],["Fahrzeuge",DB.vehicles.length+" gesamt","var(--white)"],["App","qar.gallery/pcn/","var(--muted)"],["Club-Code","PCN2026","var(--gold)"]].map(([k,v,c])=>`
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #131313;font-size:13px"><span style="color:var(--muted)">${k}</span><span style="color:${c}">${v}</span></div>`).join("")}
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #131313;font-size:15px"><span style="color:var(--muted)">${k}</span><span style="color:${c}">${v}</span></div>`).join("")}
   </div>`;
 }
 
@@ -1630,7 +1639,7 @@ async function runMsgDiagnostics(){
     log.push(`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #131313">
       <span style="flex-shrink:0">${ok===null?"⏳":ok?"✅":"❌"}</span>
       <div style="flex:1"><div style="color:${ok===false?"#ef4444":"#ccc"}">${txt}</div>
-      ${detail?`<div style="color:#555;font-size:10px;margin-top:2px">${detail}</div>`:""}</div>
+      ${detail?`<div style="color:#555;font-size:12px;margin-top:2px">${detail}</div>`:""}</div>
     </div>`);
     out.innerHTML=log.join("");
   };
@@ -1755,12 +1764,12 @@ function confirmDanger({title, body, warn, confirmLabel, onConfirm}){
   wrap.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px";
   wrap.innerHTML=`
     <div style="background:#111;border:1px solid #ef444455;border-radius:16px;max-width:420px;width:100%;padding:22px;animation:sheetUp .2s ease">
-      <div style="font-size:18px;font-weight:800;color:#ef4444;margin-bottom:8px">⚠ ${title}</div>
-      <div style="font-size:13px;color:#bbb;line-height:1.65;margin-bottom:${warn?"12px":"18px"}">${body}</div>
-      ${warn?`<div style="background:#ef44440d;border:1px solid #ef444433;border-radius:9px;padding:11px;margin-bottom:18px;font-size:12px;color:#e88;line-height:1.6">${warn}</div>`:""}
+      <div style="font-size:19px;font-weight:800;color:#ef4444;margin-bottom:8px">⚠ ${title}</div>
+      <div style="font-size:15px;color:#bbb;line-height:1.65;margin-bottom:${warn?"12px":"18px"}">${body}</div>
+      ${warn?`<div style="background:#ef44440d;border:1px solid #ef444433;border-radius:9px;padding:11px;margin-bottom:18px;font-size:14px;color:#e88;line-height:1.6">${warn}</div>`:""}
       <div style="display:flex;gap:8px">
-        <button onclick="closeDanger()" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:12px;color:#aaa;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Abbrechen</button>
-        <button id="danger-go" style="flex:1;background:#ef4444;border:none;border-radius:9px;padding:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">${confirmLabel}</button>
+        <button onclick="closeDanger()" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:12px;color:#aaa;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Abbrechen</button>
+        <button id="danger-go" style="flex:1;background:#ef4444;border:none;border-radius:9px;padding:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">${confirmLabel}</button>
       </div>
     </div>`;
   wrap.onclick=(e)=>{ if(e.target===wrap) closeDanger(); };
@@ -1877,20 +1886,20 @@ function confirmPublish({title, reach, preview, onConfirm}){
   wrap.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px";
   wrap.innerHTML=`
     <div style="background:#111;border:1px solid var(--border);border-radius:16px;max-width:420px;width:100%;padding:22px;animation:sheetUp .2s ease">
-      <div style="font-size:18px;font-weight:800;color:var(--txt);margin-bottom:10px">📬 ${title}</div>
+      <div style="font-size:19px;font-weight:800;color:var(--txt);margin-bottom:10px">📬 ${title}</div>
       <div style="background:#0d0d0d;border-radius:9px;padding:11px;margin-bottom:12px">
-        <div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Betreff</div>
-        <div style="font-size:13px;color:#ddd;font-weight:600">${preview}</div>
+        <div style="font-size:12px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Betreff</div>
+        <div style="font-size:15px;color:#ddd;font-weight:600">${preview}</div>
       </div>
       <div style="background:#5b8fff0d;border:1px solid #5b8fff33;border-radius:9px;padding:11px;margin-bottom:18px">
-        <div style="font-size:13px;color:#8ab;line-height:1.6">
+        <div style="font-size:15px;color:#8ab;line-height:1.6">
           Erscheint sofort im App-Feed von <strong style="color:#fff">${reach} Mitglied${reach!==1?"ern":""}</strong>.
           Ein Zurückholen ist nicht möglich.
         </div>
       </div>
       <div style="display:flex;gap:8px">
-        <button onclick="closePub()" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:12px;color:#aaa;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Nochmal prüfen</button>
-        <button id="pub-go" style="flex:1;background:var(--red);border:none;border-radius:9px;padding:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Veröffentlichen</button>
+        <button onclick="closePub()" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:9px;padding:12px;color:#aaa;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Nochmal prüfen</button>
+        <button id="pub-go" style="flex:1;background:var(--red);border:none;border-radius:9px;padding:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Veröffentlichen</button>
       </div>
     </div>`;
   wrap.onclick=(e)=>{ if(e.target===wrap) closePub(); };
