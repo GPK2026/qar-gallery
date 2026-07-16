@@ -546,18 +546,23 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
       <div style={{padding:"16px",maxWidth:520,margin:"0 auto"}}>
         {/* Event Info */}
         <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:14}}>
-          {[
-            ["📅", fmtDate(ev.date), "Datum"],
-            ["📍", ev.location, "Ort"],
-            ["💶", ev.entryFee||ev.price||"Kostenlos", "Eintritt"],
-            ["👥", `${confirmedParts.length} / ${ev.maxParticipants||100}`, "Bestätigte Teilnehmer"],
-          ].filter(([,v])=>v).map(([icon,val,label])=>(
-            <div key={label} style={{display:"flex",gap:10,marginBottom:8,alignItems:"center"}}>
-              <span style={{width:20,textAlign:"center"}}>{icon}</span>
-              <span style={{fontSize:11,color:C.muted,minWidth:60}}>{label}</span>
-              <span style={{fontSize:13,color:C.white,fontWeight:600}}>{val}</span>
-            </div>
-          ))}
+          {(()=>{
+            const raw = String(ev.entryFee||ev.price||"").trim();
+            const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
+            const rows = [
+              ["📅", fmtDate(ev.date), "Datum", null],
+              ["📍", ev.location, "Ort", null],
+              ["💶", free?"Kostenlos":raw, "Eintritt", free?C.green:C.gold],
+              ["👥", `${confirmedParts.length} / ${ev.maxParticipants||100}`, "Bestätigte Teilnehmer", null],
+            ];
+            return rows.filter(([,v])=>v).map(([icon,val,label,col])=>(
+              <div key={label} style={{display:"flex",gap:10,marginBottom:8,alignItems:"center"}}>
+                <span style={{width:20,textAlign:"center"}}>{icon}</span>
+                <span style={{fontSize:11,color:C.muted,minWidth:60}}>{label}</span>
+                <span style={{fontSize:13,color:col||C.white,fontWeight:col?800:600}}>{val}</span>
+              </div>
+            ));
+          })()}
           {ev.description&&<p style={{fontSize:12,color:"#bbb",lineHeight:1.75,marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`}}>{ev.description}</p>}
         </div>
 
@@ -624,6 +629,27 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
         {!myReg&&!isPast&&me&&myVehicles.length>0&&spotsLeft>0&&(
           <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:14}}>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:C.white,marginBottom:4}}>Jetzt anmelden</div>
+            {(()=>{
+              const raw = String(ev.entryFee||ev.price||"").trim();
+              const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
+              return (
+                <div style={{background:free?`${C.green}12`:`${C.gold}12`,
+                  border:`1px solid ${free?C.green:C.gold}33`,borderRadius:8,
+                  padding:"9px 12px",marginBottom:12,display:"flex",gap:9,alignItems:"center"}}>
+                  <span style={{fontSize:15}}>{free?"✓":"💶"}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:800,color:free?C.green:C.gold}}>
+                      {free?"Teilnahme kostenlos":`Startgebühr: ${raw}`}
+                    </div>
+                    {!free&&(
+                      <div style={{fontSize:10,color:"#888",marginTop:1}}>
+                        Zahlung direkt beim Veranstalter vor Ort
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
             <div style={{fontSize:11,color:C.muted,marginBottom:14}}>
               Nach Anmeldung wird deine Teilnahme vom Admin bestätigt.
             </div>
@@ -4813,6 +4839,14 @@ Regeln:
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
                           <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:700}}>{ev.category}</span>
+                          {(()=>{
+                            // Preis: leer oder "kostenlos"/"frei"/"0" → gratis
+                            const raw = String(ev.entryFee||ev.price||"").trim();
+                            const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
+                            return free
+                              ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>Kostenlos</span>
+                              : <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>💶 {raw}</span>;
+                          })()}
                           {myReg
                             ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>✓ Angemeldet #{myReg.startNr}</span>
                             : <span style={{background:`${C.border}44`,color:C.muted,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:600}}>Nicht angemeldet</span>
@@ -4920,7 +4954,16 @@ Regeln:
                             </div>
                             <div style={{flex:1,minWidth:0}}>
                               <div style={{fontSize:15,fontWeight:700,color:C.white,marginBottom:2}}>{ev.name}</div>
-                              <div style={{fontSize:12,color:C.muted}}>{ev.location}</div>
+                              <div style={{fontSize:12,color:C.muted,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                                <span>{ev.location}</span>
+                                {(()=>{
+                                  const raw = String(ev.entryFee||ev.price||"").trim();
+                                  const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
+                                  return <span style={{color:free?C.green:C.gold,fontWeight:700}}>
+                                    · {free?"Kostenlos":raw}
+                                  </span>;
+                                })()}
+                              </div>
                             </div>
                             {myReg
                               ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"4px 8px",fontSize:12,fontWeight:800,flexShrink:0}}>✓ #{myReg.startNr}</span>
