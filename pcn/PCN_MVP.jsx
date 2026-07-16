@@ -135,6 +135,25 @@ function QRCodeCanvas({value, size=140}) {
 }
 
 // ─── Demo Data ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SICHERER SPEICHER — Safari Privat wirft bei localStorage.setItem
+// einen QuotaExceededError. Ungeschützt bricht dadurch der Login ab.
+// Fallback: Arbeitsspeicher. Überlebt kein Neuladen, aber die App läuft.
+// ═══════════════════════════════════════════════════════════════════════════
+const _mem = {};
+let _lsOk = null;
+const lsAvailable = () => {
+  if(_lsOk !== null) return _lsOk;
+  try { localStorage.setItem("__t__","1"); localStorage.removeItem("__t__"); _lsOk = true; }
+  catch(e){ console.warn("[Speicher] Privates Fenster? Nutze Arbeitsspeicher."); _lsOk = false; }
+  return _lsOk;
+};
+const store = {
+  getItem: (k) => { if(lsAvailable()){ try { return localStorage.getItem(k); } catch(e){} } return _mem[k] ?? null; },
+  setItem: (k,v) => { _mem[k] = String(v); if(lsAvailable()){ try { localStorage.setItem(k,v); } catch(e){} } },
+  removeItem: (k) => { delete _mem[k]; if(lsAvailable()){ try { localStorage.removeItem(k); } catch(e){} } },
+};
+
 const CLUB_CODE = "PCN2026";
 // Sponsor config — set in pcn_config.js: window.PCN_SPONSOR = {name:"Porschezentrum Koblenz", url:"https://...", logo:"https://..."}
 const SPONSOR = {
@@ -898,7 +917,7 @@ function PCNInner() {
   const [screen, setScreen]       = useState(()=>window.__PCN_PRELOAD_SESSION__ ? "app" : "splash");
   const [tab, setTab]             = useState("dashboard");
   const [favorites, setFavorites] = useState(()=>{
-    try{ return JSON.parse(localStorage.getItem("pcn_favorites")||"[]"); }catch(e){ return []; }
+    try{ return JSON.parse(store.getItem("pcn_favorites")||"[]"); }catch(e){ return []; }
   });
   const [me, setMe]               = useState(()=>window.__PCN_PRELOAD_SESSION__||null);
   const [allUsers, setAllUsers]   = useState({...DEMO_USERS});
@@ -911,16 +930,16 @@ function PCNInner() {
   const [threads, setThreads]     = useState({});
   const [activeThread, setActiveThread] = useState(null);
   const [guestThreads, setGuestThreads] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("pcn_guest_threads")||"[]"); } catch(e){ return []; }
+    try { return JSON.parse(store.getItem("pcn_guest_threads")||"[]"); } catch(e){ return []; }
   });
   const [deletedThreadIds, setDeletedThreadIds] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("pcn_deleted_threads")||"[]"); } catch(e){ return []; }
+    try { return JSON.parse(store.getItem("pcn_deleted_threads")||"[]"); } catch(e){ return []; }
   });
   const [viewV, setViewV]         = useState(null);
   const [viewEv, setViewEv]       = useState(null);
   const [publicV, setPublicV]     = useState(null);
   const [recentVehicles, setRecentVehicles] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("pcn_recent_vehicles")||"[]"); } catch(e){ return []; }
+    try { return JSON.parse(store.getItem("pcn_recent_vehicles")||"[]"); } catch(e){ return []; }
   });
 
   // ── Form state ──────────────────────────────────────────────────────────────
@@ -948,20 +967,20 @@ function PCNInner() {
   const isOpen = (vid, section) => !!openSections[vid+"_"+section];
   const [profileImgUploading, setProfileImgUploading] = useState(false);
   const [newsState, setNewsState] = useState(()=>{
-    try { return JSON.parse(localStorage.getItem("pcn_news_state")||"{}"); } catch(e){ return {}; }
+    try { return JSON.parse(store.getItem("pcn_news_state")||"{}"); } catch(e){ return {}; }
   });
   const [viewNews, setViewNews] = useState(null);
   const markNewsRead = (id) => {
     setNewsState(p=>{
       const updated = {...p,[id]:"read"};
-      localStorage.setItem("pcn_news_state", JSON.stringify(updated));
+      store.setItem("pcn_news_state", JSON.stringify(updated));
       return updated;
     });
     // Add points for reading — 10 pts per article
     const readKey = "pcn_news_read_pts";
-    const already = JSON.parse(localStorage.getItem(readKey)||"[]");
+    const already = JSON.parse(store.getItem(readKey)||"[]");
     if(!already.includes(id)) {
-      localStorage.setItem(readKey, JSON.stringify([...already, id]));
+      store.setItem(readKey, JSON.stringify([...already, id]));
       toast_(`✓ Gelesen · +${POINTS.news_read} Punkte 🏆`);
     } else {
       toast_("✓ Als gelesen markiert");
@@ -1015,8 +1034,8 @@ function PCNInner() {
 
   // Punkte-Berechnung: Basis-Aktivitäten + Events
   // ── View/Scan points ─────────────────────────────────────────────────────────
-  const getViewedVehicles = () => { try { return JSON.parse(localStorage.getItem("pcn_viewed_vehicles")||"[]"); } catch(e){ return []; } };
-  const getScanConfirmed  = () => { try { return JSON.parse(localStorage.getItem("pcn_scan_confirmed")||"[]"); } catch(e){ return []; } };
+  const getViewedVehicles = () => { try { return JSON.parse(store.getItem("pcn_viewed_vehicles")||"[]"); } catch(e){ return []; } };
+  const getScanConfirmed  = () => { try { return JSON.parse(store.getItem("pcn_scan_confirmed")||"[]"); } catch(e){ return []; } };
 
   // Award +2 pts for viewing a foreign vehicle (once per vehicle)
   const awardViewPoints = (vehicleId) => {
@@ -1024,7 +1043,7 @@ function PCNInner() {
     const viewed = getViewedVehicles();
     if(viewed.includes(vehicleId)) return;
     viewed.push(vehicleId);
-    localStorage.setItem("pcn_viewed_vehicles", JSON.stringify(viewed));
+    store.setItem("pcn_viewed_vehicles", JSON.stringify(viewed));
   };
 
   // Request scan confirmation from owner — sends admin message
@@ -1070,7 +1089,7 @@ function PCNInner() {
     const key = `${scannerId}:${vehicleId}`;
     if(confirmed.includes(key)) { toast_("Scan bereits bestätigt"); return; }
     confirmed.push(key);
-    localStorage.setItem("pcn_scan_confirmed", JSON.stringify(confirmed));
+    store.setItem("pcn_scan_confirmed", JSON.stringify(confirmed));
     // Bestätigung an den Scanner — Demo-Modus schreibt nicht in die echte DB,
     // Zugangsdaten kommen aus der Config statt hardcoded im Quelltext.
     if(!isDemo){
@@ -1127,7 +1146,7 @@ function PCNInner() {
     // ── PRIO 3: Aktivität (Events, Nachrichten, News) ──
     pts += myParticipations.filter(p=>p.status==="confirmed").length * V.event_confirmed;
     pts += myThreads.length * V.message;
-    try { pts += JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length * V.news_read; } catch(e){}
+    try { pts += JSON.parse(store.getItem("pcn_news_read_pts")||"[]").length * V.news_read; } catch(e){}
 
     // ── PRIO 4: Treue (Mitgliedsjahre, Beitrag) ──
     if(me?.createdAt){
@@ -1138,7 +1157,7 @@ function PCNInner() {
 
     // ── Bonus: Geburtstag (einmal pro Jahr, automatisch) ──
     try {
-      const bdayPts = JSON.parse(localStorage.getItem("pcn_bday_pts")||"[]");
+      const bdayPts = JSON.parse(store.getItem("pcn_bday_pts")||"[]");
       bdayPts.forEach(entry => { pts += entry.pts||0; });
     } catch(e){}
 
@@ -1173,7 +1192,7 @@ function PCNInner() {
 
     const year = today.getFullYear();
     let awarded = [];
-    try { awarded = JSON.parse(localStorage.getItem("pcn_bday_pts")||"[]"); } catch(e){}
+    try { awarded = JSON.parse(store.getItem("pcn_bday_pts")||"[]"); } catch(e){}
     if(awarded.some(a=>a.year===year)) return; // schon gutgeschrieben
 
     const age = year - bd.getFullYear();
@@ -1181,7 +1200,7 @@ function PCNInner() {
     const pts = isRound ? POINTS.birthday_round : POINTS.birthday;
 
     awarded.push({year, pts, age});
-    localStorage.setItem("pcn_bday_pts", JSON.stringify(awarded));
+    store.setItem("pcn_bday_pts", JSON.stringify(awarded));
     setTimeout(()=>{
       toast_(isRound
         ? `🎂 Alles Gute zum ${age}. Geburtstag! +${pts} Punkte vom PCN 🎉`
@@ -1195,7 +1214,7 @@ function PCNInner() {
       const next = prev.includes(vehicleId)
         ? prev.filter(id=>id!==vehicleId)
         : [...prev, vehicleId];
-      localStorage.setItem("pcn_favorites", JSON.stringify(next));
+      store.setItem("pcn_favorites", JSON.stringify(next));
       if(!prev.includes(vehicleId)) toast_("❤️ Gespeichert");
       return next;
     });
@@ -1524,7 +1543,7 @@ function PCNInner() {
     setRecentVehicles(prev=>{
       const filtered = prev.filter(v=>v.id!==entry.id);
       const updated = [entry,...filtered].slice(0,10);
-      localStorage.setItem("pcn_recent_vehicles", JSON.stringify(updated));
+      store.setItem("pcn_recent_vehicles", JSON.stringify(updated));
       return updated;
     });
   },[screen, publicV?.id]);
@@ -1686,9 +1705,9 @@ function PCNInner() {
 
   const trackAI = (ok, fieldCount) => {
     try {
-      const s = JSON.parse(localStorage.getItem("pcn_ai_stats")||'{"runs":0,"ok":0,"fields":0}');
+      const s = JSON.parse(store.getItem("pcn_ai_stats")||'{"runs":0,"ok":0,"fields":0}');
       s.runs++; if(ok) s.ok++; s.fields += fieldCount||0;
-      localStorage.setItem("pcn_ai_stats", JSON.stringify(s));
+      store.setItem("pcn_ai_stats", JSON.stringify(s));
     } catch(e){}
   };
 
@@ -2024,7 +2043,7 @@ Regeln:
     };
     setMe(updated);
     // Persist session locally (always)
-    localStorage.setItem("pcn_session", JSON.stringify(updated));
+    store.setItem("pcn_session", JSON.stringify(updated));
     // Patch in Supabase if active
     const DB = window.PCN_DB;
     if(DB && me?.id){
@@ -2226,7 +2245,7 @@ Regeln:
       const gThread = {id:t.id, vehicleId:v.id, vehicleName:`${v.hersteller} ${v.modell}`, qarId:v.qarId, createdAt:new Date().toISOString()};
       setGuestThreads(prev=>{
         const updated=[gThread,...prev.filter(x=>x.id!==t.id)].slice(0,10);
-        localStorage.setItem("pcn_guest_threads", JSON.stringify(updated));
+        store.setItem("pcn_guest_threads", JSON.stringify(updated));
         return updated;
       });
     }
@@ -2267,7 +2286,7 @@ Regeln:
     const DB = window.PCN_DB;
     if(DB && DB.backend === "local"){
       // Local backend: seed via localStorage directly (fast path)
-      const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
+      const stored=JSON.parse(store.getItem("pcn_v1")||"{}");
       stored.users={...stored.users,...DEMO_USERS};
       stored.session=DEMO_USERS.u1;
       stored.vehicles=DEMO_VEHICLES;
@@ -2280,7 +2299,7 @@ Regeln:
         {id:"R2",vehicleId:"V002",title:"Sommerreifenwechsel",date:dPlus(4),done:false},
         {id:"R3",vehicleId:"V001",title:"TÜV Termin vereinbaren",date:dPlus(45),done:false},
       ]};
-      localStorage.setItem("pcn_v1",JSON.stringify(stored));
+      store.setItem("pcn_v1",JSON.stringify(stored));
       await refreshAll(DEMO_USERS.u1);
     } else {
       // Supabase/API backend: demo runs purely in-memory, not persisted to DB
@@ -2294,7 +2313,7 @@ Regeln:
       // Always reset demo threads — fresh every login
       // Keep deleted threads list — user intentionally deleted them
       // setThreads: only add demo threads that user hasn't deleted
-      const deletedIds = JSON.parse(localStorage.getItem("pcn_deleted_threads")||"[]");
+      const deletedIds = JSON.parse(store.getItem("pcn_deleted_threads")||"[]");
       const freshThreads = {};
       Object.entries(JSON.parse(JSON.stringify(DEMO_THREADS))).forEach(([k,v])=>{
         if(!deletedIds.includes(k)) freshThreads[k]=v;
@@ -2656,9 +2675,9 @@ Regeln:
                       }),
                     }).catch(e=>console.warn("Einwilligung nicht protokolliert:",e));
                   }
-                  const stored=JSON.parse(localStorage.getItem("pcn_v1")||"{}");
+                  const stored=JSON.parse(store.getItem("pcn_v1")||"{}");
                   if(!stored.events||Object.keys(stored.events).length===0){
-                    stored.events={}; localStorage.setItem("pcn_v1",JSON.stringify(stored));
+                    stored.events={}; store.setItem("pcn_v1",JSON.stringify(stored));
                   }
                   track("member_register", {club_code:loginForm.code});
                   setMe(u); setAllUsers(p=>({...p,[u.id]:u}));
@@ -3328,7 +3347,7 @@ Regeln:
         </div>
         <div style={{display:"flex",gap:10,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
           {(()=>{
-            const alreadyR = JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").includes(String(viewNews.id));
+            const alreadyR = JSON.parse(store.getItem("pcn_news_read_pts")||"[]").includes(String(viewNews.id));
             return (
               <button onClick={()=>{markNewsRead(viewNews.id);setViewNews(null);}}
                 style={{flex:1,background:alreadyR?C.card:`${C.green}18`,
@@ -4290,7 +4309,7 @@ Regeln:
 {/* Neuigkeiten — horizontal swipeable */}
               {(()=>{
                 const dbNews = (window._dbNews||[]).filter(n=>n&&!DEMO_NEWS.find(d=>d.id===String(n.id)));
-                const readPts = JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]");
+                const readPts = JSON.parse(store.getItem("pcn_news_read_pts")||"[]");
                 const items = [...dbNews, ...DEMO_NEWS]
                   .filter(n=>n.type!=="welcome" && newsState[n.id]!=="read" && !readPts.includes(String(n.id)))
                   .sort((a,b)=>new Date(b.date)-new Date(a.date));
@@ -4500,7 +4519,7 @@ Regeln:
                                 e.stopPropagation();
                                 setRecentVehicles(prev=>{
                                   const updated=prev.filter(v=>v.id!==rv.id);
-                                  localStorage.setItem("pcn_recent_vehicles",JSON.stringify(updated));
+                                  store.setItem("pcn_recent_vehicles",JSON.stringify(updated));
                                   return updated;
                                 });
                               }}
@@ -4521,7 +4540,7 @@ Regeln:
                         </div>
                       </div>
                     ))}
-                    <button onClick={()=>{setRecentVehicles([]);localStorage.removeItem("pcn_recent_vehicles");}}
+                    <button onClick={()=>{setRecentVehicles([]);store.removeItem("pcn_recent_vehicles");}}
                       style={{flexShrink:0,width:44,background:"none",border:`1px dashed ${C.border}`,
                         borderRadius:10,color:"#555",cursor:"pointer",fontSize:16,minHeight:119,
                         display:"flex",alignItems:"center",justifyContent:"center"}}
@@ -4941,12 +4960,12 @@ Regeln:
                       setThreads(prev=>{const n={...prev};delete n[t.id];return n;});
                       setDeletedThreadIds(prev=>{
                         const updated=[...new Set([...prev, t.id])];
-                        localStorage.setItem("pcn_deleted_threads",JSON.stringify(updated));
+                        store.setItem("pcn_deleted_threads",JSON.stringify(updated));
                         return updated;
                       });
                       setGuestThreads(prev=>{
                         const updated=prev.filter(x=>x.id!==t.id);
-                        localStorage.setItem("pcn_guest_threads",JSON.stringify(updated));
+                        store.setItem("pcn_guest_threads",JSON.stringify(updated));
                         return updated;
                       });
                       toast_("Chat gelöscht");
@@ -5191,7 +5210,7 @@ Regeln:
 
             {/* Recently viewed */}
             {(()=>{
-              const recent = JSON.parse(localStorage.getItem("pcn_recent_vehicles")||"[]")
+              const recent = JSON.parse(store.getItem("pcn_recent_vehicles")||"[]")
                 .filter(id=>!favorites.includes(id));
               if(!recent.length) return null;
               return (
@@ -5234,7 +5253,7 @@ Regeln:
 
             {/* Pending scan confirmations */}
             {(()=>{
-              const pending = JSON.parse(localStorage.getItem("pcn_scan_requests")||"[]")
+              const pending = JSON.parse(store.getItem("pcn_scan_requests")||"[]")
                 .filter(key=>!getScanConfirmed().includes(key));
               if(!pending.length) return null;
               return (
@@ -5345,7 +5364,7 @@ Regeln:
                   ["❤️","Favoriten",favorites.length,"gespeichert",()=>setTab("community")],
                   ["👁","Angesehen",getViewedVehicles().length,"Akten · +"+(getViewedVehicles().length*POINTS.view_akte).toLocaleString("de-DE")+" Pkt",()=>setTab("community")],
                   ["📱","QR-Scans",getScanConfirmed().length,"bestätigt · +"+(getScanConfirmed().length*POINTS.qr_scan).toLocaleString("de-DE")+" Pkt",()=>setTab("community")],
-                  ["📰","News",JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length,"gelesen · +"+(JSON.parse(localStorage.getItem("pcn_news_read_pts")||"[]").length*POINTS.news_read).toLocaleString("de-DE")+" Pkt",()=>setTab("dashboard")],
+                  ["📰","News",JSON.parse(store.getItem("pcn_news_read_pts")||"[]").length,"gelesen · +"+(JSON.parse(store.getItem("pcn_news_read_pts")||"[]").length*POINTS.news_read).toLocaleString("de-DE")+" Pkt",()=>setTab("dashboard")],
                 ].map(([icon,label,val,sub,onTap])=>(
                   <button key={label} onClick={onTap}
                     style={{background:C.black,borderRadius:10,padding:"12px",textAlign:"center",
