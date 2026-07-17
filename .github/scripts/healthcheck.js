@@ -56,6 +56,43 @@ async function q(path, opts = {}) {
   }
 }
 
+
+// Räumt alle Spuren eines Testlaufs weg. Wird auch bei Fehlern aufgerufen —
+// sonst tauchen Testnutzer und -chats in der Admin-Console auf.
+async function cleanupTestUser(uid, vehId) {
+  if (!uid) return;
+  const tid = `ad000000-0000-4000-8000-${String(uid).replace(/-/g, "").slice(-12)}`;
+  const steps = [
+    `logbook?vehicle_id=eq.${vehId}`,
+    `vehicle_status?vehicle_id=eq.${vehId}`,
+    `participants?user_id=eq.${uid}`,
+    `messages?thread_id=eq.${tid}`,
+    `threads?id=eq.${tid}`,
+    `vehicles?id=eq.${vehId}`,
+    `users?id=eq.${uid}`,
+  ];
+  for (const path of steps) {
+    await q(path, { method: "DELETE" }).catch(() => {});
+  }
+  // Verifizieren — RLS blockiert lautlos
+  const left = await q(`users?id=eq.${uid}&select=id`);
+  if (left.data && left.data.length) {
+    results.push("⚠ Testnutzer nicht gelöscht — in der Console unter Mitglieder entfernen");
+  }
+}
+
+// Entfernt Testdaten aus früheren, abgebrochenen Läufen
+async function cleanupOldTestData() {
+  const old = await q("users?email=like.healthcheck-*&select=id");
+  if (!old.data || !old.data.length) return;
+  for (const u of old.data) {
+    const veh = await q(`vehicles?user_id=eq.${u.id}&select=id`);
+    for (const v of (veh.data || [])) await cleanupTestUser(u.id, v.id);
+    await cleanupTestUser(u.id, null);
+  }
+  if (old.data.length) results.push(`ℹ ${old.data.length} alte Testdaten aufgeräumt`);
+}
+
 (async () => {
   console.log("Health-Check gestartet\n");
 
@@ -80,6 +117,9 @@ async function q(path, opts = {}) {
       process.exit(1);
     }
   }
+
+  // Reste früherer Läufe entfernen (falls einer abgebrochen ist)
+  await cleanupOldTestData();
 
   // ── 1. Lesen: sind alle Tabellen erreichbar? ──
   // Pflicht-Tabellen: ohne die läuft nichts
@@ -203,12 +243,8 @@ async function q(path, opts = {}) {
         : ok("Chat löschen (threads DELETE)");
     }
 
-    // Aufräumen
-    await q(`users?id=eq.${uid}`, { method: "DELETE" });
-    const uGone = await q(`users?id=eq.${uid}&select=id`);
-    if (uGone.data && uGone.data.length) {
-      results.push("⚠ Testnutzer konnte nicht gelöscht werden — bitte manuell entfernen");
-    }
+    // Aufräumen — muss immer laufen, auch wenn oben etwas fehlschlug
+    await cleanupTestUser(uid, testId);
   }
 
   // ── 3. Sicherheit: liegt ein echter service_role-Key im Client? ──
