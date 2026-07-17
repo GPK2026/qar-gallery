@@ -1059,7 +1059,340 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// APP-SELBSTTEST
+//
+// Warum: Klammer-Zählen und Funktionsnamen prüfen findet Syntaxfehler, aber
+// keine undefinierten Variablen. Genau so ist "Can't find variable: news"
+// durchgerutscht und hat die App lahmgelegt.
+//
+// Dieser Test rendert jeden Screen und jedes Modal wirklich, fängt Fehler ab
+// und listet auf, was kaputt ist. Erreichbar über ?selftest in der URL.
+// ═══════════════════════════════════════════════════════════════════════════
+
+class TestBoundary extends React.Component {
+  constructor(p){ super(p); this.state = {err:null}; }
+  static getDerivedStateFromError(err){ return {err}; }
+  componentDidCatch(err){ this.props.onError?.(err); }
+  render(){
+    if(this.state.err) return null;
+    return this.props.children;
+  }
+}
+
+function SelfTest({onClose}) {
+  const [results, setResults] = useState([]);
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(false);
+
+  // Prüfungen, die ohne Rendern auskommen — finden die häufigsten Fehler
+  const staticChecks = () => {
+    const out = [];
+    const check = (label, fn, hint) => {
+      try {
+        const r = fn();
+        out.push({ ok: r !== false, label, detail: typeof r === "string" ? r : "" });
+      } catch(e) {
+        out.push({ ok:false, label, detail: e.message, hint });
+      }
+    };
+
+    // Globale Abhängigkeiten
+    check("Konfiguration geladen", () => {
+      const c = window.PCN_CONFIG;
+      if(!c) throw new Error("PCN_CONFIG fehlt — pcn_config.js lädt nicht");
+      if(!c.supabaseUrl || !c.supabaseKey) throw new Error("supabaseUrl/Key leer");
+      return c.supabaseUrl.replace("https://","").split(".")[0];
+    }, "pcn_config.js prüfen");
+
+    check("Datenbank-Schicht", () => {
+      const db = window.PCN_DB;
+      if(!db) throw new Error("PCN_DB fehlt — pcn_storage.js hat einen Syntaxfehler");
+      const need = ["auth","vehicles","threads","events","reminders","logbook"];
+      const miss = need.filter(k => !db[k]);
+      if(miss.length) throw new Error("fehlt: " + miss.join(", "));
+      return need.length + " Bereiche";
+    }, "pcn_storage.js prüfen");
+
+    check("Fahrzeug-Funktionen", () => {
+      const v = window.PCN_DB?.vehicles;
+      const need = ["list","listClub","save","delete","getPublic","getStatus","setStatus"];
+      const miss = need.filter(k => typeof v?.[k] !== "function");
+      if(miss.length) throw new Error("fehlt: " + miss.join(", "));
+      return need.length + " Funktionen";
+    });
+
+    check("Chat-Funktionen", () => {
+      const t = window.PCN_DB?.threads;
+      const need = ["list","get","create","send","read","delete"];
+      const miss = need.filter(k => typeof t?.[k] !== "function");
+      if(miss.length) throw new Error("fehlt: " + miss.join(", "));
+      return need.length + " Funktionen";
+    });
+
+    check("QR-Bibliothek", () => {
+      if(typeof window.jsQR !== "function") throw new Error("jsQR nicht geladen — Scan geht nicht");
+      return "bereit";
+    }, "jsQR.js prüfen");
+
+    check("QR-Erzeugung", () => {
+      if(!window.qrcode && !window.QRCode) throw new Error("qrcode_bundle nicht geladen");
+      return "bereit";
+    });
+
+    // Konstanten, die überall gebraucht werden
+    check("Punktesystem", () => {
+      const need = ["qr_scan","vehicle_added","event_confirmed","news_read","birthday"];
+      const miss = need.filter(k => typeof POINTS?.[k] !== "number");
+      if(miss.length) throw new Error("fehlt: " + miss.join(", "));
+      return Object.keys(POINTS).length + " Werte · Kurs " + PTS_PER_UNIT + ":" + EUR_PER_UNIT;
+    });
+
+    check("Stufen", () => {
+      if(!Array.isArray(TIERS) || !TIERS.length) throw new Error("TIERS leer");
+      return TIERS.map(t=>t.name).join(", ");
+    });
+
+    check("Privacy-Standard", () => {
+      if(DEF_PRIVACY.kennzeichen !== false) throw new Error("Kennzeichen ist öffentlich — DSGVO Art. 25!");
+      if(DEF_PRIVACY.fin !== false) throw new Error("FIN ist öffentlich!");
+      const öffentlich = Object.entries(DEF_PRIVACY).filter(([,v])=>v).map(([k])=>k);
+      return öffentlich.length + " Felder sichtbar: " + öffentlich.join(", ");
+    });
+
+    check("Speicher verfügbar", () => {
+      store.setItem("__t__","1");
+      const ok = store.getItem("__t__") === "1";
+      store.removeItem("__t__");
+      if(!ok) throw new Error("Weder localStorage noch Speicher-Fallback");
+      return lsAvailable() ? "localStorage" : "Arbeitsspeicher (privates Fenster)";
+    });
+
+    check("Admin-Thread-IDs", () => {
+      const id = adminThreadId("7701c779-1568-4c42-aa2d-b8506bc3e988");
+      const valid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id);
+      if(!valid) throw new Error("Ungültige UUID: " + id);
+      // Auch Demo-Aliase prüfen
+      if(!/^[0-9a-f-]+$/.test(adminThreadId("u1"))) throw new Error("Demo-Alias erzeugt ungültige UUID");
+      return "gültig";
+    });
+
+    check("Club-Kanal-ID", () => {
+      const valid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(CLUB_CHANNEL_ID);
+      if(!valid) throw new Error("Ungültige UUID: " + CLUB_CHANNEL_ID);
+      return "gültig";
+    });
+
+    check("Demo-Daten", () => {
+      const n = Object.keys(DEMO_VEHICLES||{}).length;
+      if(!n) throw new Error("Keine Demo-Fahrzeuge");
+      return n + " Fahrzeuge, " + (DEMO_NEWS||[]).length + " News";
+    });
+
+    return out;
+  };
+
+  // Rendert eine Komponente isoliert und meldet Fehler
+  const renderCheck = (label, el) => new Promise(resolve => {
+    let failed = null;
+    const host = document.createElement("div");
+    host.style.cssText = "position:fixed;left:-99999px;top:0;width:390px;height:800px;pointer-events:none";
+    document.body.appendChild(host);
+    try {
+      const RD = window.ReactDOM;
+      if(!RD?.createRoot){ host.remove(); return resolve({ ok:false, label, detail:"ReactDOM nicht verfügbar" }); }
+      const root = RD.createRoot(host);
+      root.render(
+        React.createElement(TestBoundary, { onError: (e)=>{ failed = e; } }, el)
+      );
+      setTimeout(() => {
+        try { root.unmount(); } catch(e){}
+        host.remove();
+        resolve({ ok: !failed, label, detail: failed ? failed.message : "" });
+      }, 120);
+    } catch(e) {
+      host.remove();
+      resolve({ ok:false, label, detail: e.message });
+    }
+  });
+
+  const run = async () => {
+    setRunning(true); setDone(false);
+    const out = [];
+
+    // 1. Statische Prüfungen
+    out.push({ section: "Grundlagen" });
+    staticChecks().forEach(r => out.push(r));
+    setResults([...out]);
+
+    // 2. Komponenten wirklich rendern
+    out.push({ section: "Komponenten rendern" });
+    setResults([...out]);
+
+    const demoV = Object.values(DEMO_VEHICLES)[0];
+    const demoUser = DEMO_USERS["u1"] || Object.values(DEMO_USERS)[0];
+    const demoEv = { id:"T1", name:"Test-Event", date:new Date().toISOString().slice(0,10),
+                     location:"Nürburgring", category:"Trackday", entryFee:"€ 95",
+                     maxParticipants:50, classes:["Alle"] };
+    const demoThread = { id: adminThreadId("u1"), participants:["u1", ADMIN_UUID],
+                         messages:[{id:"m1",from:ADMIN_UUID,text:"Test",isSystem:true,created_at:new Date().toISOString()}],
+                         anonymous:false };
+
+    const tests = [
+      ["Karussell (leer)", React.createElement(Carousel, {
+        items: [], renderItem: ()=>null, emptyState: React.createElement("div",null,"leer") })],
+      ["Karussell (mit Fahrzeugen)", React.createElement(Carousel, {
+        items: Object.values(DEMO_VEHICLES).slice(0,3),
+        renderItem: (v)=>React.createElement("div",null,v.modell) })],
+      ["Event-Detail", React.createElement(EventDetail, {
+        ev: demoEv, me: demoUser, myVehicles:[demoV], vehicles: DEMO_VEHICLES,
+        participants: {}, onBack:()=>{}, onJoin:()=>{}, onCancel:()=>{}, onViewVehicle:()=>{} })],
+      ["Chat-Fenster", React.createElement(ChatScreen, {
+        thread: demoThread, me: demoUser, allUsers: DEMO_USERS, vehicles: DEMO_VEHICLES,
+        onBack:()=>{}, onSend:()=>{}, onMarkRead:()=>{}, onViewVehicle:()=>{},
+        onUpgrade:()=>{}, onDeleteMessage:()=>{}, onDeleteThread:()=>{}, onConfirmScan:()=>{} })],
+      ["QR-Code", React.createElement(QRCodeCanvas, { value:"QAR-TEST1234", size:120 })],
+    ];
+
+    for(const [label, el] of tests){
+      const r = await renderCheck(label, el);
+      out.push(r);
+      setResults([...out]);
+    }
+
+    // 3. Datenbank erreichbar?
+    out.push({ section: "Datenbank" });
+    setResults([...out]);
+    try {
+      const t0 = Date.now();
+      const { data, error } = await window.PCN_DB.events.list();
+      const ms = Date.now() - t0;
+      if(error) out.push({ ok:false, label:"Events laden", detail: String(error).slice(0,60) });
+      else out.push({ ok:true, label:"Events laden", detail: (data?.length||0) + " Events · " + ms + "ms" });
+    } catch(e){ out.push({ ok:false, label:"Events laden", detail:e.message }); }
+
+    try {
+      const { data, error } = await window.PCN_DB.vehicles.listClub(5);
+      if(error) out.push({ ok:false, label:"Community-Fahrzeuge", detail: String(error).slice(0,60) });
+      else out.push({ ok:true, label:"Community-Fahrzeuge", detail: (data?.length||0) + " geladen" });
+    } catch(e){ out.push({ ok:false, label:"Community-Fahrzeuge", detail:e.message }); }
+
+    try {
+      const r = await fetch(`${sbUrl()}/rest/v1/news?select=id&limit=1`, { headers: sbHead() });
+      if(r.ok) out.push({ ok:true, label:"News-Tabelle", detail:"erreichbar" });
+      else out.push({ ok:false, label:"News-Tabelle", detail:"HTTP " + r.status + " — Newsletter erscheinen nicht" });
+    } catch(e){ out.push({ ok:false, label:"News-Tabelle", detail:e.message }); }
+
+    setResults([...out]);
+    setRunning(false); setDone(true);
+  };
+
+  useEffect(()=>{ run(); },[]);
+
+  const checks = results.filter(r => !r.section);
+  const failed = checks.filter(r => !r.ok);
+
+  return (
+    <div style={{position:"fixed",inset:0,background:C.black,zIndex:9999,overflowY:"auto",
+      padding:"20px 16px",fontFamily:"'Barlow',sans-serif"}}>
+      <div style={{maxWidth:520,margin:"0 auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white}}>
+            🔬 App-Selbsttest
+          </div>
+          <button onClick={onClose}
+            style={{background:"none",border:"none",color:"#666",fontSize:22,cursor:"pointer",padding:"0 4px"}}>✕</button>
+        </div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.5}}>
+          Prüft Abhängigkeiten, rendert Komponenten und testet die Datenbank.
+        </div>
+
+        {running&&(
+          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:14,
+            background:C.card,borderRadius:10,padding:"12px 14px"}}>
+            <div style={{width:15,height:15,border:`2px solid ${C.red}44`,borderTopColor:C.red,
+              borderRadius:"50%",animation:"spin .7s linear infinite"}}/>
+            <span style={{fontSize:13,color:C.muted}}>Test läuft…</span>
+          </div>
+        )}
+
+        {done&&(
+          <div style={{background: failed.length ? "#ef44440d" : `${C.green}0d`,
+            border:`1px solid ${failed.length ? "#ef444433" : C.green+"33"}`,
+            borderRadius:12,padding:"14px",marginBottom:16}}>
+            <div style={{fontSize:15,fontWeight:800,color: failed.length ? "#ef4444" : C.green,marginBottom:4}}>
+              {failed.length
+                ? `${failed.length} von ${checks.length} Prüfungen fehlgeschlagen`
+                : `Alle ${checks.length} Prüfungen bestanden ✓`}
+            </div>
+            <div style={{fontSize:11,color:"#888",lineHeight:1.5}}>
+              {failed.length
+                ? "Die roten Punkte unten zeigen, was kaputt ist."
+                : "Alle Komponenten rendern, Datenbank erreichbar."}
+            </div>
+          </div>
+        )}
+
+        {results.map((r,i)=>
+          r.section ? (
+            <div key={i} style={{fontSize:10,fontWeight:800,color:"#555",letterSpacing:1.5,
+              textTransform:"uppercase",margin:"16px 0 7px"}}>{r.section}</div>
+          ) : (
+            <div key={i} style={{display:"flex",gap:9,padding:"8px 0",
+              borderBottom:`1px solid ${C.border}`,alignItems:"flex-start"}}>
+              <span style={{flexShrink:0,fontSize:13,width:16}}>{r.ok ? "✅" : "❌"}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,color: r.ok ? "#ccc" : "#ef4444",fontWeight: r.ok?400:600}}>
+                  {r.label}
+                </div>
+                {r.detail&&(
+                  <div style={{fontSize:11,color:"#666",marginTop:2,lineHeight:1.45,wordBreak:"break-word"}}>
+                    {r.detail}
+                  </div>
+                )}
+                {r.hint&&!r.ok&&(
+                  <div style={{fontSize:10,color:C.gold,marginTop:3}}>→ {r.hint}</div>
+                )}
+              </div>
+            </div>
+          )
+        )}
+
+        {done&&(
+          <div style={{display:"flex",gap:8,marginTop:20}}>
+            <button onClick={run} className="btn ghost" style={{flex:1,fontSize:13}}>
+              ↻ Nochmal prüfen
+            </button>
+            <button onClick={onClose} className="btn" style={{flex:1,fontSize:13}}>
+              Schließen
+            </button>
+          </div>
+        )}
+
+        <div style={{fontSize:10,color:"#444",textAlign:"center",marginTop:16,lineHeight:1.5}}>
+          Aufrufbar über qar.gallery/pcn/?selftest
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PCN() {
+  // Selbsttest über ?selftest in der URL — findet Fehler, die Klammer-Zählen
+  // nicht sieht. Genau so ist "Can't find variable: news" durchgerutscht.
+  const [selfTest, setSelfTest] = useState(()=>{
+    try { return new URLSearchParams(window.location.search).has("selftest"); }
+    catch(e){ return false; }
+  });
+  if(selfTest) return <SelfTest onClose={()=>{
+    setSelfTest(false);
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.delete("selftest");
+      window.history.replaceState({}, "", u.toString());
+    } catch(e){}
+  }}/>;
+
   return <ErrorBoundary><PCNInner/></ErrorBoundary>;
 }
 
