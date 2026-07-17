@@ -1136,9 +1136,17 @@ function SelfTest({onClose}) {
     }, "jsQR.js prüfen");
 
     check("QR-Erzeugung", () => {
-      if(!window.qrcode && !window.QRCode) throw new Error("qrcode_bundle nicht geladen");
+      // qrcode_bundle.js setzt window.QRCodeLib (nicht "qrcode" oder "QRCode").
+      // Wird in index.html vorab geladen, QRCodeCanvas lädt sonst bei Bedarf nach.
+      if(!window.QRCodeLib){
+        const tag = [...document.querySelectorAll("script[src]")]
+          .find(s => s.src.includes("qrcode_bundle"));
+        if(!tag) throw new Error("qrcode_bundle.js nicht eingebunden — index.html prüfen");
+        throw new Error("Script eingebunden, aber QRCodeLib nicht gesetzt — Ladefehler");
+      }
+      if(typeof window.QRCodeLib.toCanvas !== "function") throw new Error("toCanvas fehlt");
       return "bereit";
-    });
+    }, "qrcode_bundle.js prüfen");
 
     // Konstanten, die überall gebraucht werden
     check("Punktesystem", () => {
