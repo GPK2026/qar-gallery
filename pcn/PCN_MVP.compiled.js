@@ -96,12 +96,34 @@
         }
       }, this.state.error?.message || "Unbekannter Fehler"), /*#__PURE__*/_react.default.createElement("div", {
         style: {
+          fontSize: 10,
+          color: "#555",
+          marginBottom: 10
+        }
+      }, "Version ", (() => {
+        try {
+          const s = [...document.querySelectorAll("script[src]")].find(x => x.src.includes("PCN_MVP"));
+          return (s?.src.match(/v=(\d+)/) || [])[1] || "?";
+        } catch (e) {
+          return "?";
+        }
+      })()), /*#__PURE__*/_react.default.createElement("div", {
+        style: {
           fontSize: 11,
           color: "#666",
           marginBottom: 20
         }
       }, "Deine Daten sind sicher gespeichert."), /*#__PURE__*/_react.default.createElement("button", {
-        onClick: () => window.location.reload(),
+        onClick: async () => {
+          try {
+            if (window.caches?.keys) {
+              const ks = await caches.keys();
+              await Promise.all(ks.map(k => caches.delete(k)));
+            }
+            sessionStorage.clear();
+          } catch (e) {}
+          window.location.reload(true);
+        },
         style: {
           background: "#e30613",
           color: "#fff",
