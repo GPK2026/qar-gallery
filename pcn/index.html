@@ -110,6 +110,35 @@
   <!-- Google Fonts (same as PCN website uses Barlow) -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script>
+    // ── Cache-Selbstheilung ──────────────────────────────────────────────
+    // iOS-PWAs und Safari halten alte Bundles teils hartnäckig fest. Wenn die
+    // geladene Bundle-Version nicht zur Seite passt, einmalig hart neu laden.
+    (function(){
+      var expected = document.currentScript?.dataset?.v || "";
+      window.__PCN_EXPECTED_V = expected;
+      window.addEventListener("error", function(e){
+        var msg = String(e?.message||"");
+        // Typische Symptome eines veralteten Bundles
+        if(!/Can't find variable|is not defined|undefined is not an object/.test(msg)) return;
+        var key = "pcn_cache_reload";
+        var last = 0;
+        try { last = parseInt(sessionStorage.getItem(key)||"0"); } catch(_){}
+        // Nur einmal pro Sitzung — sonst Endlosschleife
+        if(Date.now() - last < 30000) return;
+        try { sessionStorage.setItem(key, String(Date.now())); } catch(_){}
+        console.warn("[PCN] Veraltetes Bundle erkannt — lade neu:", msg);
+        // Caches leeren, falls vorhanden
+        if(window.caches?.keys) {
+          caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); })
+            .finally(function(){ location.reload(true); });
+        } else {
+          location.reload(true);
+        }
+      }, true);
+    })();
+  </script>
 </head>
 <body>
 
@@ -140,7 +169,7 @@
       }
     } catch(e) {}
   </script>
-  <script src="pcn_config.js?v=1784243718"></script>
+  <script src="pcn_config.js?v=1784269273"></script>
 
   <!-- PostHog Analytics (optional — loads only if key configured) -->
   <script>
@@ -151,13 +180,13 @@
     }
   </script>
   <!-- jsQR — bundled locally, no CDN needed -->
-  <script src="jsQR.js?v=1784243718"></script>
+  <script src="jsQR.js?v=1784269273"></script>
   <!-- QR Code generator — bundled locally -->
-  <script src="qrcode_bundle.js?v=1784243718"></script>
+  <script src="qrcode_bundle.js?v=1784269273"></script>
   <!-- Storage layer (load before app) -->
-  <script src="pcn_storage.js?v=1784243718"></script>
+  <script src="pcn_storage.js?v=1784269273"></script>
   <!-- App -->
-  <script src="PCN_MVP.compiled.js?v=1784243718"></script>
+  <script src="PCN_MVP.compiled.js?v=1784269273"></script>
 
   <script>
     (function() {
