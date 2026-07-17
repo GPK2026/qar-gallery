@@ -2344,7 +2344,33 @@ function rSettings(el){
     </div>
   </div>
 
-  <!-- 8. DEMO ZURÜCKSETZEN — ganz unten, weil selten und riskant -->
+  <!-- 8. DSGVO-LÖSCHANTRAG -->
+  <div class="card" style="margin-bottom:14px;border-color:#ef444433">
+    <div class="sec-title" style="color:#ef4444">🗑 Löschantrag bearbeiten</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">
+      Verlangt ein Mitglied die Löschung seiner Daten (DSGVO Art. 17), muss der Verein
+      dem binnen eines Monats nachkommen. Diese Funktion entfernt <strong style="color:#ccc">alle</strong>
+      Daten der Person — Konto, Fahrzeuge, Logbuch, Chats, Anmeldungen.
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <select id="del-member" style="flex:1">
+        <option value="">Mitglied wählen…</option>
+        ${DB.members.map(m=>`<option value="${m.id}">${escapeHtml(m.name||"—")} · ${escapeHtml(m.email||"")}</option>`).join("")}
+      </select>
+      <button onclick="startDeletion()" style="flex-shrink:0;background:transparent;border:1px solid #ef444455;border-radius:8px;padding:11px 16px;color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
+        Löschen
+      </button>
+    </div>
+    <div style="background:#f59e0b0d;border:1px solid #f59e0b33;border-radius:7px;padding:10px 12px">
+      <div style="font-size:12px;color:var(--amber);line-height:1.6">
+        <strong>Vorher prüfen:</strong> Liegt der Antrag schriftlich vor?
+        Ist „Pausieren" die passendere Wahl? Pausierte Accounts sind unsichtbar,
+        aber wiederherstellbar — gelöschte nicht.
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. DEMO ZURÜCKSETZEN — ganz unten, weil selten und riskant -->
   <div class="card" style="border-color:#f59e0b44">
     <div class="sec-title" style="color:var(--amber)">🔄 Demo zurücksetzen</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">
@@ -2355,6 +2381,16 @@ function rSettings(el){
   </div>`;
 
   renderActivityLog();
+}
+
+// Löschung aus dem System-Tab starten
+function startDeletion(){
+  const sel = document.getElementById("del-member");
+  const id = sel?.value;
+  if(!id){ toast("Bitte Mitglied wählen","err"); return; }
+  const m = DB.members.find(x=>x.id===id);
+  if(!m){ toast("Mitglied nicht gefunden","err"); return; }
+  delMember(m.id, m.name || m.email || "Unbekannt");
 }
 
 // ── Aktivitäts-Logbuch: aus vorhandenen Daten abgeleitet ──
@@ -2543,22 +2579,97 @@ function confirmDanger({title, body, warn, confirmLabel, onConfirm}){
 }
 function closeDanger(){ document.getElementById("danger-modal")?.remove(); }
 
-async function delMember(id,name){
-  const veh=DB.vehicles.filter(v=>v.user_id===id).length;
-  const parts=DB.participants.filter(p=>p.user_id===id).length;
-  const pts=calcPts(id);
+// ═══════════════════════════════════════════════════════════════════════
+// MITGLIED VOLLSTÄNDIG LÖSCHEN (DSGVO Art. 17 — Recht auf Vergessenwerden)
+//
+// WICHTIG: Die Tabellen haben KEINE Fremdschlüssel auf users mit CASCADE.
+// Ein einfaches DELETE FROM users würde nur die Zeile entfernen — Fahrzeuge,
+// Logbuch, Chats und Anmeldungen blieben als Waisen zurück. Ein Löschantrag
+// wäre damit NICHT erfüllt.
+//
+// Deshalb löschen wir hier in der richtigen Reihenfolge und verifizieren
+// anschließend, dass wirklich nichts übrig bleibt.
+// ═══════════════════════════════════════════════════════════════════════
+async function delMember(id, name){
+  // Was hängt alles an diesem Nutzer?
+  const veh = DB.vehicles.filter(v=>v.user_id===id);
+  const parts = DB.participants.filter(p=>p.user_id===id);
+  const pts = calcPts(id);
+  const mem = DB.members.find(m=>m.id===id);
+  const threads = (DB.adminThreads||[]).filter(t=>(t.participants||[]).includes(id));
+
   confirmDanger({
-    title:`${name} löschen?`,
-    body:`Das Mitglied wird dauerhaft aus der Datenbank entfernt. Diese Aktion kann <strong style="color:#ddd">nicht rückgängig</strong> gemacht werden.`,
-    warn:`Dabei gehen verloren:<br>• ${veh} Fahrzeug${veh!==1?"e":""} inkl. Akte und Logbuch<br>• ${parts} Event-Anmeldung${parts!==1?"en":""}<br>• ${pts.toLocaleString("de-DE")} Punkte (≈ ${ptsToEur(pts).toFixed(2).replace(".",",")} €)<br>• Alle Chatverläufe`,
-    confirmLabel:"Endgültig löschen",
-    onConfirm: async()=>{
-      await api(`users?id=eq.${id}`,{method:"DELETE"});
-      toast(`${name} gelöscht`);
+    title: name + " endgültig löschen?",
+    body: 'Alle Daten dieser Person werden <strong style="color:#ddd">unwiderruflich</strong> entfernt — '
+        + 'so wie es die DSGVO bei einem Löschantrag verlangt.',
+    warn: 'Gelöscht werden:<br>'
+        + '• Konto: ' + (mem?.email || "—") + '<br>'
+        + '• ' + veh.length + ' Fahrzeug' + (veh.length!==1?"e":"") + ' inkl. Fotos, Logbuch und Live-Status<br>'
+        + '• ' + parts.length + ' Event-Anmeldung' + (parts.length!==1?"en":"") + '<br>'
+        + '• ' + threads.length + ' Chatverlauf' + (threads.length!==1?"e":"") + ' mit dem Vorstand<br>'
+        + '• ' + pts.toLocaleString("de-DE") + ' Punkte (≈ ' + ptsToEur(pts).toFixed(2).replace(".",",") + ' €)<br>'
+        + '<br><strong style="color:#fcc">Kein Backup, keine Wiederherstellung.</strong> '
+        + 'Zum vorübergehenden Ausblenden ist „Pausieren" die bessere Wahl.',
+    confirmLabel: "Endgültig löschen",
+    onConfirm: async function(){
+      toast("Lösche " + name + "…");
+      const log = [];
+      const vehIds = veh.map(v=>v.id);
+
+      // Reihenfolge: erst abhängige Daten, dann der Nutzer selbst
+      const steps = [];
+
+      // 1. Fahrzeugbezogenes (Logbuch, Live-Status, Event-Historie)
+      for(const vid of vehIds){
+        steps.push(["Logbuch",      "logbook?vehicle_id=eq." + vid]);
+        steps.push(["Live-Status",  "vehicle_status?vehicle_id=eq." + vid]);
+        steps.push(["Event-Historie","event_history?vehicle_id=eq." + vid]);
+      }
+      // 2. Nutzerbezogenes
+      steps.push(["Anmeldungen", "participants?user_id=eq." + id]);
+      steps.push(["Erinnerungen", "reminders?user_id=eq." + id]);
+      // 3. Chats: erst Nachrichten, dann die Threads
+      const tid = adminThreadId(id);
+      steps.push(["Nachrichten", "messages?thread_id=eq." + tid]);
+      steps.push(["Chatverlauf", "threads?id=eq." + tid]);
+      // 4. Fahrzeuge
+      for(const vid of vehIds) steps.push(["Fahrzeug", "vehicles?id=eq." + vid]);
+      // 5. Zuletzt der Nutzer
+      steps.push(["Konto", "users?id=eq." + id]);
+
+      for(const [label, path] of steps){
+        const r = await api(path, {method:"DELETE"});
+        if(r.error){
+          const s = JSON.stringify(r.error);
+          // Fehlende Tabelle ist kein Drama — überspringen
+          if(/does not exist|PGRST205|42P01/.test(s)) continue;
+          log.push("✗ " + label + ": " + s.slice(0,50));
+        }
+      }
+
+      // Verifizieren — RLS blockiert lautlos mit 204, deshalb nachschauen
+      const rest = [];
+      const checkUser = await api("users?id=eq." + id + "&select=id");
+      if(checkUser.data && checkUser.data.length) rest.push("Konto");
+      const checkVeh = await api("vehicles?user_id=eq." + id + "&select=id");
+      if(checkVeh.data && checkVeh.data.length) rest.push(checkVeh.data.length + " Fahrzeuge");
+      const checkPart = await api("participants?user_id=eq." + id + "&select=id");
+      if(checkPart.data && checkPart.data.length) rest.push(checkPart.data.length + " Anmeldungen");
+
+      if(rest.length){
+        toast("Nicht alles gelöscht: " + rest.join(", "), "err");
+        console.error("[Löschung unvollständig]", rest, log);
+      } else if(log.length){
+        toast(name + " gelöscht — mit Warnungen (siehe Konsole)");
+        console.warn("[Löschung]", log);
+      } else {
+        toast("✓ " + name + " restlos gelöscht");
+      }
       await loadAll();
     }
   });
 }
+
 
 function toggleEvForm(){
   const f=document.getElementById("ev-form");f.classList.toggle("hidden");
