@@ -24,8 +24,20 @@ class ErrorBoundary extends React.Component {
           <div style={{fontSize:44,marginBottom:14}}>⚠️</div>
           <div style={{fontSize:17,fontWeight:800,color:"#fff",marginBottom:8}}>Etwas ist schiefgelaufen</div>
           <div style={{fontSize:12,color:"#999",marginBottom:6,lineHeight:1.6,fontFamily:"monospace",wordBreak:"break-word"}}>{this.state.error?.message||"Unbekannter Fehler"}</div>
+          <div style={{fontSize:10,color:"#555",marginBottom:10}}>
+            Version {(()=>{ try{ const s=[...document.querySelectorAll("script[src]")].find(x=>x.src.includes("PCN_MVP")); return (s?.src.match(/v=(\d+)/)||[])[1] || "?"; }catch(e){ return "?"; } })()}
+          </div>
           <div style={{fontSize:11,color:"#666",marginBottom:20}}>Deine Daten sind sicher gespeichert.</div>
-          <button onClick={()=>window.location.reload()}
+          <button onClick={async()=>{
+              try {
+                if(window.caches?.keys){
+                  const ks = await caches.keys();
+                  await Promise.all(ks.map(k=>caches.delete(k)));
+                }
+                sessionStorage.clear();
+              } catch(e){}
+              window.location.reload(true);
+            }}
             style={{background:"#e30613",color:"#fff",border:"none",borderRadius:10,padding:"12px 28px",fontWeight:800,fontSize:14,cursor:"pointer",width:"100%"}}>
             🔄 Neu laden
           </button>
