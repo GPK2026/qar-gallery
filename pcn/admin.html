@@ -189,6 +189,16 @@ const POINTS={qr_scan:150,view_akte:25,vehicle_added:500,vehicle_complete:750,
   member_year:500,beitrag_paid:300,birthday:200,birthday_round:911};
 const TIERS=[{n:"Bronze",p:1000},{n:"Silber",p:5000},{n:"Gold",p:12000},{n:"Platin",p:25000},{n:"Legend",p:50000}];
 const ADMIN_UUID="00000000-0000-0000-0000-000000000000";
+// Muss vor loadAll() definiert sein — const hat eine Temporal Dead Zone
+const CLUB_CHANNEL_ID = "c1b00000-0000-4000-8000-000000000001";
+// Testdaten des Health-Checks erkennen — die sollen nirgends auftauchen
+function isTestData(m){
+  if(!m) return false;
+  const mail = String(m.email||"");
+  return mail.startsWith("healthcheck-") || mail.endsWith("@qar.invalid")
+      || m.member_nr === "HC-0000";
+}
+
 let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[],adminThreads:[],news:[]};
 let currentTab="dashboard";
 
@@ -238,26 +248,41 @@ async function loadAll(){
     ]);
     // news ist optional — fehlt die Tabelle, bleibt der Feed leer statt zu crashen
     DB.news = (nw && Array.isArray(nw.data)) ? nw.data : [];
-    if(m.data&&Array.isArray(m.data)) DB.members=m.data;
+    // Testnutzer des Health-Checks gar nicht erst laden
+    if(m.data&&Array.isArray(m.data)) DB.members=m.data.filter(x=>!isTestData(x));
     if(e.data&&Array.isArray(e.data)) DB.events=e.data;
     if(v.data&&Array.isArray(v.data)) DB.vehicles=v.data;
     if(p.data&&Array.isArray(p.data)) DB.participants=p.data;
     // Ungelesene Nachrichten AN den Admin (für Dringlichkeiten)
     if(msg.data&&Array.isArray(msg.data)){
-      DB.unreadMsgs = msg.data.filter(x=>
-        x.from_id!==ADMIN_UUID && !x.read_at &&
-        (x.thread_id||"").startsWith("ad000000-0000-4000-8000-")
-      );
+      const knownIds = new Set(DB.members.map(m=>m.id));
+      DB.unreadMsgs = msg.data.filter(x=>{
+        if(x.from_id===ADMIN_UUID || x.read_at) return false;
+        if(!(x.thread_id||"").startsWith("ad000000-0000-4000-8000-")) return false;
+        if(x.text==="Healthcheck") return false;          // Testnachricht
+        return knownIds.has(x.from_id);                    // nur echte Mitglieder
+      });
     } else DB.unreadMsgs=[];
 
     // Admin-Threads (Vorstand ↔ Mitglied + Club-Kanal) inkl. Nachrichten laden
     // Datenschutz: NUR Threads mit Admin als Teilnehmer — keine Member-zu-Member Chats
     const th = await api(`threads?participants=cs.{${ADMIN_UUID}}&select=*,messages(*)&order=created_at.desc`);
     if(th.data&&Array.isArray(th.data)){
-      DB.adminThreads = th.data.map(t=>({
-        ...t,
-        messages:(t.messages||[]).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))
-      }));
+      // Bekannte Mitglieder-IDs — DB.members ist bereits von Testdaten bereinigt
+      const known = new Set(DB.members.map(m=>m.id));
+      DB.adminThreads = th.data
+        // Threads des Health-Checks und verwaiste Threads ausblenden:
+        // Der Teilnehmer muss ein echtes Mitglied sein (oder es ist der Club-Kanal)
+        .filter(t=>{
+          if(t.id === CLUB_CHANNEL_ID) return true;
+          if(/^Healthcheck$/i.test(t.vehicle_name||"")) return false;
+          const member = (t.participants||[]).find(p=>p!==ADMIN_UUID);
+          return member ? known.has(member) : false;
+        })
+        .map(t=>({
+          ...t,
+          messages:(t.messages||[]).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))
+        }));
     } else DB.adminThreads=[];
     updateBadges(); renderTab(currentTab);
     toast(`✓ ${DB.members.length} Mitglieder · ${DB.events.length} Events`);
@@ -1641,7 +1666,6 @@ async function confirmAllPending(eid){
 // WICHTIG: Nur eigene Konversationen sichtbar. Private Chats zwischen
 // Mitgliedern bleiben für den Admin unsichtbar (Datenschutzversprechen).
 // ═══════════════════════════════════════════════════════════════════
-const CLUB_CHANNEL_ID = "c1b00000-0000-4000-8000-000000000001";
 let openChatId = null;
 
 function rMessages(el){
