@@ -211,16 +211,41 @@ async function q(path, opts = {}) {
     }
   }
 
-  // ── 3. Sicherheit: liegt ein service_role-Key im Client? ──
+  // ── 3. Sicherheit: liegt ein echter service_role-Key im Client? ──
+  //
+  // Naive Textsuche nach "service_role" liefert Fehlalarme: die Admin-Console
+  // prüft selbst den Key-Typ und erwähnt das Wort im Code. Stattdessen suchen
+  // wir echte JWTs und dekodieren sie.
   try {
     const admin = await fetch("https://qar.gallery/pcn/admin.html").then(r => r.text());
-    if (/service_role/.test(admin) && /atob\(/.test(admin)) {
-      bad("Sicherheit: service_role-Key im Browser", "kritisch");
+    // JWT-Muster: drei base64-Blöcke, durch Punkte getrennt
+    const jwts = admin.match(/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g) || [];
+    // Auch base64-verschleierte JWTs finden (atob("eyJ...") )
+    const encoded = admin.match(/atob\("([A-Za-z0-9+/=]{40,})"\)/g) || [];
+    for (const e of encoded) {
+      const b64 = e.match(/"([^"]+)"/)?.[1];
+      if (!b64) continue;
+      try { jwts.push(Buffer.from(b64, "base64").toString("utf8")); } catch (_) {}
+    }
+
+    let found = null;
+    for (const j of jwts) {
+      const parts = j.split(".");
+      if (parts.length !== 3) continue;
+      try {
+        const payload = JSON.parse(Buffer.from(parts[1] + "==", "base64").toString("utf8"));
+        if (payload.role === "service_role") { found = payload; break; }
+      } catch (_) {}
+    }
+
+    if (found) {
+      bad("Sicherheit: echter service_role-Key im Browser",
+          "42501 Umgeht alle Regeln — jeder kann alle Daten lesen und löschen");
     } else {
       ok("Sicherheit: kein erhöhter Schlüssel im Client");
     }
   } catch (e) {
-    results.push("⚠ admin.html nicht prüfbar");
+    results.push("⚠ admin.html nicht prüfbar: " + String(e.message).slice(0, 40));
   }
 
   // ── 4. Datenbestand (nur Zahlen, keine Inhalte) ──
