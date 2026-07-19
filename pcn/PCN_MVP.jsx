@@ -1495,6 +1495,12 @@ function PCNInner() {
   const [showContactAuth, setShowContactAuth] = useState(null); // vehicleId — triggers login/register/guest sheet
   const [contactAuthMode, setContactAuthMode] = useState("guest"); // "guest" | "login" | "register"
   const [contactAuthForm, setContactAuthForm] = useState({name:"",email:"",code:""});
+  // Getrennte Einwilligungen — Kopplungsverbot Art. 7 Abs. 4 DSGVO:
+  // Kontakt-Zustimmung ist Pflicht (Zweck: Nachrichtenzustellung),
+  // Marketing-Opt-in ist freiwillig (Zweck: eigene Werbung/Leads) und
+  // darf die Kontaktaufnahme nicht blockieren, wenn abgelehnt.
+  const [contactAgbAccepted, setContactAgbAccepted] = useState(false);
+  const [contactMarketingOptIn, setContactMarketingOptIn] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [imgUploading, setImgUploading] = useState(false);
   const [lightbox, setLightbox]       = useState(null); // {images:[], index:0}
@@ -2926,7 +2932,7 @@ Regeln:
       });
     }
     setScreen("chat");
-    toast_("Anonyme Nachricht gestartet 🔒");
+    toast_("Vertraulicher Kontakt gestartet 🔒");
   };
 
   // ── Triggered from the public-view "Nachricht senden" sheet ──
@@ -2938,7 +2944,13 @@ Regeln:
     let result;
     if(contactAuthMode === "guest"){
       if(!name) { toast_("Name angeben","err"); return; }
-      result = await DB.auth.registerGuest(name, email);
+      // AGB-Zustimmung ist Pflicht für die Kontaktaufnahme — Marketing-Opt-in
+      // ist davon unabhängig und blockiert nichts, wenn nicht angehakt.
+      if(!contactAgbAccepted) { toast_("Bitte den Bedingungen zur Kontaktaufnahme zustimmen","err"); return; }
+      result = await DB.auth.registerGuest(name, email, {
+        contactAccepted: true,
+        marketingOptIn: contactMarketingOptIn,
+      });
     } else if(contactAuthMode === "register"){
       if(!name) { toast_("Name angeben","err"); return; }
       if(code.toUpperCase() !== CLUB_CODE) { toast_("Falscher Club-Code","err"); return; }
@@ -2953,6 +2965,8 @@ Regeln:
     const vehicleId = showContactAuth;
     setShowContactAuth(null);
     setContactAuthForm({name:"",email:"",code:""});
+    setContactAgbAccepted(false);
+    setContactMarketingOptIn(false);
     toast_(`Willkommen, ${u.name}! 🏁`);
     // Pass u directly — don't rely on setMe() React state which hasn't updated yet
     await startContact(vehicleId, u);
@@ -3638,7 +3652,7 @@ Regeln:
                 <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>💬</div>
                 <div style={{flex:1,textAlign:"left"}}>
                   <div style={{fontWeight:800,fontSize:15}}>Nachricht an Fahrer(in) senden</div>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:1}}>Anonym · Besitzer antwortet per App</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:1}}>Vertraulich · Besitzer antwortet per App</div>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2,flexShrink:0}}>
                   <span style={{fontSize:18,color:"rgba(255,255,255,.7)"}}>›</span>
@@ -3652,7 +3666,7 @@ Regeln:
               <div style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"11px 13px",display:"flex",gap:10,alignItems:"flex-start"}}>
                 <span style={{fontSize:16,flexShrink:0,marginTop:1}}>🔒</span>
                 <div style={{fontSize:12,color:"#888",lineHeight:1.6}}>
-                  <strong style={{color:"#aaa"}}>Anonymer Kontakt:</strong> Deine Nachricht wird anonym übermittelt — Name und E-Mail bleiben geschützt. Der Fahrzeughalter antwortet direkt über die QAR-App.
+                  <strong style={{color:"#aaa"}}>Vertraulicher Kontakt:</strong> Der Fahrzeughalter sieht nur deine Nachricht — nicht deinen Namen oder deine E-Mail-Adresse. Er antwortet direkt über die QAR-App.
                 </div>
               </div>
             )}
@@ -3798,7 +3812,32 @@ Regeln:
                 value={contactAuthForm.email} onChange={e=>setContactAuthForm(p=>({...p,email:e.target.value}))}
                 onKeyDown={e=>{if(e.key==="Enter")handleContactAuth();}}/>
 
-              <button className="btn" style={{width:"100%"}} onClick={handleContactAuth}>
+              {contactAuthMode==="guest"&&(
+                <div style={{marginBottom:16}}>
+                  <label style={{display:"flex",gap:9,alignItems:"flex-start",cursor:"pointer",marginBottom:10}}>
+                    <input type="checkbox" checked={contactAgbAccepted}
+                      onChange={e=>setContactAgbAccepted(e.target.checked)}
+                      style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
+                    <span style={{fontSize:11,color:C.muted,lineHeight:1.5}}>
+                      Nachricht an den Halter nur mit Angabe einer E-Mail-Adresse möglich.
+                      Ich stimme den <a href="/agb" target="_blank" style={{color:C.red}}>AGB</a> zu. *
+                    </span>
+                  </label>
+                  <label style={{display:"flex",gap:9,alignItems:"flex-start",cursor:"pointer"}}>
+                    <input type="checkbox" checked={contactMarketingOptIn}
+                      onChange={e=>setContactMarketingOptIn(e.target.checked)}
+                      style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
+                    <span style={{fontSize:11,color:C.muted,lineHeight:1.5}}>
+                      Ich möchte gelegentlich Neuigkeiten und Angebote von QAR.Gallery per E-Mail erhalten (optional, jederzeit widerrufbar).
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              <button className="btn"
+                disabled={contactAuthMode==="guest"&&!contactAgbAccepted}
+                style={{width:"100%",opacity:(contactAuthMode==="guest"&&!contactAgbAccepted)?.5:1}}
+                onClick={handleContactAuth}>
                 {contactAuthMode==="guest"?"Weiter zur Nachricht →":contactAuthMode==="login"?"Anmelden →":"Konto erstellen →"}
               </button>
 
@@ -4735,7 +4774,32 @@ Regeln:
                 value={contactAuthForm.email} onChange={e=>setContactAuthForm(p=>({...p,email:e.target.value}))}
                 onKeyDown={e=>{if(e.key==="Enter")handleContactAuth();}}/>
 
-              <button className="btn" style={{width:"100%"}} onClick={handleContactAuth}>
+              {contactAuthMode==="guest"&&(
+                <div style={{marginBottom:16}}>
+                  <label style={{display:"flex",gap:9,alignItems:"flex-start",cursor:"pointer",marginBottom:10}}>
+                    <input type="checkbox" checked={contactAgbAccepted}
+                      onChange={e=>setContactAgbAccepted(e.target.checked)}
+                      style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
+                    <span style={{fontSize:11,color:C.muted,lineHeight:1.5}}>
+                      Nachricht an den Halter nur mit Angabe einer E-Mail-Adresse möglich.
+                      Ich stimme den <a href="/agb" target="_blank" style={{color:C.red}}>AGB</a> zu. *
+                    </span>
+                  </label>
+                  <label style={{display:"flex",gap:9,alignItems:"flex-start",cursor:"pointer"}}>
+                    <input type="checkbox" checked={contactMarketingOptIn}
+                      onChange={e=>setContactMarketingOptIn(e.target.checked)}
+                      style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
+                    <span style={{fontSize:11,color:C.muted,lineHeight:1.5}}>
+                      Ich möchte gelegentlich Neuigkeiten und Angebote von QAR.Gallery per E-Mail erhalten (optional, jederzeit widerrufbar).
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              <button className="btn"
+                disabled={contactAuthMode==="guest"&&!contactAgbAccepted}
+                style={{width:"100%",opacity:(contactAuthMode==="guest"&&!contactAgbAccepted)?.5:1}}
+                onClick={handleContactAuth}>
                 {contactAuthMode==="guest"?"Weiter zur Nachricht →":contactAuthMode==="login"?"Anmelden →":"Konto erstellen →"}
               </button>
 
