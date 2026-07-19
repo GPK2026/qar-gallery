@@ -1438,6 +1438,7 @@ function PCNInner() {
   const [loginForm, setLoginForm] = useState({mode:"register",code:"",email:"",name:""});
   const [consent, setConsent] = useState(false);
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
+  const [showContactPrivacyInfo, setShowContactPrivacyInfo] = useState(false);
   const [showPwChange, setShowPwChange] = useState(false);
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -3819,8 +3820,13 @@ Regeln:
                       onChange={e=>setContactAgbAccepted(e.target.checked)}
                       style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
                     <span style={{fontSize:11,color:C.muted,lineHeight:1.5}}>
-                      Nachricht an den Halter nur mit Angabe einer E-Mail-Adresse möglich.
-                      Ich stimme den <a href="/agb" target="_blank" style={{color:C.red}}>AGB</a> zu. *
+                      Nachricht an den Halter nur mit Angabe einer E-Mail-Adresse möglich. *
+                      <button onClick={e=>{e.preventDefault();e.stopPropagation();setShowContactPrivacyInfo(true);}}
+                        style={{background:"none",border:"none",color:C.red,fontSize:11,fontWeight:700,
+                          cursor:"pointer",padding:"3px 0 0",display:"block",fontFamily:"'Barlow',sans-serif",
+                          textDecoration:"underline"}}>
+                        Was wird gespeichert? →
+                      </button>
                     </span>
                   </label>
                   <label style={{display:"flex",gap:9,alignItems:"flex-start",cursor:"pointer"}}>
@@ -4781,8 +4787,13 @@ Regeln:
                       onChange={e=>setContactAgbAccepted(e.target.checked)}
                       style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
                     <span style={{fontSize:11,color:C.muted,lineHeight:1.5}}>
-                      Nachricht an den Halter nur mit Angabe einer E-Mail-Adresse möglich.
-                      Ich stimme den <a href="/agb" target="_blank" style={{color:C.red}}>AGB</a> zu. *
+                      Nachricht an den Halter nur mit Angabe einer E-Mail-Adresse möglich. *
+                      <button onClick={e=>{e.preventDefault();e.stopPropagation();setShowContactPrivacyInfo(true);}}
+                        style={{background:"none",border:"none",color:C.red,fontSize:11,fontWeight:700,
+                          cursor:"pointer",padding:"3px 0 0",display:"block",fontFamily:"'Barlow',sans-serif",
+                          textDecoration:"underline"}}>
+                        Was wird gespeichert? →
+                      </button>
                     </span>
                   </label>
                   <label style={{display:"flex",gap:9,alignItems:"flex-start",cursor:"pointer"}}>
@@ -6579,6 +6590,56 @@ Regeln:
           </div>
         </div>
       )}
+      {/* ── Erklärung für Gast-Kontaktaufnahme — bewusst eigener Text,
+           NICHT der Mitgliedschafts-Text: hier wird kein Fahrzeug angelegt,
+           nur Name/E-Mail für die Nachrichtenzustellung gespeichert. ── */}
+      {showContactPrivacyInfo&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",zIndex:900,
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>setShowContactPrivacyInfo(false)}>
+          <div onClick={e=>e.stopPropagation()}
+            style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
+              padding:"24px 20px",maxWidth:420,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
+              color:C.white,marginBottom:6}}>🔒 Deine Nachricht</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+              Kurz und ohne Juristendeutsch — du wirst hier kein Mitglied, du schickst nur eine Nachricht.
+            </div>
+
+            {[
+              {t:"Was gespeichert wird",
+               b:"Dein Name, deine E-Mail-Adresse und der Text deiner Nachricht. Es wird KEIN Fahrzeug für dich angelegt — das gehört ja bereits der Person, die du kontaktierst."},
+              {t:"Wer es sehen kann",
+               b:"Der Fahrzeughalter sieht ausschließlich deine Nachricht — nicht deinen Namen und nicht deine E-Mail-Adresse. Er antwortet direkt über die App."},
+              {t:"Warum wir trotzdem Name und E-Mail brauchen",
+               b:"Damit die Nachricht überhaupt zugestellt und beantwortet werden kann, und damit wir bei Missbrauch nachvollziehen können, wer sie geschickt hat."},
+              {t:"Newsletter/Marketing — komplett getrennt",
+               b:"Die zweite Checkbox (Neuigkeiten per E-Mail) ist unabhängig von der ersten. Lässt du sie leer, bekommst du niemals Marketing-E-Mails — deine Nachricht wird trotzdem zugestellt."},
+              {t:"Wo die Daten liegen",
+               b:"Auf Servern in Frankfurt am Main (Supabase, EU). Keine Übermittlung in Drittländer."},
+              {t:"Löschung",
+               b:"Du kannst jederzeit per E-Mail an den Vorstand die Löschung deiner Kontaktdaten verlangen."},
+            ].map(({t,b})=>(
+              <div key={t} style={{marginBottom:14,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:4}}>{t}</div>
+                <div style={{fontSize:12,color:"#999",lineHeight:1.65}}>{b}</div>
+              </div>
+            ))}
+
+            <div style={{background:`${C.gold}0d`,border:`1px solid ${C.gold}33`,borderRadius:9,
+              padding:"11px 13px",marginBottom:16}}>
+              <div style={{fontSize:11,color:"#aaa",lineHeight:1.65}}>
+                <strong style={{color:C.gold}}>Hinweis:</strong> Ausführliche AGB folgen in Kürze an dieser Stelle.
+                Bis dahin gilt diese Kurzerklärung als verbindliche Information zur Datenverarbeitung.
+              </div>
+            </div>
+
+            <button className="btn" style={{width:"100%",padding:"13px"}}
+              onClick={()=>setShowContactPrivacyInfo(false)}>Verstanden</button>
+          </div>
+        </div>
+      )}
+
 
       {/* ── Demo-Popup Overlay (erscheint nach 3 Sekunden, legt sich über die Seite) ── */}
       {isDemo&&demoBannerVisible&&!demoBannerClosed&&(
