@@ -142,7 +142,7 @@
       <div class="nav-sec">Events & Inhalt</div>
       <div class="nav-item" data-tab="events" onclick="showTab('events')">🏁 Events <span class="nbadge hidden" id="sb-ev"></span></div>
       <div class="nav-item" data-tab="messages" onclick="showTab('messages')">💬 Nachrichten <span class="nbadge hidden" id="sb-msg"></span></div>
-      <div class="nav-item" data-tab="content" onclick="showTab('content')">📰 Content</div>
+      <div class="nav-item" data-tab="content" onclick="showTab('content')">📰 Content <span class="nbadge hidden" id="sb-leads"></span></div>
       <div class="nav-sec">System</div>
       <div class="nav-item" data-tab="settings" onclick="showTab('settings')">⚙️ Einstellungen</div>
     </nav>
@@ -164,7 +164,7 @@
     <button class="tbt" data-tab="payments" onclick="showTab('payments')"><span>💳</span><span>Beiträge</span><span class="tbt-badge hidden" id="tb-pay"></span></button>
     <button class="tbt" data-tab="events" onclick="showTab('events')"><span>🏁</span><span>Events</span><span class="tbt-badge hidden" id="tb-ev"></span></button>
     <button class="tbt" data-tab="points" onclick="showTab('points')"><span>🏆</span><span>Punkte</span></button>
-    <button class="tbt" data-tab="content" onclick="showTab('content')"><span>📰</span><span>Content</span></button>
+    <button class="tbt" data-tab="content" onclick="showTab('content')"><span>📰</span><span>Content</span><span class="tbt-badge hidden" id="tb-leads"></span></button>
     <button class="tbt" data-tab="settings" onclick="showTab('settings')"><span>⚙️</span><span>System</span></button>
   </div>
 </div>
@@ -209,6 +209,7 @@ function doLogin(){
     document.getElementById("login-wrap").style.display="none";
     document.getElementById("app").classList.remove("hidden");
     loadAll();
+    startBackgroundPolling();
   } else toast("Falscher Code","err");
 }
 function doLogout(){sessionStorage.removeItem("pcn_adm");location.reload();}
@@ -235,8 +236,12 @@ async function api(path,opts={}){
   }catch(e){return{data:null,error:e.message};}
 }
 
-async function loadAll(){
-  toast("Lädt…");
+// Erinnert sich an die zuletzt gesehene Anzahl an Marketing-Leads, um neue
+// Zustimmungen zu erkennen, die während einer offenen Session eintreffen.
+let lastKnownLeadsCount = null;
+
+async function loadAll(silent){
+  if(!silent) toast("Lädt…");
   try{
     const [m,e,v,p,msg,nw]=await Promise.all([
       api("users?select=*&order=created_at.desc&limit=200"),
@@ -284,9 +289,58 @@ async function loadAll(){
           messages:(t.messages||[]).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))
         }));
     } else DB.adminThreads=[];
-    updateBadges(); renderTab(currentTab);
-    toast(`✓ ${DB.members.length} Mitglieder · ${DB.events.length} Events`);
-  }catch(err){toast("Ladefehler","err"); renderTab(currentTab);}
+
+    // Neue Marketing-Leads erkennen — zeigt einen Badge am Content-Tab,
+    // ohne die gerade sichtbare Ansicht des Vorstands zu unterbrechen.
+    const currentLeadsCount = DB.members.filter(x => x.marketing_consent_at).length;
+    const hasNewLeads = lastKnownLeadsCount !== null && currentLeadsCount > lastKnownLeadsCount;
+    lastKnownLeadsCount = currentLeadsCount;
+
+    updateBadges();
+    updateLeadsBadge(hasNewLeads ? currentLeadsCount : null);
+    renderTab(currentTab);
+    if(!silent){
+      toast(`✓ ${DB.members.length} Mitglieder · ${DB.events.length} Events`);
+    } else if(hasNewLeads){
+      toast(`📬 Neue Marketing-Zustimmung eingegangen`);
+    }
+  }catch(err){ if(!silent) toast("Ladefehler","err"); renderTab(currentTab); }
+}
+
+// ── Hintergrund-Aktualisierung ───────────────────────────────────────────
+// Läuft alle 45 Sekunden im Hintergrund, damit neue Marketing-Opt-ins nicht
+// erst nach einem manuellen Neuladen sichtbar werden. Bewusst kein Realtime/
+// WebSocket — bei diesem Anwendungsfall (kein Chat, keine Sofortigkeit
+// nötig) ist Polling einfacher und robuster.
+let backgroundPollTimer = null;
+function startBackgroundPolling(){
+  if(backgroundPollTimer) return;
+  backgroundPollTimer = setInterval(() => {
+    if(document.hidden) return; // Tab im Hintergrund: nicht unnötig Requests schicken
+    loadAll(true);
+  }, 45000);
+}
+
+// Zeigt/versteckt einen Hinweis-Badge am Content-Nav-Eintrag, sobald neue
+// Marketing-Leads eingetroffen sind. Wird beim Öffnen des Content-Tabs
+// automatisch wieder entfernt (siehe showTab).
+let newLeadsSinceSeen = 0;
+function updateLeadsBadge(currentCount){
+  if(currentCount === null) return; // keine Änderung — bestehenden Zustand nicht anfassen
+  newLeadsSinceSeen++;
+  const badges = [document.getElementById("sb-leads"), document.getElementById("tb-leads")];
+  badges.forEach(el => {
+    if(!el) return;
+    el.textContent = newLeadsSinceSeen;
+    el.classList.remove("hidden");
+    el.title = "Neue Marketing-Zustimmung seit letztem Öffnen des Content-Tabs";
+  });
+}
+function clearLeadsBadge(){
+  newLeadsSinceSeen = 0;
+  [document.getElementById("sb-leads"), document.getElementById("tb-leads")].forEach(el=>{
+    if(el) el.classList.add("hidden");
+  });
 }
 
 function updateBadges(){
@@ -301,6 +355,7 @@ function updateBadges(){
 
 function showTab(id){
   currentTab=id;
+  if(id==="content") clearLeadsBadge();
   document.querySelectorAll(".nav-item").forEach(el=>el.classList.toggle("active",el.dataset.tab===id));
   document.querySelectorAll(".tbt").forEach(el=>el.classList.toggle("active",el.dataset.tab===id));
   document.querySelectorAll("[id^='tab-']").forEach(el=>el.classList.add("hidden"));
@@ -2932,6 +2987,7 @@ if(sessionStorage.getItem("pcn_adm")==="1"){
   document.getElementById("login-wrap").style.display="none";
   document.getElementById("app").classList.remove("hidden");
   loadAll();
+  startBackgroundPolling();
 }
 </script>
 </body>
