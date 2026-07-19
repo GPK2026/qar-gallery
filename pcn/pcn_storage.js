@@ -136,6 +136,7 @@ const PCN_STORAGE = (() => {
         id: uid(), name, email, role: "guest",
         memberNr: null,
         createdAt: nowIso, lastSeen: nowIso,
+        guestSource: "vehicle_contact",
         contactConsentAt: null, contactConsentVersion: null,
         marketingConsentAt: null, marketingConsentVersion: null,
       };
@@ -587,6 +588,12 @@ const PCN_STORAGE = (() => {
       }
       const user = {
         name, email, role:"guest", member_nr:null, guest_created_at:nowIso,
+        // Kennzeichnet: diese Person kam über eine Fahrzeug-Kontaktanfrage,
+        // nicht über eine App-Registrierung. Wird gebraucht, um in der
+        // Mitgliederliste zwischen "wartet auf App-Freigabe" und
+        // "hat einmal eine Nachricht geschickt" zu unterscheiden — beide
+        // teilten sich bislang denselben role="guest"-Wert.
+        guest_source: "vehicle_contact",
         contact_consent_at: consent.contactAccepted ? nowIso : null,
         contact_consent_version: consent.contactAccepted ? CONSENT_VERSION : null,
         marketing_consent_at: consent.marketingOptIn ? nowIso : null,
@@ -1041,7 +1048,7 @@ function guard(label, fn){
 // Proxy all methods to selected backend
     auth: {
       register:          (name, email, code, pw) => db.register(name, email, code, pw),
-      registerGuest:     (name, email)            => db.registerGuest(name, email),
+      registerGuest:     (name, email, consent)   => db.registerGuest(name, email, consent),
       login:             (email)                  => db.login(email),
       loginWithPassword: (email, pw)              => db.loginWithPassword ? db.loginWithPassword(email, pw) : db.login(email),
       resetPassword:     (email)                  => db.resetPassword     ? db.resetPassword(email)         : { data: { sent: true } },
