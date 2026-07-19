@@ -2616,6 +2616,15 @@ async function togglePaid(id,isPaid){
   await loadAll();
 }
 async function toggleRole(id,isMember){
+  // Reine Kontaktanfragen dürfen NIEMALS direkt zum Mitglied hochgestuft
+  // werden — sie haben keine bewusste Mitgliedschaftsanfrage gestellt,
+  // sondern nur eine Fahrzeug-Nachricht geschickt. Eine echte Mitgliedschaft
+  // muss über eine eigene Anfrage/Registrierung laufen.
+  const member = DB.members.find(m=>m.id===id);
+  if(!isMember && isContactOnlyGuest(member)){
+    toast("Nicht möglich: hat nur eine Kontaktnachricht geschickt, keine Mitgliedschaft beantragt. Bitte eigene Registrierung anstoßen.","err");
+    return;
+  }
   // Optimistic update
   DB.members = DB.members.map(m=>m.id===id?{...m,role:isMember?"guest":"member"}:m);
   updateBadges(); renderTab(currentTab);
