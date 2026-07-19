@@ -1971,7 +1971,58 @@ function rContent(el){
   out += '<div class="lbl" style="margin:20px 0 8px">Veröffentlicht' + (newsCount ? ' (' + newsCount + ')' : '') + '</div>'
     + '<div class="card">' + newsListHTML() + '</div>';
 
+  // Marketing-Leads: Gäste mit eigenständigem, getrenntem Opt-in
+  // (Art. 7 Abs. 4 DSGVO — Kopplungsverbot: dieser Opt-in ist unabhängig von
+  // der Kontakt-Zustimmung erhoben, siehe registerGuest() in pcn_storage.js)
+  const leads = (DB.members||[]).filter(m => m.marketing_consent_at);
+  out += '<div class="lbl" style="margin:20px 0 8px;display:flex;justify-content:space-between;align-items:center">'
+    + '<span>Marketing-Leads' + (leads.length ? ' (' + leads.length + ')' : '') + '</span>'
+    + (leads.length ? '<button class="btn btn-sm btn-ghost" onclick="exportLeadsCSV()">📥 CSV</button>' : '')
+    + '</div>';
+  out += '<div class="card">';
+  if(!leads.length){
+    out += '<div style="font-size:12px;color:#555;padding:6px 0">'
+      + 'Noch keine Zustimmungen. Gäste können beim Kontaktieren eines Fahrzeughalters '
+      + 'optional zustimmen, Neuigkeiten per E-Mail zu erhalten.</div>';
+  } else {
+    out += '<div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px">'
+      + 'Freiwillige Zustimmung zu Marketing-E-Mails — getrennt von der Kontaktaufnahme erhoben. '
+      + 'Widerruf jederzeit möglich (bitte manuell in der Liste vermerken, bis eine Selbstverwaltung existiert).'
+      + '</div>';
+    leads.sort((a,b) => new Date(b.marketing_consent_at) - new Date(a.marketing_consent_at));
+    leads.forEach(function(m){
+      const dt = new Date(m.marketing_consent_at).toLocaleString("de-DE", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+      out += '<div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #131313">'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:13px;font-weight:600;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(m.name||"—") + '</div>'
+        + '<div style="font-size:11px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(m.email||"—") + '</div>'
+        + '</div>'
+        + '<div style="font-size:10px;color:#555;flex-shrink:0;text-align:right">seit<br>' + dt + '</div>'
+        + '</div>';
+    });
+  }
+  out += '</div>';
+
   el.innerHTML = out;
+}
+
+// CSV-Export der Marketing-Leads — gleiches Muster wie exportCSV() für Beiträge
+function exportLeadsCSV(){
+  const leads = (DB.members||[]).filter(m => m.marketing_consent_at);
+  const rows = [
+    ["Name","E-Mail","Zustimmung seit","Consent-Version"],
+    ...leads.map(m => [
+      m.name || "",
+      m.email || "",
+      m.marketing_consent_at ? new Date(m.marketing_consent_at).toISOString() : "",
+      m.marketing_consent_version || "",
+    ]),
+  ];
+  const el = document.createElement("a");
+  el.href = "data:text/csv;charset=utf-8," + encodeURIComponent(rows.map(r=>r.join(";")).join("\n"));
+  el.download = "PCN_Marketing_Leads_" + new Date().toISOString().slice(0,10) + ".csv";
+  el.click();
+  toast("✓ " + leads.length + " Leads exportiert");
 }
 
 // Live-Warnung bei offenen Platzhaltern
