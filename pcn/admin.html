@@ -590,6 +590,14 @@ ${gaeste.length?`<div class="card">
 }
 
 function rMembers(el){
+  // Aktuellen Filter-/Sortier-/Suchzustand VOR dem Neu-Rendern sichern —
+  // sonst wird bei jedem renderTab() (z.B. beim Auf-/Zuklappen einer Karte
+  // via toggleMemberOpen) das <select> neu erzeugt und fällt dabei
+  // stillschweigend auf die erste Option ("Alle") zurück.
+  const prevFilter = document.getElementById("m-f")?.value || "all";
+  const prevSort = document.getElementById("m-sort")?.value || "smart";
+  const prevSearch = document.getElementById("m-q")?.value || "";
+
   // Kontaktanfragen zählen hier nicht mit — sie gehören in Marketing-Leads
   const clubMembers = DB.members.filter(m=>!isContactOnlyGuest(m));
   // Zähler für Handlungsbedarf-Filter
@@ -622,24 +630,24 @@ function rMembers(el){
   </div>
 
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-    <input id="m-q" placeholder="🔍 Name, E-Mail…" oninput="filterMembers()" style="flex:1;min-width:140px">
+    <input id="m-q" placeholder="🔍 Name, E-Mail…" oninput="filterMembers()" style="flex:1;min-width:140px" value="${escapeHtml(prevSearch)}">
     <select id="m-sort" onchange="filterMembers()" style="width:auto;min-width:150px">
-      <option value="smart">⚡ Handlungsbedarf zuerst</option>
-      <option value="name">A–Z</option>
-      <option value="points">🏆 Meiste Punkte</option>
-      <option value="oldest">📅 Am längsten dabei</option>
-      <option value="newest">🆕 Neueste zuerst</option>
-      <option value="vehicles">🚗 Meiste Fahrzeuge</option>
-      <option value="bday">🎂 Nächster Geburtstag</option>
+      <option value="smart" ${prevSort==="smart"?"selected":""}>⚡ Handlungsbedarf zuerst</option>
+      <option value="name" ${prevSort==="name"?"selected":""}>A–Z</option>
+      <option value="points" ${prevSort==="points"?"selected":""}>🏆 Meiste Punkte</option>
+      <option value="oldest" ${prevSort==="oldest"?"selected":""}>📅 Am längsten dabei</option>
+      <option value="newest" ${prevSort==="newest"?"selected":""}>🆕 Neueste zuerst</option>
+      <option value="vehicles" ${prevSort==="vehicles"?"selected":""}>🚗 Meiste Fahrzeuge</option>
+      <option value="bday" ${prevSort==="bday"?"selected":""}>🎂 Nächster Geburtstag</option>
     </select>
     <select id="m-f" onchange="filterMembers()" style="width:auto;min-width:150px">
-      <option value="all">Alle (${DB.members.length})</option>
-      <option value="member">Mitglieder (${DB.members.filter(m=>m.role==="member").length})</option>
-      <option value="guest">Gäste (${DB.members.filter(m=>m.role==="guest").length})</option>
-      <option value="issues">⚠ Handlungsbedarf (${cntIssues})</option>
-      <option value="unpaid">💳 Beitrag offen (${DB.members.filter(m=>m.role==="member"&&!m.beitrag_bezahlt).length})</option>
-      <option value="novehicle">🚗 Ohne Fahrzeug (${cntNoVeh})</option>
-      <option value="incomplete">📋 Unvollst. Akte (${cntIncompl})</option>
+      <option value="all" ${prevFilter==="all"?"selected":""}>Alle (${clubMembers.length})</option>
+      <option value="member" ${prevFilter==="member"?"selected":""}>Mitglieder (${clubMembers.filter(m=>m.role==="member").length})</option>
+      <option value="guest" ${prevFilter==="guest"?"selected":""}>Gäste (${clubMembers.filter(m=>m.role==="guest").length})</option>
+      <option value="issues" ${prevFilter==="issues"?"selected":""}>⚠ Handlungsbedarf (${cntIssues})</option>
+      <option value="unpaid" ${prevFilter==="unpaid"?"selected":""}>💳 Beitrag offen (${clubMembers.filter(m=>m.role==="member"&&!m.beitrag_bezahlt).length})</option>
+      <option value="novehicle" ${prevFilter==="novehicle"?"selected":""}>🚗 Ohne Fahrzeug (${cntNoVeh})</option>
+      <option value="incomplete" ${prevFilter==="incomplete"?"selected":""}>📋 Unvollst. Akte (${cntIncompl})</option>
     </select>
   </div><div id="members-list"></div>`;
   filterMembers();
