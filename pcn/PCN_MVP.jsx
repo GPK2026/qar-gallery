@@ -1750,7 +1750,9 @@ function PCNInner() {
     }
     const slot = {id:"s"+Date.now(), text, icon:preset.icon||"💬", expiresAt, setAt:Date.now()};
     setVehicleStatus(prev=>{
-      const slots = (prev[vehicleId]||[]).filter(s=>s.expiresAt===null||Date.now()<s.expiresAt);
+      const raw = prev[vehicleId];
+      const arr = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+      const slots = arr.filter(s=>s.expiresAt===null||Date.now()<s.expiresAt);
       // Replace slot being edited, or add new (max 3)
       let updated;
       if(statusEditSlot) {
@@ -1770,7 +1772,9 @@ function PCNInner() {
   const clearStatus = async (vehicleId, slotId=null) => {
     setVehicleStatus(prev=>{
       if(slotId) {
-        const slots = (prev[vehicleId]||[]).filter(s=>s.id!==slotId);
+        const raw = prev[vehicleId];
+        const arr = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+        const slots = arr.filter(s=>s.id!==slotId);
         if(slots.length===0){const n={...prev};delete n[vehicleId];return n;}
         return {...prev,[vehicleId]:slots};
       }
@@ -1803,8 +1807,16 @@ function PCNInner() {
     const DB = window.PCN_DB;
     if(!DB) return;
     const {data} = await DB.vehicles.getStatus(vehicleId);
-    if(data) setVehicleStatus(prev=>({...prev,[vehicleId]:data}));
-    else setVehicleStatus(prev=>{const n={...prev};delete n[vehicleId];return n;});
+    // WICHTIG: vehicleStatus[id] muss IMMER ein Array sein — setStatus/clearStatus
+    // rufen darauf .filter()/.map() auf. getStatus() liefert von Supabase aber ein
+    // einzelnes Objekt {text,icon,expiresAt,setAt} zurück, kein Array. Ohne diesen
+    // Wrap crasht die App beim nächsten "Status setzen" mit ".filter is not a function".
+    if(data) {
+      const slot = Array.isArray(data) ? data : [{...data, id: data.id || ("s"+(data.setAt||Date.now()))}];
+      setVehicleStatus(prev=>({...prev,[vehicleId]:slot}));
+    } else {
+      setVehicleStatus(prev=>{const n={...prev};delete n[vehicleId];return n;});
+    }
   };
 
   const toast_ = useCallback((msg,type="ok")=>{
