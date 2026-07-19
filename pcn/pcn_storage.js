@@ -125,7 +125,9 @@ const PCN_STORAGE = (() => {
       return { data: user };
     },
 
-    async registerGuest(name, email) {
+    async registerGuest(name, email, consent={}) {
+      const nowIso = now();
+      const CONSENT_VERSION = "guest-contact-2026-07";
       const users = local._get("users") || {};
       // Guests can reuse an existing email if it was also a guest (no error)
       const existing = users[email];
@@ -133,9 +135,20 @@ const PCN_STORAGE = (() => {
       const user = existing || {
         id: uid(), name, email, role: "guest",
         memberNr: null,
-        createdAt: now(), lastSeen: now(),
+        createdAt: nowIso, lastSeen: nowIso,
+        contactConsentAt: null, contactConsentVersion: null,
+        marketingConsentAt: null, marketingConsentVersion: null,
       };
-      user.lastSeen = now();
+      user.lastSeen = nowIso;
+      // Getrennt dokumentieren — siehe Kommentar bei der Supabase-Variante
+      if(consent.contactAccepted && !user.contactConsentAt){
+        user.contactConsentAt = nowIso;
+        user.contactConsentVersion = CONSENT_VERSION;
+      }
+      if(consent.marketingOptIn && !user.marketingConsentAt){
+        user.marketingConsentAt = nowIso;
+        user.marketingConsentVersion = CONSENT_VERSION;
+      }
       users[email] = user;
       local._set("users", users);
       local._set("session", user);
@@ -546,16 +559,39 @@ const PCN_STORAGE = (() => {
       return { data: u };
     },
 
-    async registerGuest(name, email) {
+    // consent: { contactAccepted: bool (Pflicht), marketingOptIn: bool (optional) }
+    // Beide Zustimmungen werden GETRENNT dokumentiert (Kopplungsverbot,
+    // Art. 7 Abs. 4 DSGVO) — die eine ist Voraussetzung für die Kontaktaufnahme,
+    // die andere ein eigener, freiwilliger Zweck (Marketing/Lead-Nutzung).
+    async registerGuest(name, email, consent={}) {
+      const nowIso = now();
+      const CONSENT_VERSION = "guest-contact-2026-07";
       const {data:existing} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
       if(existing&&existing.length>0){
         const u = existing[0];
         if(u.role !== "guest") return { error: "E-Mail bereits als Mitglied registriert" };
+        // Bei erneutem Kontakt: Einwilligungen ggf. nachtragen/aktualisieren
+        const patch = {};
+        if(consent.contactAccepted && !u.contact_consent_at){
+          patch.contact_consent_at = nowIso;
+          patch.contact_consent_version = CONSENT_VERSION;
+        }
+        if(consent.marketingOptIn && !u.marketing_consent_at){
+          patch.marketing_consent_at = nowIso;
+          patch.marketing_consent_version = CONSENT_VERSION;
+        }
+        if(Object.keys(patch).length) await supabase._patch("users","id=eq."+u.id, patch);
         const session = { id:u.id, name:u.name, email:u.email, role:"guest", memberNr:null };
         safeStore.setItem("pcn_session", JSON.stringify(session));
         return { data: session };
       }
-      const user = { name, email, role:"guest", member_nr:null, guest_created_at:now() };
+      const user = {
+        name, email, role:"guest", member_nr:null, guest_created_at:nowIso,
+        contact_consent_at: consent.contactAccepted ? nowIso : null,
+        contact_consent_version: consent.contactAccepted ? CONSENT_VERSION : null,
+        marketing_consent_at: consent.marketingOptIn ? nowIso : null,
+        marketing_consent_version: consent.marketingOptIn ? CONSENT_VERSION : null,
+      };
       const res = await supabase._post("users", user);
       if(res.error) return res;
       const u = { id:res.data.id, name, email, role:"guest", memberNr:null };
