@@ -290,7 +290,7 @@ async function loadAll(){
 }
 
 function updateBadges(){
-  const g=DB.members.filter(m=>m.role==="guest").length;
+  const g=DB.members.filter(m=>m.role==="guest"&&!isContactOnlyGuest(m)).length;
   const p=DB.members.filter(m=>m.role==="member"&&!m.beitrag_bezahlt).length;
   const pe=DB.participants.filter(p=>p.status==="pending").length;
   const msg=(DB.unreadMsgs||[]).length;
@@ -445,7 +445,7 @@ function showMembersFiltered(filter){
 
 function rDashboard(el){
   const aktive=DB.members.filter(m=>m.role==="member");
-  const gaeste=DB.members.filter(m=>m.role==="guest");
+  const gaeste=DB.members.filter(m=>m.role==="guest"&&!isContactOnlyGuest(m));
   const bezahlt=aktive.filter(m=>m.beitrag_bezahlt);
   const offen=aktive.filter(m=>!m.beitrag_bezahlt);
   const pct=aktive.length?Math.round(bezahlt.length/aktive.length*100):0;
@@ -590,10 +590,12 @@ ${gaeste.length?`<div class="card">
 }
 
 function rMembers(el){
+  // Kontaktanfragen zählen hier nicht mit — sie gehören in Marketing-Leads
+  const clubMembers = DB.members.filter(m=>!isContactOnlyGuest(m));
   // Zähler für Handlungsbedarf-Filter
-  const cntIssues=DB.members.filter(m=>memberIssueKeys(m).length>0).length;
-  const cntNoVeh=DB.members.filter(m=>m.role==="member"&&!DB.vehicles.some(v=>v.user_id===m.id)).length;
-  const cntIncompl=DB.members.filter(m=>DB.vehicles.some(v=>v.user_id===m.id&&(!v.image||!v.kennzeichen||!v.baujahr||!v.besonderheiten))).length;
+  const cntIssues=clubMembers.filter(m=>memberIssueKeys(m).length>0).length;
+  const cntNoVeh=clubMembers.filter(m=>m.role==="member"&&!DB.vehicles.some(v=>v.user_id===m.id)).length;
+  const cntIncompl=clubMembers.filter(m=>DB.vehicles.some(v=>v.user_id===m.id&&(!v.image||!v.kennzeichen||!v.baujahr||!v.besonderheiten))).length;
   el.innerHTML=`<div class="page-title">👥 Mitglieder <span style="font-size:15px;font-weight:400;color:var(--muted)">${DB.members.length}</span></div>
 
   <!-- Pilotgruppe anlegen -->
@@ -755,6 +757,18 @@ Dein PCN-Vorstand`;
 }
 
 // ── Handlungsbedarf eines Mitglieds ermitteln (zentrale Logik) ──
+// Erkennt Kontaktanfragen (Person hat nur eine Fahrzeug-Nachricht geschickt),
+// im Unterschied zu "echten" App-Gästen, die auf Freigabe warten.
+// Fallback für Altbestand: guest_source fehlte, bevor dieses Feld eingeführt
+// wurde — dort war jede role="guest"-Zeile mit contact_consent_at ohnehin
+// ausschließlich über die Kontaktaufnahme entstanden.
+function isContactOnlyGuest(m){
+  if(m.role !== "guest") return false;
+  if(m.guest_source === "vehicle_contact") return true;
+  if(m.guest_source) return false; // explizit anders markiert
+  return !!m.contact_consent_at;    // Altbestand ohne guest_source-Feld
+}
+
 function memberIssueKeys(m){
   if(m.paused) return [];   // pausierte Accounts erzeugen keinen Handlungsbedarf
   const isMember=m.role==="member", isPaid=!!m.beitrag_bezahlt;
@@ -774,6 +788,7 @@ function filterMembers(){
   const sort=document.getElementById("m-sort")?.value||"smart";
   const list=document.getElementById("members-list");if(!list)return;
   let filtered=DB.members.filter(m=>{
+    if(isContactOnlyGuest(m)) return false;   // gehört in Marketing-Leads, nicht hierhin
     const keys=memberIssueKeys(m);
     if(f==="member"&&m.role!=="member")return false;
     if(f==="guest"&&m.role!=="guest")return false;
