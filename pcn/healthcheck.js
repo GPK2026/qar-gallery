@@ -153,6 +153,7 @@ async function cleanupOldTestData() {
       "contact_consent_at", "contact_consent_version",
       "marketing_consent_at", "marketing_consent_version",
       "marketing_consent_withdrawn_at",             // add_guest_consent_columns.sql
+      "guest_source",                                // add_guest_source_column.sql
     ],
     messages: [
       "read_at",                                     // add_geburtstag_column.sql (Nebenmigration)
