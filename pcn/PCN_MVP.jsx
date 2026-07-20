@@ -2123,7 +2123,17 @@ function PCNInner() {
               const ev = events[mapped.eventId];
               const evName = ev?.name || "einem Event";
               if(mapped.status==="confirmed") toast_(`✅ Anmeldung für ${evName} bestätigt!`);
-              else if(mapped.status==="cancelled" && mapped.cancelledBy==="admin") toast_(`❌ Anmeldung für ${evName} wurde abgelehnt`);
+              else if(mapped.status==="cancelled" && mapped.cancelledBy==="admin"){
+                // War die Teilnahme bereits bestätigt (=Punkte gutgeschrieben),
+                // macht die Meldung transparent, dass diese jetzt entfallen —
+                // die Punktzahl selbst wird automatisch neu berechnet (siehe
+                // getPoints: filtert auf status==="confirmed"), hier geht es
+                // nur um die ehrliche Nutzer-Kommunikation.
+                const hadPoints = before.status === "confirmed";
+                toast_(hadPoints
+                  ? `❌ Anmeldung für ${evName} storniert — ${POINTS.event_confirmed} Punkte entfallen`
+                  : `❌ Anmeldung für ${evName} wurde abgelehnt`);
+              }
             }
             const evId = mapped.eventId;
             const list = next[evId] ? [...next[evId]] : [];
