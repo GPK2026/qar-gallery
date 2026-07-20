@@ -579,9 +579,14 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
   const [selV, setSelV] = useState(myVehicles[0]?.id||"");
   const [selC, setSelC] = useState((ev.classes||["Alle Modelle"])[0]);
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const evParts = (participants[ev.id]||[]).filter(p=>p.status!=="cancelled");
+  const evParts = (participants[ev.id]||[]).filter(p=>p.status!=="cancelled"||p.cancelledBy!=="member");
   const confirmedParts = evParts.filter(p=>p.status==="confirmed");
-  const myReg = (participants[ev.id]||[]).find(p=>p.userId===me?.id&&p.status!=="cancelled");
+  // Wichtig: Eine vom VORSTAND abgelehnte Anmeldung soll weiterhin als
+  // "meine Registrierung" gelten (damit "✗ Abgelehnt" sichtbar wird) —
+  // nur eine Anmeldung, die das Mitglied SELBST zurückgezogen hat, soll
+  // wieder das leere Anmeldeformular zeigen (siehe cancelEvent).
+  const myReg = (participants[ev.id]||[]).find(p=>
+    p.userId===me?.id && !(p.status==="cancelled" && p.cancelledBy==="member"));
   const days = daysUntil(ev.date);
   const spotsLeft = (ev.maxParticipants||100) - confirmedParts.length;
   const isPast = new Date(ev.date) < new Date();
@@ -589,7 +594,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
   const statusColor = myReg?.status==="confirmed" ? C.green : myReg?.status==="pending" ? C.amber : "#ef4444";
   const statusLabel = myReg?.status==="confirmed"
     ? `✓ Bestätigt${myReg.startNr?" — #"+myReg.startNr:""}`
-    : myReg?.status==="pending" ? "🟡 Anmeldung eingegangen" : "✗ Abgelehnt";
+    : myReg?.status==="pending" ? "🟡 Anmeldung eingegangen" : "✗ Leider abgelehnt";
 
   return (
     <div style={{minHeight:"100vh",background:C.black,paddingBottom:40,animation:"fadeIn .2s"}}>
@@ -665,8 +670,8 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                 </button>
               </div>
             )}
-            {/* Abmelden */}
-            {!isPast&&(
+            {/* Abmelden — nur sinnvoll, solange die Anmeldung noch aktiv ist */}
+            {!isPast && myReg.status!=="cancelled" && (
               confirmCancel?(
                 <div style={{background:"#ef444418",border:"1px solid #ef444433",borderRadius:10,padding:"12px"}}>
                   <div style={{fontSize:13,color:"#ef4444",marginBottom:10,fontWeight:600}}>Anmeldung wirklich stornieren?</div>
@@ -688,6 +693,16 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                   ✕ Anmeldung stornieren
                 </button>
               )
+            )}
+            {/* Nach einer Ablehnung: klarer Weg zur Neuanmeldung, statt Sackgasse */}
+            {!isPast && myReg.status==="cancelled" && myReg.cancelledBy==="admin" && (
+              <button onClick={()=>{
+                  setParticipants(prev=>({...prev,[ev.id]:(prev[ev.id]||[]).filter(p=>p.id!==myReg.id)}));
+                }}
+                style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"9px 14px",
+                  color:C.white,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                Erneut anmelden →
+              </button>
             )}
           </div>
         )}
@@ -2080,6 +2095,47 @@ function PCNInner() {
       } catch(e){}
     };
 
+    // Event-Anmeldungen: bestätigt/abgelehnt soll sofort sichtbar sein,
+    // ohne dass das Mitglied die App neu laden muss ("live is King").
+    const refreshParticipants = async () => {
+      try {
+        const r = await fetch(`${sbUrl()}/rest/v1/participants?user_id=eq.${me.id}&select=*`,
+          { headers: sbHead() });
+        if(!r.ok) return;
+        const rows = await r.json();
+        if(!Array.isArray(rows)) return;
+
+        setParticipants(prev => {
+          const next = {...prev};
+          // Vorherige Status merken, um bei einer Änderung eine Benachrichtigung zu zeigen
+          const prevById = {};
+          Object.values(prev).flat().forEach(p => { prevById[p.id] = p; });
+
+          rows.forEach(row => {
+            const mapped = {
+              id: row.id, eventId: row.event_id, userId: row.user_id, vehicleId: row.vehicle_id,
+              class: row.class, startNr: row.start_nr||"01",
+              status: row.status||"confirmed", registeredAt: row.registered_at,
+              cancelledBy: row.cancelled_by||null,
+            };
+            const before = prevById[mapped.id];
+            if(before && before.status !== mapped.status){
+              const ev = events[mapped.eventId];
+              const evName = ev?.name || "einem Event";
+              if(mapped.status==="confirmed") toast_(`✅ Anmeldung für ${evName} bestätigt!`);
+              else if(mapped.status==="cancelled" && mapped.cancelledBy==="admin") toast_(`❌ Anmeldung für ${evName} wurde abgelehnt`);
+            }
+            const evId = mapped.eventId;
+            const list = next[evId] ? [...next[evId]] : [];
+            const idx = list.findIndex(p => p.id === mapped.id);
+            if(idx >= 0) list[idx] = mapped; else list.push(mapped);
+            next[evId] = list;
+          });
+          return next;
+        });
+      } catch(e){}
+    };
+
     const refreshAllLive = () => {
       refreshThreads();
       refreshNews();
@@ -2111,13 +2167,15 @@ function PCNInner() {
         ws.onopen=()=>{
           // Auf alles lauschen, was das Mitglied betrifft — nicht nur Nachrichten
           ws.send(JSON.stringify({
-            topic:"realtime:public",event:"phx_join",
+            topic:"realtime:public", event:"phx_join",
             payload:{config:{broadcast:{ack:false},presence:{key:""},
               postgres_changes:[
                 {event:"INSERT", schema:"public", table:"messages"},
                 {event:"INSERT", schema:"public", table:"news"},
                 {event:"UPDATE", schema:"public", table:"users"},
                 {event:"*",      schema:"public", table:"vehicles"},
+                {event:"*",      schema:"public", table:"participants"}, // Event-Anmeldungen: bestätigt/abgelehnt
+                {event:"INSERT", schema:"public", table:"threads"},      // neue Konversation eines Gasts/Mitglieds
               ]}},
             ref:"1"
           }));
@@ -2135,6 +2193,8 @@ function PCNInner() {
             else if(tbl==="news") refreshNews();
             else if(tbl==="users") refreshProfile();
             else if(tbl==="vehicles") refreshVehicles();
+            else if(tbl==="participants") refreshParticipants();
+            else if(tbl==="threads") refreshThreads();
             else refreshAllLive();
           }catch(err){}
         };
