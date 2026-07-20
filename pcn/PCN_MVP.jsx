@@ -1502,6 +1502,10 @@ function PCNInner() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showFeatureDetail, setShowFeatureDetail] = useState(null); // false | 'features' | 'points'
   const [eventsView, setEventsView] = useState("calendar"); // "list" | "calendar"
+  const [showEventFilters, setShowEventFilters] = useState(false);
+  const [eventFilters, setEventFilters] = useState({
+    onlyMine: false, category: "", price: "", period: "", onlySpotsLeft: false,
+  });
   const [demoBannerClosed, setDemoBannerClosed] = useState(false);
   const [demoBannerVisible, setDemoBannerVisible] = useState(false);
   const [communitySearch, setCommunitySearch] = useState("");
@@ -5570,27 +5574,71 @@ Regeln:
         )}
 
         {/* EVENTS */}
-        {tab==="events"&&!isGuest&&(
+        {tab==="events"&&!isGuest&&(()=>{
+          const now = new Date();
+          const weekEnd = new Date(now.getTime() + 7*864e5);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth()+1, 0);
+          const filteredEvents = Object.values(events).filter(ev=>{
+            const myReg = (participants[ev.id]||[]).find(p=>p.userId===me?.id&&p.status!=="cancelled");
+            if(eventFilters.onlyMine && !myReg) return false;
+            if(eventFilters.category && ev.category!==eventFilters.category) return false;
+            if(eventFilters.price){
+              const raw = String(ev.entryFee||ev.price||"").trim();
+              const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
+              if(eventFilters.price==="free" && !free) return false;
+              if(eventFilters.price==="paid" && free) return false;
+            }
+            if(eventFilters.period){
+              const d = new Date(ev.date);
+              if(eventFilters.period==="week" && (d<now||d>weekEnd)) return false;
+              if(eventFilters.period==="month" && (d<now||d>monthEnd)) return false;
+            }
+            if(eventFilters.onlySpotsLeft){
+              const confirmed = (participants[ev.id]||[]).filter(p=>p.status==="confirmed").length;
+              if(confirmed >= (ev.maxParticipants||100)) return false;
+            }
+            return true;
+          });
+          return (
           <div style={{animation:"fadeIn .2s"}}>
 
-            {/* View toggle */}
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            {/* View toggle + Filter */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,gap:8}}>
               <div style={{fontSize:13,fontWeight:800,color:C.white}}>Veranstaltungen 2026</div>
-              <div style={{display:"flex",background:"#1a1a1a",borderRadius:8,padding:2}}>
-                {[["list","☰ Liste"],["calendar","📅 Kalender"]].map(([v,label])=>(
-                  <button key={v} onClick={()=>setEventsView(v)}
-                    style={{padding:"7px 12px",border:"none",borderRadius:6,cursor:"pointer",
-                      fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:12,
-                      background:eventsView===v?C.red:"transparent",
-                      color:eventsView===v?"#fff":C.muted,transition:"all .15s"}}>
-                    {label}
-                  </button>
-                ))}
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                {(()=>{
+                  const activeCount = [eventFilters.onlyMine, eventFilters.category, eventFilters.price,
+                    eventFilters.period, eventFilters.onlySpotsLeft].filter(Boolean).length;
+                  return (
+                    <button onClick={()=>setShowEventFilters(true)}
+                      style={{position:"relative",background:activeCount?`${C.red}22`:"#1a1a1a",
+                        border:`1px solid ${activeCount?C.red+"66":C.border}`,borderRadius:8,
+                        padding:"8px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+                      <span style={{fontSize:14}}>⚙️</span>
+                      {activeCount>0&&(
+                        <span style={{background:C.red,color:"#fff",fontSize:10,fontWeight:800,
+                          borderRadius:99,minWidth:16,height:16,display:"flex",alignItems:"center",
+                          justifyContent:"center",padding:"0 4px"}}>{activeCount}</span>
+                      )}
+                    </button>
+                  );
+                })()}
+                <div style={{display:"flex",background:"#1a1a1a",borderRadius:8,padding:2}}>
+                  {[["list","☰ Liste"],["calendar","📅 Kalender"]].map(([v,label])=>(
+                    <button key={v} onClick={()=>setEventsView(v)}
+                      style={{padding:"7px 12px",border:"none",borderRadius:6,cursor:"pointer",
+                        fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:12,
+                        background:eventsView===v?C.red:"transparent",
+                        color:eventsView===v?"#fff":C.muted,transition:"all .15s"}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* LIST VIEW */}
-            {eventsView==="list"&&Object.values(events).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(ev=>{
+            {eventsView==="list"&&filteredEvents.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(ev=>{
               const days=daysUntil(ev.date);
               const myReg=(participants[ev.id]||[]).find(p=>p.userId===me?.id);
               return (
@@ -5646,7 +5694,7 @@ Regeln:
               const firstDay = new Date(year, month, 1).getDay();
               const daysInMonth = new Date(year, month+1, 0).getDate();
               const startOffset = (firstDay+6)%7; // Mon=0
-              const eventsThisMonth = Object.values(events).filter(ev=>{
+              const eventsThisMonth = filteredEvents.filter(ev=>{
                 const d=new Date(ev.date); return d.getFullYear()===year && d.getMonth()===month;
               });
               const eventsByDay = {};
@@ -5750,7 +5798,8 @@ Regeln:
               );
             })()}
           </div>
-        )}
+          );
+        })()}
 
         {/* MESSAGES */}
         {tab==="messages"&&(
@@ -6688,6 +6737,109 @@ Regeln:
       {/* ── Erklärung für Gast-Kontaktaufnahme — bewusst eigener Text,
            NICHT der Mitgliedschafts-Text: hier wird kein Fahrzeug angelegt,
            nur Name/E-Mail für die Nachrichtenzustellung gespeichert. ── */}
+      {/* ── Event-Filter — Bottom-Sheet ── */}
+      {showEventFilters&&(
+        <div className="overlay" style={{zIndex:850}} onClick={e=>{if(e.target===e.currentTarget)setShowEventFilters(false);}}>
+          <div className="sheet" style={{maxHeight:"85vh",overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>⚙️ Events filtern</div>
+              <button onClick={()=>setShowEventFilters(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:22,cursor:"pointer",padding:"0 4px"}}>✕</button>
+            </div>
+
+            {/* Meine Anmeldungen */}
+            <label style={{display:"flex",gap:10,alignItems:"center",padding:"12px 0",borderBottom:`1px solid ${C.border}`,cursor:"pointer"}}>
+              <input type="checkbox" checked={eventFilters.onlyMine}
+                onChange={e=>setEventFilters(p=>({...p,onlyMine:e.target.checked}))}
+                style={{width:18,height:18}}/>
+              <span style={{fontSize:14,color:C.white,fontWeight:600}}>Nur meine Anmeldungen</span>
+            </label>
+
+            {/* Noch Plätze frei */}
+            <label style={{display:"flex",gap:10,alignItems:"center",padding:"12px 0",borderBottom:`1px solid ${C.border}`,cursor:"pointer"}}>
+              <input type="checkbox" checked={eventFilters.onlySpotsLeft}
+                onChange={e=>setEventFilters(p=>({...p,onlySpotsLeft:e.target.checked}))}
+                style={{width:18,height:18}}/>
+              <span style={{fontSize:14,color:C.white,fontWeight:600}}>Nur mit freien Plätzen</span>
+            </label>
+
+            {/* Zeitraum */}
+            <div style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Zeitraum</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {[["","Alle"],["week","Diese Woche"],["month","Diesen Monat"]].map(([v,label])=>(
+                  <button key={v} onClick={()=>setEventFilters(p=>({...p,period:v}))}
+                    style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.period===v?C.red:C.border}`,
+                      background:eventFilters.period===v?`${C.red}22`:"transparent",
+                      color:eventFilters.period===v?C.red:C.muted,fontSize:12,fontWeight:700,
+                      cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Preis */}
+            <div style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Preis</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {[["","Alle"],["free","Kostenlos"],["paid","Kostenpflichtig"]].map(([v,label])=>(
+                  <button key={v} onClick={()=>setEventFilters(p=>({...p,price:v}))}
+                    style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.price===v?C.red:C.border}`,
+                      background:eventFilters.price===v?`${C.red}22`:"transparent",
+                      color:eventFilters.price===v?C.red:C.muted,fontSize:12,fontWeight:700,
+                      cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Kategorie — dynamisch aus vorhandenen Events, keine feste Liste */}
+            {(()=>{
+              const cats = [...new Set(Object.values(events).map(ev=>ev.category).filter(Boolean))];
+              if(!cats.length) return null;
+              return (
+                <div style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Kategorie</div>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    <button onClick={()=>setEventFilters(p=>({...p,category:""}))}
+                      style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${!eventFilters.category?C.red:C.border}`,
+                        background:!eventFilters.category?`${C.red}22`:"transparent",
+                        color:!eventFilters.category?C.red:C.muted,fontSize:12,fontWeight:700,
+                        cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      Alle
+                    </button>
+                    {cats.map(cat=>(
+                      <button key={cat} onClick={()=>setEventFilters(p=>({...p,category:cat}))}
+                        style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.category===cat?C.red:C.border}`,
+                          background:eventFilters.category===cat?`${C.red}22`:"transparent",
+                          color:eventFilters.category===cat?C.red:C.muted,fontSize:12,fontWeight:700,
+                          cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div style={{display:"flex",gap:8,marginTop:16}}>
+              <button onClick={()=>setEventFilters({onlyMine:false,category:"",price:"",period:"",onlySpotsLeft:false})}
+                style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",
+                  color:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                Zurücksetzen
+              </button>
+              <button onClick={()=>setShowEventFilters(false)}
+                style={{flex:1,background:C.red,border:"none",borderRadius:10,padding:"12px",
+                  color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                Anwenden
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showContactPrivacyInfo&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",zIndex:900,
           display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
