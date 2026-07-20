@@ -1771,9 +1771,18 @@ function PCNInner() {
     });
     broadcastStatus(vehicleId, slot);
     const DB = window.PCN_DB;
-    if(DB) await DB.vehicles.setStatus(vehicleId, slot).catch(()=>{});
+    let dbError = null;
+    if(DB) {
+      const res = await DB.vehicles.setStatus(vehicleId, slot).catch(e=>({error:e?.message||"Unbekannter Fehler"}));
+      if(res?.error) dbError = res.error;
+    }
     setShowStatusPicker(null); setStatusCustom(""); setStatusEditSlot(null); setStatusPresetIcon(null); setStatusDateTime(""); setStatusUseDate(false);
-    toast_(`Status gesetzt: "${text}"`);
+    if(dbError) {
+      console.error("[Live-Status] Speichern in Datenbank fehlgeschlagen:", dbError);
+      toast_(`⚠️ Status nur lokal sichtbar — Speichern fehlgeschlagen`);
+    } else {
+      toast_(`Status gesetzt: "${text}"`);
+    }
   };
 
   const clearStatus = async (vehicleId, slotId=null) => {
@@ -1789,7 +1798,10 @@ function PCNInner() {
     });
     broadcastStatus(vehicleId, null);
     const DB = window.PCN_DB;
-    if(DB) await DB.vehicles.clearStatus(vehicleId).catch(()=>{});
+    if(DB) {
+      const res = await DB.vehicles.clearStatus(vehicleId).catch(e=>({error:e?.message||"Unbekannter Fehler"}));
+      if(res?.error) console.error("[Live-Status] Löschen in Datenbank fehlgeschlagen:", res.error);
+    }
   };
 
   const getActiveStatus = (vehicleId) => {
