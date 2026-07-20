@@ -1598,7 +1598,12 @@ function evDetailHTML(ev,k){
       var m = DB.members.find(function(x){return x.id===p.user_id;});
       var v = DB.vehicles.find(function(x){return x.id===p.vehicle_id;});
       var sc = p.status==="confirmed"?"var(--green)":p.status==="pending"?"var(--amber)":"#ef4444";
-      var sl = p.status==="confirmed"?"✓ Bestätigt":p.status==="pending"?"⏳ Offen":"✕ Storniert";
+      var sl;
+      if(p.status==="confirmed") sl = "✓ Bestätigt";
+      else if(p.status==="pending") sl = "⏳ Offen";
+      else if(p.cancelled_by==="admin") sl = "✕ Abgelehnt (Vorstand)";
+      else if(p.cancelled_by==="member") sl = "↩ Selbst zurückgezogen";
+      else sl = "✕ Storniert"; // Altbestand ohne cancelled_by-Feld
       var s = '<div style="display:flex;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">'
         + '<div style="width:28px;height:28px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">'+((m&&m.name?m.name:"?")[0].toUpperCase())+'</div>'
         + '<div style="flex:1;min-width:0">'
@@ -2783,15 +2788,23 @@ async function cancelParticipant(partId,eventId){
   const part=DB.participants.find(p=>p.id===partId);
   const ev=DB.events.find(e=>e.id===eventId);
   const mem=DB.members.find(m=>m.id===part?.user_id);
+  const wasPending = part?.status==="pending";
   confirmDanger({
-    title:"Anmeldung stornieren?",
-    body:`Die Anmeldung von <strong style="color:#ddd">${mem?.name||"diesem Mitglied"}</strong> für "${ev?.name||"das Event"}" wird storniert.`,
-    warn:`Das Mitglied erhält automatisch eine Nachricht über die Stornierung.${part?.status==="confirmed"?"<br>Die Teilnahme war bereits <strong>bestätigt</strong> — die Punkte entfallen.":""}`,
-    confirmLabel:"Stornieren",
+    title: wasPending ? "Anfrage ablehnen?" : "Anmeldung stornieren?",
+    body:`Die Anmeldung von <strong style="color:#ddd">${mem?.name||"diesem Mitglied"}</strong> für "${ev?.name||"das Event"}" wird ${wasPending?"abgelehnt":"storniert"}.`,
+    warn:`Das Mitglied erhält automatisch eine Nachricht.${part?.status==="confirmed"?"<br>Die Teilnahme war bereits <strong>bestätigt</strong> — die Punkte entfallen.":""}`,
+    confirmLabel: wasPending ? "Ablehnen" : "Stornieren",
     onConfirm: async()=>{
-      await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"cancelled"})});
-      if(part?.user_id&&ev) sendAdminMsg(part.user_id,`Deine Anmeldung für "${ev.name}" wurde leider storniert.`,"❌");
-      toast("Storniert + Nachricht gesendet"); await loadAll();
+      // cancelled_by:'admin' unterscheidet dies von einer Selbststornierung
+      // durch das Mitglied — beide schreiben status='cancelled', aber nur
+      // hier ist es eine Ablehnung/Stornierung durch den Vorstand.
+      await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"cancelled",cancelled_by:"admin"})});
+      if(part?.user_id&&ev) sendAdminMsg(part.user_id,
+        wasPending
+          ? `Deine Anmeldung für "${ev.name}" wurde leider abgelehnt.`
+          : `Deine Anmeldung für "${ev.name}" wurde leider storniert.`,
+        "❌");
+      toast(wasPending?"Abgelehnt + Nachricht gesendet":"Storniert + Nachricht gesendet"); await loadAll();
     }
   });
 }
