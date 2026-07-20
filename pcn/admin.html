@@ -1794,6 +1794,18 @@ function rMessages(el){
     <div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:12px">
       🔒 Nur deine eigenen Konversationen. Chats zwischen Mitgliedern sind nicht einsehbar.
     </div>
+
+    <!-- Mitglied suchen, um eine neue Nachricht zu starten (auch ohne bestehenden Chat) -->
+    <div style="position:relative;margin-bottom:14px">
+      <input id="msg-member-search" placeholder="🔍 Mitglied suchen, um zu schreiben…"
+        oninput="filterMsgMemberSearch()" onfocus="filterMsgMemberSearch()"
+        autocomplete="off" style="width:100%">
+      <div id="msg-member-results" class="hidden"
+        style="position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:20;
+          background:#161616;border:1px solid var(--border);border-radius:10px;
+          max-height:280px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5)"></div>
+    </div>
+
     ${direct.length?direct.map(t=>{
       const memberId=(t.participants||[]).find(p=>p!==ADMIN_UUID);
       const m=DB.members.find(x=>x.id===memberId);
@@ -1841,6 +1853,69 @@ function rMessages(el){
     </div>`}
   </div>`;
 }
+
+// ── Mitglied suchen, um eine NEUE Nachricht zu starten (auch ohne bestehenden Chat) ──
+function filterMsgMemberSearch(){
+  const box = document.getElementById("msg-member-search");
+  const results = document.getElementById("msg-member-results");
+  if(!box || !results) return;
+  const q = box.value.trim().toLowerCase();
+
+  // Kontaktanfragen gehören nicht hierhin — das ist der Vorstand-↔-Mitglied-
+  // Bereich, keine Marketing-Leads-Liste (siehe isContactOnlyGuest).
+  const pool = DB.members.filter(m => !isContactOnlyGuest(m));
+
+  if(!q){
+    results.classList.add("hidden");
+    results.innerHTML = "";
+    return;
+  }
+
+  const matches = pool.filter(m =>
+    (m.name||"").toLowerCase().includes(q) || (m.email||"").toLowerCase().includes(q)
+  ).slice(0, 8);
+
+  if(!matches.length){
+    results.innerHTML = `<div style="padding:14px;font-size:13px;color:#666;text-align:center">Kein Mitglied gefunden</div>`;
+    results.classList.remove("hidden");
+    return;
+  }
+
+  results.innerHTML = matches.map(m=>{
+    const hasThread = (DB.adminThreads||[]).some(t=>
+      t.id!==CLUB_CHANNEL_ID && (t.participants||[]).includes(m.id));
+    const roleLabel = m.role==="member" ? "Mitglied" : "Gast";
+    const paused = m.paused ? " · pausiert" : "";
+    return `<div onclick="startMsgFromSearch('${m.id}','${(m.name||"").replace(/'/g,"\\'")}')"
+      style="display:flex;gap:10px;align-items:center;padding:10px 12px;cursor:pointer;border-bottom:1px solid #1f1f1f"
+      onmouseover="this.style.background='#1d1d1d'" onmouseout="this.style.background='transparent'">
+      <div style="width:30px;height:30px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">${(m.name||"?")[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;color:var(--txt);font-weight:600">${escapeHtml(m.name||"—")}</div>
+        <div style="font-size:11px;color:#666">${escapeHtml(m.email||"")} · ${roleLabel}${paused}</div>
+      </div>
+      ${hasThread?`<span style="font-size:10px;color:#555;flex-shrink:0">Chat vorhanden</span>`:`<span style="font-size:10px;color:var(--gold);flex-shrink:0">Neu schreiben</span>`}
+    </div>`;
+  }).join("");
+  results.classList.remove("hidden");
+}
+
+// Öffnet das bestehende Nachrichten-Modal und räumt die Suche danach auf
+function startMsgFromSearch(id, name){
+  document.getElementById("msg-member-results")?.classList.add("hidden");
+  const box = document.getElementById("msg-member-search");
+  if(box) box.value = "";
+  openDirectMsg(id, name);
+}
+
+// Ergebnisliste schließen, wenn woanders hingeklickt wird
+document.addEventListener("click", (e)=>{
+  const results = document.getElementById("msg-member-results");
+  const box = document.getElementById("msg-member-search");
+  if(!results || results.classList.contains("hidden")) return;
+  if(e.target===box || results.contains(e.target)) return;
+  results.classList.add("hidden");
+});
 
 function toggleChat(id){
   openChatId = openChatId===id ? null : id;
