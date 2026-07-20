@@ -854,6 +854,7 @@ const PCN_STORAGE = (() => {
       id: p.id, eventId: p.event_id, userId: p.user_id, vehicleId: p.vehicle_id,
       class: p.class, startNr: p.start_nr||p.startNr||"01",
       status: p.status||"confirmed", registeredAt: p.registered_at,
+      cancelledBy: p.cancelled_by||null,
     }) : null,
 
     async getParticipants(eventId) {
