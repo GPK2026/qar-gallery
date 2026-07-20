@@ -1774,6 +1774,10 @@ function PCNInner() {
     let dbError = null;
     if(DB) {
       const res = await DB.vehicles.setStatus(vehicleId, slot).catch(e=>({error:e?.message||"Unbekannter Fehler"}));
+      // Der Demo-Guard antwortet absichtlich mit {data:null, demo:true} und
+      // OHNE error-Feld — das ist kein Fehlschlag, sondern gewolltes
+      // Verhalten (Demo darf nie in die echte DB schreiben). Nur ein
+      // echtes error-Feld ist ein tatsächlicher Fehlschlag.
       if(res?.error) dbError = res.error;
     }
     setShowStatusPicker(null); setStatusCustom(""); setStatusEditSlot(null); setStatusPresetIcon(null); setStatusDateTime(""); setStatusUseDate(false);
@@ -3007,6 +3011,15 @@ Regeln:
     } else {
       // Supabase/API backend: demo runs purely in-memory, not persisted to DB
       // (avoids polluting the real database with fake demo data)
+      //
+      // WICHTIG: isDemoSession() im Storage-Layer erkennt eine Demo-Sitzung
+      // über den "pcn_session"-Eintrag im Speicher — nicht über den React-
+      // State. Ohne diesen Eintrag greift der guard()-Wrapper NICHT, und
+      // Schreibversuche (z.B. Live-Status setzen) gehen als echte Anfragen
+      // an Supabase raus, wo sie scheitern (die Demo-Fahrzeuge V001 etc.
+      // existieren dort gar nicht) — genau das Problem, das zur
+      // fälschlichen Fehlermeldung "Speichern fehlgeschlagen" führte.
+      store.setItem("pcn_session", JSON.stringify({...DEMO_USERS.u1, isDemo:true}));
       setMe(DEMO_USERS.u1);
       setVehicles(DEMO_VEHICLES);
       setLogbook(DEMO_LOGBOOK);
