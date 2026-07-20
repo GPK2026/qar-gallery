@@ -418,9 +418,24 @@ function collectUrgencies({aktive,gaeste,offen,pending,next}){
 
   // 3. Offene Event-Anmeldungen
   if(pending.length){
-    u.push({icon:"🏁",color:AMBER,title:`${pending.length} Event-Anmeldung${pending.length!==1?"en":""} offen`,
+    // Nach Event gruppieren, um bei genau einem betroffenen Event direkt
+    // zu dessen Karte zu springen, statt nur pauschal zum Tab zu wechseln.
+    const byEvent = {};
+    pending.forEach(p => { (byEvent[p.event_id] = byEvent[p.event_id]||[]).push(p); });
+    const affectedEventIds = Object.keys(byEvent);
+    const singleEventId = affectedEventIds.length === 1 ? affectedEventIds[0] : null;
+    const singleEv = singleEventId ? DB.events.find(e=>e.id===singleEventId) : null;
+
+    u.push({icon:"🏁", color:AMBER,
+      title: affectedEventIds.length === 1
+        ? `${pending.length} Anmeldung${pending.length!==1?"en":""} offen — ${singleEv?.name||"1 Event"}`
+        : `${pending.length} Event-Anmeldung${pending.length!==1?"en":""} offen bei ${affectedEventIds.length} Events`,
       detail:"Warten auf Bestätigung durch den Vorstand",
-      action:`showTab('events')`, actionLabel:"Bestätigen"});
+      // Bei genau einem betroffenen Event: direkt zu dessen Karte springen.
+      // Bei mehreren: zum ersten betroffenen Event springen (statt nur
+      // pauschal den Tab zu öffnen) — Suchen entfällt so oder so.
+      action: `goToEvent('${singleEventId || affectedEventIds[0]}')`,
+      actionLabel:"Bestätigen"});
   }
 
   // 4. Überfällige Beiträge (Stichtag: 31.03.)
@@ -1441,6 +1456,20 @@ let evCalMonth = new Date();
 
 function setEvView(v){ evView = v; renderTab("events"); }
 function toggleEvDetail(id){ evOpenId = evOpenId===id ? null : id; renderTab("events"); }
+
+// Springt direkt zu einer bestimmten Eventkarte: Tab wechseln, Karte
+// aufklappen, und zur Karte scrollen — erspart das manuelle Suchen,
+// wenn man von einer Dashboard-Dringlichkeit oder einem Badge kommt.
+function goToEvent(eventId){
+  evOpenId = eventId;
+  showTab("events");
+  // Kurze Verzögerung, damit der Tab-Wechsel das DOM erst neu aufgebaut hat,
+  // bevor wir zur Karte scrollen — sonst existiert das Element noch nicht.
+  setTimeout(()=>{
+    const el = document.getElementById("ev-card-"+eventId);
+    if(el) el.scrollIntoView({behavior:"smooth", block:"center"});
+  }, 60);
+}
 function evMonthShift(n){ evCalMonth = new Date(evCalMonth.getFullYear(), evCalMonth.getMonth()+n, 1); renderTab("events"); }
 
 // Kennzahlen für ein einzelnes Event
@@ -1517,7 +1546,7 @@ function evListHTML(sorted){
     if(!k.free) kpis.push(["💶", "€"+k.umsatz, "von €"+k.potenzial]);
     if(k.canc.length) kpis.push(["✕", k.canc.length, "storniert"]);
 
-    return '<div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;border-left:4px solid '+col+'">'
+    return '<div id="ev-card-'+ev.id+'" class="card" style="margin-bottom:10px;padding:0;overflow:hidden;border-left:4px solid '+col+'">'
       + '<div onclick="toggleEvDetail(\''+ev.id+'\')" style="padding:14px;cursor:pointer">'
         + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'
           + '<div style="flex:1;min-width:0">'
