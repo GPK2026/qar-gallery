@@ -1427,6 +1427,10 @@ function PCNInner() {
     try{ return JSON.parse(store.getItem("pcn_favorites")||"[]"); }catch(e){ return []; }
   });
   const [me, setMe]               = useState(()=>window.__PCN_PRELOAD_SESSION__||null);
+  // Verfolgt, ob die Realtime-WebSocket-Verbindung gerade aktiv ist — damit
+  // das Chat-Fast-Polling (3s) nur als Rückfallebene läuft, statt dauerhaft
+  // parallel zum WebSocket dieselbe Aktualisierung zu wiederholen.
+  const realtimeActiveRef = useRef(false);
   const [allUsers, setAllUsers]   = useState({...DEMO_USERS});
   const [vehicles, setVehicles]   = useState({});
   const [logbook, setLogbook]     = useState({});
@@ -2179,6 +2183,7 @@ function PCNInner() {
         const ws=new WebSocket(wsUrl);
         let alive=true, hb=null;
         ws.onopen=()=>{
+          realtimeActiveRef.current = true;
           // Auf alles lauschen, was das Mitglied betrifft — nicht nur Nachrichten
           ws.send(JSON.stringify({
             topic:"realtime:public", event:"phx_join",
@@ -2212,8 +2217,8 @@ function PCNInner() {
             else refreshAllLive();
           }catch(err){}
         };
-        ws.onerror=()=>{alive=false;if(hb)clearInterval(hb);ws.close();startPolling();};
-        ws.onclose=()=>{if(alive){alive=false;if(hb)clearInterval(hb);startPolling();}};
+        ws.onerror=()=>{alive=false;realtimeActiveRef.current=false;if(hb)clearInterval(hb);ws.close();startPolling();};
+        ws.onclose=()=>{if(alive){alive=false;realtimeActiveRef.current=false;if(hb)clearInterval(hb);startPolling();}};
         cleanup=()=>{alive=false;if(hb)clearInterval(hb);ws.readyState===1&&ws.close();};
         return true;
       } catch(e){return false;}
@@ -2232,11 +2237,16 @@ function PCNInner() {
     return ()=>{ cleanup&&cleanup(); origCleanup(); if(fastPoll) clearInterval(fastPoll); };
   },[me?.id, isDemo]);
 
-  // ── Fast polling (3s) when actively viewing a chat ────────────────────────
+  // ── Fallback-Polling (8s) beim aktiven Chat — NUR wenn Realtime gerade
+  // nicht verbunden ist. Neue Nachrichten kommen normalerweise sofort über
+  // die WebSocket-Verbindung (messages-Abo) — dieses Intervall greift nur
+  // ein, falls die Verbindung kurzzeitig getrennt ist, damit der Chat nicht
+  // komplett "einschläft".
   useEffect(()=>{
     if(screen!=="chat"||!activeThread||!me?.id) return;
     const DB=window.PCN_DB; if(!DB) return;
     const fast=setInterval(async()=>{
+      if(realtimeActiveRef.current) return; // Realtime übernimmt bereits
       const {data:liveThreads}=await DB.threads.list(me.id);
       if(liveThreads){
         setThreads(prev=>{
@@ -2245,7 +2255,7 @@ function PCNInner() {
           return next;
         });
       }
-    },3000);
+    },8000);
     return ()=>clearInterval(fast);
   },[screen,activeThread,me?.id]);
 
