@@ -88,6 +88,49 @@ const PCN_STORAGE = (() => {
   const uid = () => Math.random().toString(36).slice(2,10).toUpperCase();
   const now = () => new Date().toISOString();
 
+  // ── PASSWORT-HASHING (PBKDF2 mit Salt, via Web Crypto API) ──────────────────
+  // Ersetzt das vorherige btoa(encodeURIComponent(pw)) — das war reine
+  // Kodierung, keine Verschlüsselung, und ohne Salt bei jedem Datenbank-Leck
+  // sofort mit vorberechneten Tabellen (Rainbow Tables) angreifbar.
+  //
+  // PBKDF2 läuft nativ im Browser (crypto.subtle), braucht keine externe
+  // Bibliothek. 100.000 Iterationen folgen der aktuellen OWASP-Empfehlung
+  // für PBKDF2-HMAC-SHA256 (Stand 2023, seither nicht nach unten korrigiert).
+  const PBKDF2_ITERATIONS = 100000;
+
+  async function hashPassword(password, saltHex) {
+    const enc = new TextEncoder();
+    // Salt: entweder vorgegeben (beim Prüfen eines bestehenden Hashes)
+    // oder neu erzeugt (beim erstmaligen Setzen eines Passworts)
+    const salt = saltHex
+      ? new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)))
+      : crypto.getRandomValues(new Uint8Array(16));
+    const keyMaterial = await crypto.subtle.importKey(
+      "raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]
+    );
+    const derivedBits = await crypto.subtle.deriveBits(
+      { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+      keyMaterial, 256
+    );
+    const hashHex = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, "0")).join("");
+    const saltHexOut = Array.from(salt).map(b => b.toString(16).padStart(2, "0")).join("");
+    // Format "salt:hash" — beides zusammen gespeichert, damit beim Prüfen
+    // exakt derselbe Salt wiederverwendet werden kann
+    return saltHexOut + ":" + hashHex;
+  }
+
+  async function verifyPassword(password, storedHash) {
+    if (!storedHash || !storedHash.includes(":")) return false;
+    const [saltHex, expectedHash] = storedHash.split(":");
+    const computed = await hashPassword(password, saltHex);
+    const [, computedHash] = computed.split(":");
+    return computedHash === expectedHash;
+  }
+
+  // Erkennt das alte, unsichere Format (kein ":" enthalten = btoa-Format,
+  // 32 Zeichen Base64) — für die Übergangsphase, siehe migratePasswordHash().
+  const isLegacyHash = (hash) => !!hash && !hash.includes(":");
+
   // ── LOCAL STORAGE BACKEND ──────────────────────────────────────────────────
   const local = {
     _load: () => {
@@ -184,6 +227,19 @@ const PCN_STORAGE = (() => {
     async resetPassword(email) {
       // In local mode: just acknowledge — no real email
       return { data: { sent: true } };
+    },
+
+    async changePassword(userId, newPassword) {
+      // Lokaler Modus: keine echte Datenbank, die geleakt werden könnte —
+      // Klartext-Speicherung hier bewusst unverändert, nur für Offline-Demo.
+      if(!newPassword || newPassword.length < 6) return { error: "Mindestens 6 Zeichen" };
+      const users = local._get("users") || {};
+      const entry = Object.values(users).find(u => u.id === userId);
+      if(!entry) return { error: "Nutzer nicht gefunden" };
+      entry.password = newPassword;
+      users[entry.email] = entry;
+      local._set("users", users);
+      return { data: { changed: true } };
     },
 
     async getSession() {
@@ -523,7 +579,7 @@ const PCN_STORAGE = (() => {
     // Register: create/update user profile row after Supabase Auth creates the account
     async register(name, email, clubCode, password) {
       // MVP: Club-Code = Verifikation. Kein Supabase Auth nötig.
-      const pwHash = password ? btoa(encodeURIComponent(password)).slice(0,32) : "";
+      const pwHash = password ? await hashPassword(password) : "";
       const memberNr = "PCN-"+Math.floor(1000+Math.random()*8999);
 
       // Check if already registered
@@ -532,8 +588,12 @@ const PCN_STORAGE = (() => {
         const ex = existing[0];
         if(ex.role !== "guest") return { error: "E-Mail bereits registriert" };
         // Guest upgrade
+        // Bugfix: dieser Pfad setzte bisher KEINEN Passwort-Hash — jemand,
+        // der vorher nur eine Kontaktanfrage war und sich jetzt registriert,
+        // hätte kein Passwort in der DB gehabt und sich nie wieder einloggen
+        // können.
         await supabase._patch("users","email=eq."+encodeURIComponent(email),
-          { name, club_code:clubCode, role:"member", member_nr:memberNr, converted_from_guest:true });
+          { name, club_code:clubCode, role:"member", member_nr:memberNr, converted_from_guest:true, pw_hash:pwHash });
         const u = { id:ex.id, name, email, role:"member", memberNr, avatar:"" };
         safeStore.setItem("pcn_session", JSON.stringify(u));
         return { data: u };
@@ -642,8 +702,22 @@ const PCN_STORAGE = (() => {
       const u = users[0];
       // Check password hash
       if(u.pw_hash) {
-        const pwHash = btoa(encodeURIComponent(password)).slice(0,32);
-        if(u.pw_hash !== pwHash) return { error: "Falsches Passwort" };
+        let valid = false;
+        if(isLegacyHash(u.pw_hash)) {
+          // Altes, unsicheres Format (btoa) — noch einmal so prüfen,
+          // aber bei Erfolg sofort und unbemerkt auf das neue,
+          // PBKDF2-basierte Format migrieren. Niemand muss sein
+          // Passwort zurücksetzen.
+          const legacyHash = btoa(encodeURIComponent(password)).slice(0,32);
+          valid = (u.pw_hash === legacyHash);
+          if(valid) {
+            const newHash = await hashPassword(password);
+            await supabase._patch("users","email=eq."+encodeURIComponent(email),{pw_hash:newHash});
+          }
+        } else {
+          valid = await verifyPassword(password, u.pw_hash);
+        }
+        if(!valid) return { error: "Falsches Passwort" };
       }
       // Build session
       const session = {
@@ -658,6 +732,16 @@ const PCN_STORAGE = (() => {
       safeStore.setItem("pcn_session", JSON.stringify(session));
       await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
       return { data: session };
+    },
+
+    // Ersetzt den direkten btoa()-Aufruf, der bisher in PCN_MVP.jsx lag —
+    // Passwort-Hashing gehört in den Storage-Layer, nicht in die UI-Komponente.
+    async changePassword(userId, newPassword) {
+      if(!newPassword || newPassword.length < 6) return { error: "Mindestens 6 Zeichen" };
+      const newHash = await hashPassword(newPassword);
+      const res = await supabase._patch("users","id=eq."+userId,{pw_hash:newHash});
+      if(res.error) return res;
+      return { data: { changed: true } };
     },
 
     async resetPassword(email) {
@@ -1052,6 +1136,7 @@ function guard(label, fn){
       registerGuest:     (name, email, consent)   => db.registerGuest(name, email, consent),
       login:             (email)                  => db.login(email),
       loginWithPassword: (email, pw)              => db.loginWithPassword ? db.loginWithPassword(email, pw) : db.login(email),
+      changePassword:    (userId, newPw)          => db.changePassword    ? db.changePassword(userId, newPw) : Promise.resolve({error:"Not supported"}),
       resetPassword:     (email)                  => db.resetPassword     ? db.resetPassword(email)         : { data: { sent: true } },
       sendMagicLink:     (email, redirect)        => db.sendMagicLink     ? db.sendMagicLink(email, redirect) : { error:"Not supported" },
       verifyOtp:         (email, token)           => db.verifyOtp         ? db.verifyOtp(email, token)       : { error:"Not supported" },
