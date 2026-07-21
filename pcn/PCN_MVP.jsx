@@ -2771,20 +2771,11 @@ Regeln:
     if(isDemo){ toast_("Im Demo-Modus nicht möglich","err"); return; }
     setPwSaving(true);
     try {
-      // Muss zur Registrierung passen (pcn_storage.js Z.505).
-      // HINWEIS: btoa ist kein Hash, sondern umkehrbares Base64 — für den Pilot
-      // hinnehmbar, vor dem Rollout durch Supabase Auth ersetzen.
-      const hash = btoa(encodeURIComponent(pwNew)).slice(0,32);
-
-      const res = await fetch(`${sbUrl()}/rest/v1/users?id=eq.${me.id}`, {
-        method:"PATCH",
-        headers:{...sbHead(), "Prefer":"return=minimal"},
-        body: JSON.stringify({ pw_hash: hash }),
-      });
-      if(!res.ok){
-        const t = await res.text().catch(()=>"");
-        console.error("Passwort speichern:", t);
-        toast_(/PGRST204/.test(t)
+      const DB = window.PCN_DB;
+      const res = await DB.auth.changePassword(me.id, pwNew);
+      if(res?.error){
+        console.error("Passwort speichern:", res.error);
+        toast_(/PGRST204/.test(String(res.error))
           ? "Passwort-Feld fehlt in der Datenbank — bitte Vorstand melden"
           : "Speichern fehlgeschlagen", "err");
         return;
