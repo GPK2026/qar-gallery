@@ -1986,13 +1986,24 @@ function PCNInner() {
     }));
     setParticipants(pMap);
     const tMap={}; (thRes.data||[]).forEach(t=>tMap[t.id]=t); setThreads(tMap);
-    // Load each vehicle's live status from DB
-    const sMap={};
-    await Promise.all((vRes.data||[]).map(async v=>{
-      const r=await DB.vehicles.getStatus(v.id);
-      if(r.data) sMap[v.id]=r.data;
-    }));
-    setVehicleStatus(sMap);
+    // Load each vehicle's live status from DB — im Demo-Modus liefert die DB
+    // absichtlich NIE Daten (siehe guard() in pcn_storage.js). Den gesamten
+    // vehicleStatus-State hier trotzdem komplett zu ersetzen, würde jeden
+    // lokal gesetzten Demo-Status sofort wieder löschen — das war die
+    // eigentliche, dritte und schwerwiegendste Fundstelle desselben Bugs,
+    // weil refreshAll() bei jedem Neuladen/Realtime-Sync läuft, nicht nur
+    // beim 5s-Poll der öffentlichen Ansicht. isDemo direkt aus dem
+    // übergebenen user-Parameter ableiten, nicht aus der Komponenten-Variable
+    // isDemo — die hängt an me, das an dieser Stelle noch nicht aktualisiert ist.
+    const userIsDemo = user?.id==="a0000000-0000-0000-0000-000000000001"||user?.id==="u2"||user?.isDemo===true;
+    if(!userIsDemo){
+      const sMap={};
+      await Promise.all((vRes.data||[]).map(async v=>{
+        const r=await DB.vehicles.getStatus(v.id);
+        if(r.data) sMap[v.id]=r.data;
+      }));
+      setVehicleStatus(sMap);
+    }
     setMe(user);
   };
 
@@ -4006,6 +4017,7 @@ Regeln:
                   {slots.map(s=>{
                     const remaining = s.expiresAt ? Math.max(0,Math.ceil((s.expiresAt-Date.now())/60000)) : null;
                     const expDate = s.expiresAt ? new Date(s.expiresAt) : null;
+                    const remainingDays = remaining!==null ? Math.floor(remaining/1440) : null; // 1440 Min = 1 Tag
                     return (
                       <div key={s.id} style={{background:`${C.green}11`,border:`1px solid ${C.green}33`,borderRadius:10,padding:"10px 12px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
                         <span style={{fontSize:20,flexShrink:0}}>{s.icon}</span>
@@ -4015,7 +4027,9 @@ Regeln:
                             {statusTick>=0&&remaining!==null
                               ? (remaining<=0?"⚠️ Abgelaufen":remaining<60
                                 ?`⏱ Noch ${remaining} Min`
-                                :`⏱ Bis ${expDate.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`)
+                                :remainingDays>=1
+                                  ?`⏱ Bis ${expDate.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}, ${expDate.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`
+                                  :`⏱ Bis ${expDate.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`)
                               : "⏳ Dauerhaft aktiv"}
                           </div>
                         </div>
@@ -5023,6 +5037,7 @@ Regeln:
                   {slots.map(s=>{
                     const remaining = s.expiresAt ? Math.max(0,Math.ceil((s.expiresAt-Date.now())/60000)) : null;
                     const expDate = s.expiresAt ? new Date(s.expiresAt) : null;
+                    const remainingDays = remaining!==null ? Math.floor(remaining/1440) : null; // 1440 Min = 1 Tag
                     return (
                       <div key={s.id} style={{background:`${C.green}11`,border:`1px solid ${C.green}33`,borderRadius:10,padding:"10px 12px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
                         <span style={{fontSize:20,flexShrink:0}}>{s.icon}</span>
@@ -5032,7 +5047,9 @@ Regeln:
                             {statusTick>=0&&remaining!==null
                               ? (remaining<=0?"⚠️ Abgelaufen":remaining<60
                                 ?`⏱ Noch ${remaining} Min`
-                                :`⏱ Bis ${expDate.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`)
+                                :remainingDays>=1
+                                  ?`⏱ Bis ${expDate.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}, ${expDate.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`
+                                  :`⏱ Bis ${expDate.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`)
                               : "⏳ Dauerhaft aktiv"}
                           </div>
                         </div>
