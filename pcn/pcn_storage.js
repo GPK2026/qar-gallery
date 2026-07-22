@@ -824,6 +824,16 @@ const PCN_STORAGE = (() => {
       } catch(e){ /* Spalte fehlt noch — dann eben alle zeigen */ }
       return { data: list };
     },
+
+    // Minimale, nicht-sensible Mitgliederdaten für Namensanzeige in der
+    // Community — bewusst NUR name/id/is_admin, keine E-Mail, kein
+    // Beitragsstatus, keine Kontaktdaten. Wird gebraucht, um fremde
+    // Fahrzeug-Besitzernamen und das Vorstands-Abzeichen anzuzeigen.
+    async getClubMembers() {
+      const res = await supabase._q("users","?select=id,name,is_admin&role=eq.member");
+      if(res.error) return res;
+      return { data: (res.data||[]).map(u => ({ id:u.id, name:u.name, isAdmin: !!u.is_admin })) };
+    },
     async saveVehicle(vehicle) {
       const row = {
         id: vehicle.id||("V"+uid()), qar_id: vehicle.qarId||genQARId(),
@@ -1158,6 +1168,11 @@ function guard(label, fn){
       getStatus:  (vid)    => db.getStatus(vid),
       setStatus:  guard("vehicles.setStatus",   (vid, s) => db.setStatus(vid, s)),
       clearStatus:guard("vehicles.clearStatus", (vid)    => db.clearStatus(vid)),
+    },
+    members: {
+      // Minimale, nicht-sensible Liste aller Mitglieder für Namensanzeige
+      // und Vorstands-Abzeichen in der Community — siehe getClubMembers().
+      listClub: () => db.getClubMembers ? db.getClubMembers() : Promise.resolve({data:[]}),
     },
     logbook: {
       list:  (vid)         => db.getLogbook(vid),
