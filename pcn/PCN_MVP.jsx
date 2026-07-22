@@ -1860,7 +1860,13 @@ function PCNInner() {
     if(data) {
       const slot = Array.isArray(data) ? data : [{...data, id: data.id || ("s"+(data.setAt||Date.now()))}];
       setVehicleStatus(prev=>({...prev,[vehicleId]:slot}));
-    } else {
+    } else if(!isDemo) {
+      // Im Demo-Modus wird NIE in die echte Datenbank geschrieben (siehe
+      // guard() in pcn_storage.js) — ein leeres DB-Ergebnis heißt dort NICHT
+      // "kein Status gesetzt", sondern nur "die Demo-Aktion wurde absichtlich
+      // nicht gespeichert". Einen bereits lokal gesetzten Demo-Status hier zu
+      // löschen, würde ihn in der öffentlichen Vorschau fälschlich
+      // verschwinden lassen, obwohl er im Browser weiterhin aktiv ist.
       setVehicleStatus(prev=>{const n={...prev};delete n[vehicleId];return n;});
     }
   };
@@ -3693,6 +3699,8 @@ Regeln:
                     if(data) {
                       setVehicleStatus(prev=>({...prev,[v.id]:Array.isArray(data)?data:[data]}));
                       toast_("Status geladen ✓");
+                    } else if(isDemo) {
+                      toast_("Im Demo-Modus wird nichts in der Datenbank gespeichert — Status bleibt nur lokal sichtbar");
                     } else {
                       toast_("Kein aktiver Status");
                     }
