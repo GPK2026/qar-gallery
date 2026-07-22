@@ -4092,7 +4092,7 @@ Regeln:
                         style={{flex:1,background:!statusUseDate?C.red:"#1a1a1a",border:`1px solid ${!statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:!statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                         ⏱ Dauer
                       </button>
-                      <button onClick={()=>setStatusUseDate(true)}
+                      <button onClick={()=>{setStatusUseDate(true); if(!statusDateTime){const d=new Date(Date.now()+24*60*60*1000); setStatusDateTime(d.toISOString().slice(0,16));}}}
                         style={{flex:1,background:statusUseDate?C.red:"#1a1a1a",border:`1px solid ${statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                         📅 Bis Uhrzeit
                       </button>
@@ -5112,7 +5112,7 @@ Regeln:
                         style={{flex:1,background:!statusUseDate?C.red:"#1a1a1a",border:`1px solid ${!statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:!statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                         ⏱ Dauer
                       </button>
-                      <button onClick={()=>setStatusUseDate(true)}
+                      <button onClick={()=>{setStatusUseDate(true); if(!statusDateTime){const d=new Date(Date.now()+24*60*60*1000); setStatusDateTime(d.toISOString().slice(0,16));}}}
                         style={{flex:1,background:statusUseDate?C.red:"#1a1a1a",border:`1px solid ${statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                         📅 Bis Uhrzeit
                       </button>
