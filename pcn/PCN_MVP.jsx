@@ -7256,6 +7256,21 @@ Regeln:
                   </div>
                 )}
               </div>
+
+              {/* ── Zur Verwaltungs-Console — nur sichtbar für Vorstandsmitglieder ──
+                   Führt zur separaten Console-Anmeldung; der Admin-Code muss dort
+                   weiterhin eingegeben werden (bewusste Sicherheitsentscheidung,
+                   kein Ein-Klick-Bypass). Reine Komfort-Abkürzung statt die
+                   Console-URL manuell aufrufen zu müssen. ── */}
+              {me?.isAdmin&&(
+                <a href="/pcn/admin.html" target="_blank" rel="noopener"
+                  style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+                    background:`${C.gold}14`,border:`1px solid ${C.gold}44`,borderRadius:9,
+                    padding:"13px 14px",marginTop:10,textDecoration:"none"}}>
+                  <span style={{fontSize:13,color:C.gold,fontWeight:700}}>⚙️ Zur Verwaltungs-Console</span>
+                  <span style={{fontSize:14,color:C.gold}}>↗</span>
+                </a>
+              )}
             </div>
 
             <div style={{marginBottom:18}}>
