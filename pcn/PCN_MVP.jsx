@@ -2949,12 +2949,24 @@ Regeln:
   const sendMsg = async (threadId,text) => {
     const clean = sanitize(text);
     if(!clean) return;
-    const newMsg = {id:"m"+Date.now(),from:me.id,text:clean,created_at:new Date().toISOString(),read:false};
+    const tempId = "m"+Date.now();
+    const newMsg = {id:tempId,from:me.id,text:clean,created_at:new Date().toISOString(),read:false};
     setThreads(prev=>({...prev,[threadId]:{...prev[threadId],messages:[...(prev[threadId]?.messages||[]),newMsg]}}));
 
-    // Try DB send (may fail in demo — that's ok)
+    // DB-Aufruf: die echte, von der Datenbank vergebene ID sofort
+    // übernehmen — sonst trägt die Nachricht bis zum nächsten Realtime-
+    // Sync/Poll (bis zu 15-45s) weiterhin die temporäre lokale ID, und ein
+    // Löschversuch in dieser Zeit läuft in der DB ins Leere (die temporäre
+    // ID existiert dort nie), während die Nachricht lokal kurz verschwindet
+    // und beim nächsten Sync wieder auftaucht.
     const DB=window.PCN_DB;
-    if(DB) DB.threads.send(threadId,me.id,clean).catch(()=>{});
+    if(DB) {
+      const res = await DB.threads.send(threadId,me.id,clean).catch(()=>null);
+      if(res?.data?.id) {
+        setThreads(prev=>({...prev,[threadId]:{...prev[threadId],
+          messages:(prev[threadId]?.messages||[]).map(m=>m.id===tempId?{...m,id:res.data.id}:m)}}));
+      }
+    }
     track("message_sent", {thread_id:threadId, is_guest:me?.role==="guest"});
 
     // Demo chatbot auto-reply from Peter
@@ -5176,10 +5188,20 @@ Regeln:
           onMarkRead={(tid)=>setThreads(prev=>({...prev,[tid]:{...prev[tid],messages:(prev[tid]?.messages||[]).map(m=>({...m,read:true}))}}))}
           onViewVehicle={v=>{setViewV(v);setScreen("vehicle");}}
           onDeleteMessage={async(threadId,msgId)=>{
+            const deletedMsg = threads[threadId]?.messages?.find(m=>m.id===msgId);
             setThreads(prev=>({...prev,[threadId]:{...prev[threadId],
               messages:(prev[threadId]?.messages||[]).filter(m=>m.id!==msgId)}}));
             const DB=window.PCN_DB;
-            if(DB) try{ await DB.threads.deleteMessage(msgId); }catch(e){}
+            if(DB) {
+              const res = await DB.threads.deleteMessage(msgId).catch(e=>({error:e?.message||"Unbekannter Fehler"}));
+              if(res?.error) {
+                console.error("[Nachricht löschen] fehlgeschlagen:", res.error);
+                // Zurückholen, statt dem Nutzer vorzutäuschen, es sei gelöscht
+                if(deletedMsg) setThreads(prev=>({...prev,[threadId]:{...prev[threadId],
+                  messages:[...(prev[threadId]?.messages||[]),deletedMsg].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))}}));
+                toast_("⚠️ Löschen fehlgeschlagen — bitte erneut versuchen");
+              }
+            }
           }}
           onDeleteThread={(threadId)=>setConfirmDeleteThread(threadId)}
           onConfirmScan={confirmScan}
