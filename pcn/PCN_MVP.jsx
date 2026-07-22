@@ -2375,11 +2375,15 @@ function PCNInner() {
       // Reload full vehicle data (catches privacy/field changes)
       const {data:vd} = await DB.vehicles.getPublic(publicV.qarId);
       if(vd) setPublicV({...vd, privacy:{...DEF_PRIVACY,...(vd.privacy||{})}});
-      // Reload status
+      // Reload status — im Demo-Modus liefert die DB absichtlich NIE Daten
+      // (siehe guard() in pcn_storage.js). Ein leeres Ergebnis hier darf einen
+      // lokal gesetzten Demo-Status deshalb nicht löschen, sonst verschwindet
+      // er beim nächsten 5s-Poll-Durchlauf, obwohl er im Browser weiterhin
+      // aktiv ist — exakt dasselbe Problem wie in loadStatusFor().
       const vid = vd?.id || publicV.id;
       const {data:s} = await DB.vehicles.getStatus(vid);
       if(s) setVehicleStatus(prev=>({...prev,[publicV.id]:s}));
-      else setVehicleStatus(prev=>({...prev,[publicV.id]:null}));
+      else if(!isDemo) setVehicleStatus(prev=>({...prev,[publicV.id]:null}));
     }, 5000);
 
     return ()=>{ bc?.close(); clearInterval(poll); };
