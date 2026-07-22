@@ -3760,7 +3760,7 @@ Regeln:
                               background:urgent?"#ef444422":`${C.amber}22`,
                               border:`1px solid ${urgent?"#ef444444":C.amber+"44"}`,
                               borderRadius:6,padding:"2px 8px"}}>
-                              {minsLeft<=1?"< 1 Min":minsLeft<60?`noch ${minsLeft} Min`:`noch ca. ${Math.round(minsLeft/60)} Std`}
+                              {minsLeft<=1?"< 1 Min":minsLeft<60?`noch ${minsLeft} Min`:minsLeft<1440?`noch ca. ${Math.round(minsLeft/60)} Std`:`noch ca. ${Math.round(minsLeft/1440)} Tag${Math.round(minsLeft/1440)!==1?"e":""}`}
                             </span>
                           )}
                           {!minsLeft&&s.expiresAt&&new Date(s.expiresAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})&&(
