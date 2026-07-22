@@ -513,6 +513,7 @@ const PCN_STORAGE = (() => {
         city: profile?.city || "",
         bio: profile?.bio || "",
         phone: profile?.phone || "",
+        isAdmin: !!profile?.is_admin,
         notifications: { events: true, messages: true },
         access_token: supaUser.access_token || "",
         token_expiry: supaUser.token_expiry || 0,
@@ -681,6 +682,7 @@ const PCN_STORAGE = (() => {
         memberNr:u.member_nr, avatar:u.avatar||"", city:u.city||"", bio:u.bio||"",
         beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
         geburtstag: u.geburtstag||"", phone: u.phone||"",
+        isAdmin: !!u.is_admin,
         createdAt: u.created_at||"" };
       safeStore.setItem("pcn_session", JSON.stringify(session));
       await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
@@ -726,6 +728,7 @@ const PCN_STORAGE = (() => {
         city: u.city||"", bio: u.bio||"", phone: u.phone||"",
         beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
         geburtstag: u.geburtstag||"",
+        isAdmin: !!u.is_admin,
         notifications: { events:true, messages:true },
         createdAt: u.created_at||"",
       };
@@ -769,6 +772,7 @@ const PCN_STORAGE = (() => {
         beitrag_bezahlt: !!u.beitrag_bezahlt,
         beitrag_datum: u.beitrag_datum||null,
         geburtstag: u.geburtstag||sess.geburtstag||"",
+        isAdmin: !!u.is_admin,
         createdAt: u.created_at||sess.createdAt||"",
       };
       safeStore.setItem("pcn_session", JSON.stringify(updated));
