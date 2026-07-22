@@ -516,6 +516,7 @@ const STATUS_PRESETS = [
   {icon:"⏱️", text:"Bin in 10 Min zurück", mins:10},
   {icon:"⏱️", text:"Bin in 15 Min zurück", mins:15},
   {icon:"⏱️", text:"Bin in 30 Min zurück", mins:30},
+  {icon:"💰", text:"Zu verkaufen"},
 ];
 
 // ─── Sub-components (proper React components — no hooks-in-render) ─────────────
@@ -4072,7 +4073,7 @@ Regeln:
                       <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
                       <div style={{flex:1}}>
                         <div style={{fontSize:13,fontWeight:700,color:C.white}}>{p.text}</div>
-                        <div style={{fontSize:10,color:C.muted}}>Vorschlag: {p.mins} Min · Dauer unten anpassbar</div>
+                        <div style={{fontSize:10,color:C.muted}}>{p.mins?`Vorschlag: ${p.mins} Min · Dauer unten anpassbar`:"Dauer frei wählbar — z.B. mehrere Tage"}</div>
                       </div>
                       {statusCustom===p.text&&<span style={{fontSize:16,color:C.red}}>✓</span>}
                     </button>
@@ -5092,7 +5093,7 @@ Regeln:
                       <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
                       <div style={{flex:1}}>
                         <div style={{fontSize:13,fontWeight:700,color:C.white}}>{p.text}</div>
-                        <div style={{fontSize:10,color:C.muted}}>Vorschlag: {p.mins} Min · Dauer unten anpassbar</div>
+                        <div style={{fontSize:10,color:C.muted}}>{p.mins?`Vorschlag: ${p.mins} Min · Dauer unten anpassbar`:"Dauer frei wählbar — z.B. mehrere Tage"}</div>
                       </div>
                       {statusCustom===p.text&&<span style={{fontSize:16,color:C.red}}>✓</span>}
                     </button>
