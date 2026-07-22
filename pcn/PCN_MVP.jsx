@@ -1936,13 +1936,24 @@ function PCNInner() {
   const refreshAll = async (user) => {
     if(!user) return;
     const DB=window.PCN_DB; if(!DB) return;
-    const [vRes,clubRes,remRes,evRes,thRes] = await Promise.all([
+    const [vRes,clubRes,remRes,evRes,thRes,membersRes] = await Promise.all([
       DB.vehicles.list(user.id||user.email),
       DB.vehicles.listClub ? DB.vehicles.listClub(200) : Promise.resolve({data:[]}),
       DB.reminders.list(user.id),
       DB.events.list(),
       DB.threads.list(user.id),
+      DB.members?.listClub ? DB.members.listClub() : Promise.resolve({data:[]}),
     ]);
+    // Echte Mitgliedernamen (+ Vorstands-Status) laden — ohne das bleibt
+    // allUsers nur bei den Demo-Platzhaltern, und Community-Fahrzeuge
+    // fremder Mitglieder zeigen keinen echten Namen an.
+    if(membersRes.data && membersRes.data.length){
+      setAllUsers(prev=>{
+        const next={...prev};
+        membersRes.data.forEach(m=>{ next[m.id]={...(next[m.id]||{}), ...m}; });
+        return next;
+      });
+    }
     // Eigene Fahrzeuge zuletzt einfügen — sie haben die vollständigen Daten,
     // die Club-Liste liefert bewusst nur die unkritischen Felder.
     const vMap={};
@@ -5456,6 +5467,7 @@ Regeln:
                           <div style={{fontSize:10,color:C.muted,marginTop:2,
                             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                             {v.baujahr}{owner?.name?` · ${owner.name.split(" ")[0]}`:v.ownerName?` · ${v.ownerName}`:""}
+                            {owner?.isAdmin&&<span style={{color:C.gold,fontWeight:700}}> 🏆</span>}
                           </div>
                         </div>
                       </div>
@@ -6151,6 +6163,7 @@ Regeln:
                     <div style={{maxHeight:420,overflowY:"auto",scrollbarWidth:"thin",marginRight:-4,paddingRight:4}}>
                     {filtered.map(v=>{
                       const priv=typeof v.privacy==="string"?JSON.parse(v.privacy||"{}"):(v.privacy||{});
+                      const owner = Object.values(allUsers).find(u=>u.id===v.userId);
                       return (
                         <div key={v.id} style={{background:C.card,border:`1px solid ${isFavorite(v.id)?C.red+"44":C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer",display:"flex"}}
                           onClick={()=>{setPublicV({...v,privacy:{...DEF_PRIVACY,...priv}});setScreen("public");}}>
@@ -6169,7 +6182,8 @@ Regeln:
                                 {fmtKz(v.kennzeichen,v.baujahr)}
                               </span>
                               <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
-                              {v.ownerName&&<span style={{fontSize:10,color:C.gold,fontWeight:700}}>{v.ownerName}</span>}
+                              {(owner?.name||v.ownerName)&&<span style={{fontSize:10,color:C.gold,fontWeight:700}}>{owner?.name||v.ownerName}</span>}
+                              {owner?.isAdmin&&<span style={{fontSize:10,color:C.gold,fontWeight:700}}>🏆</span>}
                             </div>
                           </div>
                           <div style={{display:"flex",alignItems:"center",paddingRight:14}}>
