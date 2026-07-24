@@ -5245,7 +5245,23 @@ Regeln:
               }
             }
           }}
-          onDeleteThread={(threadId)=>setConfirmDeleteThread(threadId)}
+          onDeleteThread={async(threadId)=>{
+            const t = threads[threadId];
+            const label = t?.name || (t?.vehicle_name ? `Chat zu ${t.vehicle_name}` : "diesen Chat");
+            if(!window.confirm(`${label} wirklich löschen?\n\nAlle Nachrichten in diesem Chat werden dauerhaft entfernt.`)) return;
+            const DB=window.PCN_DB;
+            if(DB){
+              const res = await DB.threads.delete(threadId).catch(e=>({error:e?.message||"Unbekannter Fehler"}));
+              if(res?.error){
+                console.error("[Chat löschen] fehlgeschlagen:", res.error);
+                toast_("⚠️ Löschen fehlgeschlagen — bitte erneut versuchen");
+                return;
+              }
+            }
+            setThreads(prev=>{const n={...prev}; delete n[threadId]; return n;});
+            setScreen("app"); setTab("messages");
+            toast_("Chat gelöscht");
+          }}
           onConfirmScan={confirmScan}
           onUpgrade={()=>{
             setLoginForm({mode:"register",code:"",name:me?.name||"",email:me?.email||""});
@@ -5946,7 +5962,21 @@ Regeln:
                         </div>
                       </div>
                       <button
-                        onClick={e=>{e.stopPropagation(); setConfirmDeleteThread(gt.id);}}
+                        onClick={async(e)=>{
+                          e.stopPropagation();
+                          if(!window.confirm(`Chat zu "${gt.vehicleName||"diesem Fahrzeug"}" wirklich löschen?\n\nAlle Nachrichten in diesem Chat werden dauerhaft entfernt.`)) return;
+                          const DB=window.PCN_DB;
+                          if(DB){
+                            const res = await DB.threads.delete(gt.id).catch(err=>({error:err?.message||"Unbekannter Fehler"}));
+                            if(res?.error){
+                              console.error("[Chat löschen] fehlgeschlagen:", res.error);
+                              toast_("⚠️ Löschen fehlgeschlagen — bitte erneut versuchen");
+                              return;
+                            }
+                          }
+                          setThreads(prev=>{const n={...prev}; delete n[gt.id]; return n;});
+                          toast_("Chat gelöscht");
+                        }}
                         style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:17,padding:"4px 8px",flexShrink:0}}>
                         🗑
                       </button>
