@@ -627,6 +627,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
               ["📍", ev.location, "Ort", null],
               ["💶", free?"Kostenlos":raw, "Eintritt", free?C.green:C.gold],
               ["👥", `${confirmedParts.length} / ${ev.maxParticipants||100}`, "Bestätigte Teilnehmer", null],
+              ["⚡", `+${POINTS.event_confirmed} Punkte`, "Bei Teilnahme", C.gold],
             ];
             return rows.filter(([,v])=>v).map(([icon,val,label,col])=>(
               <div key={label} style={{display:"flex",gap:10,marginBottom:8,alignItems:"center"}}>
@@ -5747,6 +5748,7 @@ Regeln:
                             ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>✓ Angemeldet #{myReg.startNr}</span>
                             : <span style={{background:`${C.border}44`,color:C.muted,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:600}}>Nicht angemeldet</span>
                           }
+                          <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>⚡ +{POINTS.event_confirmed}</span>
                         </div>
                         <div style={{fontWeight:800,fontSize:17,color:C.white,marginBottom:3}}>{ev.name}</div>
                         <div style={{fontSize:13,color:C.muted}}>{fmtDate(ev.date)} · {ev.location}</div>
