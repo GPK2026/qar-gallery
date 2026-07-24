@@ -5723,14 +5723,25 @@ Regeln:
             {/* LIST VIEW */}
             {eventsView==="list"&&filteredEvents.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(ev=>{
               const days=daysUntil(ev.date);
-              const myReg=(participants[ev.id]||[]).find(p=>p.userId===me?.id);
+              // Nur eine aktive (nicht selbst zurückgezogene) Anmeldung zählt als "meine Registrierung" —
+              // dasselbe Muster wie in EventDetail, damit eine stornierte Anmeldung nicht fälschlich
+              // noch als "angemeldet" markiert wird.
+              const myReg=(participants[ev.id]||[]).find(p=>p.userId===me?.id&&!(p.status==="cancelled"&&p.cancelledBy==="member"));
+              const confirmedCount=(participants[ev.id]||[]).filter(p=>p.status==="confirmed").length;
+              const isFull=confirmedCount>=(ev.maxParticipants||100);
+              // Statusfarbe: bestätigt=grün, in Prüfung=gelb, abgelehnt ODER ausgebucht=rot, sonst hellblau
+              const statusCol = myReg?.status==="confirmed" ? C.green
+                : myReg?.status==="pending" ? C.amber
+                : (myReg?.status==="cancelled"&&myReg?.cancelledBy==="admin") ? "#ef4444"
+                : isFull ? "#ef4444"
+                : "#38bdf8";
               return (
                 <div key={ev.id}
                   style={{background:C.card,borderRadius:14,marginBottom:12,overflow:"hidden",cursor:"pointer",
-                    border:`2px solid ${myReg?C.green+"66":days<=7?C.amber+"44":C.border}`}}
+                    border:`2px solid ${statusCol}66`}}
                   onClick={()=>{setViewEv(ev);setScreen("event");}}>
                   {/* Color bar top */}
-                  <div style={{height:4,background:myReg?C.green:days<=7?C.amber:C.red}}/>
+                  <div style={{height:4,background:statusCol}}/>
                   <div style={{padding:"14px"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
                       <div style={{flex:1,minWidth:0}}>
@@ -5744,9 +5755,13 @@ Regeln:
                               ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>Kostenlos</span>
                               : <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>💶 {raw}</span>;
                           })()}
-                          {myReg
+                          {myReg?.status==="confirmed"
                             ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>✓ Angemeldet #{myReg.startNr}</span>
-                            : <span style={{background:`${C.border}44`,color:C.muted,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:600}}>Nicht angemeldet</span>
+                            : myReg?.status==="pending"
+                              ? <span style={{background:`${C.amber}22`,color:C.amber,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>⏳ In Prüfung</span>
+                              : myReg?.status==="cancelled"&&myReg?.cancelledBy==="admin"
+                                ? <span style={{background:"#ef444422",color:"#ef4444",borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>✕ Abgelehnt</span>
+                                : <span style={{background:`${C.border}44`,color:C.muted,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:600}}>Nicht angemeldet</span>
                           }
                           <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>⚡ +{POINTS.event_confirmed}</span>
                         </div>
