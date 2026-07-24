@@ -1460,6 +1460,9 @@ function PCNInner() {
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [showContactPrivacyInfo, setShowContactPrivacyInfo] = useState(false);
   const [showPwChange, setShowPwChange] = useState(false);
+  // Nur für diese Sitzung — beim nächsten Login/Neuladen erscheint der
+  // Willkommens-Block wieder, bewusst kein dauerhaftes Speichern.
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
   const [pwSaving, setPwSaving] = useState(false);
@@ -5332,17 +5335,23 @@ Regeln:
             <div style={{marginBottom:20}}>
               <div style={{fontSize:11,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>📰 Infos & Neuigkeiten</div>
 
-              {/* Willkommen — immer oben, nicht ausblendbar */}
-              {(()=>{
+              {/* Willkommen — für diese Sitzung schließbar über das X */}
+              {!welcomeDismissed && (()=>{
                 const welcome = DEMO_NEWS.find(n=>n.type==="welcome");
                 if(!welcome) return null;
                 return (
-                  <div style={{background:"#ffffff",border:"1px solid #e5e7eb",borderRadius:12,padding:"13px 14px",marginBottom:10}}>
-                    <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                      <span style={{fontSize:20,flexShrink:0}}>🎉</span>
+                  <div style={{background:"#ffffff",border:"1px solid #e5e7eb",borderRadius:12,padding:"14px 14px",marginBottom:10,position:"relative"}}>
+                    <button onClick={()=>setWelcomeDismissed(true)}
+                      aria-label="Schließen"
+                      style={{position:"absolute",top:8,right:8,background:"none",border:"none",
+                        cursor:"pointer",fontSize:16,color:"#999",padding:6,lineHeight:1}}>
+                      ✕
+                    </button>
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start",paddingRight:22}}>
+                      <span style={{fontSize:22,flexShrink:0}}>🎉</span>
                       <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:700,color:"#111",marginBottom:3}}>{welcome.title}</div>
-                        <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>{welcome.body}</div>
+                        <div style={{fontSize:15,fontWeight:700,color:"#111",marginBottom:4}}>{welcome.title}</div>
+                        <div style={{fontSize:13,color:"#555",lineHeight:1.6}}>{welcome.body}</div>
                       </div>
                     </div>
                   </div>
