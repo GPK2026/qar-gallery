@@ -207,7 +207,7 @@ const DEMO_NEWS = [
     body:"Die Nordschleife ist an folgenden Terminen für Touristenfahrten geöffnet: 5., 12., 19. und 26. Juli. Früh buchen — Plätze sind begrenzt.",
     date:"2026-06-25", eventId:"E001" },
   { id:"N3", type:"welcome", icon:"🎉", title:"Willkommen im PCN",
-    body:"Leg deine Fahrzeugakte an und lass andere Mitglieder dein Fahrzeug per QR-Code entdecken. Je mehr du einträgst, desto mehr Funktionen werden freigeschaltet.",
+    body:"Deine digitale Fahrzeugakte, dein Club, deine Community — alles an einem Ort. Leg dein Fahrzeug an, tausch dich mit anderen Mitgliedern aus und entdecke Events. Mit jeder Aktivität sammelst du Punkte, die du bald gegen Prämien und Vorteile eintauschen kannst.",
     date:"2026-06-01" },
 ];
 const dPlus = days => new Date(Date.now()+days*86400000).toISOString().split("T")[0];
