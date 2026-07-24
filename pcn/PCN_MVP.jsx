@@ -3324,13 +3324,17 @@ Regeln:
         </div>
       )}
 
-      {/* ── White logo area ── */}
-      <div style={{background:"#ffffff",padding:"36px 24px 28px",textAlign:"center",borderBottom:"3px solid "+C.red}}>
-        <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"} style={{width:260,maxWidth:"85%",objectFit:"contain",marginBottom:16}}/>
-        <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#1a1a1a",letterSpacing:1,lineHeight:1}}>
+      {/* ── White logo area — Logo allein, klar abgesetzt ── */}
+      <div style={{background:"#ffffff",padding:"40px 24px",textAlign:"center",borderBottom:"3px solid "+C.red}}>
+        <img src={LOGO_URL} alt="PCN" onError={e=>e.target.style.display="none"} style={{width:280,maxWidth:"88%",objectFit:"contain"}}/>
+      </div>
+
+      {/* ── Titel + Subline — eigener Bereich auf dunklem Grund, klar getrennt vom Logo ── */}
+      <div style={{background:C.black,padding:"22px 24px 20px",textAlign:"center"}}>
+        <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,letterSpacing:1,lineHeight:1}}>
           DIGITALE <span style={{color:C.red}}>CLUBPLATTFORM</span>
         </h1>
-        <p style={{fontSize:11,color:"#888",marginTop:6}}>Fahrzeugakte · Events · QR-Code · Messenger</p>
+        <p style={{fontSize:11,color:C.muted,marginTop:8}}>Fahrzeugakte · Events · QR-Code · Messenger</p>
       </div>
 
       {/* ── Login area ── */}
