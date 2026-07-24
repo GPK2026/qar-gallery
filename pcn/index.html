@@ -49,11 +49,18 @@
       height: 4px;
       background: #e30613;
     }
+    .l-logo-wrap {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 20px 28px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.35);
+    }
     .l-logo {
-      width: 220px;
-      max-width: 68%;
+      width: 260px;
+      max-width: 78%;
       object-fit: contain;
-      margin-bottom: 32px;
+      display: block;
       filter: brightness(1.05);
     }
     .l-divider {
@@ -69,26 +76,38 @@
       letter-spacing: 4px;
       color: #333;
       text-transform: uppercase;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
-    .l-bar {
+    /* Kleine Lade-Animation: Auto "fährt" auf die Zielflagge zu */
+    .l-race {
+      position: relative;
       width: 140px;
+      height: 30px;
+      margin-bottom: 10px;
+    }
+    .l-track {
+      position: absolute;
+      bottom: 6px; left: 0; right: 0;
       height: 2px;
       background: #1a1a1a;
       border-radius: 99px;
-      overflow: hidden;
     }
-    .l-fill {
-      height: 100%;
-      background: #e30613;
-      border-radius: 99px;
-      animation: lfill 2.5s ease-in-out forwards;
+    .l-flag {
+      position: absolute;
+      right: 0; bottom: -4px;
+      font-size: 18px;
     }
-    @keyframes lfill {
-      0%   { width: 5%; }
-      30%  { width: 45%; }
-      70%  { width: 78%; }
-      100% { width: 96%; }
+    .l-car {
+      position: absolute;
+      bottom: -6px; left: 0;
+      font-size: 20px;
+      animation: lcar 2.5s ease-in-out forwards;
+    }
+    @keyframes lcar {
+      0%   { left: 0%; }
+      30%  { left: 38%; }
+      70%  { left: 70%; }
+      100% { left: 88%; }
     }
 
     /* ── Error state ── */
@@ -144,13 +163,19 @@
 
   <!-- Loading screen -->
   <div id="loading">
-    <img class="l-logo"
-      src="https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg"
-      alt="Porsche Club Nürburgring"
-      onerror="this.style.opacity='.2'"/>
+    <div class="l-logo-wrap">
+      <img class="l-logo"
+        src="https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg"
+        alt="Porsche Club Nürburgring"
+        onerror="this.style.opacity='.2'"/>
+    </div>
     <div class="l-divider"></div>
     <div class="l-title">Digitale Clubplattform</div>
-    <div class="l-bar"><div class="l-fill"></div></div>
+    <div class="l-race">
+      <div class="l-track"></div>
+      <div class="l-car">🚗</div>
+      <div class="l-flag">🏁</div>
+    </div>
   </div>
 
   <div id="root"></div>
