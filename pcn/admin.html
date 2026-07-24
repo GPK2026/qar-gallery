@@ -243,14 +243,22 @@ let lastKnownLeadsCount = null;
 async function loadAll(silent){
   if(!silent) toast("Lädt…");
   try{
-    const [m,e,v,p,msg,nw]=await Promise.all([
+    const [m,e,v,p,msg,nw,rx]=await Promise.all([
       api("users?select=*&order=created_at.desc&limit=200"),
       api("events?select=*&order=date.asc&limit=100"),
       api("vehicles?select=*&order=created_at.desc&limit=200"),
       api("participants?select=*&order=registered_at.desc&limit=500"),
       api("messages?select=*&order=created_at.desc&limit=200").catch(()=>({data:[]})),
       api("news?select=*&order=pinned.desc,created_at.desc&limit=50").catch(()=>({data:[]})),
+      api("message_reactions?select=*&limit=1000").catch(()=>({data:[]})),
     ]);
+    // Reaktionen nach message_id gruppieren, damit die Nachrichten-Rendering-
+    // Funktion direkt darauf zugreifen kann — dieselbe Datenquelle, aus der
+    // auch die Mitglieder-App ihre Reaktionen liest.
+    DB.reactions = {};
+    if(rx.data && Array.isArray(rx.data)){
+      rx.data.forEach(r=>{ (DB.reactions[r.message_id]=DB.reactions[r.message_id]||[]).push(r); });
+    }
     // news ist optional — fehlt die Tabelle, bleibt der Feed leer statt zu crashen
     DB.news = (nw && Array.isArray(nw.data)) ? nw.data : [];
     // Testnutzer des Health-Checks gar nicht erst laden
@@ -1867,11 +1875,31 @@ function rMessages(el){
           <div style="max-height:280px;overflow-y:auto;margin-bottom:10px">
             ${msgs.length?msgs.map(x=>{
               const isAdm=x.from_id===ADMIN_UUID;
-              return `<div style="display:flex;justify-content:${isAdm?"flex-end":"flex-start"};margin-bottom:7px">
-                <div style="max-width:80%;background:${isAdm?"#C8A96E22":"#1a1a1a"};border:1px solid ${isAdm?"#C8A96E44":"var(--border)"};border-radius:10px;padding:8px 11px">
+              const myReactions=(DB.reactions||{})[x.id]||[];
+              const reactionCounts={};
+              myReactions.forEach(r=>{reactionCounts[r.emoji]=(reactionCounts[r.emoji]||0)+1;});
+              return `<div style="display:flex;flex-direction:column;align-items:${isAdm?"flex-end":"flex-start"};margin-bottom:7px">
+                <div style="max-width:80%;background:${isAdm?"#C8A96E22":"#1a1a1a"};border:1px solid ${isAdm?"#C8A96E44":"var(--border)"};border-radius:10px;padding:8px 11px;cursor:pointer"
+                  onclick="event.stopPropagation();toggleReactionPicker('${x.id}')">
                   <div style="font-size:12px;color:${isAdm?"var(--gold)":"#666"};font-weight:700;margin-bottom:2px">${isAdm?"📣 Vorstand":m?.name||"Mitglied"}</div>
                   <div style="font-size:15px;color:#ddd;line-height:1.5;white-space:pre-wrap;word-break:break-word">${escapeHtml(x.text)}</div>
-                  <div style="font-size:12px;color:#555;margin-top:3px;text-align:right">${fmtTime(x.created_at)}</div>
+                  <div style="font-size:12px;color:#555;margin-top:3px;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:4px">
+                    <span>${fmtTime(x.created_at)}</span>
+                    ${isAdm?`<span style="color:${x.read_at?"#53bdeb":"#555"};font-size:13px">✓✓</span>`:""}
+                  </div>
+                </div>
+                ${Object.keys(reactionCounts).length?`
+                <div style="display:flex;gap:4px;margin-top:3px">
+                  ${Object.entries(reactionCounts).map(([emo,count])=>
+                    `<span style="background:#161616;border:1px solid var(--border);border-radius:99px;padding:2px 7px;font-size:12px;display:flex;gap:3px;align-items:center">
+                      ${emo}${count>1?`<span style="font-size:10px;color:#666">${count}</span>`:""}
+                    </span>`
+                  ).join("")}
+                </div>`:""}
+                <div id="reaction-picker-${x.id}" class="hidden" style="display:none;gap:4px;background:#161616;border:1px solid var(--border);border-radius:99px;padding:5px 8px;margin-top:4px">
+                  ${["👍","❤️","😂","😮","😢","🙏"].map(emo=>
+                    `<span onclick="event.stopPropagation();setAdminReaction('${x.id}','${emo}')" style="font-size:18px;cursor:pointer;padding:2px">${emo}</span>`
+                  ).join("")}
                 </div>
               </div>`;
             }).join(""):`<div style="text-align:center;color:#555;font-size:13px;padding:16px">Noch keine Nachrichten</div>`}
@@ -1963,6 +1991,32 @@ function toggleChat(id){
         {method:"PATCH",body:JSON.stringify({read_at:new Date().toISOString()})}).then(()=>loadAll());
     }
   }
+}
+
+// Emoji-Reaktionen (WhatsApp-Stil) — dieselbe message_reactions-Tabelle,
+// die auch von der Mitglieder-App genutzt wird, damit Reaktionen des
+// Vorstands für Mitglieder sichtbar sind und umgekehrt.
+function toggleReactionPicker(msgId){
+  const el = document.getElementById("reaction-picker-"+msgId);
+  if(!el) return;
+  // Alle anderen offenen Picker schließen, bevor der neue geöffnet wird
+  document.querySelectorAll("[id^='reaction-picker-']").forEach(p=>{ if(p!==el) p.style.display="none"; });
+  el.style.display = el.style.display==="flex" ? "none" : "flex";
+}
+
+async function setAdminReaction(msgId, emoji){
+  document.querySelectorAll("[id^='reaction-picker-']").forEach(p=>p.style.display="none");
+  // Erneutes Tippen auf dieselbe Reaktion entfernt sie wieder — gleiches
+  // Toggle-Verhalten wie in der App.
+  const existing = ((DB.reactions||{})[msgId]||[]).find(r=>r.user_id===ADMIN_UUID);
+  if(existing?.emoji===emoji){
+    await api(`message_reactions?message_id=eq.${msgId}&user_id=eq.${ADMIN_UUID}`,{method:"DELETE"});
+  } else {
+    await api("message_reactions",{method:"POST",
+      headers:{"Prefer":"resolution=merge-duplicates,return=representation"},
+      body:JSON.stringify({message_id:msgId,user_id:ADMIN_UUID,emoji})});
+  }
+  await loadAll();
 }
 
 function fmtTime(ts){
