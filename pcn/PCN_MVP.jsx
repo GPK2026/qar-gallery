@@ -804,9 +804,9 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
   );
 }
 
-function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead, onViewVehicle, onUpgrade, onDeleteMessage, onDeleteThread, onConfirmScan}) {
+function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead, onViewVehicle, onUpgrade, onDeleteMessage, onDeleteThread, onConfirmScan, reactions, onReact}) {
   const [msg, setMsg] = useState("");
-  const [selectedMsg, setSelectedMsg] = useState(null); // for delete menu
+  const [selectedMsg, setSelectedMsg] = useState(null); // for delete menu / reaction picker
   const endRef = useRef(null);
   const rootRef = useRef(null);
   const threadParticipants = thread.participants||[];
@@ -998,10 +998,38 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                     ✅ Scan bestätigen — {scanPayload.scannerName||"Nutzer"} erhält +{POINTS.qr_scan} Punkte
                   </button>
                 )}
-                <div style={{fontSize:11,color:mine?"rgba(255,255,255,.55)":C.muted,marginTop:5,textAlign:"right"}}>
-                  {fullTs}
+                <div style={{fontSize:11,color:mine?"rgba(255,255,255,.55)":C.muted,marginTop:5,textAlign:"right",display:"flex",alignItems:"center",justifyContent:"flex-end",gap:4}}>
+                  <span>{fullTs}</span>
+                  {mine&&!isAdminMsg&&(
+                    // Graues Doppelhäkchen = gesendet, blaues = gelesen — wie bei WhatsApp.
+                    // Beruht auf dem bereits vorhandenen m.read-Feld (wird beim Öffnen
+                    // des Chats durch den Empfänger automatisch gesetzt, siehe onMarkRead).
+                    <span style={{color:m.read?"#53bdeb":"rgba(255,255,255,.55)",fontSize:13,lineHeight:1}}>✓✓</span>
+                  )}
                 </div>
               </div>
+              {/* Reaktionen — kleine Badges unterhalb der Blase, wie bei WhatsApp */}
+              {reactions?.[m.id]?.length>0&&(
+                <div style={{display:"flex",gap:4,marginTop:-8,marginBottom:6,
+                  paddingLeft:mine?0:8,paddingRight:mine?8:0,alignSelf:mine?"flex-end":"flex-start"}}>
+                  {(()=>{
+                    const grouped = {};
+                    reactions[m.id].forEach(r=>{ grouped[r.emoji]=(grouped[r.emoji]||0)+1; });
+                    return Object.entries(grouped).map(([emo,count])=>(
+                      <div key={emo}
+                        onClick={()=>{
+                          const mineReaction=reactions[m.id].find(r=>r.userId===me?.id);
+                          if(onReact) onReact(m.id, mineReaction?.emoji===emo?null:emo);
+                        }}
+                        style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:99,
+                          padding:"2px 7px",fontSize:12,cursor:"pointer",display:"flex",gap:3,alignItems:"center"}}>
+                        <span>{emo}</span>
+                        {count>1&&<span style={{fontSize:10,color:C.muted}}>{count}</span>}
+                      </div>
+                    ));
+                  })()}
+                </div>
+              )}
             </div>
           );
         })}
@@ -1042,6 +1070,28 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
             <div style={{fontSize:12,color:C.muted,marginBottom:12,textAlign:"center"}}>
               „{selectedMsg.text.slice(0,40)}{selectedMsg.text.length>40?"…":""}"
             </div>
+            {/* Schnellreaktionen — Long-Press-Menü, wie bei WhatsApp */}
+            {onReact&&(
+              <div style={{display:"flex",justifyContent:"space-around",background:C.card,
+                border:`1px solid ${C.border}`,borderRadius:99,padding:"8px 6px",marginBottom:12}}>
+                {["👍","❤️","😂","😮","😢","🙏"].map(emo=>{
+                  const myReaction = (reactions?.[selectedMsg.id]||[]).find(r=>r.userId===me?.id);
+                  const isMine = myReaction?.emoji===emo;
+                  return (
+                    <button key={emo}
+                      onClick={()=>{
+                        if(isMine) onReact(selectedMsg.id, null); // erneutes Tippen entfernt die eigene Reaktion
+                        else onReact(selectedMsg.id, emo);
+                        setSelectedMsg(null);
+                      }}
+                      style={{background:isMine?`${C.red}22`:"none",border:"none",fontSize:22,
+                        cursor:"pointer",padding:"4px 6px",borderRadius:99,transform:isMine?"scale(1.15)":"scale(1)"}}>
+                      {emo}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {selectedMsg.from===me?.id&&onDeleteMessage&&(
               <button onClick={()=>{ onDeleteMessage(thread.id, selectedMsg.id); setSelectedMsg(null); }}
                 style={{width:"100%",background:"#ef444422",border:"1px solid #ef444444",borderRadius:10,
@@ -1441,7 +1491,23 @@ function PCNInner() {
   const [events, setEvents]       = useState({});
   const [eventHistory]            = useState(DEMO_HISTORY);
   const [threads, setThreads]     = useState({});
+  // Reaktionen je Nachricht: { [messageId]: [{userId, emoji}, ...] }
+  const [reactions, setReactions] = useState({});
   const [activeThread, setActiveThread] = useState(null);
+
+  // Reaktionen für den geöffneten Chat laden — bei jedem Thread-Wechsel neu,
+  // damit man beim Zurückkommen die aktuellen Reaktionen sieht.
+  useEffect(()=>{
+    if(!activeThread || activeThread==="GROUP_PCN") return;
+    const DB = window.PCN_DB; if(!DB?.threads?.getReactions) return;
+    (async()=>{
+      const {data} = await DB.threads.getReactions(activeThread);
+      if(!data) return;
+      const grouped = {};
+      data.forEach(r=>{ (grouped[r.message_id]=grouped[r.message_id]||[]).push({userId:r.user_id, emoji:r.emoji}); });
+      setReactions(prev=>({...prev, ...grouped}));
+    })();
+  },[activeThread]);
   const [guestThreads, setGuestThreads] = useState(() => {
     try { return JSON.parse(store.getItem("pcn_guest_threads")||"[]"); } catch(e){ return []; }
   });
@@ -5225,6 +5291,22 @@ Regeln:
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         <ChatScreen
           thread={t} me={me} allUsers={allUsers} vehicles={vehicles}
+          reactions={reactions}
+          onReact={async(messageId, emoji)=>{
+            // Optimistisch lokal aktualisieren, damit es sofort reagiert —
+            // dieselbe eigene Reaktion wird zuerst entfernt (falls vorhanden),
+            // dann die neue gesetzt (oder gar keine, wenn emoji===null).
+            setReactions(prev=>{
+              const next = {...prev};
+              const list = (next[messageId]||[]).filter(r=>r.userId!==me?.id);
+              if(emoji) list.push({userId:me.id, emoji});
+              next[messageId] = list;
+              return next;
+            });
+            const DB = window.PCN_DB; if(!DB) return;
+            if(emoji) await DB.threads.setReaction(messageId, me.id, emoji).catch(()=>{});
+            else await DB.threads.removeReaction(messageId, me.id).catch(()=>{});
+          }}
           onBack={()=>{setScreen("app");setTab("messages");}}
           onSend={sendMsg}
           onMarkRead={(tid)=>setThreads(prev=>({...prev,[tid]:{...prev[tid],messages:(prev[tid]?.messages||[]).map(m=>({...m,read:true}))}}))}
