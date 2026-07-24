@@ -1048,6 +1048,32 @@ const PCN_STORAGE = (() => {
     async deleteMessage(msgId) {
       return await supabase._delete("messages","id=eq."+msgId);
     },
+
+    // Emoji-Reaktionen (WhatsApp-Stil) — eigene fetch-Anfrage mit PostgREST-
+    // Upsert-Header statt die geteilte _post-Funktion zu verändern, um keine
+    // Nebenwirkungen an den vielen anderen Stellen zu riskieren, die _post nutzen.
+    async setReaction(messageId, userId, emoji) {
+      const r = await fetch(SUPABASE_URL_get()+"/rest/v1/message_reactions", {
+        method:"POST",
+        headers: {...supabase._h(), "Prefer":"resolution=merge-duplicates,return=representation"},
+        body: JSON.stringify({ message_id: messageId, user_id: userId, emoji })
+      });
+      if(!r.ok) return { error: await r.text() };
+      const d = await r.json();
+      return { data: Array.isArray(d)?d[0]:d };
+    },
+    async removeReaction(messageId, userId) {
+      return await supabase._delete("message_reactions",
+        "message_id=eq."+messageId+"&user_id=eq."+userId);
+    },
+    async getReactions(threadId) {
+      // Alle Reaktionen für Nachrichten dieses Threads auf einmal laden,
+      // statt pro Nachricht einzeln nachzufragen.
+      const msgIds = await supabase._q("messages","?thread_id=eq."+threadId+"&select=id");
+      if(msgIds.error || !msgIds.data?.length) return { data: [] };
+      const ids = msgIds.data.map(m=>m.id).join(",");
+      return await supabase._q("message_reactions","?message_id=in.("+ids+")&select=*");
+    },
     cancel: (regId) => supabase._delete("participants","id=eq."+regId),  // via events.cancel gewrappt
     async getStats(userId) {
       const [v,r,p,t] = await Promise.all([
@@ -1197,6 +1223,9 @@ function guard(label, fn){
       read:   guard("threads.read",   (tid, uid)                  => db.markRead(tid, uid)),
       delete: guard("threads.delete", (tid)                       => db.deleteThread ? db.deleteThread(tid) : Promise.resolve({error:"not supported"})),
       deleteMessage: guard("threads.deleteMessage", (mid)          => db.deleteMessage ? db.deleteMessage(mid) : Promise.resolve({error:"not supported"})),
+      setReaction: guard("threads.setReaction", (mid, uid, emoji)  => db.setReaction ? db.setReaction(mid, uid, emoji) : Promise.resolve({error:"not supported"})),
+      removeReaction: guard("threads.removeReaction", (mid, uid)   => db.removeReaction ? db.removeReaction(mid, uid) : Promise.resolve({error:"not supported"})),
+      getReactions: (tid)                  => db.getReactions ? db.getReactions(tid) : Promise.resolve({data:[]}),
     },
     stats: (uid) => db.getStats(uid),
   };
