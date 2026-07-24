@@ -598,7 +598,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
     : myReg?.status==="pending" ? "🟡 Anmeldung eingegangen" : "✗ Leider abgelehnt";
 
   return (
-    <div style={{minHeight:"100vh",background:C.black,paddingBottom:40,animation:"fadeIn .2s"}}>
+    <div style={{minHeight:"100vh",background:"#ffffff",paddingBottom:40,animation:"fadeIn .2s"}}>
       {/* Header */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"14px 16px"}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,padding:0,marginBottom:10}}>← Events</button>
@@ -879,7 +879,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
   },[]);
 
   return (
-    <div ref={rootRef} style={{height:"100vh",background:C.black,display:"flex",flexDirection:"column",position:"fixed",inset:0}}>
+    <div ref={rootRef} style={{height:"100vh",background:"#ffffff",display:"flex",flexDirection:"column",position:"fixed",inset:0}}>
       {/* ── Chat Header ── */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",flexShrink:0}}>
         <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:isClubChannel?6:0}}>
@@ -1317,7 +1317,7 @@ function SelfTest({onClose}) {
   const failed = checks.filter(r => !r.ok);
 
   return (
-    <div style={{position:"fixed",inset:0,background:C.black,zIndex:9999,overflowY:"auto",
+    <div style={{position:"fixed",inset:0,background:"#ffffff",zIndex:9999,overflowY:"auto",
       padding:"20px 16px",fontFamily:"'Barlow',sans-serif"}}>
       <div style={{maxWidth:520,margin:"0 auto"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
@@ -3218,7 +3218,7 @@ Regeln:
     @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600;700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     html,body,#root{height:100%}
-    body{background:${C.black};color:${C.white};font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased}
+    body{background:#ffffff;color:#1a1a1a;font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
     input,select,textarea{font-family:'Barlow',sans-serif;outline:none;color:${C.white};background:transparent}
     input::placeholder,textarea::placeholder{color:${C.muted}}
     select option{background:#191919}
@@ -3309,7 +3309,7 @@ Regeln:
   // SPLASH
   // ══════════════════════════════════════════════════════════════════════════════
   if(screen==="splash") return (
-    <div style={{minHeight:"100vh",background:C.black,display:"flex",flexDirection:"column"}}>
+    <div style={{minHeight:"100vh",background:"#ffffff",display:"flex",flexDirection:"column"}}>
       <style>{CSS}</style>
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
 
@@ -3602,7 +3602,7 @@ Regeln:
     const vParts=Object.values(participants).flat().filter(p=>p.vehicleId===v.id);
     const nextEvent=vParts.map(p=>({...p,ev:events[p.eventId]})).filter(p=>p.ev&&daysUntil(p.ev.date)>0).sort((a,b)=>daysUntil(a.ev.date)-daysUntil(b.ev.date))[0];
     return (
-      <div style={{minHeight:"100vh",background:C.black,paddingBottom:40}}>
+      <div style={{minHeight:"100vh",background:"#ffffff",paddingBottom:40}}>
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
 
@@ -4259,7 +4259,7 @@ Regeln:
     const kz=fmtKz(v.kennzeichen,v.baujahr);
     const priv=v.privacy||DEF_PRIVACY;
     return (
-      <div style={{minHeight:"100vh",background:C.black,paddingBottom:80}}>
+      <div style={{minHeight:"100vh",background:"#ffffff",paddingBottom:80}}>
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {ScannerOverlay}
@@ -5253,7 +5253,7 @@ Regeln:
   // MAIN APP TABS
   // ══════════════════════════════════════════════════════════════════════════════
   return (
-    <div style={{minHeight:"100vh",background:C.black,paddingBottom:62}}>
+    <div style={{minHeight:"100vh",background:"#ffffff",paddingBottom:62}}>
       <style>{CSS}</style>
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
       {ScannerOverlay}
