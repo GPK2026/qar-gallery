@@ -794,6 +794,7 @@ const PCN_STORAGE = (() => {
       images: row.images||[], phone: row.phone,
       // Parse privacy if stored as JSON string in DB
       privacy: typeof row.privacy==="string" ? JSON.parse(row.privacy||"{}") : (row.privacy||{}),
+      registrationBonus: !!row.registration_bonus,
       createdAt: row.created_at, updatedAt: row.updated_at,
     }) : null,
 
