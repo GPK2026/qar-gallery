@@ -893,10 +893,29 @@ const PCN_STORAGE = (() => {
 
     // ── Logbook ──
     async getLogbook(vehicleId) {
-      return await supabase._q("logbook","?vehicle_id=eq."+vehicleId+"&order=date.desc");
+      const res = await supabase._q("logbook","?vehicle_id=eq."+vehicleId+"&order=date.desc");
+      if(res.error || !res.data) return res;
+      const mapped = res.data.map(r => ({
+        id: r.id, vehicleId: r.vehicle_id, date: r.date, type: r.type,
+        km: r.km, notes: r.notes, workshop: r.workshop,
+        amount: r.amount, documentCategory: r.document_category,
+        documentImage: r.document_image, source: r.source || "manual",
+        createdAt: r.created_at,
+      }));
+      return { data: mapped };
     },
     async addLogEntry(vehicleId, entry) {
-      return await supabase._post("logbook",{vehicle_id:vehicleId,...entry,created_at:now()});
+      const row = {
+        vehicle_id: vehicleId,
+        date: entry.date, type: entry.type, km: entry.km,
+        notes: entry.notes, workshop: entry.workshop,
+        amount: entry.amount ?? null,
+        document_category: entry.documentCategory ?? null,
+        document_image: entry.documentImage ?? null,
+        source: entry.source || "manual",
+        created_at: now(),
+      };
+      return await supabase._post("logbook", row);
     },
 
     // ── Reminders ──
