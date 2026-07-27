@@ -5790,6 +5790,7 @@ Regeln:
               const d = new Date(ev.date);
               if(eventFilters.period==="week" && (d<now||d>weekEnd)) return false;
               if(eventFilters.period==="month" && (d<now||d>monthEnd)) return false;
+              if(eventFilters.period==="past" && d>=now) return false;
             }
             if(eventFilters.onlySpotsLeft){
               const confirmed = (participants[ev.id]||[]).filter(p=>p.status==="confirmed").length;
@@ -5835,8 +5836,52 @@ Regeln:
               </div>
             </div>
 
+            {/* ── Event-Historie: Zusammenfassung — nur sichtbar bei aktivem
+                 "Vergangen"-Filter, ergänzt den reinen Listen-Filter um eine
+                 echte Übersicht statt nur einer gefilterten Liste. ── */}
+            {eventFilters.period==="past"&&(()=>{
+              const pastConfirmed = myParticipations.filter(p=>{
+                const ev = events[p.eventId];
+                return p.status==="confirmed" && ev && new Date(ev.date) < new Date();
+              });
+              const pointsEarned = pastConfirmed.length * POINTS.event_confirmed;
+              return (
+                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:14}}>
+                  <div style={{fontSize:12,fontWeight:800,color:C.muted,marginBottom:10,textTransform:"uppercase",letterSpacing:.5}}>
+                    📖 Meine Event-Historie
+                  </div>
+                  <div style={{display:"flex",gap:20,marginBottom:pastConfirmed.length?12:0}}>
+                    <div>
+                      <div style={{fontSize:22,fontWeight:900,color:C.white}}>{pastConfirmed.length}</div>
+                      <div style={{fontSize:11,color:C.muted}}>besuchte Events</div>
+                    </div>
+                    <div>
+                      <div style={{fontSize:22,fontWeight:900,color:C.gold}}>+{pointsEarned}</div>
+                      <div style={{fontSize:11,color:C.muted}}>Punkte verdient</div>
+                    </div>
+                  </div>
+                  {pastConfirmed.length>0&&(
+                    <div style={{borderTop:`1px solid ${C.border}`,paddingTop:10,display:"flex",flexDirection:"column",gap:6}}>
+                      {pastConfirmed
+                        .sort((a,b)=>new Date(events[b.eventId]?.date||0)-new Date(events[a.eventId]?.date||0))
+                        .map(p=>{
+                          const ev = events[p.eventId];
+                          const veh = vehicles[p.vehicleId];
+                          return (
+                            <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12}}>
+                              <span style={{color:C.white}}>{ev?.name||"Event"}</span>
+                              <span style={{color:C.muted}}>{veh?`${veh.hersteller||""} ${veh.modell||""}`.trim():"—"}</span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* LIST VIEW */}
-            {eventsView==="list"&&filteredEvents.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(ev=>{
+            {eventsView==="list"&&filteredEvents.sort((a,b)=>eventFilters.period==="past" ? new Date(b.date)-new Date(a.date) : new Date(a.date)-new Date(b.date)).map(ev=>{
               const days=daysUntil(ev.date);
               // Nur eine aktive (nicht selbst zurückgezogene) Anmeldung zählt als "meine Registrierung" —
               // dasselbe Muster wie in EventDetail, damit eine stornierte Anmeldung nicht fälschlich
@@ -6997,7 +7042,7 @@ Regeln:
             <div style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
               <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Zeitraum</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                {[["","Alle"],["week","Diese Woche"],["month","Diesen Monat"]].map(([v,label])=>(
+                {[["","Alle"],["week","Diese Woche"],["month","Diesen Monat"],["past","Vergangen"]].map(([v,label])=>(
                   <button key={v} onClick={()=>setEventFilters(p=>({...p,period:v}))}
                     style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.period===v?C.red:C.border}`,
                       background:eventFilters.period===v?`${C.red}22`:"transparent",
