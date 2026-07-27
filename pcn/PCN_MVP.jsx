@@ -2679,6 +2679,15 @@ Wichtig:
   const [scheinBusy, setScheinBusy] = useState(false);
   const [scheinResult, setScheinResult] = useState(null);
 
+  // ── Dokumenten-Scanner: analoges Muster zum Fahrzeugschein-Scanner oben,
+  //    aber für Wartungs-/Reparaturbelege, Rechnungen und Versicherungs-
+  //    dokumente — damit auch die Fahrzeughistorie VOR der Registrierung
+  //    digitalisiert werden kann, nicht nur neue Einträge ab jetzt. ──
+  const [docScanOpen, setDocScanOpen] = useState(false);   // welches Fahrzeug — vehicleId oder null
+  const [docScanBusy, setDocScanBusy] = useState(false);
+  const [docScanResult, setDocScanResult] = useState(null);
+  const [docScanCategory, setDocScanCategory] = useState("wartung"); // wartung | reparatur | rechnung | versicherung
+
   const analyzeSchein = async (dataUrl) => {
     const endpoint = (window.PCN_CONFIG||{}).aiProxyUrl;
     if(!endpoint){
@@ -2781,6 +2790,126 @@ Regeln:
     setScheinResult(null);
     setScheinOpen(false);
     toast_(`${n} Feld${n!==1?"er":""} aus dem Fahrzeugschein übernommen`);
+  };
+
+  // ── Dokumenten-Scanner für Logbuch-Belege — dieselbe Grundidee wie
+  //    analyzeSchein oben, aber für Wartungs-/Reparaturrechnungen und
+  //    Versicherungsdokumente. Bewusst noch vorsichtiger beim Datenschutz:
+  //    Rechnungen können IBAN, Kontodaten oder Namen Dritter enthalten,
+  //    die hier ausdrücklich NICHT ausgelesen werden sollen. ──
+  const CATEGORY_LABELS = { wartung:"Wartung", reparatur:"Reparatur", rechnung:"Rechnung", versicherung:"Versicherungsdokument" };
+
+  const analyzeDocument = async (dataUrl) => {
+    const endpoint = (window.PCN_CONFIG||{}).aiProxyUrl;
+    if(!endpoint){
+      setDocScanResult({ notConfigured:true });
+      return;
+    }
+    setDocScanBusy(true);
+    setDocScanResult(null);
+    try {
+      const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);
+      if(!m) throw new Error("Bildformat nicht lesbar");
+
+      const res = await fetch(endpoint, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-sonnet-4-6",
+          max_tokens:1000,
+          messages:[{
+            role:"user",
+            content:[
+              { type:"image", source:{ type:"base64", media_type:m[1], data:m[2] } },
+              { type:"text", text:
+`Das ist ein Dokument aus der Historie eines Sammlerfahrzeugs — vermutlich
+eine Rechnung, ein Werkstattbeleg oder ein Versicherungsdokument. Kategorie
+laut Nutzerangabe: ${CATEGORY_LABELS[docScanCategory]||"Dokument"}.
+
+Lies NUR die folgenden Angaben. Antworte AUSSCHLIESSLICH mit JSON, ohne Markdown.
+
+WICHTIG — Datenschutz, unbedingt beachten:
+- Lies NIEMALS IBAN, Kontonummern, Kreditkartennummern oder Steuernummern.
+- Lies NIEMALS Namen, Adressen oder Kontaktdaten von Privatpersonen
+  (Vorbesitzer, Rechnungsempfänger). Der Werkstatt-/Firmenname selbst ist
+  in Ordnung, sofern es sich klar um ein Unternehmen handelt.
+- Bei Unsicherheit, ob eine Angabe personenbezogen ist: weglassen.
+
+{
+  "datum": "Datum des Dokuments, Format JJJJ-MM-TT | null",
+  "betrag": "Rechnungsbetrag als Zahl ohne Währungssymbol, z.B. 450.50 | null",
+  "werkstatt": "Name der Werkstatt/Firma, falls eindeutig ein Unternehmen | null",
+  "kilometerstand": "falls auf dem Beleg vermerkt, nur die Zahl | null",
+  "beschreibung": "Kurze, sachliche Zusammenfassung was gemacht/geliefert wurde, max. 100 Zeichen | null",
+  "istPlausibelesDokument": true/false,
+  "hinweis": "falls das Bild kein auswertbares Dokument dieser Art ist"
+}
+
+Regeln:
+- Bei Unsicherheit lieber null statt Rateversuch
+- istPlausibelesDokument: false wenn das Bild offensichtlich kein Beleg/keine Rechnung/kein Dokument ist` }
+            ]
+          }]
+        })
+      });
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const data = await res.json();
+      const raw = (data.content||[]).map(c=>c.type==="text"?c.text:"").join("").trim();
+      const parsed = JSON.parse(raw.replace(/```json|```/g,"").trim());
+
+      if(parsed.istPlausibelesDokument === false){
+        setDocScanResult({ wrongDoc:true, hinweis:parsed.hinweis });
+        return;
+      }
+
+      const fields = {};
+      ["datum","betrag","werkstatt","kilometerstand","beschreibung"].forEach(k=>{
+        if(parsed[k]!==null && parsed[k]!==undefined && String(parsed[k]).trim()) fields[k]=parsed[k];
+      });
+
+      const n = Object.keys(fields).length;
+      trackAI(n>0, n);
+      if(!n){ setDocScanResult({ empty:true }); return; }
+      setDocScanResult({ fields, image:dataUrl });
+    } catch(e) {
+      console.error("Dokumenten-Scan:", e);
+      trackAI(false, 0);
+      setDocScanResult({ failed:true });
+    } finally {
+      setDocScanBusy(false);
+    }
+  };
+
+  const applyDocumentScan = async (vehicleId) => {
+    if(!docScanResult?.fields) return;
+    const DB = window.PCN_DB;
+    const f = docScanResult.fields;
+    const entry = {
+      date: f.datum || new Date().toISOString().slice(0,10),
+      type: CATEGORY_LABELS[docScanCategory] || "Dokument",
+      km: f.kilometerstand ? String(f.kilometerstand) : "",
+      notes: f.beschreibung || "",
+      workshop: f.werkstatt || "",
+      amount: f.betrag ? Number(f.betrag) : null,
+      documentCategory: docScanCategory,
+      documentImage: docScanResult.image || "",
+      source: "document_scan",
+    };
+    if(DB && !isDemo){
+      const {data:saved, error} = await DB.logbook.add(vehicleId, entry).catch(e=>({error:e?.message}));
+      if(error){
+        console.error("Logbuch-Eintrag speichern fehlgeschlagen:", error);
+        toast_("Fehler beim Speichern — bitte erneut versuchen","err");
+        return;
+      }
+      setLogbook(prev=>({...prev, [vehicleId]:[...(prev[vehicleId]||[]), saved||entry]}));
+    } else {
+      // Demo-Modus: nur lokal
+      setLogbook(prev=>({...prev, [vehicleId]:[...(prev[vehicleId]||[]), {...entry, id:"demo_"+Date.now()}]}));
+    }
+    setDocScanResult(null);
+    setDocScanOpen(false);
+    toast_(`${CATEGORY_LABELS[docScanCategory]}-Beleg zum Logbuch hinzugefügt ✓ (+${POINTS.logbook} Pkt)`);
   };
 
   const addVehicle = async () => {
@@ -5099,7 +5228,19 @@ Regeln:
           {showAddLog===v.id&&(
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddLog(null);}}>
               <div className="sheet">
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:16}}>Logbuch-Eintrag</div>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>Logbuch-Eintrag</div>
+                <button onClick={()=>{setShowAddLog(null);setDocScanOpen(v.id);setDocScanResult(null);}}
+                  style={{width:"100%",marginTop:10,marginBottom:14,background:`linear-gradient(135deg, ${C.gold}22, ${C.gold}0a)`,
+                    border:`1.5px solid ${C.gold}55`,borderRadius:12,padding:"14px",cursor:"pointer",
+                    display:"flex",gap:12,alignItems:"center",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                  <span style={{fontSize:26,flexShrink:0}}>📄</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:800,color:C.gold,marginBottom:1}}>Beleg scannen</div>
+                    <div style={{fontSize:11,color:"#999",lineHeight:1.4}}>Rechnung, Wartung oder Versicherung fotografieren — auch aus der Vergangenheit</div>
+                  </div>
+                  <span style={{fontSize:16,color:C.gold,flexShrink:0}}>→</span>
+                </button>
+                <div style={{textAlign:"center",fontSize:10,color:"#555",marginBottom:14}}>oder unten manuell eintragen</div>
                 <select className="inp" value={addLogForm.type} onChange={e=>setAddLogForm(p=>({...p,type:e.target.value}))} style={{marginBottom:8}}>
                   {["Ölwechsel","Inspektion","Reifenwechsel","Bremsenwechsel","Hauptuntersuchung","Trackday","Sonstiges"].map(t=><option key={t}>{t}</option>)}
                 </select>
@@ -6955,6 +7096,148 @@ Regeln:
                 </button>
                 <div style={{fontSize:10,color:"#555",textAlign:"center",marginTop:8,lineHeight:1.4}}>
                   Bitte die Werte kurz kontrollieren — besonders FIN und Kennzeichen
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Dokumenten-Scanner: Historie digitalisieren (Wartung/Reparatur/
+           Rechnung/Versicherung) — vorbereitet, analog zum Fahrzeugschein-
+           Scanner. Braucht denselben KI-Proxy (aiProxyUrl), der noch
+           eingerichtet werden muss. ── */}
+      {docScanOpen&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",zIndex:950,
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"18px"}}
+          onClick={e=>{if(e.target===e.currentTarget&&!docScanBusy){setDocScanOpen(false);setDocScanResult(null);}}}>
+          <div onClick={e=>e.stopPropagation()}
+            style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
+              padding:"22px 18px",maxWidth:440,width:"100%",maxHeight:"88vh",overflowY:"auto"}}>
+
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+              <div>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>
+                  📄 Beleg digitalisieren
+                </div>
+                <div style={{fontSize:11,color:C.muted,marginTop:1}}>Auch Dokumente aus der Vergangenheit — nicht nur ab heute</div>
+              </div>
+              {!docScanBusy&&(
+                <button onClick={()=>{setDocScanOpen(false);setDocScanResult(null);}}
+                  style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+              )}
+            </div>
+
+            <div style={{background:"#22c55e0d",border:"1px solid #22c55e33",borderRadius:9,padding:"10px 12px",margin:"14px 0",display:"flex",gap:9,alignItems:"flex-start"}}>
+              <span style={{fontSize:13,flexShrink:0}}>🔒</span>
+              <div style={{fontSize:11,color:"#8c8",lineHeight:1.6}}>
+                Es werden <strong style={{color:"#afa"}}>keine Kontodaten, IBAN oder Namen Dritter</strong> ausgelesen — nur Datum, Betrag, Werkstatt und eine kurze Beschreibung. Das Bild bleibt beim Eintrag gespeichert, damit du das Original später einsehen kannst.
+              </div>
+            </div>
+
+            {!docScanBusy&&!docScanResult&&(
+              <>
+                <div style={{marginBottom:14}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Art des Belegs</div>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {Object.entries(CATEGORY_LABELS).map(([key,label])=>(
+                      <button key={key} onClick={()=>setDocScanCategory(key)}
+                        style={{padding:"8px 14px",borderRadius:8,border:`1.5px solid ${docScanCategory===key?C.gold:C.border}`,
+                          background:docScanCategory===key?`${C.gold}22`:"transparent",
+                          color:docScanCategory===key?C.gold:C.muted,fontSize:12,fontWeight:700,
+                          cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{background:C.card,border:`1px dashed ${C.border}`,borderRadius:12,padding:"24px 16px",textAlign:"center",marginBottom:12}}>
+                  <div style={{fontSize:38,marginBottom:8}}>📄</div>
+                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:16}}>
+                    Gutes Licht, das ganze Dokument im Bild — auch alte, vergilbte Belege funktionieren meist gut.
+                  </div>
+                  <label style={{display:"inline-block",background:C.gold,color:"#0a0a0a",borderRadius:9,
+                    padding:"12px 22px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                    <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
+                      onChange={e=>{
+                        const f=e.target.files?.[0]; if(!f) return;
+                        handleImageUpload(f, ()=>{}, hi=>analyzeDocument(hi));
+                      }}/>
+                    📷 Foto aufnehmen
+                  </label>
+                </div>
+              </>
+            )}
+
+            {docScanBusy&&(
+              <div style={{textAlign:"center",padding:"32px 0"}}>
+                <div style={{width:28,height:28,border:`3px solid ${C.gold}33`,borderTopColor:C.gold,
+                  borderRadius:"50%",animation:"spin .7s linear infinite",margin:"0 auto 14px"}}/>
+                <div style={{fontSize:13,color:C.gold,fontWeight:700,marginBottom:4}}>Beleg wird gelesen…</div>
+                <div style={{fontSize:11,color:"#666"}}>Datum, Betrag, Werkstatt</div>
+              </div>
+            )}
+
+            {docScanResult?.notConfigured&&(
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px"}}>
+                <div style={{fontSize:13,color:"#999",fontWeight:600,marginBottom:5}}>🔧 Noch nicht aktiviert</div>
+                <div style={{fontSize:11,color:"#666",lineHeight:1.6,marginBottom:14}}>
+                  Der Beleg-Scanner wird gerade eingerichtet. Der Eintrag kann bis dahin manuell im Logbuch ergänzt werden.
+                </div>
+                <button onClick={()=>{setDocScanOpen(false);setDocScanResult(null);}} className="btn ghost" style={{width:"100%",fontSize:13}}>
+                  Verstanden
+                </button>
+              </div>
+            )}
+
+            {docScanResult?.wrongDoc&&(
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px"}}>
+                <div style={{fontSize:13,color:"#e88",fontWeight:600,marginBottom:5}}>Das sieht nicht nach einem auswertbaren Beleg aus</div>
+                <div style={{fontSize:11,color:"#666",lineHeight:1.6,marginBottom:14}}>{docScanResult.hinweis||"Bitte eine Rechnung, einen Werkstattbeleg oder ein ähnliches Dokument fotografieren."}</div>
+                <button onClick={()=>setDocScanResult(null)} className="btn ghost" style={{width:"100%",fontSize:13}}>↻ Nochmal versuchen</button>
+              </div>
+            )}
+
+            {(docScanResult?.empty||docScanResult?.failed)&&(
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px"}}>
+                <div style={{fontSize:13,color:"#999",fontWeight:600,marginBottom:5}}>{docScanResult.failed?"Analyse fehlgeschlagen":"Nichts sicher gelesen"}</div>
+                <div style={{fontSize:11,color:"#666",lineHeight:1.6,marginBottom:14}}>Bessere Chancen: mehr Licht, näher ran, Blitz aus, Beleg flach hinlegen.</div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>setDocScanResult(null)} className="btn ghost" style={{flex:1,fontSize:13}}>↻ Nochmal</button>
+                  <button onClick={()=>{setDocScanOpen(false);setDocScanResult(null);}} className="btn ghost" style={{flex:1,fontSize:13}}>Abbrechen</button>
+                </div>
+              </div>
+            )}
+
+            {docScanResult?.fields&&(
+              <div>
+                <div style={{background:`${C.green}0d`,border:`1px solid ${C.green}33`,borderRadius:9,padding:"9px 12px",marginBottom:12}}>
+                  <div style={{fontSize:12,color:C.green,fontWeight:700}}>✓ {Object.keys(docScanResult.fields).length} Angaben gelesen</div>
+                </div>
+                {Object.entries(docScanResult.fields).map(([k,v])=>{
+                  const labels={datum:"Datum",betrag:"Betrag",werkstatt:"Werkstatt",kilometerstand:"Kilometerstand",beschreibung:"Beschreibung"};
+                  return (
+                    <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      padding:"8px 0",borderBottom:`1px solid ${C.border}`,gap:10}}>
+                      <span style={{fontSize:12,color:C.muted,flexShrink:0}}>{labels[k]||k}</span>
+                      <span style={{fontSize:13,color:C.white,fontWeight:600,overflow:"hidden",
+                        textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"right"}}>
+                        {k==="betrag"?`${v} €`:v}
+                      </span>
+                    </div>
+                  );
+                })}
+                <button onClick={()=>applyDocumentScan(docScanOpen)} className="btn"
+                  style={{width:"100%",marginTop:14,background:C.gold,color:"#0a0a0a",fontWeight:800,padding:"12px"}}>
+                  Zum Logbuch hinzufügen ✓
+                </button>
+                <button onClick={()=>setDocScanResult(null)}
+                  style={{width:"100%",marginTop:7,background:"none",border:"none",color:"#666",
+                    fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"6px"}}>
+                  ↻ Nochmal scannen
+                </button>
+                <div style={{fontSize:10,color:"#555",textAlign:"center",marginTop:8,lineHeight:1.4}}>
+                  Bitte die Werte kurz kontrollieren, besonders den Betrag
                 </div>
               </div>
             )}
