@@ -460,8 +460,12 @@ const POINTS = {
   view_akte:         25,   // fremde Fahrzeugakte angesehen (einmalig je Fahrzeug)
 
   // ── PRIO 2: Fahrzeugpflege belohnen ──
-  vehicle_added:    500,   // Fahrzeug angelegt
-  vehicle_complete: 750,   // Akte vollständig gepflegt (Bonus)
+  vehicle_added:    911,   // Fahrzeug angelegt — einmaliger Wert, ersetzt die
+                           // frühere Aufteilung in "angelegt" (500) + separaten
+                           // "Akte vollständig"-Bonus (750)
+  vehicle_added_registration_bonus_mult: 2, // Verdopplung, wenn direkt nach der
+                           // Registrierung (derselben Sitzung) das erste
+                           // Fahrzeug angelegt wird — siehe justRegistered
   logbook:          150,   // Logbuch-Eintrag
   photo:             50,   // Foto hochgeladen (max. 10 zählen)
 
@@ -1530,6 +1534,10 @@ function PCNInner() {
   // Nur für diese Sitzung — beim nächsten Login/Neuladen erscheint der
   // Willkommens-Block wieder, bewusst kein dauerhaftes Speichern.
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  // Nur für diese Sitzung — true genau dann, wenn sich das Mitglied gerade
+  // eben registriert hat (nicht bei einem späteren Login). Bestimmt, ob das
+  // Anlegen des ersten Fahrzeugs den doppelten Punktebonus auslöst.
+  const [justRegistered, setJustRegistered] = useState(false);
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
   const [pwSaving, setPwSaving] = useState(false);
@@ -1749,9 +1757,8 @@ function PCNInner() {
     try { pts += getViewedVehicles().length * V.view_akte; } catch(e){}
 
     // ── PRIO 2: Fahrzeugpflege (Akte, Doku) ──
-    pts += myVehicles.length * V.vehicle_added;
     myVehicles.forEach(v=>{
-      if(isVehicleComplete(v)) pts += V.vehicle_complete;
+      pts += v.registrationBonus ? V.vehicle_added*V.vehicle_added_registration_bonus_mult : V.vehicle_added;
       const imgs = (v.images||[]).length || (v.image?1:0);
       pts += Math.min(imgs, 10) * V.photo;   // max 10 Fotos zählen
     });
@@ -2779,12 +2786,18 @@ Regeln:
   const addVehicle = async () => {
     if(!addVForm.modell||!addVForm.kennzeichen) return toast_("Modell und Kennzeichen angeben","err");
     const DB=window.PCN_DB;
+    // Bonus gilt nur für das allererste Fahrzeug einer frisch registrierten
+    // Person, in derselben Sitzung — nicht für jedes weitere Fahrzeug, und
+    // nicht mehr, sobald die Sitzung vorbei ist (justRegistered dann false).
+    const isFirstVehicle = myVehicles.length===0;
+    const earnsBonus = justRegistered && isFirstVehicle;
     const newV={
       qarId:genQARId(), userId:me.id, owner:me.email,
       ...addVForm,
       images:addVForm.images||[],
       image:(addVForm.images||[])[0]||"",
       privacy:{...DEF_PRIVACY},
+      registrationBonus: earnsBonus,
     };
     // Demo-Modus: nur lokal — nichts in die echte DB schreiben
     if(isDemo){
@@ -2793,7 +2806,8 @@ Regeln:
       setShowAddV(false);
       setAnalyzeResult(null); setAnalyzing(false); setAnalyzeHiRes(null);
       setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[]});
-      toast_(`${demoV.hersteller} ${demoV.modell} angelegt ✓ (+${POINTS.vehicle_added} Pkt)`);
+      const demoPts = earnsBonus ? POINTS.vehicle_added*POINTS.vehicle_added_registration_bonus_mult : POINTS.vehicle_added;
+      toast_(`${demoV.hersteller} ${demoV.modell} angelegt ✓ (+${demoPts} Pkt${earnsBonus?" — Registrierungsbonus! 🎉":""})`);
       return;
     }
 
@@ -2812,7 +2826,11 @@ Regeln:
     setShowAddV(false);
     setAnalyzeResult(null); setAnalyzing(false); setAnalyzeHiRes(null);
     setAddVForm({hersteller:"Porsche",modell:"",baujahr:"",kennzeichen:"",farbe:"",kraftstoff:"Benzin",getriebe:"",images:[]});
-    toast_("Fahrzeug hinzugefügt ✓ · QAR-ID: "+vehicle.qarId);
+    if(earnsBonus){
+      toast_(`Fahrzeug hinzugefügt ✓ · QAR-ID: ${vehicle.qarId} — Registrierungsbonus: ${POINTS.vehicle_added*POINTS.vehicle_added_registration_bonus_mult} Punkte! 🎉`);
+    } else {
+      toast_("Fahrzeug hinzugefügt ✓ · QAR-ID: "+vehicle.qarId);
+    }
   };
 
   const addLogEntry = async (vehicleId) => {
@@ -3591,6 +3609,7 @@ Regeln:
                   }
                   track("member_register", {club_code:loginForm.code});
                   setMe(u); setAllUsers(p=>({...p,[u.id]:u}));
+                  setJustRegistered(true);
                   setScreen("app");
                   toast_("Willkommen, "+u.name+"! 🏁");
                 } catch(e) {
@@ -5502,12 +5521,10 @@ Regeln:
             {/* ── Onboarding-Checkliste — nur bis alles erledigt ist ── */}
             {!isGuest&&!isDemo&&(()=>{
               const hasVehicle = myVehicles.length>0;
-              const hasComplete = myVehicles.some(v=>isVehicleComplete(v));
               const hasBday = !!me?.geburtstag;
               const hasEvent = myParticipations.length>0;
               const steps = [
-                {done:hasVehicle,  icon:"🚗", label:"Fahrzeug anlegen",       hint:"Schaltet QR-Code, Logbuch und Events frei", pts:POINTS.vehicle_added, go:()=>setShowAddV(true)},
-                {done:hasComplete, icon:"✨", label:"Akte vervollständigen",  hint:"Foto, Kennzeichen, Baujahr und Geschichte", pts:POINTS.vehicle_complete, go:()=>{ if(myVehicles[0]){setViewV(myVehicles[0]);setScreen("vehicle");} else setShowAddV(true); }},
+                {done:hasVehicle,  icon:"🚗", label:"Fahrzeug anlegen",       hint: justRegistered ? "Heute angelegt = doppelte Punkte!" : "Schaltet QR-Code, Logbuch und Events frei", pts: justRegistered ? POINTS.vehicle_added*POINTS.vehicle_added_registration_bonus_mult : POINTS.vehicle_added, go:()=>setShowAddV(true)},
                 {done:hasBday,     icon:"🎂", label:"Geburtstag hinterlegen", hint:"Nur für den Vorstand sichtbar", pts:POINTS.birthday, go:()=>openEditProfile()},
                 {done:hasEvent,    icon:"🏁", label:"Für ein Event anmelden", hint:"Beim nächsten Termin dabei sein", pts:POINTS.event_confirmed, go:()=>setTab("events")},
               ];
@@ -7254,7 +7271,7 @@ Regeln:
               ]},
               {group:"🚗 Fahrzeugpflege", color:C.gold, items:[
                 ["🚗","Fahrzeug anlegen","+"+POINTS.vehicle_added],
-                ["✨","Akte vollständig gepflegt","+"+POINTS.vehicle_complete],
+                ["🎉","...am Tag der Registrierung",`×${POINTS.vehicle_added_registration_bonus_mult}`],
                 ["📋","Logbuch-Eintrag","+"+POINTS.logbook],
                 ["📸","Foto hochgeladen","+"+POINTS.photo],
               ]},
@@ -7515,6 +7532,30 @@ Regeln:
         <div className="overlay" onClick={e=>{if(e.target===e.currentTarget){setShowAddV(false);setAnalyzeResult(null);setAnalyzing(false);setAnalyzeHiRes(null);}}}>
           <div className="sheet">
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>Fahrzeug hinzufügen</div>
+
+            {/* ── Fortschrittsanzeige: Auto nähert sich der Flagge, je vollständiger
+                 das Formular ausgefüllt ist — dieselbe Optik wie beim Splash-Screen. ── */}
+            {(()=>{
+              const fields = ["hersteller","modell","baujahr","kennzeichen","farbe","kraftstoff","getriebe"];
+              const filledFields = fields.filter(f=>addVForm[f]&&String(addVForm[f]).trim()).length;
+              const hasPhoto = (addVForm.images||[]).length>0;
+              const totalSteps = fields.length+1; // Felder + Foto
+              const doneSteps = filledFields + (hasPhoto?1:0);
+              const pct = Math.round((doneSteps/totalSteps)*100);
+              return (
+                <div style={{marginBottom:16}}>
+                  <div style={{position:"relative",height:22,marginBottom:4}}>
+                    <div style={{position:"absolute",bottom:4,left:0,right:0,height:2,background:C.border,borderRadius:99}}/>
+                    <div style={{position:"absolute",bottom:2,left:`calc(${pct}% - 10px)`,fontSize:16,
+                      transform:"scaleX(-1)",transition:"left .3s ease"}}>🚗</div>
+                    <div style={{position:"absolute",bottom:2,right:0,fontSize:14}}>🏁</div>
+                  </div>
+                  <div style={{fontSize:11,color:C.muted,textAlign:"right"}}>
+                    {doneSteps}/{totalSteps} ausgefüllt
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ── Fahrzeugschein scannen — der schnelle Weg ── */}
             {!(addVForm.modell||addVForm.kennzeichen)&&(
