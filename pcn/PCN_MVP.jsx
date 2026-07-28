@@ -4888,8 +4888,8 @@ Regeln:
                   <span style={{fontSize:18,flexShrink:0}}>{sec.icon}</span>
                   <span style={{fontWeight:700,fontSize:15,color:C.white,flex:1,textAlign:"left"}}>{sec.label}</span>
                   {sec.count>0&&<span style={{background:C.black,borderRadius:99,padding:"2px 8px",fontSize:11,fontWeight:700,color:C.muted,flexShrink:0}}>{sec.count}</span>}
-                  {sec.action&&isOpen(v.id,sec.id)&&(
-                    <button onClick={e=>{e.stopPropagation();sec.action();}}
+                  {sec.action&&(
+                    <button onClick={e=>{e.stopPropagation();setOpenSections(p=>({...p,[v.id+"_"+sec.id]:true}));sec.action();}}
                       style={{background:C.red,border:"none",borderRadius:6,padding:"4px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0,fontFamily:"'Barlow',sans-serif"}}>
                       {sec.actionLabel}
                     </button>
@@ -7171,15 +7171,30 @@ Regeln:
                   <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:16}}>
                     Gutes Licht, das ganze Dokument im Bild — auch alte, vergilbte Belege funktionieren meist gut.
                   </div>
-                  <label style={{display:"inline-block",background:C.gold,color:"#0a0a0a",borderRadius:9,
-                    padding:"12px 22px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                    <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
-                      onChange={e=>{
-                        const f=e.target.files?.[0]; if(!f) return;
-                        handleImageUpload(f, ()=>{}, hi=>analyzeDocument(hi));
-                      }}/>
-                    📷 Foto aufnehmen
-                  </label>
+                  <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+                    <label style={{display:"inline-block",background:C.gold,color:"#0a0a0a",borderRadius:9,
+                      padding:"12px 18px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
+                        onChange={e=>{
+                          const f=e.target.files?.[0]; if(!f) return;
+                          handleImageUpload(f, ()=>{}, hi=>analyzeDocument(hi));
+                        }}/>
+                      📷 Foto aufnehmen
+                    </label>
+                    <label style={{display:"inline-block",background:"transparent",color:C.gold,borderRadius:9,
+                      padding:"12px 18px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                      border:`1.5px solid ${C.gold}66`}}>
+                      {/* Kein capture-Attribut — der Browser bietet dann die Fotobibliothek/Dateien als
+                          Option an, statt zwingend die Kamera zu öffnen. Wichtig für bereits vorhandene,
+                          alte Belege, die man nicht erneut abfotografieren möchte. */}
+                      <input type="file" accept="image/*" style={{display:"none"}}
+                        onChange={e=>{
+                          const f=e.target.files?.[0]; if(!f) return;
+                          handleImageUpload(f, ()=>{}, hi=>analyzeDocument(hi));
+                        }}/>
+                      🖼️ Aus Fotos wählen
+                    </label>
+                  </div>
                 </div>
               </>
             )}
