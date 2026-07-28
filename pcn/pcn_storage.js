@@ -1109,24 +1109,46 @@ const PCN_STORAGE = (() => {
     },
     // ── Vehicle Status ("Komme in 5 Min zurück") ──
     async getStatus(vehicleId) {
-      const {data:rows,error} = await supabase._q("vehicle_status","?vehicle_id=eq."+vehicleId);
+      const {data:rows,error} = await supabase._q("vehicle_status","?vehicle_id=eq."+vehicleId+"&order=set_at.asc");
       if(error) return { error };
-      const row = rows&&rows[0];
-      if(!row) return { data: null };
-      return { data: { text:row.text, icon:row.icon, expiresAt: row.expires_at?new Date(row.expires_at).getTime():null, setAt: row.set_at?new Date(row.set_at).getTime():null } };
+      if(!rows||!rows.length) return { data: null };
+      const now = Date.now();
+      const active = rows.filter(r => !r.expires_at || new Date(r.expires_at).getTime() > now);
+      if(!active.length) return { data: null };
+      const mapped = active.map(row => ({
+        id: row.id, text:row.text, icon:row.icon,
+        expiresAt: row.expires_at?new Date(row.expires_at).getTime():null,
+        setAt: row.set_at?new Date(row.set_at).getTime():null,
+      }));
+      return { data: mapped };
     },
     async setStatus(vehicleId, status) {
-      const row = { vehicle_id:vehicleId, icon:status.icon, text:status.text,
+      const row = {
+        id: status.id && status.id.length>10 ? status.id : undefined, // echte UUID beim Bearbeiten mitgeben, sonst neu erzeugen lassen
+        vehicle_id:vehicleId, icon:status.icon, text:status.text,
         expires_at: status.expiresAt?new Date(status.expiresAt).toISOString():null,
-        set_at: now() };
-      // Upsert: try patch first, fallback to insert
-      const existing = await supabase._q("vehicle_status","?vehicle_id=eq."+vehicleId);
-      if(existing.data&&existing.data.length>0){
-        return await supabase._patch("vehicle_status","vehicle_id=eq."+vehicleId, row);
+        set_at: now(),
+      };
+      // Wird ein bestehender Slot bearbeitet (echte DB-UUID vorhanden)?
+      if(status.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(status.id)){
+        return await supabase._patch("vehicle_status","id=eq."+status.id, row);
       }
+      // Neuer Status: bestehende, noch aktive Slots dieses Fahrzeugs zählen —
+      // bei 3 oder mehr wird der älteste entfernt, bevor der neue eingefügt
+      // wird (max. 3 gleichzeitige Status, wie in der App-Oberfläche vorgesehen).
+      const existing = await supabase._q("vehicle_status",
+        "?vehicle_id=eq."+vehicleId+"&order=set_at.asc&select=id,expires_at");
+      const active = (existing.data||[]).filter(s=>!s.expires_at||new Date(s.expires_at).getTime()>Date.now());
+      if(active.length>=3){
+        await supabase._delete("vehicle_status","id=eq."+active[0].id);
+      }
+      delete row.id; // neue Zeile — Datenbank vergibt die ID selbst
       return await supabase._post("vehicle_status", row);
     },
-    async clearStatus(vehicleId) {
+    async clearStatus(vehicleId, slotId=null) {
+      if(slotId){
+        return await supabase._delete("vehicle_status","id=eq."+slotId);
+      }
       return await supabase._delete("vehicle_status","vehicle_id=eq."+vehicleId);
     },
   };
@@ -1213,7 +1235,7 @@ function guard(label, fn){
       getPublic:  (qarId)  => db.getPublicVehicle(qarId),
       getStatus:  (vid)    => db.getStatus(vid),
       setStatus:  guard("vehicles.setStatus",   (vid, s) => db.setStatus(vid, s)),
-      clearStatus:guard("vehicles.clearStatus", (vid)    => db.clearStatus(vid)),
+      clearStatus:guard("vehicles.clearStatus", (vid,sid)  => db.clearStatus(vid,sid)),
     },
     members: {
       // Minimale, nicht-sensible Liste aller Mitglieder für Namensanzeige
