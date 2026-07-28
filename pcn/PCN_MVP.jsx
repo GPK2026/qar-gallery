@@ -1931,10 +1931,10 @@ function PCNInner() {
     const DB = window.PCN_DB;
     if(!DB) return;
     const {data} = await DB.vehicles.getStatus(vehicleId);
-    // WICHTIG: vehicleStatus[id] muss IMMER ein Array sein — setStatus/clearStatus
-    // rufen darauf .filter()/.map() auf. getStatus() liefert von Supabase aber ein
-    // einzelnes Objekt {text,icon,expiresAt,setAt} zurück, kein Array. Ohne diesen
-    // Wrap crasht die App beim nächsten "Status setzen" mit ".filter is not a function".
+    // getStatus() liefert jetzt immer ein Array aktiver Status (mehrere
+    // gleichzeitige Status pro Fahrzeug, seit dem vehicle_status-Multi-Slot-
+    // Fix). Der Array.isArray-Check bleibt als Absicherung für den lokalen/
+    // Demo-Pfad, der ggf. noch ein einzelnes Objekt liefern könnte.
     if(data) {
       const slot = Array.isArray(data) ? data : [{...data, id: data.id || ("s"+(data.setAt||Date.now()))}];
       setVehicleStatus(prev=>({...prev,[vehicleId]:slot}));
@@ -2120,7 +2120,7 @@ function PCNInner() {
           // Load status immediately — essential for cross-device status display
           if(DB) {
             DB.vehicles.getStatus(v.id).then(({data})=>{
-              if(data && data.text) setVehicleStatus(prev=>({...prev,[v.id]:data}));
+              if(data && data.length) setVehicleStatus(prev=>({...prev,[v.id]:data}));
             });
           }
           return;
