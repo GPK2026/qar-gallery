@@ -2587,7 +2587,12 @@ function PCNInner() {
 
       const res = await fetch(endpoint, {
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        // Supabase-Gateway verlangt den apikey-Header auf Infrastruktur-
+        // Ebene, unabhaengig vom verify_jwt-Flag der Edge Function selbst —
+        // ohne ihn wird die Anfrage schon vor der Funktion abgewiesen und
+        // die Antwort haben keine CORS-Header, was im Browser wie ein
+        // haengender Request ohne Fehlermeldung aussieht.
+        headers:{"Content-Type":"application/json","apikey":sbKey(),"Authorization":"Bearer "+sbKey()},
         body: JSON.stringify({
           model:"claude-sonnet-4-6",
           max_tokens:1000,
@@ -2702,7 +2707,12 @@ Wichtig:
 
       const res = await fetch(endpoint, {
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        // Supabase-Gateway verlangt den apikey-Header auf Infrastruktur-
+        // Ebene, unabhaengig vom verify_jwt-Flag der Edge Function selbst —
+        // ohne ihn wird die Anfrage schon vor der Funktion abgewiesen und
+        // die Antwort haben keine CORS-Header, was im Browser wie ein
+        // haengender Request ohne Fehlermeldung aussieht.
+        headers:{"Content-Type":"application/json","apikey":sbKey(),"Authorization":"Bearer "+sbKey()},
         body: JSON.stringify({
           model:"claude-sonnet-4-6",
           max_tokens:1200,
@@ -2813,7 +2823,12 @@ Regeln:
 
       const res = await fetch(endpoint, {
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        // Supabase-Gateway verlangt den apikey-Header auf Infrastruktur-
+        // Ebene, unabhaengig vom verify_jwt-Flag der Edge Function selbst —
+        // ohne ihn wird die Anfrage schon vor der Funktion abgewiesen und
+        // die Antwort haben keine CORS-Header, was im Browser wie ein
+        // haengender Request ohne Fehlermeldung aussieht.
+        headers:{"Content-Type":"application/json","apikey":sbKey(),"Authorization":"Bearer "+sbKey()},
         body: JSON.stringify({
           model:"claude-sonnet-4-6",
           max_tokens:1000,
