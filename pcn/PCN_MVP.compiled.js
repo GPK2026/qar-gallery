@@ -313,7 +313,12 @@ if(!v){const DB=window.PCN_DB;if(DB){const{data:realV}=await DB.vehicles.getPubl
 const[analyzing,setAnalyzing]=(0,_react.useState)(false);const[analyzeResult,setAnalyzeResult]=(0,_react.useState)(null);const[analyzeHiRes,setAnalyzeHiRes]=(0,_react.useState)(null);// hochauflösende Version fürs Erkennen
 const trackAI=(ok,fieldCount)=>{try{const s=JSON.parse(store.getItem("pcn_ai_stats")||'{"runs":0,"ok":0,"fields":0}');s.runs++;if(ok)s.ok++;s.fields+=fieldCount||0;store.setItem("pcn_ai_stats",JSON.stringify(s));}catch(e){}};const analyzeVehiclePhoto=async(dataUrl,attempt=1)=>{// Braucht einen serverseitigen Proxy (API-Key darf nicht in den Client).
 // Ohne konfigurierten Endpoint bleibt das Feature deaktiviert.
-const endpoint=(window.PCN_CONFIG||{}).aiProxyUrl;if(!endpoint){setAnalyzeResult({fields:{},notConfigured:true});return;}const src=analyzeHiRes||dataUrl;if(!src)return;setAnalyzing(true);if(attempt===1)setAnalyzeResult(null);try{const m=/^data:(image\/[a-z+]+);base64,(.+)$/i.exec(src);if(!m)throw new Error("Bildformat nicht lesbar");const mediaType=m[1],b64=m[2];const res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:b64}},{type:"text",text:`Analysiere dieses Fahrzeugfoto. Antworte AUSSCHLIESSLICH mit JSON, ohne Markdown, ohne Erklärung.
+const endpoint=(window.PCN_CONFIG||{}).aiProxyUrl;if(!endpoint){setAnalyzeResult({fields:{},notConfigured:true});return;}const src=analyzeHiRes||dataUrl;if(!src)return;setAnalyzing(true);if(attempt===1)setAnalyzeResult(null);try{const m=/^data:(image\/[a-z+]+);base64,(.+)$/i.exec(src);if(!m)throw new Error("Bildformat nicht lesbar");const mediaType=m[1],b64=m[2];const res=await fetch(endpoint,{method:"POST",// Supabase-Gateway verlangt den apikey-Header auf Infrastruktur-
+// Ebene, unabhaengig vom verify_jwt-Flag der Edge Function selbst —
+// ohne ihn wird die Anfrage schon vor der Funktion abgewiesen und
+// die Antwort haben keine CORS-Header, was im Browser wie ein
+// haengender Request ohne Fehlermeldung aussieht.
+headers:{"Content-Type":"application/json","apikey":sbKey(),"Authorization":"Bearer "+sbKey()},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:b64}},{type:"text",text:`Analysiere dieses Fahrzeugfoto. Antworte AUSSCHLIESSLICH mit JSON, ohne Markdown, ohne Erklärung.
 
 {
   "hersteller": "z.B. Porsche | null wenn unklar",
@@ -349,7 +354,12 @@ const[scheinOpen,setScheinOpen]=(0,_react.useState)(false);const[scheinBusy,setS
 //    digitalisiert werden kann, nicht nur neue Einträge ab jetzt. ──
 const[docScanOpen,setDocScanOpen]=(0,_react.useState)(false);// welches Fahrzeug — vehicleId oder null
 const[docScanBusy,setDocScanBusy]=(0,_react.useState)(false);const[docScanResult,setDocScanResult]=(0,_react.useState)(null);const[docScanCategory,setDocScanCategory]=(0,_react.useState)("wartung");// wartung | reparatur | rechnung | versicherung
-const analyzeSchein=async dataUrl=>{const endpoint=(window.PCN_CONFIG||{}).aiProxyUrl;if(!endpoint){setScheinResult({notConfigured:true});return;}setScheinBusy(true);setScheinResult(null);try{const m=/^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);if(!m)throw new Error("Bildformat nicht lesbar");const res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1200,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:m[1],data:m[2]}},{type:"text",text:`Das ist eine deutsche Zulassungsbescheinigung Teil I (Fahrzeugschein).
+const analyzeSchein=async dataUrl=>{const endpoint=(window.PCN_CONFIG||{}).aiProxyUrl;if(!endpoint){setScheinResult({notConfigured:true});return;}setScheinBusy(true);setScheinResult(null);try{const m=/^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);if(!m)throw new Error("Bildformat nicht lesbar");const res=await fetch(endpoint,{method:"POST",// Supabase-Gateway verlangt den apikey-Header auf Infrastruktur-
+// Ebene, unabhaengig vom verify_jwt-Flag der Edge Function selbst —
+// ohne ihn wird die Anfrage schon vor der Funktion abgewiesen und
+// die Antwort haben keine CORS-Header, was im Browser wie ein
+// haengender Request ohne Fehlermeldung aussieht.
+headers:{"Content-Type":"application/json","apikey":sbKey(),"Authorization":"Bearer "+sbKey()},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1200,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:m[1],data:m[2]}},{type:"text",text:`Das ist eine deutsche Zulassungsbescheinigung Teil I (Fahrzeugschein).
 Lies die genormten Felder aus. Antworte AUSSCHLIESSLICH mit JSON, ohne Markdown.
 
 WICHTIG — Datenschutz: Ignoriere sämtliche Halterdaten (Felder C.1.1 bis C.4.3:
@@ -390,7 +400,12 @@ if(k==="kennzeichen"&&(conf.kennzeichen??0)<70)return;fields[k]=String(parsed[k]
 //    Versicherungsdokumente. Bewusst noch vorsichtiger beim Datenschutz:
 //    Rechnungen können IBAN, Kontodaten oder Namen Dritter enthalten,
 //    die hier ausdrücklich NICHT ausgelesen werden sollen. ──
-const CATEGORY_LABELS={wartung:"Wartung",reparatur:"Reparatur",rechnung:"Rechnung",versicherung:"Versicherungsdokument"};const analyzeDocument=async dataUrl=>{const endpoint=(window.PCN_CONFIG||{}).aiProxyUrl;if(!endpoint){setDocScanResult({notConfigured:true});return;}setDocScanBusy(true);setDocScanResult(null);try{const m=/^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);if(!m)throw new Error("Bildformat nicht lesbar");const res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:m[1],data:m[2]}},{type:"text",text:`Das ist ein Dokument aus der Historie eines Sammlerfahrzeugs — vermutlich
+const CATEGORY_LABELS={wartung:"Wartung",reparatur:"Reparatur",rechnung:"Rechnung",versicherung:"Versicherungsdokument"};const analyzeDocument=async dataUrl=>{const endpoint=(window.PCN_CONFIG||{}).aiProxyUrl;if(!endpoint){setDocScanResult({notConfigured:true});return;}setDocScanBusy(true);setDocScanResult(null);try{const m=/^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);if(!m)throw new Error("Bildformat nicht lesbar");const res=await fetch(endpoint,{method:"POST",// Supabase-Gateway verlangt den apikey-Header auf Infrastruktur-
+// Ebene, unabhaengig vom verify_jwt-Flag der Edge Function selbst —
+// ohne ihn wird die Anfrage schon vor der Funktion abgewiesen und
+// die Antwort haben keine CORS-Header, was im Browser wie ein
+// haengender Request ohne Fehlermeldung aussieht.
+headers:{"Content-Type":"application/json","apikey":sbKey(),"Authorization":"Bearer "+sbKey()},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:m[1],data:m[2]}},{type:"text",text:`Das ist ein Dokument aus der Historie eines Sammlerfahrzeugs — vermutlich
 eine Rechnung, ein Werkstattbeleg oder ein Versicherungsdokument. Kategorie
 laut Nutzerangabe: ${CATEGORY_LABELS[docScanCategory]||"Dokument"}.
 
