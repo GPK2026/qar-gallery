@@ -4538,7 +4538,7 @@ Regeln:
                   </>)}
                 </div>
                 {/* Thumbnail strip — direkt unter Hero, scrollbar */}
-                {imgs.length>1&&(
+                {imgs.length>=1&&(
                   <div style={{display:"flex",gap:6,overflowX:"auto",padding:"8px 10px",background:"#0a0a0a",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
                     {imgs.map((img,i)=>(
                       <div key={i} style={{position:"relative",flexShrink:0}}>
