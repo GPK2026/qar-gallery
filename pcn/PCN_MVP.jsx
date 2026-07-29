@@ -1490,6 +1490,10 @@ function PCNInner() {
   const [allUsers, setAllUsers]   = useState({...DEMO_USERS});
   const [vehicles, setVehicles]   = useState({});
   const [logbook, setLogbook]     = useState({});
+  // Verkaufsboerse: { [vehicleId]: [{id,category,description,...}, ...] }
+  const [listings, setListings]   = useState({});
+  const [showAddListing, setShowAddListing] = useState(null); // vehicleId, oder {vehicleId, editId} beim Bearbeiten
+  const [listingForm, setListingForm] = useState({category:"auto", description:""});
   const [reminders, setReminders] = useState([]);
   const [participants, setParticipants] = useState({});
   const [events, setEvents]       = useState({});
@@ -2056,6 +2060,16 @@ function PCNInner() {
       const r=await DB.logbook.list(v.id); lMap[v.id]=r.data||[];
     }));
     setLogbook(lMap);
+    // Verkaufsboerse: alle Angebote auf einmal laden (fuer Community-Uebersicht
+    // UND einzelne Fahrzeugakten), statt pro Fahrzeug einzeln nachzufragen.
+    if(DB.listings?.listAll){
+      const {data:allListings} = await DB.listings.listAll();
+      if(allListings){
+        const listMap={};
+        allListings.forEach(l=>{ (listMap[l.vehicleId]=listMap[l.vehicleId]||[]).push(l); });
+        setListings(listMap);
+      }
+    }
     setReminders(remRes.data||[]);
     // Merge saved events with demo events
     const savedEvs=evRes.data||[];
@@ -2992,6 +3006,55 @@ Regeln:
     setLogbook(prev=>({...prev,[vehicleId]:[e,...(prev[vehicleId]||[])]}));
     setShowAddLog(null); setAddLogForm({type:"Ölwechsel",km:"",notes:"",workshop:""});
     toast_("Eintrag gespeichert ✓");
+  };
+
+  const LISTING_CATEGORY_LABELS = {auto:"🚗 Fahrzeug", felgen_reifen:"⚙️ Felgen/Reifen", sonstiges:"📦 Sonstiges"};
+
+  const loadListingsFor = async (vehicleId) => {
+    const DB=window.PCN_DB; if(!DB) return;
+    const {data} = await DB.listings.list(vehicleId);
+    if(data) setListings(prev=>({...prev,[vehicleId]:data}));
+  };
+
+  const saveListing = async () => {
+    const target = showAddListing;
+    if(!target) return;
+    const vehicleId = typeof target==="object" ? target.vehicleId : target;
+    const editId = typeof target==="object" ? target.editId : null;
+    const DB=window.PCN_DB;
+    if(isDemo){
+      // Demo-Modus: nur lokal, nichts in die echte DB schreiben
+      if(editId){
+        setListings(prev=>({...prev,[vehicleId]:(prev[vehicleId]||[]).map(l=>l.id===editId?{...l,...listingForm}:l)}));
+      } else {
+        setListings(prev=>({...prev,[vehicleId]:[{id:"demo_"+Date.now(),vehicleId,...listingForm},...(prev[vehicleId]||[])]}));
+      }
+      setShowAddListing(null); setListingForm({category:"auto",description:""});
+      toast_("Angebot gespeichert (Demo — nicht dauerhaft)");
+      return;
+    }
+    if(editId){
+      const {error} = await DB.listings.update(editId, listingForm.category, listingForm.description);
+      if(error){ toast_("Fehler beim Speichern","err"); return; }
+      setListings(prev=>({...prev,[vehicleId]:(prev[vehicleId]||[]).map(l=>l.id===editId?{...l,...listingForm}:l)}));
+      toast_("Angebot aktualisiert ✓");
+    } else {
+      const {data,error} = await DB.listings.add(vehicleId, listingForm.category, listingForm.description);
+      if(error){ toast_("Fehler beim Speichern","err"); return; }
+      setListings(prev=>({...prev,[vehicleId]:[data,...(prev[vehicleId]||[])]}));
+      toast_(`${LISTING_CATEGORY_LABELS[listingForm.category]} inseriert ✓`);
+    }
+    setShowAddListing(null); setListingForm({category:"auto",description:""});
+  };
+
+  const removeListing = async (vehicleId, listingId) => {
+    const DB=window.PCN_DB;
+    if(!isDemo && DB){
+      const {error} = await DB.listings.remove(listingId);
+      if(error){ toast_("Fehler beim Löschen","err"); return; }
+    }
+    setListings(prev=>({...prev,[vehicleId]:(prev[vehicleId]||[]).filter(l=>l.id!==listingId)}));
+    toast_("Angebot entfernt");
   };
 
   const cancelEvent = async (eventId, regId) => {
@@ -4491,6 +4554,7 @@ Regeln:
   if(screen==="vehicle"&&viewV) {
     const v=viewV;
     const vLog=logbook[v.id]||[];
+    const vListings=listings[v.id]||[];
     const vParts=Object.values(participants).flat().filter(p=>p.vehicleId===v.id);
     const vHist=eventHistory.filter(h=>h.vehicleId===v.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
     const isOwn = v.owner===me?.email || v.userId===me?.id || v.userId===me?.email;
@@ -4763,6 +4827,36 @@ Regeln:
             const vInsurance = (DEMO_INSURANCE[v.id]||[]);
             const vGutachten = (DEMO_GUTACHTEN[v.id]||[]);
             const sections = [
+              {
+                id:"listings", icon:"💰", label:"Verkaufsbörse", count:vListings.length,
+                action:isOwn?()=>{setShowAddListing(v.id);setListingForm({category:"auto",description:""});}:null,
+                actionLabel:"+ Angebot",
+                content:(
+                  <div>
+                    {vListings.length===0
+                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:13}}>
+                          Nichts inseriert — Fahrzeug, Felgen/Reifen oder Sonstiges anbieten
+                        </div>
+                      :vListings.map(l=>(
+                        <div key={l.id} style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                          <div style={{flex:1,minWidth:0}}>
+                            <span style={{fontWeight:700,fontSize:14,color:C.white}}>{LISTING_CATEGORY_LABELS[l.category]}</span>
+                            {l.description&&<div style={{fontSize:12,color:"#888",lineHeight:1.5,marginTop:3}}>{l.description}</div>}
+                          </div>
+                          {isOwn&&(
+                            <div style={{display:"flex",gap:6,flexShrink:0}}>
+                              <button onClick={()=>{setShowAddListing({vehicleId:v.id,editId:l.id});setListingForm({category:l.category,description:l.description||""});}}
+                                style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:11,cursor:"pointer"}}>✏️</button>
+                              <button onClick={()=>removeListing(v.id,l.id)}
+                                style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.red,fontSize:11,cursor:"pointer"}}>✕</button>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )
+              },
               {
                 id:"logbook", icon:"📋", label:"Service-Logbuch", count:vLog.length,
                 action:isOwn?()=>setShowAddLog(v.id):null, actionLabel:"+ Eintrag",
@@ -5258,6 +5352,34 @@ Regeln:
                 <input className="inp" placeholder="Notizen" style={{marginBottom:16}}
                   value={addLogForm.notes} onChange={e=>setAddLogForm(p=>({...p,notes:e.target.value}))}/>
                 <button className="btn" style={{width:"100%"}} onClick={()=>addLogEntry(v.id)}>Speichern ✓</button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Verkaufsbörse: Angebot hinzufügen/bearbeiten ── */}
+          {showAddListing&&(typeof showAddListing==="object"?showAddListing.vehicleId:showAddListing)===v.id&&(
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddListing(null);}}>
+              <div className="sheet">
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:16}}>
+                  {typeof showAddListing==="object"&&showAddListing.editId ? "Angebot bearbeiten" : "Neues Angebot"}
+                </div>
+                <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Kategorie</div>
+                <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+                  {Object.entries(LISTING_CATEGORY_LABELS).map(([key,label])=>(
+                    <button key={key} onClick={()=>setListingForm(p=>({...p,category:key}))}
+                      style={{padding:"8px 14px",borderRadius:8,border:`1.5px solid ${listingForm.category===key?C.gold:C.border}`,
+                        background:listingForm.category===key?`${C.gold}22`:"transparent",
+                        color:listingForm.category===key?C.gold:C.muted,fontSize:12,fontWeight:700,
+                        cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <textarea className="inp" placeholder="Beschreibung (Preis, Zustand, Details …)" rows={4} style={{marginBottom:16,resize:"vertical"}}
+                  value={listingForm.description} onChange={e=>setListingForm(p=>({...p,description:e.target.value}))}/>
+                <button className="btn" style={{width:"100%"}} onClick={saveListing}>
+                  {typeof showAddListing==="object"&&showAddListing.editId ? "Speichern ✓" : "Inserieren ✓"}
+                </button>
               </div>
             </div>
           )}
@@ -6766,6 +6888,7 @@ Regeln:
                   <option value="all">Alle</option>
                   <option value="porsche">Porsche</option>
                   <option value="favoriten">❤️ Favoriten</option>
+                  <option value="zumverkauf">💰 Zum Verkauf</option>
                 </select>
               </div>
               {(()=>{
@@ -6775,6 +6898,7 @@ Regeln:
                 const filtered = allVehicles.filter(v=>{
                   if(f==="favoriten" && !isFavorite(v.id)) return false;
                   if(f==="porsche" && !(v.hersteller||"").toLowerCase().includes("porsche")) return false;
+                  if(f==="zumverkauf" && !(listings[v.id]||[]).length) return false;
                   if(q) return `${v.hersteller||""} ${v.modell||""} ${v.kennzeichen||""} ${v.baujahr||""}`.toLowerCase().includes(q);
                   return true;
                 });
@@ -6824,6 +6948,8 @@ Regeln:
                               <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
                               {(owner?.name||v.ownerName)&&<span style={{fontSize:10,color:C.gold,fontWeight:700}}>{owner?.name||v.ownerName}</span>}
                               {owner?.isAdmin&&<span style={{fontSize:10,color:C.gold,fontWeight:700}}>🏆</span>}
+                              {(listings[v.id]||[]).length>0&&
+                                <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:4,padding:"1px 6px",fontSize:10,fontWeight:800}}>💰 Zum Verkauf</span>}
                             </div>
                           </div>
                           <div style={{display:"flex",alignItems:"center",paddingRight:14}}>
