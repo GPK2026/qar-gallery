@@ -1519,6 +1519,7 @@ function PCNInner() {
     try { return JSON.parse(store.getItem("pcn_deleted_threads")||"[]"); } catch(e){ return []; }
   });
   const [viewV, setViewV]         = useState(null);
+  const [photoManagerVehicle, setPhotoManagerVehicle] = useState(null); // vehicleId für screen==="photos"
   const [viewEv, setViewEv]       = useState(null);
   const [publicV, setPublicV]     = useState(null);
   const [recentVehicles, setRecentVehicles] = useState(() => {
@@ -4543,42 +4544,29 @@ Regeln:
                 </div>
                 {/* Thumbnail strip — direkt unter Hero, scrollbar */}
                 {imgs.length>=1&&(
-                  <div style={{display:"flex",gap:6,overflowX:"auto",padding:"8px 10px",background:"#0a0a0a",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
-                    {imgs.map((img,i)=>(
-                      <div key={i} style={{position:"relative",flexShrink:0}}>
-                        <img src={img} alt="" onClick={()=>{goTo(i);setLightbox({images:imgs,index:i});}}
-                          style={{width:90,height:64,objectFit:"cover",borderRadius:8,cursor:"pointer",display:"block",
-                            border:`2.5px solid ${i===cur?C.red:"transparent"}`,
-                            opacity:i===cur?1:0.7,transition:"all .15s"}}
-                          onError={e=>e.target.style.display="none"}/>
-                        {i===0&&<div style={{position:"absolute",top:2,left:2,fontSize:10,background:"rgba(0,0,0,.6)",borderRadius:4,padding:"1px 4px"}}>👑</div>}
-                        {isOwn&&i!==0&&(
-                          <button onClick={async e=>{
-                            e.stopPropagation();
-                            const imgs2=[...imgs]; const img2=imgs2[i];
-                            imgs2.splice(i,1); imgs2.unshift(img2);
-                            const updated={...v,images:imgs2,image:img2};
-                            setVehicles(prev=>({...prev,[v.id]:updated}));
-                            if(viewV?.id===v.id) setViewV(updated);
-                            goTo(0);
-                            const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
-                            toast_("Titelbild gesetzt 👑");
-                          }} style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(200,169,110,.9)",border:"none",borderRadius:"0 0 6px 6px",padding:"2px",color:"#000",fontSize:8,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                            👑 Titelbild
-                          </button>
-                        )}
-                        {isOwn&&(
-                          <button onClick={e=>{e.stopPropagation();removeImageFromVehicle(v.id,i);}}
-                            style={{position:"absolute",top:-4,right:-4,background:C.red,border:"2px solid #0a0a0a",color:"#fff",fontSize:9,width:17,height:17,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</button>
-                        )}
-                      </div>
-                    ))}
+                  <div style={{padding:"8px 10px",background:"#0a0a0a"}}>
+                    <div style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",marginBottom:isOwn?8:0}}>
+                      {imgs.map((img,i)=>(
+                        <div key={i} style={{position:"relative",flexShrink:0}}>
+                          <img src={img} alt="" onClick={()=>{goTo(i);setLightbox({images:imgs,index:i});}}
+                            style={{width:90,height:64,objectFit:"cover",borderRadius:8,cursor:"pointer",display:"block",
+                              border:`2.5px solid ${i===cur?C.red:"transparent"}`,
+                              opacity:i===cur?1:0.7,transition:"all .15s"}}
+                            onError={e=>e.target.style.display="none"}/>
+                          {i===0&&<div style={{position:"absolute",top:2,left:2,fontSize:10,background:"rgba(0,0,0,.6)",borderRadius:4,padding:"1px 4px"}}>👑</div>}
+                        </div>
+                      ))}
+                    </div>
+                    {/* Bearbeiten (Titelbild setzen, löschen, hinzufügen) passiert bewusst
+                        NICHT direkt in dieser Ansichts-Galerie, sondern in einem eigenen,
+                        klar getrennten Bildschirm — siehe screen==="photos". */}
                     {isOwn&&(
-                      <label style={{width:90,height:64,background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,gap:2}}>
-                        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
-                        <span style={{fontSize:22}}>{imgUploading?"⏳":"📷"}</span>
-                        <span style={{fontSize:9,color:C.muted}}>Hinzufügen</span>
-                      </label>
+                      <button onClick={()=>{setPhotoManagerVehicle(v.id);setScreen("photos");}}
+                        style={{width:"100%",background:"none",border:`1px solid ${C.border}`,borderRadius:8,
+                          padding:"8px",color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",
+                          fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        ✏️ Fotos verwalten
+                      </button>
                     )}
                   </div>
                 )}
@@ -5593,6 +5581,80 @@ Regeln:
           </div>
         </div>
       )}
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // FOTOS VERWALTEN — eigener, dedizierter Bearbeitungsbildschirm.
+  // Bewusst getrennt von der Fahrzeugakte selbst: Dort ist die Bilderleiste
+  // eine reine Ansicht zum Durchblättern; alle bearbeitenden Aktionen
+  // (Titelbild setzen, löschen, hinzufügen) leben ausschließlich hier.
+  // ══════════════════════════════════════════════════════════════════════════════
+  if(screen==="photos"&&photoManagerVehicle){
+    const v = vehicles[photoManagerVehicle];
+    if(!v) { setScreen("app"); return null; }
+    const isOwn = v.owner===me?.email || v.userId===me?.id || v.userId===me?.email;
+    if(!isOwn) { setScreen("app"); return null; } // Sicherheitsnetz — nur der Eigentümer darf hier rein
+    const imgs = getImages(v);
+    return (
+      <div style={{minHeight:"100vh",background:C.black,paddingBottom:40}}>
+        <div style={{position:"sticky",top:0,zIndex:10,background:C.black,borderBottom:`1px solid ${C.border}`,
+          padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
+          <button onClick={()=>{setScreen("vehicle");setPhotoManagerVehicle(null);}}
+            style={{background:"none",border:"none",color:C.white,fontSize:20,cursor:"pointer",padding:0}}>←</button>
+          <div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:800,color:C.white}}>Fotos verwalten</div>
+            <div style={{fontSize:11,color:C.muted}}>{v.hersteller} {v.modell}</div>
+          </div>
+        </div>
+
+        <div style={{padding:16}}>
+          <div style={{fontSize:11,color:C.muted,lineHeight:1.6,marginBottom:16}}>
+            👑 Titelbild antippen zum Setzen · ✕ zum Löschen · Neues Foto unten hinzufügen
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+            {imgs.map((img,i)=>(
+              <div key={i} style={{position:"relative",aspectRatio:"1"}}>
+                <img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:10,
+                  border:i===0?`2.5px solid ${C.gold}`:`1px solid ${C.border}`}}
+                  onError={e=>e.target.style.display="none"}/>
+                {i===0
+                  ? <div style={{position:"absolute",top:4,left:4,background:C.gold,color:"#0a0a0a",
+                      fontSize:10,fontWeight:800,borderRadius:6,padding:"2px 6px"}}>👑 Titelbild</div>
+                  : <button onClick={async()=>{
+                      const imgs2=[...imgs]; const img2=imgs2[i];
+                      imgs2.splice(i,1); imgs2.unshift(img2);
+                      const updated={...v,images:imgs2,image:img2};
+                      setVehicles(prev=>({...prev,[v.id]:updated}));
+                      if(viewV?.id===v.id) setViewV(updated);
+                      const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
+                      toast_("Titelbild gesetzt 👑");
+                    }} style={{position:"absolute",top:4,left:4,background:"rgba(0,0,0,.75)",
+                      border:`1px solid ${C.border}`,color:C.white,fontSize:10,fontWeight:700,
+                      borderRadius:6,padding:"3px 7px",cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      👑 Setzen
+                    </button>
+                }
+                <button onClick={async()=>{
+                    if(imgs.length<=1){ toast_("Mindestens ein Foto muss bleiben","err"); return; }
+                    await removeImageFromVehicle(v.id,i);
+                    toast_("Foto gelöscht");
+                  }} style={{position:"absolute",top:4,right:4,background:C.red,border:"2px solid #0a0a0a",
+                    color:"#fff",fontSize:12,width:24,height:24,borderRadius:"50%",cursor:"pointer",
+                    display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</button>
+              </div>
+            ))}
+            <label style={{aspectRatio:"1",background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:10,
+              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:4}}>
+              <input type="file" accept="image/*" style={{display:"none"}}
+                onChange={e=>{const f=e.target.files?.[0]; if(f) handleImageUpload(f,url=>addImageToVehicle(v.id,url));}}/>
+              <span style={{fontSize:26}}>{imgUploading?"⏳":"📷"}</span>
+              <span style={{fontSize:11,color:C.muted,fontWeight:700}}>Hinzufügen</span>
+            </label>
+          </div>
+        </div>
       </div>
     );
   }
