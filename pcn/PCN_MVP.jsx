@@ -1959,6 +1959,12 @@ function PCNInner() {
     const imgs = v.images || (v.image ? [v.image] : []);
     return imgs.filter(Boolean);
   };
+  // Einzige Quelle der Wahrheit für das Titelbild — immer images[0] (mit
+  // Fallback auf das ältere Einzelfeld v.image für Altdaten). Wird überall
+  // verwendet, wo bisher inkonsistent mal v.image, mal images[0] direkt
+  // gelesen wurde — das war die eigentliche Ursache dafür, dass ein neu
+  // gesetztes Titelbild nicht überall gleichzeitig ankam.
+  const getCoverImage = (v) => v ? (getImages(v)[0] || null) : null;
 
   const addImageToVehicle = async (vehicleId, dataUrl) => {
     const v = vehicles[vehicleId]; if(!v) return;
@@ -3879,10 +3885,8 @@ Regeln:
             // Show gallery unless explicitly disabled (undefined = show by default)
             const galleryEnabled = priv.pub_gallery !== false;
             const img = galleryEnabled && (
-              (v.images&&v.images[0]) ||
-              v.image ||
-              (DEMO_VEHICLES[v.id]?.images?.[0]) ||
-              (DEMO_VEHICLES[v.id]?.image)
+              getCoverImage(v) ||
+              getCoverImage(DEMO_VEHICLES[v.id])
             );
             if(img) return (
               <img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}
@@ -4548,7 +4552,7 @@ Regeln:
                             opacity:i===cur?1:0.7,transition:"all .15s"}}
                           onError={e=>e.target.style.display="none"}/>
                         {i===0&&<div style={{position:"absolute",top:2,left:2,fontSize:10,background:"rgba(0,0,0,.6)",borderRadius:4,padding:"1px 4px"}}>👑</div>}
-                        {isOwn&&i===cur&&i!==0&&(
+                        {isOwn&&i!==0&&(
                           <button onClick={async e=>{
                             e.stopPropagation();
                             const imgs2=[...imgs]; const img2=imgs2[i];
@@ -5898,7 +5902,7 @@ Regeln:
                   onClick={()=>{setViewV(v);setScreen("vehicle");}}>
                   {/* Bild oben, breit */}
                   <div style={{width:"100%",height:160,overflow:"hidden",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-                    {v.image?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:48}}>🏎️</span>}
+                    {getCoverImage(v)?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:48}}>🏎️</span>}
                     {/* Kennzeichen-Badge bottom-left */}
                     <div style={{position:"absolute",bottom:10,left:12}}>
                       <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"2px 9px",fontSize:11,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif",boxShadow:"0 1px 4px rgba(0,0,0,.4)"}}>
@@ -5947,8 +5951,8 @@ Regeln:
                         }}>
                         <div style={{height:100,overflow:"hidden",background:"#111",position:"relative",
                           display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {v.image
-                            ?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                          {getCoverImage(v)
+                            ?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
                             :<span style={{fontSize:30}}>🏎️</span>}
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
                             style={{position:"absolute",top:5,right:5,background:"rgba(0,0,0,.6)",
@@ -5997,8 +6001,8 @@ Regeln:
                           style={{cursor:"pointer",borderRadius:10,overflow:"hidden",
                             border:`1px solid ${C.border}`,background:C.card}}>
                           <div style={{height:80,overflow:"hidden",background:"#111",position:"relative"}}>
-                            {rv.image
-                              ? <img src={rv.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                            {getCoverImage(rv)
+                              ? <img src={getCoverImage(rv)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
                               : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",fontSize:28}}>🚗</div>}
                             {/* ✕ sitzt sauber in der oberen rechten Ecke des Bildes */}
                             <button
@@ -6742,7 +6746,7 @@ Regeln:
                         <div key={v.id} style={{background:C.card,border:`1px solid ${isFavorite(v.id)?C.red+"44":C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",cursor:"pointer",display:"flex"}}
                           onClick={()=>{setPublicV({...v,privacy:{...DEF_PRIVACY,...priv}});setScreen("public");}}>
                           <div style={{width:88,height:88,overflow:"hidden",background:"#111",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-                            {v.image?<img src={v.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:28}}>🏎️</span>}
+                            {getCoverImage(v)?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:28}}>🏎️</span>}
                             <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
                               style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,.6)",border:"none",borderRadius:"50%",
                                 width:24,height:24,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -6804,8 +6808,8 @@ Regeln:
                         }}>
                         <div style={{height:104,overflow:"hidden",background:"#111",position:"relative",
                           display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {fv.image
-                            ?<img src={fv.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                          {getCoverImage(fv)
+                            ?<img src={getCoverImage(fv)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
                             :<span style={{fontSize:32}}>🏎️</span>}
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(fv.id);}}
                             style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.65)",
@@ -6855,8 +6859,8 @@ Regeln:
                           style={{flexShrink:0,width:120,cursor:"pointer"}}>
                           <div style={{width:120,height:80,borderRadius:10,overflow:"hidden",background:"#111",
                             display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6,position:"relative"}}>
-                            {rv.image
-                              ?<img src={rv.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            {getCoverImage(rv)
+                              ?<img src={getCoverImage(rv)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                               :<span style={{fontSize:28}}>🏎️</span>}
                             <button onClick={e=>{e.stopPropagation();toggleFavorite(id);}}
                               style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,.6)",border:"none",
