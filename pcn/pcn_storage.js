@@ -918,6 +918,42 @@ const PCN_STORAGE = (() => {
       return await supabase._post("logbook", row);
     },
 
+    // ── Verkaufsboerse ──
+    // Eigene, einfache Tabelle statt Erweiterung des Live-Status-Systems,
+    // weil mehrere gleichzeitige Angebote pro Fahrzeug moeglich sein sollen
+    // (z.B. "Auto" UND "Felgen" getrennt) - anders als der Live-Status.
+    async getListings(vehicleId) {
+      const res = await supabase._q("vehicle_listings","?vehicle_id=eq."+vehicleId+"&order=created_at.desc");
+      if(res.error || !res.data) return res;
+      const mapped = res.data.map(r => ({
+        id: r.id, vehicleId: r.vehicle_id, category: r.category,
+        description: r.description, createdAt: r.created_at, updatedAt: r.updated_at,
+      }));
+      return { data: mapped };
+    },
+    async getAllListings() {
+      // Für die Community-Übersicht — alle aktiven Angebote aller Mitglieder
+      // auf einmal, statt pro Fahrzeug einzeln nachzufragen.
+      const res = await supabase._q("vehicle_listings","?order=created_at.desc&select=*");
+      if(res.error || !res.data) return res;
+      const mapped = res.data.map(r => ({
+        id: r.id, vehicleId: r.vehicle_id, category: r.category,
+        description: r.description, createdAt: r.created_at, updatedAt: r.updated_at,
+      }));
+      return { data: mapped };
+    },
+    async addListing(vehicleId, category, description) {
+      const row = { vehicle_id: vehicleId, category, description: description||null, created_at: now(), updated_at: now() };
+      return await supabase._post("vehicle_listings", row);
+    },
+    async updateListing(listingId, category, description) {
+      return await supabase._patch("vehicle_listings","id=eq."+listingId,
+        { category, description: description||null, updated_at: now() });
+    },
+    async removeListing(listingId) {
+      return await supabase._delete("vehicle_listings","id=eq."+listingId);
+    },
+
     // ── Reminders ──
     async getReminders(userId) {
       return await supabase._q("reminders","?user_id=eq."+userId+"&done=eq.false&order=date.asc");
@@ -1236,6 +1272,14 @@ function guard(label, fn){
       getStatus:  (vid)    => db.getStatus(vid),
       setStatus:  guard("vehicles.setStatus",   (vid, s) => db.setStatus(vid, s)),
       clearStatus:guard("vehicles.clearStatus", (vid,sid)  => db.clearStatus(vid,sid)),
+    },
+    listings: {
+      // Verkaufsboerse — mehrere gleichzeitige Angebote pro Fahrzeug möglich
+      list:    (vid)       => db.getListings(vid),
+      listAll: ()           => db.getAllListings ? db.getAllListings() : Promise.resolve({data:[]}),
+      add:     guard("listings.add",    (vid, cat, desc) => db.addListing(vid, cat, desc)),
+      update:  guard("listings.update", (lid, cat, desc) => db.updateListing(lid, cat, desc)),
+      remove:  guard("listings.remove", (lid)            => db.removeListing(lid)),
     },
     members: {
       // Minimale, nicht-sensible Liste aller Mitglieder für Namensanzeige
