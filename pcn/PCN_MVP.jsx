@@ -6232,6 +6232,9 @@ Regeln:
                           {getCoverImage(v)
                             ?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
                             :<span style={{fontSize:30}}>🏎️</span>}
+                          {(listings[v.id]||[]).length>0&&
+                            <div style={{position:"absolute",bottom:5,left:5,background:C.gold,color:"#0a0a0a",
+                              borderRadius:4,padding:"1px 6px",fontSize:9,fontWeight:800}}>💰 Zum Verkauf</div>}
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
                             style={{position:"absolute",top:5,right:5,background:"rgba(0,0,0,.6)",
                               border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",
@@ -6282,6 +6285,9 @@ Regeln:
                             {getCoverImage(rv)
                               ? <img src={getCoverImage(rv)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
                               : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",fontSize:28}}>🚗</div>}
+                            {(listings[rv.id]||[]).length>0&&
+                              <div style={{position:"absolute",bottom:4,left:4,background:C.gold,color:"#0a0a0a",
+                                borderRadius:4,padding:"1px 5px",fontSize:9,fontWeight:800}}>💰 Zum Verkauf</div>}
                             {/* ✕ sitzt sauber in der oberen rechten Ecke des Bildes */}
                             <button
                               onClick={e=>{
@@ -7093,6 +7099,9 @@ Regeln:
                           {getCoverImage(fv)
                             ?<img src={getCoverImage(fv)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
                             :<span style={{fontSize:32}}>🏎️</span>}
+                          {(listings[fv.id]||[]).length>0&&
+                            <div style={{position:"absolute",bottom:5,left:5,background:C.gold,color:"#0a0a0a",
+                              borderRadius:4,padding:"1px 6px",fontSize:9,fontWeight:800}}>💰 Zum Verkauf</div>}
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(fv.id);}}
                             style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.65)",
                               border:"none",borderRadius:"50%",width:28,height:28,cursor:"pointer",
@@ -7144,6 +7153,9 @@ Regeln:
                             {getCoverImage(rv)
                               ?<img src={getCoverImage(rv)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                               :<span style={{fontSize:28}}>🏎️</span>}
+                            {(listings[rv.id]||[]).length>0&&
+                              <div style={{position:"absolute",bottom:4,left:4,background:C.gold,color:"#0a0a0a",
+                                borderRadius:4,padding:"1px 5px",fontSize:9,fontWeight:800}}>💰 Zum Verkauf</div>}
                             <button onClick={e=>{e.stopPropagation();toggleFavorite(id);}}
                               style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,.6)",border:"none",
                                 borderRadius:"50%",width:24,height:24,cursor:"pointer",fontSize:13,display:"flex",
