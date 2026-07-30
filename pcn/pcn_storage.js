@@ -927,7 +927,8 @@ const PCN_STORAGE = (() => {
       if(res.error || !res.data) return res;
       const mapped = res.data.map(r => ({
         id: r.id, vehicleId: r.vehicle_id, category: r.category,
-        description: r.description, createdAt: r.created_at, updatedAt: r.updated_at,
+        description: r.description, price: r.price!=null?Number(r.price):null,
+        images: r.images||[], createdAt: r.created_at, updatedAt: r.updated_at,
       }));
       return { data: mapped };
     },
@@ -938,17 +939,19 @@ const PCN_STORAGE = (() => {
       if(res.error || !res.data) return res;
       const mapped = res.data.map(r => ({
         id: r.id, vehicleId: r.vehicle_id, category: r.category,
-        description: r.description, createdAt: r.created_at, updatedAt: r.updated_at,
+        description: r.description, price: r.price!=null?Number(r.price):null,
+        images: r.images||[], createdAt: r.created_at, updatedAt: r.updated_at,
       }));
       return { data: mapped };
     },
-    async addListing(vehicleId, category, description) {
-      const row = { vehicle_id: vehicleId, category, description: description||null, created_at: now(), updated_at: now() };
+    async addListing(vehicleId, category, description, price=null, images=[]) {
+      const row = { vehicle_id: vehicleId, category, description: description||null,
+        price, images, created_at: now(), updated_at: now() };
       return await supabase._post("vehicle_listings", row);
     },
-    async updateListing(listingId, category, description) {
+    async updateListing(listingId, category, description, price=null, images=[]) {
       return await supabase._patch("vehicle_listings","id=eq."+listingId,
-        { category, description: description||null, updated_at: now() });
+        { category, description: description||null, price, images, updated_at: now() });
     },
     async removeListing(listingId) {
       return await supabase._delete("vehicle_listings","id=eq."+listingId);
@@ -1277,8 +1280,8 @@ function guard(label, fn){
       // Verkaufsboerse — mehrere gleichzeitige Angebote pro Fahrzeug möglich
       list:    (vid)       => db.getListings(vid),
       listAll: ()           => db.getAllListings ? db.getAllListings() : Promise.resolve({data:[]}),
-      add:     guard("listings.add",    (vid, cat, desc) => db.addListing(vid, cat, desc)),
-      update:  guard("listings.update", (lid, cat, desc) => db.updateListing(lid, cat, desc)),
+      add:     guard("listings.add",    (vid, cat, desc, price, images) => db.addListing(vid, cat, desc, price, images)),
+      update:  guard("listings.update", (lid, cat, desc, price, images) => db.updateListing(lid, cat, desc, price, images)),
       remove:  guard("listings.remove", (lid)            => db.removeListing(lid)),
     },
     members: {
