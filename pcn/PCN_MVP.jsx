@@ -1493,7 +1493,7 @@ function PCNInner() {
   // Verkaufsboerse: { [vehicleId]: [{id,category,description,...}, ...] }
   const [listings, setListings]   = useState({});
   const [showAddListing, setShowAddListing] = useState(null); // vehicleId, oder {vehicleId, editId} beim Bearbeiten
-  const [listingForm, setListingForm] = useState({category:"auto", description:""});
+  const [listingForm, setListingForm] = useState({category:"auto", description:"", price:"", images:[], linkedVehicleId:""});
   const [reminders, setReminders] = useState([]);
   const [participants, setParticipants] = useState({});
   const [events, setEvents]       = useState({});
@@ -1892,6 +1892,16 @@ function PCNInner() {
       toast_(`⚠️ Status nur lokal sichtbar — Speichern fehlgeschlagen`);
     } else {
       toast_(`Status gesetzt: "${text}"`);
+      // Synchronisation: "Zu verkaufen"-Status legt automatisch ein "Auto"-
+      // Angebot in der Verkaufsbörse an, falls noch keins existiert — siehe
+      // saveListing() für die umgekehrte Richtung.
+      if(text==="Zu verkaufen" && DB && !isDemo){
+        const existing = (listings[vehicleId]||[]).some(l=>l.category==="auto");
+        if(!existing){
+          const {data} = await DB.listings.add(vehicleId, "auto", "", null, []).catch(()=>({data:null}));
+          if(data) setListings(prev=>({...prev,[vehicleId]:[data,...(prev[vehicleId]||[])]}));
+        }
+      }
     }
   };
 
@@ -3019,41 +3029,67 @@ Regeln:
   const saveListing = async () => {
     const target = showAddListing;
     if(!target) return;
-    const vehicleId = typeof target==="object" ? target.vehicleId : target;
+    const openVehicleId = typeof target==="object" ? target.vehicleId : target;
     const editId = typeof target==="object" ? target.editId : null;
+    // Bei Kategorie "auto" bestimmt die Flotten-Auswahl das eigentliche Ziel-
+    // fahrzeug — kann von dem Fahrzeug abweichen, dessen Akte gerade offen ist.
+    const targetVehicleId = listingForm.category==="auto"
+      ? (listingForm.linkedVehicleId || openVehicleId)
+      : openVehicleId;
+    const priceNum = listingForm.price!=="" && listingForm.price!=null ? Number(listingForm.price) : null;
+    const payload = {
+      category: listingForm.category,
+      description: listingForm.description,
+      price: priceNum,
+      images: listingForm.images||[],
+    };
     const DB=window.PCN_DB;
     if(isDemo){
       // Demo-Modus: nur lokal, nichts in die echte DB schreiben
       if(editId){
-        setListings(prev=>({...prev,[vehicleId]:(prev[vehicleId]||[]).map(l=>l.id===editId?{...l,...listingForm}:l)}));
+        setListings(prev=>({...prev,[targetVehicleId]:(prev[targetVehicleId]||[]).map(l=>l.id===editId?{...l,...payload}:l)}));
       } else {
-        setListings(prev=>({...prev,[vehicleId]:[{id:"demo_"+Date.now(),vehicleId,...listingForm},...(prev[vehicleId]||[])]}));
+        setListings(prev=>({...prev,[targetVehicleId]:[{id:"demo_"+Date.now(),vehicleId:targetVehicleId,...payload},...(prev[targetVehicleId]||[])]}));
       }
-      setShowAddListing(null); setListingForm({category:"auto",description:""});
+      setShowAddListing(null); setListingForm({category:"auto",description:"",price:"",images:[],linkedVehicleId:""});
       toast_("Angebot gespeichert (Demo — nicht dauerhaft)");
       return;
     }
     if(editId){
-      const {error} = await DB.listings.update(editId, listingForm.category, listingForm.description);
+      const {error} = await DB.listings.update(editId, payload.category, payload.description, payload.price, payload.images);
       if(error){ toast_("Fehler beim Speichern","err"); return; }
-      setListings(prev=>({...prev,[vehicleId]:(prev[vehicleId]||[]).map(l=>l.id===editId?{...l,...listingForm}:l)}));
+      setListings(prev=>({...prev,[targetVehicleId]:(prev[targetVehicleId]||[]).map(l=>l.id===editId?{...l,...payload}:l)}));
       toast_("Angebot aktualisiert ✓");
     } else {
-      const {data,error} = await DB.listings.add(vehicleId, listingForm.category, listingForm.description);
+      const {data,error} = await DB.listings.add(targetVehicleId, payload.category, payload.description, payload.price, payload.images);
       if(error){ toast_("Fehler beim Speichern","err"); return; }
-      setListings(prev=>({...prev,[vehicleId]:[data,...(prev[vehicleId]||[])]}));
-      toast_(`${LISTING_CATEGORY_LABELS[listingForm.category]} inseriert ✓`);
+      setListings(prev=>({...prev,[targetVehicleId]:[data,...(prev[targetVehicleId]||[])]}));
+      toast_(`${LISTING_CATEGORY_LABELS[payload.category]} inseriert ✓`);
+      // Synchronisation: ein neues "Auto"-Angebot setzt automatisch den
+      // "Zu verkaufen"-Live-Status, falls er nicht schon aktiv ist —
+      // siehe setStatus() für die umgekehrte Richtung.
+      if(payload.category==="auto"){
+        const alreadyForSale = (getActiveStatus(targetVehicleId)||[]).some(s=>s.text==="Zu verkaufen");
+        if(!alreadyForSale) await setStatus(targetVehicleId, {icon:"💰", text:"Zu verkaufen"});
+      }
     }
-    setShowAddListing(null); setListingForm({category:"auto",description:""});
+    setShowAddListing(null); setListingForm({category:"auto",description:"",price:"",images:[],linkedVehicleId:""});
   };
 
   const removeListing = async (vehicleId, listingId) => {
     const DB=window.PCN_DB;
+    const removed = (listings[vehicleId]||[]).find(l=>l.id===listingId);
     if(!isDemo && DB){
       const {error} = await DB.listings.remove(listingId);
       if(error){ toast_("Fehler beim Löschen","err"); return; }
     }
     setListings(prev=>({...prev,[vehicleId]:(prev[vehicleId]||[]).filter(l=>l.id!==listingId)}));
+    // Synchronisation: wird das "Auto"-Angebot entfernt, verschwindet auch
+    // der zugehörige "Zu verkaufen"-Live-Status, damit beide konsistent bleiben.
+    if(removed?.category==="auto"){
+      const saleSlot = (getActiveStatus(vehicleId)||[]).find(s=>s.text==="Zu verkaufen");
+      if(saleSlot) await clearStatus(vehicleId, saleSlot.id);
+    }
     toast_("Angebot entfernt");
   };
 
@@ -4829,7 +4865,7 @@ Regeln:
             const sections = [
               {
                 id:"listings", icon:"💰", label:"Verkaufsbörse", count:vListings.length,
-                action:isOwn?()=>{setShowAddListing(v.id);setListingForm({category:"auto",description:""});}:null,
+                action:isOwn?()=>{setShowAddListing(v.id);setListingForm({category:"auto",description:"",price:"",images:[],linkedVehicleId:v.id});}:null,
                 actionLabel:"+ Angebot",
                 content:(
                   <div>
@@ -4839,13 +4875,23 @@ Regeln:
                         </div>
                       :vListings.map(l=>(
                         <div key={l.id} style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                          {(l.images||[])[0]&&
+                            <img src={l.images[0]} alt="" style={{width:48,height:48,objectFit:"cover",borderRadius:8,flexShrink:0}}/>}
                           <div style={{flex:1,minWidth:0}}>
-                            <span style={{fontWeight:700,fontSize:14,color:C.white}}>{LISTING_CATEGORY_LABELS[l.category]}</span>
+                            <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                              <span style={{fontWeight:700,fontSize:14,color:C.white}}>{LISTING_CATEGORY_LABELS[l.category]}</span>
+                              {l.price!=null&&<span style={{fontSize:13,fontWeight:800,color:C.gold}}>{l.price} €</span>}
+                            </div>
                             {l.description&&<div style={{fontSize:12,color:"#888",lineHeight:1.5,marginTop:3}}>{l.description}</div>}
                           </div>
                           {isOwn&&(
                             <div style={{display:"flex",gap:6,flexShrink:0}}>
-                              <button onClick={()=>{setShowAddListing({vehicleId:v.id,editId:l.id});setListingForm({category:l.category,description:l.description||""});}}
+                              <button onClick={()=>{
+                                  setShowAddListing({vehicleId:v.id,editId:l.id});
+                                  setListingForm({category:l.category,description:l.description||"",
+                                    price:l.price!=null?String(l.price):"",images:l.images||[],
+                                    linkedVehicleId:l.vehicleId||v.id});
+                                }}
                                 style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:11,cursor:"pointer"}}>✏️</button>
                               <button onClick={()=>removeListing(v.id,l.id)}
                                 style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.red,fontSize:11,cursor:"pointer"}}>✕</button>
@@ -5375,8 +5421,56 @@ Regeln:
                     </button>
                   ))}
                 </div>
-                <textarea className="inp" placeholder="Beschreibung (Preis, Zustand, Details …)" rows={4} style={{marginBottom:16,resize:"vertical"}}
+
+                {/* Bei "Auto": Auswahl aus der eigenen Flotte statt Freitext —
+                    stellt sicher, dass bewusst das richtige Fahrzeug gewählt
+                    wird, unabhängig davon, in wessen Akte man sich gerade befindet. */}
+                {listingForm.category==="auto"&&(
+                  <>
+                    <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Welches Fahrzeug?</div>
+                    <select className="inp" style={{marginBottom:14}}
+                      value={listingForm.linkedVehicleId||v.id}
+                      onChange={e=>setListingForm(p=>({...p,linkedVehicleId:e.target.value}))}>
+                      {myVehicles.map(mv=>(
+                        <option key={mv.id} value={mv.id}>{mv.hersteller} {mv.modell} {mv.kennzeichen?`(${mv.kennzeichen})`:""}</option>
+                      ))}
+                    </select>
+                  </>
+                )}
+
+                {/* Bei Felgen/Reifen und Sonstiges: Bild-Upload, da hier kein
+                    eigenes Fahrzeug mit vorhandenen Fotos existiert. */}
+                {(listingForm.category==="felgen_reifen"||listingForm.category==="sonstiges")&&(
+                  <>
+                    <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Foto</div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+                      {(listingForm.images||[]).map((img,i)=>(
+                        <div key={i} style={{position:"relative"}}>
+                          <img src={img} alt="" style={{width:72,height:72,objectFit:"cover",borderRadius:8}}/>
+                          <button onClick={()=>setListingForm(p=>({...p,images:p.images.filter((_,j)=>j!==i)}))}
+                            style={{position:"absolute",top:-4,right:-4,background:C.red,border:"2px solid #0a0a0a",
+                              color:"#fff",fontSize:9,width:17,height:17,borderRadius:"50%",cursor:"pointer",
+                              display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</button>
+                        </div>
+                      ))}
+                      <label style={{width:72,height:72,background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:8,
+                        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:2}}>
+                        <input type="file" accept="image/*" style={{display:"none"}}
+                          onChange={e=>{const f=e.target.files?.[0]; if(f) handleImageUpload(f,url=>setListingForm(p=>({...p,images:[...(p.images||[]),url]})));}}/>
+                        <span style={{fontSize:20}}>{imgUploading?"⏳":"📷"}</span>
+                      </label>
+                    </div>
+                  </>
+                )}
+
+                <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Preis</div>
+                <input className="inp" type="number" inputMode="decimal" placeholder="€ (leer lassen für VB)" style={{marginBottom:14}}
+                  value={listingForm.price} onChange={e=>setListingForm(p=>({...p,price:e.target.value}))}/>
+
+                <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Beschreibung</div>
+                <textarea className="inp" placeholder="Zustand, Details, Kontaktwunsch …" rows={3} style={{marginBottom:16,resize:"vertical"}}
                   value={listingForm.description} onChange={e=>setListingForm(p=>({...p,description:e.target.value}))}/>
+
                 <button className="btn" style={{width:"100%"}} onClick={saveListing}>
                   {typeof showAddListing==="object"&&showAddListing.editId ? "Speichern ✓" : "Inserieren ✓"}
                 </button>
