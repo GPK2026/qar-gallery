@@ -95,6 +95,10 @@ const DEF_PRIVACY = {
   kilometerstand:false, zustand:false, tuev_faelligkeit:false,
   besonderheiten:false,
   pub_logbook:false, pub_events:false, pub_phone:false, pub_gallery:false,
+  // Live-Status (inkl. "Zu verkaufen") — Standard: sichtbar, damit sich für
+  // bestehende Nutzer nichts Unerwartetes ändert. Bewusst EIN Schalter für
+  // alle Status-Typen, nicht nur für den Verkaufsstatus.
+  pub_status:true,
 };
 
 // ─── QR Code (Real, scannable — uses bundled qrcode.js library) ──────────────
@@ -4037,8 +4041,10 @@ Regeln:
         <div style={{padding:"12px 14px",background:C.dark,borderBottom:`1px solid ${C.border}`}}>
           <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:520,margin:"0 auto"}}>
 
-          {/* ── Status Banner — shows all active slots ── */}
-            {(()=>{
+          {/* ── Status Banner — shows all active slots, respecting the
+               pub_status privacy toggle (defaults to visible for existing
+               users who haven't changed their settings) ── */}
+            {priv.pub_status!==false&&(()=>{
               const rawSlots = vehicleStatus[v.id];
               // Normalize to array
               const allSlots = !rawSlots ? [] : Array.isArray(rawSlots) ? rawSlots : [rawSlots];
@@ -5126,7 +5132,7 @@ Regeln:
               {[
                 ["Basis",[["kennzeichen","Kennzeichen"],["farbe","Farbe"],["kraftstoff","Kraftstoff"],["getriebe","Getriebe"],["baujahr","Baujahr"]]],
                 ["Details",[["kilometerstand","Kilometerstand"],["tuev_faelligkeit","TÜV-Datum"],["zustand","Zustand"],["marktwert","Marktwert"],["besonderheiten","Besonderheiten ✨"]]],
-                ["Abschnitte",[["pub_gallery","Fotogalerie 📸"],["pub_events","Veranstaltungsteilnahmen"],["pub_logbook","Service-Logbuch"]]],
+                ["Abschnitte",[["pub_gallery","Fotogalerie 📸"],["pub_events","Veranstaltungsteilnahmen"],["pub_logbook","Service-Logbuch"],["pub_status","Live-Status (auch \"Zu verkaufen\") ⚡"]]],
                 ["Kontakt",[["pub_phone","Telefonnummer (Direktanruf)"]]],
               ].map(([group,fields])=>(
                 <div key={group} style={{marginBottom:14}}>
