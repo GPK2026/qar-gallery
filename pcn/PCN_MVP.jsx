@@ -4359,6 +4359,21 @@ Regeln:
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:2}}>📍 Live-Status</div>
             <div style={{fontSize:11,color:C.muted,marginBottom:14}}>Bis zu 3 Status-Infos — sichtbar beim QR-Scan</div>
 
+            {/* ── Hinweis: Live-Status ist in der öffentlichen Ansicht deaktiviert ── */}
+            {(()=>{
+              const sv = vehicles[showStatusPicker];
+              const svPriv = sv?.privacy||DEF_PRIVACY;
+              if(svPriv.pub_status===false) return (
+                <div style={{background:`${C.amber}11`,border:`1px solid ${C.amber}44`,borderRadius:10,padding:"10px 12px",marginBottom:14,display:"flex",gap:9,alignItems:"flex-start"}}>
+                  <span style={{fontSize:15,flexShrink:0}}>🔒</span>
+                  <div style={{fontSize:11,color:"#ddb877",lineHeight:1.6}}>
+                    Live-Status ist in deinen Privatsphäre-Einstellungen <b>ausgeblendet</b> — Besucher sehen ihn beim QR-Scan nicht, auch wenn du ihn jetzt setzt.
+                  </div>
+                </div>
+              );
+              return null;
+            })()}
+
             {/* ── Aktive Slots ── */}
             {(()=>{
               const slots = getActiveStatus(showStatusPicker)||[];
@@ -5428,6 +5443,28 @@ Regeln:
                   ))}
                 </div>
 
+                {/* ── Zusammenhang mit Live-Status + Sichtbarkeit — nur bei
+                     Kategorie "auto" relevant, da nur diese den Status
+                     automatisch mitsetzt (siehe saveListing). ── */}
+                {listingForm.category==="auto"&&(()=>{
+                  const targetId = listingForm.linkedVehicleId||v.id;
+                  const tv = vehicles[targetId];
+                  const tvPriv = tv?.privacy||DEF_PRIVACY;
+                  const statusHidden = tvPriv.pub_status===false;
+                  return (
+                    <div style={{background:statusHidden?`${C.amber}11`:`${C.green}0d`,
+                      border:`1px solid ${statusHidden?C.amber+"44":C.green+"33"}`,
+                      borderRadius:9,padding:"10px 12px",marginBottom:14,display:"flex",gap:9,alignItems:"flex-start"}}>
+                      <span style={{fontSize:14,flexShrink:0}}>{statusHidden?"🔒":"💰"}</span>
+                      <div style={{fontSize:11,color:statusHidden?"#ddb877":"#8c8",lineHeight:1.6}}>
+                        {statusHidden
+                          ? <>Setzt automatisch den Live-Status "Zu verkaufen" — der ist aber gerade in den <b>Privatsphäre-Einstellungen ausgeblendet</b>. Besucher sehen weder Status noch dieses Angebot beim QR-Scan.</>
+                          : <>Legt automatisch den Live-Status "Zu verkaufen" für dieses Fahrzeug an — sichtbar beim QR-Scan.</>}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Bei "Auto": Auswahl aus der eigenen Flotte statt Freitext —
                     stellt sicher, dass bewusst das richtige Fahrzeug gewählt
                     wird, unabhängig davon, in wessen Akte man sich gerade befindet. */}
@@ -5652,6 +5689,21 @@ Regeln:
           <div className="sheet" style={{maxHeight:"92vh",overflowY:"auto"}}>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:2}}>📍 Live-Status</div>
             <div style={{fontSize:11,color:C.muted,marginBottom:14}}>Bis zu 3 Status-Infos — sichtbar beim QR-Scan</div>
+
+            {/* ── Hinweis: Live-Status ist in der öffentlichen Ansicht deaktiviert ── */}
+            {(()=>{
+              const sv = vehicles[showStatusPicker];
+              const svPriv = sv?.privacy||DEF_PRIVACY;
+              if(svPriv.pub_status===false) return (
+                <div style={{background:`${C.amber}11`,border:`1px solid ${C.amber}44`,borderRadius:10,padding:"10px 12px",marginBottom:14,display:"flex",gap:9,alignItems:"flex-start"}}>
+                  <span style={{fontSize:15,flexShrink:0}}>🔒</span>
+                  <div style={{fontSize:11,color:"#ddb877",lineHeight:1.6}}>
+                    Live-Status ist in deinen Privatsphäre-Einstellungen <b>ausgeblendet</b> — Besucher sehen ihn beim QR-Scan nicht, auch wenn du ihn jetzt setzt.
+                  </div>
+                </div>
+              );
+              return null;
+            })()}
 
             {/* ── Aktive Slots ── */}
             {(()=>{
