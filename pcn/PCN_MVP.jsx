@@ -4783,14 +4783,17 @@ Regeln:
               {(()=>{
                 const slots = getActiveStatus(v.id)||[];
                 if(!slots.length) return null;
+                const priv = v.privacy||DEF_PRIVACY;
+                const statusVisible = priv.pub_status!==false;
+                const col = statusVisible ? C.green : C.red;
                 return slots.map(s=>(
-                  <div key={s.id} style={{background:`${C.amber}18`,border:`1px solid ${C.amber}44`,borderRadius:10,padding:"10px 13px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
+                  <div key={s.id} style={{background:`${col}18`,border:`1px solid ${col}44`,borderRadius:10,padding:"10px 13px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
                     <span style={{fontSize:20}}>{s.icon}</span>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:13,fontWeight:700,color:C.amber}}>{s.text}</div>
+                      <div style={{fontSize:13,fontWeight:700,color:col}}>{s.text}</div>
                       <div style={{fontSize:10,color:C.muted,marginTop:1}}>
                         {s.expiresAt ? `Bis ${new Date(s.expiresAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr` : "Dauerhaft"}
-                        {" · sichtbar für Besucher"}
+                        {statusVisible ? " · 🔓 sichtbar für Besucher" : " · 🔒 für Besucher ausgeblendet"}
                       </div>
                     </div>
                     <button onClick={()=>{clearStatus(v.id,s.id);toast_("Status gelöscht");}}
@@ -4804,7 +4807,9 @@ Regeln:
                   <span style={{fontSize:18}}>📍</span>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:700,fontSize:13,color:C.white}}>Live-Status setzen</div>
-                    <div style={{fontSize:10,color:C.muted}}>Sichtbar beim QR-Scan</div>
+                    <div style={{fontSize:10,color:(v.privacy||DEF_PRIVACY).pub_status!==false?C.green:C.red}}>
+                      {(v.privacy||DEF_PRIVACY).pub_status!==false?"🔓 Sichtbar beim QR-Scan":"🔒 Für Besucher ausgeblendet"}
+                    </div>
                   </div>
                 </button>
                 <button onClick={()=>setShowPrivacy(v.id)}
