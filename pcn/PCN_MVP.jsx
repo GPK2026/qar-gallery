@@ -4701,17 +4701,11 @@ Regeln:
               ← Zurück
             </button>
           </div>
-          {isOwn&&(
-            <div style={{position:"absolute",top:16,right:14,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,zIndex:5}}>
-              <button title="QR-Sichtbarkeit einstellen" onClick={()=>setShowPrivacy(v.id)}
-                style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:4,fontFamily:"'Barlow',sans-serif"}}>
-                QR 🔒
-              </button>
-              {v.qarId&&(
-                <div style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,padding:"4px 9px",fontFamily:"monospace",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.75)",letterSpacing:.5}}>
-                  {v.qarId}
-                </div>
-              )}
+          {isOwn&&v.qarId&&(
+            <div style={{position:"absolute",top:16,right:14,zIndex:5}}>
+              <div style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,padding:"4px 9px",fontFamily:"monospace",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.75)",letterSpacing:.5}}>
+                {v.qarId}
+              </div>
             </div>
           )}
           {!isOwn&&(
