@@ -4707,10 +4707,6 @@ Regeln:
                 style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:4,fontFamily:"'Barlow',sans-serif"}}>
                 QR 🔒
               </button>
-              <button title="Öffentliche QR-Ansicht" onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
-                style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:4,fontFamily:"'Barlow',sans-serif"}}>
-                👁 Vorschau
-              </button>
             </div>
           )}
           {!isOwn&&(
