@@ -4702,11 +4702,16 @@ Regeln:
             </button>
           </div>
           {isOwn&&(
-            <div style={{position:"absolute",top:16,right:14,display:"flex",gap:8,zIndex:5}}>
+            <div style={{position:"absolute",top:16,right:14,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,zIndex:5}}>
               <button title="QR-Sichtbarkeit einstellen" onClick={()=>setShowPrivacy(v.id)}
                 style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:4,fontFamily:"'Barlow',sans-serif"}}>
                 QR 🔒
               </button>
+              {v.qarId&&(
+                <div style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,padding:"4px 9px",fontFamily:"monospace",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.75)",letterSpacing:.5}}>
+                  {v.qarId}
+                </div>
+              )}
             </div>
           )}
           {!isOwn&&(
@@ -4824,8 +4829,6 @@ Regeln:
                       <QRCodeCanvas value={"https://qar.gallery/pcn/?v="+v.qarId} size={72}/>
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:10,color:C.muted,marginBottom:2,textTransform:"uppercase",letterSpacing:1}}>QAR-ID</div>
-                      <div style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:C.white,letterSpacing:1,marginBottom:4}}>{v.qarId}</div>
                       <div style={{fontSize:10,color:C.muted}}>Tippen zum Vergrößern · FIN wird niemals geteilt</div>
                     </div>
                     <span style={{fontSize:18,color:C.muted,flexShrink:0}}>⤢</span>
