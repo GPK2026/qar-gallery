@@ -4703,9 +4703,17 @@ Regeln:
           </div>
           {isOwn&&v.qarId&&(
             <div style={{position:"absolute",top:16,right:14,zIndex:5}}>
-              <div style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,padding:"4px 9px",fontFamily:"monospace",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.75)",letterSpacing:.5}}>
-                {v.qarId}
-              </div>
+              <button onClick={()=>setLightbox({images:["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v="+v.qarId],index:0})}
+                title="Tippen zum Vergrößern · FIN wird niemals geteilt"
+                style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",
+                  borderRadius:8,padding:"5px 9px 5px 5px",display:"flex",alignItems:"center",gap:7,cursor:"pointer"}}>
+                <div style={{background:"#fff",borderRadius:4,padding:2,flexShrink:0,lineHeight:0}}>
+                  <QRCodeCanvas value={"https://qar.gallery/pcn/?v="+v.qarId} size={26}/>
+                </div>
+                <span style={{fontFamily:"monospace",fontSize:10,fontWeight:700,color:"rgba(255,255,255,.75)",letterSpacing:.5}}>
+                  {v.qarId}
+                </span>
+              </button>
             </div>
           )}
           {!isOwn&&(
@@ -4815,19 +4823,6 @@ Regeln:
                     <div style={{fontSize:10,color:C.muted}}>Einstellen was Besucher sehen</div>
                   </div>
                 </button>
-                {v.qarId&&(
-                  <div style={{background:C.black,borderRadius:10,padding:"12px",width:"100%",
-                    display:"flex",gap:14,alignItems:"center",border:`1px solid ${C.border}`,cursor:"pointer"}}
-                    onClick={()=>setLightbox({images:["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v="+v.qarId],index:0})}>
-                    <div style={{background:"#fff",borderRadius:8,padding:6,flexShrink:0}}>
-                      <QRCodeCanvas value={"https://qar.gallery/pcn/?v="+v.qarId} size={72}/>
-                    </div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:10,color:C.muted}}>Tippen zum Vergrößern · FIN wird niemals geteilt</div>
-                    </div>
-                    <span style={{fontSize:18,color:C.muted,flexShrink:0}}>⤢</span>
-                  </div>
-                )}
                 <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
                   style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
                   <span style={{fontSize:18}}>👁</span>
