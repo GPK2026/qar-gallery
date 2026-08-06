@@ -4704,15 +4704,12 @@ Regeln:
           {isOwn&&v.qarId&&(
             <div style={{position:"absolute",top:16,right:14,zIndex:5}}>
               <button onClick={()=>setLightbox({images:["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v="+v.qarId],index:0})}
-                title="Tippen zum Vergrößern · FIN wird niemals geteilt"
+                title={"QAR-ID: "+v.qarId+" · Tippen zum Vergrößern · FIN wird niemals geteilt"}
                 style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",
-                  borderRadius:10,padding:"7px 10px 7px 7px",display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}>
-                <div style={{background:"#fff",borderRadius:3,padding:1,flexShrink:0,lineHeight:0}}>
+                  borderRadius:9,padding:7,display:"flex",cursor:"pointer",lineHeight:0}}>
+                <div style={{background:"#fff",borderRadius:3,padding:1,lineHeight:0}}>
                   <QRCodeCanvas value={"https://qar.gallery/pcn/?v="+v.qarId} size={18}/>
                 </div>
-                <span style={{fontFamily:"monospace",fontSize:10,fontWeight:700,color:"#fff"}}>
-                  {v.qarId}
-                </span>
               </button>
             </div>
           )}
