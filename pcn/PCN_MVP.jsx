@@ -1560,6 +1560,20 @@ function PCNInner() {
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [toast, setToast]         = useState(null);
+  // Offline-Erkennung: sichtbarer Hinweis bei Verbindungsverlust, wichtig
+  // fuer eine App, die oft an Orten mit schlechtem Empfang genutzt wird
+  // (Parkplaetze, Tiefgaragen, laendliche Treffen).
+  const [isOffline, setIsOffline] = useState(typeof navigator!=="undefined" && !navigator.onLine);
+  useEffect(()=>{
+    const goOffline = () => setIsOffline(true);
+    const goOnline  = () => setIsOffline(false);
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => {
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+    };
+  }, []);
   const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
@@ -3654,6 +3668,7 @@ Regeln:
     <div style={{minHeight:"100vh",background:C.black,display:"flex",flexDirection:"column"}}>
       <style>{CSS}</style>
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
 
       {/* ── Back to chat — for guests navigating to splash ── */}
       {me?.role==="guest"&&(
@@ -3952,6 +3967,7 @@ Regeln:
       <div style={{minHeight:"100vh",background:C.black,paddingBottom:40}}>
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
 
         {/* ── Header — white, like app header ── */}
         <div style={{background:"#ffffff",borderBottom:`3px solid ${C.red}`,padding:"10px 16px",
@@ -4352,178 +4368,7 @@ Regeln:
           </div>
         )}
 
-      {/* ── OVERLAYS (rendered in every screen) ── */}
-      {showStatusPicker&&(
-        <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget){setShowStatusPicker(null);setStatusEditSlot(null);setStatusCustom("");setStatusPresetIcon(null);setStatusUseDate(false);setStatusDateTime("");}}}>
-          <div className="sheet" style={{maxHeight:"92vh",overflowY:"auto"}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:2}}>📍 Live-Status</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:14}}>Bis zu 3 Status-Infos — sichtbar beim QR-Scan</div>
-
-            {/* ── Hinweis: Live-Status ist in der öffentlichen Ansicht deaktiviert ── */}
-            {(()=>{
-              const sv = vehicles[showStatusPicker];
-              const svPriv = sv?.privacy||DEF_PRIVACY;
-              if(svPriv.pub_status===false) return (
-                <div style={{background:`${C.amber}11`,border:`1px solid ${C.amber}44`,borderRadius:10,padding:"10px 12px",marginBottom:14,display:"flex",gap:9,alignItems:"flex-start"}}>
-                  <span style={{fontSize:15,flexShrink:0}}>🔒</span>
-                  <div style={{fontSize:11,color:"#ddb877",lineHeight:1.6}}>
-                    Live-Status ist in deinen Privatsphäre-Einstellungen <b>ausgeblendet</b> — Besucher sehen ihn beim QR-Scan nicht, auch wenn du ihn jetzt setzt.
-                  </div>
-                </div>
-              );
-              return null;
-            })()}
-
-            {/* ── Aktive Slots ── */}
-            {(()=>{
-              const slots = getActiveStatus(showStatusPicker)||[];
-              if(!slots.length) return null;
-              return (
-                <div style={{marginBottom:14}}>
-                  <div style={{fontSize:10,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Aktive Status ({slots.length}/3)</div>
-                  {slots.map(s=>{
-                    const remaining = s.expiresAt ? Math.max(0,Math.ceil((s.expiresAt-Date.now())/60000)) : null;
-                    const expDate = s.expiresAt ? new Date(s.expiresAt) : null;
-                    const remainingDays = remaining!==null ? Math.floor(remaining/1440) : null; // 1440 Min = 1 Tag
-                    return (
-                      <div key={s.id} style={{background:`${C.green}11`,border:`1px solid ${C.green}33`,borderRadius:10,padding:"10px 12px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
-                        <span style={{fontSize:20,flexShrink:0}}>{s.icon}</span>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:13,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.text}</div>
-                          <div style={{fontSize:10,color:remaining!==null&&remaining<10?"#ef4444":C.muted}}>
-                            {statusTick>=0&&remaining!==null
-                              ? (remaining<=0?"⚠️ Abgelaufen":remaining<60
-                                ?`⏱ Noch ${remaining} Min`
-                                :remainingDays>=1
-                                  ?`⏱ Bis ${expDate.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}, ${expDate.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`
-                                  :`⏱ Bis ${expDate.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`)
-                              : "⏳ Dauerhaft aktiv"}
-                          </div>
-                        </div>
-                        <div style={{display:"flex",gap:4,flexShrink:0}}>
-                          <button onClick={()=>{
-                            setStatusCustom(s.text);
-                            setStatusEditSlot(s.id);
-                            setStatusPresetIcon(s.icon||null);
-                            setStatusUseDate(false);
-                            const rem = s.expiresAt ? Math.ceil((s.expiresAt-Date.now())/60000) : 30;
-                            setStatusCustomMins(Math.min(480, Math.max(5, rem)));
-                          }} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✏️</button>
-                          <button onClick={()=>{clearStatus(showStatusPicker,s.id);toast_("Status gelöscht");}}
-                            style={{background:"#ef444418",border:"1px solid #ef444433",borderRadius:6,padding:"4px 8px",color:"#ef4444",fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✕</button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {slots.length<3&&<div style={{fontSize:11,color:C.muted,marginBottom:4}}>+ Weiteren Status hinzufügen:</div>}
-                </div>
-              );
-            })()}
-
-            {/* ── Neuer Status (nur wenn < 3 aktive) ── */}
-            {(getActiveStatus(showStatusPicker)||[]).length<3&&(
-              <>
-                {/* Preset Buttons — füllen das Textfeld, Dauer wird danach abgefragt */}
-                <div style={{fontSize:11,fontWeight:700,color:"#aaa",marginBottom:8}}>⚡ Schnellauswahl</div>
-                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
-                  {STATUS_PRESETS.map((p,i)=>(
-                    <button key={i} onClick={()=>{setStatusCustom(p.text);setStatusPresetIcon(p.icon);setStatusCustomMins(p.mins||30);setStatusUseDate(false);}}
-                      style={{display:"flex",gap:12,alignItems:"center",
-                        background:statusCustom===p.text?C.red+"22":C.card,
-                        border:`1px solid ${statusCustom===p.text?C.red:C.border}`,
-                        borderRadius:12,padding:"12px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
-                      <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:700,color:C.white}}>{p.text}</div>
-                        <div style={{fontSize:10,color:C.muted}}>{p.mins?`Vorschlag: ${p.mins} Min · Dauer unten anpassbar`:"Dauer frei wählbar — z.B. mehrere Tage"}</div>
-                      </div>
-                      {statusCustom===p.text&&<span style={{fontSize:16,color:C.red}}>✓</span>}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Eigener Text + Dauer — gilt für Schnellauswahl UND eigenen Text */}
-                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",marginBottom:12}}>
-                  <div style={{fontSize:11,fontWeight:700,color:"#aaa",marginBottom:8}}>✏️ Status-Text</div>
-                  <div style={{display:"flex",gap:8,marginBottom:12}}>
-                    <input className="inp" placeholder="z.B. Bin beim Einlass..." value={statusCustom}
-                      onChange={e=>{setStatusCustom(e.target.value);setStatusPresetIcon(null);}}
-                      style={{flex:1}}/>
-                  </div>
-
-                  {/* ── Dauer-Abfrage: Wie lange soll der Status angezeigt werden? ── */}
-                  <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12}}>
-                    <div style={{fontSize:11,fontWeight:700,color:C.gold,marginBottom:10}}>⏱ Wie lange soll der Status angezeigt werden?</div>
-                    <div style={{display:"flex",gap:8,marginBottom:10}}>
-                      <button onClick={()=>setStatusUseDate(false)}
-                        style={{flex:1,background:!statusUseDate?C.red:"#1a1a1a",border:`1px solid ${!statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:!statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                        ⏱ Dauer
-                      </button>
-                      <button onClick={()=>{setStatusUseDate(true); if(!statusDateTime){const d=new Date(Date.now()+24*60*60*1000); setStatusDateTime(d.toISOString().slice(0,16));}}}
-                        style={{flex:1,background:statusUseDate?C.red:"#1a1a1a",border:`1px solid ${statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                        📅 Bis Uhrzeit
-                      </button>
-                    </div>
-
-                    {!statusUseDate?(
-                      <>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                          <span style={{fontSize:12,color:C.muted}}>Dauer</span>
-                          <span style={{fontSize:16,fontWeight:900,color:C.red}}>
-                            {(()=>{const m=statusCustomMins||30;return m>=60?`${Math.floor(m/60)}h${m%60>0?" "+m%60+"m":""}`:`${m} Min`;})()}
-                          </span>
-                        </div>
-                        <input type="range" min="5" max="480" step="5"
-                          value={statusCustomMins||30}
-                          onChange={e=>setStatusCustomMins(parseInt(e.target.value))}
-                          style={{width:"100%",accentColor:C.red}}/>
-                        <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#555",marginTop:3}}>
-                          <span>5m</span><span>30m</span><span>1h</span><span>4h</span><span>8h</span>
-                        </div>
-                        {/* Schnellwahl-Chips für gängige Dauern */}
-                        <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
-                          {[["15 Min",15],["30 Min",30],["1 Std",60],["2 Std",120],["Ganzer Tag",480]].map(([lbl,mn])=>(
-                            <button key={mn} onClick={()=>setStatusCustomMins(mn)}
-                              style={{flex:"1 1 auto",background:statusCustomMins===mn?C.red:"#1a1a1a",
-                                border:`1px solid ${statusCustomMins===mn?C.red:C.border}`,borderRadius:7,
-                                padding:"6px 4px",color:statusCustomMins===mn?"#fff":C.muted,fontSize:11,fontWeight:700,
-                                cursor:"pointer",fontFamily:"'Barlow',sans-serif",whiteSpace:"nowrap"}}>
-                              {lbl}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    ):(
-                      <>
-                        <div style={{fontSize:11,color:C.muted,marginBottom:6}}>Status aktiv bis:</div>
-                        <input type="datetime-local"
-                          value={statusDateTime}
-                          min={new Date(Date.now()+5*60000).toISOString().slice(0,16)}
-                          onChange={e=>setStatusDateTime(e.target.value)}
-                          style={{width:"100%",background:"#1a1a1a",border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 12px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",outline:"none"}}/>
-                      </>
-                    )}
-                  </div>
-
-                  <button className="btn" disabled={!statusCustom.trim()||(statusUseDate&&!statusDateTime)}
-                    onClick={()=>{if(statusCustom.trim())setStatus(showStatusPicker,{icon:statusPresetIcon||"💬"},statusCustom);}}
-                    style={{width:"100%",marginTop:14,opacity:(statusCustom.trim()&&(!statusUseDate||statusDateTime))?1:.4}}>
-                    {statusEditSlot?"Status aktualisieren":"Status setzen"}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* Alle löschen */}
-            {(getActiveStatus(showStatusPicker)||[]).length>0&&(
-              <button className="btn ghost" style={{width:"100%",color:"#ef4444",borderColor:"#ef444444"}}
-                onClick={()=>{clearStatus(showStatusPicker);setShowStatusPicker(null);toast_("Alle Status gelöscht");}}>
-                Alle Status löschen
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      
       {lightbox&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:600,display:"flex",flexDirection:"column"}}
           onClick={()=>setLightbox(null)}>
@@ -4625,6 +4470,7 @@ Regeln:
       <div style={{minHeight:"100vh",background:C.black,paddingBottom:80}}>
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         {ScannerOverlay}
         {/* ── Photo Gallery — inline ── */}
         <div style={{position:"relative"}}>
@@ -5934,6 +5780,7 @@ Regeln:
       <>
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         <EventDetail
           ev={viewEv} me={me} myVehicles={myVehicles} vehicles={vehicles}
           participants={participants}
@@ -5955,6 +5802,7 @@ Regeln:
       <>
         <style>{CSS}</style>
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         <ChatScreen
           thread={t} me={me} allUsers={allUsers} vehicles={vehicles}
           reactions={reactions}
@@ -6028,6 +5876,7 @@ Regeln:
     <div style={{minHeight:"100vh",background:C.black,paddingBottom:62}}>
       <style>{CSS}</style>
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
       {ScannerOverlay}
 
       {/* Nav — mit permanentem Punktezähler */}
@@ -6246,6 +6095,8 @@ Regeln:
                       <div style={{display:"flex",gap:8,marginTop:3,alignItems:"center"}}>
                         <span style={{fontSize:11,color:C.muted}}>{v.baujahr}</span>
                         {(logbook[v.id]||[]).length>0&&<span style={{fontSize:10,color:C.green,fontWeight:700}}>📋 {(logbook[v.id]||[]).length} Einträge</span>}
+                        {(listings[v.id]||[]).length>0&&
+                          <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:4,padding:"1px 6px",fontSize:10,fontWeight:800}}>💰 Zum Verkauf</span>}
                       </div>
                     </div>
                     <span style={{fontSize:20,color:C.muted}}>›</span>
