@@ -69,6 +69,23 @@ const C = {
   surface:"#ffffff", // white surface for logo areas
 };
 
+// ─── Persönliche Hintergrund-Themes ────────────────────────────────────────
+// Drei vorgegebene, bewusst dunkle Themes (kein freier Foto-Upload — damit
+// Lesbarkeit garantiert bleibt, unabhängig davon was der Nutzer wählt).
+// Werden bei 30% Deckkraft hinter der gesamten App nach der Anmeldung
+// angezeigt (siehe applyBackgroundTheme / BACKGROUND_LAYER_STYLE unten).
+const BACKGROUND_THEMES = {
+  none: { id:"none", label:"Kein Hintergrund", preview:C.black,
+    css: "none" },
+  carbon: { id:"carbon", label:"Karbon", preview:"linear-gradient(135deg,#0a0a0a 25%,#1a1a1a 25%,#1a1a1a 50%,#0a0a0a 50%,#0a0a0a 75%,#1a1a1a 75%,#1a1a1a 100%)",
+    css: "repeating-linear-gradient(135deg,#0a0a0a 0px,#0a0a0a 8px,#1c1c1c 8px,#1c1c1c 16px)" },
+  strecke: { id:"strecke", label:"Rennstrecke", preview:`radial-gradient(circle at 30% 20%,${C.red}33,transparent 50%),linear-gradient(160deg,#0a0a0a,#1a0505)`,
+    css: `radial-gradient(circle at 20% 10%,${C.red}22,transparent 45%),radial-gradient(circle at 80% 90%,${C.red}18,transparent 45%),linear-gradient(160deg,#0a0a0a,#1a0505)` },
+  nacht: { id:"nacht", label:"Nachthimmel", preview:"radial-gradient(circle at 70% 30%,#1a2233,transparent 50%),#0a0a0f",
+    css: "radial-gradient(circle at 15% 15%,#ffffff08 1px,transparent 1px),radial-gradient(circle at 45% 65%,#ffffff06 1px,transparent 1px),radial-gradient(circle at 75% 25%,#ffffff08 1px,transparent 1px),radial-gradient(circle at 85% 80%,#ffffff05 1px,transparent 1px),radial-gradient(circle at 60% 40%,#1a223350,transparent 60%),#0a0a0f" },
+};
+
+
 // ─── Privacy defaults ─────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
 // PRIVACY BY DEFAULT (DSGVO Art. 25)
@@ -606,7 +623,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
     : myReg?.status==="pending" ? "🟡 Anmeldung eingegangen" : "✗ Leider abgelehnt";
 
   return (
-    <div style={{minHeight:"100vh",background:C.black,paddingBottom:40,animation:"fadeIn .2s"}}>
+    <div style={{minHeight:"100vh",background:"transparent",paddingBottom:40,animation:"fadeIn .2s"}}>
       {/* Header */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"14px 16px"}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,padding:0,marginBottom:10}}>← Events</button>
@@ -812,7 +829,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
   );
 }
 
-function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead, onViewVehicle, onUpgrade, onDeleteMessage, onDeleteThread, onConfirmScan, reactions, onReact}) {
+function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead, onViewVehicle, onUpgrade, onDeleteMessage, onDeleteThread, onConfirmScan, reactions, onReact, bgTheme}) {
   const [msg, setMsg] = useState("");
   const [selectedMsg, setSelectedMsg] = useState(null); // for delete menu / reaction picker
   const endRef = useRef(null);
@@ -888,7 +905,8 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
   },[]);
 
   return (
-    <div ref={rootRef} style={{height:"100vh",background:C.black,display:"flex",flexDirection:"column",position:"fixed",inset:0}}>
+    <div ref={rootRef} style={{height:"100vh",background:"transparent",display:"flex",flexDirection:"column",position:"fixed",inset:0}}>
+      {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css}}/>}
       {/* ── Chat Header ── */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",flexShrink:0}}>
         <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:isClubChannel?6:0}}>
@@ -1574,6 +1592,13 @@ function PCNInner() {
       window.removeEventListener("online", goOnline);
     };
   }, []);
+  // Persönlicher Hintergrund — 3 vorgegebene dunkle Themes, kein freier Foto-
+  // Upload (Lesbarkeit soll unabhängig von der Wahl garantiert bleiben).
+  // localStorage als sofortiger Fallback, DB-Sync erfolgt separat pro Nutzer.
+  const [bgTheme, setBgTheme] = useState(()=>{
+    try { return store.getItem("pcn_bg_theme") || "none"; } catch(e){ return "none"; }
+  });
+  const [showBgPicker, setShowBgPicker] = useState(false);
   const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
@@ -3667,6 +3692,7 @@ Regeln:
   if(screen==="splash") return (
     <div style={{minHeight:"100vh",background:C.black,display:"flex",flexDirection:"column"}}>
       <style>{CSS}</style>
+      {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
       {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
 
@@ -3966,6 +3992,7 @@ Regeln:
     return (
       <div style={{minHeight:"100vh",background:C.black,paddingBottom:40}}>
         <style>{CSS}</style>
+        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
 
@@ -4467,8 +4494,9 @@ Regeln:
     const kz=fmtKz(v.kennzeichen,v.baujahr);
     const priv=v.privacy||DEF_PRIVACY;
     return (
-      <div style={{minHeight:"100vh",background:C.black,paddingBottom:80}}>
+      <div style={{minHeight:"100vh",background:"transparent",paddingBottom:80}}>
         <style>{CSS}</style>
+        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         {ScannerOverlay}
@@ -5711,7 +5739,7 @@ Regeln:
     if(!isOwn) { setScreen("app"); return null; } // Sicherheitsnetz — nur der Eigentümer darf hier rein
     const imgs = getImages(v);
     return (
-      <div style={{minHeight:"100vh",background:C.black,paddingBottom:40}}>
+      <div style={{minHeight:"100vh",background:"transparent",paddingBottom:40}}>
         <div style={{position:"sticky",top:0,zIndex:10,background:C.black,borderBottom:`1px solid ${C.border}`,
           padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
           <button onClick={()=>{setScreen("vehicle");setPhotoManagerVehicle(null);}}
@@ -5779,6 +5807,7 @@ Regeln:
     return (
       <>
         <style>{CSS}</style>
+        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         <EventDetail
@@ -5801,11 +5830,12 @@ Regeln:
     return (
       <>
         <style>{CSS}</style>
+        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         <ChatScreen
           thread={t} me={me} allUsers={allUsers} vehicles={vehicles}
-          reactions={reactions}
+          reactions={reactions} bgTheme={bgTheme}
           onReact={async(messageId, emoji)=>{
             // Optimistisch lokal aktualisieren, damit es sofort reagiert —
             // dieselbe eigene Reaktion wird zuerst entfernt (falls vorhanden),
@@ -5873,8 +5903,9 @@ Regeln:
   // MAIN APP TABS
   // ══════════════════════════════════════════════════════════════════════════════
   return (
-    <div style={{minHeight:"100vh",background:C.black,paddingBottom:62}}>
+    <div style={{minHeight:"100vh",background:"transparent",paddingBottom:62}}>
       <style>{CSS}</style>
+      {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
       {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
       {ScannerOverlay}
@@ -7176,6 +7207,21 @@ Regeln:
               )}
             </div>
 
+            {/* ── Persönlicher Hintergrund ── */}
+            <button onClick={()=>setShowBgPicker(true)}
+              style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:14,
+                padding:"14px 16px",marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",
+                gap:12,fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+              <div style={{width:40,height:40,borderRadius:10,flexShrink:0,
+                background:bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]?BACKGROUND_THEMES[bgTheme].preview:C.black,
+                border:`1px solid ${C.border}`}}/>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:700,fontSize:14,color:C.white}}>🎨 Persönlicher Hintergrund</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:1}}>{BACKGROUND_THEMES[bgTheme]?.label||"Kein Hintergrund"}</div>
+              </div>
+              <span style={{fontSize:18,color:C.muted}}>›</span>
+            </button>
+
             {/* ── Statistiken ── */}
             <div className="card" style={{padding:16,marginBottom:12}}>
               <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Statistiken · zum Öffnen tippen</div>
@@ -7796,6 +7842,47 @@ Regeln:
       )}
 
       {/* ── POINTS INFO MODAL ── */}
+      {showBgPicker&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>setShowBgPicker(false)}>
+          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:4}}>
+              🎨 Persönlicher Hintergrund
+            </div>
+            <div style={{fontSize:13,color:C.muted,lineHeight:1.65,marginBottom:18}}>
+              Gilt überall in der App, dezent im Hintergrund sichtbar.
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {Object.values(BACKGROUND_THEMES).map(theme=>(
+                <button key={theme.id} onClick={async()=>{
+                    setBgTheme(theme.id);
+                    try { store.setItem("pcn_bg_theme", theme.id); } catch(e){}
+                    setShowBgPicker(false);
+                    const DB=window.PCN_DB;
+                    if(DB && me?.id && !isDemo && !isGuest){
+                      const {error} = await DB.members.setBgTheme(me.id, theme.id);
+                      if(error) console.error("Hintergrund speichern fehlgeschlagen:", error);
+                    }
+                    toast_(`Hintergrund: ${theme.label}`);
+                  }}
+                  style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",borderRadius:12,
+                    border:`1.5px solid ${bgTheme===theme.id?C.gold:C.border}`,
+                    background:bgTheme===theme.id?`${C.gold}15`:"transparent",
+                    cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                  <div style={{width:44,height:44,borderRadius:10,flexShrink:0,background:theme.preview,border:`1px solid ${C.border}`}}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:14,color:C.white}}>{theme.label}</div>
+                  </div>
+                  {bgTheme===theme.id&&<span style={{fontSize:16,color:C.gold}}>✓</span>}
+                </button>
+              ))}
+            </div>
+            <button className="btn ghost" style={{width:"100%",marginTop:16}} onClick={()=>setShowBgPicker(false)}>Schließen</button>
+          </div>
+        </div>
+      )}
+
       {showInfoModal==="points"&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
           onClick={()=>setShowInfoModal(false)}>
