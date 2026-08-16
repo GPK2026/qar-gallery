@@ -514,6 +514,7 @@ const PCN_STORAGE = (() => {
         bio: profile?.bio || "",
         phone: profile?.phone || "",
         isAdmin: !!profile?.is_admin,
+        bgTheme: profile?.bg_theme || "none",
         notifications: { events: true, messages: true },
         access_token: supaUser.access_token || "",
         token_expiry: supaUser.token_expiry || 0,
@@ -683,6 +684,7 @@ const PCN_STORAGE = (() => {
         beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
         geburtstag: u.geburtstag||"", phone: u.phone||"",
         isAdmin: !!u.is_admin,
+        bgTheme: u.bg_theme||"none",
         createdAt: u.created_at||"" };
       safeStore.setItem("pcn_session", JSON.stringify(session));
       await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
@@ -729,6 +731,7 @@ const PCN_STORAGE = (() => {
         beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
         geburtstag: u.geburtstag||"",
         isAdmin: !!u.is_admin,
+        bgTheme: u.bg_theme||"none",
         notifications: { events:true, messages:true },
         createdAt: u.created_at||"",
       };
@@ -773,6 +776,7 @@ const PCN_STORAGE = (() => {
         beitrag_datum: u.beitrag_datum||null,
         geburtstag: u.geburtstag||sess.geburtstag||"",
         isAdmin: !!u.is_admin,
+        bgTheme: u.bg_theme||sess.bgTheme||"none",
         createdAt: u.created_at||sess.createdAt||"",
       };
       safeStore.setItem("pcn_session", JSON.stringify(updated));
@@ -834,6 +838,11 @@ const PCN_STORAGE = (() => {
       const res = await supabase._q("users","?select=id,name,is_admin&role=eq.member");
       if(res.error) return res;
       return { data: (res.data||[]).map(u => ({ id:u.id, name:u.name, isAdmin: !!u.is_admin })) };
+    },
+    async setBgTheme(userId, theme) {
+      const allowed = ["none","carbon","strecke","nacht"];
+      if(!allowed.includes(theme)) return { error: "Ungültiges Theme" };
+      return await supabase._patch("users","id=eq."+userId,{bg_theme:theme});
     },
     async saveVehicle(vehicle) {
       const row = {
@@ -1288,6 +1297,7 @@ function guard(label, fn){
       // Minimale, nicht-sensible Liste aller Mitglieder für Namensanzeige
       // und Vorstands-Abzeichen in der Community — siehe getClubMembers().
       listClub: () => db.getClubMembers ? db.getClubMembers() : Promise.resolve({data:[]}),
+      setBgTheme: guard("members.setBgTheme", (uid, theme) => db.setBgTheme(uid, theme)),
     },
     logbook: {
       list:  (vid)         => db.getLogbook(vid),
