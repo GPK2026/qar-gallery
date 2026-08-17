@@ -77,7 +77,7 @@ const C = {
 const BACKGROUND_THEMES = {
   none: { id:"none", label:"Kein Hintergrund", preview:C.black,
     css: "none" },
-  // Drei echte Porsche-Fotos (alle verifiziert: tatsächlich Porsche 911,
+  // Zwei echte Porsche-Fotos (verifiziert: tatsächlich Porsche 911,
   // kostenlose Unsplash-Lizenz). Ein dunkler Verlauf liegt zusätzlich über
   // dem Foto, als Sicherheitsnetz für die Lesbarkeit.
   klassiker: { id:"klassiker", label:"Klassiker",
@@ -86,9 +86,6 @@ const BACKGROUND_THEMES = {
   strecke: { id:"strecke", label:"Nachtfahrt",
     preview:"url(https://images.unsplash.com/photo-1756990637536-714b76296a30?w=200&q=60&fm=jpg&fit=crop)",
     css: `linear-gradient(180deg,#0a0a0aee,#0a0a0acc),url(https://images.unsplash.com/photo-1756990637536-714b76296a30?w=1600&q=70&fm=jpg&fit=crop)` },
-  nacht: { id:"nacht", label:"Neon-Garage",
-    preview:"url(https://images.unsplash.com/photo-1757863781053-bf81fd69c3ee?w=200&q=60&fm=jpg&fit=crop)",
-    css: `linear-gradient(180deg,#0a0a0aee,#0a0a0acc),url(https://images.unsplash.com/photo-1757863781053-bf81fd69c3ee?w=1600&q=70&fm=jpg&fit=crop)` },
 };
 
 
@@ -912,7 +909,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
 
   return (
     <div ref={rootRef} style={{height:"100vh",background:"transparent",display:"flex",flexDirection:"column",position:"fixed",inset:0}}>
-      {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
+      {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {/* ── Chat Header ── */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",flexShrink:0}}>
         <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:isClubChannel?6:0}}>
@@ -3698,7 +3695,7 @@ Regeln:
   if(screen==="splash") return (
     <div style={{minHeight:"100vh",background:C.black,display:"flex",flexDirection:"column"}}>
       <style>{CSS}</style>
-      {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
+      {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
       {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
 
@@ -3998,7 +3995,7 @@ Regeln:
     return (
       <div style={{minHeight:"100vh",background:C.black,paddingBottom:40}}>
         <style>{CSS}</style>
-        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
+        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
 
@@ -4502,7 +4499,7 @@ Regeln:
     return (
       <div style={{minHeight:"100vh",background:"transparent",paddingBottom:80}}>
         <style>{CSS}</style>
-        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
+        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         {ScannerOverlay}
@@ -5813,7 +5810,7 @@ Regeln:
     return (
       <>
         <style>{CSS}</style>
-        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
+        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         <EventDetail
@@ -5836,7 +5833,7 @@ Regeln:
     return (
       <>
         <style>{CSS}</style>
-        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
+        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         <ChatScreen
@@ -5911,7 +5908,7 @@ Regeln:
   return (
     <div style={{minHeight:"100vh",background:"transparent",paddingBottom:62}}>
       <style>{CSS}</style>
-      {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.3,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
+      {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
       {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
       {ScannerOverlay}
