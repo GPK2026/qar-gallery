@@ -840,7 +840,7 @@ const PCN_STORAGE = (() => {
       return { data: (res.data||[]).map(u => ({ id:u.id, name:u.name, isAdmin: !!u.is_admin })) };
     },
     async setBgTheme(userId, theme) {
-      const allowed = ["none","klassiker","strecke","nacht"];
+      const allowed = ["none","klassiker","strecke"];
       if(!allowed.includes(theme)) return { error: "Ungültiges Theme" };
       return await supabase._patch("users","id=eq."+userId,{bg_theme:theme});
     },
