@@ -359,7 +359,7 @@ function DDRow({item,onToggle}){
 // Es hält zufällige Besucher fern, keinen entschlossenen Angreifer.
 // Für echten Schutz: Cloudflare Access oder Supabase Auth vorschalten.
 // ═══════════════════════════════════════════════════════════════════════════
-const PW_HASH = "0f219b7e60539f805c39a2d041acafc81a5c61d56e4a40ddd29a6a71a3379601";
+const PW_HASH = "bc311c5d6adc9e42d6b4ba14ec62028ac1d7d65d7ffd3fb5e44a8deeb1c293a0";
 const AUTH_KEY = "qar_dash_auth";
 const SESSION_HOURS = 12;
 
