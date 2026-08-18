@@ -287,6 +287,55 @@ const WEEKS=[
 ];
 
 const pct=(a,b)=>Math.min(100,Math.round(a/Math.max(b,1)*100));
+
+// ─── SOM (Serviceable Obtainable Market) ────────────────────────────────
+// SOM ist der Teil des SAM, den wir in der Praxis realistisch erreichen
+// können — nicht nur "adressierbar" (SAM), sondern tatsächlich gewinnbar,
+// gegeben Vertriebskapazität, Wettbewerb und Zeithorizont.
+// Berechnung: SOM = SAM × Penetrationsrate (aus MARKET_SEGS.pen).
+// Bewusst KEINE erfundene Zahl bei "Verified Network" — dort ist die
+// Penetrationsangabe keine Prozentzahl (Anzahl verifizierter Einträge),
+// daher wird dort ehrlich "nicht direkt vergleichbar" ausgewiesen statt
+// eine Prozentzahl zu unterstellen, die es dort nicht gibt.
+function parseCurrencyToNumber(text){
+  // "€12M" -> 12_000_000 | "€2.2M" -> 2_200_000 | "€500M+" -> 500_000_000 | "€1T" -> 1_000_000_000_000
+  const m = /€\s*([\d.]+)\s*([MBT]?)\+?/i.exec(text||"");
+  if(!m) return null;
+  const num = parseFloat(m[1]);
+  const unit = (m[2]||"").toUpperCase();
+  const mult = unit==="T" ? 1e12 : unit==="B" ? 1e9 : unit==="M" ? 1e6 : 1;
+  return num*mult;
+}
+function formatCurrencyFromNumber(n){
+  const trimZero = (s) => s.replace(/\.0$/,"");
+  if(n>=1e9) return "€"+trimZero((n/1e9).toFixed(n>=10e9?0:1))+"B";
+  if(n>=1e6) return "€"+trimZero((n/1e6).toFixed(n>=10e6?0:1))+"M";
+  if(n>=1e3) return "€"+(n/1e3).toFixed(0)+"k";
+  return "€"+Math.round(n);
+}
+function parsePenetrationRange(text){
+  // "15%" -> [15,15] | "1–3%" -> [1,3] | "0.3–1%" -> [0.3,1] | "verifiz. Eintr." -> null
+  const m = /([\d.]+)(?:[–-]([\d.]+))?\s*%/.exec(text||"");
+  if(!m) return null;
+  const lo = parseFloat(m[1]);
+  const hi = m[2] ? parseFloat(m[2]) : lo;
+  return [lo,hi];
+}
+function calcSOM(samText, penText){
+  const sam = parseCurrencyToNumber(samText);
+  const range = parsePenetrationRange(penText);
+  if(sam==null || range==null) return null; // ehrlich: nicht berechenbar statt geraten
+  const [lo,hi] = range;
+  return { lo: sam*lo/100, hi: sam*hi/100 };
+}
+function formatSOM(samText, penText){
+  const som = calcSOM(samText, penText);
+  if(!som) return null;
+  const loStr = formatCurrencyFromNumber(som.lo);
+  const hiStr = formatCurrencyFromNumber(som.hi);
+  return loStr===hiStr ? loStr : `${loStr}–${hiStr}`;
+}
+
 const OC={Tech:T.blue,Business:T.red,Legal:T.amber};
 const SEV={critical:{bg:"#D5001C18",border:"#D5001C55",tx:"#D5001C",lb:"Kritisch"},high:{bg:"#D9770618",border:"#D9770655",tx:"#D97706",lb:"Hoch"},medium:{bg:"#ffffff0a",border:"#ffffff18",tx:"#666",lb:"Mittel"},low:{bg:"#ffffff06",border:"#ffffff0f",tx:"#444",lb:"Niedrig"},positive:{bg:"#16A34A18",border:"#16A34A55",tx:"#16A34A",lb:"Positiv"},info:{bg:"#2563EB18",border:"#2563EB44",tx:"#2563EB",lb:"Info"},resolved:{bg:"#ffffff05",border:"#ffffff0d",tx:"#444",lb:"Behoben"}};
 const STAT={open:{lb:"Offen",c:"#D97706"},progress:{lb:"In Arbeit",c:"#2563EB"},done:{lb:"Erledigt",c:"#16A34A"},blocked:{lb:"Blockiert",c:"#D5001C"},noted:{lb:"Notiert",c:"#555"},validated:{lb:"Validiert",c:"#16A34A"},resolved:{lb:"Behoben",c:"#16A34A"}};
@@ -824,6 +873,32 @@ function Dashboard({onLogout}){
             <div className="cond" style={{fontSize:22,fontWeight:900,color:T.white,marginBottom:4}}>BUSINESS EVALUATION</div>
             <div style={{fontSize:13,color:T.muted,marginBottom:20,lineHeight:1.7}}>Simulierte Marktbewertung basierend auf quantitativen Marktdaten, Segment-TAMs und Phasenpotentialen.</div>
 
+            {/* ── SOM-Gesamtübersicht: Summe über alle Segmente mit echter
+                 Penetrationsrate (4 von 5) — "Verified Network" bewusst
+                 ausgeschlossen und transparent benannt, da dort keine
+                 Prozent-Penetration vorliegt und eine Summierung sonst eine
+                 Genauigkeit vortäuschen würde, die nicht da ist. ── */}
+            {(()=>{
+              const computable = MARKET_SEGS.filter(s=>calcSOM(s.size_de,s.pen));
+              const excluded = MARKET_SEGS.filter(s=>!calcSOM(s.size_de,s.pen));
+              const totalLo = computable.reduce((sum,s)=>sum+calcSOM(s.size_de,s.pen).lo,0);
+              const totalHi = computable.reduce((sum,s)=>sum+calcSOM(s.size_de,s.pen).hi,0);
+              return (
+                <div style={{background:T.card,border:`1.5px solid ${T.red}55`,borderRadius:12,padding:"16px 18px",marginBottom:16}}>
+                  <div style={{fontSize:11,color:T.muted,fontWeight:700,letterSpacing:1,marginBottom:4}}>
+                    GESAMT-SOM (DE) · SUMME DER REALISTISCH ERREICHBAREN SEGMENTE
+                  </div>
+                  <div className="cond" style={{fontSize:28,fontWeight:900,color:T.red,marginBottom:6}}>
+                    {formatCurrencyFromNumber(totalLo)}–{formatCurrencyFromNumber(totalHi)}
+                  </div>
+                  <div style={{fontSize:11,color:T.muted,lineHeight:1.6}}>
+                    Aus {computable.length} von {MARKET_SEGS.length} Segmenten (SAM × Penetrationsrate).
+                    {excluded.length>0&&<> "{excluded.map(s=>s.name).join(", ")}" bewusst nicht enthalten — dort liegt keine Prozent-Penetration vor, eine Summierung würde falsche Genauigkeit vortäuschen.</>}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="cond" style={{fontSize:12,color:T.muted,letterSpacing:2,marginBottom:10}}>MARKTSEGMENTE</div>
             {MARKET_SEGS.map((seg,i)=>(
               <div key={i} style={{background:T.card,border:`1px solid ${seg.color}33`,borderRadius:11,padding:"14px 16px",marginBottom:10}}>
@@ -846,8 +921,19 @@ function Dashboard({onLogout}){
                     ))}
                   </div>
                 </div>
-                <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:8}}>
                   {[seg.tam_de,seg.tam_eu].map((t,j)=><span key={j} style={{background:T.dark,border:`1px solid ${T.border}`,borderRadius:5,padding:"2px 8px",fontSize:10,color:"#777"}}>TAM: {t}</span>)}
+                </div>
+                {/* ── SOM: der Teil des SAM, den wir realistisch erreichen —
+                     berechnet aus SAM × Penetrationsrate, nicht geschätzt.
+                     Bei "Verified Network" ist die Penetration keine echte
+                     Prozentzahl (Anzahl Eintraege statt Rate), deshalb dort
+                     ehrlich "nicht direkt vergleichbar" statt einer Zahl. ── */}
+                <div style={{background:`${seg.color}0d`,border:`1px solid ${seg.color}33`,borderRadius:8,padding:"8px 11px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}}>
+                  <span style={{fontSize:10,color:T.muted,fontWeight:700,letterSpacing:.5}}>SOM (DE) · realistisch erreichbar</span>
+                  <span className="cond" style={{fontSize:14,fontWeight:900,color:seg.color}}>
+                    {formatSOM(seg.size_de, seg.pen) || "nicht direkt vergleichbar"}
+                  </span>
                 </div>
               </div>
             ))}
