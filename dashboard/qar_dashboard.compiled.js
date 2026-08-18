@@ -747,6 +747,57 @@
     }]
   }];
   const pct = (a, b) => Math.min(100, Math.round(a / Math.max(b, 1) * 100));
+
+  // ─── SOM (Serviceable Obtainable Market) ────────────────────────────────
+  // SOM ist der Teil des SAM, den wir in der Praxis realistisch erreichen
+  // können — nicht nur "adressierbar" (SAM), sondern tatsächlich gewinnbar,
+  // gegeben Vertriebskapazität, Wettbewerb und Zeithorizont.
+  // Berechnung: SOM = SAM × Penetrationsrate (aus MARKET_SEGS.pen).
+  // Bewusst KEINE erfundene Zahl bei "Verified Network" — dort ist die
+  // Penetrationsangabe keine Prozentzahl (Anzahl verifizierter Einträge),
+  // daher wird dort ehrlich "nicht direkt vergleichbar" ausgewiesen statt
+  // eine Prozentzahl zu unterstellen, die es dort nicht gibt.
+  function parseCurrencyToNumber(text) {
+    // "€12M" -> 12_000_000 | "€2.2M" -> 2_200_000 | "€500M+" -> 500_000_000 | "€1T" -> 1_000_000_000_000
+    const m = /€\s*([\d.]+)\s*([MBT]?)\+?/i.exec(text || "");
+    if (!m) return null;
+    const num = parseFloat(m[1]);
+    const unit = (m[2] || "").toUpperCase();
+    const mult = unit === "T" ? 1e12 : unit === "B" ? 1e9 : unit === "M" ? 1e6 : 1;
+    return num * mult;
+  }
+  function formatCurrencyFromNumber(n) {
+    const trimZero = s => s.replace(/\.0$/, "");
+    if (n >= 1e9) return "€" + trimZero((n / 1e9).toFixed(n >= 10e9 ? 0 : 1)) + "B";
+    if (n >= 1e6) return "€" + trimZero((n / 1e6).toFixed(n >= 10e6 ? 0 : 1)) + "M";
+    if (n >= 1e3) return "€" + (n / 1e3).toFixed(0) + "k";
+    return "€" + Math.round(n);
+  }
+  function parsePenetrationRange(text) {
+    // "15%" -> [15,15] | "1–3%" -> [1,3] | "0.3–1%" -> [0.3,1] | "verifiz. Eintr." -> null
+    const m = /([\d.]+)(?:[–-]([\d.]+))?\s*%/.exec(text || "");
+    if (!m) return null;
+    const lo = parseFloat(m[1]);
+    const hi = m[2] ? parseFloat(m[2]) : lo;
+    return [lo, hi];
+  }
+  function calcSOM(samText, penText) {
+    const sam = parseCurrencyToNumber(samText);
+    const range = parsePenetrationRange(penText);
+    if (sam == null || range == null) return null; // ehrlich: nicht berechenbar statt geraten
+    const [lo, hi] = range;
+    return {
+      lo: sam * lo / 100,
+      hi: sam * hi / 100
+    };
+  }
+  function formatSOM(samText, penText) {
+    const som = calcSOM(samText, penText);
+    if (!som) return null;
+    const loStr = formatCurrencyFromNumber(som.lo);
+    const hiStr = formatCurrencyFromNumber(som.hi);
+    return loStr === hiStr ? loStr : `${loStr}–${hiStr}`;
+  }
   const OC = {
     Tech: T.blue,
     Business: T.red,
@@ -2523,7 +2574,43 @@
         marginBottom: 20,
         lineHeight: 1.7
       }
-    }, "Simulierte Marktbewertung basierend auf quantitativen Marktdaten, Segment-TAMs und Phasenpotentialen."), /*#__PURE__*/React.createElement("div", {
+    }, "Simulierte Marktbewertung basierend auf quantitativen Marktdaten, Segment-TAMs und Phasenpotentialen."), (() => {
+      const computable = MARKET_SEGS.filter(s => calcSOM(s.size_de, s.pen));
+      const excluded = MARKET_SEGS.filter(s => !calcSOM(s.size_de, s.pen));
+      const totalLo = computable.reduce((sum, s) => sum + calcSOM(s.size_de, s.pen).lo, 0);
+      const totalHi = computable.reduce((sum, s) => sum + calcSOM(s.size_de, s.pen).hi, 0);
+      return /*#__PURE__*/React.createElement("div", {
+        style: {
+          background: T.card,
+          border: `1.5px solid ${T.red}55`,
+          borderRadius: 12,
+          padding: "16px 18px",
+          marginBottom: 16
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: T.muted,
+          fontWeight: 700,
+          letterSpacing: 1,
+          marginBottom: 4
+        }
+      }, "GESAMT-SOM (DE) · SUMME DER REALISTISCH ERREICHBAREN SEGMENTE"), /*#__PURE__*/React.createElement("div", {
+        className: "cond",
+        style: {
+          fontSize: 28,
+          fontWeight: 900,
+          color: T.red,
+          marginBottom: 6
+        }
+      }, formatCurrencyFromNumber(totalLo), "–", formatCurrencyFromNumber(totalHi)), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: T.muted,
+          lineHeight: 1.6
+        }
+      }, "Aus ", computable.length, " von ", MARKET_SEGS.length, " Segmenten (SAM × Penetrationsrate).", excluded.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, " \"", excluded.map(s => s.name).join(", "), "\" bewusst nicht enthalten — dort liegt keine Prozent-Penetration vor, eine Summierung würde falsche Genauigkeit vortäuschen.")));
+    })(), /*#__PURE__*/React.createElement("div", {
       className: "cond",
       style: {
         fontSize: 12,
@@ -2609,7 +2696,8 @@
       style: {
         display: "flex",
         gap: 7,
-        flexWrap: "wrap"
+        flexWrap: "wrap",
+        marginBottom: 8
       }
     }, [seg.tam_de, seg.tam_eu].map((t, j) => /*#__PURE__*/React.createElement("span", {
       key: j,
@@ -2621,7 +2709,33 @@
         fontSize: 10,
         color: "#777"
       }
-    }, "TAM: ", t))))), /*#__PURE__*/React.createElement("div", {
+    }, "TAM: ", t))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: `${seg.color}0d`,
+        border: `1px solid ${seg.color}33`,
+        borderRadius: 8,
+        padding: "8px 11px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: T.muted,
+        fontWeight: 700,
+        letterSpacing: .5
+      }
+    }, "SOM (DE) · realistisch erreichbar"), /*#__PURE__*/React.createElement("span", {
+      className: "cond",
+      style: {
+        fontSize: 14,
+        fontWeight: 900,
+        color: seg.color
+      }
+    }, formatSOM(seg.size_de, seg.pen) || "nicht direkt vergleichbar")))), /*#__PURE__*/React.createElement("div", {
       className: "cond",
       style: {
         fontSize: 12,
