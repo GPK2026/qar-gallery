@@ -844,6 +844,60 @@ const PCN_STORAGE = (() => {
       if(!allowed.includes(theme)) return { error: "Ungültiges Theme" };
       return await supabase._patch("users","id=eq."+userId,{bg_theme:theme});
     },
+
+    // ── Eigentumsübertragung ──
+    // Die QAR-ID bleibt wie eine FIN lebenslang am Fahrzeug — nur der
+    // Eigentümer wechselt. Logbuch, Bilder, Punkte-Historie bleiben
+    // unangetastet, weil sie am vehicle_id hängen, nicht am user_id.
+    async initiateTransfer(vehicleId, fromUserId) {
+      // Ein zufaelliger, nicht erratbarer Code — 10 Zeichen aus demselben
+      // eindeutigen Alphabet wie die QAR-ID selbst (kein 0/O, 1/I Risiko).
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let code = "TRF-";
+      for(let i=0;i<10;i++) code += chars[Math.floor(Math.random()*chars.length)];
+      const row = {
+        vehicle_id: vehicleId, from_user_id: fromUserId, transfer_code: code,
+        status: "pending", expires_at: new Date(Date.now()+24*3600*1000).toISOString(),
+      };
+      const res = await supabase._post("vehicle_transfers", row);
+      if(res.error) return res;
+      return { data: { id: res.data?.id, code, expiresAt: row.expires_at } };
+    },
+    async getPendingTransfer(vehicleId) {
+      // Prüft ob bereits ein offener, nicht abgelaufener Vorgang existiert —
+      // verhindert, dass mehrere gleichzeitige Codes für dasselbe Fahrzeug
+      // kursieren, was Verwirrung stiften würde.
+      const res = await supabase._q("vehicle_transfers",
+        "?vehicle_id=eq."+vehicleId+"&status=eq.pending&order=created_at.desc&limit=1");
+      if(res.error || !res.data?.length) return { data: null };
+      const t = res.data[0];
+      if(new Date(t.expires_at).getTime() < Date.now()) return { data: null };
+      return { data: { id:t.id, code:t.transfer_code, expiresAt:t.expires_at } };
+    },
+    async cancelTransfer(transferId) {
+      return await supabase._patch("vehicle_transfers","id=eq."+transferId,{status:"cancelled"});
+    },
+    async redeemTransfer(code, toUserId) {
+      // Serverseitig alles nochmal prüfen — der Code allein reicht nicht,
+      // er muss auch tatsächlich noch "pending" und nicht abgelaufen sein.
+      const res = await supabase._q("vehicle_transfers","?transfer_code=eq."+encodeURIComponent(code));
+      if(res.error || !res.data?.length) return { error: "Code nicht gefunden" };
+      const t = res.data[0];
+      if(t.status!=="pending") return { error: "Dieser Code wurde bereits verwendet oder storniert" };
+      if(new Date(t.expires_at).getTime() < Date.now()) return { error: "Dieser Code ist abgelaufen" };
+      if(t.from_user_id===toUserId) return { error: "Du bist bereits der Eigentümer dieses Fahrzeugs" };
+
+      // Fahrzeug auf neuen Eigentümer umschreiben — QAR-ID, Bilder, Logbuch
+      // bleiben unverändert, nur user_id wechselt.
+      const vUpdate = await supabase._patch("vehicles","id=eq."+t.vehicle_id,{user_id:toUserId});
+      if(vUpdate.error) return { error: "Übertragung fehlgeschlagen: "+vUpdate.error };
+
+      await supabase._patch("vehicle_transfers","id=eq."+t.id,
+        {status:"completed", to_user_id:toUserId, completed_at:now()});
+
+      return { data: { vehicleId: t.vehicle_id } };
+    },
+
     async saveVehicle(vehicle) {
       const row = {
         id: vehicle.id||("V"+uid()), qar_id: vehicle.qarId||genQARId(),
@@ -1284,6 +1338,10 @@ function guard(label, fn){
       getStatus:  (vid)    => db.getStatus(vid),
       setStatus:  guard("vehicles.setStatus",   (vid, s) => db.setStatus(vid, s)),
       clearStatus:guard("vehicles.clearStatus", (vid,sid)  => db.clearStatus(vid,sid)),
+      initiateTransfer: guard("vehicles.initiateTransfer", (vid,fromUid) => db.initiateTransfer(vid,fromUid)),
+      getPendingTransfer: (vid) => db.getPendingTransfer(vid),
+      cancelTransfer: guard("vehicles.cancelTransfer", (tid) => db.cancelTransfer(tid)),
+      redeemTransfer: guard("vehicles.redeemTransfer", (code,toUid) => db.redeemTransfer(code,toUid)),
     },
     listings: {
       // Verkaufsboerse — mehrere gleichzeitige Angebote pro Fahrzeug möglich
