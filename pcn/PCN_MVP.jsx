@@ -1602,6 +1602,14 @@ function PCNInner() {
     try { return store.getItem("pcn_bg_theme") || "none"; } catch(e){ return "none"; }
   });
   const [showBgPicker, setShowBgPicker] = useState(false);
+  // Eigentumsübertragung: QAR-ID bleibt am Fahrzeug wie eine FIN, nur der
+  // Eigentümer wechselt. showTransferOut = Verkäufer-Sicht (vehicleId),
+  // showTransferIn = Käufer-Sicht (Code eingeben/scannen).
+  const [showTransferOut, setShowTransferOut] = useState(null); // vehicleId
+  const [pendingTransfer, setPendingTransfer] = useState(null); // {code, expiresAt}
+  const [transferBusy, setTransferBusy] = useState(false);
+  const [showTransferIn, setShowTransferIn] = useState(false);
+  const [transferCodeInput, setTransferCodeInput] = useState("");
   const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
@@ -3137,6 +3145,46 @@ Regeln:
       if(saleSlot) await clearStatus(vehicleId, saleSlot.id);
     }
     toast_("Angebot entfernt");
+  };
+
+  // ── Eigentumsübertragung ──
+  const startTransfer = async (vehicleId) => {
+    const DB=window.PCN_DB;
+    if(isDemo){ toast_("Im Demo-Modus nicht verfügbar — echtes Konto nötig","err"); return; }
+    setTransferBusy(true);
+    const {data,error} = await DB.vehicles.initiateTransfer(vehicleId, me.id);
+    setTransferBusy(false);
+    if(error){ toast_("Fehler: "+error,"err"); return; }
+    setPendingTransfer(data);
+    toast_("Übertragungscode erstellt — 24h gültig");
+  };
+  const cancelTransfer = async (transferId, vehicleId) => {
+    const DB=window.PCN_DB;
+    setTransferBusy(true);
+    await DB.vehicles.cancelTransfer(transferId);
+    setTransferBusy(false);
+    setPendingTransfer(null);
+    toast_("Übertragung abgebrochen");
+  };
+  const loadPendingTransfer = async (vehicleId) => {
+    const DB=window.PCN_DB; if(!DB || isDemo) return;
+    const {data} = await DB.vehicles.getPendingTransfer(vehicleId);
+    if(data) setPendingTransfer(data);
+  };
+  const redeemTransfer = async () => {
+    const code = transferCodeInput.trim().toUpperCase();
+    if(!code){ toast_("Code eingeben","err"); return; }
+    const DB=window.PCN_DB;
+    if(isDemo){ toast_("Im Demo-Modus nicht verfügbar — echtes Konto nötig","err"); return; }
+    setTransferBusy(true);
+    const {data,error} = await DB.vehicles.redeemTransfer(code, me.id);
+    setTransferBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    setShowTransferIn(false);
+    setTransferCodeInput("");
+    toast_("Fahrzeug erfolgreich übernommen 🎉");
+    // Fahrzeugliste neu laden, damit das übernommene Fahrzeug sofort erscheint
+    if(typeof refreshAll==="function") refreshAll(me);
   };
 
   const cancelEvent = async (eventId, regId) => {
@@ -4708,6 +4756,14 @@ Regeln:
                     <div style={{fontSize:10,color:C.muted}}>So sehen Besucher dein Fahrzeug beim QR-Scan</div>
                   </div>
                 </button>
+                <button onClick={()=>{setShowTransferOut(v.id);setPendingTransfer(null);loadPendingTransfer(v.id);}}
+                  style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                  <span style={{fontSize:18}}>🔑</span>
+                  <div style={{textAlign:"left"}}>
+                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>Fahrzeug übertragen</div>
+                    <div style={{fontSize:10,color:C.muted}}>Bei Verkauf — QAR-ID bleibt erhalten, wie eine FIN</div>
+                  </div>
+                </button>
               </div>
             </div>
           )}
@@ -5289,6 +5345,46 @@ Regeln:
                 <input className="inp" placeholder="Notizen" style={{marginBottom:16}}
                   value={addLogForm.notes} onChange={e=>setAddLogForm(p=>({...p,notes:e.target.value}))}/>
                 <button className="btn" style={{width:"100%"}} onClick={()=>addLogEntry(v.id)}>Speichern ✓</button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Eigentumsübertragung: Verkäufer-Sicht ── */}
+          {showTransferOut===v.id&&(
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowTransferOut(null);}}>
+              <div className="sheet">
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>🔑 Fahrzeug übertragen</div>
+                <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+                  Die QAR-ID ({v.qarId}) bleibt erhalten — wie eine FIN. Logbuch und Fotos gehen mit, nur der Eigentümer wechselt.
+                </div>
+
+                {!pendingTransfer&&(
+                  <>
+                    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:12,color:C.muted,lineHeight:1.6}}>
+                      Erzeugt einen Code, gültig 24 Stunden. Zeige ihn dem Käufer vor Ort — er scannt oder gibt ihn in seiner App ein, um das Fahrzeug zu übernehmen.
+                    </div>
+                    <button className="btn" style={{width:"100%"}} disabled={transferBusy} onClick={()=>startTransfer(v.id)}>
+                      {transferBusy?"…":"Übertragungscode erstellen"}
+                    </button>
+                  </>
+                )}
+
+                {pendingTransfer&&(
+                  <>
+                    <div style={{background:"#fff",borderRadius:12,padding:16,display:"flex",justifyContent:"center",marginBottom:14}}>
+                      <QRCodeCanvas value={"https://qar.gallery/pcn/?transfer="+pendingTransfer.code} size={180}/>
+                    </div>
+                    <div style={{textAlign:"center",marginBottom:14}}>
+                      <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Oder Code manuell eingeben lassen:</div>
+                      <div style={{fontFamily:"monospace",fontSize:18,fontWeight:800,color:C.gold,letterSpacing:2}}>{pendingTransfer.code}</div>
+                      <div style={{fontSize:10,color:C.muted,marginTop:6}}>Gültig bis {new Date(pendingTransfer.expiresAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} Uhr</div>
+                    </div>
+                    <button className="btn ghost" style={{width:"100%",color:C.red,borderColor:`${C.red}44`}} disabled={transferBusy}
+                      onClick={()=>cancelTransfer(pendingTransfer.id,v.id)}>
+                      Übertragung abbrechen
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -6101,7 +6197,10 @@ Regeln:
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🚗 Meine Fahrzeuge</div>
-                <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>
+                <div style={{display:"flex",gap:6}}>
+                  <button className="btn sm ghost" onClick={()=>setShowTransferIn(true)}>🔑 Übernehmen</button>
+                  <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>
+                </div>
               </div>
               {myVehicles.length===0?(
                 <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center",cursor:"pointer"}} onClick={()=>setShowAddV(true)}>
@@ -7846,6 +7945,26 @@ Regeln:
       )}
 
       {/* ── POINTS INFO MODAL ── */}
+      {/* ── Eigentumsübertragung: Käufer-Sicht ── */}
+      {showTransferIn&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>{setShowTransferIn(false);setTransferCodeInput("");}}>
+          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
+            onClick={e=>e.stopPropagation()}>
+            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>🔑 Fahrzeug übernehmen</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+              Code vom Verkäufer eingeben, den er dir vor Ort gezeigt hat.
+            </div>
+            <input className="inp" placeholder="z.B. TRF-XXXXXXXXXX" style={{marginBottom:14,fontFamily:"monospace",textAlign:"center",fontSize:16,letterSpacing:1}}
+              value={transferCodeInput} onChange={e=>setTransferCodeInput(e.target.value.toUpperCase())}
+              onKeyDown={e=>e.key==="Enter"&&redeemTransfer()}/>
+            <button className="btn" style={{width:"100%"}} disabled={transferBusy} onClick={redeemTransfer}>
+              {transferBusy?"…":"Fahrzeug übernehmen"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {showBgPicker&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
           onClick={()=>setShowBgPicker(false)}>
