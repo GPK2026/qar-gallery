@@ -221,6 +221,54 @@
     items: ["Consumer App", "Club-Features", "QR-Sticker", "Edge Router"],
     flow: "Consumer-Touchpoint. Erzeugt Daten, schafft Netzwerkeffekte."
   }];
+
+  // ─── Marktteilnehmer-Problem-Fit ────────────────────────────────────────
+  // Wo QAR.Gallery echten Mehrwert liefert — je Teilnehmer: das konkrete
+  // Problem, was wir TATSAECHLICH gebaut haben das es loest, und eine
+  // ehrliche Fit-Einschaetzung (nicht ueberall ist der Fit gleich stark).
+  const MARKET_FIT = [{
+    group: "Porsche-/Markenclubs",
+    fit: "sehr stark",
+    color: T.red,
+    problem: "Mitgliederverwaltung, Fahrzeughistorie und Community-Funktionen laufen heute über Excel-Listen, WhatsApp-Gruppen und Papier-Fahrtenbücher — keine zentrale, digitale Akte pro Fahrzeug.",
+    solution: "White-Label-App direkt für den Club, Punktesystem als Mitglieder-Bindung, digitales Logbuch, Community-Marktplatz, Event-Historie — vollständig fertig und im Pilotbetrieb (PCN).",
+    evidence: "Aktueller Pilot-Club, Kernprodukt seit Monaten im Aufbau, heute u.a. um Eigentumsübertragung und Live-Ausfahrt-Karte erweitert."
+  }, {
+    group: "Einzelne Fahrzeugbesitzer (Sammler, Klassiker-Fans)",
+    fit: "stark",
+    color: T.gold,
+    problem: "Wartungshistorie, Kaufbelege und Fotos verteilen sich über Ordner, E-Mails und private Notizen — bei einem Verkauf geht die gesamte Dokumentation verloren oder wird nicht glaubwürdig übergeben.",
+    solution: "QAR-ID verhält sich wie eine FIN — Akte bleibt bei Fahrzeugverkauf lebenslang erhalten, Übertragung mit beidseitiger Zustimmung, KI-Dokumenten-Scanner digitalisiert auch alte Belege rückwirkend.",
+    evidence: "Eigentumsübertragung (Weg A/B) und KI-Beleg-Scanner heute/kürzlich fertiggestellt und getestet."
+  }, {
+    group: "Angehörige & Ersthelfer im Notfall",
+    fit: "stark",
+    color: T.red,
+    problem: "Bei einem Unfall haben Rettungskräfte oft keinen Zugriff auf Kontaktdaten, Blutgruppe oder Vorerkrankungen der verletzten Person — Handy ist gesperrt oder nicht auffindbar.",
+    solution: "IN CASE OF EMERGENCY-Zugang direkt über den Fahrzeug-QR-Code, geschützt durch physisch verborgenen Code — keine App, kein Login nötig für Ersthelfer.",
+    evidence: "Heute vollständig gebaut: Notfallprofile, Code-Zugang, Anruf-Buttons für Notfallkontakte."
+  }, {
+    group: "Werkstätten & Gutachter",
+    fit: "mittel",
+    color: T.amber,
+    problem: "Bei Anfrage/Übergabe fehlt oft eine verlässliche, lückenlose Fahrzeughistorie — Kunde muss Papierbelege suchen oder Angaben sind ungeprüft.",
+    solution: "Digitales Logbuch mit Belegen wäre einsehbar (mit Zustimmung des Eigentümers) — Grundlage vorhanden, aber noch keine dedizierte Werkstatt-Ansicht oder API-Anbindung gebaut.",
+    evidence: "Datenbasis vorhanden (Logbuch, Belege), Werkstatt-spezifischer Zugang/Workflow ist noch nicht umgesetzt — Potenzial, kein fertiges Produkt."
+  }, {
+    group: "Versicherungen",
+    fit: "mittel, noch unbewiesen",
+    color: T.amber,
+    problem: "Risikoeinschätzung und Schadensfall-Historie basieren auf Selbstauskunft — keine verifizierte, laufend gepflegte Fahrzeugdokumentation als Datenquelle.",
+    solution: "Perspektivisch: API-Zugriff auf verifizierte Fahrzeughistorie könnte Basis für Prämienmodelle sein — bislang aber nur als Konzept in der Revenue-Strategie, keine konkrete Schnittstelle gebaut oder Partner angesprochen.",
+    evidence: "Rein konzeptionell (siehe Revenue Streams R4/R5) — kein Pilotkontakt, keine technische Vorarbeit über die generelle Datenbasis hinaus."
+  }, {
+    group: "Pannenhilfe-Anbieter (ADAC, AvD)",
+    fit: "schwach, aber Anknüpfungspunkt vorhanden",
+    color: T.muted,
+    problem: "Kein akutes Problem, das wir für diese Anbieter selbst lösen — sie haben etablierte, funktionierende Prozesse.",
+    solution: "Wir integrieren SIE als Service für unsere Nutzer (Kontaktdaten, Direktwahl), nicht umgekehrt — echte Kooperation (z.B. Co-Branding, Datenaustausch) ist ein möglicher, aber unbestätigter nächster Schritt.",
+    evidence: "Heute gebaut: Anruf-Integration mit verifizierten Nummern — einseitig, keine Gegenleistung oder Vereinbarung mit ADAC/AvD."
+  }];
   const MARKET_SEGS = [{
     name: "Club SaaS",
     phase: 1,
@@ -319,6 +367,43 @@
     y3: "€15M",
     y5: "€200M+",
     note: "RWA live, 500k Fahrzeuge"
+  }];
+
+  // ─── Vertriebsstrategie ─────────────────────────────────────────────────
+  // Direkt aus der Marktteilnehmer-Fit-Analyse abgeleitet — Priorisierung
+  // nach Fit-Staerke UND danach, was heute schon ein fertiges Produkt ist
+  // vs. reines Konzept.
+  const SALES_STRATEGY = [{
+    prio: 1,
+    target: "Weitere Markenclubs (wie PCN)",
+    color: T.red,
+    approach: "Direktansprache über bestehende Club-Netzwerke und Verbände, mit dem laufenden PCN-Piloten als Referenz. Der 'Land-and-Expand'-Ansatz: ein Club als Leuchtturm, dann warme Empfehlung an Schwesterclubs (911er-, Youngtimer-, Regionalclubs).",
+    next: "PCN-Pilotvertrag abschließen, danach 2-3 strukturell ähnliche Clubs (Größe, Struktur) gezielt mit dokumentierten PCN-Ergebnissen ansprechen."
+  }, {
+    prio: 2,
+    target: "Einzelne Sammler / Klassiker-Community",
+    color: T.gold,
+    approach: "Community-getriebenes Wachstum statt Kaltakquise: jeder physische QR-Code am Fahrzeug ist ein Werbeträger bei Treffen und Ausfahrten. Eigentumsübertragung als virales Element — neuer Eigentümer wird selbst zum Nutzer.",
+    next: "Sichtbarkeit auf Szene-Plattformen (Foren, Instagram-Communities) erhöhen; Eigentumsübertragung als 'das bleibt bei jedem Verkauf erhalten'-Kernbotschaft kommunizieren."
+  }, {
+    prio: 3,
+    target: "Notfall-Feature als eigenständiges Verkaufsargument",
+    color: T.red,
+    approach: "IN CASE OF EMERGENCY ist ein Alleinstellungsmerkmal mit emotionaler, nicht nur funktionaler Überzeugungskraft — eignet sich für gezielte Aufklärungskommunikation (auch außerhalb der Kernzielgruppe Youngtimer).",
+    next: "Kurze, klare Erklärung des Features als eigenständigen Kommunikationsbaustein aufbereiten — Sicherheitsaspekt eignet sich für Club-Vorstände als Zusatzargument bei der internen Überzeugung."
+  }, {
+    prio: 4,
+    target: "Werkstätten & Gutachter",
+    fit: "mittel",
+    color: T.amber,
+    approach: "Kein Direktvertrieb jetzt — Grundlage (Logbuch-Daten) existiert, aber kein fertiges Produkt für diese Zielgruppe. Erst nach Validierung im Consumer-/Club-Segment sinnvoll anzugehen.",
+    next: "Zurückstellen, bis genug reale Logbuch-Daten für eine überzeugende Demo vorhanden sind — dann gezielte Pilotgespräche mit 1-2 Partnerwerkstätten."
+  }, {
+    prio: 5,
+    target: "Versicherungen",
+    color: T.muted,
+    approach: "Zu früh für aktiven Vertrieb — kein belastbarer Proof of Concept, keine API. Würde aktuell nur Ressourcen von den stärkeren Fits abziehen.",
+    next: "Nicht aktiv verfolgen, bis Consumer-/Club-Basis groß genug ist, um Versicherungen überhaupt interessant als Datenpartner zu machen."
   }];
   const REVENUE = [{
     id: "R1",
@@ -2617,6 +2702,139 @@
         color: T.muted,
         letterSpacing: 2,
         marginBottom: 10
+      }
+    }, "WO WIR ECHTEN MEHRWERT LIEFERN"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: T.muted,
+        marginBottom: 14,
+        lineHeight: 1.6
+      }
+    }, "Je Marktteilnehmer: das konkrete Problem, was wir tatsächlich gebaut haben (nicht nur geplant), und eine ehrliche Fit-Einschätzung."), MARKET_FIT.map((m, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        background: T.card,
+        border: `1px solid ${m.color}33`,
+        borderRadius: 11,
+        padding: "14px 16px",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8,
+        gap: 8,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontWeight: 800,
+        fontSize: 14,
+        color: T.white
+      }
+    }, m.group), /*#__PURE__*/React.createElement("span", {
+      className: "tag",
+      style: {
+        background: `${m.color}22`,
+        color: m.color
+      }
+    }, "Fit: ", m.fit)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: T.muted,
+        lineHeight: 1.6,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#999",
+        fontWeight: 700
+      }
+    }, "Problem: "), m.problem), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: T.muted,
+        lineHeight: 1.6,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#999",
+        fontWeight: 700
+      }
+    }, "Unsere Lösung: "), m.solution), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#666",
+        lineHeight: 1.6,
+        fontStyle: "italic"
+      }
+    }, m.evidence))), /*#__PURE__*/React.createElement("div", {
+      className: "cond",
+      style: {
+        fontSize: 12,
+        color: T.muted,
+        letterSpacing: 2,
+        marginBottom: 10,
+        marginTop: 20
+      }
+    }, "VERTRIEBSSTRATEGIE"), SALES_STRATEGY.map((s, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        background: T.card,
+        border: `1px solid ${s.color}33`,
+        borderRadius: 11,
+        padding: "14px 16px",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        alignItems: "center",
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "tag",
+      style: {
+        background: `${s.color}22`,
+        color: s.color
+      }
+    }, "Priorität ", s.prio), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontWeight: 800,
+        fontSize: 14,
+        color: T.white
+      }
+    }, s.target)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: T.muted,
+        lineHeight: 1.6,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#999",
+        fontWeight: 700
+      }
+    }, "Ansatz: "), s.approach), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: s.color,
+        lineHeight: 1.6,
+        fontWeight: 700
+      }
+    }, "→ ", s.next))), /*#__PURE__*/React.createElement("div", {
+      className: "cond",
+      style: {
+        fontSize: 12,
+        color: T.muted,
+        letterSpacing: 2,
+        marginBottom: 10,
+        marginTop: 20
       }
     }, "MARKTSEGMENTE"), MARKET_SEGS.map((seg, i) => /*#__PURE__*/React.createElement("div", {
       key: i,
