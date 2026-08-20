@@ -4999,21 +4999,32 @@ Regeln:
 
                 {/* ── Eigener Standort-Check-in ── */}
                 {v.checkinLat!=null&&(
-                  <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div>
-                      <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>📍 Zuletzt geparkt</div>
-                      <a href={`https://maps.google.com/?q=${v.checkinLat},${v.checkinLng}`} target="_blank" rel="noopener noreferrer"
-                        style={{fontSize:12,color:C.gold,fontWeight:700,textDecoration:"none"}}>
-                        {v.checkinAt?new Date(v.checkinAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"?"} Uhr — auf Karte ansehen →
+                  <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📍 Zuletzt geparkt</div>
+                    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+                      <a href={`https://maps.google.com/?q=${v.checkinLat},${v.checkinLng}`} target="_blank" rel="noopener noreferrer" style={{display:"block"}}>
+                        <iframe title="Zuletzt geparkt" style={{width:"100%",height:120,border:"none",display:"block",pointerEvents:"none"}}
+                          src={`https://www.openstreetmap.org/export/embed.html?bbox=${v.checkinLng-0.004},${v.checkinLat-0.003},${v.checkinLng+0.004},${v.checkinLat+0.003}&layer=mapnik&marker=${v.checkinLat},${v.checkinLng}`}/>
                       </a>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px"}}>
+                        <div>
+                          <div style={{fontSize:12,fontWeight:700,color:C.white}}>
+                            {v.checkinAt?new Date(v.checkinAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"?"} Uhr
+                          </div>
+                          <a href={`https://maps.google.com/?q=${v.checkinLat},${v.checkinLng}`} target="_blank" rel="noopener noreferrer"
+                            style={{fontSize:11,color:C.gold,fontWeight:700,textDecoration:"none"}}>
+                            In Maps öffnen →
+                          </a>
+                        </div>
+                        <button onClick={async()=>{
+                            const DB=window.PCN_DB;
+                            if(!isDemo&&DB) await DB.vehicles.clearCheckIn(v.id,me.id);
+                            setVehicles(prev=>({...prev,[v.id]:{...prev[v.id],checkinLat:null,checkinLng:null,checkinAt:null}}));
+                            toast_("Standort entfernt");
+                          }}
+                          style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,color:C.muted,fontSize:13,cursor:"pointer",padding:"6px 10px"}}>✕</button>
+                      </div>
                     </div>
-                    <button onClick={async()=>{
-                        const DB=window.PCN_DB;
-                        if(!isDemo&&DB) await DB.vehicles.clearCheckIn(v.id,me.id);
-                        setVehicles(prev=>({...prev,[v.id]:{...prev[v.id],checkinLat:null,checkinLng:null,checkinAt:null}}));
-                        toast_("Standort entfernt");
-                      }}
-                      style={{background:"none",border:"none",color:C.muted,fontSize:16,cursor:"pointer",padding:4}}>✕</button>
                   </div>
                 )}
 
