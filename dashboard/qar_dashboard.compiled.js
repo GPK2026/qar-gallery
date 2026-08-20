@@ -227,6 +227,27 @@
   // Problem, was wir TATSAECHLICH gebaut haben das es loest, und eine
   // ehrliche Fit-Einschaetzung (nicht ueberall ist der Fit gleich stark).
   const MARKET_FIT = [{
+    group: "Gebrauchtwagenhändler",
+    fit: "stark",
+    color: T.gold,
+    problem: "Beim Ankauf fehlt oft eine verlässliche, lückenlose Herkunfts- und Wartungshistorie — Angaben des Verkäufers sind ungeprüft, Vertrauen entsteht nur durch Reputation oder teure Gutachten.",
+    solution: "Digitales Logbuch mit KI-gescannten Belegen plus die Eigentumsübertragung (QAR-ID bleibt wie eine FIN erhalten) liefern eine lückenlose, glaubwürdige Historie direkt beim Ankauf — kein Aufbau von Grund auf nötig, Historie ist vom Vorbesitzer bereits gepflegt.",
+    evidence: "Logbuch + KI-Dokumenten-Scanner + Eigentumsübertragung sind fertige, getestete Features — aber: kein dedizierter Händler-Workflow (z.B. Massenankauf, Flotten-Ansicht) existiert bisher, nur die Einzelfahrzeug-Perspektive."
+  }, {
+    group: "Fahrzeugfinanzierer (z.B. Santander)",
+    fit: "stark, aber unbestätigt",
+    color: T.gold,
+    problem: "Finanzierte Fahrzeuge bleiben bis zur letzten Rate sicherungsübereignet — die Bank trägt über die gesamte Laufzeit ein Werterhalt- und Zustandsrisiko, aktuell verschärft durch dokumentierte Probleme mit Restwert-Prognosen in der Branche.",
+    solution: "Laufend gepflegte, verifizierbare Fahrzeughistorie (Wartung, Zustand, Fotos) könnte objektivere Grundlage für Restwert-Einschätzung sein als reine Marktdaten-Modelle — bislang aber nur eine Hypothese, keine konkrete Schnittstelle oder Pilotgespräch.",
+    evidence: "Recherche bestätigt: Santander verlangt die Zulassungsbescheinigung Teil II als Sicherheit und hatte laut Presseberichten 2026 spürbare Probleme mit Restwert-Prognosen — ein echter, aktueller Schmerzpunkt. Aber: kein Kontakt, keine API, rein konzeptionell."
+  }, {
+    group: "Versicherungen — differenziert betrachtet",
+    fit: "schwach für Marktführer wie HUK",
+    color: T.muted,
+    problem: "Bei HUK (größter dt. Kfz-Versicherer) liegt der digitale Fokus nachweislich auf Telematik-Fahrverhalten (Bremsen, Beschleunigung, gefahrene Strecken über eigene Sensoren/App) — nicht auf Fahrzeug-Dokumentationshistorie.",
+    solution: "Unsere Datenbasis (Wartungshistorie, Zustand, Fotos) adressiert ein anderes Datenproblem als das, was HUK aktuell aktiv ausbaut — kein direkter Ersatz oder Ergänzung zu deren bestehendem Telematik-Ansatz.",
+    evidence: "Aktuelle Recherche (2026): HUK-Investitionen fließen in Telematik-Sensorik und eine eigene Datenschutz-Tochtergesellschaft (HDD GmbH) — die vorherige Einschätzung 'unbewiesen' wird durch die Recherche eher noch abgeschwächt, nicht bestätigt. Kleinere, spezialisierte Oldtimer-/Klassiker-Versicherer könnten ein besserer Fit sein als Marktführer wie HUK, aber auch das ist ungeprüft."
+  }, {
     group: "Porsche-/Markenclubs",
     fit: "sehr stark",
     color: T.red,
