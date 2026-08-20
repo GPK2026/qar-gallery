@@ -847,6 +847,38 @@ const PCN_STORAGE = (() => {
       if(res.error || !res.data?.length) return { data: null };
       return { data: { id: res.data[0].id, hersteller: res.data[0].hersteller, modell: res.data[0].modell } };
     },
+
+    // ── Standort-Historie bei QR-Scans (Diebstahl-Früherkennung) ──
+    // Nur für den aktuellen Eigentümer sichtbar (App-seitig geprüft, siehe
+    // getRecentScanLocations-Aufrufer). Aufbewahrung bewusst kurz: 48h,
+    // danach automatisch gelöscht — reine Frühwarnung, keine dauerhafte
+    // Bewegungsüberwachung. Löschung passiert beim Abrufen (kein separater
+    // Cron-Job nötig).
+    async recordScanLocation(vehicleId, coords) {
+      const row = {
+        vehicle_id: vehicleId,
+        has_location: !!coords,
+        latitude: coords?.lat ?? null,
+        longitude: coords?.lng ?? null,
+        accuracy_m: coords?.accuracy ?? null,
+      };
+      return await supabase._post("vehicle_scan_locations", row);
+    },
+    async getRecentScanLocations(vehicleId) {
+      // Zweckbindung/Datensparsamkeit: alles älter als 48h wird beim
+      // Abrufen gelöscht, bevor die verbleibenden Einträge zurückgegeben
+      // werden.
+      const cutoff = new Date(Date.now()-48*3600*1000).toISOString();
+      await supabase._delete("vehicle_scan_locations","vehicle_id=eq."+vehicleId+"&scanned_at=lt."+cutoff);
+      const res = await supabase._q("vehicle_scan_locations",
+        "?vehicle_id=eq."+vehicleId+"&order=scanned_at.desc");
+      if(res.error) return res;
+      return { data: (res.data||[]).map(r => ({
+        id: r.id, scannedAt: r.scanned_at, hasLocation: r.has_location,
+        lat: r.latitude, lng: r.longitude, accuracyM: r.accuracy_m,
+      })) };
+    },
+
     async setBgTheme(userId, theme) {
       const allowed = ["none","klassiker","strecke"];
       if(!allowed.includes(theme)) return { error: "Ungültiges Theme" };
@@ -1457,6 +1489,8 @@ function guard(label, fn){
       clearStatus:guard("vehicles.clearStatus", (vid,sid)  => db.clearStatus(vid,sid)),
       startTransferViaScan: guard("vehicles.startTransferViaScan", (vid,scannerUid) => db.startTransferViaScan(vid,scannerUid)),
       findVehicleByQarId: (qarId) => db.findVehicleByQarId(qarId),
+      recordScanLocation: (vid,coords) => db.recordScanLocation(vid,coords),
+      getRecentScanLocations: (vid) => db.getRecentScanLocations(vid),
       requestTransfer: guard("vehicles.requestTransfer", (vid,buyerUid) => db.requestTransfer(vid,buyerUid)),
       getPendingTransfer: (vid) => db.getPendingTransfer(vid),
       cancelTransfer: guard("vehicles.cancelTransfer", (tid) => db.cancelTransfer(tid)),
