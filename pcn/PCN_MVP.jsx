@@ -1616,6 +1616,14 @@ function PCNInner() {
   const [scanLocations, setScanLocations] = useState({}); // vehicleId -> array
   const [showCheckInPrompt, setShowCheckInPrompt] = useState(null); // vehicleId
   const [checkInBusy, setCheckInBusy] = useState(false);
+  // Live-Standort-Gruppen für gemeinsame Ausfahrten
+  const [showCreateLiveGroup, setShowCreateLiveGroup] = useState(false);
+  const [liveGroupName, setLiveGroupName] = useState("");
+  const [liveGroupInvitees, setLiveGroupInvitees] = useState([]);
+  const [myLiveGroups, setMyLiveGroups] = useState([]);
+  const [activeLiveGroup, setActiveLiveGroup] = useState(null); // {id,name,organizerId,status,members}
+  const [liveGroupBusy, setLiveGroupBusy] = useState(false);
+  const liveGroupPollRef = useRef(null);
   const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
@@ -2626,6 +2634,88 @@ function PCNInner() {
       { timeout: 8000, maximumAge: 0 }
     );
   };
+
+  // ── Live-Standort-Gruppen ──
+  const loadMyLiveGroups = async () => {
+    const DB=window.PCN_DB; if(!DB || isDemo || !me) return;
+    const {data} = await DB.liveGroups.listMine(me.id);
+    setMyLiveGroups(data||[]);
+  };
+  useEffect(()=>{
+    if(me?.id && !isDemo) loadMyLiveGroups();
+    return ()=>stopLiveGroupPolling();
+  }, [me?.id]);
+  const createLiveGroupNow = async () => {
+    if(!liveGroupName.trim()){ toast_("Name für die Ausfahrt eingeben","err"); return; }
+    if(liveGroupInvitees.length===0){ toast_("Mindestens eine Person einladen","err"); return; }
+    const DB=window.PCN_DB;
+    if(isDemo){ toast_("Im Demo-Modus nicht verfügbar — echtes Konto nötig","err"); return; }
+    setLiveGroupBusy(true);
+    const {data,error} = await DB.liveGroups.create(liveGroupName.trim(), me.id, liveGroupInvitees);
+    setLiveGroupBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    setShowCreateLiveGroup(false);
+    setLiveGroupName(""); setLiveGroupInvitees([]);
+    toast_("Ausfahrt gestartet — Teilnehmer wurden eingeladen");
+    await loadMyLiveGroups();
+    openLiveGroup(data.id);
+  };
+  const stopLiveGroupPolling = () => {
+    if(liveGroupPollRef.current){ clearInterval(liveGroupPollRef.current); liveGroupPollRef.current=null; }
+  };
+  const pushOwnLivePosition = (groupId) => {
+    if(!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const DB=window.PCN_DB; if(!DB) return;
+        DB.liveGroups.updatePosition(groupId, me.id, pos.coords.latitude, pos.coords.longitude).catch(()=>{});
+      },
+      () => {}, { timeout: 8000, maximumAge: 0 }
+    );
+  };
+  const refreshLiveGroup = async (groupId) => {
+    const DB=window.PCN_DB; if(!DB) return;
+    const {data,error} = await DB.liveGroups.get(groupId, me.id);
+    if(error){ toast_(error,"err"); stopLiveGroupPolling(); setActiveLiveGroup(null); return; }
+    if(data.status==="ended"){ toast_("Die Ausfahrt wurde beendet"); stopLiveGroupPolling(); setActiveLiveGroup(null); return; }
+    setActiveLiveGroup(data);
+  };
+  const openLiveGroup = async (groupId) => {
+    const DB=window.PCN_DB;
+    if(isDemo){ toast_("Im Demo-Modus nicht verfügbar","err"); return; }
+    // Falls nur eingeladen, nicht bereits Mitglied: automatisch beitreten,
+    // sobald man die Gruppe öffnet.
+    await DB.liveGroups.join(groupId, me.id).catch(()=>{});
+    await refreshLiveGroup(groupId);
+    pushOwnLivePosition(groupId);
+    stopLiveGroupPolling();
+    liveGroupPollRef.current = setInterval(()=>{
+      pushOwnLivePosition(groupId);
+      refreshLiveGroup(groupId);
+    }, 45000);
+  };
+  const closeLiveGroupView = () => {
+    stopLiveGroupPolling();
+    setActiveLiveGroup(null);
+  };
+  const leaveLiveGroupNow = async () => {
+    if(!activeLiveGroup) return;
+    const DB=window.PCN_DB;
+    await DB.liveGroups.leave(activeLiveGroup.id, me.id);
+    closeLiveGroupView();
+    await loadMyLiveGroups();
+    toast_("Ausfahrt verlassen");
+  };
+  const endLiveGroupNow = async () => {
+    if(!activeLiveGroup) return;
+    const DB=window.PCN_DB;
+    const {error} = await DB.liveGroups.end(activeLiveGroup.id, me.id);
+    if(error){ toast_(error,"err"); return; }
+    closeLiveGroupView();
+    await loadMyLiveGroups();
+    toast_("Ausfahrt beendet");
+  };
+
   const handleScanResult = async (data) => {
     const match=data.match(/QAR-[A-Z2-9]{8}/);
     if(!match) return;
@@ -6248,6 +6338,26 @@ Regeln:
         {tab==="dashboard"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
 
+            {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
+            <div style={{marginBottom:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🗺️ Live-Ausfahrt</div>
+                <button className="btn sm ghost" onClick={()=>setShowCreateLiveGroup(true)}>+ Starten</button>
+              </div>
+              {myLiveGroups.length>0?myLiveGroups.map(g=>(
+                <button key={g.id} onClick={()=>openLiveGroup(g.id)}
+                  style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:"'Barlow',sans-serif"}}>
+                  <div style={{textAlign:"left"}}>
+                    <div style={{fontWeight:700,fontSize:14,color:C.white}}>{g.name}</div>
+                    <div style={{fontSize:11,color:C.muted}}>{g.myStatus==="invited"?"Du wurdest eingeladen":"Läuft gerade"}</div>
+                  </div>
+                  <span style={{fontSize:18,color:g.myStatus==="invited"?C.gold:C.green}}>{g.myStatus==="invited"?"✉️":"🟢"}</span>
+                </button>
+              )):(
+                <div style={{fontSize:12,color:C.muted}}>Keine aktive Ausfahrt — starte eine, um Standorte mit Mitgliedern zu teilen.</div>
+              )}
+            </div>
+
             {/* Demo-Hinweis erscheint als Popup-Overlay nach 3 Sekunden — siehe globaler Overlay-Bereich */}
             {/* ── 1. Infos & Neuigkeiten ── */}
             <div style={{marginBottom:20}}>
@@ -8223,6 +8333,86 @@ Regeln:
                 onClick={()=>{const v=vehicles[showCheckInPrompt];setShowCheckInPrompt(null);if(v){setViewV(v);setScreen("vehicle");}}}>
                 Nur Fahrzeugakte ansehen
               </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Live-Ausfahrt erstellen ── */}
+      {showCreateLiveGroup&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>{setShowCreateLiveGroup(false);setLiveGroupName("");setLiveGroupInvitees([]);}}>
+          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
+            onClick={e=>e.stopPropagation()}>
+            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:14}}>🗺️ Live-Ausfahrt starten</div>
+            <input className="inp" placeholder="Name der Ausfahrt, z.B. 'Eifel-Runde'" style={{marginBottom:14}}
+              value={liveGroupName} onChange={e=>setLiveGroupName(e.target.value)}/>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Wen einladen?</div>
+            <div style={{maxHeight:220,overflowY:"auto",marginBottom:16}}>
+              {Object.values(allUsers).filter(u=>u.id&&u.id!==me?.id&&u.name).map(u=>(
+                <label key={u.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
+                  <input type="checkbox" checked={liveGroupInvitees.includes(u.id)}
+                    onChange={e=>setLiveGroupInvitees(prev=>e.target.checked?[...prev,u.id]:prev.filter(id=>id!==u.id))}
+                    style={{width:18,height:18,accentColor:C.gold}}/>
+                  <span style={{fontSize:13,color:C.white}}>{u.name}</span>
+                </label>
+              ))}
+            </div>
+            <div style={{fontSize:10,color:C.muted,marginBottom:14,lineHeight:1.5}}>
+              Alle Teilnehmer sehen sich gegenseitig, solange die Ausfahrt läuft. Du kannst sie jederzeit beenden.
+            </div>
+            <button className="btn" style={{width:"100%"}} disabled={liveGroupBusy} onClick={createLiveGroupNow}>
+              {liveGroupBusy?"…":"Ausfahrt starten"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Live-Ausfahrt: Kartenansicht ── */}
+      {activeLiveGroup&&(()=>{
+        const joined = (activeLiveGroup.members||[]).filter(m=>m.status==="joined"&&m.lat!=null);
+        const isOrganizer = activeLiveGroup.organizerId===me?.id;
+        let bbox = "";
+        if(joined.length>0){
+          const lats=joined.map(m=>m.lat), lngs=joined.map(m=>m.lng);
+          const pad=0.01;
+          bbox = `${Math.min(...lngs)-pad},${Math.min(...lats)-pad},${Math.max(...lngs)+pad},${Math.max(...lats)+pad}`;
+        }
+        return (
+          <div style={{position:"fixed",inset:0,background:C.black,zIndex:600,display:"flex",flexDirection:"column"}}>
+            <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <div className="cond" style={{fontSize:18,fontWeight:900,color:C.white}}>{activeLiveGroup.name}</div>
+                <div style={{fontSize:11,color:C.muted}}>{joined.length} live · aktualisiert alle 45s</div>
+              </div>
+              <button onClick={closeLiveGroupView} style={{background:"none",border:"none",color:C.muted,fontSize:22,cursor:"pointer"}}>✕</button>
+            </div>
+            <div style={{flex:1,position:"relative"}}>
+              {bbox?(
+                <iframe title="Live-Karte" style={{width:"100%",height:"100%",border:"none"}}
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik`}/>
+              ):(
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.muted,fontSize:13,padding:20,textAlign:"center"}}>
+                  Noch keine Standorte verfügbar — warte, bis Teilnehmer beitreten und ihren Standort teilen.
+                </div>
+              )}
+            </div>
+            <div style={{padding:"12px 16px",borderTop:`1px solid ${C.border}`,maxHeight:180,overflowY:"auto"}}>
+              {(activeLiveGroup.members||[]).map(m=>(
+                <div key={m.userId} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontSize:12}}>
+                  <span style={{color:C.white}}>{allUsers[m.userId]?.name||"Mitglied"}{m.userId===activeLiveGroup.organizerId?" 👑":""}</span>
+                  <span style={{color:C.muted}}>
+                    {m.status==="invited"?"Noch nicht beigetreten":m.updatedAt?new Date(m.updatedAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr":"—"}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:"12px 16px",display:"flex",gap:8}}>
+              {isOrganizer?(
+                <button className="btn ghost" style={{flex:1,color:C.red,borderColor:`${C.red}44`}} onClick={endLiveGroupNow}>Ausfahrt beenden</button>
+              ):(
+                <button className="btn ghost" style={{flex:1}} onClick={leaveLiveGroupNow}>Verlassen</button>
+              )}
             </div>
           </div>
         );
