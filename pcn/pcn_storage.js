@@ -515,6 +515,7 @@ const PCN_STORAGE = (() => {
         phone: profile?.phone || "",
         isAdmin: !!profile?.is_admin,
         bgTheme: profile?.bg_theme || "none",
+        adacMemberNr: profile?.adac_member_nr || "", avdMemberNr: profile?.avd_member_nr || "",
         notifications: { events: true, messages: true },
         access_token: supaUser.access_token || "",
         token_expiry: supaUser.token_expiry || 0,
@@ -685,6 +686,7 @@ const PCN_STORAGE = (() => {
         geburtstag: u.geburtstag||"", phone: u.phone||"",
         isAdmin: !!u.is_admin,
         bgTheme: u.bg_theme||"none",
+        adacMemberNr: u.adac_member_nr||"", avdMemberNr: u.avd_member_nr||"",
         createdAt: u.created_at||"" };
       safeStore.setItem("pcn_session", JSON.stringify(session));
       await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
@@ -732,6 +734,7 @@ const PCN_STORAGE = (() => {
         geburtstag: u.geburtstag||"",
         isAdmin: !!u.is_admin,
         bgTheme: u.bg_theme||"none",
+        adacMemberNr: u.adac_member_nr||"", avdMemberNr: u.avd_member_nr||"",
         notifications: { events:true, messages:true },
         createdAt: u.created_at||"",
       };
@@ -777,6 +780,7 @@ const PCN_STORAGE = (() => {
         geburtstag: u.geburtstag||sess.geburtstag||"",
         isAdmin: !!u.is_admin,
         bgTheme: u.bg_theme||sess.bgTheme||"none",
+        adacMemberNr: u.adac_member_nr||sess.adacMemberNr||"", avdMemberNr: u.avd_member_nr||sess.avdMemberNr||"",
         createdAt: u.created_at||sess.createdAt||"",
       };
       safeStore.setItem("pcn_session", JSON.stringify(updated));
@@ -973,6 +977,11 @@ const PCN_STORAGE = (() => {
       const allowed = ["none","klassiker","strecke"];
       if(!allowed.includes(theme)) return { error: "Ungültiges Theme" };
       return await supabase._patch("users","id=eq."+userId,{bg_theme:theme});
+    },
+    async setBreakdownMembership(userId, adacNr, avdNr) {
+      return await supabase._patch("users","id=eq."+userId,{
+        adac_member_nr: adacNr||null, avd_member_nr: avdNr||null,
+      });
     },
 
     // ── Eigentumsübertragung ──
@@ -1615,6 +1624,7 @@ function guard(label, fn){
       // und Vorstands-Abzeichen in der Community — siehe getClubMembers().
       listClub: () => db.getClubMembers ? db.getClubMembers() : Promise.resolve({data:[]}),
       setBgTheme: guard("members.setBgTheme", (uid, theme) => db.setBgTheme(uid, theme)),
+      setBreakdownMembership: guard("members.setBreakdownMembership", (uid,adacNr,avdNr) => db.setBreakdownMembership(uid,adacNr,avdNr)),
     },
     liveGroups: {
       create: guard("liveGroups.create", (name,organizerId,invitedUserIds) => db.createLiveGroup(name,organizerId,invitedUserIds)),
