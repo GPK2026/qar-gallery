@@ -1613,6 +1613,9 @@ function PCNInner() {
   const [showBuyerConfirm, setShowBuyerConfirm] = useState(null); // transfer-Objekt, das der Käufer bestätigen soll
   const [buyerVisibilityChoice, setBuyerVisibilityChoice] = useState({gallery:false, logbook:false, events:false});
   const [qarIdRequestInput, setQarIdRequestInput] = useState("");
+  const [adacNrInput, setAdacNrInput] = useState("");
+  const [avdNrInput, setAvdNrInput] = useState("");
+  const [breakdownBusy, setBreakdownBusy] = useState(false);
   const [scanLocations, setScanLocations] = useState({}); // vehicleId -> array
   const [showCheckInPrompt, setShowCheckInPrompt] = useState(null); // vehicleId
   const [checkInBusy, setCheckInBusy] = useState(false);
@@ -2662,6 +2665,10 @@ function PCNInner() {
     if(me?.id && !isDemo) loadMyLiveGroups();
     return ()=>stopLiveGroupPolling();
   }, [me?.id]);
+  useEffect(()=>{
+    setAdacNrInput(me?.adacMemberNr||"");
+    setAvdNrInput(me?.avdMemberNr||"");
+  }, [me?.adacMemberNr, me?.avdMemberNr]);
   const createLiveGroupNow = async () => {
     if(!liveGroupName.trim()){ toast_("Name für die Ausfahrt eingeben","err"); return; }
     if(liveGroupInvitees.length===0){ toast_("Mindestens eine Person einladen","err"); return; }
@@ -3360,6 +3367,16 @@ Regeln:
     setShowTransferPanel(null);
     setQarIdRequestInput("");
     toast_(`Antrag für ${vehicle.hersteller} ${vehicle.modell} gestellt — der Verkäufer muss ihn bestätigen`);
+  };
+  const saveBreakdownMembership = async () => {
+    const DB=window.PCN_DB;
+    if(isDemo){ toast_("Im Demo-Modus nicht dauerhaft speicherbar"); return; }
+    setBreakdownBusy(true);
+    const {error} = await DB.members.setBreakdownMembership(me.id, adacNrInput.trim(), avdNrInput.trim());
+    setBreakdownBusy(false);
+    if(error){ toast_("Fehler beim Speichern","err"); return; }
+    setMe(prev=>({...prev, adacMemberNr:adacNrInput.trim(), avdMemberNr:avdNrInput.trim()}));
+    toast_("Pannenhilfe-Daten gespeichert");
   };
   const cancelTransfer = async (transferId) => {
     const DB=window.PCN_DB;
@@ -5027,6 +5044,30 @@ Regeln:
                     </div>
                   </div>
                 )}
+
+                {/* ── Pannenhilfe: schnell griffbereit im Ernstfall ── */}
+                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🚨 Pannenhilfe</div>
+                  <div style={{display:"flex",gap:8}}>
+                    <a href="tel:+498920204000" style={{flex:1,textDecoration:"none"}}>
+                      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",textAlign:"center"}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.white}}>📞 ADAC</div>
+                        {me?.adacMemberNr&&<div style={{fontSize:9,color:C.muted,marginTop:2}}>Mitglied {me.adacMemberNr}</div>}
+                      </div>
+                    </a>
+                    <a href="tel:+498009909909" style={{flex:1,textDecoration:"none"}}>
+                      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",textAlign:"center"}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.white}}>📞 AvD</div>
+                        {me?.avdMemberNr&&<div style={{fontSize:9,color:C.muted,marginTop:2}}>Mitglied {me.avdMemberNr}</div>}
+                      </div>
+                    </a>
+                  </div>
+                  {!me?.adacMemberNr&&!me?.avdMemberNr&&(
+                    <div style={{fontSize:10,color:C.muted,marginTop:6}}>
+                      Pannenhilfe erreichst du auch ohne Mitgliedschaft — Mitgliedsnummer im Profil hinterlegen für schnelleren Ablauf.
+                    </div>
+                  )}
+                </div>
 
                 {/* ── Standort-Historie: nur für den Eigentümer, letzte 48h ── */}
                 {(scanLocations[v.id]||[]).length>0&&(
@@ -7754,6 +7795,23 @@ Regeln:
                   </>
                 );
               })()}
+            </div>
+
+            {/* ── Pannenhilfe-Mitgliedschaften ── */}
+            <div className="card" style={{padding:16,marginBottom:14}}>
+              <div style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>🚨 Pannenhilfe</div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:12,lineHeight:1.6}}>
+                Mitgliedsnummer hinterlegen — bei einer Panne dann direkt in der Fahrzeugakte griffbereit, mit Anruf-Button.
+              </div>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:4}}>ADAC-Mitgliedsnummer</div>
+              <input className="inp" placeholder="z.B. 123456789" style={{marginBottom:10}}
+                value={adacNrInput} onChange={e=>setAdacNrInput(e.target.value)}/>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:4}}>AvD-Mitgliedsnummer</div>
+              <input className="inp" placeholder="z.B. 987654321" style={{marginBottom:12}}
+                value={avdNrInput} onChange={e=>setAvdNrInput(e.target.value)}/>
+              <button className="btn ghost" style={{width:"100%"}} disabled={breakdownBusy} onClick={saveBreakdownMembership}>
+                {breakdownBusy?"…":"Speichern"}
+              </button>
             </div>
 
             <button className="btn ghost" style={{width:"100%",fontSize:15,padding:"14px"}} onClick={async()=>{
