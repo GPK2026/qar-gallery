@@ -1603,13 +1603,16 @@ function PCNInner() {
   });
   const [showBgPicker, setShowBgPicker] = useState(false);
   // Eigentumsübertragung: QAR-ID bleibt am Fahrzeug wie eine FIN, nur der
-  // Eigentümer wechselt. showTransferOut = Verkäufer-Sicht (vehicleId),
-  // showTransferIn = Käufer-Sicht (Code eingeben/scannen).
-  const [showTransferOut, setShowTransferOut] = useState(null); // vehicleId
-  const [pendingTransfer, setPendingTransfer] = useState(null); // {code, expiresAt}
+  // Eigentümer wechselt. Zwei Wege: Weg A (Direktübertragung vor Ort per
+  // Doppel-Scan) und Weg B (Antrag ohne gemeinsame Anwesenheit).
+  const [pendingTransfer, setPendingTransfer] = useState(null); // {id, code, expiresAt, mode, status, requestedByUserId}
   const [transferBusy, setTransferBusy] = useState(false);
-  const [showTransferIn, setShowTransferIn] = useState(false);
-  const [transferCodeInput, setTransferCodeInput] = useState("");
+  const [showTransferPanel, setShowTransferPanel] = useState(null); // vehicleId — Verkäufer-Sicht am eigenen Fahrzeug
+  const [showForeignTransferStart, setShowForeignTransferStart] = useState(null); // fremdes vehicleId nach QR-Scan
+  const [showSellerConfirm, setShowSellerConfirm] = useState(null); // transfer-Objekt, das der Verkäufer bestätigen soll
+  const [showBuyerConfirm, setShowBuyerConfirm] = useState(null); // transfer-Objekt, das der Käufer bestätigen soll
+  const [buyerVisibilityChoice, setBuyerVisibilityChoice] = useState({gallery:false, logbook:false, events:false});
+  const [qarIdRequestInput, setQarIdRequestInput] = useState("");
   const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
@@ -2593,6 +2596,15 @@ function PCNInner() {
     setTimeout(async()=>{
       closeScanner();
       if(v){
+        const isOwnVehicle = me && (v.userId===me.id || v.owner===me.email);
+        if(me && !isGuest && !isOwnVehicle){
+          // Eingeloggter Nutzer scannt ein fremdes Fahrzeug — statt direkt
+          // die öffentliche Vorschau zu zeigen, Übernahme-Option anbieten
+          // (Weg A: Direktübertragung vor Ort).
+          setShowForeignTransferStart(v.id);
+          setScreen("app");
+          return;
+        }
         setPublicV({...v,privacy:{...DEF_PRIVACY,...(v.privacy||{})}});
         setScreen("public");
         await loadStatusFor(v.id);
@@ -3148,43 +3160,88 @@ Regeln:
   };
 
   // ── Eigentumsübertragung ──
-  const startTransfer = async (vehicleId) => {
+  const startTransferAsBuyer = async (vehicleId) => {
+    // Weg A: jemand scannt den bestehenden, permanenten QR-Code eines
+    // fremden Fahrzeugs und will es übernehmen — erzeugt einen
+    // individuellen Bestätigungscode für den Verkäufer.
     const DB=window.PCN_DB;
     if(isDemo){ toast_("Im Demo-Modus nicht verfügbar — echtes Konto nötig","err"); return; }
     setTransferBusy(true);
-    const {data,error} = await DB.vehicles.initiateTransfer(vehicleId, me.id);
+    const {data,error} = await DB.vehicles.startTransferViaScan(vehicleId, me.id);
     setTransferBusy(false);
-    if(error){ toast_("Fehler: "+error,"err"); return; }
-    setPendingTransfer(data);
-    toast_("Übertragungscode erstellt — 24h gültig");
+    if(error){ toast_(error,"err"); return; }
+    setPendingTransfer({...data, mode:"seller_initiated"});
+    setShowForeignTransferStart(null);
+    setShowBuyerConfirm({...data, mode:"seller_initiated"});
+    toast_("Übernahme gestartet — bestätige jetzt deinen Teil, danach der Verkäufer seinen");
   };
-  const cancelTransfer = async (transferId, vehicleId) => {
+  const requestTransferAsBuyer = async (vehicleId) => {
+    // Weg B: Käufer ist nicht mit dem Verkäufer vor Ort, stellt einen
+    // Antrag über sein eigenes Konto — Verkäufer bestätigt später.
+    const DB=window.PCN_DB;
+    if(isDemo){ toast_("Im Demo-Modus nicht verfügbar — echtes Konto nötig","err"); return; }
+    setTransferBusy(true);
+    const {data,error} = await DB.vehicles.requestTransfer(vehicleId, me.id);
+    setTransferBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    setShowForeignTransferStart(null);
+    toast_("Antrag gestellt — der Verkäufer muss ihn in seiner App bestätigen");
+  };
+  const requestTransferByQarId = async () => {
+    const qarId = qarIdRequestInput.trim().toUpperCase();
+    if(!qarId){ toast_("QAR-ID eingeben","err"); return; }
+    const DB=window.PCN_DB;
+    if(isDemo){ toast_("Im Demo-Modus nicht verfügbar — echtes Konto nötig","err"); return; }
+    setTransferBusy(true);
+    const {data:vehicle} = await DB.vehicles.findVehicleByQarId(qarId);
+    if(!vehicle){ setTransferBusy(false); toast_("Kein Fahrzeug mit dieser QAR-ID gefunden","err"); return; }
+    const {error} = await DB.vehicles.requestTransfer(vehicle.id, me.id);
+    setTransferBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    setShowTransferPanel(null);
+    setQarIdRequestInput("");
+    toast_(`Antrag für ${vehicle.hersteller} ${vehicle.modell} gestellt — der Verkäufer muss ihn bestätigen`);
+  };
+  const cancelTransfer = async (transferId) => {
     const DB=window.PCN_DB;
     setTransferBusy(true);
     await DB.vehicles.cancelTransfer(transferId);
     setTransferBusy(false);
     setPendingTransfer(null);
+    setShowTransferPanel(null);
     toast_("Übertragung abgebrochen");
   };
   const loadPendingTransfer = async (vehicleId) => {
     const DB=window.PCN_DB; if(!DB || isDemo) return;
     const {data} = await DB.vehicles.getPendingTransfer(vehicleId);
-    if(data) setPendingTransfer(data);
+    setPendingTransfer(data||null);
   };
-  const redeemTransfer = async () => {
-    const code = transferCodeInput.trim().toUpperCase();
-    if(!code){ toast_("Code eingeben","err"); return; }
+  const confirmAsSeller = async (transfer, agreed) => {
+    if(!agreed){ toast_("Bitte der Übertragung zustimmen","err"); return; }
     const DB=window.PCN_DB;
-    if(isDemo){ toast_("Im Demo-Modus nicht verfügbar — echtes Konto nötig","err"); return; }
     setTransferBusy(true);
-    const {data,error} = await DB.vehicles.redeemTransfer(code, me.id);
+    const {error} = await DB.vehicles.confirmSellerSide(transfer.id, me.id, true);
     setTransferBusy(false);
     if(error){ toast_(error,"err"); return; }
-    setShowTransferIn(false);
-    setTransferCodeInput("");
-    toast_("Fahrzeug erfolgreich übernommen 🎉");
-    // Fahrzeugliste neu laden, damit das übernommene Fahrzeug sofort erscheint
-    if(typeof refreshAll==="function") refreshAll(me);
+    setShowSellerConfirm(null);
+    setPendingTransfer(null);
+    toast_("Bestätigt — sobald auch der Käufer zustimmt, ist die Übertragung abgeschlossen");
+  };
+  const confirmAsBuyer = async (transfer, agreed) => {
+    if(!agreed){ toast_("Bitte den Nutzungsbedingungen zustimmen","err"); return; }
+    const DB=window.PCN_DB;
+    setTransferBusy(true);
+    const {data,error} = await DB.vehicles.confirmBuyerSide(transfer.id, me.id, true, buyerVisibilityChoice);
+    setTransferBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    setShowBuyerConfirm(null);
+    setBuyerVisibilityChoice({gallery:false, logbook:false, events:false});
+    if(data?.vehicleId){
+      toast_("Fahrzeug erfolgreich übernommen 🎉 — 30 Tage kostenlose Probezeit gestartet");
+      if(typeof refreshAll==="function") refreshAll(me);
+    } else {
+      toast_("Bestätigt — wartet noch auf Zustimmung des Verkäufers");
+    }
   };
 
   const cancelEvent = async (eventId, regId) => {
@@ -4756,7 +4813,7 @@ Regeln:
                     <div style={{fontSize:10,color:C.muted}}>So sehen Besucher dein Fahrzeug beim QR-Scan</div>
                   </div>
                 </button>
-                <button onClick={()=>{setShowTransferOut(v.id);setPendingTransfer(null);loadPendingTransfer(v.id);}}
+                <button onClick={()=>{setShowTransferPanel(v.id);setPendingTransfer(null);loadPendingTransfer(v.id);}}
                   style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
                   <span style={{fontSize:18}}>🔑</span>
                   <div style={{textAlign:"left"}}>
@@ -5350,8 +5407,8 @@ Regeln:
           )}
 
           {/* ── Eigentumsübertragung: Verkäufer-Sicht ── */}
-          {showTransferOut===v.id&&(
-            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowTransferOut(null);}}>
+          {showTransferPanel===v.id&&(
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowTransferPanel(null);}}>
               <div className="sheet">
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>🔑 Fahrzeug übertragen</div>
                 <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
@@ -5359,32 +5416,50 @@ Regeln:
                 </div>
 
                 {!pendingTransfer&&(
-                  <>
-                    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:12,color:C.muted,lineHeight:1.6}}>
-                      Erzeugt einen Code, gültig 24 Stunden. Zeige ihn dem Käufer vor Ort — er scannt oder gibt ihn in seiner App ein, um das Fahrzeug zu übernehmen.
-                    </div>
-                    <button className="btn" style={{width:"100%"}} disabled={transferBusy} onClick={()=>startTransfer(v.id)}>
-                      {transferBusy?"…":"Übertragungscode erstellen"}
-                    </button>
-                  </>
+                  <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",fontSize:12,color:C.muted,lineHeight:1.7}}>
+                    <div style={{fontWeight:700,color:C.white,marginBottom:6}}>So funktioniert die Übertragung:</div>
+                    <div style={{marginBottom:8}}><b>Vor Ort gemeinsam:</b> Der Käufer scannt den QR-Code direkt am Fahrzeug — das startet den Vorgang automatisch. Du bestätigst anschließend hier.</div>
+                    <div><b>Ohne gemeinsame Anwesenheit:</b> Der Käufer stellt über sein eigenes Konto einen Antrag. Du erhältst dann eine Anfrage zur Bestätigung.</div>
+                  </div>
                 )}
 
                 {pendingTransfer&&(
                   <>
-                    <div style={{background:"#fff",borderRadius:12,padding:16,display:"flex",justifyContent:"center",marginBottom:14}}>
-                      <QRCodeCanvas value={"https://qar.gallery/pcn/?transfer="+pendingTransfer.code} size={180}/>
+                    <div style={{background:`${C.gold}11`,border:`1px solid ${C.gold}44`,borderRadius:10,padding:"12px 14px",marginBottom:14}}>
+                      <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:4}}>
+                        {pendingTransfer.mode==="buyer_requested"?"Übernahme-Antrag liegt vor":"Käufer wartet vor Ort auf deine Bestätigung"}
+                      </div>
+                      <div style={{fontSize:11,color:C.muted,lineHeight:1.6}}>
+                        Gültig bis {new Date(pendingTransfer.expiresAt).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})} — danach wird der QR-Code inaktiv, falls nicht abgeschlossen.
+                      </div>
                     </div>
-                    <div style={{textAlign:"center",marginBottom:14}}>
-                      <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Oder Code manuell eingeben lassen:</div>
-                      <div style={{fontFamily:"monospace",fontSize:18,fontWeight:800,color:C.gold,letterSpacing:2}}>{pendingTransfer.code}</div>
-                      <div style={{fontSize:10,color:C.muted,marginTop:6}}>Gültig bis {new Date(pendingTransfer.expiresAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} Uhr</div>
-                    </div>
+                    <button className="btn" style={{width:"100%",marginBottom:8}} disabled={transferBusy}
+                      onClick={()=>setShowSellerConfirm(pendingTransfer)}>
+                      Übertragung bestätigen
+                    </button>
                     <button className="btn ghost" style={{width:"100%",color:C.red,borderColor:`${C.red}44`}} disabled={transferBusy}
-                      onClick={()=>cancelTransfer(pendingTransfer.id,v.id)}>
+                      onClick={()=>cancelTransfer(pendingTransfer.id)}>
                       Übertragung abbrechen
                     </button>
                   </>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Verkäufer-Bestätigungsdialog mit rechtlichem Opt-in ── */}
+          {showSellerConfirm&&showSellerConfirm.id&&(
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowSellerConfirm(null);}}>
+              <div className="sheet">
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:14}}>Übertragung bestätigen</div>
+                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"14px",marginBottom:16,fontSize:12,color:C.muted,lineHeight:1.7}}>
+                  „Ich übertrage die digitale QAR-Akte dieses Fahrzeugs (Fotos, Logbuch-Einträge, Punkte-Historie) an den von mir bestätigten neuen Eigentümer. Mir ist bewusst, dass diese Übertragung unabhängig vom zivilrechtlichen Kaufvertrag über das Fahrzeug erfolgt und diesen weder ersetzt noch beeinflusst. Ich bestätige, dass ich zur Übertragung berechtigt bin. Mir ist bewusst, dass ich für die Prüfung und Bereinigung persönlicher Daten in Fotos, Notizen und Dokumenten dieser Akte selbst verantwortlich bin — nicht entfernte Inhalte gehen mit der Übertragung an den neuen Eigentümer über."
+                </div>
+                <button className="btn" style={{width:"100%",marginBottom:8}} disabled={transferBusy}
+                  onClick={()=>confirmAsSeller(showSellerConfirm,true)}>
+                  {transferBusy?"…":"Ich stimme zu und übertrage"}
+                </button>
+                <button className="btn ghost" style={{width:"100%"}} onClick={()=>setShowSellerConfirm(null)}>Zurück</button>
               </div>
             </div>
           )}
@@ -6198,7 +6273,7 @@ Regeln:
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🚗 Meine Fahrzeuge</div>
                 <div style={{display:"flex",gap:6}}>
-                  <button className="btn sm ghost" onClick={()=>setShowTransferIn(true)}>🔑 Übernehmen</button>
+                  <button className="btn sm ghost" onClick={()=>setShowTransferPanel("__request__")}>🔑 Beantragen</button>
                   <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>
                 </div>
               </div>
@@ -7946,24 +8021,88 @@ Regeln:
 
       {/* ── POINTS INFO MODAL ── */}
       {/* ── Eigentumsübertragung: Käufer-Sicht ── */}
-      {showTransferIn&&(
+      {showTransferPanel==="__request__"&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
-          onClick={()=>{setShowTransferIn(false);setTransferCodeInput("");}}>
+          onClick={()=>{setShowTransferPanel(null);setQarIdRequestInput("");}}>
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
-            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>🔑 Fahrzeug übernehmen</div>
+            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>🔑 Fahrzeug beantragen</div>
             <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
-              Code vom Verkäufer eingeben, den er dir vor Ort gezeigt hat.
+              QAR-ID des Fahrzeugs eingeben, das du übernehmen möchtest. Der bisherige Eigentümer erhält eine Anfrage und muss sie bestätigen — das Fahrzeug wechselt nicht sofort.
             </div>
-            <input className="inp" placeholder="z.B. TRF-XXXXXXXXXX" style={{marginBottom:14,fontFamily:"monospace",textAlign:"center",fontSize:16,letterSpacing:1}}
-              value={transferCodeInput} onChange={e=>setTransferCodeInput(e.target.value.toUpperCase())}
-              onKeyDown={e=>e.key==="Enter"&&redeemTransfer()}/>
-            <button className="btn" style={{width:"100%"}} disabled={transferBusy} onClick={redeemTransfer}>
-              {transferBusy?"…":"Fahrzeug übernehmen"}
+            <input className="inp" placeholder="z.B. QAR-XXXXXXXX" style={{marginBottom:14,fontFamily:"monospace",textAlign:"center",fontSize:16,letterSpacing:1}}
+              value={qarIdRequestInput} onChange={e=>setQarIdRequestInput(e.target.value.toUpperCase())}
+              onKeyDown={e=>e.key==="Enter"&&requestTransferByQarId()}/>
+            <button className="btn" style={{width:"100%"}} disabled={transferBusy} onClick={requestTransferByQarId}>
+              {transferBusy?"…":"Übernahme beantragen"}
             </button>
           </div>
         </div>
       )}
+
+      {/* ── Käufer-Bestätigungsdialog: Nutzungsbedingungen + Sichtbarkeits-Wahl
+           für die geerbte Historie — zwei getrennte Opt-ins laut Rechtstext
+           Teil 4. Wird geöffnet, sobald ein Vorgang zur Käufer-Bestätigung
+           ansteht (z.B. nach erfolgreichem QR-Scan eines fremden Fahrzeugs). ── */}
+      {showBuyerConfirm&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>setShowBuyerConfirm(null)}>
+          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
+            onClick={e=>e.stopPropagation()}>
+            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:14}}>Fahrzeug übernehmen</div>
+
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>1. Nutzungsbedingungen</div>
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:12,color:C.muted,lineHeight:1.6}}>
+              „Ich übernehme die digitale QAR-Akte dieses Fahrzeugs und akzeptiere die Allgemeinen Geschäftsbedingungen von QAR.Gallery für die weitere Nutzung. Mir ist bewusst, dass nach einer 30-tägigen kostenlosen Probezeit eine Zahlung erforderlich wird, andernfalls die Akte gesperrt wird."
+            </div>
+
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>2. Sichtbarkeit der übernommenen Historie</div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.6}}>
+              Was von den Einträgen des vorherigen Eigentümers öffentlich sichtbar bleiben soll — ohne Auswahl bleibt alles zunächst privat.
+            </div>
+            {[["gallery","📸 Bisherige Fotogalerie"],["logbook","📋 Bisheriges Service-Logbuch"],["events","🏁 Bisherige Veranstaltungsteilnahmen"]].map(([key,label])=>(
+              <label key={key} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",cursor:"pointer"}}>
+                <input type="checkbox" checked={!!buyerVisibilityChoice[key]}
+                  onChange={e=>setBuyerVisibilityChoice(p=>({...p,[key]:e.target.checked}))}
+                  style={{width:18,height:18,accentColor:C.gold}}/>
+                <span style={{fontSize:13,color:C.white}}>{label}</span>
+              </label>
+            ))}
+
+            <button className="btn" style={{width:"100%",marginTop:16,marginBottom:8}} disabled={transferBusy}
+              onClick={()=>confirmAsBuyer(showBuyerConfirm,true)}>
+              {transferBusy?"…":"Zustimmen und übernehmen"}
+            </button>
+            <button className="btn ghost" style={{width:"100%"}} onClick={()=>setShowBuyerConfirm(null)}>Abbrechen</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Fremdes Fahrzeug gescannt: Übernahme starten (Weg A) ── */}
+      {showForeignTransferStart&&(()=>{
+        const fv = vehicles[showForeignTransferStart] || Object.values(DEMO_VEHICLES).find(x=>x.id===showForeignTransferStart);
+        return (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+            onClick={()=>setShowForeignTransferStart(null)}>
+            <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
+              onClick={e=>e.stopPropagation()}>
+              <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>🔑 Fahrzeug übernehmen?</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+                {fv?`${fv.hersteller||""} ${fv.modell||""}`.trim():"Dieses Fahrzeug"} gehört aktuell einem anderen Mitglied. Ist der Verkäufer jetzt bei dir?
+              </div>
+              <button className="btn" style={{width:"100%",marginBottom:8}} disabled={transferBusy}
+                onClick={()=>startTransferAsBuyer(showForeignTransferStart)}>
+                {transferBusy?"…":"Ja, gemeinsam übernehmen"}
+              </button>
+              <button className="btn ghost" style={{width:"100%",marginBottom:8}} disabled={transferBusy}
+                onClick={()=>requestTransferAsBuyer(showForeignTransferStart)}>
+                Nein — Antrag stellen
+              </button>
+              <button className="btn ghost" style={{width:"100%",color:C.muted}} onClick={()=>setShowForeignTransferStart(null)}>Abbrechen</button>
+            </div>
+          </div>
+        );
+      })()}
 
       {showBgPicker&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
