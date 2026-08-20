@@ -1460,6 +1460,7 @@ const PCN_STORAGE = (() => {
         id: row.id, text:row.text, icon:row.icon,
         expiresAt: row.expires_at?new Date(row.expires_at).getTime():null,
         setAt: row.set_at?new Date(row.set_at).getTime():null,
+        lat: row.latitude, lng: row.longitude,
       }));
       return { data: mapped };
     },
@@ -1485,6 +1486,17 @@ const PCN_STORAGE = (() => {
       }
       delete row.id; // neue Zeile — Datenbank vergibt die ID selbst
       return await supabase._post("vehicle_status", row);
+    },
+    async setStatusLocation(vehicleId, _appSlotId, lat, lng) {
+      // App-seitige Slot-IDs ("s1234567890") entsprechen NICHT den echten
+      // Datenbank-UUIDs — daher wird stattdessen der zuletzt erstellte
+      // aktive Status-Eintrag dieses Fahrzeugs anhand set_at gefunden.
+      // Rein privat: nur für den Eigentümer sichtbar, der Status-TEXT
+      // selbst bleibt öffentlich unverändert.
+      const res = await supabase._q("vehicle_status",
+        "?vehicle_id=eq."+vehicleId+"&order=set_at.desc&limit=1&select=id");
+      if(res.error || !res.data?.length) return { error: "Status nicht gefunden" };
+      return await supabase._patch("vehicle_status","id=eq."+res.data[0].id,{latitude:lat, longitude:lng});
     },
     async clearStatus(vehicleId, slotId=null) {
       if(slotId){
@@ -1577,6 +1589,7 @@ function guard(label, fn){
       getStatus:  (vid)    => db.getStatus(vid),
       setStatus:  guard("vehicles.setStatus",   (vid, s) => db.setStatus(vid, s)),
       clearStatus:guard("vehicles.clearStatus", (vid,sid)  => db.clearStatus(vid,sid)),
+      setStatusLocation: (vid,slotId,lat,lng) => db.setStatusLocation(vid,slotId,lat,lng),
       startTransferViaScan: guard("vehicles.startTransferViaScan", (vid,scannerUid) => db.startTransferViaScan(vid,scannerUid)),
       findVehicleByQarId: (qarId) => db.findVehicleByQarId(qarId),
       recordScanLocation: (vid,coords) => db.recordScanLocation(vid,coords),
