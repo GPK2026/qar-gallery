@@ -796,6 +796,7 @@ const PCN_STORAGE = (() => {
       marktwert: row.marktwert, zustand: row.zustand,
       besonderheiten: row.besonderheiten, image: row.image,
       images: row.images||[], phone: row.phone,
+      checkinLat: row.checkin_lat, checkinLng: row.checkin_lng, checkinAt: row.checkin_at,
       // Parse privacy if stored as JSON string in DB
       privacy: typeof row.privacy==="string" ? JSON.parse(row.privacy||"{}") : (row.privacy||{}),
       registrationBonus: !!row.registration_bonus,
@@ -877,6 +878,26 @@ const PCN_STORAGE = (() => {
         id: r.id, scannedAt: r.scanned_at, hasLocation: r.has_location,
         lat: r.latitude, lng: r.longitude, accuracyM: r.accuracy_m,
       })) };
+    },
+
+    // ── Standort-Check-in: Eigentümer scannt eigenen QR-Code, setzt bewusst
+    // seinen aktuellen Standort ("wo hab ich geparkt"). Rein privat, nur der
+    // Eigentümer sieht es — komplett getrennt vom Diebstahl-Frühwarnsystem.
+    async setCheckIn(vehicleId, ownerUserId, coords) {
+      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id");
+      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
+      if(vRes.data[0].user_id!==ownerUserId) return { error: "Nur der Eigentümer kann einchecken" };
+      return await supabase._patch("vehicles","id=eq."+vehicleId,{
+        checkin_lat: coords.lat, checkin_lng: coords.lng, checkin_at: now(),
+      });
+    },
+    async clearCheckIn(vehicleId, ownerUserId) {
+      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id");
+      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
+      if(vRes.data[0].user_id!==ownerUserId) return { error: "Nur der Eigentümer kann dies ändern" };
+      return await supabase._patch("vehicles","id=eq."+vehicleId,{
+        checkin_lat: null, checkin_lng: null, checkin_at: null,
+      });
     },
 
     async setBgTheme(userId, theme) {
@@ -1491,6 +1512,8 @@ function guard(label, fn){
       findVehicleByQarId: (qarId) => db.findVehicleByQarId(qarId),
       recordScanLocation: (vid,coords) => db.recordScanLocation(vid,coords),
       getRecentScanLocations: (vid) => db.getRecentScanLocations(vid),
+      setCheckIn: guard("vehicles.setCheckIn", (vid,ownerUid,coords) => db.setCheckIn(vid,ownerUid,coords)),
+      clearCheckIn: guard("vehicles.clearCheckIn", (vid,ownerUid) => db.clearCheckIn(vid,ownerUid)),
       requestTransfer: guard("vehicles.requestTransfer", (vid,buyerUid) => db.requestTransfer(vid,buyerUid)),
       getPendingTransfer: (vid) => db.getPendingTransfer(vid),
       cancelTransfer: guard("vehicles.cancelTransfer", (tid) => db.cancelTransfer(tid)),
