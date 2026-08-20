@@ -1613,6 +1613,7 @@ function PCNInner() {
   const [showBuyerConfirm, setShowBuyerConfirm] = useState(null); // transfer-Objekt, das der Käufer bestätigen soll
   const [buyerVisibilityChoice, setBuyerVisibilityChoice] = useState({gallery:false, logbook:false, events:false});
   const [qarIdRequestInput, setQarIdRequestInput] = useState("");
+  const [scanLocations, setScanLocations] = useState({}); // vehicleId -> array
   const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
@@ -2582,6 +2583,28 @@ function PCNInner() {
     setScannerOpen(false); setScannerStatus("idle"); setScannerError(null);
     if(videoRef.current?.srcObject) videoRef.current.srcObject.getTracks().forEach(t=>t.stop());
   };
+  const captureScanLocation = (vehicleId) => {
+    // Standort-Historie fürs Diebstahl-Frühwarnsystem — nur für den
+    // aktuellen Eigentümer sichtbar (siehe getRecentScanLocations),
+    // automatisch nach 48h gelöscht. Lehnt der Scanner die Standortfreigabe
+    // ab oder ist Geolocation nicht verfügbar, wird der Scan trotzdem
+    // vermerkt, nur ohne Koordinaten — blockiert nie den eigentlichen Scan.
+    const DB = window.PCN_DB;
+    if(!DB || isDemo) return;
+    if(!navigator.geolocation){
+      DB.vehicles.recordScanLocation(vehicleId, null).catch(()=>{});
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        DB.vehicles.recordScanLocation(vehicleId, {
+          lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy,
+        }).catch(()=>{});
+      },
+      () => { DB.vehicles.recordScanLocation(vehicleId, null).catch(()=>{}); },
+      { timeout: 8000, maximumAge: 0 }
+    );
+  };
   const handleScanResult = async (data) => {
     const match=data.match(/QAR-[A-Z2-9]{8}/);
     if(!match) return;
@@ -2597,6 +2620,7 @@ function PCNInner() {
       closeScanner();
       if(v){
         const isOwnVehicle = me && (v.userId===me.id || v.owner===me.email);
+        if(!isOwnVehicle) captureScanLocation(v.id);
         if(me && !isGuest && !isOwnVehicle){
           // Eingeloggter Nutzer scannt ein fremdes Fahrzeug — statt direkt
           // die öffentliche Vorschau zu zeigen, Übernahme-Option anbieten
@@ -3216,6 +3240,16 @@ Regeln:
     const {data} = await DB.vehicles.getPendingTransfer(vehicleId);
     setPendingTransfer(data||null);
   };
+  const loadScanLocations = async (vehicleId) => {
+    const DB=window.PCN_DB; if(!DB || isDemo) return;
+    const {data} = await DB.vehicles.getRecentScanLocations(vehicleId);
+    setScanLocations(prev=>({...prev,[vehicleId]:data||[]}));
+  };
+  useEffect(()=>{
+    if(!viewV || isDemo) return;
+    const isOwnVehicle = me && (viewV.userId===me.id || viewV.owner===me.email);
+    if(isOwnVehicle) loadScanLocations(viewV.id);
+  }, [viewV?.id]);
   const confirmAsSeller = async (transfer, agreed) => {
     if(!agreed){ toast_("Bitte der Übertragung zustimmen","err"); return; }
     const DB=window.PCN_DB;
@@ -4821,6 +4855,23 @@ Regeln:
                     <div style={{fontSize:10,color:C.muted}}>Bei Verkauf — QAR-ID bleibt erhalten, wie eine FIN</div>
                   </div>
                 </button>
+
+                {/* ── Standort-Historie: nur für den Eigentümer, letzte 48h ── */}
+                {(scanLocations[v.id]||[]).length>0&&(
+                  <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>📍 Zuletzt gescannt</div>
+                    <div style={{fontSize:10,color:C.muted,marginBottom:8}}>Nur für dich sichtbar · automatisch nach 48h gelöscht</div>
+                    {scanLocations[v.id].slice(0,5).map(s=>(
+                      <div key={s.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontSize:12}}>
+                        <span style={{color:C.muted}}>{new Date(s.scannedAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} Uhr</span>
+                        {s.hasLocation
+                          ? <a href={`https://maps.google.com/?q=${s.lat},${s.lng}`} target="_blank" rel="noopener noreferrer"
+                              style={{color:C.gold,fontWeight:700,textDecoration:"none"}}>Auf Karte ansehen →</a>
+                          : <span style={{color:C.muted,fontSize:11}}>Standort nicht freigegeben</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
