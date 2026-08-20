@@ -984,6 +984,99 @@ const PCN_STORAGE = (() => {
       });
     },
 
+    // ── Notfallprofile (ICE) ──
+    // Mehrere Profile pro Fahrzeug moeglich. Verwaltung nur fuer den
+    // Eigentuemer (bereits eingeloggt, kein zusaetzlicher Code noetig).
+    // Der code-geschuetzte Abruf ist die eigentliche Sicherheitsschranke
+    // fuer Rettungskraefte ohne eigenes Konto.
+    async listEmergencyProfiles(vehicleId, ownerUserId) {
+      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id");
+      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
+      if(vRes.data[0].user_id!==ownerUserId) return { error: "Nur der Eigentümer kann Notfallprofile verwalten" };
+      const res = await supabase._q("emergency_profiles","?vehicle_id=eq."+vehicleId+"&select=*");
+      if(res.error) return res;
+      const profiles = res.data||[];
+      // Kontakte für alle Profile in einem Rutsch laden
+      const ids = profiles.map(p=>p.id);
+      let contactsByProfile = {};
+      if(ids.length){
+        const cRes = await supabase._q("emergency_contacts","?emergency_profile_id=in.("+ids.join(",")+")&order=sort_order.asc");
+        for(const c of (cRes.data||[])){
+          (contactsByProfile[c.emergency_profile_id] ??= []).push({id:c.id, name:c.name, relationship:c.relationship, phone:c.phone});
+        }
+      }
+      return { data: profiles.map(p => ({
+        id:p.id, name:p.name, photoUrl:p.photo_url, birthDate:p.birth_date,
+        bloodType:p.blood_type, allergies:p.allergies, medications:p.medications,
+        conditions:p.conditions, accessCode:p.access_code,
+        contacts: contactsByProfile[p.id]||[],
+      })) };
+    },
+    async saveEmergencyProfile(vehicleId, ownerUserId, profile) {
+      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id");
+      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
+      if(vRes.data[0].user_id!==ownerUserId) return { error: "Nur der Eigentümer kann Notfallprofile verwalten" };
+
+      const row = {
+        vehicle_id: vehicleId, created_by_user_id: ownerUserId, name: profile.name,
+        photo_url: profile.photoUrl||null, birth_date: profile.birthDate||null,
+        blood_type: profile.bloodType||null, allergies: profile.allergies||null,
+        medications: profile.medications||null, conditions: profile.conditions||null,
+        access_code: profile.accessCode, updated_at: now(),
+      };
+      let profileId = profile.id;
+      if(profileId){
+        const res = await supabase._patch("emergency_profiles","id=eq."+profileId, row);
+        if(res.error) return res;
+      } else {
+        row.created_at = now();
+        const res = await supabase._post("emergency_profiles", row);
+        if(res.error) return res;
+        profileId = res.data.id;
+        // Bestehende Kontakte bei Neuanlage löschen (falls versehentlich vorhanden)
+      }
+      // Kontakte komplett ersetzen — einfacher und robuster als Diffing.
+      await supabase._delete("emergency_contacts","emergency_profile_id=eq."+profileId);
+      for(let i=0;i<(profile.contacts||[]).length;i++){
+        const c = profile.contacts[i];
+        if(!c.name || !c.phone) continue;
+        await supabase._post("emergency_contacts", {
+          emergency_profile_id: profileId, name:c.name, relationship:c.relationship||null,
+          phone:c.phone, sort_order:i,
+        });
+      }
+      return { data: { id: profileId } };
+    },
+    async deleteEmergencyProfile(profileId, ownerUserId) {
+      const pRes = await supabase._q("emergency_profiles","?id=eq."+profileId+"&select=vehicle_id");
+      if(pRes.error || !pRes.data?.length) return { error: "Profil nicht gefunden" };
+      const vRes = await supabase._q("vehicles","?id=eq."+pRes.data[0].vehicle_id+"&select=user_id");
+      if(vRes.error || vRes.data?.[0]?.user_id!==ownerUserId) return { error: "Nur der Eigentümer kann Notfallprofile löschen" };
+      return await supabase._delete("emergency_profiles","id=eq."+profileId);
+    },
+    async getEmergencyProfilesByCode(vehicleId, accessCode) {
+      // KEIN Login nötig — das ist der Weg für Rettungskräfte. Der Code
+      // ist die einzige Zugangsschranke hier (siehe Sicherheitskonzept:
+      // Code liegt physisch verborgen im Fahrzeuginneren).
+      const code = (accessCode||"").trim();
+      if(!/^\d{4}$/.test(code)) return { error: "Ungültiger Code" };
+      const res = await supabase._q("emergency_profiles","?vehicle_id=eq."+vehicleId+"&access_code=eq."+code);
+      if(res.error) return res;
+      if(!res.data?.length) return { error: "Falscher Code" };
+      const profiles = res.data;
+      const ids = profiles.map(p=>p.id);
+      const cRes = await supabase._q("emergency_contacts","?emergency_profile_id=in.("+ids.join(",")+")&order=sort_order.asc");
+      let contactsByProfile = {};
+      for(const c of (cRes.data||[])){
+        (contactsByProfile[c.emergency_profile_id] ??= []).push({name:c.name, relationship:c.relationship, phone:c.phone});
+      }
+      return { data: profiles.map(p => ({
+        name:p.name, photoUrl:p.photo_url, birthDate:p.birth_date,
+        bloodType:p.blood_type, allergies:p.allergies, medications:p.medications,
+        conditions:p.conditions, contacts: contactsByProfile[p.id]||[],
+      })) };
+    },
+
     // ── Eigentumsübertragung ──
     // Die QAR-ID bleibt wie eine FIN lebenslang am Fahrzeug — nur der
     // Eigentümer wechselt. Logbuch, Bilder, Punkte-Historie bleiben
@@ -1625,6 +1718,14 @@ function guard(label, fn){
       listClub: () => db.getClubMembers ? db.getClubMembers() : Promise.resolve({data:[]}),
       setBgTheme: guard("members.setBgTheme", (uid, theme) => db.setBgTheme(uid, theme)),
       setBreakdownMembership: guard("members.setBreakdownMembership", (uid,adacNr,avdNr) => db.setBreakdownMembership(uid,adacNr,avdNr)),
+    },
+    emergencyProfiles: {
+      list: guard("emergencyProfiles.list", (vid,ownerUid) => db.listEmergencyProfiles(vid,ownerUid)),
+      save: guard("emergencyProfiles.save", (vid,ownerUid,profile) => db.saveEmergencyProfile(vid,ownerUid,profile)),
+      remove: guard("emergencyProfiles.remove", (pid,ownerUid) => db.deleteEmergencyProfile(pid,ownerUid)),
+      // Kein guard() — muss ohne Login funktionieren (Rettungskräfte-Zugang).
+      // Der 4-stellige Code selbst ist die Zugangsschranke.
+      getByCode: (vid,code) => db.getEmergencyProfilesByCode(vid,code),
     },
     liveGroups: {
       create: guard("liveGroups.create", (name,organizerId,invitedUserIds) => db.createLiveGroup(name,organizerId,invitedUserIds)),
