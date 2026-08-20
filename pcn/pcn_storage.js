@@ -839,6 +839,14 @@ const PCN_STORAGE = (() => {
       if(res.error) return res;
       return { data: (res.data||[]).map(u => ({ id:u.id, name:u.name, isAdmin: !!u.is_admin })) };
     },
+    async findVehicleByQarId(qarId) {
+      // Für Weg B (Übernahme-Antrag ohne QR-Scan): löst eine eingegebene
+      // QAR-ID zur vehicle_id auf, auch wenn das Fahrzeug lokal noch nicht
+      // geladen war.
+      const res = await supabase._q("vehicles","?qar_id=eq."+encodeURIComponent(qarId)+"&select=id,hersteller,modell");
+      if(res.error || !res.data?.length) return { data: null };
+      return { data: { id: res.data[0].id, hersteller: res.data[0].hersteller, modell: res.data[0].modell } };
+    },
     async setBgTheme(userId, theme) {
       const allowed = ["none","klassiker","strecke"];
       if(!allowed.includes(theme)) return { error: "Ungültiges Theme" };
@@ -849,51 +857,160 @@ const PCN_STORAGE = (() => {
     // Die QAR-ID bleibt wie eine FIN lebenslang am Fahrzeug — nur der
     // Eigentümer wechselt. Logbuch, Bilder, Punkte-Historie bleiben
     // unangetastet, weil sie am vehicle_id hängen, nicht am user_id.
-    async initiateTransfer(vehicleId, fromUserId) {
-      // Ein zufaelliger, nicht erratbarer Code — 10 Zeichen aus demselben
-      // eindeutigen Alphabet wie die QAR-ID selbst (kein 0/O, 1/I Risiko).
+    //
+    // Zwei Wege:
+    // - Weg A (seller_initiated): Käufer scannt den BESTEHENDEN, permanenten
+    //   QR-Code am Fahrzeug. Das erzeugt einen individuellen Bestätigungs-
+    //   code, den der Verkäufer im Anschluss vor Ort bestätigt.
+    // - Weg B (buyer_requested): Käufer ist nicht mit dem Verkäufer vor Ort,
+    //   stellt über sein eigenes Konto einen Antrag. Verkäufer bestätigt
+    //   später in der App.
+    // Beide Wege: keine Bearbeitung innerhalb von 30 Tagen -> der physische
+    // QR-Code wird inaktiv (nicht die Akte selbst), jederzeit reaktivierbar.
+
+    async startTransferViaScan(vehicleId, scannerUserId) {
+      // Weg A, Schritt 1: jemand scannt den bestehenden QR-Code eines
+      // Fahrzeugs, das ihm nicht gehört, und will es übernehmen.
+      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id,qr_locked");
+      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
+      const vehicle = vRes.data[0];
+      if(vehicle.qr_locked) return { error: "Dieser QR-Code ist derzeit inaktiv. Der Eigentümer kann ihn in der App reaktivieren." };
+      if(vehicle.user_id===scannerUserId) return { error: "Dies ist bereits dein eigenes Fahrzeug" };
+
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       let code = "TRF-";
       for(let i=0;i<10;i++) code += chars[Math.floor(Math.random()*chars.length)];
       const row = {
-        vehicle_id: vehicleId, from_user_id: fromUserId, transfer_code: code,
-        status: "pending", expires_at: new Date(Date.now()+24*3600*1000).toISOString(),
+        vehicle_id: vehicleId, from_user_id: vehicle.user_id, transfer_code: code,
+        status: "pending", mode: "seller_initiated", requested_by_user_id: scannerUserId,
+        expires_at: new Date(Date.now()+30*24*3600*1000).toISOString(),
       };
       const res = await supabase._post("vehicle_transfers", row);
       if(res.error) return res;
       return { data: { id: res.data?.id, code, expiresAt: row.expires_at } };
     },
+
+    async requestTransfer(vehicleId, buyerUserId) {
+      // Weg B, Schritt 1: Käufer beantragt Übernahme ohne gemeinsame
+      // Anwesenheit — braucht ein eigenes, registriertes Konto.
+      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id,qr_locked");
+      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
+      const vehicle = vRes.data[0];
+      if(vehicle.qr_locked) return { error: "Dieser QR-Code ist derzeit inaktiv. Der Eigentümer kann ihn in der App reaktivieren." };
+      if(vehicle.user_id===buyerUserId) return { error: "Dies ist bereits dein eigenes Fahrzeug" };
+
+      const row = {
+        vehicle_id: vehicleId, from_user_id: vehicle.user_id, transfer_code: "REQ-"+uid(),
+        status: "awaiting_seller", mode: "buyer_requested", requested_by_user_id: buyerUserId,
+        expires_at: new Date(Date.now()+30*24*3600*1000).toISOString(),
+      };
+      const res = await supabase._post("vehicle_transfers", row);
+      if(res.error) return res;
+      return { data: { id: res.data?.id } };
+    },
+
     async getPendingTransfer(vehicleId) {
       // Prüft ob bereits ein offener, nicht abgelaufener Vorgang existiert —
-      // verhindert, dass mehrere gleichzeitige Codes für dasselbe Fahrzeug
-      // kursieren, was Verwirrung stiften würde.
+      // verhindert, dass mehrere gleichzeitige Vorgänge für dasselbe
+      // Fahrzeug kursieren, was Verwirrung stiften würde.
       const res = await supabase._q("vehicle_transfers",
-        "?vehicle_id=eq."+vehicleId+"&status=eq.pending&order=created_at.desc&limit=1");
+        "?vehicle_id=eq."+vehicleId+"&status=in.(pending,awaiting_seller)&order=created_at.desc&limit=1");
       if(res.error || !res.data?.length) return { data: null };
       const t = res.data[0];
       if(new Date(t.expires_at).getTime() < Date.now()) return { data: null };
-      return { data: { id:t.id, code:t.transfer_code, expiresAt:t.expires_at } };
+      return { data: {
+        id:t.id, code:t.transfer_code, expiresAt:t.expires_at, mode:t.mode,
+        status:t.status, requestedByUserId:t.requested_by_user_id,
+      } };
     },
+
     async cancelTransfer(transferId) {
       return await supabase._patch("vehicle_transfers","id=eq."+transferId,{status:"cancelled"});
     },
-    async redeemTransfer(code, toUserId) {
-      // Serverseitig alles nochmal prüfen — der Code allein reicht nicht,
-      // er muss auch tatsächlich noch "pending" und nicht abgelaufen sein.
-      const res = await supabase._q("vehicle_transfers","?transfer_code=eq."+encodeURIComponent(code));
-      if(res.error || !res.data?.length) return { error: "Code nicht gefunden" };
-      const t = res.data[0];
-      if(t.status!=="pending") return { error: "Dieser Code wurde bereits verwendet oder storniert" };
-      if(new Date(t.expires_at).getTime() < Date.now()) return { error: "Dieser Code ist abgelaufen" };
-      if(t.from_user_id===toUserId) return { error: "Du bist bereits der Eigentümer dieses Fahrzeugs" };
 
-      // Fahrzeug auf neuen Eigentümer umschreiben — QAR-ID, Bilder, Logbuch
-      // bleiben unverändert, nur user_id wechselt.
-      const vUpdate = await supabase._patch("vehicles","id=eq."+t.vehicle_id,{user_id:toUserId});
+    async confirmSellerSide(transferId, sellerUserId, agreedTerms) {
+      // Verkäufer bestätigt (bei beiden Wegen) — setzt seinen Teil des
+      // Opt-ins. Erst wenn BEIDE Seiten bestätigt haben, wird tatsächlich
+      // übertragen (siehe finalizeTransfer).
+      const res = await supabase._q("vehicle_transfers","?id=eq."+transferId);
+      if(res.error || !res.data?.length) return { error: "Vorgang nicht gefunden" };
+      const t = res.data[0];
+      if(t.from_user_id!==sellerUserId) return { error: "Nur der aktuelle Eigentümer kann bestätigen" };
+      if(!["pending","awaiting_seller"].includes(t.status)) return { error: "Dieser Vorgang ist nicht mehr aktiv" };
+      if(!agreedTerms) return { error: "Zustimmung zur Übertragung erforderlich" };
+
+      await supabase._patch("vehicle_transfers","id=eq."+transferId,
+        {seller_confirmed_at:now(), seller_agreed_terms:true});
+      return { data: { vehicleId: t.vehicle_id, requestedByUserId: t.requested_by_user_id } };
+    },
+
+    async confirmBuyerSide(transferId, buyerUserId, agreedTerms, visibilityChoice) {
+      // Käufer bestätigt beide Opt-ins auf einmal: Nutzungsbedingungen UND
+      // die Entscheidung, was von der geerbten Historie sichtbar bleibt.
+      const res = await supabase._q("vehicle_transfers","?id=eq."+transferId);
+      if(res.error || !res.data?.length) return { error: "Vorgang nicht gefunden" };
+      const t = res.data[0];
+      if(!["pending","awaiting_seller"].includes(t.status)) return { error: "Dieser Vorgang ist nicht mehr aktiv" };
+      if(!agreedTerms) return { error: "Zustimmung zu den Nutzungsbedingungen erforderlich" };
+
+      await supabase._patch("vehicle_transfers","id=eq."+transferId,{
+        buyer_confirmed_at:now(), buyer_agreed_terms:true,
+        buyer_visibility_choice: visibilityChoice||{}, to_user_id: buyerUserId,
+      });
+
+      // Prüfen ob jetzt beide Seiten bestätigt haben — wenn ja, abschließen.
+      const check = await supabase._q("vehicle_transfers","?id=eq."+transferId);
+      const updated = check.data?.[0];
+      if(updated?.seller_confirmed_at && updated?.buyer_confirmed_at){
+        return await db.finalizeTransfer(transferId);
+      }
+      return { data: { pending: true } };
+    },
+
+    async anonymizeVehicleMessages(vehicleId, sellerUserId) {
+      // Bei Uebertragung: NUR Nachrichten-Threads, die zu DIESEM Fahrzeug
+      // gehoeren, werden bereinigt. Andere Threads des Verkaeufers (andere
+      // Fahrzeuge, allgemeine Chats) bleiben komplett unberuehrt. Innerhalb
+      // der betroffenen Threads werden nur die EIGENEN Nachrichten des
+      // Verkaeufers anonymisiert — die des Gespraechspartners bleiben fuer
+      // diesen unveraendert sichtbar (wie bei einer Kontoloeschung ueblich).
+      const threadsRes = await supabase._q("threads","?vehicle_id=eq."+vehicleId+"&select=id");
+      if(threadsRes.error || !threadsRes.data?.length) return { data: { cleaned: 0 } };
+      let cleaned = 0;
+      for(const t of threadsRes.data){
+        const msgRes = await supabase._patch("messages",
+          "thread_id=eq."+t.id+"&from_id=eq."+sellerUserId,
+          {text:"Nachricht wurde bei Fahrzeugübertragung entfernt", is_system:false});
+        if(!msgRes.error) cleaned++;
+      }
+      return { data: { cleaned, threadsAffected: threadsRes.data.length } };
+    },
+
+    async finalizeTransfer(transferId) {
+      // Wird erst aufgerufen, wenn BEIDE Seiten (Verkäufer + Käufer)
+      // zugestimmt haben. QAR-ID, Fotos, Logbuch bleiben unverändert —
+      // nur user_id wechselt, und die Sichtbarkeits-Wahl des Käufers wird
+      // auf die Privatsphäre-Einstellungen angewendet.
+      const res = await supabase._q("vehicle_transfers","?id=eq."+transferId);
+      if(res.error || !res.data?.length) return { error: "Vorgang nicht gefunden" };
+      const t = res.data[0];
+      if(t.status==="completed") return { data: { vehicleId: t.vehicle_id, alreadyDone:true } };
+
+      const vUpdate = await supabase._patch("vehicles","id=eq."+t.vehicle_id,{
+        user_id: t.to_user_id, qr_locked:false, qr_locked_at:null,
+        transfer_trial_started_at: now(),
+      });
       if(vUpdate.error) return { error: "Übertragung fehlgeschlagen: "+vUpdate.error };
 
-      await supabase._patch("vehicle_transfers","id=eq."+t.id,
-        {status:"completed", to_user_id:toUserId, completed_at:now()});
+      // Nachrichten zu diesem Fahrzeug bereinigen — eigener Fehlerfall wird
+      // bewusst NICHT die gesamte Übertragung blockieren, da das Fahrzeug
+      // bereits übertragen wurde; stattdessen wird der Fehler geloggt.
+      await db.anonymizeVehicleMessages(t.vehicle_id, t.from_user_id).catch(e=>{
+        console.error("[Übertragung] Nachrichten-Bereinigung fehlgeschlagen:", e);
+      });
+
+      await supabase._patch("vehicle_transfers","id=eq."+transferId,
+        {status:"completed", completed_at:now()});
 
       return { data: { vehicleId: t.vehicle_id } };
     },
@@ -1338,10 +1455,13 @@ function guard(label, fn){
       getStatus:  (vid)    => db.getStatus(vid),
       setStatus:  guard("vehicles.setStatus",   (vid, s) => db.setStatus(vid, s)),
       clearStatus:guard("vehicles.clearStatus", (vid,sid)  => db.clearStatus(vid,sid)),
-      initiateTransfer: guard("vehicles.initiateTransfer", (vid,fromUid) => db.initiateTransfer(vid,fromUid)),
+      startTransferViaScan: guard("vehicles.startTransferViaScan", (vid,scannerUid) => db.startTransferViaScan(vid,scannerUid)),
+      findVehicleByQarId: (qarId) => db.findVehicleByQarId(qarId),
+      requestTransfer: guard("vehicles.requestTransfer", (vid,buyerUid) => db.requestTransfer(vid,buyerUid)),
       getPendingTransfer: (vid) => db.getPendingTransfer(vid),
       cancelTransfer: guard("vehicles.cancelTransfer", (tid) => db.cancelTransfer(tid)),
-      redeemTransfer: guard("vehicles.redeemTransfer", (code,toUid) => db.redeemTransfer(code,toUid)),
+      confirmSellerSide: guard("vehicles.confirmSellerSide", (tid,sellerUid,agreed) => db.confirmSellerSide(tid,sellerUid,agreed)),
+      confirmBuyerSide: guard("vehicles.confirmBuyerSide", (tid,buyerUid,agreed,vis) => db.confirmBuyerSide(tid,buyerUid,agreed,vis)),
     },
     listings: {
       // Verkaufsboerse — mehrere gleichzeitige Angebote pro Fahrzeug möglich
