@@ -1616,6 +1616,14 @@ function PCNInner() {
   const [adacNrInput, setAdacNrInput] = useState("");
   const [avdNrInput, setAvdNrInput] = useState("");
   const [breakdownBusy, setBreakdownBusy] = useState(false);
+  // Notfallprofile (ICE)
+  const [showEmergencyAccess, setShowEmergencyAccess] = useState(null); // vehicleId
+  const [emergencyCodeInput, setEmergencyCodeInput] = useState("");
+  const [emergencyResult, setEmergencyResult] = useState(null); // Array von Profilen, oder null
+  const [emergencyBusy, setEmergencyBusy] = useState(false);
+  const [emergencyProfiles, setEmergencyProfiles] = useState([]); // Eigentümer-Verwaltung
+  const [showEmergencyEdit, setShowEmergencyEdit] = useState(null); // Profil-Objekt oder {} für neu
+  const [emergencyEditBusy, setEmergencyEditBusy] = useState(false);
   const [scanLocations, setScanLocations] = useState({}); // vehicleId -> array
   const [showCheckInPrompt, setShowCheckInPrompt] = useState(null); // vehicleId
   const [checkInBusy, setCheckInBusy] = useState(false);
@@ -3378,6 +3386,44 @@ Regeln:
     setMe(prev=>({...prev, adacMemberNr:adacNrInput.trim(), avdMemberNr:avdNrInput.trim()}));
     toast_("Pannenhilfe-Daten gespeichert");
   };
+
+  // ── Notfallprofile (ICE) ──
+  const checkEmergencyAccess = async () => {
+    const code = emergencyCodeInput.trim();
+    if(!/^\d{4}$/.test(code)){ toast_("4-stelligen Code eingeben","err"); return; }
+    const DB=window.PCN_DB;
+    setEmergencyBusy(true);
+    const {data,error} = await DB.emergencyProfiles.getByCode(showEmergencyAccess, code);
+    setEmergencyBusy(false);
+    if(error){ toast_(error,"err"); setEmergencyCodeInput(""); return; }
+    setEmergencyResult(data);
+  };
+  const loadEmergencyProfiles = async (vehicleId) => {
+    const DB=window.PCN_DB; if(!DB || isDemo) return;
+    const {data} = await DB.emergencyProfiles.list(vehicleId, me.id);
+    setEmergencyProfiles(data||[]);
+  };
+  const saveEmergencyProfileNow = async (vehicleId, profile) => {
+    const DB=window.PCN_DB;
+    if(isDemo){ toast_("Im Demo-Modus nicht verfügbar","err"); return; }
+    if(!profile.name?.trim()){ toast_("Name eingeben","err"); return; }
+    if(!/^\d{4}$/.test(profile.accessCode||"")){ toast_("4-stelliger Code erforderlich","err"); return; }
+    setEmergencyEditBusy(true);
+    const {error} = await DB.emergencyProfiles.save(vehicleId, me.id, profile);
+    setEmergencyEditBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    setShowEmergencyEdit(null);
+    await loadEmergencyProfiles(vehicleId);
+    toast_("Notfallprofil gespeichert");
+  };
+  const deleteEmergencyProfileNow = async (profileId, vehicleId) => {
+    const DB=window.PCN_DB;
+    setEmergencyEditBusy(true);
+    await DB.emergencyProfiles.remove(profileId, me.id);
+    setEmergencyEditBusy(false);
+    await loadEmergencyProfiles(vehicleId);
+    toast_("Notfallprofil gelöscht");
+  };
   const cancelTransfer = async (transferId) => {
     const DB=window.PCN_DB;
     setTransferBusy(true);
@@ -4308,6 +4354,14 @@ Regeln:
           </div>
         </div>
 
+        {/* ── Notfall-Zugang — für Ersthelfer/Rettungskräfte immer sichtbar ── */}
+        <button onClick={()=>setShowEmergencyAccess(v.id)}
+          style={{width:"100%",background:"#ef4444",border:"none",padding:"11px 16px",cursor:"pointer",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:"'Barlow Condensed',sans-serif"}}>
+          <span style={{fontSize:16}}>🚨</span>
+          <span style={{fontSize:14,fontWeight:800,color:"#fff",letterSpacing:.5}}>IN CASE OF EMERGENCY</span>
+        </button>
+
         {/* ── Sponsor banner — shown below header if configured ── */}
         {SPONSOR&&(
           <a href={SPONSOR.url||"#"} target="_blank" rel="noopener noreferrer"
@@ -4771,6 +4825,85 @@ Regeln:
           </button>
         </div>
       </div>
+
+      {/* ── Notfall-Zugang: Code-Eingabe ── */}
+      {showEmergencyAccess&&!emergencyResult&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.9)",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>{setShowEmergencyAccess(null);setEmergencyCodeInput("");}}>
+          <div style={{background:C.dark,border:"1px solid #ef4444",borderRadius:20,padding:"28px 22px",maxWidth:360,width:"100%",textAlign:"center"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:36,marginBottom:10}}>🚨</div>
+            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#fff",marginBottom:8}}>Notfall-Zugang</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:20,lineHeight:1.6}}>
+              4-stelligen Code eingeben — zu finden auf dem Aufkleber hinter dem QR-Code im Fahrzeuginneren.
+            </div>
+            <input className="inp" placeholder="0000" inputMode="numeric" maxLength={4} autoFocus
+              style={{marginBottom:14,fontFamily:"monospace",textAlign:"center",fontSize:28,letterSpacing:8}}
+              value={emergencyCodeInput} onChange={e=>setEmergencyCodeInput(e.target.value.replace(/\D/g,"").slice(0,4))}
+              onKeyDown={e=>e.key==="Enter"&&checkEmergencyAccess()}/>
+            <button className="btn" style={{width:"100%",background:"#ef4444"}} disabled={emergencyBusy} onClick={checkEmergencyAccess}>
+              {emergencyBusy?"…":"Daten anzeigen"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Notfall-Zugang: Ergebnis ── */}
+      {showEmergencyAccess&&emergencyResult&&(
+        <div style={{position:"fixed",inset:0,background:C.black,zIndex:700,overflowY:"auto",padding:"20px 16px 60px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+            <div className="cond" style={{fontSize:20,fontWeight:900,color:"#fff"}}>🚨 Notfalldaten</div>
+            <button onClick={()=>{setShowEmergencyAccess(null);setEmergencyResult(null);setEmergencyCodeInput("");}}
+              style={{background:"none",border:"none",color:C.muted,fontSize:24,cursor:"pointer"}}>✕</button>
+          </div>
+          {emergencyResult.length===0&&<div style={{color:C.muted,fontSize:13,textAlign:"center",padding:40}}>Keine Notfallprofile hinterlegt.</div>}
+          {emergencyResult.map((p,i)=>(
+            <div key={i} style={{background:C.card,border:"1px solid #ef444444",borderRadius:16,padding:18,marginBottom:14}}>
+              <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:14}}>
+                {p.photoUrl?
+                  <img src={p.photoUrl} alt="" style={{width:64,height:64,borderRadius:12,objectFit:"cover"}}/>
+                  :<div style={{width:64,height:64,borderRadius:12,background:C.black,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>👤</div>}
+                <div>
+                  <div style={{fontSize:17,fontWeight:800,color:"#fff"}}>{p.name}</div>
+                  {p.birthDate&&<div style={{fontSize:12,color:C.muted}}>geb. {new Date(p.birthDate).toLocaleDateString("de-DE")}</div>}
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                <div style={{background:C.black,borderRadius:8,padding:10}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Blutgruppe</div>
+                  <div style={{fontSize:14,fontWeight:700,color:"#fff"}}>{p.bloodType||"unbekannt"}</div>
+                </div>
+                <div style={{background:C.black,borderRadius:8,padding:10}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Allergien</div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{p.allergies||"keine bekannt"}</div>
+                </div>
+                <div style={{background:C.black,borderRadius:8,padding:10}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Medikamente</div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{p.medications||"keine bekannt"}</div>
+                </div>
+                <div style={{background:C.black,borderRadius:8,padding:10}}>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Vorerkrankungen</div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{p.conditions||"keine bekannt"}</div>
+                </div>
+              </div>
+              {(p.contacts||[]).length>0&&(
+                <>
+                  <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Notfallkontakte</div>
+                  {p.contacts.map((c,j)=>(
+                    <a key={j} href={"tel:"+c.phone} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.black,borderRadius:8,padding:"10px 12px",marginBottom:6,textDecoration:"none"}}>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{c.name}</div>
+                        {c.relationship&&<div style={{fontSize:11,color:C.muted}}>{c.relationship}</div>}
+                      </div>
+                      <span style={{fontSize:16}}>📞</span>
+                    </a>
+                  ))}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -5067,6 +5200,33 @@ Regeln:
                       Pannenhilfe erreichst du auch ohne Mitgliedschaft — Mitgliedsnummer im Profil hinterlegen für schnelleren Ablauf.
                     </div>
                   )}
+                </div>
+
+                {/* ── Notfallprofile (ICE) ── */}
+                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1}}>🆘 Notfallprofile</div>
+                    <button onClick={()=>{loadEmergencyProfiles(v.id);setShowEmergencyEdit({vehicleId:v.id,name:"",accessCode:"",contacts:[{name:"",relationship:"",phone:""}]});}}
+                      style={{background:"none",border:"none",color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Hinzufügen</button>
+                  </div>
+                  <div style={{fontSize:10,color:C.muted,marginBottom:8,lineHeight:1.5}}>
+                    Für Ersthelfer im Ernstfall — Zugang nur mit 4-stelligem Code, den du hinter dem "Nur im Notfall abziehen"-Aufkleber im Fahrzeug notierst.
+                  </div>
+                  {emergencyProfiles.length===0&&(
+                    <button onClick={()=>loadEmergencyProfiles(v.id)} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+                      Profile laden
+                    </button>
+                  )}
+                  {emergencyProfiles.map(p=>(
+                    <div key={p.id} onClick={()=>setShowEmergencyEdit({...p,vehicleId:v.id})}
+                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:C.white}}>{p.name}</div>
+                        <div style={{fontSize:10,color:C.muted}}>Code: {p.accessCode} · {(p.contacts||[]).length} Kontakt(e)</div>
+                      </div>
+                      <span style={{fontSize:16,color:C.muted}}>›</span>
+                    </div>
+                  ))}
                 </div>
 
                 {/* ── Standort-Historie: nur für den Eigentümer, letzte 48h ── */}
@@ -5666,6 +5826,79 @@ Regeln:
                 <input className="inp" placeholder="Notizen" style={{marginBottom:16}}
                   value={addLogForm.notes} onChange={e=>setAddLogForm(p=>({...p,notes:e.target.value}))}/>
                 <button className="btn" style={{width:"100%"}} onClick={()=>addLogEntry(v.id)}>Speichern ✓</button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Notfallprofil bearbeiten/anlegen ── */}
+          {showEmergencyEdit&&showEmergencyEdit.vehicleId===v.id&&(
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowEmergencyEdit(null);}}>
+              <div className="sheet" style={{maxHeight:"90vh",overflowY:"auto"}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:14}}>
+                  {showEmergencyEdit.id?"Notfallprofil bearbeiten":"🆘 Notfallprofil anlegen"}
+                </div>
+
+                <div style={{display:"flex",gap:12,marginBottom:14,alignItems:"center"}}>
+                  <label style={{width:64,height:64,borderRadius:12,background:C.card,border:`1.5px dashed ${C.border}`,
+                    display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,overflow:"hidden"}}>
+                    {showEmergencyEdit.photoUrl?
+                      <img src={showEmergencyEdit.photoUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      :<span style={{fontSize:22}}>📷</span>}
+                    <input type="file" accept="image/*" style={{display:"none"}}
+                      onChange={e=>{const f=e.target.files?.[0]; if(f) handleImageUpload(f,url=>setShowEmergencyEdit(p=>({...p,photoUrl:url})));}}/>
+                  </label>
+                  <input className="inp" placeholder="Name der Person" style={{flex:1}}
+                    value={showEmergencyEdit.name||""} onChange={e=>setShowEmergencyEdit(p=>({...p,name:e.target.value}))}/>
+                </div>
+
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+                  <input className="inp" type="date" placeholder="Geburtsdatum"
+                    value={showEmergencyEdit.birthDate||""} onChange={e=>setShowEmergencyEdit(p=>({...p,birthDate:e.target.value}))}/>
+                  <input className="inp" placeholder="Blutgruppe, z.B. A+"
+                    value={showEmergencyEdit.bloodType||""} onChange={e=>setShowEmergencyEdit(p=>({...p,bloodType:e.target.value}))}/>
+                </div>
+                <input className="inp" placeholder="Allergien (oder 'keine bekannt')" style={{marginBottom:10}}
+                  value={showEmergencyEdit.allergies||""} onChange={e=>setShowEmergencyEdit(p=>({...p,allergies:e.target.value}))}/>
+                <input className="inp" placeholder="Medikamente (oder 'keine')" style={{marginBottom:10}}
+                  value={showEmergencyEdit.medications||""} onChange={e=>setShowEmergencyEdit(p=>({...p,medications:e.target.value}))}/>
+                <input className="inp" placeholder="Vorerkrankungen (oder 'keine')" style={{marginBottom:14}}
+                  value={showEmergencyEdit.conditions||""} onChange={e=>setShowEmergencyEdit(p=>({...p,conditions:e.target.value}))}/>
+
+                <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Notfallkontakte</div>
+                {(showEmergencyEdit.contacts||[]).map((c,i)=>(
+                  <div key={i} style={{display:"flex",gap:6,marginBottom:8}}>
+                    <input className="inp" placeholder="Name" style={{flex:2}} value={c.name}
+                      onChange={e=>setShowEmergencyEdit(p=>({...p,contacts:p.contacts.map((x,j)=>j===i?{...x,name:e.target.value}:x)}))}/>
+                    <input className="inp" placeholder="Beziehung" style={{flex:1}} value={c.relationship}
+                      onChange={e=>setShowEmergencyEdit(p=>({...p,contacts:p.contacts.map((x,j)=>j===i?{...x,relationship:e.target.value}:x)}))}/>
+                    <input className="inp" placeholder="Telefon" style={{flex:2}} value={c.phone}
+                      onChange={e=>setShowEmergencyEdit(p=>({...p,contacts:p.contacts.map((x,j)=>j===i?{...x,phone:e.target.value}:x)}))}/>
+                    <button onClick={()=>setShowEmergencyEdit(p=>({...p,contacts:p.contacts.filter((_,j)=>j!==i)}))}
+                      style={{background:"none",border:"none",color:C.red,fontSize:16,cursor:"pointer",padding:"0 4px"}}>✕</button>
+                  </div>
+                ))}
+                <button onClick={()=>setShowEmergencyEdit(p=>({...p,contacts:[...(p.contacts||[]),{name:"",relationship:"",phone:""}]}))}
+                  style={{background:"none",border:"none",color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",marginBottom:16}}>
+                  + Kontakt hinzufügen
+                </button>
+
+                <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>4-stelliger Zugangscode</div>
+                <input className="inp" placeholder="z.B. 4271" inputMode="numeric" maxLength={4} style={{marginBottom:6,fontFamily:"monospace",letterSpacing:4,fontSize:18,textAlign:"center"}}
+                  value={showEmergencyEdit.accessCode||""} onChange={e=>setShowEmergencyEdit(p=>({...p,accessCode:e.target.value.replace(/\D/g,"").slice(0,4)}))}/>
+                <div style={{fontSize:10,color:C.muted,marginBottom:16,lineHeight:1.5}}>
+                  Notiere diesen Code auf dem Aufkleber hinter dem QR-Code — "Nur im Notfall abziehen".
+                </div>
+
+                <button className="btn" style={{width:"100%",marginBottom:8}} disabled={emergencyEditBusy}
+                  onClick={()=>saveEmergencyProfileNow(v.id, showEmergencyEdit)}>
+                  {emergencyEditBusy?"…":"Speichern"}
+                </button>
+                {showEmergencyEdit.id&&(
+                  <button className="btn ghost" style={{width:"100%",color:C.red,borderColor:`${C.red}44`}} disabled={emergencyEditBusy}
+                    onClick={()=>deleteEmergencyProfileNow(showEmergencyEdit.id, v.id)}>
+                    Profil löschen
+                  </button>
+                )}
               </div>
             </div>
           )}
