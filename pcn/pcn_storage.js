@@ -900,6 +900,75 @@ const PCN_STORAGE = (() => {
       });
     },
 
+    // ── Live-Standort-Gruppen für gemeinsame Ausfahrten ──
+    // Spontan, unabhängig von Events. Organisator lädt gezielt ein, alle
+    // Teilnehmer sehen sich gegenseitig gleichberechtigt, Organisator
+    // beendet die Gruppe manuell. Kein Positions-Verlauf — nur der
+    // aktuellste bekannte Standort pro Teilnehmer wird gespeichert.
+    async createLiveGroup(name, organizerId, invitedUserIds) {
+      const gRes = await supabase._post("live_groups", { name, organizer_id: organizerId, status: "active" });
+      if(gRes.error) return gRes;
+      const groupId = gRes.data.id;
+      // Organisator selbst ist automatisch "joined", Eingeladene "invited"
+      // bis sie aktiv beitreten.
+      const members = [
+        { group_id: groupId, user_id: organizerId, status: "joined" },
+        ...invitedUserIds.filter(id=>id!==organizerId).map(uid => ({ group_id: groupId, user_id: uid, status: "invited" })),
+      ];
+      for(const m of members) await supabase._post("live_group_members", m);
+      return { data: { id: groupId, name } };
+    },
+    async joinLiveGroup(groupId, userId) {
+      const res = await supabase._q("live_group_members","?group_id=eq."+groupId+"&user_id=eq."+userId);
+      if(res.error || !res.data?.length) return { error: "Du wurdest zu dieser Gruppe nicht eingeladen" };
+      return await supabase._patch("live_group_members","group_id=eq."+groupId+"&user_id=eq."+userId,{status:"joined"});
+    },
+    async leaveLiveGroup(groupId, userId) {
+      return await supabase._patch("live_group_members","group_id=eq."+groupId+"&user_id=eq."+userId,{status:"left"});
+    },
+    async endLiveGroup(groupId, organizerId) {
+      const res = await supabase._q("live_groups","?id=eq."+groupId+"&select=organizer_id");
+      if(res.error || !res.data?.length) return { error: "Gruppe nicht gefunden" };
+      if(res.data[0].organizer_id!==organizerId) return { error: "Nur der Organisator kann die Gruppe beenden" };
+      return await supabase._patch("live_groups","id=eq."+groupId,{status:"ended", ended_at:now()});
+    },
+    async updateLiveGroupPosition(groupId, userId, lat, lng) {
+      return await supabase._patch("live_group_members","group_id=eq."+groupId+"&user_id=eq."+userId,{
+        latitude: lat, longitude: lng, updated_at: now(),
+      });
+    },
+    async getLiveGroup(groupId, requestingUserId) {
+      const gRes = await supabase._q("live_groups","?id=eq."+groupId);
+      if(gRes.error || !gRes.data?.length) return { error: "Gruppe nicht gefunden" };
+      const group = gRes.data[0];
+      const mRes = await supabase._q("live_group_members","?group_id=eq."+groupId);
+      if(mRes.error) return mRes;
+      const members = mRes.data||[];
+      // Nur tatsächliche Mitglieder (auch "invited", noch nicht "joined")
+      // dürfen die Gruppe überhaupt sehen — kein Zugriff für Fremde.
+      const isMember = members.some(m=>m.user_id===requestingUserId);
+      if(!isMember) return { error: "Kein Zugriff auf diese Gruppe" };
+      return { data: {
+        id: group.id, name: group.name, organizerId: group.organizer_id,
+        status: group.status, createdAt: group.created_at,
+        members: members.map(m => ({
+          userId: m.user_id, status: m.status,
+          lat: m.latitude, lng: m.longitude, updatedAt: m.updated_at,
+        })),
+      } };
+    },
+    async getMyLiveGroups(userId) {
+      const mRes = await supabase._q("live_group_members","?user_id=eq."+userId+"&status=neq.left");
+      if(mRes.error || !mRes.data?.length) return { data: [] };
+      const groupIds = mRes.data.map(m=>m.group_id);
+      const gRes = await supabase._q("live_groups","?id=in.("+groupIds.join(",")+")&status=eq.active");
+      if(gRes.error) return gRes;
+      return { data: (gRes.data||[]).map(g => ({
+        id: g.id, name: g.name, organizerId: g.organizer_id,
+        myStatus: mRes.data.find(m=>m.group_id===g.id)?.status,
+      })) };
+    },
+
     async setBgTheme(userId, theme) {
       const allowed = ["none","klassiker","strecke"];
       if(!allowed.includes(theme)) return { error: "Ungültiges Theme" };
@@ -1533,6 +1602,15 @@ function guard(label, fn){
       // und Vorstands-Abzeichen in der Community — siehe getClubMembers().
       listClub: () => db.getClubMembers ? db.getClubMembers() : Promise.resolve({data:[]}),
       setBgTheme: guard("members.setBgTheme", (uid, theme) => db.setBgTheme(uid, theme)),
+    },
+    liveGroups: {
+      create: guard("liveGroups.create", (name,organizerId,invitedUserIds) => db.createLiveGroup(name,organizerId,invitedUserIds)),
+      join: guard("liveGroups.join", (gid,uid) => db.joinLiveGroup(gid,uid)),
+      leave: guard("liveGroups.leave", (gid,uid) => db.leaveLiveGroup(gid,uid)),
+      end: guard("liveGroups.end", (gid,organizerId) => db.endLiveGroup(gid,organizerId)),
+      updatePosition: (gid,uid,lat,lng) => db.updateLiveGroupPosition(gid,uid,lat,lng),
+      get: (gid,requestingUserId) => db.getLiveGroup(gid,requestingUserId),
+      listMine: (uid) => db.getMyLiveGroups(uid),
     },
     logbook: {
       list:  (vid)         => db.getLogbook(vid),
