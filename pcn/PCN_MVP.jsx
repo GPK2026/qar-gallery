@@ -5001,7 +5001,7 @@ Regeln:
                 {v.checkinLat!=null&&(
                   <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
                     <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📍 Zuletzt geparkt</div>
-                    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+                    <div style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
                       <a href={`https://maps.google.com/?q=${v.checkinLat},${v.checkinLng}`} target="_blank" rel="noopener noreferrer" style={{display:"block"}}>
                         <iframe title="Zuletzt geparkt" style={{width:"100%",height:120,border:"none",display:"block",pointerEvents:"none"}}
                           src={`https://www.openstreetmap.org/export/embed.html?bbox=${v.checkinLng-0.004},${v.checkinLat-0.003},${v.checkinLng+0.004},${v.checkinLat+0.003}&layer=mapnik&marker=${v.checkinLat},${v.checkinLng}`}/>
