@@ -1614,6 +1614,8 @@ function PCNInner() {
   const [buyerVisibilityChoice, setBuyerVisibilityChoice] = useState({gallery:false, logbook:false, events:false});
   const [qarIdRequestInput, setQarIdRequestInput] = useState("");
   const [scanLocations, setScanLocations] = useState({}); // vehicleId -> array
+  const [showCheckInPrompt, setShowCheckInPrompt] = useState(null); // vehicleId
+  const [checkInBusy, setCheckInBusy] = useState(false);
   const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
@@ -2605,6 +2607,25 @@ function PCNInner() {
       { timeout: 8000, maximumAge: 0 }
     );
   };
+  const doCheckIn = (vehicleId) => {
+    if(!navigator.geolocation){ toast_("Standort auf diesem Gerät nicht verfügbar","err"); return; }
+    setCheckInBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const DB = window.PCN_DB;
+        if(isDemo){ setCheckInBusy(false); setShowCheckInPrompt(null); toast_("Im Demo-Modus nicht dauerhaft gespeichert"); return; }
+        const {error} = await DB.vehicles.setCheckIn(vehicleId, me.id, {
+          lat: pos.coords.latitude, lng: pos.coords.longitude,
+        });
+        setCheckInBusy(false); setShowCheckInPrompt(null);
+        if(error){ toast_(error,"err"); return; }
+        setVehicles(prev=>({...prev,[vehicleId]:{...prev[vehicleId], checkinLat:pos.coords.latitude, checkinLng:pos.coords.longitude, checkinAt:new Date().toISOString()}}));
+        toast_("📍 Standort gespeichert");
+      },
+      () => { setCheckInBusy(false); toast_("Standortfreigabe abgelehnt oder nicht verfügbar","err"); },
+      { timeout: 8000, maximumAge: 0 }
+    );
+  };
   const handleScanResult = async (data) => {
     const match=data.match(/QAR-[A-Z2-9]{8}/);
     if(!match) return;
@@ -2626,6 +2647,13 @@ function PCNInner() {
           // die öffentliche Vorschau zu zeigen, Übernahme-Option anbieten
           // (Weg A: Direktübertragung vor Ort).
           setShowForeignTransferStart(v.id);
+          setScreen("app");
+          return;
+        }
+        if(isOwnVehicle){
+          // Eigenes Fahrzeug gescannt — Check-in anbieten ("wo hab ich
+          // geparkt"), statt zur öffentlichen Vorschau zu springen.
+          setShowCheckInPrompt(v.id);
           setScreen("app");
           return;
         }
@@ -4855,6 +4883,26 @@ Regeln:
                     <div style={{fontSize:10,color:C.muted}}>Bei Verkauf — QAR-ID bleibt erhalten, wie eine FIN</div>
                   </div>
                 </button>
+
+                {/* ── Eigener Standort-Check-in ── */}
+                {v.checkinLat!=null&&(
+                  <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div>
+                      <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>📍 Zuletzt geparkt</div>
+                      <a href={`https://maps.google.com/?q=${v.checkinLat},${v.checkinLng}`} target="_blank" rel="noopener noreferrer"
+                        style={{fontSize:12,color:C.gold,fontWeight:700,textDecoration:"none"}}>
+                        {v.checkinAt?new Date(v.checkinAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"?"} Uhr — auf Karte ansehen →
+                      </a>
+                    </div>
+                    <button onClick={async()=>{
+                        const DB=window.PCN_DB;
+                        if(!isDemo&&DB) await DB.vehicles.clearCheckIn(v.id,me.id);
+                        setVehicles(prev=>({...prev,[v.id]:{...prev[v.id],checkinLat:null,checkinLng:null,checkinAt:null}}));
+                        toast_("Standort entfernt");
+                      }}
+                      style={{background:"none",border:"none",color:C.muted,fontSize:16,cursor:"pointer",padding:4}}>✕</button>
+                  </div>
+                )}
 
                 {/* ── Standort-Historie: nur für den Eigentümer, letzte 48h ── */}
                 {(scanLocations[v.id]||[]).length>0&&(
@@ -8150,6 +8198,31 @@ Regeln:
                 Nein — Antrag stellen
               </button>
               <button className="btn ghost" style={{width:"100%",color:C.muted}} onClick={()=>setShowForeignTransferStart(null)}>Abbrechen</button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Eigenes Fahrzeug gescannt: Standort-Check-in ── */}
+      {showCheckInPrompt&&(()=>{
+        const cv = vehicles[showCheckInPrompt] || Object.values(DEMO_VEHICLES).find(x=>x.id===showCheckInPrompt);
+        return (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+            onClick={()=>setShowCheckInPrompt(null)}>
+            <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
+              onClick={e=>e.stopPropagation()}>
+              <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>📍 Standort merken?</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+                Speichert, wo du gerade geparkt hast — nur für dich sichtbar, in {cv?`${cv.hersteller||""} ${cv.modell||""}`.trim()||"deiner Fahrzeugakte":"deiner Fahrzeugakte"}.
+              </div>
+              <button className="btn" style={{width:"100%",marginBottom:8}} disabled={checkInBusy}
+                onClick={()=>doCheckIn(showCheckInPrompt)}>
+                {checkInBusy?"…":"Ja, hier parke ich"}
+              </button>
+              <button className="btn ghost" style={{width:"100%"}}
+                onClick={()=>{const v=vehicles[showCheckInPrompt];setShowCheckInPrompt(null);if(v){setViewV(v);setScreen("vehicle");}}}>
+                Nur Fahrzeugakte ansehen
+              </button>
             </div>
           </div>
         );
