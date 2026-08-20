@@ -1954,6 +1954,23 @@ function PCNInner() {
       // echtes error-Feld ist ein tatsächlicher Fehlschlag.
       if(res?.error) dbError = res.error;
     }
+    // Standort NUR privat für den Eigentümer speichern — der Status-TEXT
+    // bleibt öffentlich wie bisher, der Standort wird Besuchern nie
+    // angezeigt. Blockiert nie das Setzen des Status selbst; wird nach-
+    // gereicht, sobald GPS verfügbar ist.
+    if(DB && !isDemo && !dbError && navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          DB.vehicles.setStatusLocation?.(vehicleId, slot.id, pos.coords.latitude, pos.coords.longitude).catch(()=>{});
+          setVehicleStatus(prev=>{
+            const raw = prev[vehicleId];
+            const arr = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+            return {...prev,[vehicleId]:arr.map(s=>s.id===slot.id?{...s,lat:pos.coords.latitude,lng:pos.coords.longitude}:s)};
+          });
+        },
+        () => {}, { timeout: 6000, maximumAge: 30000 }
+      );
+    }
     setShowStatusPicker(null); setStatusCustom(""); setStatusEditSlot(null); setStatusPresetIcon(null); setStatusDateTime(""); setStatusUseDate(false);
     if(dbError) {
       console.error("[Live-Status] Speichern in Datenbank fehlgeschlagen:", dbError);
@@ -4917,6 +4934,12 @@ Regeln:
                         {s.expiresAt ? `Bis ${new Date(s.expiresAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr` : "Dauerhaft"}
                         {statusVisible ? " · 🔓 sichtbar für Besucher" : " · 🔒 für Besucher ausgeblendet"}
                       </div>
+                      {s.lat!=null&&(
+                        <a href={`https://maps.google.com/?q=${s.lat},${s.lng}`} target="_blank" rel="noopener noreferrer"
+                          style={{fontSize:10,color:C.gold,textDecoration:"none",display:"block",marginTop:3}}>
+                          📍 Nur für dich: Standort beim Setzen ansehen →
+                        </a>
+                      )}
                     </div>
                     <button onClick={()=>{clearStatus(v.id,s.id);toast_("Status gelöscht");}}
                       style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:18,padding:"0 4px"}}>✕</button>
