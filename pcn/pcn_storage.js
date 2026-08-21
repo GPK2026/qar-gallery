@@ -984,6 +984,27 @@ const PCN_STORAGE = (() => {
       });
     },
 
+    // ── Punkte-Ereignisse (ersetzt localStorage-basierte Kategorien) ──
+    // Trocken, serverseitig gezaehlt — QR-Scan, angesehene Akte, News
+    // gelesen, Geburtstag. UNIQUE(user_id,event_type,ref_id) verhindert
+    // Duplikate genau wie es vorher die localStorage-Arrays taten.
+    async recordPointEvent(userId, eventType, refId, points) {
+      const res = await supabase._post("point_events", {
+        user_id: userId, event_type: eventType, ref_id: String(refId), points,
+      });
+      // Duplikat (schon vorhanden) ist kein Fehler, sondern erwartetes
+      // Verhalten — genau wie ".includes()" bei den alten Arrays.
+      if(res.error && String(res.error).includes("duplicate")) return { data: null, alreadyRecorded: true };
+      return res;
+    },
+    async getPointEvents(userId) {
+      const res = await supabase._q("point_events","?user_id=eq."+userId);
+      if(res.error) return res;
+      return { data: (res.data||[]).map(r => ({
+        id: r.id, eventType: r.event_type, refId: r.ref_id, points: r.points, createdAt: r.created_at,
+      })) };
+    },
+
     // ── Notfallprofile (ICE) ──
     // Mehrere Profile pro Fahrzeug moeglich. Verwaltung nur fuer den
     // Eigentuemer (bereits eingeloggt, kein zusaetzlicher Code noetig).
@@ -1718,6 +1739,10 @@ function guard(label, fn){
       listClub: () => db.getClubMembers ? db.getClubMembers() : Promise.resolve({data:[]}),
       setBgTheme: guard("members.setBgTheme", (uid, theme) => db.setBgTheme(uid, theme)),
       setBreakdownMembership: guard("members.setBreakdownMembership", (uid,adacNr,avdNr) => db.setBreakdownMembership(uid,adacNr,avdNr)),
+    },
+    pointEvents: {
+      record: guard("pointEvents.record", (uid,type,refId,points) => db.recordPointEvent(uid,type,refId,points)),
+      list: (uid) => db.getPointEvents(uid),
     },
     emergencyProfiles: {
       list: guard("emergencyProfiles.list", (vid,ownerUid) => db.listEmergencyProfiles(vid,ownerUid)),
