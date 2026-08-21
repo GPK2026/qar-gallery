@@ -1507,7 +1507,7 @@ export default function PCN() {
 // Tippen auf die Karte setzt Wegpunkte, Route wird über die kostenlose
 // OSRM-Demo-Routing-API berechnet und eingezeichnet.
 const LIVE_MAP_COLORS = ["#D5001C","#2563EB","#16A34A","#D97706","#7C3AED","#0891B2","#DB2777"];
-function LiveGroupMap({members, organizerId, meId, isOrganizer, routeMode}){
+function LiveGroupMap({members, organizerId, meId, isOrganizer, routeMode, onMapReady}){
   const mapDivRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef({});
@@ -1521,6 +1521,7 @@ function LiveGroupMap({members, organizerId, meId, isOrganizer, routeMode}){
       attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19,
     }).addTo(map);
     mapRef.current = map;
+    if(onMapReady) onMapReady(map);
     return ()=>{ map.remove(); mapRef.current=null; };
   },[]);
 
@@ -1563,8 +1564,8 @@ function LiveGroupMap({members, organizerId, meId, isOrganizer, routeMode}){
       waypointsRef.current = [];
       return;
     }
-    const onClick = (e) => {
-      waypointsRef.current = [...waypointsRef.current, e.latlng];
+    const addWaypoint = (latlng) => {
+      waypointsRef.current = [...waypointsRef.current, latlng];
       if(waypointsRef.current.length<2) return; // erst ab 2 Punkten gibt es eine Route
       if(routingRef.current) map.removeControl(routingRef.current);
       routingRef.current = window.L.Routing.control({
@@ -1574,12 +1575,31 @@ function LiveGroupMap({members, organizerId, meId, isOrganizer, routeMode}){
         show: false, // eigenes Turn-by-Turn-Panel ausgeblendet, nur die Linie zählt
         lineOptions: { styles: [{color:C.gold, weight:5, opacity:.85}] },
       }).addTo(map);
+      map.panTo(latlng);
     };
+    map.__addRouteWaypoint = addWaypoint; // von der Adresssuche außerhalb dieses Effects nutzbar
+    const onClick = (e) => addWaypoint(e.latlng);
     map.on("click", onClick);
-    return ()=>map.off("click", onClick);
+    return ()=>{ map.off("click", onClick); delete map.__addRouteWaypoint; };
   },[routeMode, isOrganizer]);
 
   return <div ref={mapDivRef} style={{width:"100%",height:"100%"}}/>;
+}
+
+// ── Adresssuche für die Routenplanung (Nominatim/OSM Geocoding) ──
+// Nutzergesteuert (Klick auf "Suchen"), kein automatisches/Batch-Geocoding —
+// das entspricht der Nominatim-Nutzungsrichtlinie für "direkt vom Nutzer
+// ausgelöste" Anfragen. Eigener, aussagekräftiger User-Agent-Header ist im
+// Browser nicht setzbar, daher zumindest ein eindeutiger Referer-Kontext
+// über die Anfrage-URL selbst (App-Name als "email"-Parameter laut Policy-
+// Empfehlung für Kontaktierbarkeit).
+async function geocodeAddress(query){
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}&email=support@qar.gallery`;
+  const res = await fetch(url, { headers: { "Accept-Language":"de" } });
+  if(!res.ok) return null;
+  const data = await res.json();
+  if(!data?.length) return null;
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), label: data[0].display_name };
 }
 
 function PCNInner() {
@@ -1719,6 +1739,9 @@ function PCNInner() {
   const [liveGroupBusy, setLiveGroupBusy] = useState(false);
   const liveGroupPollRef = useRef(null);
   const [routePlanMode, setRoutePlanMode] = useState(false);
+  const [routeAddressInput, setRouteAddressInput] = useState("");
+  const [routeAddressBusy, setRouteAddressBusy] = useState(false);
+  const liveMapInstanceRef = useRef(null);
   const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
@@ -2838,6 +2861,20 @@ function PCNInner() {
     stopLiveGroupPolling();
     setActiveLiveGroup(null);
     setRoutePlanMode(false);
+    setRouteAddressInput("");
+  };
+  const addRouteWaypointByAddress = async () => {
+    const query = routeAddressInput.trim();
+    if(!query){ toast_("Adresse eingeben","err"); return; }
+    const map = liveMapInstanceRef.current;
+    if(!map || !map.__addRouteWaypoint){ toast_("Karte noch nicht bereit","err"); return; }
+    setRouteAddressBusy(true);
+    const result = await geocodeAddress(query).catch(()=>null);
+    setRouteAddressBusy(false);
+    if(!result){ toast_("Adresse nicht gefunden — bitte genauer eingeben","err"); return; }
+    map.__addRouteWaypoint(window.L.latLng(result.lat, result.lng));
+    setRouteAddressInput("");
+    toast_(`📍 Wegpunkt hinzugefügt: ${result.label.split(",")[0]}`);
   };
   const leaveLiveGroupNow = async () => {
     if(!activeLiveGroup) return;
@@ -8854,10 +8891,21 @@ Regeln:
             <div style={{flex:1,position:"relative"}}>
               {joined.length>0?(
                 <LiveGroupMap members={activeLiveGroup.members} organizerId={activeLiveGroup.organizerId}
-                  meId={me?.id} isOrganizer={isOrganizer} routeMode={routePlanMode}/>
+                  meId={me?.id} isOrganizer={isOrganizer} routeMode={routePlanMode}
+                  onMapReady={(map)=>{liveMapInstanceRef.current=map;}}/>
               ):(
                 <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.muted,fontSize:13,padding:20,textAlign:"center"}}>
                   Noch keine Standorte verfügbar — warte, bis Teilnehmer beitreten und ihren Standort teilen.
+                </div>
+              )}
+              {routePlanMode&&isOrganizer&&joined.length>0&&(
+                <div style={{position:"absolute",top:12,left:12,right:12,zIndex:500,display:"flex",gap:6}}>
+                  <input className="inp" placeholder="Adresse eingeben, z.B. Nürburgring, Nürburg" style={{flex:1,background:C.dark,boxShadow:"0 2px 8px rgba(0,0,0,.4)"}}
+                    value={routeAddressInput} onChange={e=>setRouteAddressInput(e.target.value)}
+                    onKeyDown={e=>e.key==="Enter"&&addRouteWaypointByAddress()}/>
+                  <button className="btn sm" style={{flexShrink:0}} disabled={routeAddressBusy} onClick={addRouteWaypointByAddress}>
+                    {routeAddressBusy?"…":"🔍"}
+                  </button>
                 </div>
               )}
               {isOrganizer&&joined.length>0&&(
@@ -8872,7 +8920,7 @@ Regeln:
             </div>
             {routePlanMode&&isOrganizer&&(
               <div style={{padding:"8px 16px",fontSize:11,color:C.muted,background:`${C.gold}0d`,borderTop:`1px solid ${C.gold}33`}}>
-                Tippe mindestens zwei Punkte auf der Karte an, um eine Route für die Ausfahrt einzuzeichnen — sichtbar für dich als Organisator.
+                Adresse eingeben oder mindestens zwei Punkte auf der Karte antippen, um eine Route für die Ausfahrt einzuzeichnen — sichtbar für dich als Organisator.
               </div>
             )}
             <div style={{padding:"12px 16px",borderTop:`1px solid ${C.border}`,maxHeight:180,overflowY:"auto"}}>
