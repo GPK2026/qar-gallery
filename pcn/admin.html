@@ -184,7 +184,7 @@ const EUR=95;
 const PTS_PER_UNIT=911, EUR_PER_UNIT=3;          // 911 Punkte = 3 € (je 1 € pro Partie)
 const POINT_RATE=EUR_PER_UNIT/PTS_PER_UNIT;
 const ptsToEur=(p)=>p*POINT_RATE;
-const POINTS={qr_scan:150,view_akte:25,vehicle_added:500,vehicle_complete:750,
+const POINTS={qr_scan:150,view_akte:25,vehicle_added:911,vehicle_added_registration_bonus_mult:2,
   logbook:150,photo:50,event_confirmed:1000,message:50,news_read:25,
   member_year:500,beitrag_paid:300,birthday:200,birthday_round:911};
 const TIERS=[{n:"Bronze",p:1000},{n:"Silber",p:5000},{n:"Gold",p:12000},{n:"Platin",p:25000},{n:"Legend",p:50000}];
@@ -387,7 +387,11 @@ function calcPts(id){
   const conf=DB.participants.filter(x=>x.user_id===id&&x.status==="confirmed").length;
   const mem=DB.members.find(m=>m.id===id);
   let p=0;
-  p+=veh.length*POINTS.vehicle_added;
+  veh.forEach(v=>{
+    p+=v.registration_bonus?POINTS.vehicle_added*POINTS.vehicle_added_registration_bonus_mult:POINTS.vehicle_added;
+    const imgs=(v.images||[]).length||(v.image?1:0);
+    p+=Math.min(imgs,10)*POINTS.photo;
+  });
   p+=conf*POINTS.event_confirmed;
   if(mem?.beitrag_bezahlt) p+=POINTS.beitrag_paid;
   if(mem?.created_at){
@@ -1375,6 +1379,20 @@ function rPoints(el){
   const totalEur=ptsToEur(totalPts);
   const avgPts=aktive.length?Math.round(totalPts/aktive.length):0;
   el.innerHTML=`<div class="page-title">🏆 Punkte & Engagement</div>
+
+  <!-- Ehrlicher Hinweis: einige Bonus-Kategorien werden nur lokal im
+       Geraet des Mitglieds gespeichert (QR-Scans, angesehene Akten,
+       gelesene News, Geburtstags-Boni) - diese kann die Admin-Console
+       serverseitig grundsaetzlich nicht sehen, da es dafuer (noch) keine
+       zentrale Datenbank-Speicherung gibt. Die hier gezeigte Punktzahl
+       kann daher etwas niedriger liegen als in der App des Mitglieds. -->
+  <div class="card" style="margin-bottom:12px;background:#5b8fff11;border-color:#5b8fff33">
+    <div style="font-size:12px;color:var(--muted);line-height:1.6">
+      ℹ️ Diese Punktzahlen basieren auf Fahrzeugen, Events, Mitgliedsjahren und Beitrag — serverseitig aus der Datenbank berechnet.
+      QR-Scans, angesehene Fahrzeugakten, gelesene News und Geburtstags-Boni werden aktuell nur lokal im jeweiligen Mitglieder-Gerät gespeichert
+      und fließen hier <b>nicht</b> ein. Die tatsächliche Punktzahl in der App eines Mitglieds kann daher etwas höher liegen.
+    </div>
+  </div>
 
   <!-- Punkte-Haftung: was der Club bei Einlösung schuldet -->
   <div class="card" style="margin-bottom:12px;border-color:#C8A96E44">
