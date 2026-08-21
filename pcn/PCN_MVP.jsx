@@ -1757,20 +1757,22 @@ function PCNInner() {
   });
   const [viewNews, setViewNews] = useState(null);
   const [newsTick, setNewsTick] = useState(0);   // erzwingt Re-Render wenn window._dbNews sich ändert
-  const markNewsRead = (id) => {
+  const markNewsRead = async (id) => {
     setNewsState(p=>{
       const updated = {...p,[id]:"read"};
       store.setItem("pcn_news_state", JSON.stringify(updated));
       return updated;
     });
-    // Add points for reading — 10 pts per article
-    const readKey = "pcn_news_read_pts";
-    const already = JSON.parse(store.getItem(readKey)||"[]");
-    if(!already.includes(id)) {
-      store.setItem(readKey, JSON.stringify([...already, id]));
-      toast_(`✓ Gelesen · +${POINTS.news_read} Punkte 🏆`);
-    } else {
-      toast_("✓ Als gelesen markiert");
+    // Punkte fürs Lesen — jetzt serverseitig in point_events statt localStorage
+    if(me?.id && !isDemo){
+      const DB = window.PCN_DB;
+      const {alreadyRecorded} = await DB.pointEvents.record(me.id, "news_read", id, POINTS.news_read).catch(()=>({}));
+      if(!alreadyRecorded){
+        setDbPointEvents(prev=>[...prev, {eventType:"news_read", refId:String(id), points:POINTS.news_read}]);
+        toast_(`✓ Gelesen · +${POINTS.news_read} Punkte 🏆`);
+      } else {
+        toast_("✓ Als gelesen markiert");
+      }
     }
   }; // full newsletter detail // {id: "read"|"remind"}
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -1846,17 +1848,26 @@ function PCNInner() {
   const unlockedFeatures = new Set(MILESTONES.filter(m=>m.check(appState)).flatMap(m=>m.unlocks));
 
   // Punkte-Berechnung: Basis-Aktivitäten + Events
-  // ── View/Scan points ─────────────────────────────────────────────────────────
-  const getViewedVehicles = () => { try { return JSON.parse(store.getItem("pcn_viewed_vehicles")||"[]"); } catch(e){ return []; } };
-  const getScanConfirmed  = () => { try { return JSON.parse(store.getItem("pcn_scan_confirmed")||"[]"); } catch(e){ return []; } };
+  // ── View/Scan points — serverseitig in point_events, ersetzt localStorage ──
+  const [dbPointEvents, setDbPointEvents] = useState([]);
+  const getViewedVehicles = () => dbPointEvents.filter(e=>e.eventType==="view_akte").map(e=>e.refId);
+  const getScanConfirmed  = () => dbPointEvents.filter(e=>e.eventType==="qr_scan").map(e=>e.refId);
+  const loadPointEvents = async () => {
+    const DB = window.PCN_DB; if(!DB || !me?.id || isDemo) return;
+    const {data} = await DB.pointEvents.list(me.id);
+    setDbPointEvents(data||[]);
+  };
+  useEffect(()=>{
+    if(me?.id && !isDemo) loadPointEvents();
+  }, [me?.id]);
 
-  // Award +2 pts for viewing a foreign vehicle (once per vehicle)
-  const awardViewPoints = (vehicleId) => {
-    if(!vehicleId || !me?.id) return;
-    const viewed = getViewedVehicles();
-    if(viewed.includes(vehicleId)) return;
-    viewed.push(vehicleId);
-    store.setItem("pcn_viewed_vehicles", JSON.stringify(viewed));
+  // Award +2 pts for viewing a foreign vehicle (once per vehicle) — jetzt
+  // serverseitig, die UNIQUE-Constraint in point_events verhindert Duplikate.
+  const awardViewPoints = async (vehicleId) => {
+    if(!vehicleId || !me?.id || isDemo) return;
+    const DB = window.PCN_DB; if(!DB) return;
+    const {data,alreadyRecorded} = await DB.pointEvents.record(me.id, "view_akte", vehicleId, POINTS.view_akte).catch(()=>({}));
+    if(data && !alreadyRecorded) setDbPointEvents(prev=>[...prev, {eventType:"view_akte", refId:vehicleId, points:POINTS.view_akte}]);
   };
 
   // Request scan confirmation from owner — sends admin message
@@ -1898,11 +1909,16 @@ function PCNInner() {
 
   // Confirm scan — called when owner taps confirm (from their admin thread)
   const confirmScan = async (scannerId, vehicleId, scannerName) => {
-    const confirmed = getScanConfirmed();
-    const key = `${scannerId}:${vehicleId}`;
-    if(confirmed.includes(key)) { toast_("Scan bereits bestätigt"); return; }
-    confirmed.push(key);
-    store.setItem("pcn_scan_confirmed", JSON.stringify(confirmed));
+    const DB = window.PCN_DB;
+    if(!DB){ toast_("Nicht verfügbar","err"); return; }
+    // WICHTIG: Punkte gehen an den SCANNER (scannerId), nicht an den
+    // aktuellen Nutzer (der Eigentümer, der hier nur bestätigt). Vorher
+    // lag das faelschlich im localStorage des Eigentuemer-Geraets, wodurch
+    // der Scanner es nie sehen konnte — jetzt korrekt serverseitig unter
+    // dem Scanner selbst gespeichert.
+    const refId = `${scannerId}:${vehicleId}`;
+    const {alreadyRecorded} = await DB.pointEvents.record(scannerId, "qr_scan", refId, POINTS.qr_scan).catch(()=>({}));
+    if(alreadyRecorded){ toast_("Scan bereits bestätigt"); return; }
     // Bestätigung an den Scanner — Demo-Modus schreibt nicht in die echte DB,
     // Zugangsdaten kommen aus der Config statt hardcoded im Quelltext.
     if(!isDemo){
@@ -1943,9 +1959,9 @@ function PCNInner() {
     let pts = 0;
     const V = POINTS;
 
-    // ── PRIO 1: Community (Scans, Kontakte) ──
-    try { pts += getScanConfirmed().length * V.qr_scan; } catch(e){}
-    try { pts += getViewedVehicles().length * V.view_akte; } catch(e){}
+    // ── PRIO 1: Community (Scans, Kontakte) — jetzt serverseitig ──
+    pts += dbPointEvents.filter(e=>e.eventType==="qr_scan").length * V.qr_scan;
+    pts += dbPointEvents.filter(e=>e.eventType==="view_akte").length * V.view_akte;
 
     // ── PRIO 2: Fahrzeugpflege (Akte, Doku) ──
     myVehicles.forEach(v=>{
@@ -1958,7 +1974,7 @@ function PCNInner() {
     // ── PRIO 3: Aktivität (Events, Nachrichten, News) ──
     pts += myParticipations.filter(p=>p.status==="confirmed").length * V.event_confirmed;
     pts += myThreads.length * V.message;
-    try { pts += JSON.parse(store.getItem("pcn_news_read_pts")||"[]").length * V.news_read; } catch(e){}
+    pts += dbPointEvents.filter(e=>e.eventType==="news_read").length * V.news_read;
 
     // ── PRIO 4: Treue (Mitgliedsjahre, Beitrag) ──
     if(me?.createdAt){
@@ -1967,11 +1983,9 @@ function PCNInner() {
     }
     if(me?.beitrag_bezahlt) pts += V.beitrag_paid;
 
-    // ── Bonus: Geburtstag (einmal pro Jahr, automatisch) ──
-    try {
-      const bdayPts = JSON.parse(store.getItem("pcn_bday_pts")||"[]");
-      bdayPts.forEach(entry => { pts += entry.pts||0; });
-    } catch(e){}
+    // ── Bonus: Geburtstag (einmal pro Jahr, automatisch, jetzt serverseitig) ──
+    pts += dbPointEvents.filter(e=>e.eventType==="birthday"||e.eventType==="birthday_round")
+      .reduce((sum,e)=>sum+(e.points||0), 0);
 
     return pts;
   };
@@ -1993,7 +2007,7 @@ function PCNInner() {
     return ()=>{ clearTimeout(t1); clearTimeout(t2); };
   },[myPoints]);
 
-  // ── Geburtstags-Punkte automatisch gutschreiben ──────────────────────────
+  // ── Geburtstags-Punkte automatisch gutschreiben — jetzt serverseitig ──────
   useEffect(()=>{
     if(!me?.geburtstag || isDemo) return;
     const bd = new Date(me.geburtstag);
@@ -2003,22 +2017,25 @@ function PCNInner() {
     if(!isBirthday) return;
 
     const year = today.getFullYear();
-    let awarded = [];
-    try { awarded = JSON.parse(store.getItem("pcn_bday_pts")||"[]"); } catch(e){}
-    if(awarded.some(a=>a.year===year)) return; // schon gutgeschrieben
+    const alreadyAwarded = dbPointEvents.some(e=>(e.eventType==="birthday"||e.eventType==="birthday_round")&&e.refId===String(year));
+    if(alreadyAwarded) return; // schon gutgeschrieben
 
     const age = year - bd.getFullYear();
     const isRound = age%10===0 || age===18 || age===25;
     const pts = isRound ? POINTS.birthday_round : POINTS.birthday;
+    const eventType = isRound ? "birthday_round" : "birthday";
 
-    awarded.push({year, pts, age});
-    store.setItem("pcn_bday_pts", JSON.stringify(awarded));
-    setTimeout(()=>{
-      toast_(isRound
-        ? `🎂 Alles Gute zum ${age}. Geburtstag! +${pts} Punkte vom PCN 🎉`
-        : `🎂 Herzlichen Glückwunsch! +${pts} Punkte vom PCN`);
-    }, 1200);
-  },[me?.geburtstag, me?.id]);
+    const DB = window.PCN_DB; if(!DB || !me?.id) return;
+    DB.pointEvents.record(me.id, eventType, year, pts).then(({alreadyRecorded})=>{
+      if(alreadyRecorded) return;
+      setDbPointEvents(prev=>[...prev, {eventType, refId:String(year), points:pts}]);
+      setTimeout(()=>{
+        toast_(isRound
+          ? `🎂 Alles Gute zum ${age}. Geburtstag! +${pts} Punkte vom PCN 🎉`
+          : `🎂 Herzlichen Glückwunsch! +${pts} Punkte vom PCN`);
+      }, 1200);
+    }).catch(()=>{});
+  },[me?.geburtstag, me?.id, dbPointEvents]);
 
   const isFavorite = (vehicleId) => favorites.includes(vehicleId);
   const toggleFavorite = (vehicleId) => {
@@ -5056,7 +5073,7 @@ Regeln:
         </div>
         <div style={{display:"flex",gap:10,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
           {(()=>{
-            const alreadyR = JSON.parse(store.getItem("pcn_news_read_pts")||"[]").includes(String(viewNews.id));
+            const alreadyR = dbPointEvents.some(e=>e.eventType==="news_read"&&e.refId===String(viewNews.id));
             return (
               <button onClick={()=>{markNewsRead(viewNews.id);setViewNews(null);}}
                 style={{flex:1,background:alreadyR?C.card:`${C.green}18`,
@@ -6859,7 +6876,7 @@ Regeln:
 {/* Neuigkeiten — horizontal swipeable */}
               {(()=>{
                 const dbNews = (window._dbNews||[]).filter(n=>n&&!DEMO_NEWS.find(d=>d.id===String(n.id)));
-                const readPts = JSON.parse(store.getItem("pcn_news_read_pts")||"[]");
+                const readPts = dbPointEvents.filter(e=>e.eventType==="news_read").map(e=>e.refId);
                 const items = [...dbNews, ...DEMO_NEWS]
                   .filter(n=>n.type!=="welcome" && newsState[n.id]!=="read" && !readPts.includes(String(n.id)))
                   .sort((a,b)=>new Date(b.date)-new Date(a.date));
@@ -8111,7 +8128,7 @@ Regeln:
                   ["❤️","Favoriten",favorites.length,"gespeichert",()=>setTab("community")],
                   ["👁","Angesehen",getViewedVehicles().length,"Akten · +"+(getViewedVehicles().length*POINTS.view_akte).toLocaleString("de-DE")+" Pkt",()=>setTab("community")],
                   ["📱","QR-Scans",getScanConfirmed().length,"bestätigt · +"+(getScanConfirmed().length*POINTS.qr_scan).toLocaleString("de-DE")+" Pkt",()=>setTab("community")],
-                  ["📰","News",JSON.parse(store.getItem("pcn_news_read_pts")||"[]").length,"gelesen · +"+(JSON.parse(store.getItem("pcn_news_read_pts")||"[]").length*POINTS.news_read).toLocaleString("de-DE")+" Pkt",()=>setTab("dashboard")],
+                  ["📰","News",dbPointEvents.filter(e=>e.eventType==="news_read").length,"gelesen · +"+(dbPointEvents.filter(e=>e.eventType==="news_read").length*POINTS.news_read).toLocaleString("de-DE")+" Pkt",()=>setTab("dashboard")],
                 ].map(([icon,label,val,sub,onTap])=>(
                   <button key={label} onClick={onTap}
                     style={{background:C.black,borderRadius:10,padding:"12px",textAlign:"center",
