@@ -17,6 +17,10 @@
   <link rel="apple-touch-icon" href="https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg"/>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0a'/><text y='.85em' x='10' font-size='80'>🏎️</text></svg>"/>
 
+  <!-- Leaflet (Multi-Marker-Karte fuer Live-Ausfahrten) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { height: 100%; }
@@ -185,6 +189,9 @@
   <!-- React -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
   <script>
     // Pre-load session before React mounts to avoid flash of splash screen
@@ -196,7 +203,7 @@
       }
     } catch(e) {}
   </script>
-  <script src="pcn_config.js?v=1787312098"></script>
+  <script src="pcn_config.js?v=1787353293"></script>
 
   <!-- PostHog Analytics (optional — loads only if key configured) -->
   <script>
@@ -207,13 +214,13 @@
     }
   </script>
   <!-- jsQR — bundled locally, no CDN needed -->
-  <script src="jsQR.js?v=1787312098"></script>
+  <script src="jsQR.js?v=1787353293"></script>
   <!-- QR Code generator — bundled locally -->
-  <script src="qrcode_bundle.js?v=1787312098"></script>
+  <script src="qrcode_bundle.js?v=1787353293"></script>
   <!-- Storage layer (load before app) -->
-  <script src="pcn_storage.js?v=1787312098"></script>
+  <script src="pcn_storage.js?v=1787353293"></script>
   <!-- App -->
-  <script src="PCN_MVP.compiled.js?v=1787312098"></script>
+  <script src="PCN_MVP.compiled.js?v=1787353293"></script>
 
   <script>
     (function() {
