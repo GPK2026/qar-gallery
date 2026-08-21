@@ -199,7 +199,7 @@ function isTestData(m){
       || m.member_nr === "HC-0000";
 }
 
-let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[],adminThreads:[],news:[]};
+let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[],adminThreads:[],news:[],pointEvents:[]};
 let currentTab="dashboard";
 
 function doLogin(){
@@ -243,7 +243,7 @@ let lastKnownLeadsCount = null;
 async function loadAll(silent){
   if(!silent) toast("Lädt…");
   try{
-    const [m,e,v,p,msg,nw,rx]=await Promise.all([
+    const [m,e,v,p,msg,nw,rx,pe]=await Promise.all([
       api("users?select=*&order=created_at.desc&limit=200"),
       api("events?select=*&order=date.asc&limit=100"),
       api("vehicles?select=*&order=created_at.desc&limit=200"),
@@ -251,7 +251,12 @@ async function loadAll(silent){
       api("messages?select=*&order=created_at.desc&limit=200").catch(()=>({data:[]})),
       api("news?select=*&order=pinned.desc,created_at.desc&limit=50").catch(()=>({data:[]})),
       api("message_reactions?select=*&limit=1000").catch(()=>({data:[]})),
+      api("point_events?select=*&limit=5000").catch(()=>({data:[]})),
     ]);
+    // point_events ist die neue, serverseitige Quelle fuer QR-Scans,
+    // angesehene Akten, gelesene News und Geburtstags-Boni — ersetzt die
+    // vorherigen, hier nicht abbildbaren localStorage-Kategorien.
+    DB.pointEvents = (pe && Array.isArray(pe.data)) ? pe.data : [];
     // Reaktionen nach message_id gruppieren, damit die Nachrichten-Rendering-
     // Funktion direkt darauf zugreifen kann — dieselbe Datenquelle, aus der
     // auch die Mitglieder-App ihre Reaktionen liest.
@@ -398,6 +403,9 @@ function calcPts(id){
     const y=Math.floor((Date.now()-new Date(mem.created_at))/(365.25*864e5));
     p+=Math.max(0,y)*POINTS.member_year;
   }
+  // QR-Scans, angesehene Akten, gelesene News, Geburtstage — jetzt
+  // serverseitig aus point_events, dieselbe Quelle wie die App selbst.
+  p+=DB.pointEvents.filter(e=>e.user_id===id).reduce((sum,e)=>sum+(e.points||0),0);
   return p;
 }
 function getTier(pts){return TIERS.filter(t=>pts>=t.p).slice(-1)[0]||null;}
@@ -1380,17 +1388,13 @@ function rPoints(el){
   const avgPts=aktive.length?Math.round(totalPts/aktive.length):0;
   el.innerHTML=`<div class="page-title">🏆 Punkte & Engagement</div>
 
-  <!-- Ehrlicher Hinweis: einige Bonus-Kategorien werden nur lokal im
-       Geraet des Mitglieds gespeichert (QR-Scans, angesehene Akten,
-       gelesene News, Geburtstags-Boni) - diese kann die Admin-Console
-       serverseitig grundsaetzlich nicht sehen, da es dafuer (noch) keine
-       zentrale Datenbank-Speicherung gibt. Die hier gezeigte Punktzahl
-       kann daher etwas niedriger liegen als in der App des Mitglieds. -->
-  <div class="card" style="margin-bottom:12px;background:#5b8fff11;border-color:#5b8fff33">
+  <!-- Alle Punkte-Kategorien sind jetzt vollstaendig serverseitig in
+       point_events bzw. den jeweiligen Fachtabellen gespeichert - App und
+       Admin-Console lesen dieselbe Quelle, koennen also nicht mehr
+       auseinanderlaufen. -->
+  <div class="card" style="margin-bottom:12px;background:#22c55e11;border-color:#22c55e33">
     <div style="font-size:12px;color:var(--muted);line-height:1.6">
-      ℹ️ Diese Punktzahlen basieren auf Fahrzeugen, Events, Mitgliedsjahren und Beitrag — serverseitig aus der Datenbank berechnet.
-      QR-Scans, angesehene Fahrzeugakten, gelesene News und Geburtstags-Boni werden aktuell nur lokal im jeweiligen Mitglieder-Gerät gespeichert
-      und fließen hier <b>nicht</b> ein. Die tatsächliche Punktzahl in der App eines Mitglieds kann daher etwas höher liegen.
+      ✓ Alle Punkte-Kategorien (Fahrzeuge, Events, Mitgliedsjahre, Beitrag, QR-Scans, angesehene Akten, News, Geburtstage) werden jetzt vollständig serverseitig berechnet — identisch zur App des Mitglieds.
     </div>
   </div>
 
