@@ -4355,12 +4355,15 @@ Regeln:
           </div>
         </div>
 
-        {/* ── Notfall-Zugang — für Ersthelfer/Rettungskräfte immer sichtbar ── */}
+        {/* ── Notfall-Zugang (ICE) — rundes Symbol oben rechts, immer sichtbar ── */}
         <button onClick={()=>{setShowEmergencyAccess(v.id);setEmergencyRoleConfirmed(false);}}
-          style={{width:"100%",background:"#ef4444",border:"none",padding:"11px 16px",cursor:"pointer",
-            display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:"'Barlow Condensed',sans-serif"}}>
-          <span style={{fontSize:16}}>🚨</span>
-          <span style={{fontSize:14,fontWeight:800,color:"#fff",letterSpacing:.5}}>IN CASE OF EMERGENCY</span>
+          aria-label="Notfall-Zugang (In Case of Emergency)"
+          style={{position:"fixed",top:14,right:14,zIndex:60,width:52,height:52,borderRadius:"50%",
+            background:"#ef4444",border:"3px solid #fff",cursor:"pointer",
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+            boxShadow:"0 2px 10px rgba(0,0,0,.35)",padding:0}}>
+          <span style={{fontSize:13,fontWeight:900,color:"#fff",lineHeight:1}}>✚</span>
+          <span style={{fontSize:9,fontWeight:900,color:"#fff",letterSpacing:.5,lineHeight:1.3}}>ICE</span>
         </button>
 
         {/* ── Hero image — taller, with gallery fallback ── */}
@@ -5164,6 +5167,14 @@ Regeln:
                     <div style={{fontSize:10,color:C.muted}}>So sehen Besucher dein Fahrzeug beim QR-Scan</div>
                   </div>
                 </button>
+                <button onClick={()=>doCheckIn(v.id)}
+                  style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                  <span style={{width:24,height:24,borderRadius:"50%",background:C.gold,color:"#000",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,flexShrink:0}}>P</span>
+                  <div style={{textAlign:"left"}}>
+                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>Standort merken</div>
+                    <div style={{fontSize:10,color:C.muted}}>Aktuellen Parkplatz speichern — nur für dich sichtbar</div>
+                  </div>
+                </button>
                 <button onClick={()=>{setShowTransferPanel(v.id);setPendingTransfer(null);loadPendingTransfer(v.id);}}
                   style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
                   <span style={{fontSize:18}}>🔑</span>
@@ -5474,18 +5485,18 @@ Regeln:
                   <span style={{fontSize:18,flexShrink:0}}>{sec.icon}</span>
                   <span style={{fontWeight:700,fontSize:15,color:C.white,flex:1,textAlign:"left"}}>{sec.label}</span>
                   {sec.count>0&&<span style={{background:C.black,borderRadius:99,padding:"2px 8px",fontSize:11,fontWeight:700,color:C.muted,flexShrink:0}}>{sec.count}</span>}
-                  {sec.action&&(
-                    <button onClick={e=>{e.stopPropagation();setOpenSections(p=>({...p,[v.id+"_"+sec.id]:true}));sec.action();}}
-                      style={{background:C.red,border:"none",borderRadius:6,padding:"4px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0,fontFamily:"'Barlow',sans-serif"}}>
-                      {sec.actionLabel}
-                    </button>
-                  )}
                   <span style={{fontSize:16,color:C.muted,flexShrink:0,transition:"transform .2s",
                     transform:isOpen(v.id,sec.id)?"rotate(180deg)":"rotate(0deg)"}}>▾</span>
                 </button>
                 {/* Accordion body */}
                 {isOpen(v.id,sec.id)&&(
                   <div style={{padding:"0 16px 14px",borderTop:`1px solid ${C.border}`}}>
+                    {sec.action&&(
+                      <button onClick={sec.action}
+                        style={{width:"100%",background:C.red,border:"none",borderRadius:8,padding:"9px 12px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",marginTop:12,marginBottom:4,fontFamily:"'Barlow',sans-serif"}}>
+                        {sec.actionLabel}
+                      </button>
+                    )}
                     {sec.content}
                   </div>
                 )}
