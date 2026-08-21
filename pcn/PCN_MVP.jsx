@@ -6791,26 +6791,6 @@ Regeln:
         {tab==="dashboard"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
 
-            {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
-            <div style={{marginBottom:20}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🗺️ Live-Ausfahrt</div>
-                <button className="btn sm ghost" onClick={()=>setShowCreateLiveGroup(true)}>+ Starten</button>
-              </div>
-              {myLiveGroups.length>0?myLiveGroups.map(g=>(
-                <button key={g.id} onClick={()=>openLiveGroup(g.id)}
-                  style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:"'Barlow',sans-serif"}}>
-                  <div style={{textAlign:"left"}}>
-                    <div style={{fontWeight:700,fontSize:14,color:C.white}}>{g.name}</div>
-                    <div style={{fontSize:11,color:C.muted}}>{g.myStatus==="invited"?"Du wurdest eingeladen":"Läuft gerade"}</div>
-                  </div>
-                  <span style={{fontSize:18,color:g.myStatus==="invited"?C.gold:C.green}}>{g.myStatus==="invited"?"✉️":"🟢"}</span>
-                </button>
-              )):(
-                <div style={{fontSize:12,color:C.muted}}>Keine aktive Ausfahrt — starte eine, um Standorte mit Mitgliedern zu teilen.</div>
-              )}
-            </div>
-
             {/* Demo-Hinweis erscheint als Popup-Overlay nach 3 Sekunden — siehe globaler Overlay-Bereich */}
             {/* ── 1. Infos & Neuigkeiten ── */}
             <div style={{marginBottom:20}}>
@@ -7174,6 +7154,26 @@ Regeln:
           });
           return (
           <div style={{animation:"fadeIn .2s"}}>
+
+            {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
+            <div style={{marginBottom:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🗺️ Live-Ausfahrt</div>
+                <button className="btn sm ghost" onClick={()=>setShowCreateLiveGroup(true)}>+ Starten</button>
+              </div>
+              {myLiveGroups.length>0?myLiveGroups.map(g=>(
+                <button key={g.id} onClick={()=>openLiveGroup(g.id)}
+                  style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:"'Barlow',sans-serif"}}>
+                  <div style={{textAlign:"left"}}>
+                    <div style={{fontWeight:700,fontSize:14,color:C.white}}>{g.name}</div>
+                    <div style={{fontSize:11,color:C.muted}}>{g.myStatus==="invited"?"Du wurdest eingeladen":"Läuft gerade"}</div>
+                  </div>
+                  <span style={{fontSize:18,color:g.myStatus==="invited"?C.gold:C.green}}>{g.myStatus==="invited"?"✉️":"🟢"}</span>
+                </button>
+              )):(
+                <div style={{fontSize:12,color:C.muted}}>Keine aktive Ausfahrt — starte eine, um Standorte mit Mitgliedern zu teilen.</div>
+              )}
+            </div>
 
             {/* View toggle + Filter */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,gap:8}}>
