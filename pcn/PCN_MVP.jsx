@@ -1618,6 +1618,7 @@ function PCNInner() {
   const [breakdownBusy, setBreakdownBusy] = useState(false);
   // Notfallprofile (ICE)
   const [showEmergencyAccess, setShowEmergencyAccess] = useState(null); // vehicleId
+  const [emergencyRoleConfirmed, setEmergencyRoleConfirmed] = useState(false);
   const [emergencyCodeInput, setEmergencyCodeInput] = useState("");
   const [emergencyResult, setEmergencyResult] = useState(null); // Array von Profilen, oder null
   const [emergencyBusy, setEmergencyBusy] = useState(false);
@@ -4355,23 +4356,12 @@ Regeln:
         </div>
 
         {/* ── Notfall-Zugang — für Ersthelfer/Rettungskräfte immer sichtbar ── */}
-        <button onClick={()=>setShowEmergencyAccess(v.id)}
+        <button onClick={()=>{setShowEmergencyAccess(v.id);setEmergencyRoleConfirmed(false);}}
           style={{width:"100%",background:"#ef4444",border:"none",padding:"11px 16px",cursor:"pointer",
             display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:"'Barlow Condensed',sans-serif"}}>
           <span style={{fontSize:16}}>🚨</span>
           <span style={{fontSize:14,fontWeight:800,color:"#fff",letterSpacing:.5}}>IN CASE OF EMERGENCY</span>
         </button>
-
-        {/* ── Sponsor banner — shown below header if configured ── */}
-        {SPONSOR&&(
-          <a href={SPONSOR.url||"#"} target="_blank" rel="noopener noreferrer"
-            style={{display:"flex",alignItems:"center",gap:10,background:"#fff",
-              padding:"8px 16px",textDecoration:"none",borderBottom:"1px solid #eee"}}>
-            {SPONSOR.logo&&<img src={SPONSOR.logo} alt={SPONSOR.name} style={{height:28,objectFit:"contain"}}/>}
-            <span style={{fontSize:11,color:"#888",fontWeight:600}}>Powered by</span>
-            <span style={{fontSize:12,fontWeight:800,color:"#111"}}>{SPONSOR.name}</span>
-          </a>
-        )}
 
         {/* ── Hero image — taller, with gallery fallback ── */}
         <div style={{height:260,position:"relative",overflow:"hidden",background:"#111"}}>
@@ -4410,6 +4400,18 @@ Regeln:
             )}
           </div>
         </div>
+
+        {/* ── Sponsor banner — jetzt unter dem Bild, nicht mehr neben dem Notfall-Button ── */}
+        {SPONSOR&&(
+          <a href={SPONSOR.url||"#"} target="_blank" rel="noopener noreferrer"
+            style={{display:"flex",alignItems:"center",gap:10,background:"#fff",
+              padding:"8px 16px",textDecoration:"none",borderBottom:"1px solid #eee"}}>
+            {SPONSOR.logo&&<img src={SPONSOR.logo} alt={SPONSOR.name} style={{height:28,objectFit:"contain"}}/>}
+            <span style={{fontSize:11,color:"#888",fontWeight:600}}>Powered by</span>
+            <span style={{fontSize:12,fontWeight:800,color:"#111"}}>{SPONSOR.name}</span>
+          </a>
+        )}
+
           {/* ── Thumbnail strip — direkt unter Hero, Teil des Bild-Blocks ── */}
           {priv.pub_gallery!==false&&(()=>{
             const allImgs = v.images||(DEMO_VEHICLES[v.id]?.images)||[];
@@ -4826,8 +4828,31 @@ Regeln:
         </div>
       </div>
 
+      {/* ── Notfall-Zugang: Rollen-Abfrage ── */}
+      {showEmergencyAccess&&!emergencyRoleConfirmed&&!emergencyResult&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.9)",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>setShowEmergencyAccess(null)}>
+          <div style={{background:C.dark,border:"1px solid #ef4444",borderRadius:20,padding:"28px 22px",maxWidth:360,width:"100%",textAlign:"center"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:36,marginBottom:10}}>🚨</div>
+            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:"#fff",marginBottom:14,lineHeight:1.3}}>
+              Sind Sie Ersthelfer, Polizei, Notarzt oder Rettungsdienst?
+            </div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:22,lineHeight:1.6}}>
+              Dieser Bereich enthält medizinische Notfalldaten der Fahrzeughalterin/des Fahrzeughalters — bitte nur im echten Einsatzfall öffnen.
+            </div>
+            <button className="btn" style={{width:"100%",background:"#ef4444",marginBottom:8}} onClick={()=>setEmergencyRoleConfirmed(true)}>
+              Ja — weiter zur Anleitung
+            </button>
+            <button className="btn ghost" style={{width:"100%"}} onClick={()=>setShowEmergencyAccess(null)}>
+              Nein — Fenster schließen
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Notfall-Zugang: Code-Eingabe ── */}
-      {showEmergencyAccess&&!emergencyResult&&(
+      {showEmergencyAccess&&emergencyRoleConfirmed&&!emergencyResult&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.9)",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
           onClick={()=>{setShowEmergencyAccess(null);setEmergencyCodeInput("");}}>
           <div style={{background:C.dark,border:"1px solid #ef4444",borderRadius:20,padding:"28px 22px",maxWidth:360,width:"100%",textAlign:"center"}}
