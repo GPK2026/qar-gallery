@@ -2706,6 +2706,26 @@ function PCNInner() {
       () => {}, { timeout: 8000, maximumAge: 0 }
     );
   };
+  const pushOwnLivePositionAsync = (groupId) => {
+    // Awaitbare Variante — wird beim ersten Öffnen der Karte genutzt, damit
+    // die eigene Position sicher gespeichert ist, BEVOR die Gruppe geladen
+    // wird. Timeout-Fallback: blockiert nie länger als 8s, auch wenn
+    // Geolocation abgelehnt wird oder hängt.
+    return new Promise((resolve) => {
+      if(!navigator.geolocation){ resolve(); return; }
+      let done = false;
+      const finish = () => { if(!done){ done=true; resolve(); } };
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const DB=window.PCN_DB;
+          if(DB) await DB.liveGroups.updatePosition(groupId, me.id, pos.coords.latitude, pos.coords.longitude).catch(()=>{});
+          finish();
+        },
+        () => finish(), { timeout: 8000, maximumAge: 0 }
+      );
+      setTimeout(finish, 8500); // Sicherheitsnetz falls getCurrentPosition selbst haengt
+    });
+  };
   const refreshLiveGroup = async (groupId) => {
     const DB=window.PCN_DB; if(!DB) return;
     const {data,error} = await DB.liveGroups.get(groupId, me.id);
@@ -2719,8 +2739,12 @@ function PCNInner() {
     // Falls nur eingeladen, nicht bereits Mitglied: automatisch beitreten,
     // sobald man die Gruppe öffnet.
     await DB.liveGroups.join(groupId, me.id).catch(()=>{});
+    // WICHTIG: eigene Position ZUERST senden und abwarten, bevor die Gruppe
+    // geladen wird — sonst zeigt die Karte beim ersten Öffnen "keine
+    // Standorte", weil noch niemand (auch man selbst nicht) einen Standort
+    // gesendet hat, und man müsste bis zum nächsten 45s-Intervall warten.
+    await pushOwnLivePositionAsync(groupId);
     await refreshLiveGroup(groupId);
-    pushOwnLivePosition(groupId);
     stopLiveGroupPolling();
     liveGroupPollRef.current = setInterval(()=>{
       pushOwnLivePosition(groupId);
