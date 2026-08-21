@@ -1500,6 +1500,88 @@ export default function PCN() {
   return <ErrorBoundary><PCNInner/></ErrorBoundary>;
 }
 
+// ─── Live-Ausfahrt: Multi-Marker-Karte mit Routenplanung ───────────────
+// Leaflet ist eine imperative DOM-Bibliothek (kein natives React) — daher
+// useRef für den Karten-Container und useEffect für Aufbau/Aufräumen.
+// Ein Marker pro Teilnehmer, farblich unterschieden. Für den Organisator:
+// Tippen auf die Karte setzt Wegpunkte, Route wird über die kostenlose
+// OSRM-Demo-Routing-API berechnet und eingezeichnet.
+const LIVE_MAP_COLORS = ["#D5001C","#2563EB","#16A34A","#D97706","#7C3AED","#0891B2","#DB2777"];
+function LiveGroupMap({members, organizerId, meId, isOrganizer, routeMode}){
+  const mapDivRef = useRef(null);
+  const mapRef = useRef(null);
+  const markersRef = useRef({});
+  const routingRef = useRef(null);
+  const waypointsRef = useRef([]);
+
+  useEffect(()=>{
+    if(!window.L || !mapDivRef.current) return;
+    const map = window.L.map(mapDivRef.current, {zoomControl:true});
+    window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19,
+    }).addTo(map);
+    mapRef.current = map;
+    return ()=>{ map.remove(); mapRef.current=null; };
+  },[]);
+
+  // Marker aktualisieren, wenn sich Teilnehmer-Positionen ändern
+  useEffect(()=>{
+    const map = mapRef.current; if(!map || !window.L) return;
+    const joined = (members||[]).filter(m=>m.status==="joined"&&m.lat!=null);
+    const seenIds = new Set();
+    joined.forEach((m,i)=>{
+      seenIds.add(m.userId);
+      const color = LIVE_MAP_COLORS[i % LIVE_MAP_COLORS.length];
+      const isMe = m.userId===meId;
+      const icon = window.L.divIcon({
+        className:"", html:`<div style="width:${isMe?26:20}px;height:${isMe?26:20}px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
+        iconSize:[isMe?26:20,isMe?26:20], iconAnchor:[isMe?13:10,isMe?13:10],
+      });
+      if(markersRef.current[m.userId]){
+        markersRef.current[m.userId].setLatLng([m.lat,m.lng]);
+      } else {
+        markersRef.current[m.userId] = window.L.marker([m.lat,m.lng],{icon}).addTo(map)
+          .bindTooltip(m.userId===organizerId?"👑 Organisator":"Teilnehmer");
+      }
+    });
+    // Marker von Teilnehmern entfernen, die nicht mehr "joined"+lat sind
+    Object.keys(markersRef.current).forEach(uid=>{
+      if(!seenIds.has(uid)){ map.removeLayer(markersRef.current[uid]); delete markersRef.current[uid]; }
+    });
+    // Ansicht auf alle sichtbaren Marker zoomen (nur beim ersten Erscheinen von Positionen)
+    if(joined.length>0){
+      const bounds = window.L.latLngBounds(joined.map(m=>[m.lat,m.lng]));
+      map.fitBounds(bounds,{padding:[40,40],maxZoom:16});
+    }
+  },[members]);
+
+  // Routenplanung: Organisator tippt auf die Karte, um Wegpunkte zu setzen
+  useEffect(()=>{
+    const map = mapRef.current; if(!map || !window.L) return;
+    if(!routeMode || !isOrganizer){
+      if(routingRef.current){ map.removeControl(routingRef.current); routingRef.current=null; }
+      waypointsRef.current = [];
+      return;
+    }
+    const onClick = (e) => {
+      waypointsRef.current = [...waypointsRef.current, e.latlng];
+      if(waypointsRef.current.length<2) return; // erst ab 2 Punkten gibt es eine Route
+      if(routingRef.current) map.removeControl(routingRef.current);
+      routingRef.current = window.L.Routing.control({
+        waypoints: waypointsRef.current,
+        routeWhileDragging: true,
+        addWaypoints: true,
+        show: false, // eigenes Turn-by-Turn-Panel ausgeblendet, nur die Linie zählt
+        lineOptions: { styles: [{color:C.gold, weight:5, opacity:.85}] },
+      }).addTo(map);
+    };
+    map.on("click", onClick);
+    return ()=>map.off("click", onClick);
+  },[routeMode, isOrganizer]);
+
+  return <div ref={mapDivRef} style={{width:"100%",height:"100%"}}/>;
+}
+
 function PCNInner() {
   // ── Core state ──────────────────────────────────────────────────────────────
   const [screen, setScreen]       = useState(()=>window.__PCN_PRELOAD_SESSION__ ? "app" : "splash");
@@ -1636,6 +1718,7 @@ function PCNInner() {
   const [activeLiveGroup, setActiveLiveGroup] = useState(null); // {id,name,organizerId,status,members}
   const [liveGroupBusy, setLiveGroupBusy] = useState(false);
   const liveGroupPollRef = useRef(null);
+  const [routePlanMode, setRoutePlanMode] = useState(false);
   const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
@@ -2754,6 +2837,7 @@ function PCNInner() {
   const closeLiveGroupView = () => {
     stopLiveGroupPolling();
     setActiveLiveGroup(null);
+    setRoutePlanMode(false);
   };
   const leaveLiveGroupNow = async () => {
     if(!activeLiveGroup) return;
@@ -8758,12 +8842,6 @@ Regeln:
       {activeLiveGroup&&(()=>{
         const joined = (activeLiveGroup.members||[]).filter(m=>m.status==="joined"&&m.lat!=null);
         const isOrganizer = activeLiveGroup.organizerId===me?.id;
-        let bbox = "";
-        if(joined.length>0){
-          const lats=joined.map(m=>m.lat), lngs=joined.map(m=>m.lng);
-          const pad=0.01;
-          bbox = `${Math.min(...lngs)-pad},${Math.min(...lats)-pad},${Math.max(...lngs)+pad},${Math.max(...lats)+pad}`;
-        }
         return (
           <div style={{position:"fixed",inset:0,background:C.black,zIndex:600,display:"flex",flexDirection:"column"}}>
             <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -8774,15 +8852,29 @@ Regeln:
               <button onClick={closeLiveGroupView} style={{background:"none",border:"none",color:C.muted,fontSize:22,cursor:"pointer"}}>✕</button>
             </div>
             <div style={{flex:1,position:"relative"}}>
-              {bbox?(
-                <iframe title="Live-Karte" style={{width:"100%",height:"100%",border:"none"}}
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik`}/>
+              {joined.length>0?(
+                <LiveGroupMap members={activeLiveGroup.members} organizerId={activeLiveGroup.organizerId}
+                  meId={me?.id} isOrganizer={isOrganizer} routeMode={routePlanMode}/>
               ):(
                 <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.muted,fontSize:13,padding:20,textAlign:"center"}}>
                   Noch keine Standorte verfügbar — warte, bis Teilnehmer beitreten und ihren Standort teilen.
                 </div>
               )}
+              {isOrganizer&&joined.length>0&&(
+                <button onClick={()=>setRoutePlanMode(p=>!p)}
+                  style={{position:"absolute",bottom:14,right:14,zIndex:500,background:routePlanMode?C.gold:C.dark,
+                    color:routePlanMode?"#000":"#fff",border:`1px solid ${routePlanMode?C.gold:C.border}`,borderRadius:99,
+                    padding:"9px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                    display:"flex",alignItems:"center",gap:6,boxShadow:"0 2px 8px rgba(0,0,0,.4)"}}>
+                  🗺️ {routePlanMode?"Route aktiv — auf Karte tippen":"Route planen"}
+                </button>
+              )}
             </div>
+            {routePlanMode&&isOrganizer&&(
+              <div style={{padding:"8px 16px",fontSize:11,color:C.muted,background:`${C.gold}0d`,borderTop:`1px solid ${C.gold}33`}}>
+                Tippe mindestens zwei Punkte auf der Karte an, um eine Route für die Ausfahrt einzuzeichnen — sichtbar für dich als Organisator.
+              </div>
+            )}
             <div style={{padding:"12px 16px",borderTop:`1px solid ${C.border}`,maxHeight:180,overflowY:"auto"}}>
               {(activeLiveGroup.members||[]).map(m=>(
                 <div key={m.userId} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontSize:12}}>
