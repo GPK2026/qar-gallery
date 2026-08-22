@@ -2007,6 +2007,21 @@ function PCNInner() {
     return ()=>{ clearTimeout(t1); clearTimeout(t2); };
   },[myPoints]);
 
+  // ── Gesamt-Punktestand synchronisieren — bei Login und bei jeder
+  // Änderung wird der von der App berechnete Wert in die Datenbank
+  // geschrieben. Die Admin-Console liest NUR diesen Wert, rechnet nicht
+  // mehr selbst nach — eine einzige Quelle der Wahrheit, kein
+  // Auseinanderlaufen mehr möglich. Schreibt nur bei tatsächlicher
+  // Änderung, um unnötige Datenbank-Aufrufe zu vermeiden.
+  const lastSyncedPointsRef = useRef(null);
+  useEffect(()=>{
+    if(!me?.id || isDemo) return;
+    if(lastSyncedPointsRef.current === myPoints) return; // schon synchron
+    const DB = window.PCN_DB; if(!DB) return;
+    lastSyncedPointsRef.current = myPoints;
+    DB.pointEvents.syncTotal(me.id, myPoints).catch(()=>{});
+  },[myPoints, me?.id]);
+
   // ── Geburtstags-Punkte automatisch gutschreiben — jetzt serverseitig ──────
   useEffect(()=>{
     if(!me?.geburtstag || isDemo) return;
