@@ -4619,9 +4619,10 @@ Regeln:
         <div style={{background:"#ffffff",borderBottom:`3px solid ${C.red}`,padding:"10px 16px",
           display:"flex",alignItems:"center",justifyContent:"space-between",
           position:"sticky",top:0,zIndex:50}}>
-          <img src={LOGO_SMALL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:34,objectFit:"contain",background:"transparent"}}/>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginRight:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <img src={LOGO_SMALL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:34,objectFit:"contain",background:"transparent"}}/>
             <span style={{fontSize:13,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
+          </div>
             {/* ── Notfall-Zugang (ICE) — roter Button mit ICE-Schriftzug, Erklaertext und weissem Kreuz-Symbol ── */}
             <button onClick={()=>{setShowEmergencyAccess(v.id);setEmergencyRoleConfirmed(false);}}
               aria-label="Notfall-Zugang (In Case of Emergency)"
@@ -4635,7 +4636,6 @@ Regeln:
                 <span style={{fontSize:24,fontWeight:900,color:"#ef4444",lineHeight:1}}>✚</span>
               </span>
             </button>
-          </div>
         </div>
 
         {/* ── Hero image — taller, with gallery fallback ── */}
