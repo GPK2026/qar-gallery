@@ -87,6 +87,12 @@ function LoginGate({onOk}){
 // ═══════════════════════════════════════════════════════════════════════════
 
 const STATUS_DONE = [
+  {t:"Punktesystem: komplett serverseitig", d:"QR-Scan, angesehene Akte, News gelesen, Geburtstag laufen nicht mehr über localStorage sondern über eine neue Datenbank-Tabelle — App und Admin-Console können strukturell nicht mehr auseinanderlaufen. Dabei einen echten Bug behoben: QR-Scan-Bestätigung landete fälschlich im Speicher des Eigentümers statt des Scanners", date:"Aug 2026"},
+  {t:"Live-Ausfahrt-Karte auf Leaflet umgestellt", d:"Vorheriger Kartenansatz zeigte nur einen Positionspin — jetzt echte Multi-Marker-Karte mit farblich unterschiedenen Teilnehmern, plus Routenplanung für den Organisator (Wegpunkte per Antippen oder Adresseingabe, Route via OSRM berechnet)", date:"Aug 2026"},
+  {t:"Notfall-Zugang (ICE)", d:"Rundes Symbol oben rechts in der Fahrzeugakte — Rettungskräfte bestätigen zunächst ihre Rolle, dann Zugang zu Blutgruppe, Allergien, Notfallkontakten über einen physisch verborgenen 4-stelligen Code", date:"Aug 2026"},
+  {t:"Pannenhilfe-Integration", d:"ADAC/AvD-Mitgliedsnummer im Profil, direkter Anruf-Button in der Fahrzeugakte mit recherchierten, verifizierten Notrufnummern", date:"Aug 2026"},
+  {t:"Fahrzeug-Eigentumsübertragung", d:"QAR-ID bleibt wie eine FIN lebenslang am Fahrzeug — zwei Wege (Direktübertragung per QR-Scan vor Ort, oder Antrag ohne gemeinsame Anwesenheit), beidseitige Zustimmung mit rechtlichem Opt-in-Text, automatische Nachrichten-Bereinigung", date:"Aug 2026"},
+  {t:"Standort-Themenreihe", d:"Diebstahl-Frühwarnung bei Fremd-Scans (48h-Löschfrist), privater Standort-Check-in, Live-Ausfahrt-Gruppen mit Positions-Teilen — alle bewusst unterschiedlich in Sichtbarkeit und Aufbewahrung gestaltet", date:"Aug 2026"},
   {t:"Verkaufsbörse", d:"3 Kategorien, Fahrzeugauswahl, Preisfeld, Bild-Upload, bidirektionale Sync mit Live-Status", date:"Aug 2026"},
   {t:"Persönlicher Hintergrund", d:"2 Foto-Themes (verifizierte Unsplash-Lizenz), 50% Deckkraft, überall nach Login sichtbar", date:"Aug 2026"},
   {t:"KI-Fotoerkennung aktiviert", d:"Supabase Edge Function als Proxy eingerichtet, Fahrzeugschein- und Beleg-Scanner funktionieren jetzt tatsächlich", date:"Aug 2026"},
@@ -101,27 +107,31 @@ const STATUS_DONE = [
 
 const STATUS_OPEN = [
   {t:"Backups einschalten", own:"Business", note:"Supabase-Dashboard-Einstellung, keine Entwicklungsarbeit"},
-  {t:"DSGVO-Anwalt beauftragen", own:"Business/Legal", note:"Interne Bewertung liegt vor (siehe Recht-Tab), keine rechtsverbindliche Prüfung"},
+  {t:"DSGVO-Anwalt beauftragen", own:"Business/Legal", note:"Interne Bewertung liegt vor (siehe Recht-Tab), keine rechtsverbindliche Prüfung — jetzt dringlicher durch Notfall-Zugang (Gesundheitsdaten) und Standort-Features"},
   {t:"Pilotvertrag unterschreiben", own:"Business", note:"Entwurf fertig (PCN_Pilotvertrag), wartet auf Unterschrift Club-Vorstand"},
   {t:"Echte Authentifizierung", own:"Tech", note:"Aktuell Club-Code statt Supabase Auth — für Pilot vertretbar, vor Multi-Club-Rollout nötig"},
-  {t:"Punkte-Einlösung", own:"Tech + Business", note:"Berechnet, nicht buchbar — braucht Konto-Modell, Entscheidung wogegen eingelöst wird"},
-  {t:"Stripe-Zahlung aktivieren", own:"Business", note:"Vorbereitet, kein Payment Link — Beiträge laufen im Pilot per Überweisung"},
+  {t:"Punkte-Einlösung", own:"Tech + Business", note:"Jetzt vollständig serverseitig berechnet und konsistent — Einlösung selbst (wogegen, wie gebucht) noch nicht umgesetzt"},
+  {t:"Stripe-Zahlung aktivieren", own:"Business", note:"Vorbereitet, kein Payment Link — Beiträge laufen im Pilot per Überweisung, betrifft jetzt auch die 30-Tage-Probezeit nach Fahrzeugübertragung"},
   {t:"Dashboard-Zugriff absichern", own:"Tech", note:"Aktuell Passwort-Hash im Quelltext (Sichtschutz) — für echten Schutz: Cloudflare Access"},
-  {t:"Werbe-KPI-Auswertung", own:"Tech", note:"QR-Scan-Rohdaten werden erfasst, Auswertungs-Ansicht in der Console fehlt noch"},
+  {t:"Werbe-KPI-Auswertung", own:"Tech", note:"QR-Scan-Rohdaten liegen jetzt strukturiert in point_events vor, Auswertungs-Ansicht in der Admin-Console fehlt noch"},
+  {t:"Anwaltliche Prüfung Übertragungstext", own:"Legal", note:"Rechtlicher Opt-in-Text für die Eigentumsübertragung ist als Arbeitsentwurf fertig, noch nicht anwaltlich geprüft"},
 ];
 
 const LEGAL_POINTS = [
+  {sev:"high", t:"Notfall-Feature verarbeitet Gesundheitsdaten", d:"Blutgruppe, Allergien, Medikamente fallen unter Art. 9 DSGVO (besondere Kategorien) — physischer Code als Zugangsschranke ist ein plausibles, aber anwaltlich ungeprüftes Schutzkonzept."},
+  {sev:"medium", t:"Eigentumsübertragung berührt Vertragsverhältnis", d:"Mit der Übertragung entsteht ein neues Nutzungsverhältnis zum bisher unbeteiligten neuen Eigentümer — rechtlicher Opt-in-Text liegt vor, ist aber Arbeitsentwurf, keine geprüfte Fassung."},
   {sev:"info", t:"Rollenverteilung DSGVO", d:"Club ist Verantwortlicher (Art. 4 Nr. 7), QAR.Gallery ist Auftragsverarbeiter (Art. 28) im B2B-Modell."},
   {sev:"positive", t:"Privacy-by-Default umgesetzt", d:"Kennzeichen, FIN, Standort-Historie serverseitig standardmäßig verborgen — technisch umgesetzter Schutz, kein Lippenbekenntnis."},
   {sev:"positive", t:"Keine öffentliche Suchfunktion", d:"Zugriff ausschließlich über physischen QR-Code oder geschlossene Mitglieder-Suche — kein Weg, Kennzeichen einzugeben und Akte zu finden."},
   {sev:"medium", t:"Gesamtschuldnerische Haftung bleibt", d:"Art. 82 DSGVO: B2B-Struktur verschiebt Hauptlast zum Club, eliminiert aber nicht die Direkthaftung von QAR.Gallery bei softwareseitigen Ursachen."},
-  {sev:"medium", t:"Scan-Metadaten & Zweckbindung", d:"Aufklärungsnutzen bei Diebstahl ist real, rechtfertigt aber keine unbegrenzte Speicherung (Art. 5 Abs. 1 lit. b) — Löschfristen nötig."},
+  {sev:"medium", t:"Scan-Metadaten & Zweckbindung", d:"Aufklärungsnutzen bei Diebstahl ist real, rechtfertigt aber keine unbegrenzte Speicherung (Art. 5 Abs. 1 lit. b) — bewusst auf 48h begrenzt umgesetzt."},
   {sev:"high", t:"Noch keine rechtsverbindliche Prüfung", d:"Interne Bewertung (QAR_Datenschutz_Risikobewertung.md) ist Arbeitsgrundlage, kein Rechtsgutachten — vor echtem Rollout: DSGVO-Anwalt beauftragen."},
   {sev:"medium", t:"Zugangsschutz der Dashboards", d:"Sowohl /dashboard als auch /ceo nutzen Passwort-Hash im Quelltext — bewusster Sichtschutz für die Pilotphase, kein Ersatz für echte Zugriffskontrolle."},
 ];
 
 const SALES_POINTS = [
   {t:"Kernthese", d:"Der Club ist die Tür, das Fahrzeug ist das Produkt. Zahlungsverhältnis eigentlich zwischen Plattform und Fahrzeugeigentümer, nicht nur dem Club."},
+  {t:"Marktteilnehmer-Fit-Analyse ausgearbeitet", d:"Ergänzt um Gebrauchtwagenhändler (stark, Herkunftsnachweis) und Fahrzeugfinanzierer wie Santander (stark, aber unbestätigt — recherchiert: Zulassungsbescheinigung Teil II als Sicherheit). Versicherungen (HUK) ehrlich als schwacher Fit neu bewertet, da deren Digitalfokus auf Telematik-Fahrverhalten liegt, nicht auf Fahrzeughistorie — Details im Investment-Dashboard."},
   {t:"Stickyness als Burggraben", d:"180+ Datenpunkte pro aktivem Mitglied nach 12 Monaten (Logbuch, Fotos, Scans, Punkte) — nicht übertragbar, klebt am Nutzer. Geschätzte Wechselrate < 5% nach vollem Jahr Nutzung."},
   {t:"Wachstumsschwungrad", d:"Club nutzt Plattform → Mitglieder pflegen Akten → QR-Scans bringen Neue → Datenbank wächst → Hersteller zahlen für Zielgruppen-Zugang → mehr Clubs."},
   {t:"Aktueller Vertriebsstand", d:"Ein Pilot-Club (PCN), Vertrag in Vorbereitung, keine weiteren Clubs im aktiven Gespräch — Fokus liegt bewusst auf einem sauberen ersten Piloten vor Skalierung."},
@@ -129,10 +139,10 @@ const SALES_POINTS = [
 ];
 
 const JOURNAL = [
-  {icon:"🏆", t:"KI-Proxy live", d:"Supabase Edge Function eingerichtet und mit API-Schlüssel aktiviert — Fahrzeugschein- und Beleg-Scanner funktionieren jetzt tatsächlich, nicht nur vorbereitet.", date:"Aug 2026"},
-  {icon:"📊", t:"SOM klar ausgearbeitet", d:"Investment-Dashboard: Serviceable Obtainable Market jetzt real berechnet (SAM × Penetrationsrate) statt nur als Text angegeben, mit transparentem Ausschluss eines nicht vergleichbaren Segments.", date:"Aug 2026"},
-  {icon:"⚠️", t:"GitHub-Infrastrukturausfall", d:"Mehrstündiger, von GitHub offiziell bestätigter Ausfall von Actions & Pages hat Deploys blockiert — durch Wechsel auf Legacy-Build-Modus umgangen, seitdem stabil.", date:"Aug 2026"},
-  {icon:"📋", t:"Systematisches App-Review", d:"Vollständiger Durchgang durch die App ergab: totes Code-Duplikat entfernt, fehlende Offline-Erkennung ergänzt, Konsistenz-Lücken beim Verkaufs-Badge geschlossen.", date:"Aug 2026"},
+  {icon:"🎯", t:"Punktesystem: App und Admin-Console synchron", d:"Ursache einer gemeldeten Diskrepanz gefunden (veraltete Konstanten in der Admin-Console) und behoben — zusätzlich alle vier localStorage-Kategorien auf eine gemeinsame Datenbank-Tabelle umgestellt, dabei einen zweiten, unabhängigen Bug (Scan-Bestätigung landete beim falschen Nutzer) entdeckt und korrigiert.", date:"Aug 2026"},
+  {icon:"🗺️", t:"Live-Ausfahrt: echte Karte mit Routenplanung", d:"Ursprünglicher Kartenansatz konnte technisch nur einen Positionspin zeigen — auf Leaflet umgestellt, jetzt mit allen Teilnehmern gleichzeitig sichtbar plus Routenplanung per Antippen oder Adresseingabe für den Organisator.", date:"Aug 2026"},
+  {icon:"🆘", t:"Notfall-Zugang (ICE) konzipiert und gebaut", d:"Nach sorgfältiger Abwägung der Datenschutzfragen umgesetzt: physisch verborgener Code als Zugangsschranke, Rollen-Abfrage vor der Dateneinsicht, recherchierte Rettungsdienst-Standardfelder.", date:"Aug 2026"},
+  {icon:"🔑", t:"Fahrzeug-Eigentumsübertragung wie eine FIN", d:"Kernkonzept: QAR-ID bleibt lebenslang am Fahrzeug, nicht am Eigentümer — zwei Übertragungswege, beidseitige Zustimmung, automatische Nachrichten-Bereinigung.", date:"Aug 2026"},
 ];
 
 const T_ICON = {info:"ℹ️",positive:"✓",medium:"◐",high:"⚠️"};
