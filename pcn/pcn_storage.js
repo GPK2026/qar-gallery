@@ -801,6 +801,7 @@ const PCN_STORAGE = (() => {
       besonderheiten: row.besonderheiten, image: row.image,
       images: row.images||[], phone: row.phone,
       checkinLat: row.checkin_lat, checkinLng: row.checkin_lng, checkinAt: row.checkin_at,
+      checkinNote: row.checkin_note||"",
       // Parse privacy if stored as JSON string in DB
       privacy: typeof row.privacy==="string" ? JSON.parse(row.privacy||"{}") : (row.privacy||{}),
       registrationBonus: !!row.registration_bonus,
@@ -887,12 +888,13 @@ const PCN_STORAGE = (() => {
     // ── Standort-Check-in: Eigentümer scannt eigenen QR-Code, setzt bewusst
     // seinen aktuellen Standort ("wo hab ich geparkt"). Rein privat, nur der
     // Eigentümer sieht es — komplett getrennt vom Diebstahl-Frühwarnsystem.
-    async setCheckIn(vehicleId, ownerUserId, coords) {
+    async setCheckIn(vehicleId, ownerUserId, coords, note) {
       const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id");
       if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
       if(vRes.data[0].user_id!==ownerUserId) return { error: "Nur der Eigentümer kann einchecken" };
       return await supabase._patch("vehicles","id=eq."+vehicleId,{
         checkin_lat: coords.lat, checkin_lng: coords.lng, checkin_at: now(),
+        checkin_note: note||null,
       });
     },
     async clearCheckIn(vehicleId, ownerUserId) {
@@ -900,7 +902,7 @@ const PCN_STORAGE = (() => {
       if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
       if(vRes.data[0].user_id!==ownerUserId) return { error: "Nur der Eigentümer kann dies ändern" };
       return await supabase._patch("vehicles","id=eq."+vehicleId,{
-        checkin_lat: null, checkin_lng: null, checkin_at: null,
+        checkin_lat: null, checkin_lng: null, checkin_at: null, checkin_note: null,
       });
     },
 
