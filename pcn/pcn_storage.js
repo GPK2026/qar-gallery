@@ -1004,6 +1004,14 @@ const PCN_STORAGE = (() => {
         id: r.id, eventType: r.event_type, refId: r.ref_id, points: r.points, createdAt: r.created_at,
       })) };
     },
+    async syncTotalPoints(userId, totalPoints) {
+      // Schreibt den von der App berechneten Gesamt-Punktestand in die
+      // Datenbank — die Admin-Console liest NUR diesen Wert, rechnet nicht
+      // mehr selbst nach. Eine einzige Quelle der Wahrheit.
+      return await supabase._patch("users","id=eq."+userId,{
+        total_points: totalPoints, total_points_updated_at: now(),
+      });
+    },
 
     // ── Notfallprofile (ICE) ──
     // Mehrere Profile pro Fahrzeug moeglich. Verwaltung nur fuer den
@@ -1743,6 +1751,7 @@ function guard(label, fn){
     pointEvents: {
       record: guard("pointEvents.record", (uid,type,refId,points) => db.recordPointEvent(uid,type,refId,points)),
       list: (uid) => db.getPointEvents(uid),
+      syncTotal: guard("pointEvents.syncTotal", (uid,total) => db.syncTotalPoints(uid,total)),
     },
     emergencyProfiles: {
       list: guard("emergencyProfiles.list", (vid,ownerUid) => db.listEmergencyProfiles(vid,ownerUid)),
