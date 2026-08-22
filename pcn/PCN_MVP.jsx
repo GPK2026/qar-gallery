@@ -1747,6 +1747,8 @@ function PCNInner() {
   ]);
   const [routeStopBusy, setRouteStopBusy] = useState(null); // Index des gerade geocodierten Stopps
   const [routePlanMode, setRoutePlanMode] = useState(false);
+  const [pendingPreplannedRoute, setPendingPreplannedRoute] = useState(null);
+  const liveMapInstanceRef = useRef(null);
   useEffect(()=>{
     if(!pendingPreplannedRoute) return;
     setRoutePlanMode(true); // aktiviert den Modus, der map.__addRouteWaypoint registriert
@@ -1770,7 +1772,6 @@ function PCNInner() {
   },[pendingPreplannedRoute]);
   const [routeAddressInput, setRouteAddressInput] = useState("");
   const [routeAddressBusy, setRouteAddressBusy] = useState(false);
-  const liveMapInstanceRef = useRef(null);
   const [showAddV, setShowAddV]   = useState(false);
   const [showAddLog, setShowAddLog] = useState(null);
   const [showAddRem, setShowAddRem] = useState(false);
@@ -2928,7 +2929,6 @@ function PCNInner() {
     if(data.status==="ended"){ toast_("Die Ausfahrt wurde beendet"); stopLiveGroupPolling(); setActiveLiveGroup(null); return; }
     setActiveLiveGroup(data);
   };
-  const [pendingPreplannedRoute, setPendingPreplannedRoute] = useState(null);
   const openLiveGroup = async (groupId, preplannedRoute) => {
     const DB=window.PCN_DB;
     if(isDemo){ toast_("Im Demo-Modus nicht verfügbar","err"); return; }
