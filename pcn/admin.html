@@ -388,24 +388,12 @@ const daysLeft=d=>Math.ceil((new Date(d)-new Date())/86400000);
 function toast(msg,type="ok"){const el=document.getElementById("toast");el.textContent=msg;el.className=type==="err"?"err":"";el.style.display="block";clearTimeout(el._t);el._t=setTimeout(()=>el.style.display="none",3200);}
 function stat(val,lbl,sub,col,tab){return `<div class="stat" ${tab?`onclick="showTab('${tab}')"`:''}><div class="stat-val" style="color:${col}">${val}</div><div class="stat-lbl">${lbl}</div><div class="stat-sub">${sub}</div>${tab?`<div class="stat-arrow">→ ${tab}</div>`:''}</div>`;}
 function calcPts(id){
-  const veh=DB.vehicles.filter(x=>x.user_id===id);
-  const conf=DB.participants.filter(x=>x.user_id===id&&x.status==="confirmed").length;
+  // Liest NUR den von der App berechneten und synchronisierten Gesamtwert
+  // aus users.total_points — keine eigene Berechnung mehr. Damit gibt es
+  // nur noch eine Quelle der Wahrheit, App und Admin-Console koennen
+  // strukturell nicht mehr auseinanderlaufen.
   const mem=DB.members.find(m=>m.id===id);
-  let p=0;
-  veh.forEach(v=>{
-    p+=v.registration_bonus?POINTS.vehicle_added*POINTS.vehicle_added_registration_bonus_mult:POINTS.vehicle_added;
-    const imgs=(v.images||[]).length||(v.image?1:0);
-    p+=Math.min(imgs,10)*POINTS.photo;
-  });
-  p+=conf*POINTS.event_confirmed;
-  if(mem?.beitrag_bezahlt) p+=POINTS.beitrag_paid;
-  if(mem?.created_at){
-    const y=Math.floor((Date.now()-new Date(mem.created_at))/(365.25*864e5));
-    p+=Math.max(0,y)*POINTS.member_year;
-  }
-  // QR-Scans, angesehene Akten, gelesene News, Geburtstage — jetzt
-  // serverseitig aus point_events, dieselbe Quelle wie die App selbst.
-  p+=DB.pointEvents.filter(e=>e.user_id===id).reduce((sum,e)=>sum+(e.points||0),0);
+  return mem?.total_points||0;
   return p;
 }
 function getTier(pts){return TIERS.filter(t=>pts>=t.p).slice(-1)[0]||null;}
@@ -1388,13 +1376,13 @@ function rPoints(el){
   const avgPts=aktive.length?Math.round(totalPts/aktive.length):0;
   el.innerHTML=`<div class="page-title">🏆 Punkte & Engagement</div>
 
-  <!-- Alle Punkte-Kategorien sind jetzt vollstaendig serverseitig in
-       point_events bzw. den jeweiligen Fachtabellen gespeichert - App und
-       Admin-Console lesen dieselbe Quelle, koennen also nicht mehr
-       auseinanderlaufen. -->
+  <!-- Die Admin-Console liest NUR noch den in der App berechneten und
+       gespeicherten Gesamt-Punktestand (users.total_points) - keine
+       eigene Berechnung, keine Aufschlüsselung nach Kategorie. Damit gibt
+       es nur noch eine Quelle der Wahrheit. -->
   <div class="card" style="margin-bottom:12px;background:#22c55e11;border-color:#22c55e33">
     <div style="font-size:12px;color:var(--muted);line-height:1.6">
-      ✓ Alle Punkte-Kategorien (Fahrzeuge, Events, Mitgliedsjahre, Beitrag, QR-Scans, angesehene Akten, News, Geburtstage) werden jetzt vollständig serverseitig berechnet — identisch zur App des Mitglieds.
+      ✓ Punktzahlen sind der von der App berechnete Gesamtwert je Mitglied — 1:1 identisch, ohne eigene Aufschlüsselung nach Kategorie.
     </div>
   </div>
 
