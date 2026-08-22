@@ -4929,7 +4929,11 @@ Regeln:
         {showContactAuth&&(
           <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}}>
             <div className="sheet">
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>💬 Nachricht senden</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>💬 Nachricht senden</div>
+                <button onClick={()=>{setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}
+                  style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+              </div>
               <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Um eine Nachricht zu senden, identifiziere dich kurz</div>
 
               <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:16}}>
@@ -5835,12 +5839,16 @@ Regeln:
         {showPrivacy===v.id&&(
           <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowPrivacy(null);}}>
             <div className="sheet">
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
-                <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,padding:"6px 10px",display:"flex",alignItems:"center",gap:5}}>
-                  <span style={{fontWeight:800,fontSize:15,color:C.red}}>QR</span>
-                  <span style={{fontSize:16}}>🔒</span>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,padding:"6px 10px",display:"flex",alignItems:"center",gap:5}}>
+                    <span style={{fontWeight:800,fontSize:15,color:C.red}}>QR</span>
+                    <span style={{fontSize:16}}>🔒</span>
+                  </div>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>QR-Sichtbarkeit</div>
                 </div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>QR-Sichtbarkeit</div>
+                <button onClick={()=>setShowPrivacy(null)}
+                  style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
               </div>
               <div style={{fontSize:14,color:C.muted,marginBottom:4}}>Was sehen Besucher wenn sie den QR-Code scannen?</div>
 
@@ -5897,7 +5905,11 @@ Regeln:
         {showEditVehicle===v.id&&(
           <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowEditVehicle(null);}}>
             <div className="sheet">
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>✏️ Fahrzeugdaten bearbeiten</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>✏️ Fahrzeugdaten bearbeiten</div>
+                <button onClick={()=>setShowEditVehicle(null)}
+                  style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+              </div>
               <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Alle Angaben jederzeit änderbar</div>
 
               <div style={{marginBottom:16}}>
@@ -5996,7 +6008,11 @@ Regeln:
         {showContactAuth&&(
           <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}}>
             <div className="sheet">
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>💬 Nachricht senden</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>💬 Nachricht senden</div>
+                <button onClick={()=>{setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}
+                  style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+              </div>
               <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Um eine Nachricht zu senden, identifiziere dich kurz</div>
 
               <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:16}}>
@@ -6172,8 +6188,12 @@ Regeln:
           {showEmergencyEdit&&showEmergencyEdit.vehicleId===v.id&&(
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowEmergencyEdit(null);}}>
               <div className="sheet" style={{maxHeight:"90vh",overflowY:"auto"}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:14}}>
-                  {showEmergencyEdit.id?"Notfallprofil bearbeiten":"🆘 Notfallprofil anlegen"}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>
+                    {showEmergencyEdit.id?"Notfallprofil bearbeiten":"🆘 Notfallprofil anlegen"}
+                  </div>
+                  <button onClick={()=>setShowEmergencyEdit(null)}
+                    style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
                 </div>
 
                 <div style={{display:"flex",gap:12,marginBottom:14,alignItems:"center"}}>
@@ -6245,7 +6265,11 @@ Regeln:
           {showTransferPanel===v.id&&(
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowTransferPanel(null);}}>
               <div className="sheet">
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>🔑 Fahrzeug übertragen</div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>🔑 Fahrzeug übertragen</div>
+                  <button onClick={()=>setShowTransferPanel(null)}
+                    style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+                </div>
                 <div style={{fontSize:14,color:C.muted,marginBottom:16,lineHeight:1.6}}>
                   Die QAR-ID ({v.qarId}) bleibt erhalten — wie eine FIN. Logbuch und Fotos gehen mit, nur der Eigentümer wechselt.
                 </div>
@@ -6286,7 +6310,11 @@ Regeln:
           {showSellerConfirm&&showSellerConfirm.id&&(
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowSellerConfirm(null);}}>
               <div className="sheet">
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:14}}>Übertragung bestätigen</div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>Übertragung bestätigen</div>
+                  <button onClick={()=>setShowSellerConfirm(null)}
+                    style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+                </div>
                 <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"14px",marginBottom:16,fontSize:14,color:C.muted,lineHeight:1.7}}>
                   „Ich übertrage die digitale QAR-Akte dieses Fahrzeugs (Fotos, Logbuch-Einträge, Punkte-Historie) an den von mir bestätigten neuen Eigentümer. Mir ist bewusst, dass diese Übertragung unabhängig vom zivilrechtlichen Kaufvertrag über das Fahrzeug erfolgt und diesen weder ersetzt noch beeinflusst. Ich bestätige, dass ich zur Übertragung berechtigt bin. Mir ist bewusst, dass ich für die Prüfung und Bereinigung persönlicher Daten in Fotos, Notizen und Dokumenten dieser Akte selbst verantwortlich bin — nicht entfernte Inhalte gehen mit der Übertragung an den neuen Eigentümer über."
                 </div>
@@ -6303,8 +6331,12 @@ Regeln:
           {showAddListing&&(typeof showAddListing==="object"?showAddListing.vehicleId:showAddListing)===v.id&&(
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddListing(null);}}>
               <div className="sheet">
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:16}}>
-                  {typeof showAddListing==="object"&&showAddListing.editId ? "Angebot bearbeiten" : "Neues Angebot"}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>
+                    {typeof showAddListing==="object"&&showAddListing.editId ? "Angebot bearbeiten" : "Neues Angebot"}
+                  </div>
+                  <button onClick={()=>setShowAddListing(null)}
+                    style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
                 </div>
                 <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Kategorie</div>
                 <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
@@ -6563,7 +6595,11 @@ Regeln:
       {showStatusPicker&&(
         <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget){setShowStatusPicker(null);setStatusEditSlot(null);setStatusCustom("");setStatusPresetIcon(null);setStatusUseDate(false);setStatusDateTime("");}}}>
           <div className="sheet" style={{maxHeight:"92vh",overflowY:"auto"}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:2}}>📍 Live-Status</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>📍 Live-Status</div>
+              <button onClick={()=>{setShowStatusPicker(null);setStatusEditSlot(null);setStatusCustom("");setStatusPresetIcon(null);setStatusUseDate(false);setStatusDateTime("");}}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+            </div>
             <div style={{fontSize:13,color:C.muted,marginBottom:14}}>Bis zu 3 Status-Infos — sichtbar beim QR-Scan</div>
 
             {/* ── Hinweis: Live-Status ist in der öffentlichen Ansicht deaktiviert ── */}
@@ -9390,7 +9426,11 @@ Regeln:
       {showEditProfile&&(
         <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowEditProfile(false);}}>
           <div className="sheet">
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>✏️ Profil bearbeiten</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>✏️ Profil bearbeiten</div>
+              <button onClick={()=>setShowEditProfile(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+            </div>
             <div style={{fontSize:13,color:C.muted,marginBottom:16}}>Deine persönlichen Angaben</div>
 
             {/* ── Profilbild ── */}
@@ -9546,7 +9586,11 @@ Regeln:
       {showAddV&&(
         <div className="overlay" onClick={e=>{if(e.target===e.currentTarget){setShowAddV(false);setAnalyzeResult(null);setAnalyzing(false);setAnalyzeHiRes(null);}}}>
           <div className="sheet">
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>Fahrzeug hinzufügen</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>Fahrzeug hinzufügen</div>
+              <button onClick={()=>{setShowAddV(false);setAnalyzeResult(null);setAnalyzing(false);setAnalyzeHiRes(null);}}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+            </div>
 
             {/* ── Fortschrittsanzeige: Auto nähert sich der Flagge, je vollständiger
                  das Formular ausgefüllt ist — dieselbe Optik wie beim Splash-Screen. ── */}
@@ -9747,7 +9791,11 @@ Regeln:
       {showAddRem&&(
         <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddRem(false);}}>
           <div className="sheet">
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:C.white,marginBottom:4}}>🔔 Erinnerung</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>🔔 Erinnerung</div>
+              <button onClick={()=>setShowAddRem(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+            </div>
             <div style={{fontSize:14,color:C.muted,marginBottom:14}}>Neue Aufgabe oder Termin anlegen</div>
 
             {/* Quick presets */}
