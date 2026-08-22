@@ -4622,14 +4622,18 @@ Regeln:
           <img src={LOGO_SMALL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:34,objectFit:"contain",background:"transparent"}}/>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:13,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
-            {/* ── Notfall-Zugang (ICE) — länglicher Button im Header, immer sichtbar ── */}
+            {/* ── Notfall-Zugang (ICE) — roter Button mit ICE-Schriftzug, Erklaertext und weissem Kreuz-Symbol ── */}
             <button onClick={()=>{setShowEmergencyAccess(v.id);setEmergencyRoleConfirmed(false);}}
               aria-label="Notfall-Zugang (In Case of Emergency)"
-              style={{background:"#ef4444",border:"none",borderRadius:8,padding:"7px 12px",cursor:"pointer",
-                display:"flex",alignItems:"center",gap:5,flexShrink:0,
+              style={{background:"#ef4444",border:"none",borderRadius:8,padding:"6px 10px",cursor:"pointer",
+                display:"flex",alignItems:"center",gap:8,flexShrink:0,
                 boxShadow:"0 1px 4px rgba(239,68,68,.4)"}}>
-              <span style={{fontSize:13,fontWeight:900,color:"#fff",lineHeight:1}}>✚</span>
-              <span style={{fontSize:12,fontWeight:900,color:"#fff",letterSpacing:.5,lineHeight:1}}>ICE</span>
+              <span style={{fontSize:17,fontWeight:900,color:"#fff",lineHeight:1}}>ICE</span>
+              <span style={{fontSize:9,fontWeight:800,color:"#fff",lineHeight:1.25,textAlign:"left"}}>IN CASE OF<br/>EMERGENCY</span>
+              <span style={{width:22,height:22,borderRadius:"50%",background:"#fff",flexShrink:0,
+                display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <span style={{fontSize:14,fontWeight:900,color:"#ef4444",lineHeight:1}}>✚</span>
+              </span>
             </button>
           </div>
         </div>
