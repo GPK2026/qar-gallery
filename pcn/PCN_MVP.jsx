@@ -1738,7 +1738,36 @@ function PCNInner() {
   const [activeLiveGroup, setActiveLiveGroup] = useState(null); // {id,name,organizerId,status,members}
   const [liveGroupBusy, setLiveGroupBusy] = useState(false);
   const liveGroupPollRef = useRef(null);
+  // Route bereits beim Erstellen der Ausfahrt planen — Start, beliebig viele
+  // Zwischenstopps, Ziel. label ist nur fuer die Anzeige, coords wird beim
+  // Geocoding befuellt.
+  const [routeStops, setRouteStops] = useState([
+    { label: "Start", address: "", coords: null },
+    { label: "Ziel", address: "", coords: null },
+  ]);
+  const [routeStopBusy, setRouteStopBusy] = useState(null); // Index des gerade geocodierten Stopps
   const [routePlanMode, setRoutePlanMode] = useState(false);
+  useEffect(()=>{
+    if(!pendingPreplannedRoute) return;
+    setRoutePlanMode(true); // aktiviert den Modus, der map.__addRouteWaypoint registriert
+    let cancelled = false;
+    let attempts = 0;
+    const tryApply = () => {
+      if(cancelled) return;
+      const map = liveMapInstanceRef.current;
+      if(map && map.__addRouteWaypoint){
+        pendingPreplannedRoute.forEach(coord => {
+          map.__addRouteWaypoint(window.L.latLng(coord.lat, coord.lng));
+        });
+        setPendingPreplannedRoute(null);
+        return;
+      }
+      attempts++;
+      if(attempts<20) setTimeout(tryApply, 200); // bis zu 4s warten, bis Karte+Helfer bereit sind
+    };
+    tryApply();
+    return ()=>{ cancelled = true; };
+  },[pendingPreplannedRoute]);
   const [routeAddressInput, setRouteAddressInput] = useState("");
   const [routeAddressBusy, setRouteAddressBusy] = useState(false);
   const liveMapInstanceRef = useRef(null);
@@ -2816,6 +2845,29 @@ function PCNInner() {
     setAdacNrInput(me?.adacMemberNr||"");
     setAvdNrInput(me?.avdMemberNr||"");
   }, [me?.adacMemberNr, me?.avdMemberNr]);
+  const addRouteStop = () => {
+    setRouteStops(prev=>{
+      // Neuer Zwischenstopp wird VOR dem letzten Eintrag (Ziel) eingefuegt
+      const withoutLast = prev.slice(0,-1);
+      const last = prev[prev.length-1];
+      return [...withoutLast, { label: "Zwischenstopp", address: "", coords: null }, last];
+    });
+  };
+  const removeRouteStop = (index) => {
+    setRouteStops(prev => prev.length<=2 ? prev : prev.filter((_,i)=>i!==index));
+  };
+  const updateRouteStopAddress = (index, address) => {
+    setRouteStops(prev => prev.map((s,i)=>i===index?{...s,address,coords:null}:s));
+  };
+  const geocodeRouteStop = async (index) => {
+    const stop = routeStops[index];
+    if(!stop.address.trim()) return;
+    setRouteStopBusy(index);
+    const result = await geocodeAddress(stop.address.trim()).catch(()=>null);
+    setRouteStopBusy(null);
+    if(!result){ toast_(`"${stop.address}" nicht gefunden`,"err"); return; }
+    setRouteStops(prev => prev.map((s,i)=>i===index?{...s,coords:{lat:result.lat,lng:result.lng}}:s));
+  };
   const createLiveGroupNow = async () => {
     if(!liveGroupName.trim()){ toast_("Name für die Ausfahrt eingeben","err"); return; }
     if(liveGroupInvitees.length===0){ toast_("Mindestens eine Person einladen","err"); return; }
@@ -2827,9 +2879,14 @@ function PCNInner() {
     if(error){ toast_(error,"err"); return; }
     setShowCreateLiveGroup(false);
     setLiveGroupName(""); setLiveGroupInvitees([]);
+    // Vorab eingegebene Route (Start/Zwischenstopps/Ziel) mitgeben, damit sie
+    // direkt nach dem Öffnen auf der Karte erscheint — nur Stopps mit
+    // erfolgreich geocodierten Koordinaten zählen.
+    const preplannedRoute = routeStops.filter(s=>s.coords).map(s=>s.coords);
+    setRouteStops([{ label:"Start", address:"", coords:null }, { label:"Ziel", address:"", coords:null }]);
     toast_("Ausfahrt gestartet — Teilnehmer wurden eingeladen");
     await loadMyLiveGroups();
-    openLiveGroup(data.id);
+    openLiveGroup(data.id, preplannedRoute.length>=2 ? preplannedRoute : null);
   };
   const stopLiveGroupPolling = () => {
     if(liveGroupPollRef.current){ clearInterval(liveGroupPollRef.current); liveGroupPollRef.current=null; }
@@ -2871,9 +2928,11 @@ function PCNInner() {
     if(data.status==="ended"){ toast_("Die Ausfahrt wurde beendet"); stopLiveGroupPolling(); setActiveLiveGroup(null); return; }
     setActiveLiveGroup(data);
   };
-  const openLiveGroup = async (groupId) => {
+  const [pendingPreplannedRoute, setPendingPreplannedRoute] = useState(null);
+  const openLiveGroup = async (groupId, preplannedRoute) => {
     const DB=window.PCN_DB;
     if(isDemo){ toast_("Im Demo-Modus nicht verfügbar","err"); return; }
+    if(preplannedRoute) setPendingPreplannedRoute(preplannedRoute);
     // Falls nur eingeladen, nicht bereits Mitglied: automatisch beitreten,
     // sobald man die Gruppe öffnet.
     await DB.liveGroups.join(groupId, me.id).catch(()=>{});
@@ -8917,9 +8976,47 @@ Regeln:
             </div>
             <input className="inp" placeholder="Name der Ausfahrt, z.B. 'Eifel-Runde'" style={{marginBottom:14}}
               value={liveGroupName} onChange={e=>setLiveGroupName(e.target.value)}/>
+
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Route (optional)</div>
+            <div style={{marginBottom:6}}>
+              {routeStops.map((stop,i)=>(
+                <div key={i} style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
+                  <span style={{width:20,textAlign:"center",fontSize:14,flexShrink:0}}>
+                    {i===0?"🟢":i===routeStops.length-1?"🏁":"📍"}
+                  </span>
+                  <input className="inp" placeholder={stop.label} style={{flex:1,fontSize:13}}
+                    value={stop.address}
+                    onChange={e=>updateRouteStopAddress(i,e.target.value)}
+                    onBlur={()=>geocodeRouteStop(i)}
+                    onKeyDown={e=>e.key==="Enter"&&geocodeRouteStop(i)}/>
+                  {routeStopBusy===i?(
+                    <span style={{fontSize:12,color:C.muted,flexShrink:0,width:20,textAlign:"center"}}>…</span>
+                  ):stop.coords?(
+                    <span style={{fontSize:14,color:C.green,flexShrink:0,width:20,textAlign:"center"}}>✓</span>
+                  ):(
+                    <span style={{width:20,flexShrink:0}}/>
+                  )}
+                  {routeStops.length>2&&i>0&&i<routeStops.length-1&&(
+                    <button onClick={()=>removeRouteStop(i)}
+                      style={{background:"none",border:"none",color:"#666",fontSize:16,cursor:"pointer",padding:"0 2px",flexShrink:0}}>✕</button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button onClick={addRouteStop}
+              style={{background:"none",border:"none",color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",marginBottom:16,padding:0}}>
+              + Zwischenstopp
+            </button>
+
             <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Wen einladen?</div>
             <div style={{maxHeight:220,overflowY:"auto",marginBottom:16}}>
-              {Object.values(allUsers).filter(u=>u.id&&u.id!==me?.id&&u.name).map(u=>(
+              {(()=>{
+                // Demo-Nutzer duerfen nicht in die Einladungsliste — allUsers
+                // startet mit {...DEMO_USERS} und behaelt diese dauerhaft, da
+                // spaetere setAllUsers()-Aufrufe nur ergaenzen, nie entfernen.
+                const demoIds = new Set(Object.values(DEMO_USERS).map(u=>u.id));
+                return Object.values(allUsers).filter(u=>u.id&&u.id!==me?.id&&u.name&&!demoIds.has(u.id));
+              })().map(u=>(
                 <label key={u.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
                   <input type="checkbox" checked={liveGroupInvitees.includes(u.id)}
                     onChange={e=>setLiveGroupInvitees(prev=>e.target.checked?[...prev,u.id]:prev.filter(id=>id!==u.id))}
