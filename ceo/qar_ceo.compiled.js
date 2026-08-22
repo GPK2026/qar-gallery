@@ -162,6 +162,30 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   const STATUS_DONE = [{
+    t: "Punktesystem: komplett serverseitig",
+    d: "QR-Scan, angesehene Akte, News gelesen, Geburtstag laufen nicht mehr über localStorage sondern über eine neue Datenbank-Tabelle — App und Admin-Console können strukturell nicht mehr auseinanderlaufen. Dabei einen echten Bug behoben: QR-Scan-Bestätigung landete fälschlich im Speicher des Eigentümers statt des Scanners",
+    date: "Aug 2026"
+  }, {
+    t: "Live-Ausfahrt-Karte auf Leaflet umgestellt",
+    d: "Vorheriger Kartenansatz zeigte nur einen Positionspin — jetzt echte Multi-Marker-Karte mit farblich unterschiedenen Teilnehmern, plus Routenplanung für den Organisator (Wegpunkte per Antippen oder Adresseingabe, Route via OSRM berechnet)",
+    date: "Aug 2026"
+  }, {
+    t: "Notfall-Zugang (ICE)",
+    d: "Rundes Symbol oben rechts in der Fahrzeugakte — Rettungskräfte bestätigen zunächst ihre Rolle, dann Zugang zu Blutgruppe, Allergien, Notfallkontakten über einen physisch verborgenen 4-stelligen Code",
+    date: "Aug 2026"
+  }, {
+    t: "Pannenhilfe-Integration",
+    d: "ADAC/AvD-Mitgliedsnummer im Profil, direkter Anruf-Button in der Fahrzeugakte mit recherchierten, verifizierten Notrufnummern",
+    date: "Aug 2026"
+  }, {
+    t: "Fahrzeug-Eigentumsübertragung",
+    d: "QAR-ID bleibt wie eine FIN lebenslang am Fahrzeug — zwei Wege (Direktübertragung per QR-Scan vor Ort, oder Antrag ohne gemeinsame Anwesenheit), beidseitige Zustimmung mit rechtlichem Opt-in-Text, automatische Nachrichten-Bereinigung",
+    date: "Aug 2026"
+  }, {
+    t: "Standort-Themenreihe",
+    d: "Diebstahl-Frühwarnung bei Fremd-Scans (48h-Löschfrist), privater Standort-Check-in, Live-Ausfahrt-Gruppen mit Positions-Teilen — alle bewusst unterschiedlich in Sichtbarkeit und Aufbewahrung gestaltet",
+    date: "Aug 2026"
+  }, {
     t: "Verkaufsbörse",
     d: "3 Kategorien, Fahrzeugauswahl, Preisfeld, Bild-Upload, bidirektionale Sync mit Live-Status",
     date: "Aug 2026"
@@ -209,7 +233,7 @@
   }, {
     t: "DSGVO-Anwalt beauftragen",
     own: "Business/Legal",
-    note: "Interne Bewertung liegt vor (siehe Recht-Tab), keine rechtsverbindliche Prüfung"
+    note: "Interne Bewertung liegt vor (siehe Recht-Tab), keine rechtsverbindliche Prüfung — jetzt dringlicher durch Notfall-Zugang (Gesundheitsdaten) und Standort-Features"
   }, {
     t: "Pilotvertrag unterschreiben",
     own: "Business",
@@ -221,11 +245,11 @@
   }, {
     t: "Punkte-Einlösung",
     own: "Tech + Business",
-    note: "Berechnet, nicht buchbar — braucht Konto-Modell, Entscheidung wogegen eingelöst wird"
+    note: "Jetzt vollständig serverseitig berechnet und konsistent — Einlösung selbst (wogegen, wie gebucht) noch nicht umgesetzt"
   }, {
     t: "Stripe-Zahlung aktivieren",
     own: "Business",
-    note: "Vorbereitet, kein Payment Link — Beiträge laufen im Pilot per Überweisung"
+    note: "Vorbereitet, kein Payment Link — Beiträge laufen im Pilot per Überweisung, betrifft jetzt auch die 30-Tage-Probezeit nach Fahrzeugübertragung"
   }, {
     t: "Dashboard-Zugriff absichern",
     own: "Tech",
@@ -233,9 +257,21 @@
   }, {
     t: "Werbe-KPI-Auswertung",
     own: "Tech",
-    note: "QR-Scan-Rohdaten werden erfasst, Auswertungs-Ansicht in der Console fehlt noch"
+    note: "QR-Scan-Rohdaten liegen jetzt strukturiert in point_events vor, Auswertungs-Ansicht in der Admin-Console fehlt noch"
+  }, {
+    t: "Anwaltliche Prüfung Übertragungstext",
+    own: "Legal",
+    note: "Rechtlicher Opt-in-Text für die Eigentumsübertragung ist als Arbeitsentwurf fertig, noch nicht anwaltlich geprüft"
   }];
   const LEGAL_POINTS = [{
+    sev: "high",
+    t: "Notfall-Feature verarbeitet Gesundheitsdaten",
+    d: "Blutgruppe, Allergien, Medikamente fallen unter Art. 9 DSGVO (besondere Kategorien) — physischer Code als Zugangsschranke ist ein plausibles, aber anwaltlich ungeprüftes Schutzkonzept."
+  }, {
+    sev: "medium",
+    t: "Eigentumsübertragung berührt Vertragsverhältnis",
+    d: "Mit der Übertragung entsteht ein neues Nutzungsverhältnis zum bisher unbeteiligten neuen Eigentümer — rechtlicher Opt-in-Text liegt vor, ist aber Arbeitsentwurf, keine geprüfte Fassung."
+  }, {
     sev: "info",
     t: "Rollenverteilung DSGVO",
     d: "Club ist Verantwortlicher (Art. 4 Nr. 7), QAR.Gallery ist Auftragsverarbeiter (Art. 28) im B2B-Modell."
@@ -254,7 +290,7 @@
   }, {
     sev: "medium",
     t: "Scan-Metadaten & Zweckbindung",
-    d: "Aufklärungsnutzen bei Diebstahl ist real, rechtfertigt aber keine unbegrenzte Speicherung (Art. 5 Abs. 1 lit. b) — Löschfristen nötig."
+    d: "Aufklärungsnutzen bei Diebstahl ist real, rechtfertigt aber keine unbegrenzte Speicherung (Art. 5 Abs. 1 lit. b) — bewusst auf 48h begrenzt umgesetzt."
   }, {
     sev: "high",
     t: "Noch keine rechtsverbindliche Prüfung",
@@ -267,6 +303,9 @@
   const SALES_POINTS = [{
     t: "Kernthese",
     d: "Der Club ist die Tür, das Fahrzeug ist das Produkt. Zahlungsverhältnis eigentlich zwischen Plattform und Fahrzeugeigentümer, nicht nur dem Club."
+  }, {
+    t: "Marktteilnehmer-Fit-Analyse ausgearbeitet",
+    d: "Ergänzt um Gebrauchtwagenhändler (stark, Herkunftsnachweis) und Fahrzeugfinanzierer wie Santander (stark, aber unbestätigt — recherchiert: Zulassungsbescheinigung Teil II als Sicherheit). Versicherungen (HUK) ehrlich als schwacher Fit neu bewertet, da deren Digitalfokus auf Telematik-Fahrverhalten liegt, nicht auf Fahrzeughistorie — Details im Investment-Dashboard."
   }, {
     t: "Stickyness als Burggraben",
     d: "180+ Datenpunkte pro aktivem Mitglied nach 12 Monaten (Logbuch, Fotos, Scans, Punkte) — nicht übertragbar, klebt am Nutzer. Geschätzte Wechselrate < 5% nach vollem Jahr Nutzung."
@@ -281,24 +320,24 @@
     d: "Jeder QR-Code am Fahrzeug ist physischer, dauerhafter Werbeträger ohne laufende Kosten — wirkt direkt am faszinierenden Objekt."
   }];
   const JOURNAL = [{
-    icon: "🏆",
-    t: "KI-Proxy live",
-    d: "Supabase Edge Function eingerichtet und mit API-Schlüssel aktiviert — Fahrzeugschein- und Beleg-Scanner funktionieren jetzt tatsächlich, nicht nur vorbereitet.",
+    icon: "🎯",
+    t: "Punktesystem: App und Admin-Console synchron",
+    d: "Ursache einer gemeldeten Diskrepanz gefunden (veraltete Konstanten in der Admin-Console) und behoben — zusätzlich alle vier localStorage-Kategorien auf eine gemeinsame Datenbank-Tabelle umgestellt, dabei einen zweiten, unabhängigen Bug (Scan-Bestätigung landete beim falschen Nutzer) entdeckt und korrigiert.",
     date: "Aug 2026"
   }, {
-    icon: "📊",
-    t: "SOM klar ausgearbeitet",
-    d: "Investment-Dashboard: Serviceable Obtainable Market jetzt real berechnet (SAM × Penetrationsrate) statt nur als Text angegeben, mit transparentem Ausschluss eines nicht vergleichbaren Segments.",
+    icon: "🗺️",
+    t: "Live-Ausfahrt: echte Karte mit Routenplanung",
+    d: "Ursprünglicher Kartenansatz konnte technisch nur einen Positionspin zeigen — auf Leaflet umgestellt, jetzt mit allen Teilnehmern gleichzeitig sichtbar plus Routenplanung per Antippen oder Adresseingabe für den Organisator.",
     date: "Aug 2026"
   }, {
-    icon: "⚠️",
-    t: "GitHub-Infrastrukturausfall",
-    d: "Mehrstündiger, von GitHub offiziell bestätigter Ausfall von Actions & Pages hat Deploys blockiert — durch Wechsel auf Legacy-Build-Modus umgangen, seitdem stabil.",
+    icon: "🆘",
+    t: "Notfall-Zugang (ICE) konzipiert und gebaut",
+    d: "Nach sorgfältiger Abwägung der Datenschutzfragen umgesetzt: physisch verborgener Code als Zugangsschranke, Rollen-Abfrage vor der Dateneinsicht, recherchierte Rettungsdienst-Standardfelder.",
     date: "Aug 2026"
   }, {
-    icon: "📋",
-    t: "Systematisches App-Review",
-    d: "Vollständiger Durchgang durch die App ergab: totes Code-Duplikat entfernt, fehlende Offline-Erkennung ergänzt, Konsistenz-Lücken beim Verkaufs-Badge geschlossen.",
+    icon: "🔑",
+    t: "Fahrzeug-Eigentumsübertragung wie eine FIN",
+    d: "Kernkonzept: QAR-ID bleibt lebenslang am Fahrzeug, nicht am Eigentümer — zwei Übertragungswege, beidseitige Zustimmung, automatische Nachrichten-Bereinigung.",
     date: "Aug 2026"
   }];
   const T_ICON = {
