@@ -1507,6 +1507,29 @@ export default function PCN() {
 // Tippen auf die Karte setzt Wegpunkte, Route wird über die kostenlose
 // OSRM-Demo-Routing-API berechnet und eingezeichnet.
 const LIVE_MAP_COLORS = ["#D5001C","#2563EB","#16A34A","#D97706","#7C3AED","#0891B2","#DB2777"];
+// ─── Einzelner Standort-Marker (z.B. "Zuletzt geparkt") ──────────────────
+// Einfachere Variante von LiveGroupMap für einen einzigen, statischen
+// Punkt — nutzt denselben zuverlässigen Leaflet-Ansatz statt des
+// vorherigen iframe-Embeds, der auf manchen Geräten nicht zuverlässig lud.
+function SingleMarkerMap({lat, lng}){
+  const mapDivRef = useRef(null);
+  useEffect(()=>{
+    if(!window.L || !mapDivRef.current || lat==null || lng==null) return;
+    const map = window.L.map(mapDivRef.current, {zoomControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false, touchZoom:false});
+    window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+      attribution:'&copy; OpenStreetMap', maxZoom:19,
+    }).addTo(map);
+    map.setView([lat,lng], 16);
+    const icon = window.L.divIcon({
+      className:"", html:`<div style="width:22px;height:22px;border-radius:50%;background:${C.gold};border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
+      iconSize:[22,22], iconAnchor:[11,11],
+    });
+    window.L.marker([lat,lng],{icon}).addTo(map);
+    return ()=>map.remove();
+  },[lat,lng]);
+  return <div ref={mapDivRef} style={{width:"100%",height:"100%"}}/>;
+}
+
 function LiveGroupMap({members, organizerId, meId, isOrganizer, routeMode, onMapReady}){
   const mapDivRef = useRef(null);
   const mapRef = useRef(null);
@@ -1732,6 +1755,8 @@ function PCNInner() {
   const [emergencyEditBusy, setEmergencyEditBusy] = useState(false);
   const [scanLocations, setScanLocations] = useState({}); // vehicleId -> array
   const [showCheckInPrompt, setShowCheckInPrompt] = useState(null); // vehicleId
+  const [checkInNoteInput, setCheckInNoteInput] = useState("");
+  const [showCheckInNoteDialog, setShowCheckInNoteDialog] = useState(null); // vehicleId
   const [checkInBusy, setCheckInBusy] = useState(false);
   // Live-Standort-Gruppen für gemeinsame Ausfahrten
   const [showCreateLiveGroup, setShowCreateLiveGroup] = useState(false);
@@ -2831,16 +2856,17 @@ function PCNInner() {
   const doCheckIn = (vehicleId) => {
     if(!navigator.geolocation){ toast_("Standort auf diesem Gerät nicht verfügbar","err"); return; }
     setCheckInBusy(true);
+    const note = checkInNoteInput.trim();
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const DB = window.PCN_DB;
-        if(isDemo){ setCheckInBusy(false); setShowCheckInPrompt(null); toast_("Im Demo-Modus nicht dauerhaft gespeichert"); return; }
+        if(isDemo){ setCheckInBusy(false); setShowCheckInPrompt(null); setCheckInNoteInput(""); toast_("Im Demo-Modus nicht dauerhaft gespeichert"); return; }
         const {error} = await DB.vehicles.setCheckIn(vehicleId, me.id, {
           lat: pos.coords.latitude, lng: pos.coords.longitude,
-        });
-        setCheckInBusy(false); setShowCheckInPrompt(null);
+        }, note);
+        setCheckInBusy(false); setShowCheckInPrompt(null); setCheckInNoteInput("");
         if(error){ toast_(error,"err"); return; }
-        setVehicles(prev=>({...prev,[vehicleId]:{...prev[vehicleId], checkinLat:pos.coords.latitude, checkinLng:pos.coords.longitude, checkinAt:new Date().toISOString()}}));
+        setVehicles(prev=>({...prev,[vehicleId]:{...prev[vehicleId], checkinLat:pos.coords.latitude, checkinLng:pos.coords.longitude, checkinAt:new Date().toISOString(), checkinNote:note}}));
         toast_("📍 Standort gespeichert");
       },
       () => { setCheckInBusy(false); toast_("Standortfreigabe abgelehnt oder nicht verfügbar","err"); },
@@ -5409,7 +5435,7 @@ Regeln:
                     <div style={{fontSize:12,color:C.muted}}>So sehen Besucher dein Fahrzeug beim QR-Scan</div>
                   </div>
                 </button>
-                <button onClick={()=>doCheckIn(v.id)}
+                <button onClick={()=>{setCheckInNoteInput(v.checkinNote||"");setShowCheckInNoteDialog(v.id);}}
                   style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
                   <span style={{fontSize:22,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24}}>🅿️</span>
                   <div style={{textAlign:"left"}}>
@@ -5431,27 +5457,33 @@ Regeln:
                   <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
                     <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📍 Zuletzt geparkt</div>
                     <div style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-                      <a href={`https://maps.google.com/?q=${v.checkinLat},${v.checkinLng}`} target="_blank" rel="noopener noreferrer" style={{display:"block"}}>
-                        <iframe title="Zuletzt geparkt" style={{width:"100%",height:120,border:"none",display:"block",pointerEvents:"none"}}
-                          src={`https://www.openstreetmap.org/export/embed.html?bbox=${v.checkinLng-0.004},${v.checkinLat-0.003},${v.checkinLng+0.004},${v.checkinLat+0.003}&layer=mapnik&marker=${v.checkinLat},${v.checkinLng}`}/>
-                      </a>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px"}}>
-                        <div>
-                          <div style={{fontSize:14,fontWeight:700,color:C.white}}>
-                            {v.checkinAt?new Date(v.checkinAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"?"} Uhr
+                      <div style={{height:120}}>
+                        <SingleMarkerMap lat={v.checkinLat} lng={v.checkinLng}/>
+                      </div>
+                      <div style={{padding:"10px 12px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <div>
+                            <div style={{fontSize:14,fontWeight:700,color:C.white}}>
+                              {v.checkinAt?new Date(v.checkinAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"?"} Uhr
+                            </div>
+                            <a href={`https://maps.google.com/?q=${v.checkinLat},${v.checkinLng}`} target="_blank" rel="noopener noreferrer"
+                              style={{fontSize:13,color:C.gold,fontWeight:700,textDecoration:"none"}}>
+                              In Maps öffnen →
+                            </a>
                           </div>
-                          <a href={`https://maps.google.com/?q=${v.checkinLat},${v.checkinLng}`} target="_blank" rel="noopener noreferrer"
-                            style={{fontSize:13,color:C.gold,fontWeight:700,textDecoration:"none"}}>
-                            In Maps öffnen →
-                          </a>
-                        </div>
                         <button onClick={async()=>{
                             const DB=window.PCN_DB;
                             if(!isDemo&&DB) await DB.vehicles.clearCheckIn(v.id,me.id);
-                            setVehicles(prev=>({...prev,[v.id]:{...prev[v.id],checkinLat:null,checkinLng:null,checkinAt:null}}));
+                            setVehicles(prev=>({...prev,[v.id]:{...prev[v.id],checkinLat:null,checkinLng:null,checkinAt:null,checkinNote:""}}));
                             toast_("Standort entfernt");
                           }}
                           style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,color:C.muted,fontSize:15,cursor:"pointer",padding:"6px 10px"}}>✕</button>
+                        </div>
+                        {v.checkinNote&&(
+                          <div style={{fontSize:13,color:C.muted,marginTop:8,paddingTop:8,borderTop:`1px solid ${C.border}`,lineHeight:1.5}}>
+                            📝 {v.checkinNote}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -6105,6 +6137,29 @@ Regeln:
                 <input className="inp" placeholder="Notizen" style={{marginBottom:16}}
                   value={addLogForm.notes} onChange={e=>setAddLogForm(p=>({...p,notes:e.target.value}))}/>
                 <button className="btn" style={{width:"100%"}} onClick={()=>addLogEntry(v.id)}>Speichern ✓</button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Standort merken: Notiz-Eingabe vor dem eigentlichen Check-in ── */}
+          {showCheckInNoteDialog===v.id&&(
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget){setShowCheckInNoteDialog(null);setCheckInNoteInput("");}}}>
+              <div className="sheet">
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                  <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🅿️ Standort merken</div>
+                  <button onClick={()=>{setShowCheckInNoteDialog(null);setCheckInNoteInput("");}}
+                    style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+                </div>
+                <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+                  Aktueller Standort wird gespeichert — nur für dich sichtbar. Optional kannst du dir eine Notiz dazu machen.
+                </div>
+                <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Notiz (optional)</div>
+                <input className="inp" placeholder="z.B. Parkhaus Ebene 3, Reihe C" style={{marginBottom:16}}
+                  value={checkInNoteInput} onChange={e=>setCheckInNoteInput(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&doCheckIn(v.id)}/>
+                <button className="btn" style={{width:"100%"}} disabled={checkInBusy} onClick={()=>doCheckIn(v.id)}>
+                  {checkInBusy?"…":"Standort speichern"}
+                </button>
               </div>
             </div>
           )}
@@ -8984,15 +9039,18 @@ Regeln:
             <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
               onClick={e=>e.stopPropagation()}>
               <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>📍 Standort merken?</div>
-              <div style={{fontSize:14,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+              <div style={{fontSize:14,color:C.muted,marginBottom:14,lineHeight:1.6}}>
                 Speichert, wo du gerade geparkt hast — nur für dich sichtbar, in {cv?`${cv.hersteller||""} ${cv.modell||""}`.trim()||"deiner Fahrzeugakte":"deiner Fahrzeugakte"}.
               </div>
+              <input className="inp" placeholder="Notiz, optional — z.B. Parkhaus Ebene 3" style={{marginBottom:16}}
+                value={checkInNoteInput} onChange={e=>setCheckInNoteInput(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&doCheckIn(showCheckInPrompt)}/>
               <button className="btn" style={{width:"100%",marginBottom:8}} disabled={checkInBusy}
                 onClick={()=>doCheckIn(showCheckInPrompt)}>
                 {checkInBusy?"…":"Ja, hier parke ich"}
               </button>
               <button className="btn ghost" style={{width:"100%"}}
-                onClick={()=>{const v=vehicles[showCheckInPrompt];setShowCheckInPrompt(null);if(v){setViewV(v);setScreen("vehicle");}}}>
+                onClick={()=>{const v=vehicles[showCheckInPrompt];setShowCheckInPrompt(null);setCheckInNoteInput("");if(v){setViewV(v);setScreen("vehicle");}}}>
                 Nur Fahrzeugakte ansehen
               </button>
             </div>
