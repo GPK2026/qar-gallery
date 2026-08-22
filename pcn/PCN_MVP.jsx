@@ -4594,19 +4594,19 @@ Regeln:
           display:"flex",alignItems:"center",justifyContent:"space-between",
           position:"sticky",top:0,zIndex:50}}>
           <img src={LOGO_SMALL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:34,objectFit:"contain",background:"transparent"}}/>
-          <span style={{fontSize:13,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:13,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
+            {/* ── Notfall-Zugang (ICE) — länglicher Button im Header, immer sichtbar ── */}
+            <button onClick={()=>{setShowEmergencyAccess(v.id);setEmergencyRoleConfirmed(false);}}
+              aria-label="Notfall-Zugang (In Case of Emergency)"
+              style={{background:"#ef4444",border:"none",borderRadius:8,padding:"7px 12px",cursor:"pointer",
+                display:"flex",alignItems:"center",gap:5,flexShrink:0,
+                boxShadow:"0 1px 4px rgba(239,68,68,.4)"}}>
+              <span style={{fontSize:13,fontWeight:900,color:"#fff",lineHeight:1}}>✚</span>
+              <span style={{fontSize:12,fontWeight:900,color:"#fff",letterSpacing:.5,lineHeight:1}}>ICE</span>
+            </button>
+          </div>
         </div>
-
-        {/* ── Notfall-Zugang (ICE) — rundes Symbol oben rechts, immer sichtbar ── */}
-        <button onClick={()=>{setShowEmergencyAccess(v.id);setEmergencyRoleConfirmed(false);}}
-          aria-label="Notfall-Zugang (In Case of Emergency)"
-          style={{position:"fixed",top:14,right:14,zIndex:60,width:52,height:52,borderRadius:"50%",
-            background:"#ef4444",border:"3px solid #fff",cursor:"pointer",
-            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-            boxShadow:"0 2px 10px rgba(0,0,0,.35)",padding:0}}>
-          <span style={{fontSize:15,fontWeight:900,color:"#fff",lineHeight:1}}>✚</span>
-          <span style={{fontSize:9,fontWeight:900,color:"#fff",letterSpacing:.5,lineHeight:1.3}}>ICE</span>
-        </button>
 
         {/* ── Hero image — taller, with gallery fallback ── */}
         <div style={{height:260,position:"relative",overflow:"hidden",background:"#111"}}>
@@ -7081,7 +7081,7 @@ Regeln:
                 <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🚗 Meine Fahrzeuge</div>
                 <div style={{display:"flex",gap:6}}>
                   <button className="btn sm ghost" onClick={()=>setShowTransferPanel("__request__")}>🔑 Fremde QAR-ID beantragen</button>
-                  <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Fahrzeug hinzufügen</button>
+                  <button className="btn sm" style={{background:C.gold,color:"#000"}} onClick={()=>setShowAddV(true)}>Fahrzeug hinzufügen</button>
                 </div>
               </div>
               {myVehicles.length===0?(
