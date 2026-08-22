@@ -19,7 +19,7 @@ class ErrorBoundary extends React.Component {
   render(){
     if(!this.state.hasError) return this.props.children;
     return (
-      <div style={{minHeight:"100vh",background:"#0a0a0a",display:"flex",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"sans-serif"}}>
+      <div className="vh-screen" style={{background:"#0a0a0a",display:"flex",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"sans-serif"}}>
         <div style={{background:"#191919",border:"1px solid #e3061344",borderRadius:18,padding:"28px 24px",maxWidth:380,textAlign:"center"}}>
           <div style={{fontSize:44,marginBottom:14}}>⚠️</div>
           <div style={{fontSize:17,fontWeight:800,color:"#fff",marginBottom:8}}>Etwas ist schiefgelaufen</div>
@@ -626,7 +626,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
     : myReg?.status==="pending" ? "🟡 Anmeldung eingegangen" : "✗ Leider abgelehnt";
 
   return (
-    <div style={{minHeight:"100vh",background:"transparent",paddingBottom:40,animation:"fadeIn .2s"}}>
+    <div className="vh-screen" style={{background:"transparent",paddingBottom:40,animation:"fadeIn .2s"}}>
       {/* Header */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"14px 16px"}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:15,padding:0,marginBottom:10}}>← Events</button>
@@ -908,7 +908,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
   },[]);
 
   return (
-    <div ref={rootRef} style={{height:"100vh",background:"transparent",display:"flex",flexDirection:"column",position:"fixed",inset:0}}>
+    <div ref={rootRef} className="vh-screen-exact" style={{background:"transparent",display:"flex",flexDirection:"column",position:"fixed",inset:0}}>
       {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {/* ── Chat Header ── */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",flexShrink:0}}>
@@ -4218,6 +4218,13 @@ Regeln:
     @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600;700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     html,body,#root{height:100%}
+    /* ── Robuste Viewport-Hoehe: 100vh als Fallback, 100dvh (dynamisch,
+       reagiert auf ein-/ausblendende Browser-Adressleiste, z.B. Chrome
+       mobil) wo unterstuetzt — behebt "Header oben angeschnitten". ── */
+    .vh-screen{min-height:100vh}
+    @supports (height:100dvh){.vh-screen{min-height:100dvh}}
+    .vh-screen-exact{height:100vh}
+    @supports (height:100dvh){.vh-screen-exact{height:100dvh}}
     body{background:${C.black};color:${C.white};font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased}
     input,select,textarea{font-family:'Barlow',sans-serif;outline:none;color:${C.white};background:transparent}
     input::placeholder,textarea::placeholder{color:${C.muted}}
@@ -4309,7 +4316,7 @@ Regeln:
   // SPLASH
   // ══════════════════════════════════════════════════════════════════════════════
   if(screen==="splash") return (
-    <div style={{minHeight:"100vh",background:C.black,display:"flex",flexDirection:"column"}}>
+    <div className="vh-screen" style={{background:C.black,display:"flex",flexDirection:"column"}}>
       <style>{CSS}</style>
       {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
@@ -4609,7 +4616,7 @@ Regeln:
     const vParts=Object.values(participants).flat().filter(p=>p.vehicleId===v.id);
     const nextEvent=vParts.map(p=>({...p,ev:events[p.eventId]})).filter(p=>p.ev&&daysUntil(p.ev.date)>0).sort((a,b)=>daysUntil(a.ev.date)-daysUntil(b.ev.date))[0];
     return (
-      <div style={{minHeight:"100vh",background:C.black,paddingBottom:40}}>
+      <div className="vh-screen" style={{background:C.black,paddingBottom:40}}>
         <style>{CSS}</style>
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
@@ -5109,7 +5116,8 @@ Regeln:
             <div key={i} style={{background:C.card,border:"1px solid #ef444444",borderRadius:16,padding:18,marginBottom:14}}>
               <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:14}}>
                 {p.photoUrl?
-                  <img src={p.photoUrl} alt="" style={{width:64,height:64,borderRadius:12,objectFit:"cover"}}/>
+                  <img src={p.photoUrl} alt="" onClick={()=>setLightbox({images:[p.photoUrl],index:0})}
+                    style={{width:64,height:64,borderRadius:12,objectFit:"cover",cursor:"pointer"}}/>
                   :<div style={{width:64,height:64,borderRadius:12,background:C.black,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>👤</div>}
                 <div>
                   <div style={{fontSize:17,fontWeight:800,color:"#fff"}}>{p.name}</div>
@@ -5142,6 +5150,7 @@ Regeln:
                       <div>
                         <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>{c.name}</div>
                         {c.relationship&&<div style={{fontSize:13,color:C.muted}}>{c.relationship}</div>}
+                        <div style={{fontSize:14,color:C.gold,fontWeight:700,marginTop:2}}>{c.phone}</div>
                       </div>
                       <span style={{fontSize:16}}>📞</span>
                     </a>
@@ -5226,7 +5235,7 @@ Regeln:
     const kz=fmtKz(v.kennzeichen,v.baujahr);
     const priv=v.privacy||DEF_PRIVACY;
     return (
-      <div style={{minHeight:"100vh",background:"transparent",paddingBottom:80}}>
+      <div className="vh-screen" style={{background:"transparent",paddingBottom:80}}>
         <style>{CSS}</style>
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
@@ -6784,7 +6793,7 @@ Regeln:
     if(!isOwn) { setScreen("app"); return null; } // Sicherheitsnetz — nur der Eigentümer darf hier rein
     const imgs = getImages(v);
     return (
-      <div style={{minHeight:"100vh",background:"transparent",paddingBottom:40}}>
+      <div className="vh-screen" style={{background:"transparent",paddingBottom:40}}>
         <div style={{position:"sticky",top:0,zIndex:10,background:C.black,borderBottom:`1px solid ${C.border}`,
           padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
           <button onClick={()=>{setScreen("vehicle");setPhotoManagerVehicle(null);}}
@@ -6948,7 +6957,7 @@ Regeln:
   // MAIN APP TABS
   // ══════════════════════════════════════════════════════════════════════════════
   return (
-    <div style={{minHeight:"100vh",background:"transparent",paddingBottom:62}}>
+    <div className="vh-screen" style={{background:"transparent",paddingBottom:62}}>
       <style>{CSS}</style>
       {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
