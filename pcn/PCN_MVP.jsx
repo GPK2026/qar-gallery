@@ -23,11 +23,11 @@ class ErrorBoundary extends React.Component {
         <div style={{background:"#191919",border:"1px solid #e3061344",borderRadius:18,padding:"28px 24px",maxWidth:380,textAlign:"center"}}>
           <div style={{fontSize:44,marginBottom:14}}>⚠️</div>
           <div style={{fontSize:17,fontWeight:800,color:"#fff",marginBottom:8}}>Etwas ist schiefgelaufen</div>
-          <div style={{fontSize:12,color:"#999",marginBottom:6,lineHeight:1.6,fontFamily:"monospace",wordBreak:"break-word"}}>{this.state.error?.message||"Unbekannter Fehler"}</div>
-          <div style={{fontSize:10,color:"#555",marginBottom:10}}>
+          <div style={{fontSize:14,color:"#999",marginBottom:6,lineHeight:1.6,fontFamily:"monospace",wordBreak:"break-word"}}>{this.state.error?.message||"Unbekannter Fehler"}</div>
+          <div style={{fontSize:12,color:"#555",marginBottom:10}}>
             Version {(()=>{ try{ const s=[...document.querySelectorAll("script[src]")].find(x=>x.src.includes("PCN_MVP")); return (s?.src.match(/v=(\d+)/)||[])[1] || "?"; }catch(e){ return "?"; } })()}
           </div>
-          <div style={{fontSize:11,color:"#666",marginBottom:20}}>Deine Daten sind sicher gespeichert.</div>
+          <div style={{fontSize:13,color:"#666",marginBottom:20}}>Deine Daten sind sicher gespeichert.</div>
           <button onClick={async()=>{
               try {
                 if(window.caches?.keys){
@@ -156,7 +156,7 @@ function QRCodeCanvas({value, size=140}) {
 
   if(status === "loading") return (
     <div style={{width:size,height:size,background:"#fff",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <span style={{fontSize:10,color:"#999",fontFamily:"sans-serif"}}>Lädt…</span>
+      <span style={{fontSize:12,color:"#999",fontFamily:"sans-serif"}}>Lädt…</span>
     </div>
   );
 
@@ -629,15 +629,15 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
     <div style={{minHeight:"100vh",background:"transparent",paddingBottom:40,animation:"fadeIn .2s"}}>
       {/* Header */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"14px 16px"}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,padding:0,marginBottom:10}}>← Events</button>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:15,padding:0,marginBottom:10}}>← Events</button>
         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:6}}>
-          <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>{ev.category||"Event"}</span>
+          <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"2px 8px",fontSize:12,fontWeight:700}}>{ev.category||"Event"}</span>
           <span style={{background:isPast?"#33333322":days<=7?`${C.amber}22`:`${C.border}22`,
-            color:isPast?C.muted:days<=7?C.amber:C.muted,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>
+            color:isPast?C.muted:days<=7?C.amber:C.muted,borderRadius:6,padding:"2px 8px",fontSize:12,fontWeight:700}}>
             {isPast?"Abgeschlossen":days<=0?"Heute":days===1?"Morgen":`in ${days} T.`}
           </span>
           {!isPast&&<span style={{background:spotsLeft<=5?`${C.red}22`:`${C.green}11`,color:spotsLeft<=5?C.red:C.green,
-            borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700}}>
+            borderRadius:6,padding:"2px 8px",fontSize:12,fontWeight:700}}>
             {spotsLeft<=0?"Ausgebucht":`${spotsLeft} Plätze frei`}
           </span>}
         </div>
@@ -660,24 +660,24 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
             return rows.filter(([,v])=>v).map(([icon,val,label,col])=>(
               <div key={label} style={{display:"flex",gap:10,marginBottom:8,alignItems:"center"}}>
                 <span style={{width:20,textAlign:"center"}}>{icon}</span>
-                <span style={{fontSize:11,color:C.muted,minWidth:60}}>{label}</span>
-                <span style={{fontSize:13,color:col||C.white,fontWeight:col?800:600}}>{val}</span>
+                <span style={{fontSize:13,color:C.muted,minWidth:60}}>{label}</span>
+                <span style={{fontSize:15,color:col||C.white,fontWeight:col?800:600}}>{val}</span>
               </div>
             ));
           })()}
-          {ev.description&&<p style={{fontSize:12,color:"#bbb",lineHeight:1.75,marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`}}>{ev.description}</p>}
+          {ev.description&&<p style={{fontSize:14,color:"#bbb",lineHeight:1.75,marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`}}>{ev.description}</p>}
         </div>
 
         {/* ── Mein Anmeldestatus ── */}
         {myReg&&(
           <div style={{background:`${statusColor}11`,border:`2px solid ${statusColor}33`,borderRadius:14,padding:"16px",marginBottom:14}}>
             <div style={{fontWeight:800,fontSize:16,color:statusColor,marginBottom:4}}>{statusLabel}</div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:12}}>
+            <div style={{fontSize:14,color:C.muted,marginBottom:12}}>
               {vehicles[myReg.vehicleId]&&`${vehicles[myReg.vehicleId].hersteller} ${vehicles[myReg.vehicleId].modell}`}
               {myReg.class&&` · ${myReg.class}`}
             </div>
             {myReg.status==="pending"&&(
-              <div style={{background:`${C.amber}18`,borderRadius:8,padding:"10px 12px",marginBottom:12,fontSize:12,color:C.amber,lineHeight:1.6}}>
+              <div style={{background:`${C.amber}18`,borderRadius:8,padding:"10px 12px",marginBottom:12,fontSize:14,color:C.amber,lineHeight:1.6}}>
                 ⏳ Deine Anmeldung wird vom Admin geprüft und bestätigt.<br/>
                 Nach Bestätigung erhältst du <b>+1.000 Punkte</b> und eine Startnummer.
               </div>
@@ -686,7 +686,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
               <div style={{display:"flex",gap:8,marginBottom:12}}>
                 <button onClick={()=>generateICS({title:ev.name,date:ev.date,location:ev.location||"",
                     description:`PCN Event · Klasse: ${myReg.class||""}${myReg.startNr?" · Startnr: #"+myReg.startNr:""}`,alarmMinutes:1440})}
-                  style={{flex:1,background:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:700,
+                  style={{flex:1,background:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:14,fontWeight:700,
                     cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
                   📅 Kalender
                 </button>
@@ -694,7 +694,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                     const t=encodeURIComponent(ev.name),d=(ev.date||"").replace(/-/g,""),loc=encodeURIComponent(ev.location||"");
                     window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${d}/${d}&location=${loc}`,"_blank");
                   }}
-                  style={{flex:1,background:"#4285F4",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:700,
+                  style={{flex:1,background:"#4285F4",border:"none",borderRadius:8,padding:"9px",fontSize:14,fontWeight:700,
                     cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
                   🗓 Google
                 </button>
@@ -704,14 +704,14 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
             {!isPast && myReg.status!=="cancelled" && (
               confirmCancel?(
                 <div style={{background:"#ef444418",border:"1px solid #ef444433",borderRadius:10,padding:"12px"}}>
-                  <div style={{fontSize:13,color:"#ef4444",marginBottom:10,fontWeight:600}}>Anmeldung wirklich stornieren?</div>
+                  <div style={{fontSize:15,color:"#ef4444",marginBottom:10,fontWeight:600}}>Anmeldung wirklich stornieren?</div>
                   <div style={{display:"flex",gap:8}}>
                     <button onClick={()=>{ onCancel(ev.id, myReg.id); setConfirmCancel(false); }}
-                      style={{flex:1,background:"#ef4444",border:"none",borderRadius:8,padding:"10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      style={{flex:1,background:"#ef4444",border:"none",borderRadius:8,padding:"10px",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                       Ja, abmelden
                     </button>
                     <button onClick={()=>setConfirmCancel(false)}
-                      style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"10px",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"10px",color:C.muted,fontSize:15,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                       Abbrechen
                     </button>
                   </div>
@@ -719,7 +719,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
               ):(
                 <button onClick={()=>setConfirmCancel(true)}
                   style={{background:"none",border:`1px solid #ef444433`,borderRadius:8,padding:"8px 14px",
-                    color:"#ef4444",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                    color:"#ef4444",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                   ✕ Anmeldung stornieren
                 </button>
               )
@@ -730,7 +730,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                   setParticipants(prev=>({...prev,[ev.id]:(prev[ev.id]||[]).filter(p=>p.id!==myReg.id)}));
                 }}
                 style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"9px 14px",
-                  color:C.white,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                  color:C.white,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                 Erneut anmelden →
               </button>
             )}
@@ -750,11 +750,11 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                   padding:"9px 12px",marginBottom:12,display:"flex",gap:9,alignItems:"center"}}>
                   <span style={{fontSize:15}}>{free?"✓":"💶"}</span>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:13,fontWeight:800,color:free?C.green:C.gold}}>
+                    <div style={{fontSize:15,fontWeight:800,color:free?C.green:C.gold}}>
                       {free?"Teilnahme kostenlos":`Startgebühr: ${raw}`}
                     </div>
                     {!free&&(
-                      <div style={{fontSize:10,color:"#888",marginTop:1}}>
+                      <div style={{fontSize:12,color:"#888",marginTop:1}}>
                         Zahlung direkt beim Veranstalter vor Ort
                       </div>
                     )}
@@ -762,10 +762,10 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                 </div>
               );
             })()}
-            <div style={{fontSize:11,color:C.muted,marginBottom:14}}>
+            <div style={{fontSize:13,color:C.muted,marginBottom:14}}>
               Nach Anmeldung wird deine Teilnahme vom Admin bestätigt.
             </div>
-            <label style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5}}>Fahrzeug</label>
+            <label style={{fontSize:15,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5}}>Fahrzeug</label>
             <select value={selV} onChange={e=>setSelV(e.target.value)}
               style={{width:"100%",background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",
                 color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",marginBottom:10,appearance:"none"}}>
@@ -773,7 +773,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
             </select>
             {(ev.classes||[]).length>1&&(
               <>
-                <label style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5}}>Klasse</label>
+                <label style={{fontSize:15,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5}}>Klasse</label>
                 <select value={selC} onChange={e=>setSelC(e.target.value)}
                   style={{width:"100%",background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",
                     color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",marginBottom:14,appearance:"none"}}>
@@ -783,18 +783,18 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
             )}
             <button className="btn" onClick={()=>onJoin(ev.id,selV,selC)} style={{width:"100%",padding:"14px",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
               <span>Anmelden →</span>
-              <span style={{fontSize:10,opacity:.7,fontWeight:600}}>+1.000 Pkt bei Bestätigung</span>
+              <span style={{fontSize:12,opacity:.7,fontWeight:600}}>+1.000 Pkt bei Bestätigung</span>
             </button>
           </div>
         )}
         {!myReg&&!isPast&&spotsLeft<=0&&(
           <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14,textAlign:"center"}}>
             <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:4}}>Ausgebucht</div>
-            <div style={{fontSize:12,color:C.muted}}>Keine freien Plätze mehr.</div>
+            <div style={{fontSize:14,color:C.muted}}>Keine freien Plätze mehr.</div>
           </div>
         )}
         {!myReg&&!isPast&&me&&myVehicles.length===0&&(
-          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14,textAlign:"center",color:C.muted,fontSize:13}}>
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14,textAlign:"center",color:C.muted,fontSize:15}}>
             Zuerst ein Fahrzeug anlegen um dich anzumelden.
           </div>
         )}
@@ -802,7 +802,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
         {/* ── Teilnehmerliste (nur Bestätigte) ── */}
         {confirmedParts.length>0&&(
           <div style={{marginTop:8}}>
-            <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>
+            <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>
               Bestätigte Teilnehmer ({confirmedParts.length})
             </div>
             {confirmedParts.map(p=>{
@@ -812,14 +812,14 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                   borderBottom:`1px solid ${C.border}`,cursor:pv?"pointer":"default"}}
                   onClick={()=>pv&&onViewVehicle(pv)}>
                   <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:7,padding:"3px 8px",
-                    fontWeight:800,fontSize:13,color:C.red,flexShrink:0,minWidth:32,textAlign:"center"}}>
+                    fontWeight:800,fontSize:15,color:C.red,flexShrink:0,minWidth:32,textAlign:"center"}}>
                     {p.startNr?"#"+p.startNr:"·"}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    <div style={{fontSize:15,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                       {pv?`${pv.hersteller} ${pv.modell}`:"Fahrzeug"}
                     </div>
-                    <div style={{fontSize:11,color:C.muted}}>{p.class||p.klasse||""}{pv?.kennzeichen?" · "+pv.kennzeichen:""}</div>
+                    <div style={{fontSize:13,color:C.muted}}>{p.class||p.klasse||""}{pv?.kennzeichen?" · "+pv.kennzeichen:""}</div>
                   </div>
                   {pv&&<span style={{color:C.muted,fontSize:16}}>›</span>}
                 </div>
@@ -925,7 +925,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
             <div style={{fontWeight:800,fontSize:16,color:C.white,lineHeight:1.2}}>
               {isAdminThread?"📣 PCN Vorstand":isClubChannel?(thread.name||"PCN Mitglieder"):thread.anonymous?"🔒 Anonyme Nachricht":other.name}
             </div>
-            <div style={{fontSize:12,color:C.muted,marginTop:2}}>
+            <div style={{fontSize:14,color:C.muted,marginTop:2}}>
               {isClubChannel
                 ? `${threadParticipants.filter(p=>p!==ADMIN_UUID).length} Mitglieder`
                 : isAdminThread ? "Offizielle Mitteilung"
@@ -933,7 +933,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
             </div>
           </div>
           {!isClubChannel&&v&&(
-            <button className="btn sm ghost" onClick={()=>onViewVehicle(v)} style={{fontSize:12,flexShrink:0}}>Akte →</button>
+            <button className="btn sm ghost" onClick={()=>onViewVehicle(v)} style={{fontSize:14,flexShrink:0}}>Akte →</button>
           )}
           {onDeleteThread&&(
             <button onClick={()=>onDeleteThread(thread.id)} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:18,padding:"0 4px",flexShrink:0}}>🗑</button>
@@ -948,13 +948,13 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                 <div key={uid} style={{width:26,height:26,borderRadius:"50%",
                   background:`${C.red}33`,border:`1.5px solid ${C.border}`,
                   display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:11,fontWeight:800,color:C.white}}>
+                  fontSize:13,fontWeight:800,color:C.white}}>
                   {u.name[0]?.toUpperCase()}
                 </div>
               );
             })}
             {threadParticipants.length>5&&(
-              <div style={{fontSize:10,color:C.muted}}>+{threadParticipants.length-5}</div>
+              <div style={{fontSize:12,color:C.muted}}>+{threadParticipants.length-5}</div>
             )}
           </div>
         )}
@@ -963,11 +963,11 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
       {isGuest && (
         <div style={{background:`${C.gold}14`,borderBottom:`1px solid ${C.gold}33`,padding:"10px 16px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
           <span style={{fontSize:16,flexShrink:0}}>👋</span>
-          <div style={{flex:1,fontSize:11,color:C.white,lineHeight:1.4}}>
+          <div style={{flex:1,fontSize:13,color:C.white,lineHeight:1.4}}>
             Du schreibst als <strong>Gast</strong>. Mitglieder bekommen eigene Fahrzeugakte & Event-Zugang.
           </div>
           <button onClick={onUpgrade}
-            style={{background:C.gold,border:"none",borderRadius:7,padding:"6px 11px",color:"#0a0a0a",fontWeight:800,fontSize:11,cursor:"pointer",flexShrink:0,fontFamily:"'Barlow',sans-serif"}}>
+            style={{background:C.gold,border:"none",borderRadius:7,padding:"6px 11px",color:"#0a0a0a",fontWeight:800,fontSize:13,cursor:"pointer",flexShrink:0,fontFamily:"'Barlow',sans-serif"}}>
             Mitglied werden
           </button>
         </div>
@@ -980,7 +980,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           const fromAdmin = m.from===ADMIN_UUID || m.from_id===ADMIN_UUID;
           // Nur echte System-Hinweise zentriert — Admin-Nachrichten bekommen eine Blase
           if(m.isSystem && !fromAdmin) return (
-            <div key={m.id} style={{textAlign:"center",fontSize:12,color:"#666",margin:"6px 0",lineHeight:1.5}}>— {m.text} —</div>
+            <div key={m.id} style={{textAlign:"center",fontSize:14,color:"#666",margin:"6px 0",lineHeight:1.5}}>— {m.text} —</div>
           );
           const isAdminMsg = fromAdmin || (isAdminThreadId(thread.id) && !mine);
           // Parse payload for scan requests
@@ -1002,7 +1002,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           return (
             <div key={m.id} style={{display:"flex",flexDirection:"column",alignItems:mine?"flex-end":"flex-start",marginBottom:2}}>
               {senderName&&(
-                <div style={{fontSize:12,fontWeight:700,color:isAdminMsg?C.gold:C.muted,marginBottom:3,paddingLeft:4}}>
+                <div style={{fontSize:14,fontWeight:700,color:isAdminMsg?C.gold:C.muted,marginBottom:3,paddingLeft:4}}>
                   {senderName}
                 </div>
               )}
@@ -1023,17 +1023,17 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                 {scanPayload&&me&&(
                   <button onClick={()=>onConfirmScan&&onConfirmScan(scanPayload.scannerId,scanPayload.vehicleId,scanPayload.scannerName)}
                     style={{marginTop:10,background:C.green,border:"none",borderRadius:8,padding:"11px 14px",
-                      color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                      color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer",fontFamily:"'Barlow',sans-serif",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     ✅ Scan bestätigen — {scanPayload.scannerName||"Nutzer"} erhält +{POINTS.qr_scan} Punkte
                   </button>
                 )}
-                <div style={{fontSize:11,color:mine?"rgba(255,255,255,.55)":C.muted,marginTop:5,textAlign:"right",display:"flex",alignItems:"center",justifyContent:"flex-end",gap:4}}>
+                <div style={{fontSize:13,color:mine?"rgba(255,255,255,.55)":C.muted,marginTop:5,textAlign:"right",display:"flex",alignItems:"center",justifyContent:"flex-end",gap:4}}>
                   <span>{fullTs}</span>
                   {mine&&!isAdminMsg&&(
                     // Graues Doppelhäkchen = gesendet, blaues = gelesen — wie bei WhatsApp.
                     // Beruht auf dem bereits vorhandenen m.read-Feld (wird beim Öffnen
                     // des Chats durch den Empfänger automatisch gesetzt, siehe onMarkRead).
-                    <span style={{color:m.read?"#53bdeb":"rgba(255,255,255,.55)",fontSize:13,lineHeight:1}}>✓✓</span>
+                    <span style={{color:m.read?"#53bdeb":"rgba(255,255,255,.55)",fontSize:15,lineHeight:1}}>✓✓</span>
                   )}
                 </div>
               </div>
@@ -1051,9 +1051,9 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                           if(onReact) onReact(m.id, mineReaction?.emoji===emo?null:emo);
                         }}
                         style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:99,
-                          padding:"2px 7px",fontSize:12,cursor:"pointer",display:"flex",gap:3,alignItems:"center"}}>
+                          padding:"2px 7px",fontSize:14,cursor:"pointer",display:"flex",gap:3,alignItems:"center"}}>
                         <span>{emo}</span>
-                        {count>1&&<span style={{fontSize:10,color:C.muted}}>{count}</span>}
+                        {count>1&&<span style={{fontSize:12,color:C.muted}}>{count}</span>}
                       </div>
                     ));
                   })()}
@@ -1080,7 +1080,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           ↓
           {newBelow>0&&(
             <span style={{position:"absolute",top:-5,right:-5,background:"#fff",color:C.red,
-              borderRadius:99,minWidth:20,height:20,fontSize:11,fontWeight:900,
+              borderRadius:99,minWidth:20,height:20,fontSize:13,fontWeight:900,
               display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px",
               border:`2px solid ${C.dark}`}}>
               {newBelow>9?"9+":newBelow}
@@ -1096,7 +1096,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:"16px 16px 0 0",
             padding:"16px",width:"100%",maxWidth:480}}
             onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:12,color:C.muted,marginBottom:12,textAlign:"center"}}>
+            <div style={{fontSize:14,color:C.muted,marginBottom:12,textAlign:"center"}}>
               „{selectedMsg.text.slice(0,40)}{selectedMsg.text.length>40?"…":""}"
             </div>
             {/* Schnellreaktionen — Long-Press-Menü, wie bei WhatsApp */}
@@ -1136,7 +1136,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
               📋 Kopieren
             </button>
             <button onClick={()=>setSelectedMsg(null)}
-              style={{width:"100%",background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"8px"}}>
+              style={{width:"100%",background:"none",border:"none",color:C.muted,fontSize:15,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"8px"}}>
               Abbrechen
             </button>
           </div>
@@ -1407,7 +1407,7 @@ function SelfTest({onClose}) {
           <button onClick={onClose}
             style={{background:"none",border:"none",color:"#666",fontSize:22,cursor:"pointer",padding:"0 4px"}}>✕</button>
         </div>
-        <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.5}}>
+        <div style={{fontSize:14,color:C.muted,marginBottom:18,lineHeight:1.5}}>
           Prüft Abhängigkeiten, rendert Komponenten und testet die Datenbank.
         </div>
 
@@ -1416,7 +1416,7 @@ function SelfTest({onClose}) {
             background:C.card,borderRadius:10,padding:"12px 14px"}}>
             <div style={{width:15,height:15,border:`2px solid ${C.red}44`,borderTopColor:C.red,
               borderRadius:"50%",animation:"spin .7s linear infinite"}}/>
-            <span style={{fontSize:13,color:C.muted}}>Test läuft…</span>
+            <span style={{fontSize:15,color:C.muted}}>Test läuft…</span>
           </div>
         )}
 
@@ -1429,7 +1429,7 @@ function SelfTest({onClose}) {
                 ? `${failed.length} von ${checks.length} Prüfungen fehlgeschlagen`
                 : `Alle ${checks.length} Prüfungen bestanden ✓`}
             </div>
-            <div style={{fontSize:11,color:"#888",lineHeight:1.5}}>
+            <div style={{fontSize:13,color:"#888",lineHeight:1.5}}>
               {failed.length
                 ? "Die roten Punkte unten zeigen, was kaputt ist."
                 : "Alle Komponenten rendern, Datenbank erreichbar."}
@@ -1439,23 +1439,23 @@ function SelfTest({onClose}) {
 
         {results.map((r,i)=>
           r.section ? (
-            <div key={i} style={{fontSize:10,fontWeight:800,color:"#555",letterSpacing:1.5,
+            <div key={i} style={{fontSize:12,fontWeight:800,color:"#555",letterSpacing:1.5,
               textTransform:"uppercase",margin:"16px 0 7px"}}>{r.section}</div>
           ) : (
             <div key={i} style={{display:"flex",gap:9,padding:"8px 0",
               borderBottom:`1px solid ${C.border}`,alignItems:"flex-start"}}>
-              <span style={{flexShrink:0,fontSize:13,width:16}}>{r.ok ? "✅" : "❌"}</span>
+              <span style={{flexShrink:0,fontSize:15,width:16}}>{r.ok ? "✅" : "❌"}</span>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,color: r.ok ? "#ccc" : "#ef4444",fontWeight: r.ok?400:600}}>
+                <div style={{fontSize:15,color: r.ok ? "#ccc" : "#ef4444",fontWeight: r.ok?400:600}}>
                   {r.label}
                 </div>
                 {r.detail&&(
-                  <div style={{fontSize:11,color:"#666",marginTop:2,lineHeight:1.45,wordBreak:"break-word"}}>
+                  <div style={{fontSize:13,color:"#666",marginTop:2,lineHeight:1.45,wordBreak:"break-word"}}>
                     {r.detail}
                   </div>
                 )}
                 {r.hint&&!r.ok&&(
-                  <div style={{fontSize:10,color:C.gold,marginTop:3}}>→ {r.hint}</div>
+                  <div style={{fontSize:12,color:C.gold,marginTop:3}}>→ {r.hint}</div>
                 )}
               </div>
             </div>
@@ -1464,16 +1464,16 @@ function SelfTest({onClose}) {
 
         {done&&(
           <div style={{display:"flex",gap:8,marginTop:20}}>
-            <button onClick={run} className="btn ghost" style={{flex:1,fontSize:13}}>
+            <button onClick={run} className="btn ghost" style={{flex:1,fontSize:15}}>
               ↻ Nochmal prüfen
             </button>
-            <button onClick={onClose} className="btn" style={{flex:1,fontSize:13}}>
+            <button onClick={onClose} className="btn" style={{flex:1,fontSize:15}}>
               Schließen
             </button>
           </div>
         )}
 
-        <div style={{fontSize:10,color:"#444",textAlign:"center",marginTop:16,lineHeight:1.5}}>
+        <div style={{fontSize:12,color:"#444",textAlign:"center",marginTop:16,lineHeight:1.5}}>
           Aufrufbar über qar.gallery/pcn/?selftest
         </div>
       </div>
@@ -1666,6 +1666,9 @@ function PCNInner() {
   // Nur für diese Sitzung — beim nächsten Login/Neuladen erscheint der
   // Willkommens-Block wieder, bewusst kein dauerhaftes Speichern.
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  useEffect(()=>{
+    if(me?.welcomeSeen) setWelcomeDismissed(true);
+  },[me?.welcomeSeen]);
   // Nur für diese Sitzung — true genau dann, wenn sich das Mitglied gerade
   // eben registriert hat (nicht bei einem späteren Login). Bestimmt, ob das
   // Anlegen des ersten Fahrzeugs den doppelten Punktebonus auslöst.
@@ -1786,6 +1789,7 @@ function PCNInner() {
     try { return JSON.parse(store.getItem("pcn_news_state")||"{}"); } catch(e){ return {}; }
   });
   const [viewNews, setViewNews] = useState(null);
+  const [showNewsArchive, setShowNewsArchive] = useState(false);
   const [newsTick, setNewsTick] = useState(0);   // erzwingt Re-Render wenn window._dbNews sich ändert
   const markNewsRead = async (id) => {
     setNewsState(p=>{
@@ -2446,6 +2450,18 @@ function PCNInner() {
         const next={...prev};
         liveThreads.forEach(t=>{next[t.id]=t;});
         return next;
+      });
+      // Verwaiste guestThreads-Eintraege bereinigen: nur Eintraege behalten,
+      // deren Thread tatsaechlich noch serverseitig existiert. Vorher
+      // konnten sich veraltete localStorage-Eintraege ansammeln (z.B. aus
+      // frueheren Test-Sessions), die als "Geister-Chats" mit "Noch keine
+      // Nachricht" angezeigt wurden, obwohl der zugehoerige Thread gar
+      // nicht mehr existiert.
+      const liveIds = new Set(liveThreads.map(t=>t.id));
+      setGuestThreads(prev=>{
+        const cleaned = prev.filter(g=>liveIds.has(g.id));
+        if(cleaned.length !== prev.length) store.setItem("pcn_guest_threads", JSON.stringify(cleaned));
+        return cleaned;
       });
     };
 
@@ -4226,9 +4242,9 @@ Regeln:
       <div style={{position:"absolute",top:0,left:0,right:0,zIndex:10,padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"linear-gradient(to bottom,rgba(0,0,0,.8),transparent)"}}>
         <div>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#fff"}}>QR-Code scannen</div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>Halte die Kamera über den QAR-Code</div>
+          <div style={{fontSize:13,color:"rgba(255,255,255,.5)"}}>Halte die Kamera über den QAR-Code</div>
         </div>
-        <button onClick={closeScanner} style={{background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"8px 14px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>✕ Schließen</button>
+        <button onClick={closeScanner} style={{background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"8px 14px",color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>✕ Schließen</button>
       </div>
       <video ref={videoRef} style={{width:"100%",height:"100%",objectFit:"cover"}} muted playsInline/>
       <canvas ref={canvasRef} style={{display:"none"}}/>
@@ -4250,13 +4266,13 @@ Regeln:
       {scannerError&&(
         <div style={{position:"absolute",bottom:100,left:20,right:20,background:"rgba(0,0,0,.95)",border:"1px solid #ef4444",borderRadius:14,padding:"16px"}}>
           <div style={{color:"#ef4444",fontWeight:700,fontSize:14,marginBottom:6}}>⚠️ Kein Kamera-Zugriff</div>
-          <div style={{color:"#999",fontSize:12,lineHeight:1.7,marginBottom:12,whiteSpace:"pre-line"}}>{scannerError}</div>
+          <div style={{color:"#999",fontSize:14,lineHeight:1.7,marginBottom:12,whiteSpace:"pre-line"}}>{scannerError}</div>
           <button onClick={()=>{setScannerError(null);setScannerStatus("loading");}}
-            style={{background:C.red,border:"none",borderRadius:8,padding:"10px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,width:"100%",fontFamily:"'Barlow',sans-serif"}}>Erneut versuchen</button>
+            style={{background:C.red,border:"none",borderRadius:8,padding:"10px",color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,width:"100%",fontFamily:"'Barlow',sans-serif"}}>Erneut versuchen</button>
         </div>
       )}
       <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"14px 16px",background:"linear-gradient(to top,rgba(0,0,0,.95),transparent)",paddingBottom:"calc(20px + env(safe-area-inset-bottom,0))"}}>
-        <div style={{fontSize:11,color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:8}}>Oder UID manuell eingeben</div>
+        <div style={{fontSize:13,color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:8}}>Oder UID manuell eingeben</div>
         <input placeholder="QAR-XXXXXXXX" onChange={e=>{const v=e.target.value.toUpperCase();if(/^QAR-[A-Z2-9]{8}$/.test(v))handleScanResult(v);}}
           style={{width:"100%",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:14,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:1}}/>
       </div>
@@ -4271,7 +4287,7 @@ Regeln:
       <style>{CSS}</style>
       {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
 
       {/* ── Back to chat — for guests navigating to splash ── */}
       {me?.role==="guest"&&(
@@ -4294,7 +4310,7 @@ Regeln:
         <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,letterSpacing:1,lineHeight:1}}>
           DIGITALE <span style={{color:C.red}}>CLUBPLATTFORM</span>
         </h1>
-        <p style={{fontSize:11,color:C.muted,marginTop:8}}>Fahrzeugakte · Events · QR-Code · Messenger</p>
+        <p style={{fontSize:13,color:C.muted,marginTop:8}}>Fahrzeugakte · Events · QR-Code · Messenger</p>
       </div>
 
       {/* ── Login area ── */}
@@ -4366,7 +4382,7 @@ Regeln:
               }}>
               {authLoading?(authStep||"⏳ Anmelden…"):"Anmelden →"}
             </button>
-            <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>
+            <div style={{textAlign:"center",marginTop:10,fontSize:13,color:C.muted}}>
               Passwort vergessen?{" "}
               <span style={{color:C.red,cursor:"pointer",fontWeight:700}}
                 onClick={async()=>{
@@ -4386,16 +4402,16 @@ Regeln:
           <>
             {/* Single Club-Code field */}
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:11,color:C.muted,marginBottom:6,fontWeight:600}}>CLUB-CODE</div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:6,fontWeight:600}}>CLUB-CODE</div>
               <input className="inp" placeholder="PCN2026" value={loginForm.code}
                 onChange={e=>setLoginForm(p=>({...p,code:e.target.value}))}
                 style={{textTransform:"uppercase",letterSpacing:4,textAlign:"center",fontWeight:800,fontSize:20,
                   border:`2px solid ${loginForm.code.toUpperCase()===CLUB_CODE?C.green:loginForm.code.length>0?"#ef4444":C.border}`}}/>
               {loginForm.code.length>0&&loginForm.code.toUpperCase()!==CLUB_CODE&&(
-                <div style={{fontSize:10,color:"#ef4444",marginTop:4,textAlign:"center"}}>Falscher Club-Code</div>
+                <div style={{fontSize:12,color:"#ef4444",marginTop:4,textAlign:"center"}}>Falscher Club-Code</div>
               )}
               {loginForm.code.toUpperCase()===CLUB_CODE&&(
-                <div style={{fontSize:10,color:C.green,marginTop:4,textAlign:"center"}}>✓ Club-Code korrekt</div>
+                <div style={{fontSize:12,color:C.green,marginTop:4,textAlign:"center"}}>✓ Club-Code korrekt</div>
               )}
             </div>
 
@@ -4422,16 +4438,16 @@ Regeln:
                   <label style={{display:"flex",gap:10,alignItems:"flex-start",cursor:"pointer"}}>
                     <input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}
                       style={{width:18,height:18,marginTop:1,flexShrink:0,accentColor:C.red,cursor:"pointer"}}/>
-                    <div style={{fontSize:12,color:"#bbb",lineHeight:1.6}}>
+                    <div style={{fontSize:14,color:"#bbb",lineHeight:1.6}}>
                       Ich stimme zu, dass der Porsche Club Nürburgring e.V. meine Daten
                       zur Vereinsverwaltung speichert und verarbeitet.
-                      <div style={{fontSize:11,color:"#777",marginTop:6,lineHeight:1.6}}>
+                      <div style={{fontSize:13,color:"#777",marginTop:6,lineHeight:1.6}}>
                         <strong style={{color:"#999"}}>Nichts ist automatisch öffentlich.</strong> Du entscheidest
                         pro Fahrzeug und pro Feld selbst, was beim QR-Scan sichtbar ist —
                         Kennzeichen, FIN und Kontaktdaten sind standardmäßig verborgen.
                       </div>
                       <button onClick={e=>{e.preventDefault();setShowPrivacyInfo(true);}}
-                        style={{background:"none",border:"none",color:C.red,fontSize:11,fontWeight:700,
+                        style={{background:"none",border:"none",color:C.red,fontSize:13,fontWeight:700,
                           cursor:"pointer",padding:"6px 0 0",fontFamily:"'Barlow',sans-serif",textDecoration:"underline"}}>
                         Was wird gespeichert? →
                       </button>
@@ -4496,20 +4512,20 @@ Regeln:
               <div style={{marginTop:12,background:"rgba(255,255,255,.05)",borderRadius:10,padding:"12px 14px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <div style={{width:16,height:16,border:"2px solid #ffffff33",borderTop:`2px solid ${C.red}`,borderRadius:"50%",animation:"spin 1s linear infinite",flexShrink:0}}/>
-                  <span style={{fontSize:13,color:"#aaa"}}>{authStep||"Verbindung wird hergestellt…"}</span>
+                  <span style={{fontSize:15,color:"#aaa"}}>{authStep||"Verbindung wird hergestellt…"}</span>
                 </div>
-                <div style={{marginTop:8,fontSize:11,color:"#555"}}>Dies kann bei erster Registrierung bis zu 15 Sekunden dauern.</div>
+                <div style={{marginTop:8,fontSize:13,color:"#555"}}>Dies kann bei erster Registrierung bis zu 15 Sekunden dauern.</div>
               </div>
             )}
             {!authLoading&&loginPassword.length>0&&loginPassword.length<6&&(
-              <div style={{fontSize:11,color:"#ef4444",textAlign:"center",marginTop:6}}>Passwort muss mind. 6 Zeichen haben</div>
+              <div style={{fontSize:13,color:"#ef4444",textAlign:"center",marginTop:6}}>Passwort muss mind. 6 Zeichen haben</div>
             )}
           </>
         )}
 
         <div style={{display:"flex",alignItems:"center",gap:10,margin:"18px 0"}}>
           <div style={{flex:1,height:1,background:C.border}}/>
-          <span style={{fontSize:11,color:"#444"}}>oder</span>
+          <span style={{fontSize:13,color:"#444"}}>oder</span>
           <div style={{flex:1,height:1,background:C.border}}/>
         </div>
 
@@ -4521,7 +4537,7 @@ Regeln:
         {me?.role==="guest"&&(
           <button onClick={()=>setScreen("app")}
             style={{background:"none",border:"none",color:C.muted,cursor:"pointer",
-              fontSize:13,fontFamily:"'Barlow',sans-serif",width:"100%",marginTop:8,padding:"8px"}}>
+              fontSize:15,fontFamily:"'Barlow',sans-serif",width:"100%",marginTop:8,padding:"8px"}}>
             ← Zurück zum Chat
           </button>
         )}
@@ -4529,7 +4545,7 @@ Regeln:
         {/* ── Sponsor ── */}
         {SPONSOR&&(
           <div style={{marginTop:20}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#333",textTransform:"uppercase",letterSpacing:2,textAlign:"center",marginBottom:10}}>
+            <div style={{fontSize:15,fontWeight:700,color:"#333",textTransform:"uppercase",letterSpacing:2,textAlign:"center",marginBottom:10}}>
               Offizieller Partner
             </div>
             <a href={SPONSOR.url} target="_blank" rel="noopener noreferrer"
@@ -4541,8 +4557,8 @@ Regeln:
                 :<div style={{width:36,height:36,background:C.red,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🏎️</div>
               }
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{SPONSOR.name}</div>
-                {SPONSOR.subtitle&&<div style={{fontSize:10,color:"#888",marginTop:1}}>{SPONSOR.subtitle}</div>}
+                <div style={{fontSize:15,fontWeight:800,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{SPONSOR.name}</div>
+                {SPONSOR.subtitle&&<div style={{fontSize:12,color:"#888",marginTop:1}}>{SPONSOR.subtitle}</div>}
                 {SPONSOR.tagline&&<div style={{fontSize:9,color:C.red,fontWeight:700,marginTop:2,textTransform:"uppercase",letterSpacing:.5}}>{SPONSOR.tagline}</div>}
               </div>
               <span style={{fontSize:16,color:"#ccc"}}>›</span>
@@ -4550,7 +4566,7 @@ Regeln:
           </div>
         )}
 
-        <p style={{textAlign:"center",fontSize:10,color:"#333",marginTop:16}}>
+        <p style={{textAlign:"center",fontSize:12,color:"#333",marginTop:16}}>
           Powered by <span style={{color:C.gold}}>QAR.Gallery</span>
         </p>
       </div>
@@ -4571,24 +4587,14 @@ Regeln:
         <style>{CSS}</style>
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
 
         {/* ── Header — white, like app header ── */}
         <div style={{background:"#ffffff",borderBottom:`3px solid ${C.red}`,padding:"10px 16px",
           display:"flex",alignItems:"center",justifyContent:"space-between",
           position:"sticky",top:0,zIndex:50}}>
           <img src={LOGO_SMALL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:34,objectFit:"contain",background:"transparent"}}/>
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <span style={{fontSize:11,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
-            {/* QR Code button */}
-            <button
-              onClick={()=>setLightbox({images:["https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://qar.gallery/pcn/?v="+v.qarId],index:0})}
-              style={{background:"#f5f5f5",border:"1px solid #ddd",borderRadius:8,
-                padding:"7px 10px",color:"#111",cursor:"pointer",fontSize:12,fontWeight:700,
-                fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
-              📱 QR-Code anzeigen
-            </button>
-          </div>
+          <span style={{fontSize:13,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
         </div>
 
         {/* ── Notfall-Zugang (ICE) — rundes Symbol oben rechts, immer sichtbar ── */}
@@ -4598,7 +4604,7 @@ Regeln:
             background:"#ef4444",border:"3px solid #fff",cursor:"pointer",
             display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
             boxShadow:"0 2px 10px rgba(0,0,0,.35)",padding:0}}>
-          <span style={{fontSize:13,fontWeight:900,color:"#fff",lineHeight:1}}>✚</span>
+          <span style={{fontSize:15,fontWeight:900,color:"#fff",lineHeight:1}}>✚</span>
           <span style={{fontSize:9,fontWeight:900,color:"#fff",letterSpacing:.5,lineHeight:1.3}}>ICE</span>
         </button>
 
@@ -4620,7 +4626,7 @@ Regeln:
               <div style={{display:"flex",alignItems:"center",justifyContent:"center",
                 height:"100%",color:C.muted,flexDirection:"column",gap:8}}>
                 <span style={{fontSize:32}}>🔒</span>
-                <span style={{fontSize:12}}>Galerie nicht öffentlich</span>
+                <span style={{fontSize:14}}>Galerie nicht öffentlich</span>
               </div>
             );
             return <div style={{height:"100%",background:"linear-gradient(135deg,#1a1a1a,#111)"}}/>;
@@ -4646,8 +4652,8 @@ Regeln:
             style={{display:"flex",alignItems:"center",gap:10,background:"#fff",
               padding:"8px 16px",textDecoration:"none",borderBottom:"1px solid #eee"}}>
             {SPONSOR.logo&&<img src={SPONSOR.logo} alt={SPONSOR.name} style={{height:28,objectFit:"contain"}}/>}
-            <span style={{fontSize:11,color:"#888",fontWeight:600}}>Powered by</span>
-            <span style={{fontSize:12,fontWeight:800,color:"#111"}}>{SPONSOR.name}</span>
+            <span style={{fontSize:13,color:"#888",fontWeight:600}}>Powered by</span>
+            <span style={{fontSize:14,fontWeight:800,color:"#111"}}>{SPONSOR.name}</span>
           </a>
         )}
 
@@ -4704,7 +4710,7 @@ Regeln:
                     border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 14px",
                     cursor:"pointer",display:"flex",alignItems:"center",
                     justifyContent:"center",gap:8,fontFamily:"'Barlow',sans-serif",
-                    color:C.muted,fontSize:13,fontWeight:600}}>
+                    color:C.muted,fontSize:15,fontWeight:600}}>
                   <span style={{fontSize:16}}>🔄</span> Live-Status abrufen
                 </button>
               );
@@ -4731,12 +4737,12 @@ Regeln:
                         <div style={{fontWeight:800,fontSize:16,color,lineHeight:1.2,marginBottom:5}}>{s.text}</div>
                         <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
                           {timeStamp&&(
-                            <span style={{fontSize:10,color:C.muted,display:"flex",alignItems:"center",gap:3}}>
+                            <span style={{fontSize:12,color:C.muted,display:"flex",alignItems:"center",gap:3}}>
                               🕐 {timeStamp}
                             </span>
                           )}
                           {minsLeft&&minsLeft>0&&(
-                            <span style={{fontSize:11,fontWeight:700,color,
+                            <span style={{fontSize:13,fontWeight:700,color,
                               background:urgent?"#ef444422":`${C.amber}22`,
                               border:`1px solid ${urgent?"#ef444444":C.amber+"44"}`,
                               borderRadius:6,padding:"2px 8px"}}>
@@ -4748,7 +4754,7 @@ Regeln:
                             </span>
                           )}
                           {!minsLeft&&s.expiresAt&&new Date(s.expiresAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})&&(
-                            <span style={{fontSize:10,color:C.muted}}>
+                            <span style={{fontSize:12,color:C.muted}}>
                               bis {new Date(s.expiresAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr
                             </span>
                           )}
@@ -4768,7 +4774,7 @@ Regeln:
                 <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>📞</div>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:800,fontSize:15,color:"#fff"}}>Direkt anrufen</div>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:1}}>{v.phone}</div>
+                  <div style={{fontSize:14,color:"rgba(255,255,255,.7)",marginTop:1}}>{v.phone}</div>
                 </div>
                 <span style={{fontSize:20,color:"rgba(255,255,255,.7)"}}>›</span>
               </a>
@@ -4783,7 +4789,7 @@ Regeln:
                 <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>💬</div>
                 <div style={{flex:1,textAlign:"left"}}>
                   <div style={{fontWeight:800,fontSize:15}}>Nachricht an Fahrer(in) senden</div>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:1}}>Vertraulich · Besitzer antwortet per App</div>
+                  <div style={{fontSize:14,color:"rgba(255,255,255,.7)",marginTop:1}}>Vertraulich · Besitzer antwortet per App</div>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2,flexShrink:0}}>
                   <span style={{fontSize:18,color:"rgba(255,255,255,.7)"}}>›</span>
@@ -4796,7 +4802,7 @@ Regeln:
             {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
               <div style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"11px 13px",display:"flex",gap:10,alignItems:"flex-start"}}>
                 <span style={{fontSize:16,flexShrink:0,marginTop:1}}>🔒</span>
-                <div style={{fontSize:12,color:"#888",lineHeight:1.6}}>
+                <div style={{fontSize:14,color:"#888",lineHeight:1.6}}>
                   <strong style={{color:"#aaa"}}>Vertraulicher Kontakt:</strong> Der Fahrzeughalter sieht nur deine Nachricht — nicht deinen Namen oder deine E-Mail-Adresse. Er antwortet direkt über die QAR-App.
                 </div>
               </div>
@@ -4810,13 +4816,13 @@ Regeln:
 
         {nextEvent&&priv.pub_events&&(
             <div style={{background:`${C.red}11`,border:`1px solid ${C.red}33`,borderRadius:12,padding:"12px 14px",marginBottom:14}}>
-              <div style={{fontSize:13,color:C.red,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>🏁 Nächste Veranstaltung — in {daysUntil(nextEvent.ev.date)} Tagen</div>
+              <div style={{fontSize:15,color:C.red,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>🏁 Nächste Veranstaltung — in {daysUntil(nextEvent.ev.date)} Tagen</div>
               <div style={{fontWeight:700,fontSize:14,color:C.white}}>{nextEvent.ev.name}</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Startnr. <span style={{color:C.gold,fontWeight:700}}>#{nextEvent.startNr}</span> · {nextEvent.class}</div>
+              <div style={{fontSize:13,color:C.muted,marginTop:2}}>Startnr. <span style={{color:C.gold,fontWeight:700}}>#{nextEvent.startNr}</span> · {nextEvent.class}</div>
             </div>
           )}
           <div className="card" style={{padding:16,marginBottom:14}}>
-            <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Fahrzeugdaten</div>
+            <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Fahrzeugdaten</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               {[["Baujahr","baujahr"],["Kraftstoff","kraftstoff"],["Getriebe","getriebe"],["Farbe","farbe"],["Kilometerstand","kilometerstand"],["TÜV","tuev_faelligkeit"],["Marktwert","marktwert"],["FIN","fin"]].filter(([,k])=>priv[k]!==false&&v[k]).map(([label,key])=>(
                 <div key={key}>
@@ -4829,20 +4835,20 @@ Regeln:
                 </div>
               ))}
             </div>
-            {v.besonderheiten&&priv.besonderheiten!==false&&<div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:12,color:C.muted,lineHeight:1.6}}>ℹ️ {v.besonderheiten}</div>}
+            {v.besonderheiten&&priv.besonderheiten!==false&&<div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:14,color:C.muted,lineHeight:1.6}}>ℹ️ {v.besonderheiten}</div>}
           </div>
           {priv.pub_events&&vHist.length>0&&(
             <div className="card" style={{padding:16,marginBottom:14}}>
-              <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Veranstaltungshistorie</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Veranstaltungshistorie</div>
               {vHist.map(h=>(
                 <div key={h.id} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
-                  <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:6,padding:"2px 8px",fontWeight:800,fontSize:12,color:C.red,flexShrink:0}}>#{h.startNr}</div>
+                  <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:6,padding:"2px 8px",fontWeight:800,fontSize:14,color:C.red,flexShrink:0}}>#{h.startNr}</div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.eventName}</div>
-                    <div style={{fontSize:10,color:C.muted}}>{fmtDate(h.date)} · {h.class}</div>
-                    {h.note&&<div style={{fontSize:10,color:C.gold}}>{h.note}</div>}
+                    <div style={{fontSize:14,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.eventName}</div>
+                    <div style={{fontSize:12,color:C.muted}}>{fmtDate(h.date)} · {h.class}</div>
+                    {h.note&&<div style={{fontSize:12,color:C.gold}}>{h.note}</div>}
                   </div>
-                  <span style={{fontSize:10,fontWeight:700,color:h.result==="Teilnahme"?C.muted:C.gold,flexShrink:0}}>{h.result}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:h.result==="Teilnahme"?C.muted:C.gold,flexShrink:0}}>{h.result}</span>
                 </div>
               ))}
             </div>
@@ -4850,7 +4856,7 @@ Regeln:
 
           {/* SHARE — ganz unten */}
           <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginTop:4}}>
-            <div style={{fontSize:13,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>
+            <div style={{fontSize:15,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>
               Fahrzeugakte teilen
             </div>
             <div style={{display:"flex",gap:8,marginBottom:16}}>
@@ -4865,7 +4871,7 @@ Regeln:
                     }}
                     style={{flex:2,background:C.red,border:"none",borderRadius:9,padding:"11px",
                       display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                      color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                     <span style={{fontSize:16}}>↑</span> Teilen
                   </button>
                   <button
@@ -4874,7 +4880,7 @@ Regeln:
                     }}
                     style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"11px",
                       display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                      color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                     <span style={{fontSize:16}}>🔗</span> Link
                   </button>
                 </>);
@@ -4884,7 +4890,7 @@ Regeln:
 
           <div style={{textAlign:"center",padding:"12px 0",borderTop:`1px solid ${C.border}`}}>
             <div style={{fontSize:9,color:"#333",letterSpacing:2,marginBottom:4}}>VERIFIZIERT DURCH QAR.GALLERY</div>
-            <div style={{fontFamily:"monospace",fontSize:11,color:"#444"}}>{v.qarId}</div>
+            <div style={{fontFamily:"monospace",fontSize:13,color:"#444"}}>{v.qarId}</div>
           </div>
           {me&&<button className="btn sm ghost" style={{width:"100%",marginTop:10}} onClick={()=>setScreen(viewV?"vehicle":"app")}>← Zurück</button>}
         </div>
@@ -4894,12 +4900,12 @@ Regeln:
           <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}}>
             <div className="sheet">
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>💬 Nachricht senden</div>
-              <div style={{fontSize:11,color:C.muted,marginBottom:18}}>Um eine Nachricht zu senden, identifiziere dich kurz</div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Um eine Nachricht zu senden, identifiziere dich kurz</div>
 
               <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:16}}>
                 {[["guest","Als Gast"],["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
                   <button key={m} onClick={()=>setContactAuthMode(m)}
-                    style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:12,
+                    style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14,
                       background:contactAuthMode===m?C.red:"transparent",color:contactAuthMode===m?"#fff":C.muted,transition:"all .15s"}}>
                     {label}
                   </button>
@@ -4908,22 +4914,22 @@ Regeln:
 
               {contactAuthMode==="guest"&&(
                 <div style={{background:"#141414",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:16}}>
-                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:10}}>
+                  <div style={{fontSize:14,color:C.muted,lineHeight:1.6,marginBottom:10}}>
                     Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht.
                   </div>
-                  <div style={{fontSize:13,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
+                  <div style={{fontSize:15,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
                   {[
                     ["🚗","Eigene digitale Fahrzeugakte"],
                     ["📱","QR-Code fürs eigene Auto"],
                     ["🏁","Direkte Anmeldung zu Club-Events"],
                   ].map(([icon,text])=>(
-                    <div key={text} style={{display:"flex",gap:8,alignItems:"center",fontSize:12,color:C.white,marginBottom:5}}>
-                      <span style={{fontSize:13,flexShrink:0}}>{icon}</span>
+                    <div key={text} style={{display:"flex",gap:8,alignItems:"center",fontSize:14,color:C.white,marginBottom:5}}>
+                      <span style={{fontSize:15,flexShrink:0}}>{icon}</span>
                       <span>{text}</span>
                     </div>
                   ))}
                   <button onClick={()=>setContactAuthMode("register")}
-                    style={{background:"none",border:"none",color:C.red,fontWeight:700,fontSize:12,cursor:"pointer",padding:0,marginTop:8,fontFamily:"'Barlow',sans-serif"}}>
+                    style={{background:"none",border:"none",color:C.red,fontWeight:700,fontSize:14,cursor:"pointer",padding:0,marginTop:8,fontFamily:"'Barlow',sans-serif"}}>
                     Stattdessen Mitglied werden →
                   </button>
                 </div>
@@ -4949,10 +4955,10 @@ Regeln:
                     <input type="checkbox" checked={contactAgbAccepted}
                       onChange={e=>setContactAgbAccepted(e.target.checked)}
                       style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
-                    <span style={{fontSize:11,color:C.muted,lineHeight:1.5}}>
+                    <span style={{fontSize:13,color:C.muted,lineHeight:1.5}}>
                       Nachricht an den Halter nur mit Angabe einer E-Mail-Adresse möglich. *
                       <button onClick={e=>{e.preventDefault();e.stopPropagation();setShowContactPrivacyInfo(true);}}
-                        style={{background:"none",border:"none",color:C.red,fontSize:11,fontWeight:700,
+                        style={{background:"none",border:"none",color:C.red,fontSize:13,fontWeight:700,
                           cursor:"pointer",padding:"3px 0 0",display:"block",fontFamily:"'Barlow',sans-serif",
                           textDecoration:"underline"}}>
                         Was wird gespeichert? →
@@ -4963,7 +4969,7 @@ Regeln:
                     <input type="checkbox" checked={contactMarketingOptIn}
                       onChange={e=>setContactMarketingOptIn(e.target.checked)}
                       style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
-                    <span style={{fontSize:11,color:C.muted,lineHeight:1.5}}>
+                    <span style={{fontSize:13,color:C.muted,lineHeight:1.5}}>
                       Ich möchte gelegentlich Neuigkeiten und Angebote von QAR.Gallery per E-Mail erhalten (optional, jederzeit widerrufbar).
                     </span>
                   </label>
@@ -4978,7 +4984,7 @@ Regeln:
               </button>
 
               {contactAuthMode==="login"&&(
-                <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>Kein Passwort nötig — nur deine E-Mail</div>
+                <div style={{textAlign:"center",marginTop:10,fontSize:13,color:C.muted}}>Kein Passwort nötig — nur deine E-Mail</div>
               )}
             </div>
           </div>
@@ -4989,7 +4995,7 @@ Regeln:
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:600,display:"flex",flexDirection:"column"}}
           onClick={()=>setLightbox(null)}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
+            <div style={{fontSize:15,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
             <button onClick={()=>setLightbox(null)} style={{background:"rgba(255,255,255,.1)",border:"none",color:"#fff",fontSize:20,width:40,height:40,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
           </div>
           <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 16px",position:"relative"}} onClick={e=>e.stopPropagation()}>
@@ -5021,7 +5027,7 @@ Regeln:
             <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:"#fff",marginBottom:14,lineHeight:1.3}}>
               Sind Sie Ersthelfer, Polizei, Notarzt oder Rettungsdienst?
             </div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:22,lineHeight:1.6}}>
+            <div style={{fontSize:14,color:C.muted,marginBottom:22,lineHeight:1.6}}>
               Dieser Bereich enthält medizinische Notfalldaten der Fahrzeughalterin/des Fahrzeughalters — bitte nur im echten Einsatzfall öffnen.
             </div>
             <button className="btn" style={{width:"100%",background:"#ef4444",marginBottom:8}} onClick={()=>setEmergencyRoleConfirmed(true)}>
@@ -5042,7 +5048,7 @@ Regeln:
             onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:36,marginBottom:10}}>🚨</div>
             <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#fff",marginBottom:8}}>Notfall-Zugang</div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:20,lineHeight:1.6}}>
+            <div style={{fontSize:14,color:C.muted,marginBottom:20,lineHeight:1.6}}>
               4-stelligen Code eingeben — zu finden auf dem Aufkleber hinter dem QR-Code im Fahrzeuginneren.
             </div>
             <input className="inp" placeholder="0000" inputMode="numeric" maxLength={4} autoFocus
@@ -5064,7 +5070,7 @@ Regeln:
             <button onClick={()=>{setShowEmergencyAccess(null);setEmergencyResult(null);setEmergencyCodeInput("");}}
               style={{background:"none",border:"none",color:C.muted,fontSize:24,cursor:"pointer"}}>✕</button>
           </div>
-          {emergencyResult.length===0&&<div style={{color:C.muted,fontSize:13,textAlign:"center",padding:40}}>Keine Notfallprofile hinterlegt.</div>}
+          {emergencyResult.length===0&&<div style={{color:C.muted,fontSize:15,textAlign:"center",padding:40}}>Keine Notfallprofile hinterlegt.</div>}
           {emergencyResult.map((p,i)=>(
             <div key={i} style={{background:C.card,border:"1px solid #ef444444",borderRadius:16,padding:18,marginBottom:14}}>
               <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:14}}>
@@ -5073,35 +5079,35 @@ Regeln:
                   :<div style={{width:64,height:64,borderRadius:12,background:C.black,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>👤</div>}
                 <div>
                   <div style={{fontSize:17,fontWeight:800,color:"#fff"}}>{p.name}</div>
-                  {p.birthDate&&<div style={{fontSize:12,color:C.muted}}>geb. {new Date(p.birthDate).toLocaleDateString("de-DE")}</div>}
+                  {p.birthDate&&<div style={{fontSize:14,color:C.muted}}>geb. {new Date(p.birthDate).toLocaleDateString("de-DE")}</div>}
                 </div>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                 <div style={{background:C.black,borderRadius:8,padding:10}}>
-                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Blutgruppe</div>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:2}}>Blutgruppe</div>
                   <div style={{fontSize:14,fontWeight:700,color:"#fff"}}>{p.bloodType||"unbekannt"}</div>
                 </div>
                 <div style={{background:C.black,borderRadius:8,padding:10}}>
-                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Allergien</div>
-                  <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{p.allergies||"keine bekannt"}</div>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:2}}>Allergien</div>
+                  <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>{p.allergies||"keine bekannt"}</div>
                 </div>
                 <div style={{background:C.black,borderRadius:8,padding:10}}>
-                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Medikamente</div>
-                  <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{p.medications||"keine bekannt"}</div>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:2}}>Medikamente</div>
+                  <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>{p.medications||"keine bekannt"}</div>
                 </div>
                 <div style={{background:C.black,borderRadius:8,padding:10}}>
-                  <div style={{fontSize:10,color:C.muted,marginBottom:2}}>Vorerkrankungen</div>
-                  <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{p.conditions||"keine bekannt"}</div>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:2}}>Vorerkrankungen</div>
+                  <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>{p.conditions||"keine bekannt"}</div>
                 </div>
               </div>
               {(p.contacts||[]).length>0&&(
                 <>
-                  <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Notfallkontakte</div>
+                  <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Notfallkontakte</div>
                   {p.contacts.map((c,j)=>(
                     <a key={j} href={"tel:"+c.phone} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.black,borderRadius:8,padding:"10px 12px",marginBottom:6,textDecoration:"none"}}>
                       <div>
-                        <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{c.name}</div>
-                        {c.relationship&&<div style={{fontSize:11,color:C.muted}}>{c.relationship}</div>}
+                        <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>{c.name}</div>
+                        {c.relationship&&<div style={{fontSize:13,color:C.muted}}>{c.relationship}</div>}
                       </div>
                       <span style={{fontSize:16}}>📞</span>
                     </a>
@@ -5128,7 +5134,7 @@ Regeln:
           style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:"#111",padding:"0 4px"}}>←</button>
         <div style={{flex:1}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,color:"#111",letterSpacing:1}}>PCN NÜRBURGRING</div>
-          <div style={{fontSize:10,color:"#888"}}>Mitglieder-Information</div>
+          <div style={{fontSize:12,color:"#888"}}>Mitglieder-Information</div>
         </div>
         <img src="data:image/jpeg;base64,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REBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEQ8FHTVL6qQwUnm/Kk9yDJU1jjJ1FKNuTmeTV56ivxntTc92P8ARfOsp7eBEA58hGTgbyskNwikeGEOY4nADgqMfUV7z5dS1o/NH+i+i2tcczyySHx3Lf3AZyMBR89TJUyGCj3/AJUnIIPEzooHdRRRNdOd2cZwtiio2042nHalPF3uXulpWUzMN3uPFx5rYUBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREHxw2mkd4wo6lc6jm7LKPJc7LHjmpJR1Se010ULP6I7TndyD7cIXMJq4ZNh7BvzzC1TVNqKhksxDGRDOObitmpLqyr7O0kRR73kc/BbTaOnDtsQtyqNQ9fcDzip+fe5b0MLIYwyNuAP2rIAigIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiIMdRIIYXyH5I3KLppH09NJUBof1nygd7T4rZur8xshYfLkdwHcvU1A2Rpa15aHAeSOGRwKD1bYeqpw473SeUSVtrRo55Wy9mqANto3OHMLeQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBalXVOicIom7czuA7ltqOnjqIa108MQl224Hggxkmnm62pPW1LvMY35KyiOvqP4yQQN7m8Vko6V7JDPUO2pXd3yVuKjWpaNkDzIXGSQjG05bKIoCIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIg//Z"
           style={{height:32,objectFit:"contain"}} onError={e=>e.target.style.display="none"} alt="PCN"/>
@@ -5139,7 +5145,7 @@ Regeln:
           {viewNews.pinned&&<span style={{background:C.red,color:"#fff",fontSize:9,fontWeight:800,padding:"2px 8px",borderRadius:4}}>NEU</span>}
         </div>
         <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,lineHeight:1.2,marginBottom:8}}>{viewNews.title}</h1>
-        <div style={{fontSize:11,color:C.muted,marginBottom:24}}>
+        <div style={{fontSize:13,color:C.muted,marginBottom:24}}>
           {viewNews.author&&<span>{viewNews.author} · </span>}{fmtDate(viewNews.date)}
         </div>
         <div style={{fontSize:14,color:"#ccc",lineHeight:1.9,whiteSpace:"pre-wrap",marginBottom:32}}>
@@ -5153,7 +5159,7 @@ Regeln:
                 style={{flex:1,background:alreadyR?C.card:`${C.green}18`,
                   border:`1px solid ${alreadyR?C.border:C.green+"44"}`,
                   borderRadius:10,padding:"12px",color:alreadyR?C.muted:C.green,
-                  fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                  fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
                   display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                 {alreadyR?"✓ Gelesen":`✓ Gelesen · +${POINTS.news_read} 🏆`}
               </button>
@@ -5163,7 +5169,7 @@ Regeln:
             style={{flex:1,background:newsState[viewNews.id]==="remind"?`${C.amber}22`:C.card,
               border:`1px solid ${newsState[viewNews.id]==="remind"?C.amber+"44":C.border}`,
               borderRadius:10,padding:"12px",color:newsState[viewNews.id]==="remind"?C.amber:C.muted,
-              fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+              fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
             🔔 {newsState[viewNews.id]==="remind"?"Erinnerung aktiv":"Erinnern"}
           </button>
         </div>
@@ -5190,7 +5196,7 @@ Regeln:
         <style>{CSS}</style>
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         {ScannerOverlay}
         {/* ── Photo Gallery — inline ── */}
         <div style={{position:"relative"}}>
@@ -5224,7 +5230,7 @@ Regeln:
                           style={{width:i===cur?20:7,height:7,borderRadius:99,background:i===cur?"#fff":"rgba(255,255,255,.4)",transition:"all .2s",cursor:"pointer"}}/>
                       ))}
                     </div>
-                    <div style={{position:"absolute",bottom:14,right:14,background:"rgba(0,0,0,.6)",borderRadius:8,padding:"3px 9px",fontSize:11,fontWeight:700,color:"rgba(255,255,255,.9)",zIndex:3}}>
+                    <div style={{position:"absolute",bottom:14,right:14,background:"rgba(0,0,0,.6)",borderRadius:8,padding:"3px 9px",fontSize:13,fontWeight:700,color:"rgba(255,255,255,.9)",zIndex:3}}>
                       {cur+1}/{imgs.length}
                     </div>
                   </>)}
@@ -5240,7 +5246,7 @@ Regeln:
                               border:`2.5px solid ${i===cur?C.red:"transparent"}`,
                               opacity:i===cur?1:0.7,transition:"all .15s"}}
                             onError={e=>e.target.style.display="none"}/>
-                          {i===0&&<div style={{position:"absolute",top:2,left:2,fontSize:10,background:"rgba(0,0,0,.6)",borderRadius:4,padding:"1px 4px"}}>👑</div>}
+                          {i===0&&<div style={{position:"absolute",top:2,left:2,fontSize:12,background:"rgba(0,0,0,.6)",borderRadius:4,padding:"1px 4px"}}>👑</div>}
                         </div>
                       ))}
                     </div>
@@ -5250,7 +5256,7 @@ Regeln:
                     {isOwn&&(
                       <button onClick={()=>{setPhotoManagerVehicle(v.id);setScreen("photos");}}
                         style={{width:"100%",background:"none",border:`1px solid ${C.border}`,borderRadius:8,
-                          padding:"8px",color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",
+                          padding:"8px",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",
                           fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                         ✏️ Fotos verwalten
                       </button>
@@ -5263,14 +5269,14 @@ Regeln:
           {/* Overlay buttons on hero */}
           <div style={{position:"absolute",top:16,left:14,zIndex:5}}>
             <button onClick={()=>setScreen("app")}
-              style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"9px 14px",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>
+              style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"9px 14px",color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>
               ← Zurück
             </button>
           </div>
           {!isOwn&&(
             <div style={{position:"absolute",top:16,right:14,zIndex:5}}>
               <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
-                style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>
+                style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>
                 👁 Ansicht
               </button>
             </div>
@@ -5287,13 +5293,13 @@ Regeln:
               {isOwn&&(
                 <button onClick={()=>openEditVehicle(v)}
                   style={{background:C.red,border:"none",borderRadius:8,padding:"6px 14px",
-                    color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700,
+                    color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,
                     fontFamily:"'Barlow',sans-serif",flexShrink:0,marginLeft:10}}>
                   ✏️ Bearbeiten
                 </button>
               )}
             </div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:12}}>{v.baujahr} · {v.farbe} · {v.getriebe}</div>
+            <div style={{fontSize:14,color:C.muted,marginBottom:12}}>{v.baujahr} · {v.farbe} · {v.getriebe}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
               {[
                 [v.tuev_faelligkeit||"–","TÜV",tuevColor],
@@ -5301,7 +5307,7 @@ Regeln:
                 [["","Sehr gut","Gut","Befriend.","Ausreichend","Mangelhaft"][parseInt(v.zustand)]||"–","Zustand",C.gold],
               ].map(([val,label,color],i)=>(
                 <div key={i} style={{background:C.black,borderRadius:8,padding:"9px 8px",textAlign:"center"}}>
-                  <div style={{fontSize:12,fontWeight:700,color,marginBottom:2,lineHeight:1.2}}>{val}</div>
+                  <div style={{fontSize:14,fontWeight:700,color,marginBottom:2,lineHeight:1.2}}>{val}</div>
                   <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.5}}>{label}</div>
                 </div>
               ))}
@@ -5316,14 +5322,14 @@ Regeln:
                 <div key={label} style={{display:"flex",gap:8,alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${C.border}`}}>
                   <span style={{fontSize:14,flexShrink:0}}>{icon}</span>
                   <div style={{minWidth:0}}>
-                    <div style={{fontSize:10,color:C.muted}}>{label}</div>
-                    <div style={{fontSize:13,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{val}</div>
+                    <div style={{fontSize:12,color:C.muted}}>{label}</div>
+                    <div style={{fontSize:15,fontWeight:600,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{val}</div>
                   </div>
                 </div>
               ))}
             </div>
             {v.besonderheiten&&(
-              <div style={{marginTop:10,padding:"8px 10px",background:C.black,borderRadius:8,fontSize:11,color:C.muted,lineHeight:1.5}}>
+              <div style={{marginTop:10,padding:"8px 10px",background:C.black,borderRadius:8,fontSize:13,color:C.muted,lineHeight:1.5}}>
                 ✨ {v.besonderheiten}
               </div>
             )}
@@ -5333,7 +5339,7 @@ Regeln:
           {/* ── QR-Code & Aktionen — eigener Block ── */}
           {isOwn&&(
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
-              <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>🔗 QR-Code & Aktionen</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>🔗 QR-Code & Aktionen</div>
               {(()=>{
                 const slots = getActiveStatus(v.id)||[];
                 if(!slots.length) return null;
@@ -5344,14 +5350,14 @@ Regeln:
                   <div key={s.id} style={{background:`${col}18`,border:`1px solid ${col}44`,borderRadius:10,padding:"10px 13px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
                     <span style={{fontSize:20}}>{s.icon}</span>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:13,fontWeight:700,color:col}}>{s.text}</div>
-                      <div style={{fontSize:10,color:C.muted,marginTop:1}}>
+                      <div style={{fontSize:15,fontWeight:700,color:col}}>{s.text}</div>
+                      <div style={{fontSize:12,color:C.muted,marginTop:1}}>
                         {s.expiresAt ? `Bis ${new Date(s.expiresAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr` : "Dauerhaft"}
                         {statusVisible ? " · 🔓 sichtbar für Besucher" : " · 🔒 für Besucher ausgeblendet"}
                       </div>
                       {s.lat!=null&&(
                         <a href={`https://maps.google.com/?q=${s.lat},${s.lng}`} target="_blank" rel="noopener noreferrer"
-                          style={{fontSize:10,color:C.gold,textDecoration:"none",display:"block",marginTop:3}}>
+                          style={{fontSize:12,color:C.gold,textDecoration:"none",display:"block",marginTop:3}}>
                           📍 Nur für dich: Standort beim Setzen ansehen →
                         </a>
                       )}
@@ -5366,8 +5372,8 @@ Regeln:
                   style={{flex:1,background:`${C.amber}15`,border:`1.5px solid ${C.amber}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
                   <span style={{fontSize:18}}>📍</span>
                   <div style={{textAlign:"left"}}>
-                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>Live-Status setzen</div>
-                    <div style={{fontSize:10,color:(v.privacy||DEF_PRIVACY).pub_status!==false?C.green:C.red}}>
+                    <div style={{fontWeight:700,fontSize:15,color:C.white}}>Live-Status setzen</div>
+                    <div style={{fontSize:12,color:(v.privacy||DEF_PRIVACY).pub_status!==false?C.green:C.red}}>
                       {(v.privacy||DEF_PRIVACY).pub_status!==false?"🔓 Sichtbar beim QR-Scan":"🔒 Für Besucher ausgeblendet"}
                     </div>
                   </div>
@@ -5376,8 +5382,8 @@ Regeln:
                   style={{flex:1,background:`${C.red}15`,border:`1.5px solid ${C.red}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
                   <span style={{fontSize:18}}>🔒</span>
                   <div style={{textAlign:"left"}}>
-                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>QR-Sichtbarkeit</div>
-                    <div style={{fontSize:10,color:C.muted}}>Einstellen was Besucher sehen</div>
+                    <div style={{fontWeight:700,fontSize:15,color:C.white}}>QR-Sichtbarkeit</div>
+                    <div style={{fontSize:12,color:C.muted}}>Einstellen was Besucher sehen</div>
                   </div>
                 </button>
                 {v.qarId&&(
@@ -5388,9 +5394,9 @@ Regeln:
                       <QRCodeCanvas value={"https://qar.gallery/pcn/?v="+v.qarId} size={72}/>
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,color:C.muted,marginBottom:2,textTransform:"uppercase",letterSpacing:1}}>QAR-ID</div>
-                      <div style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:C.white,letterSpacing:1,marginBottom:4}}>{v.qarId}</div>
-                      <div style={{fontSize:10,color:C.muted}}>Tippen zum Vergrößern · FIN wird niemals geteilt</div>
+                      <div style={{fontSize:15,color:C.muted,marginBottom:2,textTransform:"uppercase",letterSpacing:1}}>QAR-ID</div>
+                      <div style={{fontFamily:"monospace",fontSize:15,fontWeight:700,color:C.white,letterSpacing:1,marginBottom:4}}>{v.qarId}</div>
+                      <div style={{fontSize:12,color:C.muted}}>Tippen zum Vergrößern · FIN wird niemals geteilt</div>
                     </div>
                     <span style={{fontSize:18,color:C.muted,flexShrink:0}}>⤢</span>
                   </div>
@@ -5399,31 +5405,31 @@ Regeln:
                   style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
                   <span style={{fontSize:18}}>👁</span>
                   <div style={{textAlign:"left"}}>
-                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>Vorschau öffentliche Akte</div>
-                    <div style={{fontSize:10,color:C.muted}}>So sehen Besucher dein Fahrzeug beim QR-Scan</div>
+                    <div style={{fontWeight:700,fontSize:15,color:C.white}}>Vorschau öffentliche Akte</div>
+                    <div style={{fontSize:12,color:C.muted}}>So sehen Besucher dein Fahrzeug beim QR-Scan</div>
                   </div>
                 </button>
                 <button onClick={()=>doCheckIn(v.id)}
                   style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
-                  <span style={{width:24,height:24,borderRadius:"50%",background:C.gold,color:"#000",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,flexShrink:0}}>P</span>
+                  <span style={{width:24,height:24,borderRadius:"50%",background:C.gold,color:"#000",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:900,flexShrink:0}}>P</span>
                   <div style={{textAlign:"left"}}>
-                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>Standort merken</div>
-                    <div style={{fontSize:10,color:C.muted}}>Aktuellen Parkplatz speichern — nur für dich sichtbar</div>
+                    <div style={{fontWeight:700,fontSize:15,color:C.white}}>Standort merken</div>
+                    <div style={{fontSize:12,color:C.muted}}>Aktuellen Parkplatz speichern — nur für dich sichtbar</div>
                   </div>
                 </button>
                 <button onClick={()=>{setShowTransferPanel(v.id);setPendingTransfer(null);loadPendingTransfer(v.id);}}
                   style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
                   <span style={{fontSize:18}}>🔑</span>
                   <div style={{textAlign:"left"}}>
-                    <div style={{fontWeight:700,fontSize:13,color:C.white}}>Fahrzeug übertragen</div>
-                    <div style={{fontSize:10,color:C.muted}}>Bei Verkauf — QAR-ID bleibt erhalten, wie eine FIN</div>
+                    <div style={{fontWeight:700,fontSize:15,color:C.white}}>Fahrzeug übertragen</div>
+                    <div style={{fontSize:12,color:C.muted}}>Bei Verkauf — QAR-ID bleibt erhalten, wie eine FIN</div>
                   </div>
                 </button>
 
                 {/* ── Eigener Standort-Check-in ── */}
                 {v.checkinLat!=null&&(
                   <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                    <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📍 Zuletzt geparkt</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📍 Zuletzt geparkt</div>
                     <div style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
                       <a href={`https://maps.google.com/?q=${v.checkinLat},${v.checkinLng}`} target="_blank" rel="noopener noreferrer" style={{display:"block"}}>
                         <iframe title="Zuletzt geparkt" style={{width:"100%",height:120,border:"none",display:"block",pointerEvents:"none"}}
@@ -5431,11 +5437,11 @@ Regeln:
                       </a>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px"}}>
                         <div>
-                          <div style={{fontSize:12,fontWeight:700,color:C.white}}>
+                          <div style={{fontSize:14,fontWeight:700,color:C.white}}>
                             {v.checkinAt?new Date(v.checkinAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"?"} Uhr
                           </div>
                           <a href={`https://maps.google.com/?q=${v.checkinLat},${v.checkinLng}`} target="_blank" rel="noopener noreferrer"
-                            style={{fontSize:11,color:C.gold,fontWeight:700,textDecoration:"none"}}>
+                            style={{fontSize:13,color:C.gold,fontWeight:700,textDecoration:"none"}}>
                             In Maps öffnen →
                           </a>
                         </div>
@@ -5445,7 +5451,7 @@ Regeln:
                             setVehicles(prev=>({...prev,[v.id]:{...prev[v.id],checkinLat:null,checkinLng:null,checkinAt:null}}));
                             toast_("Standort entfernt");
                           }}
-                          style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,color:C.muted,fontSize:13,cursor:"pointer",padding:"6px 10px"}}>✕</button>
+                          style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,color:C.muted,fontSize:15,cursor:"pointer",padding:"6px 10px"}}>✕</button>
                       </div>
                     </div>
                   </div>
@@ -5453,23 +5459,23 @@ Regeln:
 
                 {/* ── Pannenhilfe: schnell griffbereit im Ernstfall ── */}
                 <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                  <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🚨 Pannenhilfe</div>
+                  <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🚨 Pannenhilfe</div>
                   <div style={{display:"flex",gap:8}}>
                     <a href="tel:+498920204000" style={{flex:1,textDecoration:"none"}}>
                       <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",textAlign:"center"}}>
-                        <div style={{fontSize:12,fontWeight:700,color:C.white}}>📞 ADAC</div>
+                        <div style={{fontSize:14,fontWeight:700,color:C.white}}>📞 ADAC</div>
                         {me?.adacMemberNr&&<div style={{fontSize:9,color:C.muted,marginTop:2}}>Mitglied {me.adacMemberNr}</div>}
                       </div>
                     </a>
                     <a href="tel:+498009909909" style={{flex:1,textDecoration:"none"}}>
                       <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",textAlign:"center"}}>
-                        <div style={{fontSize:12,fontWeight:700,color:C.white}}>📞 AvD</div>
+                        <div style={{fontSize:14,fontWeight:700,color:C.white}}>📞 AvD</div>
                         {me?.avdMemberNr&&<div style={{fontSize:9,color:C.muted,marginTop:2}}>Mitglied {me.avdMemberNr}</div>}
                       </div>
                     </a>
                   </div>
                   {!me?.adacMemberNr&&!me?.avdMemberNr&&(
-                    <div style={{fontSize:10,color:C.muted,marginTop:6}}>
+                    <div style={{fontSize:12,color:C.muted,marginTop:6}}>
                       Pannenhilfe erreichst du auch ohne Mitgliedschaft — Mitgliedsnummer im Profil hinterlegen für schnelleren Ablauf.
                     </div>
                   )}
@@ -5478,15 +5484,15 @@ Regeln:
                 {/* ── Notfallprofile (ICE) ── */}
                 <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                    <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1}}>🆘 Notfallprofile</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1}}>🆘 Notfallprofile</div>
                     <button onClick={()=>{loadEmergencyProfiles(v.id);setShowEmergencyEdit({vehicleId:v.id,name:"",accessCode:"",contacts:[{name:"",relationship:"",phone:""}]});}}
-                      style={{background:"none",border:"none",color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Hinzufügen</button>
+                      style={{background:"none",border:"none",color:C.gold,fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Hinzufügen</button>
                   </div>
-                  <div style={{fontSize:10,color:C.muted,marginBottom:8,lineHeight:1.5}}>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:8,lineHeight:1.5}}>
                     Für Ersthelfer im Ernstfall — Zugang nur mit 4-stelligem Code, den du hinter dem "Nur im Notfall abziehen"-Aufkleber im Fahrzeug notierst.
                   </div>
                   {emergencyProfiles.length===0&&(
-                    <button onClick={()=>loadEmergencyProfiles(v.id)} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+                    <button onClick={()=>loadEmergencyProfiles(v.id)} style={{fontSize:13,color:C.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
                       Profile laden
                     </button>
                   )}
@@ -5494,8 +5500,8 @@ Regeln:
                     <div key={p.id} onClick={()=>setShowEmergencyEdit({...p,vehicleId:v.id})}
                       style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <div>
-                        <div style={{fontSize:13,fontWeight:700,color:C.white}}>{p.name}</div>
-                        <div style={{fontSize:10,color:C.muted}}>Code: {p.accessCode} · {(p.contacts||[]).length} Kontakt(e)</div>
+                        <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.name}</div>
+                        <div style={{fontSize:12,color:C.muted}}>Code: {p.accessCode} · {(p.contacts||[]).length} Kontakt(e)</div>
                       </div>
                       <span style={{fontSize:16,color:C.muted}}>›</span>
                     </div>
@@ -5505,15 +5511,15 @@ Regeln:
                 {/* ── Standort-Historie: nur für den Eigentümer, letzte 48h ── */}
                 {(scanLocations[v.id]||[]).length>0&&(
                   <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                    <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>📍 Zuletzt gescannt</div>
-                    <div style={{fontSize:10,color:C.muted,marginBottom:8}}>Nur für dich sichtbar · automatisch nach 48h gelöscht</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>📍 Zuletzt gescannt</div>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:8}}>Nur für dich sichtbar · automatisch nach 48h gelöscht</div>
                     {scanLocations[v.id].slice(0,5).map(s=>(
-                      <div key={s.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontSize:12}}>
+                      <div key={s.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontSize:14}}>
                         <span style={{color:C.muted}}>{new Date(s.scannedAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} Uhr</span>
                         {s.hasLocation
                           ? <a href={`https://maps.google.com/?q=${s.lat},${s.lng}`} target="_blank" rel="noopener noreferrer"
                               style={{color:C.gold,fontWeight:700,textDecoration:"none"}}>Auf Karte ansehen →</a>
-                          : <span style={{color:C.muted,fontSize:11}}>Standort nicht freigegeben</span>}
+                          : <span style={{color:C.muted,fontSize:13}}>Standort nicht freigegeben</span>}
                       </div>
                     ))}
                   </div>
@@ -5528,7 +5534,7 @@ Regeln:
             if(vRems.length===0) return null;
             return (
               <div style={{marginBottom:14}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>🔔 Termine & Erinnerungen</div>
+                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>🔔 Termine & Erinnerungen</div>
                 {vRems.map(r=>{
                   const days=daysUntil(r.date);
                   const overdue=days<0, urgent=days<=7;
@@ -5536,7 +5542,7 @@ Regeln:
                     <div key={r.id} style={{background:C.card,border:`1.5px solid ${overdue?C.red+"55":urgent?C.amber+"44":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:6,display:"flex",gap:10,alignItems:"center"}}>
                       <div style={{flex:1}}>
                         <div style={{fontWeight:700,fontSize:14,color:overdue?C.red:urgent?C.amber:C.white}}>{r.title}</div>
-                        <div style={{fontSize:11,color:overdue?C.red:urgent?C.amber:C.muted,marginTop:2}}>
+                        <div style={{fontSize:13,color:overdue?C.red:urgent?C.amber:C.muted,marginTop:2}}>
                           {overdue?"⚠️ Überfällig":days===0?"📅 Heute":days===1?"📅 Morgen":`📅 In ${days} Tagen`} · {fmtDate(r.date)}
                         </div>
                       </div>
@@ -5545,12 +5551,12 @@ Regeln:
                           const ds=r.date?r.date.replace(/-/g,""):"";
                           const t=encodeURIComponent(`TÜV ${v.hersteller} ${v.modell}`);
                           window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${ds}/${ds}`,"_blank");
-                        }} style={{background:`${C.amber}22`,border:`1px solid ${C.amber}44`,borderRadius:7,padding:"5px 9px",color:C.amber,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>
+                        }} style={{background:`${C.amber}22`,border:`1px solid ${C.amber}44`,borderRadius:7,padding:"5px 9px",color:C.amber,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>
                           📅 Eintragen
                         </button>
                       )}
                       <button onClick={async()=>{const DB=window.PCN_DB;if(DB)await DB.reminders.done(me.id,r.id);setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
-                        style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:7,padding:"6px 10px",color:C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>✓</button>
+                        style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:7,padding:"6px 10px",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>✓</button>
                     </div>
                   );
                 })}
@@ -5571,7 +5577,7 @@ Regeln:
                 content:(
                   <div>
                     {vListings.length===0
-                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:13}}>
+                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:15}}>
                           Nichts inseriert — Fahrzeug, Felgen/Reifen oder Sonstiges anbieten
                         </div>
                       :vListings.map(l=>(
@@ -5581,9 +5587,9 @@ Regeln:
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                               <span style={{fontWeight:700,fontSize:14,color:C.white}}>{LISTING_CATEGORY_LABELS[l.category]}</span>
-                              {l.price!=null&&<span style={{fontSize:13,fontWeight:800,color:C.gold}}>{l.price} €</span>}
+                              {l.price!=null&&<span style={{fontSize:15,fontWeight:800,color:C.gold}}>{l.price} €</span>}
                             </div>
-                            {l.description&&<div style={{fontSize:12,color:"#888",lineHeight:1.5,marginTop:3}}>{l.description}</div>}
+                            {l.description&&<div style={{fontSize:14,color:"#888",lineHeight:1.5,marginTop:3}}>{l.description}</div>}
                           </div>
                           {isOwn&&(
                             <div style={{display:"flex",gap:6,flexShrink:0}}>
@@ -5593,9 +5599,9 @@ Regeln:
                                     price:l.price!=null?String(l.price):"",images:l.images||[],
                                     linkedVehicleId:l.vehicleId||v.id});
                                 }}
-                                style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:11,cursor:"pointer"}}>✏️</button>
+                                style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:13,cursor:"pointer"}}>✏️</button>
                               <button onClick={()=>removeListing(v.id,l.id)}
-                                style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.red,fontSize:11,cursor:"pointer"}}>✕</button>
+                                style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.red,fontSize:13,cursor:"pointer"}}>✕</button>
                             </div>
                           )}
                         </div>
@@ -5610,7 +5616,7 @@ Regeln:
                 content:(
                   <div>
                     {vLog.length===0
-                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:13}}>
+                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:15}}>
                           Noch leer — 3 Einträge schalten KI-Marktwert frei
                         </div>
                       :vLog.map(e=>(
@@ -5618,12 +5624,12 @@ Regeln:
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
                             <div>
                               <span style={{fontWeight:700,fontSize:14,color:C.white}}>{e.type}</span>
-                              {e.workshop&&<span style={{fontSize:11,color:C.muted,marginLeft:8}}>· {e.workshop}</span>}
+                              {e.workshop&&<span style={{fontSize:13,color:C.muted,marginLeft:8}}>· {e.workshop}</span>}
                             </div>
-                            <span style={{fontSize:11,color:C.muted,flexShrink:0}}>{fmtDate(e.date)}</span>
+                            <span style={{fontSize:13,color:C.muted,flexShrink:0}}>{fmtDate(e.date)}</span>
                           </div>
-                          {e.km&&<div style={{fontSize:11,color:C.muted,marginBottom:2}}>{parseInt(e.km).toLocaleString("de-DE")} km</div>}
-                          {e.notes&&<div style={{fontSize:12,color:"#888",lineHeight:1.5}}>{e.notes}</div>}
+                          {e.km&&<div style={{fontSize:13,color:C.muted,marginBottom:2}}>{parseInt(e.km).toLocaleString("de-DE")} km</div>}
+                          {e.notes&&<div style={{fontSize:14,color:"#888",lineHeight:1.5}}>{e.notes}</div>}
                         </div>
                       ))
                     }
@@ -5636,26 +5642,26 @@ Regeln:
                   <div>
                     {vParts.map(p=>{const ev=events[p.eventId];if(!ev)return null;return(
                       <div key={p.id} style={{display:"flex",gap:10,alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${C.border}`,cursor:"pointer"}} onClick={()=>{setViewEv(ev);setScreen("event");}}>
-                        <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:6,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.red,flexShrink:0}}>#{p.startNr}</div>
+                        <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:6,padding:"3px 8px",fontWeight:800,fontSize:15,color:C.red,flexShrink:0}}>#{p.startNr}</div>
                         <div style={{flex:1}}>
                           <div style={{fontWeight:600,fontSize:14,color:C.white}}>{ev.name}</div>
-                          <div style={{fontSize:11,color:C.muted}}>{fmtDate(ev.date)} · {p.class}</div>
+                          <div style={{fontSize:13,color:C.muted}}>{fmtDate(ev.date)} · {p.class}</div>
                         </div>
-                        <div style={{fontSize:11,color:C.amber,fontWeight:600,flexShrink:0}}>in {daysUntil(ev.date)} T. →</div>
+                        <div style={{fontSize:13,color:C.amber,fontWeight:600,flexShrink:0}}>in {daysUntil(ev.date)} T. →</div>
                       </div>
                     );})}
                     {vHist.map(h=>(
                       <div key={h.id} style={{display:"flex",gap:10,alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${C.border}`}}>
-                        <div style={{background:`${C.gold}22`,border:`1px solid ${C.gold}44`,borderRadius:6,padding:"3px 8px",fontWeight:800,fontSize:13,color:C.gold,flexShrink:0}}>#{h.startNr}</div>
+                        <div style={{background:`${C.gold}22`,border:`1px solid ${C.gold}44`,borderRadius:6,padding:"3px 8px",fontWeight:800,fontSize:15,color:C.gold,flexShrink:0}}>#{h.startNr}</div>
                         <div style={{flex:1}}>
                           <div style={{fontWeight:600,fontSize:14,color:C.white}}>{h.eventName}</div>
-                          <div style={{fontSize:11,color:C.muted}}>{fmtDate(h.date)}{h.note?" · "+h.note:""}</div>
+                          <div style={{fontSize:13,color:C.muted}}>{fmtDate(h.date)}{h.note?" · "+h.note:""}</div>
                         </div>
-                        <div style={{fontSize:11,color:h.result==="Teilnahme"?C.muted:C.gold,fontWeight:700,flexShrink:0}}>{h.result}</div>
+                        <div style={{fontSize:13,color:h.result==="Teilnahme"?C.muted:C.gold,fontWeight:700,flexShrink:0}}>{h.result}</div>
                       </div>
                     ))}
                     {vParts.length===0&&vHist.length===0&&(
-                      <div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:13}}>Noch keine Veranstaltungsteilnahmen</div>
+                      <div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:15}}>Noch keine Veranstaltungsteilnahmen</div>
                     )}
                   </div>
                 )
@@ -5665,7 +5671,7 @@ Regeln:
                 content:(
                   <div>
                     {vInsurance.length===0
-                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:13}}>Noch keine Versicherungsdaten hinterlegt</div>
+                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:15}}>Noch keine Versicherungsdaten hinterlegt</div>
                       :vInsurance.map(ins=>(
                         <div key={ins.id} style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
@@ -5674,9 +5680,9 @@ Regeln:
                               {ins.status.toUpperCase()}
                             </span>
                           </div>
-                          <div style={{fontSize:12,color:C.muted,marginBottom:2}}>{ins.provider} · Nr: {ins.nr}</div>
-                          <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Gültig: {fmtDate(ins.since)} – {fmtDate(ins.until)} · {ins.premium}</div>
-                          {ins.note&&<div style={{fontSize:11,color:"#777",background:C.black,borderRadius:6,padding:"6px 8px"}}>{ins.note}</div>}
+                          <div style={{fontSize:14,color:C.muted,marginBottom:2}}>{ins.provider} · Nr: {ins.nr}</div>
+                          <div style={{fontSize:13,color:C.muted,marginBottom:4}}>Gültig: {fmtDate(ins.since)} – {fmtDate(ins.until)} · {ins.premium}</div>
+                          {ins.note&&<div style={{fontSize:13,color:"#777",background:C.black,borderRadius:6,padding:"6px 8px"}}>{ins.note}</div>}
                         </div>
                       ))
                     }
@@ -5688,23 +5694,23 @@ Regeln:
                 content:(
                   <div>
                     {vGutachten.length===0
-                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:13}}>Noch keine Gutachten hinterlegt</div>
+                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:15}}>Noch keine Gutachten hinterlegt</div>
                       :vGutachten.map(g=>(
                         <div key={g.id} style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
                             <div style={{fontWeight:700,fontSize:14,color:C.white}}>{g.type}</div>
                             <div style={{display:"flex",gap:4,alignItems:"center"}}>
                               {g.signiert&&<span style={{background:`${C.green}22`,color:C.green,fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:4}}>✓ SIGNIERT</span>}
-                              <span style={{fontSize:11,color:C.muted}}>{fmtDate(g.date)}</span>
+                              <span style={{fontSize:13,color:C.muted}}>{fmtDate(g.date)}</span>
                             </div>
                           </div>
-                          <div style={{fontSize:12,color:C.muted,marginBottom:2}}>{g.gutachter}</div>
+                          <div style={{fontSize:14,color:C.muted,marginBottom:2}}>{g.gutachter}</div>
                           <div style={{display:"flex",gap:12,marginBottom:6,flexWrap:"wrap"}}>
-                            <div><span style={{fontSize:10,color:C.muted}}>Bewertung: </span><span style={{fontSize:13,fontWeight:700,color:C.gold}}>{g.wert}</span></div>
-                            <div><span style={{fontSize:10,color:C.muted}}>Zustand: </span><span style={{fontSize:12,color:C.white}}>{g.zustand}</span></div>
-                            {g.km&&<div><span style={{fontSize:10,color:C.muted}}>KM: </span><span style={{fontSize:12,color:C.white}}>{parseInt(g.km).toLocaleString("de-DE")}</span></div>}
+                            <div><span style={{fontSize:12,color:C.muted}}>Bewertung: </span><span style={{fontSize:15,fontWeight:700,color:C.gold}}>{g.wert}</span></div>
+                            <div><span style={{fontSize:12,color:C.muted}}>Zustand: </span><span style={{fontSize:14,color:C.white}}>{g.zustand}</span></div>
+                            {g.km&&<div><span style={{fontSize:12,color:C.muted}}>KM: </span><span style={{fontSize:14,color:C.white}}>{parseInt(g.km).toLocaleString("de-DE")}</span></div>}
                           </div>
-                          {g.note&&<div style={{fontSize:11,color:"#777",background:C.black,borderRadius:6,padding:"8px 10px",lineHeight:1.6}}>{g.note}</div>}
+                          {g.note&&<div style={{fontSize:13,color:"#777",background:C.black,borderRadius:6,padding:"8px 10px",lineHeight:1.6}}>{g.note}</div>}
                         </div>
                       ))
                     }
@@ -5720,7 +5726,7 @@ Regeln:
                   style={{width:"100%",background:"none",border:"none",padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Barlow',sans-serif"}}>
                   <span style={{fontSize:18,flexShrink:0}}>{sec.icon}</span>
                   <span style={{fontWeight:700,fontSize:15,color:C.white,flex:1,textAlign:"left"}}>{sec.label}</span>
-                  {sec.count>0&&<span style={{background:C.black,borderRadius:99,padding:"2px 8px",fontSize:11,fontWeight:700,color:C.muted,flexShrink:0}}>{sec.count}</span>}
+                  {sec.count>0&&<span style={{background:C.black,borderRadius:99,padding:"2px 8px",fontSize:13,fontWeight:700,color:C.muted,flexShrink:0}}>{sec.count}</span>}
                   <span style={{fontSize:16,color:C.muted,flexShrink:0,transition:"transform .2s",
                     transform:isOpen(v.id,sec.id)?"rotate(180deg)":"rotate(0deg)"}}>▾</span>
                 </button>
@@ -5729,7 +5735,7 @@ Regeln:
                   <div style={{padding:"0 16px 14px",borderTop:`1px solid ${C.border}`}}>
                     {sec.action&&(
                       <button onClick={sec.action}
-                        style={{width:"100%",background:C.red,border:"none",borderRadius:8,padding:"9px 12px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",marginTop:12,marginBottom:4,fontFamily:"'Barlow',sans-serif"}}>
+                        style={{width:"100%",background:C.red,border:"none",borderRadius:8,padding:"9px 12px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",marginTop:12,marginBottom:4,fontFamily:"'Barlow',sans-serif"}}>
                         {sec.actionLabel}
                       </button>
                     )}
@@ -5743,7 +5749,7 @@ Regeln:
           {/* Phone — pulled from profile, with inline public/private toggle */}
           {isOwn&&(
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>📞 Kontakt</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>📞 Kontakt</div>
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
                 <div style={{padding:"12px 14px",display:"flex",gap:10,alignItems:"center"}}>
                   <input className="inp" placeholder="Telefonnummer (aus Profil übernehmen)" type="tel"
@@ -5766,17 +5772,17 @@ Regeln:
                       setVehicles(prev=>({...prev,[viewV.id]:updated}));
                       const DB=window.PCN_DB; if(DB) DB.vehicles.save(updated);
                       toast_("Aus Profil übernommen ✓");
-                    }} style={{background:C.red,border:"none",borderRadius:7,padding:"5px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>
+                    }} style={{background:C.red,border:"none",borderRadius:7,padding:"5px 10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>
                       Übernehmen
                     </button>
                   )}
                 </div>
                 <div style={{borderTop:`1px solid ${C.border}`,padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div>
-                    <div style={{fontSize:12,fontWeight:600,color:priv.pub_phone?C.green:C.white}}>
+                    <div style={{fontSize:14,fontWeight:600,color:priv.pub_phone?C.green:C.white}}>
                       {priv.pub_phone?"🔓 Öffentlich sichtbar":"🔒 Nur privat"}
                     </div>
-                    <div style={{fontSize:10,color:C.muted,marginTop:2}}>
+                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>
                       {priv.pub_phone?"Besucher sehen Direktanruf-Button":"Nummer nicht im QR-Profil sichtbar"}
                     </div>
                   </div>
@@ -5795,12 +5801,12 @@ Regeln:
             <div className="sheet">
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
                 <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,padding:"6px 10px",display:"flex",alignItems:"center",gap:5}}>
-                  <span style={{fontWeight:800,fontSize:13,color:C.red}}>QR</span>
+                  <span style={{fontWeight:800,fontSize:15,color:C.red}}>QR</span>
                   <span style={{fontSize:16}}>🔒</span>
                 </div>
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>QR-Sichtbarkeit</div>
               </div>
-              <div style={{fontSize:12,color:C.muted,marginBottom:4}}>Was sehen Besucher wenn sie den QR-Code scannen?</div>
+              <div style={{fontSize:14,color:C.muted,marginBottom:4}}>Was sehen Besucher wenn sie den QR-Code scannen?</div>
 
               {/* Live status summary */}
               <div style={{background:C.black,borderRadius:8,padding:"10px 12px",marginBottom:14,display:"flex",gap:6,flexWrap:"wrap"}}>
@@ -5812,7 +5818,7 @@ Regeln:
                   [priv.kennzeichen!==false,"🔑 Kennzeichen"],
                   [priv.besonderheiten!==false,"✨ Besonderheiten"],
                 ].map(([on,label])=>(
-                  <span key={label} style={{fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:4,
+                  <span key={label} style={{fontSize:12,fontWeight:700,padding:"2px 7px",borderRadius:4,
                     background:on?`${C.green}22`:`${C.border}44`,
                     color:on?C.green:C.muted,
                     border:`1px solid ${on?C.green+"44":C.border}`}}>
@@ -5821,7 +5827,7 @@ Regeln:
                 ))}
               </div>
 
-              <div style={{fontSize:10,color:"#444",marginBottom:16,lineHeight:1.6}}>
+              <div style={{fontSize:12,color:"#444",marginBottom:16,lineHeight:1.6}}>
                 🔓 = sichtbar für Besucher · 🔒 = nur für dich sichtbar
               </div>
               {[
@@ -5831,12 +5837,12 @@ Regeln:
                 ["Kontakt",[["pub_phone","Telefonnummer (Direktanruf)"]]],
               ].map(([group,fields])=>(
                 <div key={group} style={{marginBottom:14}}>
-                  <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>{group}</div>
+                  <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>{group}</div>
                   {fields.map(([key,label])=>(
                     <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`1px solid ${C.border}`}}>
                       <div>
                         <div style={{fontSize:14,color:C.white}}>{label}</div>
-                        <div style={{fontSize:10,color:(priv[key]===true||(priv[key]===undefined&&DEF_PRIVACY[key]))?C.green:C.muted,marginTop:1}}>
+                        <div style={{fontSize:12,color:(priv[key]===true||(priv[key]===undefined&&DEF_PRIVACY[key]))?C.green:C.muted,marginTop:1}}>
                           {(priv[key]===true||(priv[key]===undefined&&DEF_PRIVACY[key]))?"🔓 Öffentlich sichtbar":"🔒 Nur privat"}
                         </div>
                       </div>
@@ -5856,10 +5862,10 @@ Regeln:
           <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowEditVehicle(null);}}>
             <div className="sheet">
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>✏️ Fahrzeugdaten bearbeiten</div>
-              <div style={{fontSize:11,color:C.muted,marginBottom:18}}>Alle Angaben jederzeit änderbar</div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Alle Angaben jederzeit änderbar</div>
 
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Basis</div>
+                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Basis</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   <input className="inp" placeholder="Hersteller" value={editForm.hersteller||""}
                     onChange={e=>setEditForm(p=>({...p,hersteller:e.target.value}))}/>
@@ -5883,7 +5889,7 @@ Regeln:
               </div>
 
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Status & Technik</div>
+                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Status & Technik</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   <input className="inp" type="number" inputMode="numeric" placeholder="Kilometerstand" value={editForm.kilometerstand||""}
                     onChange={e=>setEditForm(p=>({...p,kilometerstand:e.target.value}))}/>
@@ -5906,14 +5912,14 @@ Regeln:
               </div>
 
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Kontakt</div>
+                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Kontakt</div>
                 <input className="inp" type="tel" placeholder="Telefonnummer (optional)" value={editForm.phone||""}
                   onChange={e=>setEditForm(p=>({...p,phone:e.target.value}))}/>
-                <div style={{fontSize:10,color:C.muted,marginTop:6}}>🔒 Sichtbarkeit über QR-Einstellungen steuerbar</div>
+                <div style={{fontSize:12,color:C.muted,marginTop:6}}>🔒 Sichtbarkeit über QR-Einstellungen steuerbar</div>
               </div>
 
               <div style={{marginBottom:18}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Besonderheiten</div>
+                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Besonderheiten</div>
                 <textarea className="inp" placeholder="Ausstattung, Extras, Hinweise..." rows={3}
                   value={editForm.besonderheiten||""} onChange={e=>setEditForm(p=>({...p,besonderheiten:e.target.value}))}
                   style={{resize:"vertical",fontFamily:"'Barlow',sans-serif"}}/>
@@ -5942,7 +5948,7 @@ Regeln:
                     fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>
                   🗑 Fahrzeug löschen
                 </button>
-                <div style={{fontSize:10,color:"#444",textAlign:"center",marginTop:6}}>
+                <div style={{fontSize:12,color:"#444",textAlign:"center",marginTop:6}}>
                   Löscht Fahrzeug, Logbuch und QR-Code dauerhaft
                 </div>
               </div>
@@ -5955,12 +5961,12 @@ Regeln:
           <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}}>
             <div className="sheet">
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>💬 Nachricht senden</div>
-              <div style={{fontSize:11,color:C.muted,marginBottom:18}}>Um eine Nachricht zu senden, identifiziere dich kurz</div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Um eine Nachricht zu senden, identifiziere dich kurz</div>
 
               <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:16}}>
                 {[["guest","Als Gast"],["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
                   <button key={m} onClick={()=>setContactAuthMode(m)}
-                    style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:12,
+                    style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14,
                       background:contactAuthMode===m?C.red:"transparent",color:contactAuthMode===m?"#fff":C.muted,transition:"all .15s"}}>
                     {label}
                   </button>
@@ -5969,22 +5975,22 @@ Regeln:
 
               {contactAuthMode==="guest"&&(
                 <div style={{background:"#141414",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:16}}>
-                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:10}}>
+                  <div style={{fontSize:14,color:C.muted,lineHeight:1.6,marginBottom:10}}>
                     Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht.
                   </div>
-                  <div style={{fontSize:13,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
+                  <div style={{fontSize:15,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
                   {[
                     ["🚗","Eigene digitale Fahrzeugakte"],
                     ["📱","QR-Code fürs eigene Auto"],
                     ["🏁","Direkte Anmeldung zu Club-Events"],
                   ].map(([icon,text])=>(
-                    <div key={text} style={{display:"flex",gap:8,alignItems:"center",fontSize:12,color:C.white,marginBottom:5}}>
-                      <span style={{fontSize:13,flexShrink:0}}>{icon}</span>
+                    <div key={text} style={{display:"flex",gap:8,alignItems:"center",fontSize:14,color:C.white,marginBottom:5}}>
+                      <span style={{fontSize:15,flexShrink:0}}>{icon}</span>
                       <span>{text}</span>
                     </div>
                   ))}
                   <button onClick={()=>setContactAuthMode("register")}
-                    style={{background:"none",border:"none",color:C.red,fontWeight:700,fontSize:12,cursor:"pointer",padding:0,marginTop:8,fontFamily:"'Barlow',sans-serif"}}>
+                    style={{background:"none",border:"none",color:C.red,fontWeight:700,fontSize:14,cursor:"pointer",padding:0,marginTop:8,fontFamily:"'Barlow',sans-serif"}}>
                     Stattdessen Mitglied werden →
                   </button>
                 </div>
@@ -6010,10 +6016,10 @@ Regeln:
                     <input type="checkbox" checked={contactAgbAccepted}
                       onChange={e=>setContactAgbAccepted(e.target.checked)}
                       style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
-                    <span style={{fontSize:11,color:C.muted,lineHeight:1.5}}>
+                    <span style={{fontSize:13,color:C.muted,lineHeight:1.5}}>
                       Nachricht an den Halter nur mit Angabe einer E-Mail-Adresse möglich. *
                       <button onClick={e=>{e.preventDefault();e.stopPropagation();setShowContactPrivacyInfo(true);}}
-                        style={{background:"none",border:"none",color:C.red,fontSize:11,fontWeight:700,
+                        style={{background:"none",border:"none",color:C.red,fontSize:13,fontWeight:700,
                           cursor:"pointer",padding:"3px 0 0",display:"block",fontFamily:"'Barlow',sans-serif",
                           textDecoration:"underline"}}>
                         Was wird gespeichert? →
@@ -6024,7 +6030,7 @@ Regeln:
                     <input type="checkbox" checked={contactMarketingOptIn}
                       onChange={e=>setContactMarketingOptIn(e.target.checked)}
                       style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
-                    <span style={{fontSize:11,color:C.muted,lineHeight:1.5}}>
+                    <span style={{fontSize:13,color:C.muted,lineHeight:1.5}}>
                       Ich möchte gelegentlich Neuigkeiten und Angebote von QAR.Gallery per E-Mail erhalten (optional, jederzeit widerrufbar).
                     </span>
                   </label>
@@ -6039,7 +6045,7 @@ Regeln:
               </button>
 
               {contactAuthMode==="login"&&(
-                <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>Kein Passwort nötig — nur deine E-Mail</div>
+                <div style={{textAlign:"center",marginTop:10,fontSize:13,color:C.muted}}>Kein Passwort nötig — nur deine E-Mail</div>
               )}
             </div>
           </div>
@@ -6050,7 +6056,7 @@ Regeln:
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:600,display:"flex",flexDirection:"column"}}
             onClick={()=>setLightbox(null)}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
-              <div style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
+              <div style={{fontSize:15,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
               <button onClick={()=>setLightbox(null)} style={{background:"rgba(255,255,255,.1)",border:"none",color:"#fff",fontSize:20,width:40,height:40,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
             </div>
             <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 16px",position:"relative"}} onClick={e=>e.stopPropagation()}>
@@ -6084,11 +6090,11 @@ Regeln:
                   <span style={{fontSize:26,flexShrink:0}}>📄</span>
                   <div style={{flex:1}}>
                     <div style={{fontSize:14,fontWeight:800,color:C.gold,marginBottom:1}}>Beleg scannen</div>
-                    <div style={{fontSize:11,color:"#999",lineHeight:1.4}}>Rechnung, Wartung oder Versicherung fotografieren — auch aus der Vergangenheit</div>
+                    <div style={{fontSize:13,color:"#999",lineHeight:1.4}}>Rechnung, Wartung oder Versicherung fotografieren — auch aus der Vergangenheit</div>
                   </div>
                   <span style={{fontSize:16,color:C.gold,flexShrink:0}}>→</span>
                 </button>
-                <div style={{textAlign:"center",fontSize:10,color:"#555",marginBottom:14}}>oder unten manuell eintragen</div>
+                <div style={{textAlign:"center",fontSize:12,color:"#555",marginBottom:14}}>oder unten manuell eintragen</div>
                 <select className="inp" value={addLogForm.type} onChange={e=>setAddLogForm(p=>({...p,type:e.target.value}))} style={{marginBottom:8}}>
                   {["Ölwechsel","Inspektion","Reifenwechsel","Bremsenwechsel","Hauptuntersuchung","Trackday","Sonstiges"].map(t=><option key={t}>{t}</option>)}
                 </select>
@@ -6137,7 +6143,7 @@ Regeln:
                 <input className="inp" placeholder="Vorerkrankungen (oder 'keine')" style={{marginBottom:14}}
                   value={showEmergencyEdit.conditions||""} onChange={e=>setShowEmergencyEdit(p=>({...p,conditions:e.target.value}))}/>
 
-                <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Notfallkontakte</div>
+                <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Notfallkontakte</div>
                 {(showEmergencyEdit.contacts||[]).map((c,i)=>(
                   <div key={i} style={{display:"flex",gap:6,marginBottom:8}}>
                     <input className="inp" placeholder="Name" style={{flex:2}} value={c.name}
@@ -6151,14 +6157,14 @@ Regeln:
                   </div>
                 ))}
                 <button onClick={()=>setShowEmergencyEdit(p=>({...p,contacts:[...(p.contacts||[]),{name:"",relationship:"",phone:""}]}))}
-                  style={{background:"none",border:"none",color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",marginBottom:16}}>
+                  style={{background:"none",border:"none",color:C.gold,fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:16}}>
                   + Kontakt hinzufügen
                 </button>
 
-                <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>4-stelliger Zugangscode</div>
+                <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>4-stelliger Zugangscode</div>
                 <input className="inp" placeholder="z.B. 4271" inputMode="numeric" maxLength={4} style={{marginBottom:6,fontFamily:"monospace",letterSpacing:4,fontSize:18,textAlign:"center"}}
                   value={showEmergencyEdit.accessCode||""} onChange={e=>setShowEmergencyEdit(p=>({...p,accessCode:e.target.value.replace(/\D/g,"").slice(0,4)}))}/>
-                <div style={{fontSize:10,color:C.muted,marginBottom:16,lineHeight:1.5}}>
+                <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.5}}>
                   Notiere diesen Code auf dem Aufkleber hinter dem QR-Code — "Nur im Notfall abziehen".
                 </div>
 
@@ -6181,12 +6187,12 @@ Regeln:
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowTransferPanel(null);}}>
               <div className="sheet">
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>🔑 Fahrzeug übertragen</div>
-                <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+                <div style={{fontSize:14,color:C.muted,marginBottom:16,lineHeight:1.6}}>
                   Die QAR-ID ({v.qarId}) bleibt erhalten — wie eine FIN. Logbuch und Fotos gehen mit, nur der Eigentümer wechselt.
                 </div>
 
                 {!pendingTransfer&&(
-                  <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",fontSize:12,color:C.muted,lineHeight:1.7}}>
+                  <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",fontSize:14,color:C.muted,lineHeight:1.7}}>
                     <div style={{fontWeight:700,color:C.white,marginBottom:6}}>So funktioniert die Übertragung:</div>
                     <div style={{marginBottom:8}}><b>Vor Ort gemeinsam:</b> Der Käufer scannt den QR-Code direkt am Fahrzeug — das startet den Vorgang automatisch. Du bestätigst anschließend hier.</div>
                     <div><b>Ohne gemeinsame Anwesenheit:</b> Der Käufer stellt über sein eigenes Konto einen Antrag. Du erhältst dann eine Anfrage zur Bestätigung.</div>
@@ -6196,10 +6202,10 @@ Regeln:
                 {pendingTransfer&&(
                   <>
                     <div style={{background:`${C.gold}11`,border:`1px solid ${C.gold}44`,borderRadius:10,padding:"12px 14px",marginBottom:14}}>
-                      <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:4}}>
+                      <div style={{fontSize:14,fontWeight:700,color:C.gold,marginBottom:4}}>
                         {pendingTransfer.mode==="buyer_requested"?"Übernahme-Antrag liegt vor":"Käufer wartet vor Ort auf deine Bestätigung"}
                       </div>
-                      <div style={{fontSize:11,color:C.muted,lineHeight:1.6}}>
+                      <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
                         Gültig bis {new Date(pendingTransfer.expiresAt).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})} — danach wird der QR-Code inaktiv, falls nicht abgeschlossen.
                       </div>
                     </div>
@@ -6222,7 +6228,7 @@ Regeln:
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowSellerConfirm(null);}}>
               <div className="sheet">
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:14}}>Übertragung bestätigen</div>
-                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"14px",marginBottom:16,fontSize:12,color:C.muted,lineHeight:1.7}}>
+                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"14px",marginBottom:16,fontSize:14,color:C.muted,lineHeight:1.7}}>
                   „Ich übertrage die digitale QAR-Akte dieses Fahrzeugs (Fotos, Logbuch-Einträge, Punkte-Historie) an den von mir bestätigten neuen Eigentümer. Mir ist bewusst, dass diese Übertragung unabhängig vom zivilrechtlichen Kaufvertrag über das Fahrzeug erfolgt und diesen weder ersetzt noch beeinflusst. Ich bestätige, dass ich zur Übertragung berechtigt bin. Mir ist bewusst, dass ich für die Prüfung und Bereinigung persönlicher Daten in Fotos, Notizen und Dokumenten dieser Akte selbst verantwortlich bin — nicht entfernte Inhalte gehen mit der Übertragung an den neuen Eigentümer über."
                 </div>
                 <button className="btn" style={{width:"100%",marginBottom:8}} disabled={transferBusy}
@@ -6241,13 +6247,13 @@ Regeln:
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:16}}>
                   {typeof showAddListing==="object"&&showAddListing.editId ? "Angebot bearbeiten" : "Neues Angebot"}
                 </div>
-                <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Kategorie</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Kategorie</div>
                 <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
                   {Object.entries(LISTING_CATEGORY_LABELS).map(([key,label])=>(
                     <button key={key} onClick={()=>setListingForm(p=>({...p,category:key}))}
                       style={{padding:"8px 14px",borderRadius:8,border:`1.5px solid ${listingForm.category===key?C.gold:C.border}`,
                         background:listingForm.category===key?`${C.gold}22`:"transparent",
-                        color:listingForm.category===key?C.gold:C.muted,fontSize:12,fontWeight:700,
+                        color:listingForm.category===key?C.gold:C.muted,fontSize:14,fontWeight:700,
                         cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                       {label}
                     </button>
@@ -6267,7 +6273,7 @@ Regeln:
                       border:`1px solid ${statusHidden?C.amber+"44":C.green+"33"}`,
                       borderRadius:9,padding:"10px 12px",marginBottom:14,display:"flex",gap:9,alignItems:"flex-start"}}>
                       <span style={{fontSize:14,flexShrink:0}}>{statusHidden?"🔒":"💰"}</span>
-                      <div style={{fontSize:11,color:statusHidden?"#ddb877":"#8c8",lineHeight:1.6}}>
+                      <div style={{fontSize:13,color:statusHidden?"#ddb877":"#8c8",lineHeight:1.6}}>
                         {statusHidden
                           ? <>Setzt automatisch den Live-Status "Zu verkaufen" — der ist aber gerade in den <b>Privatsphäre-Einstellungen ausgeblendet</b>. Besucher sehen weder Status noch dieses Angebot beim QR-Scan.</>
                           : <>Legt automatisch den Live-Status "Zu verkaufen" für dieses Fahrzeug an — sichtbar beim QR-Scan.</>}
@@ -6281,7 +6287,7 @@ Regeln:
                     wird, unabhängig davon, in wessen Akte man sich gerade befindet. */}
                 {listingForm.category==="auto"&&(
                   <>
-                    <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Welches Fahrzeug?</div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Welches Fahrzeug?</div>
                     <select className="inp" style={{marginBottom:14}}
                       value={listingForm.linkedVehicleId||v.id}
                       onChange={e=>setListingForm(p=>({...p,linkedVehicleId:e.target.value}))}>
@@ -6296,7 +6302,7 @@ Regeln:
                     eigenes Fahrzeug mit vorhandenen Fotos existiert. */}
                 {(listingForm.category==="felgen_reifen"||listingForm.category==="sonstiges")&&(
                   <>
-                    <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Foto</div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Foto</div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
                       {(listingForm.images||[]).map((img,i)=>(
                         <div key={i} style={{position:"relative"}}>
@@ -6317,11 +6323,11 @@ Regeln:
                   </>
                 )}
 
-                <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Preis</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Preis</div>
                 <input className="inp" type="number" inputMode="decimal" placeholder="€ (leer lassen für VB)" style={{marginBottom:14}}
                   value={listingForm.price} onChange={e=>setListingForm(p=>({...p,price:e.target.value}))}/>
 
-                <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Beschreibung</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Beschreibung</div>
                 <textarea className="inp" placeholder="Zustand, Details, Kontaktwunsch …" rows={3} style={{marginBottom:16,resize:"vertical"}}
                   value={listingForm.description} onChange={e=>setListingForm(p=>({...p,description:e.target.value}))}/>
 
@@ -6350,7 +6356,7 @@ Regeln:
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>
                   📄 Beleg digitalisieren
                 </div>
-                <div style={{fontSize:11,color:C.muted,marginTop:1}}>Auch Dokumente aus der Vergangenheit — nicht nur ab heute</div>
+                <div style={{fontSize:13,color:C.muted,marginTop:1}}>Auch Dokumente aus der Vergangenheit — nicht nur ab heute</div>
               </div>
               {!docScanBusy&&(
                 <button onClick={()=>{setDocScanOpen(false);setDocScanResult(null);}}
@@ -6359,8 +6365,8 @@ Regeln:
             </div>
 
             <div style={{background:"#22c55e0d",border:"1px solid #22c55e33",borderRadius:9,padding:"10px 12px",margin:"14px 0",display:"flex",gap:9,alignItems:"flex-start"}}>
-              <span style={{fontSize:13,flexShrink:0}}>🔒</span>
-              <div style={{fontSize:11,color:"#8c8",lineHeight:1.6}}>
+              <span style={{fontSize:15,flexShrink:0}}>🔒</span>
+              <div style={{fontSize:13,color:"#8c8",lineHeight:1.6}}>
                 Es werden <strong style={{color:"#afa"}}>keine Kontodaten, IBAN oder Namen Dritter</strong> ausgelesen — nur Datum, Betrag, Werkstatt und eine kurze Beschreibung. Das Bild bleibt beim Eintrag gespeichert, damit du das Original später einsehen kannst.
               </div>
             </div>
@@ -6368,13 +6374,13 @@ Regeln:
             {!docScanBusy&&!docScanResult&&(
               <>
                 <div style={{marginBottom:14}}>
-                  <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Art des Belegs</div>
+                  <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Art des Belegs</div>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     {Object.entries(CATEGORY_LABELS).map(([key,label])=>(
                       <button key={key} onClick={()=>setDocScanCategory(key)}
                         style={{padding:"8px 14px",borderRadius:8,border:`1.5px solid ${docScanCategory===key?C.gold:C.border}`,
                           background:docScanCategory===key?`${C.gold}22`:"transparent",
-                          color:docScanCategory===key?C.gold:C.muted,fontSize:12,fontWeight:700,
+                          color:docScanCategory===key?C.gold:C.muted,fontSize:14,fontWeight:700,
                           cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                         {label}
                       </button>
@@ -6383,12 +6389,12 @@ Regeln:
                 </div>
                 <div style={{background:C.card,border:`1px dashed ${C.border}`,borderRadius:12,padding:"24px 16px",textAlign:"center",marginBottom:12}}>
                   <div style={{fontSize:38,marginBottom:8}}>📄</div>
-                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:16}}>
+                  <div style={{fontSize:14,color:C.muted,lineHeight:1.6,marginBottom:16}}>
                     Gutes Licht, das ganze Dokument im Bild — auch alte, vergilbte Belege funktionieren meist gut.
                   </div>
                   <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
                     <label style={{display:"inline-block",background:C.gold,color:"#0a0a0a",borderRadius:9,
-                      padding:"12px 18px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      padding:"12px 18px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                       <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
                         onChange={e=>{
                           const f=e.target.files?.[0]; if(!f) return;
@@ -6397,7 +6403,7 @@ Regeln:
                       📷 Foto aufnehmen
                     </label>
                     <label style={{display:"inline-block",background:"transparent",color:C.gold,borderRadius:9,
-                      padding:"12px 18px",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                      padding:"12px 18px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
                       border:`1.5px solid ${C.gold}66`}}>
                       {/* Kein capture-Attribut — der Browser bietet dann die Fotobibliothek/Dateien als
                           Option an, statt zwingend die Kamera zu öffnen. Wichtig für bereits vorhandene,
@@ -6418,18 +6424,18 @@ Regeln:
               <div style={{textAlign:"center",padding:"32px 0"}}>
                 <div style={{width:28,height:28,border:`3px solid ${C.gold}33`,borderTopColor:C.gold,
                   borderRadius:"50%",animation:"spin .7s linear infinite",margin:"0 auto 14px"}}/>
-                <div style={{fontSize:13,color:C.gold,fontWeight:700,marginBottom:4}}>Beleg wird gelesen…</div>
-                <div style={{fontSize:11,color:"#666"}}>Datum, Betrag, Werkstatt</div>
+                <div style={{fontSize:15,color:C.gold,fontWeight:700,marginBottom:4}}>Beleg wird gelesen…</div>
+                <div style={{fontSize:13,color:"#666"}}>Datum, Betrag, Werkstatt</div>
               </div>
             )}
 
             {docScanResult?.notConfigured&&(
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px"}}>
-                <div style={{fontSize:13,color:"#999",fontWeight:600,marginBottom:5}}>🔧 Noch nicht aktiviert</div>
-                <div style={{fontSize:11,color:"#666",lineHeight:1.6,marginBottom:14}}>
+                <div style={{fontSize:15,color:"#999",fontWeight:600,marginBottom:5}}>🔧 Noch nicht aktiviert</div>
+                <div style={{fontSize:13,color:"#666",lineHeight:1.6,marginBottom:14}}>
                   Der Beleg-Scanner wird gerade eingerichtet. Der Eintrag kann bis dahin manuell im Logbuch ergänzt werden.
                 </div>
-                <button onClick={()=>{setDocScanOpen(false);setDocScanResult(null);}} className="btn ghost" style={{width:"100%",fontSize:13}}>
+                <button onClick={()=>{setDocScanOpen(false);setDocScanResult(null);}} className="btn ghost" style={{width:"100%",fontSize:15}}>
                   Verstanden
                 </button>
               </div>
@@ -6437,19 +6443,19 @@ Regeln:
 
             {docScanResult?.wrongDoc&&(
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px"}}>
-                <div style={{fontSize:13,color:"#e88",fontWeight:600,marginBottom:5}}>Das sieht nicht nach einem auswertbaren Beleg aus</div>
-                <div style={{fontSize:11,color:"#666",lineHeight:1.6,marginBottom:14}}>{docScanResult.hinweis||"Bitte eine Rechnung, einen Werkstattbeleg oder ein ähnliches Dokument fotografieren."}</div>
-                <button onClick={()=>setDocScanResult(null)} className="btn ghost" style={{width:"100%",fontSize:13}}>↻ Nochmal versuchen</button>
+                <div style={{fontSize:15,color:"#e88",fontWeight:600,marginBottom:5}}>Das sieht nicht nach einem auswertbaren Beleg aus</div>
+                <div style={{fontSize:13,color:"#666",lineHeight:1.6,marginBottom:14}}>{docScanResult.hinweis||"Bitte eine Rechnung, einen Werkstattbeleg oder ein ähnliches Dokument fotografieren."}</div>
+                <button onClick={()=>setDocScanResult(null)} className="btn ghost" style={{width:"100%",fontSize:15}}>↻ Nochmal versuchen</button>
               </div>
             )}
 
             {(docScanResult?.empty||docScanResult?.failed)&&(
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px"}}>
-                <div style={{fontSize:13,color:"#999",fontWeight:600,marginBottom:5}}>{docScanResult.failed?"Analyse fehlgeschlagen":"Nichts sicher gelesen"}</div>
-                <div style={{fontSize:11,color:"#666",lineHeight:1.6,marginBottom:14}}>Bessere Chancen: mehr Licht, näher ran, Blitz aus, Beleg flach hinlegen.</div>
+                <div style={{fontSize:15,color:"#999",fontWeight:600,marginBottom:5}}>{docScanResult.failed?"Analyse fehlgeschlagen":"Nichts sicher gelesen"}</div>
+                <div style={{fontSize:13,color:"#666",lineHeight:1.6,marginBottom:14}}>Bessere Chancen: mehr Licht, näher ran, Blitz aus, Beleg flach hinlegen.</div>
                 <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>setDocScanResult(null)} className="btn ghost" style={{flex:1,fontSize:13}}>↻ Nochmal</button>
-                  <button onClick={()=>{setDocScanOpen(false);setDocScanResult(null);}} className="btn ghost" style={{flex:1,fontSize:13}}>Abbrechen</button>
+                  <button onClick={()=>setDocScanResult(null)} className="btn ghost" style={{flex:1,fontSize:15}}>↻ Nochmal</button>
+                  <button onClick={()=>{setDocScanOpen(false);setDocScanResult(null);}} className="btn ghost" style={{flex:1,fontSize:15}}>Abbrechen</button>
                 </div>
               </div>
             )}
@@ -6457,15 +6463,15 @@ Regeln:
             {docScanResult?.fields&&(
               <div>
                 <div style={{background:`${C.green}0d`,border:`1px solid ${C.green}33`,borderRadius:9,padding:"9px 12px",marginBottom:12}}>
-                  <div style={{fontSize:12,color:C.green,fontWeight:700}}>✓ {Object.keys(docScanResult.fields).length} Angaben gelesen</div>
+                  <div style={{fontSize:14,color:C.green,fontWeight:700}}>✓ {Object.keys(docScanResult.fields).length} Angaben gelesen</div>
                 </div>
                 {Object.entries(docScanResult.fields).map(([k,v])=>{
                   const labels={datum:"Datum",betrag:"Betrag",werkstatt:"Werkstatt",kilometerstand:"Kilometerstand",beschreibung:"Beschreibung"};
                   return (
                     <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
                       padding:"8px 0",borderBottom:`1px solid ${C.border}`,gap:10}}>
-                      <span style={{fontSize:12,color:C.muted,flexShrink:0}}>{labels[k]||k}</span>
-                      <span style={{fontSize:13,color:C.white,fontWeight:600,overflow:"hidden",
+                      <span style={{fontSize:14,color:C.muted,flexShrink:0}}>{labels[k]||k}</span>
+                      <span style={{fontSize:15,color:C.white,fontWeight:600,overflow:"hidden",
                         textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"right"}}>
                         {k==="betrag"?`${v} €`:v}
                       </span>
@@ -6478,10 +6484,10 @@ Regeln:
                 </button>
                 <button onClick={()=>setDocScanResult(null)}
                   style={{width:"100%",marginTop:7,background:"none",border:"none",color:"#666",
-                    fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"6px"}}>
+                    fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"6px"}}>
                   ↻ Nochmal scannen
                 </button>
-                <div style={{fontSize:10,color:"#555",textAlign:"center",marginTop:8,lineHeight:1.4}}>
+                <div style={{fontSize:12,color:"#555",textAlign:"center",marginTop:8,lineHeight:1.4}}>
                   Bitte die Werte kurz kontrollieren, besonders den Betrag
                 </div>
               </div>
@@ -6499,7 +6505,7 @@ Regeln:
         <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget){setShowStatusPicker(null);setStatusEditSlot(null);setStatusCustom("");setStatusPresetIcon(null);setStatusUseDate(false);setStatusDateTime("");}}}>
           <div className="sheet" style={{maxHeight:"92vh",overflowY:"auto"}}>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:2}}>📍 Live-Status</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:14}}>Bis zu 3 Status-Infos — sichtbar beim QR-Scan</div>
+            <div style={{fontSize:13,color:C.muted,marginBottom:14}}>Bis zu 3 Status-Infos — sichtbar beim QR-Scan</div>
 
             {/* ── Hinweis: Live-Status ist in der öffentlichen Ansicht deaktiviert ── */}
             {(()=>{
@@ -6508,7 +6514,7 @@ Regeln:
               if(svPriv.pub_status===false) return (
                 <div style={{background:`${C.amber}11`,border:`1px solid ${C.amber}44`,borderRadius:10,padding:"10px 12px",marginBottom:14,display:"flex",gap:9,alignItems:"flex-start"}}>
                   <span style={{fontSize:15,flexShrink:0}}>🔒</span>
-                  <div style={{fontSize:11,color:"#ddb877",lineHeight:1.6}}>
+                  <div style={{fontSize:13,color:"#ddb877",lineHeight:1.6}}>
                     Live-Status ist in deinen Privatsphäre-Einstellungen <b>ausgeblendet</b> — Besucher sehen ihn beim QR-Scan nicht, auch wenn du ihn jetzt setzt.
                   </div>
                 </div>
@@ -6522,7 +6528,7 @@ Regeln:
               if(!slots.length) return null;
               return (
                 <div style={{marginBottom:14}}>
-                  <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Aktive Status ({slots.length}/3)</div>
+                  <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Aktive Status ({slots.length}/3)</div>
                   {slots.map(s=>{
                     const remaining = s.expiresAt ? Math.max(0,Math.ceil((s.expiresAt-Date.now())/60000)) : null;
                     const expDate = s.expiresAt ? new Date(s.expiresAt) : null;
@@ -6531,8 +6537,8 @@ Regeln:
                       <div key={s.id} style={{background:`${C.green}11`,border:`1px solid ${C.green}33`,borderRadius:10,padding:"10px 12px",marginBottom:8,display:"flex",gap:10,alignItems:"center"}}>
                         <span style={{fontSize:20,flexShrink:0}}>{s.icon}</span>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:13,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.text}</div>
-                          <div style={{fontSize:10,color:remaining!==null&&remaining<10?"#ef4444":C.muted}}>
+                          <div style={{fontSize:15,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.text}</div>
+                          <div style={{fontSize:12,color:remaining!==null&&remaining<10?"#ef4444":C.muted}}>
                             {statusTick>=0&&remaining!==null
                               ? (remaining<=0?"⚠️ Abgelaufen":remaining<60
                                 ?`⏱ Noch ${remaining} Min`
@@ -6550,14 +6556,14 @@ Regeln:
                             setStatusUseDate(false);
                             const rem = s.expiresAt ? Math.ceil((s.expiresAt-Date.now())/60000) : 30;
                             setStatusCustomMins(Math.min(480, Math.max(5, rem)));
-                          }} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✏️</button>
+                          }} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✏️</button>
                           <button onClick={()=>{clearStatus(showStatusPicker,s.id);toast_("Status gelöscht");}}
-                            style={{background:"#ef444418",border:"1px solid #ef444433",borderRadius:6,padding:"4px 8px",color:"#ef4444",fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✕</button>
+                            style={{background:"#ef444418",border:"1px solid #ef444433",borderRadius:6,padding:"4px 8px",color:"#ef4444",fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✕</button>
                         </div>
                       </div>
                     );
                   })}
-                  {slots.length<3&&<div style={{fontSize:11,color:C.muted,marginBottom:4}}>+ Weiteren Status hinzufügen:</div>}
+                  {slots.length<3&&<div style={{fontSize:13,color:C.muted,marginBottom:4}}>+ Weiteren Status hinzufügen:</div>}
                 </div>
               );
             })()}
@@ -6566,7 +6572,7 @@ Regeln:
             {(getActiveStatus(showStatusPicker)||[]).length<3&&(
               <>
                 {/* Preset Buttons — füllen das Textfeld, Dauer wird danach abgefragt */}
-                <div style={{fontSize:11,fontWeight:700,color:"#aaa",marginBottom:8}}>⚡ Schnellauswahl</div>
+                <div style={{fontSize:13,fontWeight:700,color:"#aaa",marginBottom:8}}>⚡ Schnellauswahl</div>
                 <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
                   {STATUS_PRESETS.map((p,i)=>(
                     <button key={i} onClick={()=>{setStatusCustom(p.text);setStatusPresetIcon(p.icon);setStatusCustomMins(p.mins||30);setStatusUseDate(false);}}
@@ -6576,8 +6582,8 @@ Regeln:
                         borderRadius:12,padding:"12px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
                       <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
                       <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:700,color:C.white}}>{p.text}</div>
-                        <div style={{fontSize:10,color:C.muted}}>{p.mins?`Vorschlag: ${p.mins} Min · Dauer unten anpassbar`:"Dauer frei wählbar — z.B. mehrere Tage"}</div>
+                        <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.text}</div>
+                        <div style={{fontSize:12,color:C.muted}}>{p.mins?`Vorschlag: ${p.mins} Min · Dauer unten anpassbar`:"Dauer frei wählbar — z.B. mehrere Tage"}</div>
                       </div>
                       {statusCustom===p.text&&<span style={{fontSize:16,color:C.red}}>✓</span>}
                     </button>
@@ -6586,7 +6592,7 @@ Regeln:
 
                 {/* Eigener Text + Dauer — gilt für Schnellauswahl UND eigenen Text */}
                 <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",marginBottom:12}}>
-                  <div style={{fontSize:11,fontWeight:700,color:"#aaa",marginBottom:8}}>✏️ Status-Text</div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#aaa",marginBottom:8}}>✏️ Status-Text</div>
                   <div style={{display:"flex",gap:8,marginBottom:12}}>
                     <input className="inp" placeholder="z.B. Bin beim Einlass..." value={statusCustom}
                       onChange={e=>{setStatusCustom(e.target.value);setStatusPresetIcon(null);}}
@@ -6595,14 +6601,14 @@ Regeln:
 
                   {/* ── Dauer-Abfrage: Wie lange soll der Status angezeigt werden? ── */}
                   <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12}}>
-                    <div style={{fontSize:11,fontWeight:700,color:C.gold,marginBottom:10}}>⏱ Wie lange soll der Status angezeigt werden?</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:10}}>⏱ Wie lange soll der Status angezeigt werden?</div>
                     <div style={{display:"flex",gap:8,marginBottom:10}}>
                       <button onClick={()=>setStatusUseDate(false)}
-                        style={{flex:1,background:!statusUseDate?C.red:"#1a1a1a",border:`1px solid ${!statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:!statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        style={{flex:1,background:!statusUseDate?C.red:"#1a1a1a",border:`1px solid ${!statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:!statusUseDate?"#fff":C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                         ⏱ Dauer
                       </button>
                       <button onClick={()=>{setStatusUseDate(true); if(!statusDateTime){const d=new Date(Date.now()+24*60*60*1000); setStatusDateTime(d.toISOString().slice(0,16));}}}
-                        style={{flex:1,background:statusUseDate?C.red:"#1a1a1a",border:`1px solid ${statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:statusUseDate?"#fff":C.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        style={{flex:1,background:statusUseDate?C.red:"#1a1a1a",border:`1px solid ${statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:statusUseDate?"#fff":C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                         📅 Bis Uhrzeit
                       </button>
                     </div>
@@ -6610,7 +6616,7 @@ Regeln:
                     {!statusUseDate?(
                       <>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                          <span style={{fontSize:12,color:C.muted}}>Dauer</span>
+                          <span style={{fontSize:14,color:C.muted}}>Dauer</span>
                           <span style={{fontSize:16,fontWeight:900,color:C.red}}>
                             {(()=>{const m=statusCustomMins||30;return m>=60?`${Math.floor(m/60)}h${m%60>0?" "+m%60+"m":""}`:`${m} Min`;})()}
                           </span>
@@ -6628,7 +6634,7 @@ Regeln:
                             <button key={mn} onClick={()=>setStatusCustomMins(mn)}
                               style={{flex:"1 1 auto",background:statusCustomMins===mn?C.red:"#1a1a1a",
                                 border:`1px solid ${statusCustomMins===mn?C.red:C.border}`,borderRadius:7,
-                                padding:"6px 4px",color:statusCustomMins===mn?"#fff":C.muted,fontSize:11,fontWeight:700,
+                                padding:"6px 4px",color:statusCustomMins===mn?"#fff":C.muted,fontSize:13,fontWeight:700,
                                 cursor:"pointer",fontFamily:"'Barlow',sans-serif",whiteSpace:"nowrap"}}>
                               {lbl}
                             </button>
@@ -6637,7 +6643,7 @@ Regeln:
                       </>
                     ):(
                       <>
-                        <div style={{fontSize:11,color:C.muted,marginBottom:6}}>Status aktiv bis:</div>
+                        <div style={{fontSize:13,color:C.muted,marginBottom:6}}>Status aktiv bis:</div>
                         <input type="datetime-local"
                           value={statusDateTime}
                           min={new Date(Date.now()+5*60000).toISOString().slice(0,16)}
@@ -6690,12 +6696,12 @@ Regeln:
             style={{background:"none",border:"none",color:C.white,fontSize:20,cursor:"pointer",padding:0}}>←</button>
           <div>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:800,color:C.white}}>Fotos verwalten</div>
-            <div style={{fontSize:11,color:C.muted}}>{v.hersteller} {v.modell}</div>
+            <div style={{fontSize:13,color:C.muted}}>{v.hersteller} {v.modell}</div>
           </div>
         </div>
 
         <div style={{padding:16}}>
-          <div style={{fontSize:11,color:C.muted,lineHeight:1.6,marginBottom:16}}>
+          <div style={{fontSize:13,color:C.muted,lineHeight:1.6,marginBottom:16}}>
             👑 Titelbild antippen zum Setzen · ✕ zum Löschen · Neues Foto unten hinzufügen
           </div>
 
@@ -6707,7 +6713,7 @@ Regeln:
                   onError={e=>e.target.style.display="none"}/>
                 {i===0
                   ? <div style={{position:"absolute",top:4,left:4,background:C.gold,color:"#0a0a0a",
-                      fontSize:10,fontWeight:800,borderRadius:6,padding:"2px 6px"}}>👑 Titelbild</div>
+                      fontSize:12,fontWeight:800,borderRadius:6,padding:"2px 6px"}}>👑 Titelbild</div>
                   : <button onClick={async()=>{
                       const imgs2=[...imgs]; const img2=imgs2[i];
                       imgs2.splice(i,1); imgs2.unshift(img2);
@@ -6717,7 +6723,7 @@ Regeln:
                       const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
                       toast_("Titelbild gesetzt 👑");
                     }} style={{position:"absolute",top:4,left:4,background:"rgba(0,0,0,.75)",
-                      border:`1px solid ${C.border}`,color:C.white,fontSize:10,fontWeight:700,
+                      border:`1px solid ${C.border}`,color:C.white,fontSize:12,fontWeight:700,
                       borderRadius:6,padding:"3px 7px",cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                       👑 Setzen
                     </button>
@@ -6727,7 +6733,7 @@ Regeln:
                     await removeImageFromVehicle(v.id,i);
                     toast_("Foto gelöscht");
                   }} style={{position:"absolute",top:4,right:4,background:C.red,border:"2px solid #0a0a0a",
-                    color:"#fff",fontSize:12,width:24,height:24,borderRadius:"50%",cursor:"pointer",
+                    color:"#fff",fontSize:14,width:24,height:24,borderRadius:"50%",cursor:"pointer",
                     display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</button>
               </div>
             ))}
@@ -6736,7 +6742,7 @@ Regeln:
               <input type="file" accept="image/*" style={{display:"none"}}
                 onChange={e=>{const f=e.target.files?.[0]; if(f) handleImageUpload(f,url=>addImageToVehicle(v.id,url));}}/>
               <span style={{fontSize:26}}>{imgUploading?"⏳":"📷"}</span>
-              <span style={{fontSize:11,color:C.muted,fontWeight:700}}>Hinzufügen</span>
+              <span style={{fontSize:13,color:C.muted,fontWeight:700}}>Hinzufügen</span>
             </label>
           </div>
         </div>
@@ -6753,7 +6759,7 @@ Regeln:
         <style>{CSS}</style>
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         <EventDetail
           ev={viewEv} me={me} myVehicles={myVehicles} vehicles={vehicles}
           participants={participants}
@@ -6776,7 +6782,7 @@ Regeln:
         <style>{CSS}</style>
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         <ChatScreen
           thread={t} me={me} allUsers={allUsers} vehicles={vehicles}
           reactions={reactions} bgTheme={bgTheme}
@@ -6851,7 +6857,7 @@ Regeln:
       <style>{CSS}</style>
       {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",opacity:.5,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:12,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
       {ScannerOverlay}
 
       {/* Nav — mit permanentem Punktezähler */}
@@ -6878,7 +6884,7 @@ Regeln:
               </div>
             </div>
             {pointsDelta>0&&(
-              <span style={{position:"absolute",marginLeft:52,marginTop:-26,fontSize:11,fontWeight:900,
+              <span style={{position:"absolute",marginLeft:52,marginTop:-26,fontSize:13,fontWeight:900,
                 color:C.green,animation:"floatUp 1.8s ease-out forwards",pointerEvents:"none",
                 fontFamily:"'Barlow Condensed',sans-serif",whiteSpace:"nowrap"}}>
                 +{pointsDelta.toLocaleString("de-DE")}
@@ -6888,8 +6894,8 @@ Regeln:
         )}
 
         <div style={{textAlign:"right",minWidth:0}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#1a1a1a",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{me?.name}</div>
-          <div style={{fontSize:10,color:"#888"}}>{me?.memberNr}</div>
+          <div style={{fontSize:15,fontWeight:700,color:"#1a1a1a",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{me?.name}</div>
+          <div style={{fontSize:12,color:"#888"}}>{me?.memberNr}</div>
         </div>
       </div>
 
@@ -6911,7 +6917,7 @@ Regeln:
               🏁 Jetzt Mitglied werden
             </button>
             <button onClick={()=>{setMe(null);setScreen("splash");}}
-              style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,fontFamily:"'Barlow',sans-serif"}}>
+              style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:15,fontFamily:"'Barlow',sans-serif"}}>
               Abmelden
             </button>
           </div>
@@ -6922,15 +6928,27 @@ Regeln:
             {/* Demo-Hinweis erscheint als Popup-Overlay nach 3 Sekunden — siehe globaler Overlay-Bereich */}
             {/* ── 1. Infos & Neuigkeiten ── */}
             <div style={{marginBottom:20}}>
-              <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>📰 Infos & Neuigkeiten</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>📰 Infos & Neuigkeiten</div>
+                <button onClick={()=>setShowNewsArchive(p=>!p)}
+                  style={{background:"none",border:"none",color:showNewsArchive?C.gold:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                  📁 {showNewsArchive?"Aktuelle":"Archiv"}
+                </button>
+              </div>
 
               {/* Willkommen — für diese Sitzung schließbar über das X */}
-              {!welcomeDismissed && (()=>{
+              {!showNewsArchive&&!welcomeDismissed && (()=>{
                 const welcome = DEMO_NEWS.find(n=>n.type==="welcome");
                 if(!welcome) return null;
                 return (
                   <div style={{background:"#ffffff",border:"1px solid #e5e7eb",borderRadius:12,padding:"14px 14px",marginBottom:10,position:"relative"}}>
-                    <button onClick={()=>setWelcomeDismissed(true)}
+                    <button onClick={()=>{
+                        setWelcomeDismissed(true);
+                        if(me?.id && !isDemo){
+                          const DB=window.PCN_DB;
+                          DB?.members?.markWelcomeSeen(me.id).catch(()=>{});
+                        }
+                      }}
                       aria-label="Schließen"
                       style={{position:"absolute",top:8,right:8,background:"none",border:"none",
                         cursor:"pointer",fontSize:16,color:"#999",padding:6,lineHeight:1}}>
@@ -6940,15 +6958,33 @@ Regeln:
                       <span style={{fontSize:22,flexShrink:0}}>🎉</span>
                       <div style={{flex:1}}>
                         <div style={{fontSize:15,fontWeight:700,color:"#111",marginBottom:4}}>{welcome.title}</div>
-                        <div style={{fontSize:13,color:"#555",lineHeight:1.6}}>{welcome.body}</div>
+                        <div style={{fontSize:15,color:"#555",lineHeight:1.6}}>{welcome.body}</div>
                       </div>
                     </div>
                   </div>
                 );
               })()}
 
-{/* Neuigkeiten — horizontal swipeable */}
-              {(()=>{
+              {showNewsArchive?(()=>{
+                const dbNews = (window._dbNews||[]).filter(n=>n&&!DEMO_NEWS.find(d=>d.id===String(n.id)));
+                const readPts = dbPointEvents.filter(e=>e.eventType==="news_read").map(e=>e.refId);
+                const archived = [...dbNews, ...DEMO_NEWS]
+                  .filter(n=>n.type!=="welcome" && (newsState[n.id]==="read" || readPts.includes(String(n.id))))
+                  .sort((a,b)=>new Date(b.date)-new Date(a.date));
+                if(!archived.length) return <div style={{fontSize:13,color:C.muted,padding:"20px 0",textAlign:"center"}}>Noch keine gelesenen Neuigkeiten im Archiv.</div>;
+                return archived.map(n=>(
+                  <div key={n.id} onClick={()=>setViewNews(n)}
+                    style={{background:"#0d0d0d",border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:8,cursor:"pointer",
+                      display:"flex",gap:10,alignItems:"center",opacity:.7}}>
+                    <span style={{fontSize:18,flexShrink:0}}>{n.icon}</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:14,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
+                      <div style={{fontSize:11,color:C.muted}}>{fmtDate(n.date)} · gelesen</div>
+                    </div>
+                  </div>
+                ));
+              })():(
+              (()=>{
                 const dbNews = (window._dbNews||[]).filter(n=>n&&!DEMO_NEWS.find(d=>d.id===String(n.id)));
                 const readPts = dbPointEvents.filter(e=>e.eventType==="news_read").map(e=>e.refId);
                 const items = [...dbNews, ...DEMO_NEWS]
@@ -6971,13 +7007,13 @@ Regeln:
                             <span style={{fontSize:20,flexShrink:0,marginTop:1}}>{n.icon}</span>
                             <div style={{flex:1,minWidth:0}}>
                               <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
-                                <div style={{fontSize:13,fontWeight:700,color:C.white,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
+                                <div style={{fontSize:15,fontWeight:700,color:C.white,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
                                 {n.pinned&&<span style={{background:C.red,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 6px",borderRadius:4,flexShrink:0}}>NEU</span>}
                               </div>
-                              <div style={{fontSize:12,color:"#bbb",lineHeight:1.7,marginBottom:10}}>{teaser}</div>
+                              <div style={{fontSize:14,color:"#bbb",lineHeight:1.7,marginBottom:10}}>{teaser}</div>
                               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                                 <span style={{fontSize:9,color:"#444"}}>{fmtDate(n.date)}</span>
-                                <span style={{fontSize:11,color:C.red,fontWeight:700}}>Lesen →</span>
+                                <span style={{fontSize:13,color:C.red,fontWeight:700}}>Lesen →</span>
                               </div>
                             </div>
                           </div>
@@ -6986,7 +7022,8 @@ Regeln:
                     })}
                   </div>
                 );
-              })()}
+              })()
+              )}
             </div>
 
             {/* ── Onboarding-Checkliste — nur bis alles erledigt ist ── */}
@@ -7007,7 +7044,7 @@ Regeln:
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
                     <div>
                       <div style={{fontSize:14,fontWeight:800,color:C.gold}}>Willkommen im PCN 🏁</div>
-                      <div style={{fontSize:11,color:C.muted,marginTop:1}}>Noch {steps.length-doneCount} Schritt{steps.length-doneCount!==1?"e":""} bis alles eingerichtet ist</div>
+                      <div style={{fontSize:13,color:C.muted,marginTop:1}}>Noch {steps.length-doneCount} Schritt{steps.length-doneCount!==1?"e":""} bis alles eingerichtet ist</div>
                     </div>
                     <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.gold}}>
                       {doneCount}/{steps.length}
@@ -7024,12 +7061,12 @@ Regeln:
                         opacity:s.done?.45:1,fontFamily:"'Barlow',sans-serif"}}>
                       <span style={{fontSize:15,width:22,textAlign:"center",flexShrink:0}}>{s.done?"✓":s.icon}</span>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:13,fontWeight:600,color:s.done?C.muted:C.white,
+                        <div style={{fontSize:15,fontWeight:600,color:s.done?C.muted:C.white,
                           textDecoration:s.done?"line-through":"none"}}>{s.label}</div>
-                        {!s.done&&<div style={{fontSize:10,color:"#666",marginTop:1}}>{s.hint}</div>}
+                        {!s.done&&<div style={{fontSize:12,color:"#666",marginTop:1}}>{s.hint}</div>}
                       </div>
                       {!s.done&&(
-                        <span style={{fontSize:11,color:C.gold,fontWeight:700,flexShrink:0,
+                        <span style={{fontSize:13,color:C.gold,fontWeight:700,flexShrink:0,
                           fontFamily:"'Barlow Condensed',sans-serif"}}>+{s.pts.toLocaleString("de-DE")}</span>
                       )}
                     </button>
@@ -7041,17 +7078,17 @@ Regeln:
             {/* ── 2. Meine Fahrzeuge ── */}
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🚗 Meine Fahrzeuge</div>
+                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🚗 Meine Fahrzeuge</div>
                 <div style={{display:"flex",gap:6}}>
-                  <button className="btn sm ghost" onClick={()=>setShowTransferPanel("__request__")}>🔑 Beantragen</button>
+                  <button className="btn sm ghost" onClick={()=>setShowTransferPanel("__request__")}>🔑 Fremde QAR-ID beantragen</button>
                   <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>
                 </div>
               </div>
               {myVehicles.length===0?(
                 <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center",cursor:"pointer"}} onClick={()=>setShowAddV(true)}>
                   <div style={{fontSize:32,marginBottom:8}}>🏎️</div>
-                  <div style={{fontSize:13,color:C.white,fontWeight:600,marginBottom:4}}>Erstes Fahrzeug hinzufügen</div>
-                  <div style={{fontSize:11,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+{POINTS.vehicle_added} Pkt</span></div>
+                  <div style={{fontSize:15,color:C.white,fontWeight:600,marginBottom:4}}>Erstes Fahrzeug hinzufügen</div>
+                  <div style={{fontSize:13,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+{POINTS.vehicle_added} Pkt</span></div>
                 </div>
               ):myVehicles.map(v=>(
                 <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,marginBottom:12,overflow:"hidden",cursor:"pointer"}}
@@ -7061,7 +7098,7 @@ Regeln:
                     {getCoverImage(v)?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:48}}>🏎️</span>}
                     {/* Kennzeichen-Badge bottom-left */}
                     <div style={{position:"absolute",bottom:10,left:12}}>
-                      <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"2px 9px",fontSize:11,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif",boxShadow:"0 1px 4px rgba(0,0,0,.4)"}}>
+                      <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"2px 9px",fontSize:13,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif",boxShadow:"0 1px 4px rgba(0,0,0,.4)"}}>
                         {fmtKz(v.kennzeichen,v.baujahr)}
                       </span>
                     </div>
@@ -7071,10 +7108,10 @@ Regeln:
                     <div>
                       <div style={{fontWeight:700,fontSize:16,color:C.white}}>{v.hersteller} {v.modell}</div>
                       <div style={{display:"flex",gap:8,marginTop:3,alignItems:"center"}}>
-                        <span style={{fontSize:11,color:C.muted}}>{v.baujahr}</span>
-                        {(logbook[v.id]||[]).length>0&&<span style={{fontSize:10,color:C.green,fontWeight:700}}>📋 {(logbook[v.id]||[]).length} Einträge</span>}
+                        <span style={{fontSize:13,color:C.muted}}>{v.baujahr}</span>
+                        {(logbook[v.id]||[]).length>0&&<span style={{fontSize:12,color:C.green,fontWeight:700}}>📋 {(logbook[v.id]||[]).length} Einträge</span>}
                         {(listings[v.id]||[]).length>0&&
-                          <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:4,padding:"1px 6px",fontSize:10,fontWeight:800}}>💰 Zum Verkauf</span>}
+                          <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:4,padding:"1px 6px",fontSize:12,fontWeight:800}}>💰 Zum Verkauf</span>}
                       </div>
                     </div>
                     <span style={{fontSize:20,color:C.muted}}>›</span>
@@ -7087,10 +7124,10 @@ Regeln:
             {displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).length>0&&(
               <div style={{marginBottom:20}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                  <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
+                  <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
                     🚗 Neueste Mitglieder-Fahrzeuge
                   </div>
-                  <button onClick={()=>setTab("community")} style={{background:"none",border:"none",color:C.red,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"2px 0"}}>
+                  <button onClick={()=>setTab("community")} style={{background:"none",border:"none",color:C.red,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"2px 0"}}>
                     Alle ansehen →
                   </button>
                 </div>
@@ -7118,17 +7155,17 @@ Regeln:
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
                             style={{position:"absolute",top:5,right:5,background:"rgba(0,0,0,.6)",
                               border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",
-                              fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",
+                              fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",
                               backdropFilter:"blur(4px)",WebkitTapHighlightColor:"transparent"}}>
                             {isFavorite(v.id)?"❤️":"🤍"}
                           </button>
                         </div>
                         <div style={{padding:"9px 10px"}}>
-                          <div style={{fontWeight:700,fontSize:13,color:C.white,
+                          <div style={{fontWeight:700,fontSize:15,color:C.white,
                             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                             {v.hersteller} {v.modell}
                           </div>
-                          <div style={{fontSize:10,color:C.muted,marginTop:2,
+                          <div style={{fontSize:12,color:C.muted,marginTop:2,
                             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                             {v.baujahr}{owner?.name?` · ${owner.name.split(" ")[0]}`:v.ownerName?` · ${v.ownerName}`:""}
                             {owner?.isAdmin&&<span style={{color:C.gold,fontWeight:700}}> 🏆</span>}
@@ -7143,7 +7180,7 @@ Regeln:
               {/* ── Zuletzt angesehen ── */}
               {recentVehicles.length>0&&(
                 <div style={{marginBottom:18}}>
-                  <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>🕐 Zuletzt angesehen</div>
+                  <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>🕐 Zuletzt angesehen</div>
                   <div style={{display:"flex",gap:10,overflowX:"auto",scrollbarWidth:"none",paddingBottom:4,paddingTop:8}}>
                     {recentVehicles.map(rv=>(
                       <div key={rv.id} style={{flexShrink:0,width:130,position:"relative"}}>
@@ -7181,7 +7218,7 @@ Regeln:
                               style={{position:"absolute",top:5,right:5,zIndex:10,
                                 width:22,height:22,borderRadius:"50%",
                                 background:"rgba(0,0,0,.6)",border:"none",backdropFilter:"blur(4px)",
-                                color:"#fff",fontSize:11,fontWeight:900,
+                                color:"#fff",fontSize:13,fontWeight:900,
                                 cursor:"pointer",display:"flex",alignItems:"center",
                                 justifyContent:"center",lineHeight:1,fontFamily:"sans-serif",
                                 WebkitTapHighlightColor:"transparent"}}>
@@ -7189,8 +7226,8 @@ Regeln:
                             </button>
                           </div>
                           <div style={{padding:"7px 8px"}}>
-                            <div style={{fontSize:11,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
-                            <div style={{fontSize:10,color:C.muted,marginTop:2}}>{rv.kennzeichen||rv.qarId}</div>
+                            <div style={{fontSize:13,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
+                            <div style={{fontSize:12,color:C.muted,marginTop:2}}>{rv.kennzeichen||rv.qarId}</div>
                           </div>
                         </div>
                       </div>
@@ -7209,7 +7246,7 @@ Regeln:
                           {/* ── 3. Plattform-Funktionen ── */}
             <div style={{marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>⚙️ Plattform-Funktionen</div>
+                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>⚙️ Plattform-Funktionen</div>
                 <button onClick={()=>setShowInfoModal(true)}
                   style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
               </div>
@@ -7222,8 +7259,8 @@ Regeln:
                       style={{background:`${C.green}0d`,border:`1px solid ${C.green}33`,borderRadius:11,padding:"12px 14px",marginBottom:7,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}>
                       <span style={{fontSize:22,flexShrink:0}}>{f.icon}</span>
                       <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:700,color:C.white}}>{f.label}</div>
-                        <div style={{fontSize:10,color:C.green,marginTop:2}}>✓ Freigeschaltet · {f.desc}</div>
+                        <div style={{fontSize:15,fontWeight:700,color:C.white}}>{f.label}</div>
+                        <div style={{fontSize:12,color:C.green,marginTop:2}}>✓ Freigeschaltet · {f.desc}</div>
                       </div>
                       <span style={{fontSize:16,color:C.green,flexShrink:0}}>›</span>
                     </div>
@@ -7239,14 +7276,14 @@ Regeln:
                       opacity:.6,position:"relative",cursor:"pointer",transition:"opacity .15s"}}
                     onMouseEnter={e=>e.currentTarget.style.opacity=".85"}
                     onMouseLeave={e=>e.currentTarget.style.opacity=".6"}>
-                    <div style={{position:"absolute",top:7,right:8,fontSize:11}}>🔒</div>
+                    <div style={{position:"absolute",top:7,right:8,fontSize:13}}>🔒</div>
                     <div style={{fontSize:20,marginBottom:5}}>{f.icon}</div>
-                    <div style={{fontSize:11,fontWeight:700,color:"#888",marginBottom:2}}>{f.label}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:"#888",marginBottom:2}}>{f.label}</div>
                     <div style={{fontSize:9,color:"#444",lineHeight:1.4}}>{f.milestone}</div>
                   </div>
                 ))}
               </div>
-              <div style={{fontSize:10,color:"#444",marginTop:10,textAlign:"center",lineHeight:1.6}}>
+              <div style={{fontSize:12,color:"#444",marginTop:10,textAlign:"center",lineHeight:1.6}}>
                 Mehr Funktionen freischalten: Fahrzeug anlegen · Logbuch führen · Events besuchen
               </div>
             </div>
@@ -7286,7 +7323,7 @@ Regeln:
             {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🗺️ Live-Ausfahrt</div>
+                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🗺️ Live-Ausfahrt</div>
                 <button className="btn sm ghost" onClick={()=>setShowCreateLiveGroup(true)}>+ Starten</button>
               </div>
               {myLiveGroups.length>0?myLiveGroups.map(g=>(
@@ -7294,18 +7331,18 @@ Regeln:
                   style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:"'Barlow',sans-serif"}}>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:700,fontSize:14,color:C.white}}>{g.name}</div>
-                    <div style={{fontSize:11,color:C.muted}}>{g.myStatus==="invited"?"Du wurdest eingeladen":"Läuft gerade"}</div>
+                    <div style={{fontSize:13,color:C.muted}}>{g.myStatus==="invited"?"Du wurdest eingeladen":"Läuft gerade"}</div>
                   </div>
                   <span style={{fontSize:18,color:g.myStatus==="invited"?C.gold:C.green}}>{g.myStatus==="invited"?"✉️":"🟢"}</span>
                 </button>
               )):(
-                <div style={{fontSize:12,color:C.muted}}>Keine aktive Ausfahrt — starte eine, um Standorte mit Mitgliedern zu teilen.</div>
+                <div style={{fontSize:14,color:C.muted}}>Keine aktive Ausfahrt — starte eine, um Standorte mit Mitgliedern zu teilen.</div>
               )}
             </div>
 
             {/* View toggle + Filter */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,gap:8}}>
-              <div style={{fontSize:13,fontWeight:800,color:C.white}}>Veranstaltungen 2026</div>
+              <div style={{fontSize:15,fontWeight:800,color:C.white}}>Veranstaltungen 2026</div>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 {(()=>{
                   const activeCount = [eventFilters.onlyMine, eventFilters.category, eventFilters.price,
@@ -7317,7 +7354,7 @@ Regeln:
                         padding:"8px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
                       <span style={{fontSize:14}}>⚙️</span>
                       {activeCount>0&&(
-                        <span style={{background:C.red,color:"#fff",fontSize:10,fontWeight:800,
+                        <span style={{background:C.red,color:"#fff",fontSize:12,fontWeight:800,
                           borderRadius:99,minWidth:16,height:16,display:"flex",alignItems:"center",
                           justifyContent:"center",padding:"0 4px"}}>{activeCount}</span>
                       )}
@@ -7328,7 +7365,7 @@ Regeln:
                   {[["list","☰ Liste"],["calendar","📅 Kalender"]].map(([v,label])=>(
                     <button key={v} onClick={()=>setEventsView(v)}
                       style={{padding:"7px 12px",border:"none",borderRadius:6,cursor:"pointer",
-                        fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:12,
+                        fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14,
                         background:eventsView===v?C.red:"transparent",
                         color:eventsView===v?"#fff":C.muted,transition:"all .15s"}}>
                       {label}
@@ -7349,17 +7386,17 @@ Regeln:
               const pointsEarned = pastConfirmed.length * POINTS.event_confirmed;
               return (
                 <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:14}}>
-                  <div style={{fontSize:13,fontWeight:800,color:C.muted,marginBottom:10,textTransform:"uppercase",letterSpacing:.5}}>
+                  <div style={{fontSize:15,fontWeight:800,color:C.muted,marginBottom:10,textTransform:"uppercase",letterSpacing:.5}}>
                     📖 Meine Event-Historie
                   </div>
                   <div style={{display:"flex",gap:20,marginBottom:pastConfirmed.length?12:0}}>
                     <div>
                       <div style={{fontSize:22,fontWeight:900,color:C.white}}>{pastConfirmed.length}</div>
-                      <div style={{fontSize:11,color:C.muted}}>besuchte Events</div>
+                      <div style={{fontSize:13,color:C.muted}}>besuchte Events</div>
                     </div>
                     <div>
                       <div style={{fontSize:22,fontWeight:900,color:C.gold}}>+{pointsEarned}</div>
-                      <div style={{fontSize:11,color:C.muted}}>Punkte verdient</div>
+                      <div style={{fontSize:13,color:C.muted}}>Punkte verdient</div>
                     </div>
                   </div>
                   {pastConfirmed.length>0&&(
@@ -7370,7 +7407,7 @@ Regeln:
                           const ev = events[p.eventId];
                           const veh = vehicles[p.vehicleId];
                           return (
-                            <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12}}>
+                            <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:14}}>
                               <span style={{color:C.white}}>{ev?.name||"Event"}</span>
                               <span style={{color:C.muted}}>{veh?`${veh.hersteller||""} ${veh.modell||""}`.trim():"—"}</span>
                             </div>
@@ -7408,38 +7445,38 @@ Regeln:
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
-                          <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:700}}>{ev.category}</span>
+                          <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"3px 9px",fontSize:14,fontWeight:700}}>{ev.category}</span>
                           {(()=>{
                             // Preis: leer oder "kostenlos"/"frei"/"0" → gratis
                             const raw = String(ev.entryFee||ev.price||"").trim();
                             const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
                             return free
-                              ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>Kostenlos</span>
-                              : <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>💶 {raw}</span>;
+                              ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"3px 9px",fontSize:14,fontWeight:800}}>Kostenlos</span>
+                              : <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:6,padding:"3px 9px",fontSize:14,fontWeight:800}}>💶 {raw}</span>;
                           })()}
                           {myReg?.status==="confirmed"
-                            ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>✓ Angemeldet #{myReg.startNr}</span>
+                            ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"3px 9px",fontSize:14,fontWeight:800}}>✓ Angemeldet #{myReg.startNr}</span>
                             : myReg?.status==="pending"
-                              ? <span style={{background:`${C.amber}22`,color:C.amber,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>⏳ In Prüfung</span>
+                              ? <span style={{background:`${C.amber}22`,color:C.amber,borderRadius:6,padding:"3px 9px",fontSize:14,fontWeight:800}}>⏳ In Prüfung</span>
                               : myReg?.status==="cancelled"&&myReg?.cancelledBy==="admin"
-                                ? <span style={{background:"#ef444422",color:"#ef4444",borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>✕ Abgelehnt</span>
-                                : <span style={{background:`${C.border}44`,color:C.muted,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:600}}>Nicht angemeldet</span>
+                                ? <span style={{background:"#ef444422",color:"#ef4444",borderRadius:6,padding:"3px 9px",fontSize:14,fontWeight:800}}>✕ Abgelehnt</span>
+                                : <span style={{background:`${C.border}44`,color:C.muted,borderRadius:6,padding:"3px 9px",fontSize:14,fontWeight:600}}>Nicht angemeldet</span>
                           }
-                          <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:6,padding:"3px 9px",fontSize:12,fontWeight:800}}>⚡ +{POINTS.event_confirmed}</span>
+                          <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:6,padding:"3px 9px",fontSize:14,fontWeight:800}}>⚡ +{POINTS.event_confirmed}</span>
                         </div>
                         <div style={{fontWeight:800,fontSize:17,color:C.white,marginBottom:3}}>{ev.name}</div>
-                        <div style={{fontSize:13,color:C.muted}}>{fmtDate(ev.date)} · {ev.location}</div>
+                        <div style={{fontSize:15,color:C.muted}}>{fmtDate(ev.date)} · {ev.location}</div>
                       </div>
                       <div style={{textAlign:"center",background:days<=0?"#1a1a1a":days<=7?`${C.amber}22`:`${C.border}33`,borderRadius:10,padding:"8px 10px",marginLeft:10,flexShrink:0}}>
                         <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:days<=0?C.red:days<=7?C.amber:C.white,lineHeight:1}}>
                           {days<=0?"Heute":days}
                         </div>
-                        {days>0&&<div style={{fontSize:10,color:C.muted}}>Tage</div>}
+                        {days>0&&<div style={{fontSize:12,color:C.muted}}>Tage</div>}
                       </div>
                     </div>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontSize:12,color:C.muted}}>💶 {ev.entryFee}</span>
-                      <span style={{fontSize:12,color:C.muted}}>
+                      <span style={{fontSize:14,color:C.muted}}>💶 {ev.entryFee}</span>
+                      <span style={{fontSize:14,color:C.muted}}>
                         {(participants[ev.id]||[]).length}/{ev.maxParticipants} Plätze
                       </span>
                     </div>
@@ -7481,7 +7518,7 @@ Regeln:
                   {/* Day headers */}
                   <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",marginBottom:4}}>
                     {["Mo","Di","Mi","Do","Fr","Sa","So"].map(d=>(
-                      <div key={d} style={{textAlign:"center",fontSize:12,fontWeight:700,color:C.muted,padding:"4px 0"}}>{d}</div>
+                      <div key={d} style={{textAlign:"center",fontSize:14,fontWeight:700,color:C.muted,padding:"4px 0"}}>{d}</div>
                     ))}
                   </div>
 
@@ -7498,7 +7535,7 @@ Regeln:
                             border:dayEvents.length?`1px solid ${hasReg?C.green+"66":C.border}`:"none",
                             position:"relative"}}
                           onClick={()=>{if(dayEvents.length===1){setViewEv(dayEvents[0]);setScreen("event");}}}>
-                          <div style={{fontSize:13,fontWeight:isToday(day)?800:400,color:isToday(day)?"#fff":dayEvents.length?C.white:C.muted,textAlign:"center",lineHeight:1.8}}>{day}</div>
+                          <div style={{fontSize:15,fontWeight:isToday(day)?800:400,color:isToday(day)?"#fff":dayEvents.length?C.white:C.muted,textAlign:"center",lineHeight:1.8}}>{day}</div>
                           {dayEvents.map((ev,i)=>(
                             <div key={ev.id} style={{fontSize:8,fontWeight:700,color:"#fff",
                               background:hasReg?C.green:C.red,borderRadius:3,padding:"1px 3px",
@@ -7515,7 +7552,7 @@ Regeln:
                   {/* Events this month */}
                   {eventsThisMonth.length>0&&(
                     <>
-                      <div style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>
+                      <div style={{fontSize:15,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>
                         Events im {new Date(year,month).toLocaleDateString("de-DE",{month:"long"})}
                       </div>
                       {eventsThisMonth.map(ev=>{
@@ -7529,7 +7566,7 @@ Regeln:
                             </div>
                             <div style={{flex:1,minWidth:0}}>
                               <div style={{fontSize:15,fontWeight:700,color:C.white,marginBottom:2}}>{ev.name}</div>
-                              <div style={{fontSize:12,color:C.muted,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                              <div style={{fontSize:14,color:C.muted,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                                 <span>{ev.location}</span>
                                 {(()=>{
                                   const raw = String(ev.entryFee||ev.price||"").trim();
@@ -7541,8 +7578,8 @@ Regeln:
                               </div>
                             </div>
                             {myReg
-                              ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"4px 8px",fontSize:12,fontWeight:800,flexShrink:0}}>✓ #{myReg.startNr}</span>
-                              : <span style={{background:`${C.border}44`,color:C.muted,borderRadius:6,padding:"4px 8px",fontSize:11,flexShrink:0}}>Anmelden</span>
+                              ? <span style={{background:`${C.green}22`,color:C.green,borderRadius:6,padding:"4px 8px",fontSize:14,fontWeight:800,flexShrink:0}}>✓ #{myReg.startNr}</span>
+                              : <span style={{background:`${C.border}44`,color:C.muted,borderRadius:6,padding:"4px 8px",fontSize:13,flexShrink:0}}>Anmelden</span>
                             }
                           </div>
                         );
@@ -7569,7 +7606,7 @@ Regeln:
             {/* ── Meine anonymen Chats (Gast + Mitglied) ── */}
             {guestThreads.length>0&&(
               <div style={{marginBottom:18}}>
-                <div style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>🔒 MEINE CHATS</div>
+                <div style={{fontSize:15,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>🔒 MEINE CHATS</div>
                 {[...guestThreads].sort((a,b)=>{
                   const at=threads[a.id]?.messages?.filter(m=>!m.isSystem)?.slice(-1)[0];
                   const bt=threads[b.id]?.messages?.filter(m=>!m.isSystem)?.slice(-1)[0];
@@ -7599,11 +7636,11 @@ Regeln:
                             const d=raw&&!raw.includes(":")===false?new Date(raw):null;
                             const today=new Date();
                             const isToday=d&&d.toDateString()===today.toDateString();
-                            return <span style={{fontSize:10,color:C.muted}}>{d&&!isNaN(d)?(isToday?d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):d.toLocaleDateString("de-DE",{day:"2-digit",month:"short"})):last.ts||""}</span>;
+                            return <span style={{fontSize:12,color:C.muted}}>{d&&!isNaN(d)?(isToday?d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):d.toLocaleDateString("de-DE",{day:"2-digit",month:"short"})):last.ts||""}</span>;
                           })()}
                         </div>
-                        <div style={{fontSize:12,color:"#6b7fff",marginBottom:2}}>QAR: {gt.qarId}</div>
-                        <div style={{fontSize:12,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                        <div style={{fontSize:14,color:"#6b7fff",marginBottom:2}}>QAR: {gt.qarId}</div>
+                        <div style={{fontSize:14,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                           {lastMsg?(lastMsg.from===me?.id?"Du: ":"")+lastMsg.text:"Noch keine Nachricht"}
                         </div>
                       </div>
@@ -7635,7 +7672,7 @@ Regeln:
               <div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}>
                 <div style={{fontSize:32,marginBottom:12}}>💬</div>
                 <div style={{fontSize:14,fontWeight:600,marginBottom:6}}>Noch keine Chats</div>
-                <div style={{fontSize:12}}>Scanne einen QR-Code und schreibe dem Fahrzeughalter</div>
+                <div style={{fontSize:14}}>Scanne einen QR-Code und schreibe dem Fahrzeughalter</div>
               </div>
             )}
 
@@ -7654,17 +7691,17 @@ Regeln:
                 : null;
               return (
                 <div style={{marginBottom:16}}>
-                  <div style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>📡 Club-Kanal</div>
+                  <div style={{fontSize:15,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>📡 Club-Kanal</div>
                   <div style={{background:`linear-gradient(135deg, #1a0a0a, #200808)`,border:`2px solid ${C.red}44`,borderRadius:14,padding:"14px",cursor:"pointer",display:"flex",gap:14,alignItems:"center"}}
                     onClick={()=>{ setActiveThread(liveClub?CLUB_CHANNEL_ID:"GROUP_PCN"); setScreen("chat"); }}>
                     <div style={{width:52,height:52,borderRadius:14,background:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>🏎️</div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
                         <span style={{fontWeight:800,fontSize:16,color:C.white}}>PCN Mitglieder</span>
-                        {unreadClub>0&&<span style={{background:C.red,color:"#fff",borderRadius:99,padding:"2px 8px",fontSize:11,fontWeight:800}}>{unreadClub}</span>}
+                        {unreadClub>0&&<span style={{background:C.red,color:"#fff",borderRadius:99,padding:"2px 8px",fontSize:13,fontWeight:800}}>{unreadClub}</span>}
                       </div>
-                      <div style={{fontSize:12,color:`${C.red}99`,marginBottom:2}}>Gruppen-Kanal · {memberCount} Mitglieder</div>
-                      <div style={{fontSize:13,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      <div style={{fontSize:14,color:`${C.red}99`,marginBottom:2}}>Gruppen-Kanal · {memberCount} Mitglieder</div>
+                      <div style={{fontSize:15,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                         {lastClub
                           ? `${lastSender?lastSender+": ":lastClub.from===ADMIN_UUID?"📣 Vorstand: ":""}${lastClub.text}`
                           : "Noch keine Nachrichten"}
@@ -7678,16 +7715,16 @@ Regeln:
             {/* ── Direktnachrichten — nur für Mitglieder ── */}
             {!isGuest&&(
             <div>
-            <div style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>💬 Direktnachrichten</div>
+            <div style={{fontSize:15,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>💬 Direktnachrichten</div>
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}>
               <span style={{fontSize:16}}>🔒</span>
-              <span style={{fontSize:13,color:C.muted,lineHeight:1.5}}>Direktnachrichten sind anonym — Name und E-Mail bleiben geschützt.</span>
+              <span style={{fontSize:15,color:C.muted,lineHeight:1.5}}>Direktnachrichten sind anonym — Name und E-Mail bleiben geschützt.</span>
             </div>
             {myThreads.length===0?(
               <div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}>
                 <div style={{fontSize:32,marginBottom:8}}>💬</div>
                 <div style={{fontSize:14,color:C.white,marginBottom:4}}>Noch keine Nachrichten</div>
-                <div style={{fontSize:12}}>Scanne einen QR-Code am Fahrzeug oder tippe auf „Kontakt" in der Fahrzeugakte</div>
+                <div style={{fontSize:14}}>Scanne einen QR-Code am Fahrzeug oder tippe auf „Kontakt" in der Fahrzeugakte</div>
               </div>
             ):(() => {
               // Filter out empty duplicate threads — keep only one per vehicleId + show threads with messages first
@@ -7746,12 +7783,12 @@ Regeln:
                       </span>
                       <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0}}>
                         {unread&&<div style={{width:8,height:8,borderRadius:"50%",background:C.red}}/>}
-                        <span style={{fontSize:11,color:C.muted}}>{last?.ts||""}</span>
+                        <span style={{fontSize:13,color:C.muted}}>{last?.ts||""}</span>
                       </div>
                     </div>
-                    {isAdminT&&<div style={{fontSize:11,color:C.gold,marginBottom:2}}>Offizielle Mitteilung</div>}
-                    {isAnon&&<div style={{fontSize:11,color:"#6b7fff",marginBottom:2}}>🔒 Anonym · {vehicleName||"Fahrzeuganfrage"}</div>}
-                    <div style={{fontSize:13,color:unread?C.white:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    {isAdminT&&<div style={{fontSize:13,color:C.gold,marginBottom:2}}>Offizielle Mitteilung</div>}
+                    {isAnon&&<div style={{fontSize:13,color:"#6b7fff",marginBottom:2}}>🔒 Anonym · {vehicleName||"Fahrzeuganfrage"}</div>}
+                    <div style={{fontSize:15,color:unread?C.white:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                       {last?(last.from===me?.id?"Du: ":"")+last.text:"Noch keine Nachricht"}
                     </div>
                   </div>
@@ -7798,14 +7835,14 @@ Regeln:
         {tab==="reminders"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-              <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>Erinnerungen</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>Erinnerungen</div>
               <button className="btn sm ghost" onClick={()=>setShowAddRem(true)}>+ Neu</button>
             </div>
             {myReminders.length===0
               ?<div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}>
                   <div style={{fontSize:40,marginBottom:10}}>🎉</div>
                   <div style={{fontSize:16,color:C.white,marginBottom:4}}>Alles erledigt!</div>
-                  <div style={{fontSize:13,color:C.muted}}>Keine offenen Erinnerungen</div>
+                  <div style={{fontSize:15,color:C.muted}}>Keine offenen Erinnerungen</div>
                 </div>
               :myReminders.map(r=>{
                 const days=daysUntil(r.date); const rv=vehicles[r.vehicleId];
@@ -7821,8 +7858,8 @@ Regeln:
                           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                             <div style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}
                               onClick={()=>{setViewV(rv);setScreen("vehicle");}}>
-                              <span style={{fontSize:13,color:C.muted}}>{rv.hersteller} {rv.modell}</span>
-                              <span style={{fontSize:11,color:C.red,fontWeight:700}}>→ Zur Akte</span>
+                              <span style={{fontSize:15,color:C.muted}}>{rv.hersteller} {rv.modell}</span>
+                              <span style={{fontSize:13,color:C.red,fontWeight:700}}>→ Zur Akte</span>
                             </div>
                             {r.date&&(
                               <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
@@ -7833,7 +7870,7 @@ Regeln:
                                     description: rv?`Fahrzeug: ${rv.hersteller} ${rv.modell} (${rv.kennzeichen||""})\nQAR.Gallery: https://qar.gallery/pcn/`:"",
                                     alarmMinutes: 1440,
                                   })}
-                                  style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",borderRadius:7,padding:"4px 9px",color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
+                                  style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",borderRadius:7,padding:"4px 9px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
                                   📅 .ics
                                 </button>
                                 <button
@@ -7842,14 +7879,14 @@ Regeln:
                                     const title = encodeURIComponent(r.title+(rv?` — ${rv.hersteller} ${rv.modell}`:""));
                                     window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}`,"_blank");
                                   }}
-                                  style={{background:"#4285F422",border:"1px solid #4285F444",borderRadius:7,padding:"4px 9px",color:"#4285F4",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
+                                  style={{background:"#4285F422",border:"1px solid #4285F444",borderRadius:7,padding:"4px 9px",color:"#4285F4",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
                                   🗓 Google
                                 </button>
                               </div>
                             )}
                           </div>
                         )}
-                        <div style={{fontSize:13,fontWeight:600,color:overdue?C.red:urgent?C.amber:C.muted}}>
+                        <div style={{fontSize:15,fontWeight:600,color:overdue?C.red:urgent?C.amber:C.muted}}>
                           {overdue?"⚠️ Überfällig":days===0?"📅 Heute fällig":days===1?"📅 Morgen fällig":`📅 In ${days} Tagen`}
                           <span style={{fontWeight:400,color:C.muted}}> · {fmtDate(r.date)}</span>
                         </div>
@@ -7874,7 +7911,7 @@ Regeln:
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,marginBottom:4}}>
               Community
             </div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:12}}>Fahrzeuge die dich begeistern</div>
+            <div style={{fontSize:14,color:C.muted,marginBottom:12}}>Fahrzeuge die dich begeistern</div>
 
             {/* ── Suchmatrix / Alle Fahrzeuge ── */}
             <div style={{marginBottom:20}}>
@@ -7884,7 +7921,7 @@ Regeln:
                   value={communitySearch||""} onChange={e=>setCommunitySearch(e.target.value)}
                   style={{flex:1,fontSize:14,padding:"10px 12px"}}/>
                 <select className="inp" value={communityFilter||"all"} onChange={e=>setCommunityFilter(e.target.value)}
-                  style={{width:"auto",minWidth:100,fontSize:13,padding:"10px 8px"}}>
+                  style={{width:"auto",minWidth:100,fontSize:15,padding:"10px 8px"}}>
                   <option value="all">Alle</option>
                   <option value="porsche">Porsche</option>
                   <option value="favoriten">❤️ Favoriten</option>
@@ -7905,21 +7942,21 @@ Regeln:
                 if(!filtered.length&&!allVehicles.length) return (
                   <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:12,padding:"28px",textAlign:"center"}}>
                     <div style={{fontSize:32,marginBottom:8}}>🏎️</div>
-                    <div style={{fontSize:13,color:C.muted}}>Noch keine anderen Fahrzeuge im Club erfasst</div>
+                    <div style={{fontSize:15,color:C.muted}}>Noch keine anderen Fahrzeuge im Club erfasst</div>
                   </div>
                 );
                 if(!filtered.length) return (
-                  <div style={{textAlign:"center",padding:"24px 0",color:C.muted,fontSize:13}}>Keine Fahrzeuge für diese Suche gefunden</div>
+                  <div style={{textAlign:"center",padding:"24px 0",color:C.muted,fontSize:15}}>Keine Fahrzeuge für diese Suche gefunden</div>
                 );
                 return (
                   <div>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                      <div style={{fontSize:10,color:C.muted,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase"}}>
+                      <div style={{fontSize:12,color:C.muted,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase"}}>
                         {filtered.length} von {allVehicles.length} Fahrzeug{allVehicles.length!==1?"en":""} {q||f!=="all"?"· gefiltert":"im Club"}
                       </div>
                       {(q||f!=="all")&&(
                         <button onClick={()=>{setCommunitySearch("");setCommunityFilter("all");}}
-                          style={{background:"none",border:"none",color:C.red,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                          style={{background:"none",border:"none",color:C.red,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                           Zurücksetzen
                         </button>
                       )}
@@ -7935,21 +7972,21 @@ Regeln:
                             {getCoverImage(v)?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:28}}>🏎️</span>}
                             <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
                               style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,.6)",border:"none",borderRadius:"50%",
-                                width:24,height:24,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                width:24,height:24,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>
                               {isFavorite(v.id)?"❤️":"🤍"}
                             </button>
                           </div>
                           <div style={{padding:"11px 12px",flex:1,minWidth:0}}>
                             <div style={{fontWeight:700,fontSize:14,color:C.white,marginBottom:3}}>{v.hersteller} {v.modell}</div>
                             <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                              <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:3,padding:"1px 6px",fontSize:10,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif"}}>
+                              <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:3,padding:"1px 6px",fontSize:12,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif"}}>
                                 {fmtKz(v.kennzeichen,v.baujahr)}
                               </span>
-                              <span style={{fontSize:10,color:C.muted}}>{v.baujahr}</span>
-                              {(owner?.name||v.ownerName)&&<span style={{fontSize:10,color:C.gold,fontWeight:700}}>{owner?.name||v.ownerName}</span>}
-                              {owner?.isAdmin&&<span style={{fontSize:10,color:C.gold,fontWeight:700}}>🏆</span>}
+                              <span style={{fontSize:12,color:C.muted}}>{v.baujahr}</span>
+                              {(owner?.name||v.ownerName)&&<span style={{fontSize:12,color:C.gold,fontWeight:700}}>{owner?.name||v.ownerName}</span>}
+                              {owner?.isAdmin&&<span style={{fontSize:12,color:C.gold,fontWeight:700}}>🏆</span>}
                               {(listings[v.id]||[]).length>0&&
-                                <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:4,padding:"1px 6px",fontSize:10,fontWeight:800}}>💰 Zum Verkauf</span>}
+                                <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:4,padding:"1px 6px",fontSize:12,fontWeight:800}}>💰 Zum Verkauf</span>}
                             </div>
                           </div>
                           <div style={{display:"flex",alignItems:"center",paddingRight:14}}>
@@ -7968,7 +8005,7 @@ Regeln:
             <div style={{marginBottom:24}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
                 <span style={{fontSize:18}}>❤️</span>
-                <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
+                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
                   Meine Favoriten ({favorites.length})
                 </div>
               </div>
@@ -7976,7 +8013,7 @@ Regeln:
                 <div style={{background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:14,padding:"32px 20px",textAlign:"center"}}>
                   <div style={{fontSize:40,marginBottom:10}}>🤍</div>
                   <div style={{fontSize:14,color:C.white,fontWeight:600,marginBottom:6}}>Noch keine Favoriten</div>
-                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>
+                  <div style={{fontSize:14,color:C.muted,lineHeight:1.6}}>
                     Tippe auf das ❤️ bei einer Fahrzeugakte um sie hier zu speichern
                   </div>
                 </div>
@@ -8015,11 +8052,11 @@ Regeln:
                           )}
                         </div>
                         <div style={{padding:"9px 10px"}}>
-                          <div style={{fontWeight:700,fontSize:13,color:C.white,
+                          <div style={{fontWeight:700,fontSize:15,color:C.white,
                             overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                             {fv.hersteller} {fv.modell}
                           </div>
-                          <div style={{fontSize:10,color:C.muted,marginTop:2}}>{fv.baujahr} · {fv.farbe}</div>
+                          <div style={{fontSize:12,color:C.muted,marginTop:2}}>{fv.baujahr} · {fv.farbe}</div>
                         </div>
                       </div>
                     );
@@ -8036,7 +8073,7 @@ Regeln:
                 <div style={{marginBottom:20}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
                     <span style={{fontSize:16}}>👁</span>
-                    <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
+                    <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
                       Zuletzt angesehen
                     </div>
                   </div>
@@ -8058,12 +8095,12 @@ Regeln:
                                 borderRadius:4,padding:"1px 5px",fontSize:9,fontWeight:800}}>💰 Zum Verkauf</div>}
                             <button onClick={e=>{e.stopPropagation();toggleFavorite(id);}}
                               style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,.6)",border:"none",
-                                borderRadius:"50%",width:24,height:24,cursor:"pointer",fontSize:13,display:"flex",
+                                borderRadius:"50%",width:24,height:24,cursor:"pointer",fontSize:15,display:"flex",
                                 alignItems:"center",justifyContent:"center",color:isFavorite(id)?C.red:"#fff"}}>
                               {isFavorite(id)?"❤":"🤍"}
                             </button>
                           </div>
-                          <div style={{fontSize:11,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
+                          <div style={{fontSize:13,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
                           <div style={{fontSize:9,color:C.muted}}>{rv.baujahr}</div>
                         </div>
                       );
@@ -8080,10 +8117,10 @@ Regeln:
               if(!pending.length) return null;
               return (
                 <div style={{background:`${C.gold}11`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:"13px 16px",marginBottom:12}}>
-                  <div style={{fontSize:13,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>
+                  <div style={{fontSize:15,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>
                     📱 QR-Scans — Bestätigung ausstehend ({pending.length})
                   </div>
-                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>
+                  <div style={{fontSize:14,color:C.muted,lineHeight:1.6}}>
                     Du hast {pending.length} Fahrzeug{pending.length>1?"e":""} gescannt. Sobald der Besitzer bestätigt, erhältst du +{POINTS.qr_scan.toLocaleString("de-DE")} Punkte je Scan.
                     Die Bestätigung erfolgt automatisch über den Admin-Chat des Besitzers.
                   </div>
@@ -8093,7 +8130,7 @@ Regeln:
 
             {/* Scan stats */}
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px"}}>
-              <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>📊 Meine Aktivität</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>📊 Meine Aktivität</div>
               {[
                 ["❤️","Favoriten",favorites.length+" Fahrzeuge"],
                 ["👁","Angesehen",getViewedVehicles().length+" Akten · +"+(getViewedVehicles().length*POINTS.view_akte).toLocaleString("de-DE")+" Pkt"],
@@ -8101,8 +8138,8 @@ Regeln:
               ].map(([icon,label,val])=>(
                 <div key={label} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
                   <span style={{fontSize:18,width:24,textAlign:"center"}}>{icon}</span>
-                  <div style={{flex:1,fontSize:13,color:C.white}}>{label}</div>
-                  <div style={{fontSize:12,color:C.muted}}>{val}</div>
+                  <div style={{flex:1,fontSize:15,color:C.white}}>{label}</div>
+                  <div style={{fontSize:14,color:C.muted}}>{val}</div>
                 </div>
               ))}
             </div>
@@ -8122,12 +8159,12 @@ Regeln:
                     ?<img src={me.avatar} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                     :<span style={{fontSize:26,fontWeight:900,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif"}}>{(me?.name||"?")[0].toUpperCase()}</span>
                   }
-                  <div style={{position:"absolute",bottom:0,right:0,width:22,height:22,background:C.red,borderRadius:"50%",border:"2px solid #1a0808",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>📷</div>
+                  <div style={{position:"absolute",bottom:0,right:0,width:22,height:22,background:C.red,borderRadius:"50%",border:"2px solid #1a0808",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>📷</div>
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1}}>{me?.name}</div>
-                  <div style={{fontSize:13,color:C.muted,marginTop:3}}>{me?.role==="guest"?"Gast-Account":"PCN-Mitglied"}{me?.memberNr?" · "+me.memberNr:""}</div>
-                  {me?.city&&<div style={{fontSize:13,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
+                  <div style={{fontSize:15,color:C.muted,marginTop:3}}>{me?.role==="guest"?"Gast-Account":"PCN-Mitglied"}{me?.memberNr?" · "+me.memberNr:""}</div>
+                  {me?.city&&<div style={{fontSize:15,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
                 </div>
                 <button className="btn sm ghost" style={{flexShrink:0,borderColor:"rgba(255,255,255,.2)",color:"#fff"}} onClick={openEditProfile}>✏️</button>
               </div>
@@ -8142,7 +8179,7 @@ Regeln:
                       style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,padding:0,lineHeight:1}}>ℹ️</button>
                   </div>
                   <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:12,color:C.muted}}>Nächste Stufe</div>
+                    <div style={{fontSize:14,color:C.muted}}>Nächste Stufe</div>
                     <div style={{fontSize:15,fontWeight:700,color:C.gold}}>
                       {nextTier.icon||""} {nextTier.name} · {(nextTier.pts-myPoints).toLocaleString("de-DE")} Pkt
                     </div>
@@ -8154,13 +8191,13 @@ Regeln:
                 </div>
                 {/* Gegenwert + aktuelle Stufe */}
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
-                  <div style={{fontSize:11,color:C.muted}}>
+                  <div style={{fontSize:13,color:C.muted}}>
                     {currentTier
                       ? <span style={{color:currentTier.color,fontWeight:700}}>{currentTier.icon} {currentTier.name}</span>
                       : <span>Noch keine Stufe</span>}
                     {" · "}🏁 {myParticipations.length} Events · 🚗 {myVehicles.length} Fzg
                   </div>
-                  <div style={{fontSize:11,color:C.gold,fontWeight:700}}>
+                  <div style={{fontSize:13,color:C.gold,fontWeight:700}}>
                     ≈ {ptsToEur(myPoints).toFixed(2).replace(".",",")} € Gegenwert
                   </div>
                 </div>
@@ -8168,7 +8205,7 @@ Regeln:
 
               {me?.role==="guest"&&(
                 <div style={{marginTop:14,paddingTop:12,borderTop:`1px solid rgba(255,255,255,.1)`,display:"flex",gap:10,alignItems:"center"}}>
-                  <div style={{flex:1,fontSize:13,color:C.muted}}>Vollmitglied werden — Fahrzeugakte, QR-Code & Events</div>
+                  <div style={{flex:1,fontSize:15,color:C.muted}}>Vollmitglied werden — Fahrzeugakte, QR-Code & Events</div>
                   <button className="btn sm" onClick={()=>{ setLoginForm({mode:"register",code:"",name:me?.name||"",email:me?.email||""}); setScreen("splash"); }}>Upgrade →</button>
                 </div>
               )}
@@ -8185,14 +8222,14 @@ Regeln:
                 border:`1px solid ${C.border}`}}/>
               <div style={{flex:1}}>
                 <div style={{fontWeight:700,fontSize:14,color:C.white}}>🎨 Persönlicher Hintergrund</div>
-                <div style={{fontSize:11,color:C.muted,marginTop:1}}>{BACKGROUND_THEMES[bgTheme]?.label||"Kein Hintergrund"}</div>
+                <div style={{fontSize:13,color:C.muted,marginTop:1}}>{BACKGROUND_THEMES[bgTheme]?.label||"Kein Hintergrund"}</div>
               </div>
               <span style={{fontSize:18,color:C.muted}}>›</span>
             </button>
 
             {/* ── Statistiken ── */}
             <div className="card" style={{padding:16,marginBottom:12}}>
-              <div style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Statistiken · zum Öffnen tippen</div>
+              <div style={{fontSize:15,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Statistiken · zum Öffnen tippen</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 {[
                   ["🚗","Fahrzeuge",myVehicles.length,"im System",()=>setTab("dashboard")],
@@ -8212,9 +8249,9 @@ Regeln:
                     onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
                     <div style={{fontSize:20,marginBottom:3}}>{icon}</div>
                     <div style={{fontSize:24,fontWeight:800,color:C.white,fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>{val}</div>
-                    <div style={{fontSize:11,color:C.muted,marginTop:2,fontWeight:600}}>{label}</div>
+                    <div style={{fontSize:13,color:C.muted,marginTop:2,fontWeight:600}}>{label}</div>
                     {sub&&<div style={{fontSize:9,color:"#555",marginTop:1}}>{sub}</div>}
-                    <span style={{position:"absolute",top:8,right:9,fontSize:11,color:"#444"}}>›</span>
+                    <span style={{position:"absolute",top:8,right:9,fontSize:13,color:"#444"}}>›</span>
                   </button>
                 ))}
               </div>
@@ -8222,12 +8259,12 @@ Regeln:
 
             {/* ── Milestones ── */}
             <div className="card" style={{padding:16,marginBottom:14}}>
-              <div style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Milestones</div>
+              <div style={{fontSize:15,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Milestones</div>
               {MILESTONES.map(m=>{const done=m.check(appState);return(
                 <div key={m.id} style={{display:"flex",gap:12,alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
-                  <div style={{width:28,height:28,borderRadius:"50%",background:done?C.green:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:done?"#fff":C.muted,flexShrink:0,fontWeight:700}}>{done?"✓":"○"}</div>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:done?C.green:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:done?"#fff":C.muted,flexShrink:0,fontWeight:700}}>{done?"✓":"○"}</div>
                   <span style={{fontSize:14,color:done?C.white:C.muted,flex:1}}>{m.label}</span>
-                  {done&&<span style={{fontSize:11,color:C.green,fontWeight:700}}>AKTIV</span>}
+                  {done&&<span style={{fontSize:13,color:C.green,fontWeight:700}}>AKTIV</span>}
                 </div>
               );})}
             </div>
@@ -8235,7 +8272,7 @@ Regeln:
             {/* ── Wallet / Bezahldaten ── */}
             <div className="card" style={{padding:16,marginBottom:14}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>💳 Wallet & Mitgliedschaft</div>
+                <div style={{fontSize:15,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2}}>💳 Wallet & Mitgliedschaft</div>
               </div>
               {(()=>{
                 const isPaid = !!(me?.beitrag_bezahlt ?? me?.beitragBezahlt);
@@ -8245,11 +8282,11 @@ Regeln:
                   <>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
                       <div style={{background:C.black,borderRadius:10,padding:"12px"}}>
-                        <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Mitglied seit</div>
+                        <div style={{fontSize:13,color:C.muted,marginBottom:4}}>Mitglied seit</div>
                         <div style={{fontSize:15,fontWeight:700,color:C.white}}>{me?.createdAt?new Date(me.createdAt).toLocaleDateString("de-DE",{month:"short",year:"numeric"}):"2026"}</div>
                       </div>
                       <div style={{background:C.black,borderRadius:10,padding:"12px"}}>
-                        <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Beitrag {year}</div>
+                        <div style={{fontSize:13,color:C.muted,marginBottom:4}}>Beitrag {year}</div>
                         <div style={{fontSize:15,fontWeight:700,color:isPaid?C.green:"#ef4444"}}>
                           {isPaid?"✓ Bezahlt":"⚠ Offen"}
                         </div>
@@ -8262,11 +8299,11 @@ Regeln:
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                         <div>
                           <div style={{fontSize:14,fontWeight:700,color:C.white}}>PCN Mitgliedschaft</div>
-                          <div style={{fontSize:12,color:C.muted,marginTop:2}}>
+                          <div style={{fontSize:14,color:C.muted,marginTop:2}}>
                             {isPaid?`Gültig bis: 31.12.${year}`:`Beitrag ${year} noch offen`}
                           </div>
                         </div>
-                        <div style={{background:isPaid?C.green:"#ef4444",borderRadius:6,padding:"4px 10px",fontSize:12,fontWeight:800,color:"#fff"}}>
+                        <div style={{background:isPaid?C.green:"#ef4444",borderRadius:6,padding:"4px 10px",fontSize:14,fontWeight:800,color:"#fff"}}>
                           {isPaid?"AKTIV":"OFFEN"}
                         </div>
                       </div>
@@ -8288,13 +8325,13 @@ Regeln:
                           }}>
                           💳 Mitgliedsbeitrag bezahlen
                         </button>
-                        <div style={{fontSize:10,color:"#444",textAlign:"center",marginTop:6}}>
+                        <div style={{fontSize:12,color:"#444",textAlign:"center",marginTop:6}}>
                           Sichere Zahlung via Stripe · SEPA · Kreditkarte
                         </div>
                       </>
                     )}
                     {isPaid&&(
-                      <div style={{fontSize:11,color:C.green,textAlign:"center",padding:"8px 0"}}>
+                      <div style={{fontSize:13,color:C.green,textAlign:"center",padding:"8px 0"}}>
                         ✓ Vielen Dank — dein Beitrag {year} ist verbucht.
                       </div>
                     )}
@@ -8305,14 +8342,14 @@ Regeln:
 
             {/* ── Pannenhilfe-Mitgliedschaften ── */}
             <div className="card" style={{padding:16,marginBottom:14}}>
-              <div style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>🚨 Pannenhilfe</div>
-              <div style={{fontSize:11,color:C.muted,marginBottom:12,lineHeight:1.6}}>
+              <div style={{fontSize:15,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>🚨 Pannenhilfe</div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:12,lineHeight:1.6}}>
                 Mitgliedsnummer hinterlegen — bei einer Panne dann direkt in der Fahrzeugakte griffbereit, mit Anruf-Button.
               </div>
-              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:4}}>ADAC-Mitgliedsnummer</div>
+              <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:4}}>ADAC-Mitgliedsnummer</div>
               <input className="inp" placeholder="z.B. 123456789" style={{marginBottom:10}}
                 value={adacNrInput} onChange={e=>setAdacNrInput(e.target.value)}/>
-              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:4}}>AvD-Mitgliedsnummer</div>
+              <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:4}}>AvD-Mitgliedsnummer</div>
               <input className="inp" placeholder="z.B. 987654321" style={{marginBottom:12}}
                 value={avdNrInput} onChange={e=>setAvdNrInput(e.target.value)}/>
               <button className="btn ghost" style={{width:"100%"}} disabled={breakdownBusy} onClick={saveBreakdownMembership}>
@@ -8345,7 +8382,7 @@ Regeln:
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>
                   📄 Fahrzeugschein scannen
                 </div>
-                <div style={{fontSize:11,color:C.muted,marginTop:1}}>Zulassungsbescheinigung Teil I</div>
+                <div style={{fontSize:13,color:C.muted,marginTop:1}}>Zulassungsbescheinigung Teil I</div>
               </div>
               {!scheinBusy&&(
                 <button onClick={()=>{setScheinOpen(false);setScheinResult(null);}}
@@ -8356,8 +8393,8 @@ Regeln:
             {/* Datenschutz-Hinweis — steht bewusst ganz oben */}
             <div style={{background:"#22c55e0d",border:"1px solid #22c55e33",borderRadius:9,
               padding:"10px 12px",margin:"14px 0",display:"flex",gap:9,alignItems:"flex-start"}}>
-              <span style={{fontSize:13,flexShrink:0}}>🔒</span>
-              <div style={{fontSize:11,color:"#8c8",lineHeight:1.6}}>
+              <span style={{fontSize:15,flexShrink:0}}>🔒</span>
+              <div style={{fontSize:13,color:"#8c8",lineHeight:1.6}}>
                 Es werden <strong style={{color:"#afa"}}>nur Fahrzeugdaten</strong> ausgelesen.
                 Deine Halterdaten — Name, Anschrift, Geburtsdatum — werden ignoriert und
                 nicht gespeichert. Das Bild wird nach der Analyse verworfen.
@@ -8370,7 +8407,7 @@ Regeln:
                 <div style={{background:C.card,border:`1px dashed ${C.border}`,borderRadius:12,
                   padding:"24px 16px",textAlign:"center",marginBottom:12}}>
                   <div style={{fontSize:38,marginBottom:8}}>📄</div>
-                  <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:16}}>
+                  <div style={{fontSize:14,color:C.muted,lineHeight:1.6,marginBottom:16}}>
                     Leg den Fahrzeugschein flach hin, gutes Licht,<br/>
                     das ganze Dokument im Bild.
                   </div>
@@ -8385,7 +8422,7 @@ Regeln:
                     📷 Foto aufnehmen
                   </label>
                 </div>
-                <div style={{fontSize:10,color:"#555",lineHeight:1.6,textAlign:"center"}}>
+                <div style={{fontSize:12,color:"#555",lineHeight:1.6,textAlign:"center"}}>
                   Tipp: Der Schein muss nicht perfekt gerade liegen — aber die Felder
                   sollten scharf und ohne Blitzreflexion sein.
                 </div>
@@ -8397,21 +8434,21 @@ Regeln:
               <div style={{textAlign:"center",padding:"32px 0"}}>
                 <div style={{width:28,height:28,border:`3px solid ${C.gold}33`,borderTopColor:C.gold,
                   borderRadius:"50%",animation:"spin .7s linear infinite",margin:"0 auto 14px"}}/>
-                <div style={{fontSize:13,color:C.gold,fontWeight:700,marginBottom:4}}>Schein wird gelesen…</div>
-                <div style={{fontSize:11,color:"#666"}}>Felder B, D.1, D.3, E, P.3, R</div>
+                <div style={{fontSize:15,color:C.gold,fontWeight:700,marginBottom:4}}>Schein wird gelesen…</div>
+                <div style={{fontSize:13,color:"#666"}}>Felder B, D.1, D.3, E, P.3, R</div>
               </div>
             )}
 
             {/* Nicht konfiguriert */}
             {scheinResult?.notConfigured&&(
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px"}}>
-                <div style={{fontSize:13,color:"#999",fontWeight:600,marginBottom:5}}>🔧 Noch nicht aktiviert</div>
-                <div style={{fontSize:11,color:"#666",lineHeight:1.6,marginBottom:14}}>
+                <div style={{fontSize:15,color:"#999",fontWeight:600,marginBottom:5}}>🔧 Noch nicht aktiviert</div>
+                <div style={{fontSize:13,color:"#666",lineHeight:1.6,marginBottom:14}}>
                   Der Scanner wird gerade eingerichtet. Bis dahin bitte die Felder
                   unten manuell ausfüllen — dauert auch nur zwei Minuten.
                 </div>
                 <button onClick={()=>{setScheinOpen(false);setScheinResult(null);}}
-                  className="btn ghost" style={{width:"100%",fontSize:13}}>
+                  className="btn ghost" style={{width:"100%",fontSize:15}}>
                   Manuell eintragen
                 </button>
               </div>
@@ -8420,11 +8457,11 @@ Regeln:
             {/* Falsches Dokument */}
             {scheinResult?.wrongDoc&&(
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px"}}>
-                <div style={{fontSize:13,color:"#e88",fontWeight:600,marginBottom:5}}>Das sieht nicht nach einem Fahrzeugschein aus</div>
-                <div style={{fontSize:11,color:"#666",lineHeight:1.6,marginBottom:14}}>
+                <div style={{fontSize:15,color:"#e88",fontWeight:600,marginBottom:5}}>Das sieht nicht nach einem Fahrzeugschein aus</div>
+                <div style={{fontSize:13,color:"#666",lineHeight:1.6,marginBottom:14}}>
                   {scheinResult.hinweis||"Bitte die Zulassungsbescheinigung Teil I fotografieren."}
                 </div>
-                <button onClick={()=>setScheinResult(null)} className="btn ghost" style={{width:"100%",fontSize:13}}>
+                <button onClick={()=>setScheinResult(null)} className="btn ghost" style={{width:"100%",fontSize:15}}>
                   ↻ Nochmal versuchen
                 </button>
               </div>
@@ -8433,18 +8470,18 @@ Regeln:
             {/* Nichts erkannt / Fehler */}
             {(scheinResult?.empty||scheinResult?.failed)&&(
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px"}}>
-                <div style={{fontSize:13,color:"#999",fontWeight:600,marginBottom:5}}>
+                <div style={{fontSize:15,color:"#999",fontWeight:600,marginBottom:5}}>
                   {scheinResult.failed?"Analyse fehlgeschlagen":"Nichts sicher gelesen"}
                 </div>
-                <div style={{fontSize:11,color:"#666",lineHeight:1.6,marginBottom:14}}>
+                <div style={{fontSize:13,color:"#666",lineHeight:1.6,marginBottom:14}}>
                   Bessere Chancen: mehr Licht, näher ran, Blitz aus, Schein flach hinlegen.
                 </div>
                 <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>setScheinResult(null)} className="btn ghost" style={{flex:1,fontSize:13}}>
+                  <button onClick={()=>setScheinResult(null)} className="btn ghost" style={{flex:1,fontSize:15}}>
                     ↻ Nochmal
                   </button>
                   <button onClick={()=>{setScheinOpen(false);setScheinResult(null);}}
-                    className="btn ghost" style={{flex:1,fontSize:13}}>
+                    className="btn ghost" style={{flex:1,fontSize:15}}>
                     Manuell
                   </button>
                 </div>
@@ -8456,7 +8493,7 @@ Regeln:
               <div>
                 <div style={{background:`${C.green}0d`,border:`1px solid ${C.green}33`,borderRadius:9,
                   padding:"9px 12px",marginBottom:12}}>
-                  <div style={{fontSize:12,color:C.green,fontWeight:700}}>
+                  <div style={{fontSize:14,color:C.green,fontWeight:700}}>
                     ✓ {Object.keys(scheinResult.fields).length} Felder gelesen
                   </div>
                 </div>
@@ -8467,9 +8504,9 @@ Regeln:
                   return (
                     <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
                       padding:"8px 0",borderBottom:`1px solid ${C.border}`,gap:10}}>
-                      <span style={{fontSize:12,color:C.muted,flexShrink:0}}>{labels[k]||k}</span>
+                      <span style={{fontSize:14,color:C.muted,flexShrink:0}}>{labels[k]||k}</span>
                       <div style={{display:"flex",gap:7,alignItems:"center",minWidth:0}}>
-                        <span style={{fontSize:13,color:C.white,fontWeight:600,
+                        <span style={{fontSize:15,color:C.white,fontWeight:600,
                           overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
                           fontFamily:k==="fin"?"ui-monospace,monospace":"inherit"}}>{v}</span>
                         {conf!=null&&(
@@ -8482,12 +8519,12 @@ Regeln:
                   );
                 })}
                 {scheinResult.erstzulassung&&(
-                  <div style={{fontSize:10,color:"#666",marginTop:8}}>
+                  <div style={{fontSize:12,color:"#666",marginTop:8}}>
                     Erstzulassung laut Schein: {scheinResult.erstzulassung}
                   </div>
                 )}
                 {scheinResult.hinweis&&(
-                  <div style={{fontSize:11,color:"#888",marginTop:8,lineHeight:1.5}}>ℹ️ {scheinResult.hinweis}</div>
+                  <div style={{fontSize:13,color:"#888",marginTop:8,lineHeight:1.5}}>ℹ️ {scheinResult.hinweis}</div>
                 )}
                 <button onClick={applySchein} className="btn"
                   style={{width:"100%",marginTop:14,background:C.gold,color:"#0a0a0a",fontWeight:800,padding:"12px"}}>
@@ -8495,10 +8532,10 @@ Regeln:
                 </button>
                 <button onClick={()=>setScheinResult(null)}
                   style={{width:"100%",marginTop:7,background:"none",border:"none",color:"#666",
-                    fontSize:11,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"6px"}}>
+                    fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"6px"}}>
                   ↻ Nochmal scannen
                 </button>
-                <div style={{fontSize:10,color:"#555",textAlign:"center",marginTop:8,lineHeight:1.4}}>
+                <div style={{fontSize:12,color:"#555",textAlign:"center",marginTop:8,lineHeight:1.4}}>
                   Bitte die Werte kurz kontrollieren — besonders FIN und Kennzeichen
                 </div>
               </div>
@@ -8521,7 +8558,7 @@ Regeln:
               <button onClick={()=>setShowPrivacyInfo(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
             </div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+            <div style={{fontSize:14,color:C.muted,marginBottom:18,lineHeight:1.6}}>
               Kurz und ohne Juristendeutsch.
             </div>
 
@@ -8540,14 +8577,14 @@ Regeln:
                b:"Du kannst jederzeit beim Vorstand die Löschung deines Kontos verlangen. Damit verschwinden alle deine Daten — Fahrzeuge, Logbuch, Nachrichten."},
             ].map(({t,b})=>(
               <div key={t} style={{marginBottom:14,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
-                <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:4}}>{t}</div>
-                <div style={{fontSize:12,color:"#999",lineHeight:1.65}}>{b}</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.white,marginBottom:4}}>{t}</div>
+                <div style={{fontSize:14,color:"#999",lineHeight:1.65}}>{b}</div>
               </div>
             ))}
 
             <div style={{background:`${C.gold}0d`,border:`1px solid ${C.gold}33`,borderRadius:9,
               padding:"11px 13px",marginBottom:16}}>
-              <div style={{fontSize:11,color:"#aaa",lineHeight:1.65}}>
+              <div style={{fontSize:13,color:"#aaa",lineHeight:1.65}}>
                 <strong style={{color:C.gold}}>Pilotphase:</strong> Die Plattform wird gerade mit dem Vorstand
                 erprobt. Es kann Fehler geben — melde sie gerne. Deine Daten bleiben dabei erhalten.
               </div>
@@ -8589,13 +8626,13 @@ Regeln:
 
             {/* Zeitraum */}
             <div style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Zeitraum</div>
+              <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Zeitraum</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[["","Alle"],["week","Diese Woche"],["month","Diesen Monat"],["past","Vergangen"]].map(([v,label])=>(
                   <button key={v} onClick={()=>setEventFilters(p=>({...p,period:v}))}
                     style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.period===v?C.red:C.border}`,
                       background:eventFilters.period===v?`${C.red}22`:"transparent",
-                      color:eventFilters.period===v?C.red:C.muted,fontSize:12,fontWeight:700,
+                      color:eventFilters.period===v?C.red:C.muted,fontSize:14,fontWeight:700,
                       cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                     {label}
                   </button>
@@ -8605,13 +8642,13 @@ Regeln:
 
             {/* Preis */}
             <div style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Preis</div>
+              <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Preis</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[["","Alle"],["free","Kostenlos"],["paid","Kostenpflichtig"]].map(([v,label])=>(
                   <button key={v} onClick={()=>setEventFilters(p=>({...p,price:v}))}
                     style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.price===v?C.red:C.border}`,
                       background:eventFilters.price===v?`${C.red}22`:"transparent",
-                      color:eventFilters.price===v?C.red:C.muted,fontSize:12,fontWeight:700,
+                      color:eventFilters.price===v?C.red:C.muted,fontSize:14,fontWeight:700,
                       cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                     {label}
                   </button>
@@ -8625,12 +8662,12 @@ Regeln:
               if(!cats.length) return null;
               return (
                 <div style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
-                  <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Kategorie</div>
+                  <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Kategorie</div>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     <button onClick={()=>setEventFilters(p=>({...p,category:""}))}
                       style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${!eventFilters.category?C.red:C.border}`,
                         background:!eventFilters.category?`${C.red}22`:"transparent",
-                        color:!eventFilters.category?C.red:C.muted,fontSize:12,fontWeight:700,
+                        color:!eventFilters.category?C.red:C.muted,fontSize:14,fontWeight:700,
                         cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                       Alle
                     </button>
@@ -8638,7 +8675,7 @@ Regeln:
                       <button key={cat} onClick={()=>setEventFilters(p=>({...p,category:cat}))}
                         style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.category===cat?C.red:C.border}`,
                           background:eventFilters.category===cat?`${C.red}22`:"transparent",
-                          color:eventFilters.category===cat?C.red:C.muted,fontSize:12,fontWeight:700,
+                          color:eventFilters.category===cat?C.red:C.muted,fontSize:14,fontWeight:700,
                           cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                         {cat}
                       </button>
@@ -8651,12 +8688,12 @@ Regeln:
             <div style={{display:"flex",gap:8,marginTop:16}}>
               <button onClick={()=>setEventFilters({onlyMine:false,category:"",price:"",period:"",onlySpotsLeft:false})}
                 style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",
-                  color:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                  color:C.muted,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                 Zurücksetzen
               </button>
               <button onClick={()=>setShowEventFilters(false)}
                 style={{flex:1,background:C.red,border:"none",borderRadius:10,padding:"12px",
-                  color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                  color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                 Anwenden
               </button>
             </div>
@@ -8677,7 +8714,7 @@ Regeln:
               <button onClick={()=>setShowContactPrivacyInfo(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
             </div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+            <div style={{fontSize:14,color:C.muted,marginBottom:18,lineHeight:1.6}}>
               Kurz und ohne Juristendeutsch — du wirst hier kein Mitglied, du schickst nur eine Nachricht.
             </div>
 
@@ -8696,14 +8733,14 @@ Regeln:
                b:"Du kannst jederzeit per E-Mail an den Vorstand die Löschung deiner Kontaktdaten verlangen."},
             ].map(({t,b})=>(
               <div key={t} style={{marginBottom:14,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
-                <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:4}}>{t}</div>
-                <div style={{fontSize:12,color:"#999",lineHeight:1.65}}>{b}</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.white,marginBottom:4}}>{t}</div>
+                <div style={{fontSize:14,color:"#999",lineHeight:1.65}}>{b}</div>
               </div>
             ))}
 
             <div style={{background:`${C.gold}0d`,border:`1px solid ${C.gold}33`,borderRadius:9,
               padding:"11px 13px",marginBottom:16}}>
-              <div style={{fontSize:11,color:"#aaa",lineHeight:1.65}}>
+              <div style={{fontSize:13,color:"#aaa",lineHeight:1.65}}>
                 <strong style={{color:C.gold}}>Hinweis:</strong> Ausführliche AGB folgen in Kürze an dieser Stelle.
                 Bis dahin gilt diese Kurzerklärung als verbindliche Information zur Datenverarbeitung.
               </div>
@@ -8734,14 +8771,14 @@ Regeln:
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:900,
                 color:"#6b7fff",letterSpacing:.5}}>Demo-Modus aktiv</div>
             </div>
-            <div style={{fontSize:13,color:"#ccc",lineHeight:1.65,marginBottom:10}}>
+            <div style={{fontSize:15,color:"#ccc",lineHeight:1.65,marginBottom:10}}>
               Du bist als <strong style={{color:"#fff"}}>Max Mustermann</strong> unterwegs.
               Alle Funktionen sind vollständig erlebbar — QR-Code, Events, Chat, Punkte und Admin-Dashboard.
             </div>
             <div style={{background:"#ffffff0a",borderRadius:8,padding:"8px 12px",
               display:"flex",gap:8,alignItems:"center"}}>
-              <span style={{fontSize:12}}>🔄</span>
-              <div style={{fontSize:11,color:"#777"}}>Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt.</div>
+              <span style={{fontSize:14}}>🔄</span>
+              <div style={{fontSize:13,color:"#777"}}>Demo-Daten werden bei jedem Seitenaufruf zurückgesetzt.</div>
             </div>
           </div>
         </div>
@@ -8771,9 +8808,9 @@ Regeln:
                   <div>
                     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                       <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>{showFeatureDetail.label}</div>
-                      <span style={{fontSize:12}}>{isUnlocked?"✅":"🔒"}</span>
+                      <span style={{fontSize:14}}>{isUnlocked?"✅":"🔒"}</span>
                     </div>
-                    <div style={{fontSize:12,color:accent,fontWeight:700}}>
+                    <div style={{fontSize:14,color:accent,fontWeight:700}}>
                       {isUnlocked?"✓ Freigeschaltet":showFeatureDetail.milestone}
                     </div>
                   </div>
@@ -8783,7 +8820,7 @@ Regeln:
                 </div>
                 {!isUnlocked&&(
                   <div style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:20}}>
-                    <div style={{fontSize:13,fontWeight:800,color:"#888",textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>So freischalten</div>
+                    <div style={{fontSize:15,fontWeight:800,color:"#888",textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>So freischalten</div>
                     {[
                       ["💳","Premium-Mitgliedschaft aktivieren","Sofortzugang zu allen Funktionen"],
                       ["🏆","Punkte durch Events sammeln","Aktive Teilnahme schaltet Features frei"],
@@ -8792,8 +8829,8 @@ Regeln:
                       <div key={title} style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
                         <span style={{fontSize:18,flexShrink:0}}>{ic}</span>
                         <div>
-                          <div style={{fontSize:12,fontWeight:700,color:C.white}}>{title}</div>
-                          <div style={{fontSize:10,color:C.muted}}>{sub}</div>
+                          <div style={{fontSize:14,fontWeight:700,color:C.white}}>{title}</div>
+                          <div style={{fontSize:12,color:C.muted}}>{sub}</div>
                         </div>
                       </div>
                     ))}
@@ -8832,7 +8869,7 @@ Regeln:
                 <div style={{width:44,height:44,borderRadius:12,background:`${color}22`,border:`1px solid ${color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{icon}</div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:16,fontWeight:700,color:C.white,marginBottom:4}}>{title}</div>
-                  <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>{text}</div>
+                  <div style={{fontSize:15,color:C.muted,lineHeight:1.6}}>{text}</div>
                 </div>
               </div>
             ))}
@@ -8854,7 +8891,7 @@ Regeln:
               <button onClick={()=>{setShowTransferPanel(null);setQarIdRequestInput("");}}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
             </div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+            <div style={{fontSize:14,color:C.muted,marginBottom:16,lineHeight:1.6}}>
               QAR-ID des Fahrzeugs eingeben, das du übernehmen möchtest. Der bisherige Eigentümer erhält eine Anfrage und muss sie bestätigen — das Fahrzeug wechselt nicht sofort.
             </div>
             <input className="inp" placeholder="z.B. QAR-XXXXXXXX" style={{marginBottom:14,fontFamily:"monospace",textAlign:"center",fontSize:16,letterSpacing:1}}
@@ -8881,13 +8918,13 @@ Regeln:
               <button onClick={()=>setShowBuyerConfirm(null)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
-            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>1. Nutzungsbedingungen</div>
-            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:12,color:C.muted,lineHeight:1.6}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>1. Nutzungsbedingungen</div>
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:14,color:C.muted,lineHeight:1.6}}>
               „Ich übernehme die digitale QAR-Akte dieses Fahrzeugs und akzeptiere die Allgemeinen Geschäftsbedingungen von QAR.Gallery für die weitere Nutzung. Mir ist bewusst, dass nach einer 30-tägigen kostenlosen Probezeit eine Zahlung erforderlich wird, andernfalls die Akte gesperrt wird."
             </div>
 
-            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>2. Sichtbarkeit der übernommenen Historie</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.6}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>2. Sichtbarkeit der übernommenen Historie</div>
+            <div style={{fontSize:13,color:C.muted,marginBottom:10,lineHeight:1.6}}>
               Was von den Einträgen des vorherigen Eigentümers öffentlich sichtbar bleiben soll — ohne Auswahl bleibt alles zunächst privat.
             </div>
             {[["gallery","📸 Bisherige Fotogalerie"],["logbook","📋 Bisheriges Service-Logbuch"],["events","🏁 Bisherige Veranstaltungsteilnahmen"]].map(([key,label])=>(
@@ -8895,7 +8932,7 @@ Regeln:
                 <input type="checkbox" checked={!!buyerVisibilityChoice[key]}
                   onChange={e=>setBuyerVisibilityChoice(p=>({...p,[key]:e.target.checked}))}
                   style={{width:18,height:18,accentColor:C.gold}}/>
-                <span style={{fontSize:13,color:C.white}}>{label}</span>
+                <span style={{fontSize:15,color:C.white}}>{label}</span>
               </label>
             ))}
 
@@ -8921,7 +8958,7 @@ Regeln:
                 <button onClick={()=>setShowForeignTransferStart(null)}
                   style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
               </div>
-              <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+              <div style={{fontSize:14,color:C.muted,marginBottom:18,lineHeight:1.6}}>
                 {fv?`${fv.hersteller||""} ${fv.modell||""}`.trim():"Dieses Fahrzeug"} gehört aktuell einem anderen Mitglied. Ist der Verkäufer jetzt bei dir?
               </div>
               <button className="btn" style={{width:"100%",marginBottom:8}} disabled={transferBusy}
@@ -8947,7 +8984,7 @@ Regeln:
             <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
               onClick={e=>e.stopPropagation()}>
               <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>📍 Standort merken?</div>
-              <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+              <div style={{fontSize:14,color:C.muted,marginBottom:18,lineHeight:1.6}}>
                 Speichert, wo du gerade geparkt hast — nur für dich sichtbar, in {cv?`${cv.hersteller||""} ${cv.modell||""}`.trim()||"deiner Fahrzeugakte":"deiner Fahrzeugakte"}.
               </div>
               <button className="btn" style={{width:"100%",marginBottom:8}} disabled={checkInBusy}
@@ -8977,20 +9014,20 @@ Regeln:
             <input className="inp" placeholder="Name der Ausfahrt, z.B. 'Eifel-Runde'" style={{marginBottom:14}}
               value={liveGroupName} onChange={e=>setLiveGroupName(e.target.value)}/>
 
-            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Route (optional)</div>
+            <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Route (optional)</div>
             <div style={{marginBottom:6}}>
               {routeStops.map((stop,i)=>(
                 <div key={i} style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
                   <span style={{width:20,textAlign:"center",fontSize:14,flexShrink:0}}>
                     {i===0?"🟢":i===routeStops.length-1?"🏁":"📍"}
                   </span>
-                  <input className="inp" placeholder={stop.label} style={{flex:1,fontSize:13}}
+                  <input className="inp" placeholder={stop.label} style={{flex:1,fontSize:15}}
                     value={stop.address}
                     onChange={e=>updateRouteStopAddress(i,e.target.value)}
                     onBlur={()=>geocodeRouteStop(i)}
                     onKeyDown={e=>e.key==="Enter"&&geocodeRouteStop(i)}/>
                   {routeStopBusy===i?(
-                    <span style={{fontSize:12,color:C.muted,flexShrink:0,width:20,textAlign:"center"}}>…</span>
+                    <span style={{fontSize:14,color:C.muted,flexShrink:0,width:20,textAlign:"center"}}>…</span>
                   ):stop.coords?(
                     <span style={{fontSize:14,color:C.green,flexShrink:0,width:20,textAlign:"center"}}>✓</span>
                   ):(
@@ -9004,11 +9041,11 @@ Regeln:
               ))}
             </div>
             <button onClick={addRouteStop}
-              style={{background:"none",border:"none",color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",marginBottom:16,padding:0}}>
+              style={{background:"none",border:"none",color:C.gold,fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:16,padding:0}}>
               + Zwischenstopp
             </button>
 
-            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Wen einladen?</div>
+            <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Wen einladen?</div>
             <div style={{maxHeight:220,overflowY:"auto",marginBottom:16}}>
               {(()=>{
                 // Demo-Nutzer duerfen nicht in die Einladungsliste — allUsers
@@ -9021,11 +9058,11 @@ Regeln:
                   <input type="checkbox" checked={liveGroupInvitees.includes(u.id)}
                     onChange={e=>setLiveGroupInvitees(prev=>e.target.checked?[...prev,u.id]:prev.filter(id=>id!==u.id))}
                     style={{width:18,height:18,accentColor:C.gold}}/>
-                  <span style={{fontSize:13,color:C.white}}>{u.name}</span>
+                  <span style={{fontSize:15,color:C.white}}>{u.name}</span>
                 </label>
               ))}
             </div>
-            <div style={{fontSize:10,color:C.muted,marginBottom:14,lineHeight:1.5}}>
+            <div style={{fontSize:12,color:C.muted,marginBottom:14,lineHeight:1.5}}>
               Alle Teilnehmer sehen sich gegenseitig, solange die Ausfahrt läuft. Du kannst sie jederzeit beenden.
             </div>
             <button className="btn" style={{width:"100%"}} disabled={liveGroupBusy} onClick={createLiveGroupNow}>
@@ -9044,7 +9081,7 @@ Regeln:
             <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div>
                 <div className="cond" style={{fontSize:18,fontWeight:900,color:C.white}}>{activeLiveGroup.name}</div>
-                <div style={{fontSize:11,color:C.muted}}>{joined.length} live · aktualisiert alle 45s</div>
+                <div style={{fontSize:13,color:C.muted}}>{joined.length} live · aktualisiert alle 45s</div>
               </div>
               <button onClick={closeLiveGroupView} style={{background:"none",border:"none",color:C.muted,fontSize:22,cursor:"pointer"}}>✕</button>
             </div>
@@ -9054,7 +9091,7 @@ Regeln:
                   meId={me?.id} isOrganizer={isOrganizer} routeMode={routePlanMode}
                   onMapReady={(map)=>{liveMapInstanceRef.current=map;}}/>
               ):(
-                <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.muted,fontSize:13,padding:20,textAlign:"center"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.muted,fontSize:15,padding:20,textAlign:"center"}}>
                   Noch keine Standorte verfügbar — warte, bis Teilnehmer beitreten und ihren Standort teilen.
                 </div>
               )}
@@ -9072,20 +9109,20 @@ Regeln:
                 <button onClick={()=>setRoutePlanMode(p=>!p)}
                   style={{position:"absolute",bottom:14,right:14,zIndex:500,background:routePlanMode?C.gold:C.dark,
                     color:routePlanMode?"#000":"#fff",border:`1px solid ${routePlanMode?C.gold:C.border}`,borderRadius:99,
-                    padding:"9px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                    padding:"9px 14px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
                     display:"flex",alignItems:"center",gap:6,boxShadow:"0 2px 8px rgba(0,0,0,.4)"}}>
                   🗺️ {routePlanMode?"Route aktiv — auf Karte tippen":"Route planen"}
                 </button>
               )}
             </div>
             {routePlanMode&&isOrganizer&&(
-              <div style={{padding:"8px 16px",fontSize:11,color:C.muted,background:`${C.gold}0d`,borderTop:`1px solid ${C.gold}33`}}>
+              <div style={{padding:"8px 16px",fontSize:13,color:C.muted,background:`${C.gold}0d`,borderTop:`1px solid ${C.gold}33`}}>
                 Adresse eingeben oder mindestens zwei Punkte auf der Karte antippen, um eine Route für die Ausfahrt einzuzeichnen — sichtbar für dich als Organisator.
               </div>
             )}
             <div style={{padding:"12px 16px",borderTop:`1px solid ${C.border}`,maxHeight:180,overflowY:"auto"}}>
               {(activeLiveGroup.members||[]).map(m=>(
-                <div key={m.userId} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontSize:12}}>
+                <div key={m.userId} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontSize:14}}>
                   <span style={{color:C.white}}>{allUsers[m.userId]?.name||"Mitglied"}{m.userId===activeLiveGroup.organizerId?" 👑":""}</span>
                   <span style={{color:C.muted}}>
                     {m.status==="invited"?"Noch nicht beigetreten":m.updatedAt?new Date(m.updatedAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr":"—"}
@@ -9116,7 +9153,7 @@ Regeln:
               <button onClick={()=>setShowBgPicker(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
-            <div style={{fontSize:13,color:C.muted,lineHeight:1.65,marginBottom:18}}>
+            <div style={{fontSize:15,color:C.muted,lineHeight:1.65,marginBottom:18}}>
               Gilt überall in der App, dezent im Hintergrund sichtbar.
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -9161,20 +9198,20 @@ Regeln:
               <button onClick={()=>setShowInfoModal(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
-            <div style={{fontSize:13,color:C.muted,lineHeight:1.65,marginBottom:16}}>
+            <div style={{fontSize:15,color:C.muted,lineHeight:1.65,marginBottom:16}}>
               Punkte belohnen echtes Club-Leben — Begegnungen, gepflegte Fahrzeuge, Teilnahme.
             </div>
 
             {/* Kurs-Box */}
             <div style={{background:`${C.gold}12`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:"14px",marginBottom:18}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                <span style={{fontSize:12,fontWeight:700,color:C.gold,letterSpacing:.5}}>WECHSELKURS</span>
-                <span style={{fontSize:10,color:"#666"}}>🏁 die 911 im Kurs</span>
+                <span style={{fontSize:14,fontWeight:700,color:C.gold,letterSpacing:.5}}>WECHSELKURS</span>
+                <span style={{fontSize:12,color:"#666"}}>🏁 die 911 im Kurs</span>
               </div>
               <div style={{fontSize:22,fontWeight:900,color:C.white,fontFamily:"'Barlow Condensed',sans-serif"}}>
                 911 Punkte = 3 €
               </div>
-              <div style={{fontSize:11,color:C.muted,marginTop:3}}>
+              <div style={{fontSize:13,color:C.muted,marginTop:3}}>
                 Dein Stand: {myPoints.toLocaleString("de-DE")} Pkt ≈ <span style={{color:C.gold,fontWeight:700}}>{ptsToEur(myPoints).toFixed(2).replace(".",",")} €</span>
               </div>
             </div>
@@ -9206,12 +9243,12 @@ Regeln:
               ]},
             ].map(sec=>(
               <div key={sec.group} style={{marginBottom:14}}>
-                <div style={{fontSize:11,fontWeight:800,color:sec.color,letterSpacing:.5,marginBottom:6}}>{sec.group}</div>
+                <div style={{fontSize:13,fontWeight:800,color:sec.color,letterSpacing:.5,marginBottom:6}}>{sec.group}</div>
                 {sec.items.map(([i,l,p])=>(
                   <div key={l} style={{display:"flex",gap:9,padding:"6px 0",borderBottom:`1px solid ${C.border}`,alignItems:"center"}}>
                     <span style={{width:20,textAlign:"center",fontSize:14}}>{i}</span>
-                    <span style={{flex:1,color:"#ddd",fontSize:13}}>{l}</span>
-                    <span style={{color:C.gold,fontWeight:800,fontSize:13,fontFamily:"'Barlow Condensed',sans-serif"}}>{p}</span>
+                    <span style={{flex:1,color:"#ddd",fontSize:15}}>{l}</span>
+                    <span style={{color:C.gold,fontWeight:800,fontSize:15,fontFamily:"'Barlow Condensed',sans-serif"}}>{p}</span>
                   </div>
                 ))}
               </div>
@@ -9219,13 +9256,13 @@ Regeln:
 
             {/* Stufen */}
             <div style={{background:"#ffffff06",borderRadius:12,padding:"14px",marginBottom:14}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#aaa",letterSpacing:.5,marginBottom:8}}>🏆 STUFEN</div>
+              <div style={{fontSize:13,fontWeight:800,color:"#aaa",letterSpacing:.5,marginBottom:8}}>🏆 STUFEN</div>
               {TIERS.map(t=>(
                 <div key={t.name} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",
                   borderBottom:`1px solid ${C.border}`,alignItems:"center",
                   opacity:myPoints>=t.pts?1:.45}}>
-                  <span style={{color:t.color,fontWeight:700,fontSize:13}}>{t.icon} {t.name}</span>
-                  <span style={{color:myPoints>=t.pts?C.green:C.muted,fontSize:12,fontWeight:600}}>
+                  <span style={{color:t.color,fontWeight:700,fontSize:15}}>{t.icon} {t.name}</span>
+                  <span style={{color:myPoints>=t.pts?C.green:C.muted,fontSize:14,fontWeight:600}}>
                     {myPoints>=t.pts?"✓ erreicht":`ab ${t.pts.toLocaleString("de-DE")} Pkt`}
                   </span>
                 </div>
@@ -9234,36 +9271,36 @@ Regeln:
 
             {/* Einlösen */}
             <div style={{background:`${C.red}0d`,border:`1px solid ${C.red}33`,borderRadius:12,padding:"14px",marginBottom:16}}>
-              <div style={{fontSize:12,fontWeight:800,color:C.red,marginBottom:8}}>🛍️ Wo du einlösen kannst</div>
+              <div style={{fontSize:14,fontWeight:800,color:C.red,marginBottom:8}}>🛍️ Wo du einlösen kannst</div>
               {/* Partner-Liste */}
               <div style={{marginBottom:12}}>
                 {REDEEM_PARTNERS.map(p=>(
                   <div key={p.name} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
                     <span style={{fontSize:16,flexShrink:0,width:22,textAlign:"center"}}>{p.icon}</span>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:"#ddd"}}>{p.name}</div>
-                      <div style={{fontSize:11,color:"#777",lineHeight:1.4}}>{p.desc}</div>
+                      <div style={{fontSize:15,fontWeight:700,color:"#ddd"}}>{p.name}</div>
+                      <div style={{fontSize:13,color:"#777",lineHeight:1.4}}>{p.desc}</div>
                     </div>
                   </div>
                 ))}
               </div>
               {/* Prämien-Beispiele */}
               <div style={{background:"#00000044",borderRadius:8,padding:"10px 11px",marginBottom:10}}>
-                <div style={{fontSize:13,color:"#666",fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:7}}>Beispiele</div>
+                <div style={{fontSize:15,color:"#666",fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:7}}>Beispiele</div>
                 {[["QR-Sticker",5.9],["Schlüsselanhänger",25],["Porsche Cap",35],["Modellauto 1:43",60]].map(([n,p])=>{
                   const need = eurToPts(p);
                   const have = myPoints>=need;
                   return (
                     <div key={n} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}>
-                      <span style={{fontSize:11,color:have?C.green:"#888"}}>{have?"✓ ":""}{n}</span>
-                      <span style={{fontSize:11,color:have?C.green:"#666",fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif"}}>
+                      <span style={{fontSize:13,color:have?C.green:"#888"}}>{have?"✓ ":""}{n}</span>
+                      <span style={{fontSize:13,color:have?C.green:"#666",fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif"}}>
                         {need.toLocaleString("de-DE")} Pkt
                       </span>
                     </div>
                   );
                 })}
               </div>
-              <div style={{color:"#666",fontSize:11,lineHeight:1.6}}>
+              <div style={{color:"#666",fontSize:13,lineHeight:1.6}}>
                 Beispielwerte · Die Einlösung wird gerade mit den Partnern abgestimmt.
                 Deine Punkte verfallen nicht — sie werden vollständig übertragen.
               </div>
@@ -9271,13 +9308,13 @@ Regeln:
 
             {/* QAR-Awards */}
             <div style={{background:"#5b8fff0d",border:"1px solid #5b8fff33",borderRadius:12,padding:"14px",marginBottom:16}}>
-              <div style={{fontSize:12,fontWeight:800,color:"#5b8fff",marginBottom:8}}>🏆 Awards & Aktionen</div>
-              <div style={{fontSize:12,color:"#aaa",lineHeight:1.7}}>
+              <div style={{fontSize:14,fontWeight:800,color:"#5b8fff",marginBottom:8}}>🏆 Awards & Aktionen</div>
+              <div style={{fontSize:14,color:"#aaa",lineHeight:1.7}}>
                 Regelmäßig gibt es besondere Aktionen — <strong style={{color:"#ddd"}}>doppelte Punkte</strong> an
                 Eventtagen, Bonuspunkte für die beste Fahrzeugakte des Monats oder für Mitglieder,
                 die neue Enthusiasten in den Club holen.
                 <br/><br/>
-                <span style={{color:"#666",fontSize:11}}>Aktionen werden im News-Feed angekündigt.</span>
+                <span style={{color:"#666",fontSize:13}}>Aktionen werden im News-Feed angekündigt.</span>
               </div>
             </div>
 
@@ -9292,7 +9329,7 @@ Regeln:
         <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowEditProfile(false);}}>
           <div className="sheet">
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>✏️ Profil bearbeiten</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:16}}>Deine persönlichen Angaben</div>
+            <div style={{fontSize:13,color:C.muted,marginBottom:16}}>Deine persönlichen Angaben</div>
 
             {/* ── Profilbild ── */}
             <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:18,padding:"14px",background:C.card,borderRadius:12,border:`1px solid ${C.border}`}}>
@@ -9303,9 +9340,9 @@ Regeln:
                 }
               </div>
               <div style={{flex:1}}>
-                <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:6}}>Profilbild</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.white,marginBottom:6}}>Profilbild</div>
                 <div style={{display:"flex",gap:8}}>
-                  <label style={{background:C.red,borderRadius:8,padding:"8px 14px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                  <label style={{background:C.red,borderRadius:8,padding:"8px 14px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                     <input type="file" accept="image/*" style={{display:"none"}}
                       onChange={e=>{
                         const file=e.target.files[0]; if(!file) return;
@@ -9331,7 +9368,7 @@ Regeln:
                   </label>
                   {profileForm.avatar&&(
                     <button onClick={()=>setProfileForm(p=>({...p,avatar:""}))}
-                      style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 12px",color:C.muted,cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif"}}>
+                      style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 12px",color:C.muted,cursor:"pointer",fontSize:14,fontFamily:"'Barlow',sans-serif"}}>
                       Entfernen
                     </button>
                   )}
@@ -9340,12 +9377,12 @@ Regeln:
             </div>
 
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Persönlich</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Persönlich</div>
               <input className="inp" placeholder="Name *" value={profileForm.name||""}
                 onChange={e=>setProfileForm(p=>({...p,name:e.target.value}))} style={{marginBottom:8}}/>
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <span style={{fontSize:14,color:C.muted}}>{me?.email}</span>
-                <span style={{fontSize:10,color:"#444"}}>E-Mail (nicht änderbar)</span>
+                <span style={{fontSize:12,color:"#444"}}>E-Mail (nicht änderbar)</span>
               </div>
               <input className="inp" placeholder="Telefon (optional)" type="tel" value={profileForm.phone||""}
                 onChange={e=>setProfileForm(p=>({...p,phone:e.target.value}))} style={{marginBottom:8}}/>
@@ -9354,7 +9391,7 @@ Regeln:
               {/* Geburtstag — für Club-Glückwünsche */}
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"10px 14px",marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                  <span style={{fontSize:12,color:"#aaa",fontWeight:600}}>🎂 Geburtstag</span>
+                  <span style={{fontSize:14,color:"#aaa",fontWeight:600}}>🎂 Geburtstag</span>
                   <span style={{fontSize:9,color:"#555"}}>optional</span>
                 </div>
                 <input type="date" value={profileForm.geburtstag||""}
@@ -9362,7 +9399,7 @@ Regeln:
                   onChange={e=>setProfileForm(p=>({...p,geburtstag:e.target.value}))}
                   style={{width:"100%",background:"#1a1a1a",border:`1px solid ${C.border}`,borderRadius:7,
                     padding:"9px 11px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",outline:"none"}}/>
-                <div style={{fontSize:10,color:"#555",marginTop:5,lineHeight:1.5}}>
+                <div style={{fontSize:12,color:"#555",marginTop:5,lineHeight:1.5}}>
                   Nur für den Vorstand sichtbar — damit der Club dir gratulieren kann. Wird nicht öffentlich angezeigt.
                 </div>
               </div>
@@ -9376,7 +9413,7 @@ Regeln:
                   style={{background:"none",border:"none",width:"100%",display:"flex",
                     justifyContent:"space-between",alignItems:"center",cursor:"pointer",padding:0,
                     fontFamily:"'Barlow',sans-serif"}}>
-                  <span style={{fontSize:13,color:"#aaa",fontWeight:600}}>🔒 Passwort ändern</span>
+                  <span style={{fontSize:15,color:"#aaa",fontWeight:600}}>🔒 Passwort ändern</span>
                   <span style={{fontSize:14,color:C.muted,transform:showPwChange?"rotate(90deg)":"none",
                     transition:"transform .2s"}}>›</span>
                 </button>
@@ -9390,7 +9427,7 @@ Regeln:
                       style={{marginBottom:10,fontSize:16,
                         borderColor: pwConfirm&&pwNew!==pwConfirm ? "#ef4444" : undefined}}/>
                     {pwConfirm&&pwNew!==pwConfirm&&(
-                      <div style={{fontSize:11,color:"#ef4444",marginBottom:8}}>Passwörter stimmen nicht überein</div>
+                      <div style={{fontSize:13,color:"#ef4444",marginBottom:8}}>Passwörter stimmen nicht überein</div>
                     )}
                     <button className="btn" disabled={pwNew.length<6||pwNew!==pwConfirm||pwSaving}
                       onClick={changePassword}
@@ -9412,22 +9449,22 @@ Regeln:
                   style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                     background:`${C.gold}14`,border:`1px solid ${C.gold}44`,borderRadius:9,
                     padding:"13px 14px",marginTop:10,textDecoration:"none"}}>
-                  <span style={{fontSize:13,color:C.gold,fontWeight:700}}>⚙️ Zur Verwaltungs-Console</span>
+                  <span style={{fontSize:15,color:C.gold,fontWeight:700}}>⚙️ Zur Verwaltungs-Console</span>
                   <span style={{fontSize:14,color:C.gold}}>↗</span>
                 </a>
               )}
             </div>
 
             <div style={{marginBottom:18}}>
-              <div style={{fontSize:13,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Benachrichtigungen</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Benachrichtigungen</div>
               {[
                 ["notifications_events","🏁  Event-Erinnerungen","Neue Events und Anmeldungsbestätigungen"],
                 ["notifications_messages","💬  Neue Nachrichten","Eingehende Nachrichten im Chat"],
               ].map(([key,label,sub])=>(
                 <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`1px solid ${C.border}`}}>
                   <div>
-                    <div style={{fontSize:13,color:C.white}}>{label}</div>
-                    <div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>
+                    <div style={{fontSize:15,color:C.white}}>{label}</div>
+                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>{sub}</div>
                   </div>
                   <button className={`tog ${profileForm[key]?"on":"off"}`}
                     onClick={()=>setProfileForm(p=>({...p,[key]:!p[key]}))}/>
@@ -9466,7 +9503,7 @@ Regeln:
                       transform:"scaleX(-1)",transition:"left .3s ease"}}>🚗</div>
                     <div style={{position:"absolute",bottom:2,right:0,fontSize:14}}>🏁</div>
                   </div>
-                  <div style={{fontSize:11,color:C.muted,textAlign:"right"}}>
+                  <div style={{fontSize:13,color:C.muted,textAlign:"right"}}>
                     {doneSteps}/{totalSteps} ausgefüllt
                   </div>
                 </div>
@@ -9485,13 +9522,13 @@ Regeln:
                     <div style={{fontSize:14,fontWeight:800,color:C.gold,marginBottom:1}}>
                       Fahrzeugschein scannen
                     </div>
-                    <div style={{fontSize:11,color:"#999",lineHeight:1.4}}>
+                    <div style={{fontSize:13,color:"#999",lineHeight:1.4}}>
                       Modell, Baujahr, Kennzeichen und FIN in Sekunden — statt abtippen
                     </div>
                   </div>
                   <span style={{fontSize:16,color:C.gold,flexShrink:0}}>→</span>
                 </button>
-                <div style={{textAlign:"center",fontSize:10,color:"#555",marginTop:8}}>
+                <div style={{textAlign:"center",fontSize:12,color:"#555",marginTop:8}}>
                   oder unten manuell eintragen
                 </div>
               </div>
@@ -9505,7 +9542,7 @@ Regeln:
                   <div key={i} style={{position:"relative",flexShrink:0}}>
                     <img src={img} alt="" style={{width:70,height:70,objectFit:"cover",borderRadius:8,border:`2px solid ${C.border}`}}/>
                     <button onClick={()=>setAddVForm(p=>({...p,images:p.images.filter((_,j)=>j!==i)}))}
-                      style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,.7)",border:"none",color:"#fff",fontSize:10,width:18,height:18,borderRadius:"50%",cursor:"pointer"}}>✕</button>
+                      style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,.7)",border:"none",color:"#fff",fontSize:12,width:18,height:18,borderRadius:"50%",cursor:"pointer"}}>✕</button>
                   </div>
                 ))}
                 <label style={{width:70,height:70,background:C.card,border:`1px dashed ${C.border}`,borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,gap:2}}>
@@ -9523,7 +9560,7 @@ Regeln:
                   <span style={{fontSize:9,color:C.muted}}>Foto</span>
                 </label>
               </div>
-              <div style={{fontSize:11,color:C.muted}}>Mehrere Fotos möglich — erstes Foto = Titelbild</div>
+              <div style={{fontSize:13,color:C.muted}}>Mehrere Fotos möglich — erstes Foto = Titelbild</div>
             </div>
 
             {/* ── KI-Analyse läuft ── */}
@@ -9532,7 +9569,7 @@ Regeln:
                 padding:"12px 14px",marginBottom:10,display:"flex",gap:10,alignItems:"center"}}>
                 <div style={{width:16,height:16,border:`2px solid ${C.gold}44`,borderTopColor:C.gold,
                   borderRadius:"50%",animation:"spin .7s linear infinite",flexShrink:0}}/>
-                <div style={{fontSize:13,color:C.gold,fontWeight:600}}>Foto wird analysiert…</div>
+                <div style={{fontSize:15,color:C.gold,fontWeight:600}}>Foto wird analysiert…</div>
               </div>
             )}
 
@@ -9542,8 +9579,8 @@ Regeln:
                 padding:"12px 14px",marginBottom:10,display:"flex",gap:9,alignItems:"flex-start"}}>
                 <span style={{fontSize:14,flexShrink:0}}>🔧</span>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:12,color:"#999",fontWeight:600,marginBottom:2}}>Fotoerkennung noch nicht aktiv</div>
-                  <div style={{fontSize:11,color:"#666",lineHeight:1.5}}>Wird gerade eingerichtet — bitte Felder manuell ausfüllen.</div>
+                  <div style={{fontSize:14,color:"#999",fontWeight:600,marginBottom:2}}>Fotoerkennung noch nicht aktiv</div>
+                  <div style={{fontSize:13,color:"#666",lineHeight:1.5}}>Wird gerade eingerichtet — bitte Felder manuell ausfüllen.</div>
                 </div>
                 <button onClick={()=>setAnalyzeResult(null)}
                   style={{background:"none",border:"none",color:"#555",fontSize:14,cursor:"pointer",padding:0}}>✕</button>
@@ -9556,10 +9593,10 @@ Regeln:
                 padding:"12px 14px",marginBottom:10}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:13,color:"#aaa",fontWeight:600,marginBottom:3}}>
+                    <div style={{fontSize:15,color:"#aaa",fontWeight:600,marginBottom:3}}>
                       {analyzeResult.failed?"Analyse nicht möglich":"Nichts sicher erkannt"}
                     </div>
-                    <div style={{fontSize:11,color:"#666",lineHeight:1.5}}>
+                    <div style={{fontSize:13,color:"#666",lineHeight:1.5}}>
                       Bitte manuell eintragen. Tipp: Seitenansicht bei Tageslicht, Kennzeichen frontal.
                     </div>
                   </div>
@@ -9569,7 +9606,7 @@ Regeln:
                 {(addVForm.images||[]).length>0&&(
                   <button onClick={()=>analyzeVehiclePhoto(addVForm.images[0])}
                     style={{width:"100%",marginTop:9,background:"transparent",border:`1px solid ${C.border}`,
-                      borderRadius:7,padding:"8px",color:"#888",fontSize:12,fontWeight:600,cursor:"pointer",
+                      borderRadius:7,padding:"8px",color:"#888",fontSize:14,fontWeight:600,cursor:"pointer",
                       fontFamily:"'Barlow',sans-serif"}}>
                     ↻ Nochmal versuchen
                   </button>
@@ -9583,7 +9620,7 @@ Regeln:
                 padding:"13px 14px",marginBottom:10}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
                   <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                    <span style={{fontSize:12,fontWeight:800,color:C.gold,letterSpacing:.3}}>✨ Aus dem Foto erkannt</span>
+                    <span style={{fontSize:14,fontWeight:800,color:C.gold,letterSpacing:.3}}>✨ Aus dem Foto erkannt</span>
                     <span style={{fontSize:8,fontWeight:800,letterSpacing:.5,color:"#0a0a0a",
                       background:C.gold,padding:"1px 5px",borderRadius:3}}>BETA</span>
                   </div>
@@ -9597,9 +9634,9 @@ Regeln:
                   return (
                     <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
                       padding:"5px 0",borderBottom:`1px solid ${C.border}`}}>
-                      <span style={{fontSize:12,color:C.muted}}>{labels[k]||k}</span>
+                      <span style={{fontSize:14,color:C.muted}}>{labels[k]||k}</span>
                       <div style={{display:"flex",gap:7,alignItems:"center"}}>
-                        <span style={{fontSize:13,color:C.white,fontWeight:600}}>{v}</span>
+                        <span style={{fontSize:15,color:C.white,fontWeight:600}}>{v}</span>
                         {conf!=null&&(
                           <span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:4,
                             background:conf>=80?`${C.green}22`:conf>=50?`${C.gold}22`:"#66666622",
@@ -9612,15 +9649,15 @@ Regeln:
                   );
                 })}
                 {analyzeResult.hinweis&&(
-                  <div style={{fontSize:11,color:"#888",marginTop:8,lineHeight:1.5}}>ℹ️ {analyzeResult.hinweis}</div>
+                  <div style={{fontSize:13,color:"#888",marginTop:8,lineHeight:1.5}}>ℹ️ {analyzeResult.hinweis}</div>
                 )}
                 <button onClick={applyAnalysis}
                   style={{width:"100%",marginTop:11,background:C.gold,border:"none",borderRadius:8,
-                    padding:"10px",color:"#0a0a0a",fontSize:13,fontWeight:800,cursor:"pointer",
+                    padding:"10px",color:"#0a0a0a",fontSize:15,fontWeight:800,cursor:"pointer",
                     fontFamily:"'Barlow',sans-serif"}}>
                   Übernehmen &amp; prüfen ✓
                 </button>
-                <div style={{fontSize:10,color:"#555",textAlign:"center",marginTop:6,lineHeight:1.4}}>
+                <div style={{fontSize:12,color:"#555",textAlign:"center",marginTop:6,lineHeight:1.4}}>
                   Vorschlag der KI — bitte immer kontrollieren
                 </div>
               </div>
@@ -9638,7 +9675,7 @@ Regeln:
             <input className="inp" placeholder="Telefon (optional, für Direktanruf)" type="tel"
               value={addVForm.phone||""} onChange={e=>setAddVForm(p=>({...p,phone:e.target.value}))}
               style={{marginBottom:6}}/>
-            <div style={{fontSize:10,color:C.muted,marginBottom:14}}>🔒 Standardmäßig privat — Sichtbarkeit in QR-Einstellungen</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:14}}>🔒 Standardmäßig privat — Sichtbarkeit in QR-Einstellungen</div>
             <button className="btn" style={{width:"100%"}} onClick={addVehicle}>Hinzufügen ✓</button>
           </div>
         </div>
@@ -9649,25 +9686,25 @@ Regeln:
         <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddRem(false);}}>
           <div className="sheet">
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:C.white,marginBottom:4}}>🔔 Erinnerung</div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:14}}>Neue Aufgabe oder Termin anlegen</div>
+            <div style={{fontSize:14,color:C.muted,marginBottom:14}}>Neue Aufgabe oder Termin anlegen</div>
 
             {/* Quick presets */}
-            <div style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Schnellauswahl</div>
+            <div style={{fontSize:15,fontWeight:800,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Schnellauswahl</div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
               {[["🔧","TÜV vereinbaren"],["🛢️","Ölwechsel"],["🏎️","Reifenwechsel"],["📋","Inspektion"],["🏁","Event vorbereiten"]].map(([icon,label])=>(
                 <button key={label} onClick={()=>setRemForm(p=>({...p,title:label}))}
                   style={{background:remForm.title===label?C.red:C.card,border:`1px solid ${remForm.title===label?C.red:C.border}`,
                     borderRadius:8,padding:"8px 10px",color:remForm.title===label?"#fff":C.muted,
-                    cursor:"pointer",fontSize:12,fontFamily:"'Barlow',sans-serif",display:"flex",gap:4,alignItems:"center"}}>
+                    cursor:"pointer",fontSize:14,fontFamily:"'Barlow',sans-serif",display:"flex",gap:4,alignItems:"center"}}>
                   <span>{icon}</span><span>{label}</span>
                 </button>
               ))}
             </div>
 
             <input className="inp" placeholder="Eigener Titel..." style={{marginBottom:10}} value={remForm.title} onChange={e=>setRemForm(p=>({...p,title:e.target.value}))}/>
-            <div style={{fontSize:11,color:C.muted,marginBottom:6}}>Fälligkeitsdatum *</div>
+            <div style={{fontSize:13,color:C.muted,marginBottom:6}}>Fälligkeitsdatum *</div>
             <input className="inp" type="date" style={{marginBottom:10}} value={remForm.date} onChange={e=>setRemForm(p=>({...p,date:e.target.value}))}/>
-            <div style={{fontSize:11,color:C.muted,marginBottom:6}}>Fahrzeug (optional)</div>
+            <div style={{fontSize:13,color:C.muted,marginBottom:6}}>Fahrzeug (optional)</div>
             <select className="inp" style={{marginBottom:16}} value={remForm.vehicleId} onChange={e=>setRemForm(p=>({...p,vehicleId:e.target.value}))}>
               <option value="">Kein Fahrzeug</option>
               {myVehicles.map(v=><option key={v.id} value={v.id}>{v.hersteller} {v.modell}</option>)}
