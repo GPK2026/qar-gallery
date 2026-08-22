@@ -4628,11 +4628,11 @@ Regeln:
               style={{background:"#ef4444",border:"none",borderRadius:8,padding:"6px 10px",cursor:"pointer",
                 display:"flex",alignItems:"center",gap:8,flexShrink:0,
                 boxShadow:"0 1px 4px rgba(239,68,68,.4)"}}>
-              <span style={{fontSize:17,fontWeight:900,color:"#fff",lineHeight:1}}>ICE</span>
-              <span style={{fontSize:9,fontWeight:800,color:"#fff",lineHeight:1.25,textAlign:"left"}}>IN CASE OF<br/>EMERGENCY</span>
-              <span style={{width:22,height:22,borderRadius:"50%",background:"#fff",flexShrink:0,
+              <span style={{fontSize:22,fontWeight:900,color:"#fff",lineHeight:1}}>ICE</span>
+              <span style={{fontSize:9,fontWeight:800,color:"#fff",lineHeight:1,textAlign:"left"}}>IN CASE OF<br/>EMERGENCY</span>
+              <span style={{width:28,height:28,borderRadius:"50%",background:"#fff",flexShrink:0,
                 display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <span style={{fontSize:14,fontWeight:900,color:"#ef4444",lineHeight:1}}>✚</span>
+                <span style={{fontSize:18,fontWeight:900,color:"#ef4444",lineHeight:1}}>✚</span>
               </span>
             </button>
           </div>
