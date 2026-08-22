@@ -514,7 +514,7 @@ const PCN_STORAGE = (() => {
         bio: profile?.bio || "",
         phone: profile?.phone || "",
         isAdmin: !!profile?.is_admin,
-        bgTheme: profile?.bg_theme || "none",
+        bgTheme: profile?.bg_theme || "none", welcomeSeen: !!profile?.welcome_seen,
         adacMemberNr: profile?.adac_member_nr || "", avdMemberNr: profile?.avd_member_nr || "",
         notifications: { events: true, messages: true },
         access_token: supaUser.access_token || "",
@@ -685,7 +685,7 @@ const PCN_STORAGE = (() => {
         beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
         geburtstag: u.geburtstag||"", phone: u.phone||"",
         isAdmin: !!u.is_admin,
-        bgTheme: u.bg_theme||"none",
+        bgTheme: u.bg_theme||"none", welcomeSeen: !!u.welcome_seen,
         adacMemberNr: u.adac_member_nr||"", avdMemberNr: u.avd_member_nr||"",
         createdAt: u.created_at||"" };
       safeStore.setItem("pcn_session", JSON.stringify(session));
@@ -733,7 +733,7 @@ const PCN_STORAGE = (() => {
         beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
         geburtstag: u.geburtstag||"",
         isAdmin: !!u.is_admin,
-        bgTheme: u.bg_theme||"none",
+        bgTheme: u.bg_theme||"none", welcomeSeen: !!u.welcome_seen,
         adacMemberNr: u.adac_member_nr||"", avdMemberNr: u.avd_member_nr||"",
         notifications: { events:true, messages:true },
         createdAt: u.created_at||"",
@@ -779,7 +779,7 @@ const PCN_STORAGE = (() => {
         beitrag_datum: u.beitrag_datum||null,
         geburtstag: u.geburtstag||sess.geburtstag||"",
         isAdmin: !!u.is_admin,
-        bgTheme: u.bg_theme||sess.bgTheme||"none",
+        bgTheme: u.bg_theme||sess.bgTheme||"none", welcomeSeen: !!(u.welcome_seen??sess.welcomeSeen),
         adacMemberNr: u.adac_member_nr||sess.adacMemberNr||"", avdMemberNr: u.avd_member_nr||sess.avdMemberNr||"",
         createdAt: u.created_at||sess.createdAt||"",
       };
@@ -1011,6 +1011,11 @@ const PCN_STORAGE = (() => {
       return await supabase._patch("users","id=eq."+userId,{
         total_points: totalPoints, total_points_updated_at: now(),
       });
+    },
+    async markWelcomeSeen(userId) {
+      // Merkt sich dauerhaft, dass das Willkommens-Popup gesehen wurde —
+      // vorher nur pro Sitzung (useState), erschien bei jedem Neustart.
+      return await supabase._patch("users","id=eq."+userId,{ welcome_seen: true });
     },
 
     // ── Notfallprofile (ICE) ──
@@ -1747,6 +1752,7 @@ function guard(label, fn){
       listClub: () => db.getClubMembers ? db.getClubMembers() : Promise.resolve({data:[]}),
       setBgTheme: guard("members.setBgTheme", (uid, theme) => db.setBgTheme(uid, theme)),
       setBreakdownMembership: guard("members.setBreakdownMembership", (uid,adacNr,avdNr) => db.setBreakdownMembership(uid,adacNr,avdNr)),
+      markWelcomeSeen: guard("members.markWelcomeSeen", (uid) => db.markWelcomeSeen(uid)),
     },
     pointEvents: {
       record: guard("pointEvents.record", (uid,type,refId,points) => db.recordPointEvent(uid,type,refId,points)),
