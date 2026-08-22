@@ -8456,8 +8456,12 @@ Regeln:
           <div onClick={e=>e.stopPropagation()}
             style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
               padding:"24px 20px",maxWidth:420,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
-              color:C.white,marginBottom:6}}>🔒 Deine Daten</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
+                color:C.white,marginBottom:6}}>🔒 Deine Daten</div>
+              <button onClick={()=>setShowPrivacyInfo(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+            </div>
             <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
               Kurz und ohne Juristendeutsch.
             </div>
@@ -8608,8 +8612,12 @@ Regeln:
           <div onClick={e=>e.stopPropagation()}
             style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
               padding:"24px 20px",maxWidth:420,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
-              color:C.white,marginBottom:6}}>🔒 Deine Nachricht</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
+                color:C.white,marginBottom:6}}>🔒 Deine Nachricht</div>
+              <button onClick={()=>setShowContactPrivacyInfo(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+            </div>
             <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
               Kurz und ohne Juristendeutsch — du wirst hier kein Mitglied, du schickst nur eine Nachricht.
             </div>
@@ -8687,7 +8695,11 @@ Regeln:
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:"20px 20px 0 0",
             padding:"28px 24px",width:"100%",maxWidth:480,animation:"slideUp .25s ease",maxHeight:"85vh",overflowY:"auto"}}
             onClick={e=>e.stopPropagation()}>
-            <div style={{width:40,height:4,background:C.border,borderRadius:2,margin:"0 auto 20px"}}/>
+            <div style={{display:"flex",justifyContent:"center",position:"relative",marginBottom:20}}>
+              <div style={{width:40,height:4,background:C.border,borderRadius:2}}/>
+              <button onClick={()=>setShowFeatureDetail(null)}
+                style={{position:"absolute",right:0,top:-8,background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+            </div>
             {(()=>{
               const isUnlocked = unlockedFeatures.has(showFeatureDetail.id);
               const accent = isUnlocked ? C.green : C.red;
@@ -8742,8 +8754,12 @@ Regeln:
           onClick={()=>setShowInfoModal(false)}>
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"28px 24px",maxWidth:380,width:"100%",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:6}}>
-              ⚙️ Funktionen freischalten
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:6}}>
+                ⚙️ Funktionen freischalten
+              </div>
+              <button onClick={()=>setShowInfoModal(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
             <div style={{fontSize:14,color:C.muted,lineHeight:1.7,marginBottom:20}}>
               Zusätzliche Plattform-Funktionen werden auf drei Wegen freigeschaltet:
@@ -8774,7 +8790,11 @@ Regeln:
           onClick={()=>{setShowTransferPanel(null);setQarIdRequestInput("");}}>
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
-            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>🔑 Fahrzeug beantragen</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+              <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🔑 Fahrzeug beantragen</div>
+              <button onClick={()=>{setShowTransferPanel(null);setQarIdRequestInput("");}}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+            </div>
             <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
               QAR-ID des Fahrzeugs eingeben, das du übernehmen möchtest. Der bisherige Eigentümer erhält eine Anfrage und muss sie bestätigen — das Fahrzeug wechselt nicht sofort.
             </div>
@@ -8797,8 +8817,11 @@ Regeln:
           onClick={()=>setShowBuyerConfirm(null)}>
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
-            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:14}}>Fahrzeug übernehmen</div>
-
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+              <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>Fahrzeug übernehmen</div>
+              <button onClick={()=>setShowBuyerConfirm(null)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+            </div>
             <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>1. Nutzungsbedingungen</div>
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:12,color:C.muted,lineHeight:1.6}}>
               „Ich übernehme die digitale QAR-Akte dieses Fahrzeugs und akzeptiere die Allgemeinen Geschäftsbedingungen von QAR.Gallery für die weitere Nutzung. Mir ist bewusst, dass nach einer 30-tägigen kostenlosen Probezeit eine Zahlung erforderlich wird, andernfalls die Akte gesperrt wird."
@@ -8834,7 +8857,11 @@ Regeln:
             onClick={()=>setShowForeignTransferStart(null)}>
             <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
               onClick={e=>e.stopPropagation()}>
-              <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>🔑 Fahrzeug übernehmen?</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🔑 Fahrzeug übernehmen?</div>
+                <button onClick={()=>setShowForeignTransferStart(null)}
+                  style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+              </div>
               <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
                 {fv?`${fv.hersteller||""} ${fv.modell||""}`.trim():"Dieses Fahrzeug"} gehört aktuell einem anderen Mitglied. Ist der Verkäufer jetzt bei dir?
               </div>
@@ -8883,7 +8910,11 @@ Regeln:
           onClick={()=>{setShowCreateLiveGroup(false);setLiveGroupName("");setLiveGroupInvitees([]);}}>
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
-            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:14}}>🗺️ Live-Ausfahrt starten</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+              <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🗺️ Live-Ausfahrt starten</div>
+              <button onClick={()=>{setShowCreateLiveGroup(false);setLiveGroupName("");setLiveGroupInvitees([]);}}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+            </div>
             <input className="inp" placeholder="Name der Ausfahrt, z.B. 'Eifel-Runde'" style={{marginBottom:14}}
               value={liveGroupName} onChange={e=>setLiveGroupName(e.target.value)}/>
             <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Wen einladen?</div>
@@ -8981,8 +9012,12 @@ Regeln:
           onClick={()=>setShowBgPicker(false)}>
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:4}}>
-              🎨 Persönlicher Hintergrund
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:4}}>
+                🎨 Persönlicher Hintergrund
+              </div>
+              <button onClick={()=>setShowBgPicker(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
             <div style={{fontSize:13,color:C.muted,lineHeight:1.65,marginBottom:18}}>
               Gilt überall in der App, dezent im Hintergrund sichtbar.
@@ -9022,8 +9057,12 @@ Regeln:
           onClick={()=>setShowInfoModal(false)}>
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:4}}>
-              🏆 Das PCN-Punktesystem
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:4}}>
+                🏆 Das PCN-Punktesystem
+              </div>
+              <button onClick={()=>setShowInfoModal(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
             <div style={{fontSize:13,color:C.muted,lineHeight:1.65,marginBottom:16}}>
               Punkte belohnen echtes Club-Leben — Begegnungen, gepflegte Fahrzeuge, Teilnahme.
