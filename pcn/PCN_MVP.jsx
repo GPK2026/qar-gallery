@@ -7081,7 +7081,7 @@ Regeln:
                 <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🚗 Meine Fahrzeuge</div>
                 <div style={{display:"flex",gap:6}}>
                   <button className="btn sm ghost" onClick={()=>setShowTransferPanel("__request__")}>🔑 Fremde QAR-ID beantragen</button>
-                  <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Hinzufügen</button>
+                  <button className="btn sm ghost" onClick={()=>setShowAddV(true)}>+ Fahrzeug hinzufügen</button>
                 </div>
               </div>
               {myVehicles.length===0?(
