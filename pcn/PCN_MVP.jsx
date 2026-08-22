@@ -5411,7 +5411,7 @@ Regeln:
                 </button>
                 <button onClick={()=>doCheckIn(v.id)}
                   style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
-                  <span style={{width:24,height:24,borderRadius:"50%",background:C.gold,color:"#000",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:900,flexShrink:0}}>P</span>
+                  <span style={{fontSize:22,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24}}>🅿️</span>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:700,fontSize:15,color:C.white}}>Standort merken</div>
                     <div style={{fontSize:12,color:C.muted}}>Aktuellen Parkplatz speichern — nur für dich sichtbar</div>
