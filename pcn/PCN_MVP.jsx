@@ -7195,31 +7195,21 @@ Regeln:
                   <div style={{fontSize:13,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+{POINTS.vehicle_added} Pkt</span></div>
                 </div>
               ):myVehicles.map(v=>(
-                <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,marginBottom:12,overflow:"hidden",cursor:"pointer"}}
+                <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,padding:"10px 12px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}
                   onClick={()=>{setViewV(v);setScreen("vehicle");}}>
-                  {/* Bild oben, breit */}
-                  <div style={{width:"100%",height:160,overflow:"hidden",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-                    {getCoverImage(v)?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:48}}>🏎️</span>}
-                    {/* Kennzeichen-Badge bottom-left */}
-                    <div style={{position:"absolute",bottom:10,left:12}}>
-                      <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:4,padding:"2px 9px",fontSize:13,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif",boxShadow:"0 1px 4px rgba(0,0,0,.4)"}}>
-                        {fmtKz(v.kennzeichen,v.baujahr)}
-                      </span>
+                  <div style={{width:56,height:56,borderRadius:10,overflow:"hidden",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {getCoverImage(v)?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:24}}>🏎️</span>}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:700,fontSize:16,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.hersteller} {v.modell}</div>
+                    <div style={{display:"flex",gap:8,marginTop:3,alignItems:"center",flexWrap:"wrap"}}>
+                      <span style={{fontSize:13,color:C.muted}}>{fmtKz(v.kennzeichen,v.baujahr)} · {v.baujahr}</span>
+                      {(logbook[v.id]||[]).length>0&&<span style={{fontSize:12,color:C.green,fontWeight:700}}>📋 {(logbook[v.id]||[]).length}</span>}
+                      {(listings[v.id]||[]).length>0&&
+                        <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:4,padding:"1px 6px",fontSize:12,fontWeight:800}}>💰</span>}
                     </div>
                   </div>
-                  {/* Info-Zeile unten */}
-                  <div style={{padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <div>
-                      <div style={{fontWeight:700,fontSize:16,color:C.white}}>{v.hersteller} {v.modell}</div>
-                      <div style={{display:"flex",gap:8,marginTop:3,alignItems:"center"}}>
-                        <span style={{fontSize:13,color:C.muted}}>{v.baujahr}</span>
-                        {(logbook[v.id]||[]).length>0&&<span style={{fontSize:12,color:C.green,fontWeight:700}}>📋 {(logbook[v.id]||[]).length} Einträge</span>}
-                        {(listings[v.id]||[]).length>0&&
-                          <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:4,padding:"1px 6px",fontSize:12,fontWeight:800}}>💰 Zum Verkauf</span>}
-                      </div>
-                    </div>
-                    <span style={{fontSize:20,color:C.muted}}>›</span>
-                  </div>
+                  <span style={{fontSize:20,color:C.muted,flexShrink:0}}>›</span>
                 </div>
               ))}
             </div>
@@ -7347,7 +7337,8 @@ Regeln:
                 </div>
               )}
 
-                          {/* ── 3. Plattform-Funktionen ── */}
+              {/* ── 3. Plattform-Funktionen — nur solange noch etwas gesperrt ist ── */}
+              {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(
             <div style={{marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>⚙️ Plattform-Funktionen</div>
@@ -7391,6 +7382,7 @@ Regeln:
                 Mehr Funktionen freischalten: Fahrzeug anlegen · Logbuch führen · Events besuchen
               </div>
             </div>
+              )}
           </div>
         )}
 
