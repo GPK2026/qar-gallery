@@ -5043,7 +5043,7 @@ Regeln:
 
       
       {lightbox&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:600,display:"flex",flexDirection:"column"}}
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:950,display:"flex",flexDirection:"column"}}
           onClick={()=>setLightbox(null)}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:15,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
@@ -6126,7 +6126,7 @@ Regeln:
 
       {/* ── OVERLAYS (rendered in every screen) ── */}
         {lightbox&&(
-          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:600,display:"flex",flexDirection:"column"}}
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:980,display:"flex",flexDirection:"column"}}
             onClick={()=>setLightbox(null)}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",flexShrink:0}} onClick={e=>e.stopPropagation()}>
               <div style={{fontSize:15,color:"rgba(255,255,255,.6)"}}>{lightbox.index+1} / {lightbox.images.length}</div>
