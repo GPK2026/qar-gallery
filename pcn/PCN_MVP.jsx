@@ -7211,7 +7211,7 @@ Regeln:
               ):myVehicles.map(v=>(
                 <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",display:"flex",alignItems:"stretch",cursor:"pointer"}}
                   onClick={()=>{setViewV(v);setScreen("vehicle");}}>
-                  <div style={{width:100,height:140,background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <div style={{width:140,height:100,background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     {getCoverImage(v)?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:36}}>🏎️</span>}
                   </div>
                   <div style={{flex:1,minWidth:0,padding:"12px 14px",display:"flex",alignItems:"center",gap:8}}>
