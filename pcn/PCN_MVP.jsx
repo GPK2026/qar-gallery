@@ -7044,12 +7044,14 @@ Regeln:
             {/* Demo-Hinweis erscheint als Popup-Overlay nach 3 Sekunden — siehe globaler Overlay-Bereich */}
             {/* ── 1. Infos & Neuigkeiten ── */}
             <div style={{marginBottom:32}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                <div style={{fontSize:13,fontWeight:800,color:C.white,textTransform:"uppercase",letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>📰 Infos & Neuigkeiten</div>
-                <button onClick={()=>setShowNewsArchive(p=>!p)}
-                  style={{background:"none",border:"none",color:showNewsArchive?C.gold:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
-                  📁 {showNewsArchive?"Aktuelle":"Archiv"}
-                </button>
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:13,fontWeight:800,color:C.white,textTransform:"uppercase",letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>📰 Infos & Neuigkeiten</div>
+                <div style={{display:"flex",justifyContent:"flex-end"}}>
+                  <button onClick={()=>setShowNewsArchive(p=>!p)}
+                    style={{background:"none",border:"none",color:showNewsArchive?C.gold:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                    📁 {showNewsArchive?"Aktuelle":"Archiv"}
+                  </button>
+                </div>
               </div>
 
               {/* Willkommen — für diese Sitzung schließbar über das X */}
@@ -7197,7 +7199,7 @@ Regeln:
             <div style={{marginBottom:32}}>
               <div style={{marginBottom:16}}>
                 <div style={{fontSize:13,fontWeight:800,color:C.white,textTransform:"uppercase",letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:10,lineHeight:1.3,display:"block"}}>🚗 Meine Fahrzeuge</div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
                   <button className="btn sm ghost" onClick={()=>setShowTransferPanel("__request__")}>🔑 Fremde QAR-ID beantragen</button>
                   <button className="btn sm" style={{background:C.gold,color:"#000"}} onClick={()=>setShowAddV(true)}>Fahrzeug hinzufügen</button>
                 </div>
@@ -7358,10 +7360,12 @@ Regeln:
               {/* ── 3. Plattform-Funktionen — nur solange noch etwas gesperrt ist ── */}
               {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(
             <div style={{marginBottom:8}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                <div style={{fontSize:13,fontWeight:800,color:C.white,textTransform:"uppercase",letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>⚙️ Plattform-Funktionen</div>
-                <button onClick={()=>setShowInfoModal(true)}
-                  style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:13,fontWeight:800,color:C.white,textTransform:"uppercase",letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>⚙️ Plattform-Funktionen</div>
+                <div style={{display:"flex",justifyContent:"flex-end"}}>
+                  <button onClick={()=>setShowInfoModal(true)}
+                    style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
+                </div>
               </div>
 
               {/* Active functions */}
@@ -7436,9 +7440,11 @@ Regeln:
 
             {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
             <div style={{marginBottom:32}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                <div style={{fontSize:13,fontWeight:800,color:C.white,textTransform:"uppercase",letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🗺️ Live-Ausfahrt</div>
-                <button className="btn sm ghost" onClick={()=>setShowCreateLiveGroup(true)}>+ Starten</button>
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:13,fontWeight:800,color:C.white,textTransform:"uppercase",letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>🗺️ Live-Ausfahrt</div>
+                <div style={{display:"flex",justifyContent:"flex-end"}}>
+                  <button className="btn sm ghost" onClick={()=>setShowCreateLiveGroup(true)}>+ Starten</button>
+                </div>
               </div>
               {myLiveGroups.length>0?myLiveGroups.map(g=>(
                 <button key={g.id} onClick={()=>openLiveGroup(g.id)}
@@ -8277,23 +8283,23 @@ Regeln:
                   }
                   <div style={{position:"absolute",bottom:0,right:0,width:22,height:22,background:C.red,borderRadius:"50%",border:"2px solid #1a0808",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>📷</div>
                 </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1}}>{me?.name}</div>
-                  <div style={{fontSize:15,color:C.muted,marginTop:3}}>{me?.role==="guest"?"Gast-Account":"PCN-Mitglied"}{me?.memberNr?" · "+me.memberNr:""}</div>
-                  {me?.city&&<div style={{fontSize:15,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
+                <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+                  <div style={{minWidth:0}}>
+                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1}}>{me?.name}</div>
+                    <div style={{fontSize:15,color:C.muted,marginTop:3}}>{me?.role==="guest"?"Gast-Account":"PCN-Mitglied"}{me?.memberNr?" · "+me.memberNr:""}</div>
+                    {me?.city&&<div style={{fontSize:15,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
+                  </div>
+                  <button onClick={()=>setShowInfoModal("points")} style={{background:"none",border:"none",cursor:"pointer",padding:0,textAlign:"right",flexShrink:0}}>
+                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.gold,lineHeight:1}}>{myPoints.toLocaleString("de-DE")}</div>
+                    <div style={{fontSize:12,color:C.muted}}>Punkte</div>
+                  </button>
                 </div>
                 <button className="btn sm ghost" style={{flexShrink:0,borderColor:"rgba(255,255,255,.2)",color:"#fff"}} onClick={openEditProfile}>✏️</button>
               </div>
 
-              {/* Punkte-Anzeige */}
-              <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid rgba(255,255,255,.1)`}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8}}>
-                  <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,color:C.gold}}>{myPoints.toLocaleString("de-DE")}</span>
-                    <span style={{fontSize:15,color:C.muted}}>Punkte</span>
-                    <button onClick={()=>setShowInfoModal("points")}
-                      style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,padding:0,lineHeight:1}}>ℹ️</button>
-                  </div>
+              {/* Naechste Stufe & Fortschritt */}
+              <div style={{marginTop:16}}>
+                <div style={{display:"flex",justifyContent:"flex-end",alignItems:"baseline",marginBottom:8}}>
                   <div style={{textAlign:"right"}}>
                     <div style={{fontSize:14,color:C.muted}}>Nächste Stufe</div>
                     <div style={{fontSize:15,fontWeight:700,color:C.gold}}>
