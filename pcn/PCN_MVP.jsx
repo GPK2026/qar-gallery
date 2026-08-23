@@ -802,7 +802,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
         {/* ── Teilnehmerliste (nur Bestätigte) ── */}
         {confirmedParts.length>0&&(
           <div style={{marginTop:8}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>
+            <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:10}}>
               Bestätigte Teilnehmer ({confirmedParts.length})
             </div>
             {confirmedParts.map(p=>{
@@ -4859,7 +4859,7 @@ Regeln:
             </div>
           )}
           <div className="card" style={{padding:16,marginBottom:14}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Fahrzeugdaten</div>
+            <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:10}}>Fahrzeugdaten</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               {[["Baujahr","baujahr"],["Kraftstoff","kraftstoff"],["Getriebe","getriebe"],["Farbe","farbe"],["Kilometerstand","kilometerstand"],["TÜV","tuev_faelligkeit"],["Marktwert","marktwert"],["FIN","fin"]].filter(([,k])=>priv[k]!==false&&v[k]).map(([label,key])=>(
                 <div key={key}>
@@ -4876,7 +4876,7 @@ Regeln:
           </div>
           {priv.pub_events&&vHist.length>0&&(
             <div className="card" style={{padding:16,marginBottom:14}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Veranstaltungshistorie</div>
+              <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:10}}>Veranstaltungshistorie</div>
               {vHist.map(h=>(
                 <div key={h.id} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
                   <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:6,padding:"2px 8px",fontWeight:800,fontSize:14,color:C.red,flexShrink:0}}>#{h.startNr}</div>
@@ -5382,7 +5382,7 @@ Regeln:
           {/* ── QR-Code & Aktionen — eigener Block ── */}
           {isOwn&&(
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>🔗 QR-Code & Aktionen</div>
+              <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:12}}>🔗 QR-Code & Aktionen</div>
               {(()=>{
                 const slots = getActiveStatus(v.id)||[];
                 if(!slots.length) return null;
@@ -5583,7 +5583,7 @@ Regeln:
             if(vRems.length===0) return null;
             return (
               <div style={{marginBottom:14}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>🔔 Termine & Erinnerungen</div>
+                <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:8}}>🔔 Termine & Erinnerungen</div>
                 {vRems.map(r=>{
                   const days=daysUntil(r.date);
                   const overdue=days<0, urgent=days<=7;
@@ -5798,7 +5798,7 @@ Regeln:
           {/* Phone — pulled from profile, with inline public/private toggle */}
           {isOwn&&(
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>📞 Kontakt</div>
+              <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:8}}>📞 Kontakt</div>
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
                 <div style={{padding:"12px 14px",display:"flex",gap:10,alignItems:"center"}}>
                   <input className="inp" placeholder="Telefonnummer (aus Profil übernehmen)" type="tel"
@@ -5890,7 +5890,7 @@ Regeln:
                 ["Kontakt",[["pub_phone","Telefonnummer (Direktanruf)"]]],
               ].map(([group,fields])=>(
                 <div key={group} style={{marginBottom:14}}>
-                  <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>{group}</div>
+                  <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:8}}>{group}</div>
                   {fields.map(([key,label])=>(
                     <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`1px solid ${C.border}`}}>
                       <div>
@@ -5922,7 +5922,7 @@ Regeln:
               <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Alle Angaben jederzeit änderbar</div>
 
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Basis</div>
+                <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:8}}>Basis</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   <input className="inp" placeholder="Hersteller" value={editForm.hersteller||""}
                     onChange={e=>setEditForm(p=>({...p,hersteller:e.target.value}))}/>
@@ -5946,7 +5946,7 @@ Regeln:
               </div>
 
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Status & Technik</div>
+                <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:8}}>Status & Technik</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   <input className="inp" type="number" inputMode="numeric" placeholder="Kilometerstand" value={editForm.kilometerstand||""}
                     onChange={e=>setEditForm(p=>({...p,kilometerstand:e.target.value}))}/>
@@ -5969,14 +5969,14 @@ Regeln:
               </div>
 
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Kontakt</div>
+                <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:8}}>Kontakt</div>
                 <input className="inp" type="tel" placeholder="Telefonnummer (optional)" value={editForm.phone||""}
                   onChange={e=>setEditForm(p=>({...p,phone:e.target.value}))}/>
                 <div style={{fontSize:12,color:C.muted,marginTop:6}}>🔒 Sichtbarkeit über QR-Einstellungen steuerbar</div>
               </div>
 
               <div style={{marginBottom:18}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Besonderheiten</div>
+                <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:8}}>Besonderheiten</div>
                 <textarea className="inp" placeholder="Ausstattung, Extras, Hinweise..." rows={3}
                   value={editForm.besonderheiten||""} onChange={e=>setEditForm(p=>({...p,besonderheiten:e.target.value}))}
                   style={{resize:"vertical",fontFamily:"'Barlow',sans-serif"}}/>
@@ -6632,7 +6632,7 @@ Regeln:
               if(!slots.length) return null;
               return (
                 <div style={{marginBottom:14}}>
-                  <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Aktive Status ({slots.length}/3)</div>
+                  <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:8}}>Aktive Status ({slots.length}/3)</div>
                   {slots.map(s=>{
                     const remaining = s.expiresAt ? Math.max(0,Math.ceil((s.expiresAt-Date.now())/60000)) : null;
                     const expDate = s.expiresAt ? new Date(s.expiresAt) : null;
@@ -7033,7 +7033,7 @@ Regeln:
             {/* ── 1. Infos & Neuigkeiten ── */}
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>📰 Infos & Neuigkeiten</div>
+                <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6}}>📰 Infos & Neuigkeiten</div>
                 <button onClick={()=>setShowNewsArchive(p=>!p)}
                   style={{background:"none",border:"none",color:showNewsArchive?C.gold:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
                   📁 {showNewsArchive?"Aktuelle":"Archiv"}
@@ -7182,7 +7182,7 @@ Regeln:
             {/* ── 2. Meine Fahrzeuge ── */}
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🚗 Meine Fahrzeuge</div>
+                <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6}}>🚗 Meine Fahrzeuge</div>
                 <div style={{display:"flex",gap:6}}>
                   <button className="btn sm ghost" onClick={()=>setShowTransferPanel("__request__")}>🔑 Fremde QAR-ID beantragen</button>
                   <button className="btn sm" style={{background:C.gold,color:"#000"}} onClick={()=>setShowAddV(true)}>Fahrzeug hinzufügen</button>
@@ -7195,10 +7195,10 @@ Regeln:
                   <div style={{fontSize:13,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+{POINTS.vehicle_added} Pkt</span></div>
                 </div>
               ):myVehicles.map(v=>(
-                <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8,padding:"10px 12px",display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}
+                <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,padding:12,display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}
                   onClick={()=>{setViewV(v);setScreen("vehicle");}}>
-                  <div style={{width:56,height:56,borderRadius:10,overflow:"hidden",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    {getCoverImage(v)?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:24}}>🏎️</span>}
+                  <div style={{width:100,height:100,borderRadius:10,overflow:"hidden",background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {getCoverImage(v)?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:36}}>🏎️</span>}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontWeight:700,fontSize:16,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.hersteller} {v.modell}</div>
@@ -7218,7 +7218,7 @@ Regeln:
             {displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).length>0&&(
               <div style={{marginBottom:20}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                  <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
+                  <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6}}>
                     🚗 Neueste Mitglieder-Fahrzeuge
                   </div>
                   <button onClick={()=>setTab("community")} style={{background:"none",border:"none",color:C.red,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"2px 0"}}>
@@ -7274,7 +7274,7 @@ Regeln:
               {/* ── Zuletzt angesehen ── */}
               {recentVehicles.length>0&&(
                 <div style={{marginBottom:18}}>
-                  <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>🕐 Zuletzt angesehen</div>
+                  <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:10}}>🕐 Zuletzt angesehen</div>
                   <div style={{display:"flex",gap:10,overflowX:"auto",scrollbarWidth:"none",paddingBottom:4,paddingTop:8}}>
                     {recentVehicles.map(rv=>(
                       <div key={rv.id} style={{flexShrink:0,width:130,position:"relative"}}>
@@ -7341,7 +7341,7 @@ Regeln:
               {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(
             <div style={{marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>⚙️ Plattform-Funktionen</div>
+                <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6}}>⚙️ Plattform-Funktionen</div>
                 <button onClick={()=>setShowInfoModal(true)}
                   style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
               </div>
@@ -7419,7 +7419,7 @@ Regeln:
             {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>🗺️ Live-Ausfahrt</div>
+                <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6}}>🗺️ Live-Ausfahrt</div>
                 <button className="btn sm ghost" onClick={()=>setShowCreateLiveGroup(true)}>+ Starten</button>
               </div>
               {myLiveGroups.length>0?myLiveGroups.map(g=>(
@@ -7931,7 +7931,7 @@ Regeln:
         {tab==="reminders"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>Erinnerungen</div>
+              <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6}}>Erinnerungen</div>
               <button className="btn sm ghost" onClick={()=>setShowAddRem(true)}>+ Neu</button>
             </div>
             {myReminders.length===0
@@ -8101,7 +8101,7 @@ Regeln:
             <div style={{marginBottom:24}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
                 <span style={{fontSize:18}}>❤️</span>
-                <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
+                <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6}}>
                   Meine Favoriten ({favorites.length})
                 </div>
               </div>
@@ -8169,7 +8169,7 @@ Regeln:
                 <div style={{marginBottom:20}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
                     <span style={{fontSize:16}}>👁</span>
-                    <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5}}>
+                    <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6}}>
                       Zuletzt angesehen
                     </div>
                   </div>
@@ -8226,7 +8226,7 @@ Regeln:
 
             {/* Scan stats */}
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px"}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>📊 Meine Aktivität</div>
+              <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:12}}>📊 Meine Aktivität</div>
               {[
                 ["❤️","Favoriten",favorites.length+" Fahrzeuge"],
                 ["👁","Angesehen",getViewedVehicles().length+" Akten · +"+(getViewedVehicles().length*POINTS.view_akte).toLocaleString("de-DE")+" Pkt"],
@@ -9480,7 +9480,7 @@ Regeln:
             </div>
 
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Persönlich</div>
+              <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:8}}>Persönlich</div>
               <input className="inp" placeholder="Name *" value={profileForm.name||""}
                 onChange={e=>setProfileForm(p=>({...p,name:e.target.value}))} style={{marginBottom:8}}/>
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -9559,7 +9559,7 @@ Regeln:
             </div>
 
             <div style={{marginBottom:18}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#aaa",textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Benachrichtigungen</div>
+              <div style={{fontSize:14,fontWeight:800,color:"#111",textTransform:"uppercase",letterSpacing:1.2,background:"#fff",display:"inline-block",padding:"4px 10px",borderRadius:6,marginBottom:10}}>Benachrichtigungen</div>
               {[
                 ["notifications_events","🏁  Event-Erinnerungen","Neue Events und Anmeldungsbestätigungen"],
                 ["notifications_messages","💬  Neue Nachrichten","Eingehende Nachrichten im Chat"],
