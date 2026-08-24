@@ -1515,6 +1515,24 @@ export default function PCN() {
 // Tippen auf die Karte setzt Wegpunkte, Route wird über die kostenlose
 // OSRM-Demo-Routing-API berechnet und eingezeichnet.
 const LIVE_MAP_COLORS = ["#D5001C","#2563EB","#16A34A","#D97706","#7C3AED","#0891B2","#DB2777"];
+// ─── Provenienz-Siegel — dezentes Abzeichen für vollständig dokumentierte
+// Fahrzeuge. Zwei Größen: "sm" für Listen/Karussells, "lg" für die eigentliche
+// Fahrzeugakte. Rein informativ zur Dokumentationsvollständigkeit — kein
+// Echtheits- oder Wertgutachten, das wird im begleitenden Infotext klar.
+function SealBadge({size="sm", onClick}){
+  const dims = size==="lg" ? {box:28,font:15} : {box:18,font:10};
+  return (
+    <span onClick={onClick} title="Vollständig dokumentiertes Fahrzeug"
+      style={{display:"inline-flex",alignItems:"center",justifyContent:"center",
+        width:dims.box,height:dims.box,borderRadius:"50%",
+        background:"linear-gradient(135deg,#e8cd94,#c8a96e)",
+        border:"1px solid #a3854f",flexShrink:0,cursor:onClick?"pointer":"default",
+        boxShadow:"0 1px 3px rgba(0,0,0,.3)"}}>
+      <span style={{fontSize:dims.font,lineHeight:1}}>✓</span>
+    </span>
+  );
+}
+
 // ─── Einzelner Standort-Marker (z.B. "Zuletzt geparkt") ──────────────────
 // Einfachere Variante von LiveGroupMap für einen einzigen, statischen
 // Punkt — nutzt denselben zuverlässigen Leaflet-Ansatz statt des
@@ -1765,6 +1783,7 @@ function PCNInner() {
   const [showCheckInPrompt, setShowCheckInPrompt] = useState(null); // vehicleId
   const [checkInNoteInput, setCheckInNoteInput] = useState("");
   const [showCheckInNoteDialog, setShowCheckInNoteDialog] = useState(null); // vehicleId
+  const [showSealDetail, setShowSealDetail] = useState(null); // vehicleId
   const [checkInBusy, setCheckInBusy] = useState(false);
   // Live-Standort-Gruppen für gemeinsame Ausfahrten
   const [showCreateLiveGroup, setShowCreateLiveGroup] = useState(false);
@@ -2020,6 +2039,27 @@ function PCNInner() {
     const hasImage = !!(v.image || (v.images||[]).length);
     const hasStory = !!(v.besonderheiten && v.besonderheiten.trim());
     return hasFields && hasImage && hasStory;
+  };
+
+  // ── Provenienz-Siegel — deutlich höhere Schwelle als isVehicleComplete:
+  // nicht nur einmalig ausgefüllte Stammdaten, sondern aktive, laufende
+  // Dokumentation über Zeit. Kriterien bewusst auf tatsächlich vorhandene
+  // Datenfelder gestützt (kein Eigentümerhistorie-Tracking existiert aktuell,
+  // daher hier nicht als Kriterium nutzbar).
+  const SEAL_CRITERIA = { minPhotos: 5, minLogbookEntries: 3, minEvents: 1 };
+  const getVehicleSealStatus = (v) => {
+    if(!v) return { earned:false, criteria:[] };
+    const photoCount = (v.images||[]).length || (v.image?1:0);
+    const logbookCount = (logbook[v.id]||[]).length;
+    const eventCount = Object.values(participants).flat()
+      .filter(p=>p.vehicleId===v.id && p.status==="confirmed").length;
+    const criteria = [
+      { label:`Stammdaten & Beschreibung vollständig`, met: isVehicleComplete(v) },
+      { label:`Mindestens ${SEAL_CRITERIA.minPhotos} Fotos`, met: photoCount>=SEAL_CRITERIA.minPhotos, progress:`${Math.min(photoCount,SEAL_CRITERIA.minPhotos)}/${SEAL_CRITERIA.minPhotos}` },
+      { label:`Mindestens ${SEAL_CRITERIA.minLogbookEntries} Logbuch-Einträge`, met: logbookCount>=SEAL_CRITERIA.minLogbookEntries, progress:`${Math.min(logbookCount,SEAL_CRITERIA.minLogbookEntries)}/${SEAL_CRITERIA.minLogbookEntries}` },
+      { label:`Mindestens ${SEAL_CRITERIA.minEvents} bestätigte Event-Teilnahme`, met: eventCount>=SEAL_CRITERIA.minEvents, progress:`${Math.min(eventCount,SEAL_CRITERIA.minEvents)}/${SEAL_CRITERIA.minEvents}` },
+    ];
+    return { earned: criteria.every(c=>c.met), criteria };
   };
 
   const calcPoints = () => {
@@ -4679,8 +4719,10 @@ Regeln:
           <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 40%,rgba(0,0,0,.85) 100%)"}}/>
           <div style={{position:"absolute",bottom:16,left:16,right:16}}>
             <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,
-              color:"#fff",lineHeight:1,marginBottom:10,textShadow:"0 2px 8px rgba(0,0,0,.5)"}}>
+              color:"#fff",lineHeight:1,marginBottom:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",
+              display:"flex",alignItems:"center",gap:10}}>
               {v.hersteller} {v.modell}
+              {getVehicleSealStatus(v).earned&&<SealBadge size="lg"/>}
             </h1>
             {priv.kennzeichen!==false&&kz&&(
             <div style={{display:"inline-flex",alignItems:"center",background:"#fff",
@@ -5344,7 +5386,17 @@ Regeln:
           {/* ── Eckdaten auf einen Blick ── */}
           <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:C.white}}>{v.hersteller} {v.modell}</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:C.white}}>{v.hersteller} {v.modell}</div>
+                {getVehicleSealStatus(v).earned
+                  ?<SealBadge size="lg" onClick={()=>setShowSealDetail(v.id)}/>
+                  :(isOwn&&<button onClick={()=>setShowSealDetail(v.id)}
+                      style={{background:"none",border:`1px dashed ${C.muted}`,borderRadius:"50%",width:20,height:20,flexShrink:0,
+                        display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}
+                      title="Provenienz-Siegel — Fortschritt ansehen">
+                      <span style={{fontSize:10,color:C.muted}}>?</span>
+                    </button>)}
+              </div>
               {isOwn&&(
                 <button onClick={()=>openEditVehicle(v)}
                   style={{background:C.red,border:"none",borderRadius:8,padding:"6px 14px",
@@ -6183,6 +6235,46 @@ Regeln:
               </div>
             </div>
           )}
+
+          {/* ── Provenienz-Siegel: Detailansicht ── */}
+          {showSealDetail===v.id&&(()=>{
+            const seal = getVehicleSealStatus(v);
+            return (
+              <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowSealDetail(null);}}>
+                <div className="sheet">
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      {seal.earned
+                        ?<SealBadge size="lg"/>
+                        :<span style={{fontSize:20}}>🔍</span>}
+                      <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>
+                        {seal.earned?"Provenienz-Siegel":"Provenienz-Siegel — noch offen"}
+                      </div>
+                    </div>
+                    <button onClick={()=>setShowSealDetail(null)}
+                      style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+                  </div>
+                  <div style={{fontSize:13,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+                    Zeigt an, wie vollständig dieses Fahrzeug dokumentiert ist — Fotos, Logbuch und Club-Teilnahme. Kein Echtheits- oder Wertgutachten, sondern ein Hinweis auf gepflegte Dokumentation.
+                  </div>
+                  {seal.criteria.map((c,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:i<seal.criteria.length-1?`1px solid ${C.border}`:"none"}}>
+                      <span style={{fontSize:16,flexShrink:0,color:c.met?C.green:C.muted}}>{c.met?"✓":"○"}</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:14,color:c.met?C.white:C.muted}}>{c.label}</div>
+                      </div>
+                      {c.progress&&<div style={{fontSize:13,color:C.muted,flexShrink:0}}>{c.progress}</div>}
+                    </div>
+                  ))}
+                  {!seal.earned&&(
+                    <div style={{marginTop:16,fontSize:13,color:C.gold,lineHeight:1.5}}>
+                      Sobald alle Punkte erfüllt sind, erscheint das Siegel automatisch — auch in Listen und der öffentlichen Ansicht.
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ── Standort merken: Notiz-Eingabe vor dem eigentlichen Check-in ── */}
           {showCheckInNoteDialog===v.id&&(
@@ -7220,7 +7312,10 @@ Regeln:
                   </div>
                   <div style={{flex:1,minWidth:0,padding:"12px 14px",display:"flex",alignItems:"center",gap:8}}>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontWeight:700,fontSize:16,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.hersteller} {v.modell}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:5}}>
+                      <div style={{fontWeight:700,fontSize:16,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.hersteller} {v.modell}</div>
+                      {getVehicleSealStatus(v).earned&&<SealBadge size="sm"/>}
+                    </div>
                     <div style={{display:"flex",gap:8,marginTop:3,alignItems:"center",flexWrap:"wrap"}}>
                       <span style={{fontSize:13,color:C.muted}}>{fmtKz(v.kennzeichen,v.baujahr)} · {v.baujahr}</span>
                       {(logbook[v.id]||[]).length>0&&<span style={{fontSize:12,color:C.green,fontWeight:700}}>📋 {(logbook[v.id]||[]).length}</span>}
