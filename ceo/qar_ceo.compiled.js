@@ -162,6 +162,26 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   const STATUS_DONE = [{
+    t: "UX-Überarbeitung: Layout, Abstände, Design-Konsistenz",
+    d: "Systematische Bereinigung nach wachsender Komplexität — Farbpalette an recherchierte Porsche-Design-Werte angelehnt (jede Farbe mit echter WCAG-Kontrastprüfung, dabei einen bestehenden Kontrastfehler unter dem Mindeststandard gefunden und behoben), einheitliche Abstände zwischen Kategorien, Buttons konsequent unter statt neben Überschriften, Swipe-Bereiche (z.B. News) jetzt visuell als wischbar erkennbar, alle Popups mit funktionierendem Schließen-Button",
+    date: "Aug 2026"
+  }, {
+    t: "Notfallakte: Bedienung nachgebessert",
+    d: "Foto vergrößert sich jetzt direkt per Antippen (vorher nur indirekt über Umweg erreichbar — echter Anzeige-Bug durch falsche Ebenen-Reihenfolge behoben), Notfallkontakt-Telefonnummern jetzt auch als Text sichtbar statt nur im Anruf-Link verborgen",
+    date: "Aug 2026"
+  }, {
+    t: "Live-Ausfahrt: Route bereits beim Erstellen planbar",
+    d: "Start, beliebige Zwischenstopps und Ziel direkt beim Anlegen der Ausfahrt per Adresseingabe festlegbar (wie bei gängigen Kartenanbietern), inklusive Distanz/Fahrzeit/voraussichtlicher Ankunft als Zusammenfassung",
+    date: "Aug 2026"
+  }, {
+    t: "Punktesystem: 1:1-Abgleich mit Admin-Console",
+    d: "Admin-Console berechnet Punkte nicht mehr selbst nach, sondern liest ausschließlich den von der App berechneten und gespeicherten Gesamtwert — dadurch strukturell unmöglich, dass beide Ansichten je wieder auseinanderlaufen",
+    date: "Aug 2026"
+  }, {
+    t: "Diverse Korrekturen aus Nutzung",
+    d: "Demo-Test-Nutzer erschienen fälschlich in echten Einladungslisten (behoben), verwaiste Chat-Einträge in 'Meine Chats' wurden automatisch bereinigt, News-Archiv für bereits gelesene Beiträge ergänzt, Willkommens-Hinweis erscheint jetzt nur noch bei echter Erstanmeldung statt bei jedem Neustart",
+    date: "Aug 2026"
+  }, {
     t: "Punktesystem: komplett serverseitig",
     d: "QR-Scan, angesehene Akte, News gelesen, Geburtstag laufen nicht mehr über localStorage sondern über eine neue Datenbank-Tabelle — App und Admin-Console können strukturell nicht mehr auseinanderlaufen. Dabei einen echten Bug behoben: QR-Scan-Bestätigung landete fälschlich im Speicher des Eigentümers statt des Scanners",
     date: "Aug 2026"
@@ -245,7 +265,7 @@
   }, {
     t: "Punkte-Einlösung",
     own: "Tech + Business",
-    note: "Jetzt vollständig serverseitig berechnet und konsistent — Einlösung selbst (wogegen, wie gebucht) noch nicht umgesetzt"
+    note: "App und Admin-Console jetzt 1:1 synchron (Admin liest nur noch, rechnet nicht mehr selbst) — Einlösung selbst (wogegen, wie gebucht) noch nicht umgesetzt"
   }, {
     t: "Stripe-Zahlung aktivieren",
     own: "Business",
@@ -320,24 +340,24 @@
     d: "Jeder QR-Code am Fahrzeug ist physischer, dauerhafter Werbeträger ohne laufende Kosten — wirkt direkt am faszinierenden Objekt."
   }];
   const JOURNAL = [{
-    icon: "🎯",
-    t: "Punktesystem: App und Admin-Console synchron",
-    d: "Ursache einer gemeldeten Diskrepanz gefunden (veraltete Konstanten in der Admin-Console) und behoben — zusätzlich alle vier localStorage-Kategorien auf eine gemeinsame Datenbank-Tabelle umgestellt, dabei einen zweiten, unabhängigen Bug (Scan-Bestätigung landete beim falschen Nutzer) entdeckt und korrigiert.",
+    icon: "🎨",
+    t: "UX-Überarbeitung: aufgeräumter, konsistenter",
+    d: "Nach Rückmeldung, dass die App durch das organische Wachstum unübersichtlich wirkte: Farbpalette überarbeitet (mit echter WCAG-Kontrastprüfung — dabei einen bestehenden Fehler unter dem Mindeststandard gefunden), einheitliche Abstände, Buttons konsequent unter statt neben Überschriften positioniert.",
+    date: "Aug 2026"
+  }, {
+    icon: "🚨",
+    t: "Notfallakte: zwei echte Bugs behoben",
+    d: "Foto ließ sich nicht direkt vergrößern (Ebenen-Reihenfolge-Fehler — Bild lag optisch unsichtbar hinter dem Dialog), Notfallkontakt-Nummern waren nur im Anruf-Link verborgen statt sichtbar als Text.",
     date: "Aug 2026"
   }, {
     icon: "🗺️",
-    t: "Live-Ausfahrt: echte Karte mit Routenplanung",
-    d: "Ursprünglicher Kartenansatz konnte technisch nur einen Positionspin zeigen — auf Leaflet umgestellt, jetzt mit allen Teilnehmern gleichzeitig sichtbar plus Routenplanung per Antippen oder Adresseingabe für den Organisator.",
+    t: "Live-Ausfahrt: Route vorab planbar",
+    d: "Start, Zwischenstopps und Ziel jetzt bereits beim Erstellen der Ausfahrt festlegbar, mit Distanz/Fahrzeit/Ankunfts-Zusammenfassung — vorher nur nachträglich während der laufenden Fahrt möglich.",
     date: "Aug 2026"
   }, {
-    icon: "🆘",
-    t: "Notfall-Zugang (ICE) konzipiert und gebaut",
-    d: "Nach sorgfältiger Abwägung der Datenschutzfragen umgesetzt: physisch verborgener Code als Zugangsschranke, Rollen-Abfrage vor der Dateneinsicht, recherchierte Rettungsdienst-Standardfelder.",
-    date: "Aug 2026"
-  }, {
-    icon: "🔑",
-    t: "Fahrzeug-Eigentumsübertragung wie eine FIN",
-    d: "Kernkonzept: QAR-ID bleibt lebenslang am Fahrzeug, nicht am Eigentümer — zwei Übertragungswege, beidseitige Zustimmung, automatische Nachrichten-Bereinigung.",
+    icon: "🎯",
+    t: "Punktesystem: App und Admin-Console synchron",
+    d: "Ursache einer gemeldeten Diskrepanz gefunden (veraltete Konstanten in der Admin-Console) und behoben — jetzt liest die Admin-Console ausschließlich den von der App berechneten Wert, kein eigenes Nachrechnen mehr möglich.",
     date: "Aug 2026"
   }];
   const T_ICON = {
