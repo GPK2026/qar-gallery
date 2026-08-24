@@ -87,6 +87,11 @@ function LoginGate({onOk}){
 // ═══════════════════════════════════════════════════════════════════════════
 
 const STATUS_DONE = [
+  {t:"UX-Überarbeitung: Layout, Abstände, Design-Konsistenz", d:"Systematische Bereinigung nach wachsender Komplexität — Farbpalette an recherchierte Porsche-Design-Werte angelehnt (jede Farbe mit echter WCAG-Kontrastprüfung, dabei einen bestehenden Kontrastfehler unter dem Mindeststandard gefunden und behoben), einheitliche Abstände zwischen Kategorien, Buttons konsequent unter statt neben Überschriften, Swipe-Bereiche (z.B. News) jetzt visuell als wischbar erkennbar, alle Popups mit funktionierendem Schließen-Button", date:"Aug 2026"},
+  {t:"Notfallakte: Bedienung nachgebessert", d:"Foto vergrößert sich jetzt direkt per Antippen (vorher nur indirekt über Umweg erreichbar — echter Anzeige-Bug durch falsche Ebenen-Reihenfolge behoben), Notfallkontakt-Telefonnummern jetzt auch als Text sichtbar statt nur im Anruf-Link verborgen", date:"Aug 2026"},
+  {t:"Live-Ausfahrt: Route bereits beim Erstellen planbar", d:"Start, beliebige Zwischenstopps und Ziel direkt beim Anlegen der Ausfahrt per Adresseingabe festlegbar (wie bei gängigen Kartenanbietern), inklusive Distanz/Fahrzeit/voraussichtlicher Ankunft als Zusammenfassung", date:"Aug 2026"},
+  {t:"Punktesystem: 1:1-Abgleich mit Admin-Console", d:"Admin-Console berechnet Punkte nicht mehr selbst nach, sondern liest ausschließlich den von der App berechneten und gespeicherten Gesamtwert — dadurch strukturell unmöglich, dass beide Ansichten je wieder auseinanderlaufen", date:"Aug 2026"},
+  {t:"Diverse Korrekturen aus Nutzung", d:"Demo-Test-Nutzer erschienen fälschlich in echten Einladungslisten (behoben), verwaiste Chat-Einträge in 'Meine Chats' wurden automatisch bereinigt, News-Archiv für bereits gelesene Beiträge ergänzt, Willkommens-Hinweis erscheint jetzt nur noch bei echter Erstanmeldung statt bei jedem Neustart", date:"Aug 2026"},
   {t:"Punktesystem: komplett serverseitig", d:"QR-Scan, angesehene Akte, News gelesen, Geburtstag laufen nicht mehr über localStorage sondern über eine neue Datenbank-Tabelle — App und Admin-Console können strukturell nicht mehr auseinanderlaufen. Dabei einen echten Bug behoben: QR-Scan-Bestätigung landete fälschlich im Speicher des Eigentümers statt des Scanners", date:"Aug 2026"},
   {t:"Live-Ausfahrt-Karte auf Leaflet umgestellt", d:"Vorheriger Kartenansatz zeigte nur einen Positionspin — jetzt echte Multi-Marker-Karte mit farblich unterschiedenen Teilnehmern, plus Routenplanung für den Organisator (Wegpunkte per Antippen oder Adresseingabe, Route via OSRM berechnet)", date:"Aug 2026"},
   {t:"Notfall-Zugang (ICE)", d:"Rundes Symbol oben rechts in der Fahrzeugakte — Rettungskräfte bestätigen zunächst ihre Rolle, dann Zugang zu Blutgruppe, Allergien, Notfallkontakten über einen physisch verborgenen 4-stelligen Code", date:"Aug 2026"},
@@ -110,7 +115,7 @@ const STATUS_OPEN = [
   {t:"DSGVO-Anwalt beauftragen", own:"Business/Legal", note:"Interne Bewertung liegt vor (siehe Recht-Tab), keine rechtsverbindliche Prüfung — jetzt dringlicher durch Notfall-Zugang (Gesundheitsdaten) und Standort-Features"},
   {t:"Pilotvertrag unterschreiben", own:"Business", note:"Entwurf fertig (PCN_Pilotvertrag), wartet auf Unterschrift Club-Vorstand"},
   {t:"Echte Authentifizierung", own:"Tech", note:"Aktuell Club-Code statt Supabase Auth — für Pilot vertretbar, vor Multi-Club-Rollout nötig"},
-  {t:"Punkte-Einlösung", own:"Tech + Business", note:"Jetzt vollständig serverseitig berechnet und konsistent — Einlösung selbst (wogegen, wie gebucht) noch nicht umgesetzt"},
+  {t:"Punkte-Einlösung", own:"Tech + Business", note:"App und Admin-Console jetzt 1:1 synchron (Admin liest nur noch, rechnet nicht mehr selbst) — Einlösung selbst (wogegen, wie gebucht) noch nicht umgesetzt"},
   {t:"Stripe-Zahlung aktivieren", own:"Business", note:"Vorbereitet, kein Payment Link — Beiträge laufen im Pilot per Überweisung, betrifft jetzt auch die 30-Tage-Probezeit nach Fahrzeugübertragung"},
   {t:"Dashboard-Zugriff absichern", own:"Tech", note:"Aktuell Passwort-Hash im Quelltext (Sichtschutz) — für echten Schutz: Cloudflare Access"},
   {t:"Werbe-KPI-Auswertung", own:"Tech", note:"QR-Scan-Rohdaten liegen jetzt strukturiert in point_events vor, Auswertungs-Ansicht in der Admin-Console fehlt noch"},
@@ -139,10 +144,10 @@ const SALES_POINTS = [
 ];
 
 const JOURNAL = [
-  {icon:"🎯", t:"Punktesystem: App und Admin-Console synchron", d:"Ursache einer gemeldeten Diskrepanz gefunden (veraltete Konstanten in der Admin-Console) und behoben — zusätzlich alle vier localStorage-Kategorien auf eine gemeinsame Datenbank-Tabelle umgestellt, dabei einen zweiten, unabhängigen Bug (Scan-Bestätigung landete beim falschen Nutzer) entdeckt und korrigiert.", date:"Aug 2026"},
-  {icon:"🗺️", t:"Live-Ausfahrt: echte Karte mit Routenplanung", d:"Ursprünglicher Kartenansatz konnte technisch nur einen Positionspin zeigen — auf Leaflet umgestellt, jetzt mit allen Teilnehmern gleichzeitig sichtbar plus Routenplanung per Antippen oder Adresseingabe für den Organisator.", date:"Aug 2026"},
-  {icon:"🆘", t:"Notfall-Zugang (ICE) konzipiert und gebaut", d:"Nach sorgfältiger Abwägung der Datenschutzfragen umgesetzt: physisch verborgener Code als Zugangsschranke, Rollen-Abfrage vor der Dateneinsicht, recherchierte Rettungsdienst-Standardfelder.", date:"Aug 2026"},
-  {icon:"🔑", t:"Fahrzeug-Eigentumsübertragung wie eine FIN", d:"Kernkonzept: QAR-ID bleibt lebenslang am Fahrzeug, nicht am Eigentümer — zwei Übertragungswege, beidseitige Zustimmung, automatische Nachrichten-Bereinigung.", date:"Aug 2026"},
+  {icon:"🎨", t:"UX-Überarbeitung: aufgeräumter, konsistenter", d:"Nach Rückmeldung, dass die App durch das organische Wachstum unübersichtlich wirkte: Farbpalette überarbeitet (mit echter WCAG-Kontrastprüfung — dabei einen bestehenden Fehler unter dem Mindeststandard gefunden), einheitliche Abstände, Buttons konsequent unter statt neben Überschriften positioniert.", date:"Aug 2026"},
+  {icon:"🚨", t:"Notfallakte: zwei echte Bugs behoben", d:"Foto ließ sich nicht direkt vergrößern (Ebenen-Reihenfolge-Fehler — Bild lag optisch unsichtbar hinter dem Dialog), Notfallkontakt-Nummern waren nur im Anruf-Link verborgen statt sichtbar als Text.", date:"Aug 2026"},
+  {icon:"🗺️", t:"Live-Ausfahrt: Route vorab planbar", d:"Start, Zwischenstopps und Ziel jetzt bereits beim Erstellen der Ausfahrt festlegbar, mit Distanz/Fahrzeit/Ankunfts-Zusammenfassung — vorher nur nachträglich während der laufenden Fahrt möglich.", date:"Aug 2026"},
+  {icon:"🎯", t:"Punktesystem: App und Admin-Console synchron", d:"Ursache einer gemeldeten Diskrepanz gefunden (veraltete Konstanten in der Admin-Console) und behoben — jetzt liest die Admin-Console ausschließlich den von der App berechneten Wert, kein eigenes Nachrechnen mehr möglich.", date:"Aug 2026"},
 ];
 
 const T_ICON = {info:"ℹ️",positive:"✓",medium:"◐",high:"⚠️"};
