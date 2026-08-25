@@ -3290,6 +3290,14 @@ Wichtig:
   const [docScanBusy, setDocScanBusy] = useState(false);
   const [docScanResult, setDocScanResult] = useState(null);
   const [docScanCategory, setDocScanCategory] = useState("wartung"); // wartung | reparatur | rechnung | versicherung
+  // ── Dokumentenablage — unabhängig vom Scan-Ablauf, Dokumente können ohne
+  // sofortige Auswertung abgelegt werden.
+  const [vehicleDocuments, setVehicleDocuments] = useState({}); // vehicleId -> [{id,category,image,label,analyzedAt,...}]
+  const [showDocArchive, setShowDocArchive] = useState(null); // vehicleId
+  const [docUploadCategory, setDocUploadCategory] = useState("wartung");
+  const [docUploadLabel, setDocUploadLabel] = useState("");
+  const [docUploadBusy, setDocUploadBusy] = useState(false);
+  const [analyzingDocId, setAnalyzingDocId] = useState(null); // Dokument-ID, falls nachträgliche Auswertung statt Neuaufnahme
 
   const analyzeSchein = async (dataUrl) => {
     const endpoint = (window.PCN_CONFIG||{}).aiProxyUrl;
@@ -3516,13 +3524,66 @@ Regeln:
         return;
       }
       setLogbook(prev=>({...prev, [vehicleId]:[...(prev[vehicleId]||[]), saved||entry]}));
+      // Falls dies eine NACHTRÄGLICHE Auswertung eines bereits abgelegten
+      // Dokuments war (nicht eine frische Fotoaufnahme), das Dokument in der
+      // Ablage als ausgewertet markieren und mit dem neuen Eintrag verknüpfen.
+      if(analyzingDocId && DB){
+        const entryId = saved?.id || null;
+        await DB.vehicleDocuments.markAnalyzed(analyzingDocId, entryId).catch(()=>{});
+        setVehicleDocuments(prev=>({...prev, [vehicleId]: (prev[vehicleId]||[]).map(d=>
+          d.id===analyzingDocId ? {...d, analyzedAt:new Date().toISOString(), logbookEntryId:entryId} : d
+        )}));
+      }
     } else {
       // Demo-Modus: nur lokal
       setLogbook(prev=>({...prev, [vehicleId]:[...(prev[vehicleId]||[]), {...entry, id:"demo_"+Date.now()}]}));
     }
     setDocScanResult(null);
     setDocScanOpen(false);
+    setAnalyzingDocId(null);
     toast_(`${CATEGORY_LABELS[docScanCategory]}-Beleg zum Logbuch hinzugefügt ✓ (+${POINTS.logbook} Pkt)`);
+  };
+
+  // ── Dokumentenablage: laden, hochladen, löschen, nachträglich auswerten ──
+  const loadVehicleDocuments = async (vehicleId) => {
+    const DB = window.PCN_DB; if(!DB || isDemo) return;
+    const {data} = await DB.vehicleDocuments.list(vehicleId).catch(()=>({data:[]}));
+    setVehicleDocuments(prev=>({...prev, [vehicleId]: data||[]}));
+  };
+  const uploadDocumentToArchive = async (vehicleId, dataUrl) => {
+    const DB = window.PCN_DB;
+    if(isDemo){ toast_("Im Demo-Modus nicht dauerhaft gespeichert"); setShowDocArchive(null); return; }
+    setDocUploadBusy(true);
+    const {data, error} = await DB.vehicleDocuments.upload(vehicleId, me.id, docUploadCategory, dataUrl, docUploadLabel.trim()||null).catch(e=>({error:e?.message}));
+    setDocUploadBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    setVehicleDocuments(prev=>({...prev, [vehicleId]: [
+      { id:data.id, category:docUploadCategory, image:dataUrl, label:docUploadLabel.trim()||null, analyzedAt:null, logbookEntryId:null, createdAt:new Date().toISOString() },
+      ...(prev[vehicleId]||[]),
+    ]}));
+    setDocUploadLabel(""); setDocUploadCategory("wartung");
+    setShowDocArchive(null);
+    toast_("Dokument abgelegt ✓ — Auswertung kann jederzeit nachgeholt werden");
+  };
+  const deleteArchivedDocument = async (vehicleId, docId) => {
+    const DB = window.PCN_DB;
+    if(!isDemo){
+      const {error} = await DB.vehicleDocuments.delete(docId, me.id).catch(e=>({error:e?.message}));
+      if(error){ toast_(error,"err"); return; }
+    }
+    setVehicleDocuments(prev=>({...prev, [vehicleId]: (prev[vehicleId]||[]).filter(d=>d.id!==docId)}));
+    toast_("Dokument entfernt");
+  };
+  // Startet die bestehende KI-Auswertung fuer ein BEREITS abgelegtes Dokument
+  // statt eine neue Fotoaufnahme zu verlangen — genau der "spaeter nachholen"-
+  // Weg aus der Anforderung.
+  const startRetroactiveAnalysis = (doc) => {
+    setAnalyzingDocId(doc.id);
+    setDocScanCategory(doc.category);
+    setDocScanResult({ fields:null }); // wird gleich von analyzeDocument ueberschrieben
+    setDocScanOpen(true);
+    setShowDocArchive(null);
+    analyzeDocument(doc.image);
   };
 
   const addVehicle = async () => {
@@ -5631,6 +5692,46 @@ Regeln:
                     </div>
                   ))}
                 </div>
+                {/* ── Dokumentenablage — unabhängig vom Scan-Ablauf, Dokumente
+                     können ohne sofortige KI-Auswertung abgelegt werden. ── */}
+                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
+                  <div style={{marginBottom:8}}>
+                    <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>📁 Dokumente</div>
+                    <div style={{display:"flex",justifyContent:"flex-end"}}>
+                      <button onClick={()=>{loadVehicleDocuments(v.id);setShowDocArchive(v.id);}}
+                        style={{background:"none",border:"none",color:C.gold,fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Ablegen</button>
+                    </div>
+                  </div>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:8,lineHeight:1.5}}>
+                    Rechnungen, Werkstattbelege, Fahrzeugschein & Co. — auch ohne sofortige Auswertung ablegbar, die KI-Analyse kannst du jederzeit später nachholen.
+                  </div>
+                  {!vehicleDocuments[v.id]&&(
+                    <button onClick={()=>loadVehicleDocuments(v.id)} style={{fontSize:13,color:C.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+                      Dokumente laden
+                    </button>
+                  )}
+                  {(vehicleDocuments[v.id]||[]).map(doc=>(
+                    <div key={doc.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6,display:"flex",alignItems:"center",gap:10}}>
+                      <img src={doc.image} alt="" onClick={()=>setLightbox({images:[doc.image],index:0})}
+                        style={{width:44,height:44,borderRadius:8,objectFit:"cover",flexShrink:0,cursor:"pointer"}}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:14,fontWeight:700,color:C.white}}>{doc.label||CATEGORY_LABELS[doc.category]||"Dokument"}</div>
+                        <div style={{fontSize:12,color:doc.analyzedAt?C.green:C.muted}}>
+                          {doc.analyzedAt?"✓ Ausgewertet":"Noch nicht ausgewertet"}
+                        </div>
+                      </div>
+                      {!doc.analyzedAt&&(
+                        <button onClick={()=>startRetroactiveAnalysis(doc)}
+                          style={{background:"none",border:`1px solid ${C.gold}`,borderRadius:7,color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",padding:"5px 9px",flexShrink:0}}>
+                          KI auslesen
+                        </button>
+                      )}
+                      <button onClick={()=>deleteArchivedDocument(v.id,doc.id)}
+                        style={{background:"none",border:"none",color:"#666",fontSize:16,cursor:"pointer",flexShrink:0,padding:"0 2px"}}>✕</button>
+                    </div>
+                  ))}
+                </div>
+
 
                 {/* ── Standort-Historie: nur für den Eigentümer, letzte 48h ── */}
                 {(scanLocations[v.id]||[]).length>0&&(
@@ -6284,6 +6385,68 @@ Regeln:
               </div>
             );
           })()}
+
+          {/* ── Dokument ablegen — unabhängig von der KI-Auswertung ── */}
+          {showDocArchive===v.id&&(
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget&&!docUploadBusy)setShowDocArchive(null);}}>
+              <div className="sheet">
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                  <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>📁 Dokument ablegen</div>
+                  {!docUploadBusy&&(
+                    <button onClick={()=>setShowDocArchive(null)}
+                      style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+                  )}
+                </div>
+                <div style={{fontSize:13,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+                  Wird ohne sofortige Auswertung gespeichert — die KI-Analyse kannst du jederzeit später aus der Dokumentenliste heraus nachholen.
+                </div>
+                <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Art des Dokuments</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+                  {Object.entries(CATEGORY_LABELS).map(([key,label])=>(
+                    <button key={key} onClick={()=>setDocUploadCategory(key)}
+                      style={{padding:"7px 12px",borderRadius:8,border:`1.5px solid ${docUploadCategory===key?C.gold:C.border}`,
+                        background:docUploadCategory===key?`${C.gold}22`:"transparent",
+                        color:docUploadCategory===key?C.gold:C.muted,fontSize:13,fontWeight:700,
+                        cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <input className="inp" placeholder="Titel (optional), z.B. 'TÜV-Bericht 2026'" style={{marginBottom:16}}
+                  value={docUploadLabel} onChange={e=>setDocUploadLabel(e.target.value)}/>
+                {docUploadBusy?(
+                  <div style={{textAlign:"center",padding:"20px 0",color:C.muted,fontSize:14}}>Wird gespeichert…</div>
+                ):(
+                  <div style={{background:C.card,border:`1px dashed ${C.border}`,borderRadius:12,padding:"22px 16px",textAlign:"center"}}>
+                    <div style={{fontSize:34,marginBottom:8}}>📄</div>
+                    <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+                      <label style={{display:"inline-block",background:C.gold,color:"#0a0a0a",borderRadius:9,
+                        padding:"11px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
+                          onChange={e=>{
+                            const f=e.target.files?.[0]; if(!f) return;
+                            setDocUploadBusy(true);
+                            handleImageUpload(f, ()=>{}, hi=>uploadDocumentToArchive(v.id,hi));
+                          }}/>
+                        📷 Foto aufnehmen
+                      </label>
+                      <label style={{display:"inline-block",background:"transparent",color:C.gold,borderRadius:9,
+                        padding:"11px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                        border:`1.5px solid ${C.gold}`}}>
+                        <input type="file" accept="image/*" style={{display:"none"}}
+                          onChange={e=>{
+                            const f=e.target.files?.[0]; if(!f) return;
+                            setDocUploadBusy(true);
+                            handleImageUpload(f, ()=>{}, hi=>uploadDocumentToArchive(v.id,hi));
+                          }}/>
+                        🖼️ Aus Galerie
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* ── Standort merken: Notiz-Eingabe vor dem eigentlichen Check-in ── */}
           {showCheckInNoteDialog===v.id&&(
