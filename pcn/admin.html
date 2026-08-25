@@ -1014,13 +1014,15 @@ function filterMembers(){
             if(!v.baujahr) missing.push("Baujahr");
             if(!v.besonderheiten) missing.push("Geschichte");
             const ok=missing.length===0;
-            return `<div style="display:flex;gap:8px;align-items:center;padding:7px 9px;background:#0d0d0d;border-radius:7px;margin-bottom:4px;border-left:2px solid ${ok?"var(--green)":"var(--gold)"}">
+            const vehicleUrl=v.qar_id?`https://qar.gallery/pcn/?v=${v.qar_id}`:null;
+            return `<a ${vehicleUrl?`href="${vehicleUrl}" target="_blank" rel="noopener noreferrer"`:""} style="display:flex;gap:8px;align-items:center;padding:7px 9px;background:#0d0d0d;border-radius:7px;margin-bottom:4px;border-left:2px solid ${ok?"var(--green)":"var(--gold)"};text-decoration:none;cursor:${vehicleUrl?"pointer":"default"}">
               <span style="font-size:15px">${ok?"✓":"⚠"}</span>
               <div style="flex:1;min-width:0">
                 <div style="font-size:14px;color:#ccc;font-weight:600">${v.hersteller||""} ${v.modell||"—"}</div>
                 ${missing.length?`<div style="font-size:12px;color:var(--gold)">fehlt: ${missing.join(", ")}</div>`:`<div style="font-size:12px;color:#555">${v.kennzeichen||""}</div>`}
               </div>
-            </div>`;
+              ${vehicleUrl?`<span style="font-size:13px;color:var(--muted);flexShrink:0">↗</span>`:""}
+            </a>`;
           }).join("")}
         </div>`:""}
 
