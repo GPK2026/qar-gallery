@@ -2914,7 +2914,16 @@ function PCNInner() {
         }, note);
         setCheckInBusy(false); setShowCheckInPrompt(null); setCheckInNoteInput("");
         if(error){ toast_(error,"err"); return; }
-        setVehicles(prev=>({...prev,[vehicleId]:{...prev[vehicleId], checkinLat:pos.coords.latitude, checkinLng:pos.coords.longitude, checkinAt:new Date().toISOString(), checkinNote:note}}));
+        const updated = {lat:pos.coords.latitude, lng:pos.coords.longitude, at:new Date().toISOString(), note};
+        setVehicles(prev=>({...prev,[vehicleId]:{...prev[vehicleId], checkinLat:updated.lat, checkinLng:updated.lng, checkinAt:updated.at, checkinNote:updated.note}}));
+        // Falls die gerade angezeigte Fahrzeugakte genau dieses Fahrzeug ist,
+        // auch die Anzeige-Kopie (viewV) aktualisieren — sonst bleibt die
+        // Karte "Zuletzt geparkt" unsichtbar, bis man die Akte neu öffnet,
+        // weil viewV eine eigene Momentaufnahme ist, kein Live-Verweis auf
+        // den vehicles-State.
+        setViewV(prevV => prevV?.id===vehicleId
+          ? {...prevV, checkinLat:updated.lat, checkinLng:updated.lng, checkinAt:updated.at, checkinNote:updated.note}
+          : prevV);
         toast_("📍 Standort gespeichert");
       },
       () => { setCheckInBusy(false); toast_("Standortfreigabe abgelehnt oder nicht verfügbar","err"); },
@@ -5626,6 +5635,7 @@ Regeln:
                             const DB=window.PCN_DB;
                             if(!isDemo&&DB) await DB.vehicles.clearCheckIn(v.id,me.id);
                             setVehicles(prev=>({...prev,[v.id]:{...prev[v.id],checkinLat:null,checkinLng:null,checkinAt:null,checkinNote:""}}));
+                            setViewV(prevV=>prevV?.id===v.id?{...prevV,checkinLat:null,checkinLng:null,checkinAt:null,checkinNote:""}:prevV);
                             toast_("Standort entfernt");
                           }}
                           style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,color:C.muted,fontSize:15,cursor:"pointer",padding:"6px 10px"}}>✕</button>
