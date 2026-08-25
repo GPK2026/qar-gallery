@@ -1020,6 +1020,39 @@ const PCN_STORAGE = (() => {
       return await supabase._patch("users","id=eq."+userId,{ welcome_seen: true });
     },
 
+    // ── Fahrzeug-Dokumentenablage — unabhaengig vom KI-Scan-Weg. Dokumente
+    // koennen ohne sofortige Auswertung abgelegt werden, die KI-Analyse kann
+    // spaeter nachtraeglich darauf laufen.
+    async uploadVehicleDocument(vehicleId, ownerUserId, category, image, label) {
+      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id");
+      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
+      if(vRes.data[0].user_id!==ownerUserId) return { error: "Nur der Eigentümer kann Dokumente hochladen" };
+      return await supabase._post("vehicle_documents", {
+        vehicle_id: vehicleId, owner_user_id: ownerUserId, category,
+        image, label: label||null, created_at: now(),
+      });
+    },
+    async listVehicleDocuments(vehicleId) {
+      const res = await supabase._q("vehicle_documents","?vehicle_id=eq."+vehicleId+"&order=created_at.desc");
+      if(res.error) return res;
+      return { data: (res.data||[]).map(r => ({
+        id: r.id, vehicleId: r.vehicle_id, category: r.category, image: r.image,
+        label: r.label, analyzedAt: r.analyzed_at, logbookEntryId: r.logbook_entry_id,
+        createdAt: r.created_at,
+      })) };
+    },
+    async markDocumentAnalyzed(documentId, logbookEntryId) {
+      return await supabase._patch("vehicle_documents","id=eq."+documentId,{
+        analyzed_at: now(), logbook_entry_id: logbookEntryId||null,
+      });
+    },
+    async deleteVehicleDocument(documentId, ownerUserId) {
+      const dRes = await supabase._q("vehicle_documents","?id=eq."+documentId+"&select=owner_user_id");
+      if(dRes.error || !dRes.data?.length) return { error: "Dokument nicht gefunden" };
+      if(dRes.data[0].owner_user_id!==ownerUserId) return { error: "Nur der Eigentümer kann dies löschen" };
+      return await supabase._delete("vehicle_documents","id=eq."+documentId);
+    },
+
     // ── Notfallprofile (ICE) ──
     // Mehrere Profile pro Fahrzeug moeglich. Verwaltung nur fuer den
     // Eigentuemer (bereits eingeloggt, kein zusaetzlicher Code noetig).
@@ -1755,6 +1788,12 @@ function guard(label, fn){
       setBgTheme: guard("members.setBgTheme", (uid, theme) => db.setBgTheme(uid, theme)),
       setBreakdownMembership: guard("members.setBreakdownMembership", (uid,adacNr,avdNr) => db.setBreakdownMembership(uid,adacNr,avdNr)),
       markWelcomeSeen: guard("members.markWelcomeSeen", (uid) => db.markWelcomeSeen(uid)),
+    },
+    vehicleDocuments: {
+      upload: guard("vehicleDocuments.upload", (vid,ownerUid,category,image,label) => db.uploadVehicleDocument(vid,ownerUid,category,image,label)),
+      list: (vid) => db.listVehicleDocuments(vid),
+      markAnalyzed: guard("vehicleDocuments.markAnalyzed", (docId,logbookEntryId) => db.markDocumentAnalyzed(docId,logbookEntryId)),
+      delete: guard("vehicleDocuments.delete", (docId,ownerUid) => db.deleteVehicleDocument(docId,ownerUid)),
     },
     pointEvents: {
       record: guard("pointEvents.record", (uid,type,refId,points) => db.recordPointEvent(uid,type,refId,points)),
