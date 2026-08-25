@@ -1553,7 +1553,7 @@ function SingleMarkerMap({lat, lng}){
     window.L.marker([lat,lng],{icon}).addTo(map);
     return ()=>map.remove();
   },[lat,lng]);
-  return <div ref={mapDivRef} style={{width:"100%",height:"100%"}}/>;
+  return <div ref={mapDivRef} style={{width:"100%",height:"100%",position:"relative",zIndex:0,isolation:"isolate"}}/>;
 }
 
 function LiveGroupMap({members, organizerId, meId, isOrganizer, routeMode, onMapReady}){
@@ -1632,7 +1632,7 @@ function LiveGroupMap({members, organizerId, meId, isOrganizer, routeMode, onMap
     return ()=>{ map.off("click", onClick); delete map.__addRouteWaypoint; };
   },[routeMode, isOrganizer]);
 
-  return <div ref={mapDivRef} style={{width:"100%",height:"100%"}}/>;
+  return <div ref={mapDivRef} style={{width:"100%",height:"100%",position:"relative",zIndex:0,isolation:"isolate"}}/>;
 }
 
 // ── Adresssuche für die Routenplanung (Nominatim/OSM Geocoding) ──
