@@ -1707,7 +1707,7 @@ function PCNInner() {
   });
 
   // ── Form state ──────────────────────────────────────────────────────────────
-  const [loginForm, setLoginForm] = useState({mode:"register",code:"",email:"",name:""});
+  const [loginForm, setLoginForm] = useState({mode:"login",code:"",email:"",name:""});
   const [consent, setConsent] = useState(false);
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [showContactPrivacyInfo, setShowContactPrivacyInfo] = useState(false);
@@ -4481,6 +4481,15 @@ Regeln:
         {/* Register */}
         {loginForm.mode==="register"&&(
           <>
+            {/* Hinweistext beim Wechsel zu Registrieren — erklaert sofort,
+                bevor der Nutzer etwas eingibt, was hier verlangt wird. */}
+            <div style={{background:`${C.gold}15`,border:`1px solid ${C.gold}44`,borderRadius:10,
+              padding:"12px 14px",marginBottom:16,display:"flex",gap:10,alignItems:"flex-start"}}>
+              <span style={{fontSize:18,flexShrink:0}}>🔑</span>
+              <div style={{fontSize:13,color:C.white,lineHeight:1.5}}>
+                Bitte gib zuerst deinen Club-Code ein. Du erhältst ihn von deinem Verein oder Ansprechpartner.
+              </div>
+            </div>
             {/* Single Club-Code field */}
             <div style={{marginBottom:16}}>
               <div style={{fontSize:13,color:C.muted,marginBottom:6,fontWeight:600}}>CLUB-CODE</div>
