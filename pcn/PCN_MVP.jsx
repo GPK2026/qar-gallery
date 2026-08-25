@@ -5692,47 +5692,6 @@ Regeln:
                     </div>
                   ))}
                 </div>
-                {/* ── Dokumentenablage — unabhängig vom Scan-Ablauf, Dokumente
-                     können ohne sofortige KI-Auswertung abgelegt werden. ── */}
-                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                  <div style={{marginBottom:8}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>📁 Dokumente</div>
-                    <div style={{display:"flex",justifyContent:"flex-end"}}>
-                      <button onClick={()=>{loadVehicleDocuments(v.id);setShowDocArchive(v.id);}}
-                        style={{background:"none",border:"none",color:C.gold,fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Ablegen</button>
-                    </div>
-                  </div>
-                  <div style={{fontSize:12,color:C.muted,marginBottom:8,lineHeight:1.5}}>
-                    Rechnungen, Werkstattbelege, Fahrzeugschein & Co. — auch ohne sofortige Auswertung ablegbar, die KI-Analyse kannst du jederzeit später nachholen.
-                  </div>
-                  {!vehicleDocuments[v.id]&&(
-                    <button onClick={()=>loadVehicleDocuments(v.id)} style={{fontSize:13,color:C.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
-                      Dokumente laden
-                    </button>
-                  )}
-                  {(vehicleDocuments[v.id]||[]).map(doc=>(
-                    <div key={doc.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6,display:"flex",alignItems:"center",gap:10}}>
-                      <img src={doc.image} alt="" onClick={()=>setLightbox({images:[doc.image],index:0})}
-                        style={{width:44,height:44,borderRadius:8,objectFit:"cover",flexShrink:0,cursor:"pointer"}}/>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:14,fontWeight:700,color:C.white}}>{doc.label||CATEGORY_LABELS[doc.category]||"Dokument"}</div>
-                        <div style={{fontSize:12,color:doc.analyzedAt?C.green:C.muted}}>
-                          {doc.analyzedAt?"✓ Ausgewertet":"Noch nicht ausgewertet"}
-                        </div>
-                      </div>
-                      {!doc.analyzedAt&&(
-                        <button onClick={()=>startRetroactiveAnalysis(doc)}
-                          style={{background:"none",border:`1px solid ${C.gold}`,borderRadius:7,color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",padding:"5px 9px",flexShrink:0}}>
-                          KI auslesen
-                        </button>
-                      )}
-                      <button onClick={()=>deleteArchivedDocument(v.id,doc.id)}
-                        style={{background:"none",border:"none",color:"#666",fontSize:16,cursor:"pointer",flexShrink:0,padding:"0 2px"}}>✕</button>
-                    </div>
-                  ))}
-                </div>
-
-
                 {/* ── Standort-Historie: nur für den Eigentümer, letzte 48h ── */}
                 {(scanLocations[v.id]||[]).length>0&&(
                   <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
@@ -5836,12 +5795,17 @@ Regeln:
                 )
               },
               {
-                id:"logbook", icon:"📋", label:"Service-Logbuch", count:vLog.length,
-                action:isOwn?()=>setShowAddLog(v.id):null, actionLabel:"+ Eintrag",
+                id:"logbook", icon:"📋", label:"Service & Dokumente", count:vLog.length+(vehicleDocuments[v.id]||[]).length,
                 content:(
                   <div>
+                    {/* ── Service-Logbuch ── */}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:12,marginBottom:6}}>
+                      <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.5}}>Logbuch</div>
+                      {isOwn&&<button onClick={()=>setShowAddLog(v.id)}
+                        style={{background:"none",border:"none",color:C.gold,fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Eintrag</button>}
+                    </div>
                     {vLog.length===0
-                      ?<div style={{padding:"16px",textAlign:"center",color:C.muted,fontSize:15}}>
+                      ?<div style={{padding:"12px 0",textAlign:"center",color:C.muted,fontSize:14}}>
                           Noch leer — 3 Einträge schalten KI-Marktwert frei
                         </div>
                       :vLog.map(e=>(
@@ -5858,6 +5822,41 @@ Regeln:
                         </div>
                       ))
                     }
+                    {/* ── Dokumentenablage — unabhängig vom Scan-Ablauf, Dokumente
+                         können ohne sofortige KI-Auswertung abgelegt werden. ── */}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:18,marginBottom:6,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
+                      <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.5}}>Dokumente</div>
+                      {isOwn&&<button onClick={()=>{loadVehicleDocuments(v.id);setShowDocArchive(v.id);}}
+                        style={{background:"none",border:"none",color:C.gold,fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Ablegen</button>}
+                    </div>
+                    {!vehicleDocuments[v.id]&&(
+                      <button onClick={()=>loadVehicleDocuments(v.id)} style={{fontSize:13,color:C.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+                        Dokumente laden
+                      </button>
+                    )}
+                    {(vehicleDocuments[v.id]||[]).length===0&&vehicleDocuments[v.id]&&(
+                      <div style={{padding:"8px 0",color:C.muted,fontSize:14}}>Noch keine Dokumente abgelegt.</div>
+                    )}
+                    {(vehicleDocuments[v.id]||[]).map(doc=>(
+                      <div key={doc.id} style={{background:C.black,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6,display:"flex",alignItems:"center",gap:10}}>
+                        <img src={doc.image} alt="" onClick={()=>setLightbox({images:[doc.image],index:0})}
+                          style={{width:44,height:44,borderRadius:8,objectFit:"cover",flexShrink:0,cursor:"pointer"}}/>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:14,fontWeight:700,color:C.white}}>{doc.label||CATEGORY_LABELS[doc.category]||"Dokument"}</div>
+                          <div style={{fontSize:12,color:doc.analyzedAt?C.green:C.muted}}>
+                            {doc.analyzedAt?"✓ Ausgewertet":"Noch nicht ausgewertet"}
+                          </div>
+                        </div>
+                        {!doc.analyzedAt&&(
+                          <button onClick={()=>startRetroactiveAnalysis(doc)}
+                            style={{background:"none",border:`1px solid ${C.gold}`,borderRadius:7,color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",padding:"5px 9px",flexShrink:0}}>
+                            KI auslesen
+                          </button>
+                        )}
+                        <button onClick={()=>deleteArchivedDocument(v.id,doc.id)}
+                          style={{background:"none",border:"none",color:"#666",fontSize:16,cursor:"pointer",flexShrink:0,padding:"0 2px"}}>✕</button>
+                      </div>
+                    ))}
                   </div>
                 )
               },
