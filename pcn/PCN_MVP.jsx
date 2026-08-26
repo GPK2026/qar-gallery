@@ -2326,10 +2326,20 @@ function PCNInner() {
   // gesetztes Titelbild nicht überall gleichzeitig ankam.
   const getCoverImage = (v) => v ? (getImages(v)[0] || null) : null;
 
-  const addImageToVehicle = async (vehicleId, dataUrl) => {
+  const MAX_VEHICLE_IMAGES = 12;
+  const addImageToVehicle = async (vehicleId, dataUrlOrUrls) => {
     const v = vehicles[vehicleId]; if(!v) return;
+    const newUrls = Array.isArray(dataUrlOrUrls) ? dataUrlOrUrls : [dataUrlOrUrls];
     const images = getImages(v);
-    const updated = {...v, images:[...images, dataUrl], image:images[0]||dataUrl};
+    if(images.length + newUrls.length > MAX_VEHICLE_IMAGES){
+      const free = Math.max(0, MAX_VEHICLE_IMAGES - images.length);
+      toast_(free>0
+        ? `Maximal ${MAX_VEHICLE_IMAGES} Fotos — es passen noch ${free}. Bitte erst ältere entfernen.`
+        : `Maximal ${MAX_VEHICLE_IMAGES} Fotos erreicht — bitte erst ein Foto entfernen.`,
+        "err");
+      return;
+    }
+    const updated = {...v, images:[...images, ...newUrls], image:images[0]||newUrls[0]};
     setVehicles(prev=>({...prev,[vehicleId]:updated}));
     if(viewV?.id===vehicleId) setViewV(updated);
     const DB=window.PCN_DB; await DB.vehicles.save(updated);
@@ -2380,6 +2390,45 @@ function PCNInner() {
       img.src=e.target.result;
     };
     reader.readAsDataURL(file);
+  };
+
+  // Verarbeitet mehrere Dateien parallel über dieselbe Konvertierung wie
+  // handleImageUpload, liefert das Ergebnis aber gebündelt als ein Array,
+  // damit die 12-Bilder-Obergrenze gegen den gesamten Stapel geprüft wird,
+  // statt Datei für Datei inkonsistent Teile durchzulassen.
+  const MAX_MULTI_UPLOAD = 3;
+  const handleMultiImageUpload = (files, onDoneAll) => {
+    const list = Array.from(files||[]).slice(0, MAX_MULTI_UPLOAD);
+    if(list.length===0) return;
+    if((files||[]).length > MAX_MULTI_UPLOAD){
+      toast_(`Nur die ersten ${MAX_MULTI_UPLOAD} Bilder werden verwendet — bitte in kleineren Gruppen hochladen`);
+    }
+    setImgUploading(true);
+    let remaining = list.length;
+    const results = new Array(list.length);
+    list.forEach((file, i) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX=600, scale=Math.min(1,MAX/img.width,MAX/img.height);
+          const canvas=document.createElement("canvas");
+          canvas.width=Math.round(img.width*scale);
+          canvas.height=Math.round(img.height*scale);
+          const ctx=canvas.getContext("2d");
+          ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high";
+          ctx.drawImage(img,0,0,canvas.width,canvas.height);
+          results[i] = canvas.toDataURL("image/jpeg",0.72);
+          remaining--;
+          if(remaining===0){
+            setImgUploading(false);
+            onDoneAll(results.filter(Boolean));
+          }
+        };
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   // ── DB refresh ───────────────────────────────────────────────────────────────
@@ -5384,7 +5433,7 @@ Regeln:
             let touchX=0;
             if(imgs.length===0) return isOwn?(
               <label style={{height:260,background:"#111",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer"}}>
-                <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageUpload(e.target.files[0],url=>addImageToVehicle(v.id,url))}/>
+                <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>handleMultiImageUpload(e.target.files,urls=>addImageToVehicle(v.id,urls))}/>
                 <span style={{fontSize:44}}>📷</span>
                 <span style={{fontSize:15,fontWeight:700,color:"#fff"}}>Erstes Foto hinzufügen</span>
               </label>
@@ -7131,13 +7180,21 @@ Regeln:
                     display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>✕</button>
               </div>
             ))}
-            <label style={{aspectRatio:"1",background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:10,
-              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:4}}>
-              <input type="file" accept="image/*" style={{display:"none"}}
-                onChange={e=>{const f=e.target.files?.[0]; if(f) handleImageUpload(f,url=>addImageToVehicle(v.id,url));}}/>
-              <span style={{fontSize:26}}>{imgUploading?"⏳":"📷"}</span>
-              <span style={{fontSize:13,color:C.muted,fontWeight:700}}>Hinzufügen</span>
-            </label>
+            {imgs.length<MAX_VEHICLE_IMAGES?(
+              <label style={{aspectRatio:"1",background:C.card,border:`1.5px dashed ${C.border}`,borderRadius:10,
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:4}}>
+                <input type="file" accept="image/*" multiple style={{display:"none"}}
+                  onChange={e=>handleMultiImageUpload(e.target.files,urls=>addImageToVehicle(v.id,urls))}/>
+                <span style={{fontSize:26}}>{imgUploading?"⏳":"📷"}</span>
+                <span style={{fontSize:13,color:C.muted,fontWeight:700}}>Hinzufügen</span>
+              </label>
+            ):(
+              <div style={{aspectRatio:"1",background:C.card,border:`1px solid ${C.border}`,borderRadius:10,
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:8,textAlign:"center"}}>
+                <span style={{fontSize:20}}>🔒</span>
+                <span style={{fontSize:12,color:C.muted}}>Maximal {MAX_VEHICLE_IMAGES} Fotos erreicht</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
