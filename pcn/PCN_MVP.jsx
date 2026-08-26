@@ -1817,6 +1817,9 @@ function PCNInner() {
           map.__addRouteWaypoint(window.L.latLng(coord.lat, coord.lng));
         });
         setPendingPreplannedRoute(null);
+        setRoutePlanMode(false); // Route ist bereits fertig geplant und eingezeichnet —
+        // der Planungsmodus (Adresseingabe, Hinweistext) soll danach nicht
+        // dauerhaft ueber der Karte liegen bleiben.
         return;
       }
       attempts++;
