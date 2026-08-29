@@ -1231,6 +1231,23 @@ const PCN_STORAGE = (() => {
         .map(t => ({ id:t.id, vehicleId:t.vehicle_id, mode:t.mode, requestedByUserId:t.requested_by_user_id })) };
     },
 
+    async getPendingBuyerConfirmations(buyerUserId) {
+      // Findet Antraege, bei denen dieser Nutzer der Kaeufer ist UND der
+      // Verkaeufer bereits bestaetigt hat - genau der Moment, in dem der
+      // Kaeufer aktiv zur finalen Bestaetigung aufgefordert werden muss,
+      // statt zufaellig selbst danach suchen zu muessen.
+      const res = await supabase._q("vehicle_transfers",
+        "?requested_by_user_id=eq."+buyerUserId+"&status=in.(pending,awaiting_seller)&seller_confirmed_at=not.is.null");
+      if(res.error) return { data: [] };
+      const now = Date.now();
+      return { data: (res.data||[])
+        .filter(t => new Date(t.expires_at).getTime() >= now)
+        .map(t => ({
+          id:t.id, vehicleId:t.vehicle_id, mode:t.mode, code:t.transfer_code,
+          expiresAt:t.expires_at, status:t.status, requestedByUserId:t.requested_by_user_id,
+        })) };
+    },
+
     async cancelTransfer(transferId) {
       return await supabase._patch("vehicle_transfers","id=eq."+transferId,{status:"cancelled"});
     },
@@ -1783,6 +1800,7 @@ function guard(label, fn){
       clearCheckIn: guard("vehicles.clearCheckIn", (vid,ownerUid) => db.clearCheckIn(vid,ownerUid)),
       requestTransfer: guard("vehicles.requestTransfer", (vid,buyerUid) => db.requestTransfer(vid,buyerUid)),
       getPendingTransfersForOwner: (ownerUid) => db.getPendingTransfersForOwner(ownerUid),
+      getPendingBuyerConfirmations: (buyerUid) => db.getPendingBuyerConfirmations(buyerUid),
       getPendingTransfer: (vid) => db.getPendingTransfer(vid),
       cancelTransfer: guard("vehicles.cancelTransfer", (tid) => db.cancelTransfer(tid)),
       confirmSellerSide: guard("vehicles.confirmSellerSide", (tid,sellerUid,agreed) => db.confirmSellerSide(tid,sellerUid,agreed)),
