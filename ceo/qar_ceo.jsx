@@ -23,8 +23,8 @@ const css=`
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ZUGANGSSCHUTZ — gleiches Muster wie /dashboard, eigenes Passwort.
-// EHRLICHER HINWEIS: Sichtschutz, keine echte Sicherheit. Haelt zufaellige
-// Besucher fern, keinen entschlossenen Angreifer. Fuer echten Schutz:
+// EHRLICHER HINWEIS: Sichtschutz, keine echte Sicherheit. Hält zufällige
+// Besucher fern, keinen entschlossenen Angreifer. Für echten Schutz:
 // Cloudflare Access oder Supabase Auth vorschalten.
 // ═══════════════════════════════════════════════════════════════════════════
 const PW_HASH = "ee0d991bd865fa4e8de352534750c370ca8e5de6ca9bd212abcf8682ecb95ba2";
@@ -79,7 +79,7 @@ function LoginGate({onOk}){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// INHALTE — aus den tatsaechlichen Projekt-Dokumenten und dem Entwicklungs-
+// INHALTE — aus den tatsächlichen Projekt-Dokumenten und dem Entwicklungs-
 // verlauf zusammengefasst (Aufgabenstand 20.7., Pilot-Readiness Juli,
 // DSGVO-Bewertung, Revenue-Strategie, heutiger Session-Stand). Wo ein
 // Datenpunkt auf Annahme statt Beleg beruht, ist das im Text vermerkt statt
@@ -87,6 +87,13 @@ function LoginGate({onOk}){
 // ═══════════════════════════════════════════════════════════════════════════
 
 const STATUS_DONE = [
+  {t:"Fahrzeugfotos: Mehrfach-Upload & Obergrenze", d:"Bis zu 3 Bilder gleichzeitig aus der Fotobibliothek auswählbar und hochladbar (an beiden Upload-Stellen der Fahrzeugakte) — vorher nur einzeln. Zusätzlich maximale Bildanzahl auf 12 pro Fahrzeug begrenzt, mit klarer Fehlermeldung statt stillem Abschneiden", date:"Aug 2026"},
+  {t:"Zwei Standort-Karten-Bugs behoben", d:"Karte 'Zuletzt geparkt' blieb nach dem Speichern unsichtbar, bis man die Fahrzeugakte neu öffnete (fehlende State-Synchronisation gefunden und behoben); zusätzlich legte sich die Leaflet-Karte teils über andere Dialoge (bekanntes Leaflet-Verhalten, durch CSS-Isolation behoben)", date:"Aug 2026"},
+  {t:"Live-Ausfahrt: Routenplanungs-Anzeige-Bug behoben", d:"Nach dem Starten einer Ausfahrt mit vorab geplanter Route blieb das Adresseingabefeld dauerhaft über der Karte liegen statt nur während des Einzeichnens", date:"Aug 2026"},
+  {t:"Dokumentenablage in der Fahrzeugakte", d:"Rechnungen, Werkstattbelege, Fahrzeugschein können ohne sofortige KI-Auswertung abgelegt werden — Auswertung über 'KI auslesen'-Button jederzeit nachholbar, verknüpft sich automatisch mit dem entstehenden Logbuch-Eintrag. Mit Service-Logbuch zu einem gemeinsamen Dropdown 'Service & Dokumente' zusammengelegt", date:"Aug 2026"},
+  {t:"Provenienz-Siegel", d:"Sichtbares Abzeichen für vollständig dokumentierte Fahrzeuge (mind. 5 Fotos, 3 Logbuch-Einträge, 1 bestätigte Event-Teilnahme, vollständige Stammdaten) — in eigener Fahrzeugakte, öffentlicher Ansicht und Fahrzeugliste sichtbar, mit klarer Kennzeichnung als Dokumentations- statt Wertgutachten", date:"Aug 2026"},
+  {t:"Login-Screen verbessert", d:"Standardansicht ist jetzt 'Anmelden' statt 'Registrieren', beim Wechsel zu Registrieren erscheint sofort ein Hinweistext zum benötigten Club-Code statt nur dem Platzhaltertext im leeren Feld", date:"Aug 2026"},
+  {t:"Admin-Console: direkter Link zur Fahrzeugakte", d:"Jedes Fahrzeug in der Mitgliederkarte führt jetzt direkt zur öffentlichen Fahrzeugakte, öffnet in neuem Tab — vorher nur reine Textanzeige ohne Verlinkung", date:"Aug 2026"},
   {t:"UX-Überarbeitung: Layout, Abstände, Design-Konsistenz", d:"Systematische Bereinigung nach wachsender Komplexität — Farbpalette an recherchierte Porsche-Design-Werte angelehnt (jede Farbe mit echter WCAG-Kontrastprüfung, dabei einen bestehenden Kontrastfehler unter dem Mindeststandard gefunden und behoben), einheitliche Abstände zwischen Kategorien, Buttons konsequent unter statt neben Überschriften, Swipe-Bereiche (z.B. News) jetzt visuell als wischbar erkennbar, alle Popups mit funktionierendem Schließen-Button", date:"Aug 2026"},
   {t:"Notfallakte: Bedienung nachgebessert", d:"Foto vergrößert sich jetzt direkt per Antippen (vorher nur indirekt über Umweg erreichbar — echter Anzeige-Bug durch falsche Ebenen-Reihenfolge behoben), Notfallkontakt-Telefonnummern jetzt auch als Text sichtbar statt nur im Anruf-Link verborgen", date:"Aug 2026"},
   {t:"Live-Ausfahrt: Route bereits beim Erstellen planbar", d:"Start, beliebige Zwischenstopps und Ziel direkt beim Anlegen der Ausfahrt per Adresseingabe festlegbar (wie bei gängigen Kartenanbietern), inklusive Distanz/Fahrzeit/voraussichtlicher Ankunft als Zusammenfassung", date:"Aug 2026"},
@@ -144,10 +151,10 @@ const SALES_POINTS = [
 ];
 
 const JOURNAL = [
-  {icon:"🎨", t:"UX-Überarbeitung: aufgeräumter, konsistenter", d:"Nach Rückmeldung, dass die App durch das organische Wachstum unübersichtlich wirkte: Farbpalette überarbeitet (mit echter WCAG-Kontrastprüfung — dabei einen bestehenden Fehler unter dem Mindeststandard gefunden), einheitliche Abstände, Buttons konsequent unter statt neben Überschriften positioniert.", date:"Aug 2026"},
-  {icon:"🚨", t:"Notfallakte: zwei echte Bugs behoben", d:"Foto ließ sich nicht direkt vergrößern (Ebenen-Reihenfolge-Fehler — Bild lag optisch unsichtbar hinter dem Dialog), Notfallkontakt-Nummern waren nur im Anruf-Link verborgen statt sichtbar als Text.", date:"Aug 2026"},
-  {icon:"🗺️", t:"Live-Ausfahrt: Route vorab planbar", d:"Start, Zwischenstopps und Ziel jetzt bereits beim Erstellen der Ausfahrt festlegbar, mit Distanz/Fahrzeit/Ankunfts-Zusammenfassung — vorher nur nachträglich während der laufenden Fahrt möglich.", date:"Aug 2026"},
-  {icon:"🎯", t:"Punktesystem: App und Admin-Console synchron", d:"Ursache einer gemeldeten Diskrepanz gefunden (veraltete Konstanten in der Admin-Console) und behoben — jetzt liest die Admin-Console ausschließlich den von der App berechneten Wert, kein eigenes Nachrechnen mehr möglich.", date:"Aug 2026"},
+  {icon:"📁", t:"Dokumentenablage mit nachholbarer KI-Auswertung", d:"Rechnungen und Belege lassen sich jetzt ablegen, ohne dass die KI-Analyse sofort laufen muss — Auswertung ist jederzeit über einen 'KI auslesen'-Button nachholbar. Mit dem Service-Logbuch zu einem gemeinsamen Dropdown zusammengelegt, nach entsprechender Rückmeldung.", date:"Aug 2026"},
+  {icon:"🏅", t:"Provenienz-Siegel eingeführt", d:"Direkt aus der eigenen Marktanalyse abgeleitet: ein sichtbares Abzeichen für Fahrzeuge mit vollständiger Dokumentation (Fotos, Logbuch, Event-Teilnahme), klar als Dokumentations- statt Wertgutachten gekennzeichnet.", date:"Aug 2026"},
+  {icon:"📍", t:"Zwei Standort-Karten-Bugs behoben", d:"Nutzer meldeten, dass die 'Zuletzt geparkt'-Karte erst nach erneutem Öffnen der Fahrzeugakte erschien, und dass sie sich teils über andere Dialoge legte — beide Ursachen gefunden und behoben.", date:"Aug 2026"},
+  {icon:"📷", t:"Fahrzeugfotos: Mehrfach-Upload eingeführt", d:"Bis zu 3 Bilder gleichzeitig aus der Fotobibliothek hochladbar, mit neuer Obergrenze von 12 Fotos pro Fahrzeug — verhindert unkontrolliertes Anwachsen der Datenmenge pro Akte.", date:"Aug 2026"},
 ];
 
 const T_ICON = {info:"ℹ️",positive:"✓",medium:"◐",high:"⚠️"};
