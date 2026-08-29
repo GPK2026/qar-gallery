@@ -1217,6 +1217,20 @@ const PCN_STORAGE = (() => {
       } };
     },
 
+    async getPendingTransfersForOwner(ownerUserId) {
+      // Laedt ALLE offenen Uebertragungsantraege fuer die Fahrzeuge eines
+      // Eigentuemers in einem Rutsch (from_user_id = aktueller Eigentuemer)
+      // - effizienter als eine Einzelabfrage pro Fahrzeug, wird fuer den
+      // roten Punkt in "Meine Fahrzeuge" gebraucht.
+      const res = await supabase._q("vehicle_transfers",
+        "?from_user_id=eq."+ownerUserId+"&status=in.(pending,awaiting_seller)");
+      if(res.error) return { data: [] };
+      const now = Date.now();
+      return { data: (res.data||[])
+        .filter(t => new Date(t.expires_at).getTime() >= now)
+        .map(t => ({ id:t.id, vehicleId:t.vehicle_id, mode:t.mode, requestedByUserId:t.requested_by_user_id })) };
+    },
+
     async cancelTransfer(transferId) {
       return await supabase._patch("vehicle_transfers","id=eq."+transferId,{status:"cancelled"});
     },
@@ -1768,6 +1782,7 @@ function guard(label, fn){
       setCheckIn: guard("vehicles.setCheckIn", (vid,ownerUid,coords) => db.setCheckIn(vid,ownerUid,coords)),
       clearCheckIn: guard("vehicles.clearCheckIn", (vid,ownerUid) => db.clearCheckIn(vid,ownerUid)),
       requestTransfer: guard("vehicles.requestTransfer", (vid,buyerUid) => db.requestTransfer(vid,buyerUid)),
+      getPendingTransfersForOwner: (ownerUid) => db.getPendingTransfersForOwner(ownerUid),
       getPendingTransfer: (vid) => db.getPendingTransfer(vid),
       cancelTransfer: guard("vehicles.cancelTransfer", (tid) => db.cancelTransfer(tid)),
       confirmSellerSide: guard("vehicles.confirmSellerSide", (tid,sellerUid,agreed) => db.confirmSellerSide(tid,sellerUid,agreed)),
