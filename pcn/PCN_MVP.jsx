@@ -1762,6 +1762,7 @@ function PCNInner() {
   const [pendingTransfer, setPendingTransfer] = useState(null); // {id, code, expiresAt, mode, status, requestedByUserId}
   const [transferBusy, setTransferBusy] = useState(false);
   const [showTransferPanel, setShowTransferPanel] = useState(null); // vehicleId — Verkäufer-Sicht am eigenen Fahrzeug
+  const [pendingTransferVehicleIds, setPendingTransferVehicleIds] = useState(new Set()); // Fahrzeuge mit offenem, eingehendem Übertragungsantrag
   const [showForeignTransferStart, setShowForeignTransferStart] = useState(null); // fremdes vehicleId nach QR-Scan
   const [showSellerConfirm, setShowSellerConfirm] = useState(null); // transfer-Objekt, das der Verkäufer bestätigen soll
   const [showBuyerConfirm, setShowBuyerConfirm] = useState(null); // transfer-Objekt, das der Käufer bestätigen soll
@@ -2559,6 +2560,17 @@ function PCNInner() {
       if(session){ await refreshAll(session); setScreen("app"); }
     })();
   },[]);
+
+  // ── Offene, eingehende Übertragungsanträge — für den roten Punkt am
+  // betroffenen Fahrzeug in "Meine Fahrzeuge". ──
+  useEffect(()=>{
+    if(!me?.id || isDemo) return;
+    const DB=window.PCN_DB; if(!DB) return;
+    (async()=>{
+      const {data} = await DB.vehicles.getPendingTransfersForOwner(me.id).catch(()=>({data:[]}));
+      setPendingTransferVehicleIds(new Set((data||[]).map(t=>t.vehicleId)));
+    })();
+  },[me?.id]);
 
   // ── Live-Sync: Nachrichten, News, Profil, Fahrzeuge ─────────────────────────
   // Ohne das merkt ein Mitglied nichts von Newslettern, Beitragsfreigaben oder
@@ -3798,6 +3810,33 @@ Regeln:
     setShowBuyerConfirm({...data, mode:"seller_initiated"});
     toast_("Übernahme gestartet — bestätige jetzt deinen Teil, danach der Verkäufer seinen");
   };
+  // Benachrichtigt den aktuellen Eigentuemer aktiv, wenn jemand eine
+  // Uebertragung fuer sein Fahrzeug beantragt — sonst muesste er zufaellig
+  // selbst in seine Fahrzeugakte schauen, um den offenen Antrag zu bemerken.
+  const notifySellerOfTransferRequest = async (sellerUserId, vehicleId, vehicle) => {
+    if(!sellerUserId || isDemo) return;
+    const threadId = adminThreadId(sellerUserId);
+    const cfg = (window.PCN_CONFIG||{});
+    const vLabel = vehicle ? `${vehicle.hersteller||""} ${vehicle.modell||""}`.trim() : "dein Fahrzeug";
+    try {
+      await fetch(`${cfg.supabaseUrl}/rest/v1/messages`,{
+        method:"POST",
+        headers:{
+          "apikey": cfg.supabaseKey,
+          "Authorization": "Bearer " + cfg.supabaseKey,
+          "Content-Type":"application/json",
+        },
+        body:JSON.stringify({
+          thread_id:threadId, from_id:ADMIN_UUID,
+          text:`🔑 Jemand möchte ${vLabel} übernehmen — bitte den Antrag in deiner Fahrzeugakte bestätigen oder ablehnen.`,
+          is_system:true,
+          payload:JSON.stringify({type:"transfer_requested",vehicleId}),
+          created_at:new Date().toISOString()
+        })
+      });
+    } catch(e) { console.warn("Übertragungs-Benachrichtigung nicht zugestellt:", e); }
+  };
+
   const requestTransferAsBuyer = async (vehicleId) => {
     // Weg B: Käufer ist nicht mit dem Verkäufer vor Ort, stellt einen
     // Antrag über sein eigenes Konto — Verkäufer bestätigt später.
@@ -3808,6 +3847,8 @@ Regeln:
     setTransferBusy(false);
     if(error){ toast_(error,"err"); return; }
     setShowForeignTransferStart(null);
+    const fv = vehicles[vehicleId] || Object.values(DEMO_VEHICLES).find(x=>x.id===vehicleId);
+    await notifySellerOfTransferRequest(fv?.userId||fv?.owner, vehicleId, fv);
     toast_("Antrag gestellt — der Verkäufer muss ihn in seiner App bestätigen");
   };
   const requestTransferByQarId = async () => {
@@ -3823,6 +3864,7 @@ Regeln:
     if(error){ toast_(error,"err"); return; }
     setShowTransferPanel(null);
     setQarIdRequestInput("");
+    await notifySellerOfTransferRequest(vehicle.userId||vehicle.owner, vehicle.id, vehicle);
     toast_(`Antrag für ${vehicle.hersteller} ${vehicle.modell} gestellt — der Verkäufer muss ihn bestätigen`);
   };
   const saveBreakdownMembership = async () => {
@@ -3873,13 +3915,14 @@ Regeln:
     await loadEmergencyProfiles(vehicleId);
     toast_("Notfallprofil gelöscht");
   };
-  const cancelTransfer = async (transferId) => {
+  const cancelTransfer = async (transferId, vehicleId) => {
     const DB=window.PCN_DB;
     setTransferBusy(true);
     await DB.vehicles.cancelTransfer(transferId);
     setTransferBusy(false);
     setPendingTransfer(null);
     setShowTransferPanel(null);
+    if(vehicleId) setPendingTransferVehicleIds(prev=>{const next=new Set(prev); next.delete(vehicleId); return next;});
     toast_("Übertragung abgebrochen");
   };
   const loadPendingTransfer = async (vehicleId) => {
@@ -3897,7 +3940,7 @@ Regeln:
     const isOwnVehicle = me && (viewV.userId===me.id || viewV.owner===me.email);
     if(isOwnVehicle) loadScanLocations(viewV.id);
   }, [viewV?.id]);
-  const confirmAsSeller = async (transfer, agreed) => {
+  const confirmAsSeller = async (transfer, agreed, vehicleId) => {
     if(!agreed){ toast_("Bitte der Übertragung zustimmen","err"); return; }
     const DB=window.PCN_DB;
     setTransferBusy(true);
@@ -3906,6 +3949,7 @@ Regeln:
     if(error){ toast_(error,"err"); return; }
     setShowSellerConfirm(null);
     setPendingTransfer(null);
+    if(vehicleId) setPendingTransferVehicleIds(prev=>{const next=new Set(prev); next.delete(vehicleId); return next;});
     toast_("Bestätigt — sobald auch der Käufer zustimmt, ist die Übertragung abgeschlossen");
   };
   const confirmAsBuyer = async (transfer, agreed) => {
@@ -6645,7 +6689,7 @@ Regeln:
                       Übertragung bestätigen
                     </button>
                     <button className="btn ghost" style={{width:"100%",color:C.red,borderColor:`${C.red}44`}} disabled={transferBusy}
-                      onClick={()=>cancelTransfer(pendingTransfer.id)}>
+                      onClick={()=>cancelTransfer(pendingTransfer.id, v.id)}>
                       Übertragung abbrechen
                     </button>
                   </>
@@ -6667,7 +6711,7 @@ Regeln:
                   „Ich übertrage die digitale QAR-Akte dieses Fahrzeugs (Fotos, Logbuch-Einträge, Punkte-Historie) an den von mir bestätigten neuen Eigentümer. Mir ist bewusst, dass diese Übertragung unabhängig vom zivilrechtlichen Kaufvertrag über das Fahrzeug erfolgt und diesen weder ersetzt noch beeinflusst. Ich bestätige, dass ich zur Übertragung berechtigt bin. Mir ist bewusst, dass ich für die Prüfung und Bereinigung persönlicher Daten in Fotos, Notizen und Dokumenten dieser Akte selbst verantwortlich bin — nicht entfernte Inhalte gehen mit der Übertragung an den neuen Eigentümer über."
                 </div>
                 <button className="btn" style={{width:"100%",marginBottom:8}} disabled={transferBusy}
-                  onClick={()=>confirmAsSeller(showSellerConfirm,true)}>
+                  onClick={()=>confirmAsSeller(showSellerConfirm,true,v.id)}>
                   {transferBusy?"…":"Ich stimme zu und übertrage"}
                 </button>
                 <button className="btn ghost" style={{width:"100%"}} onClick={()=>setShowSellerConfirm(null)}>Zurück</button>
@@ -7556,6 +7600,9 @@ Regeln:
                     <div style={{display:"flex",alignItems:"center",gap:5}}>
                       <div style={{fontWeight:700,fontSize:16,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.hersteller} {v.modell}</div>
                       {getVehicleSealStatus(v).earned&&<SealBadge size="sm"/>}
+                      {pendingTransferVehicleIds.has(v.id)&&
+                        <span title="Übertragungsantrag wartet auf deine Bestätigung"
+                          style={{width:9,height:9,borderRadius:"50%",background:C.red,flexShrink:0,boxShadow:`0 0 0 2px ${C.red}33`}}/>}
                     </div>
                     <div style={{display:"flex",gap:8,marginTop:3,alignItems:"center",flexWrap:"wrap"}}>
                       <span style={{fontSize:13,color:C.muted}}>{fmtKz(v.kennzeichen,v.baujahr)} · {v.baujahr}</span>
