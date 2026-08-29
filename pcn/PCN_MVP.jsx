@@ -2572,6 +2572,19 @@ function PCNInner() {
     })();
   },[me?.id]);
 
+  // ── Eigene, ausstehende Käufer-Bestätigung — der Verkäufer hat bereits
+  // zugestimmt, jetzt muss der Käufer final bestätigen. Öffnet den
+  // Bestätigungsdialog automatisch, konsequente Fortsetzung der Chat-
+  // Benachrichtigung, die ihn bereits informiert hat. ──
+  useEffect(()=>{
+    if(!me?.id || isDemo) return;
+    const DB=window.PCN_DB; if(!DB) return;
+    (async()=>{
+      const {data} = await DB.vehicles.getPendingBuyerConfirmations(me.id).catch(()=>({data:[]}));
+      if(data?.length) setShowBuyerConfirm(data[0]);
+    })();
+  },[me?.id]);
+
   // ── Live-Sync: Nachrichten, News, Profil, Fahrzeuge ─────────────────────────
   // Ohne das merkt ein Mitglied nichts von Newslettern, Beitragsfreigaben oder
   // Admin-Nachrichten, bis es die App neu lädt.
@@ -3837,6 +3850,33 @@ Regeln:
     } catch(e) { console.warn("Übertragungs-Benachrichtigung nicht zugestellt:", e); }
   };
 
+  // Benachrichtigt den Käufer aktiv, wenn der Verkäufer seinen Teil der
+  // Übertragung bestätigt hat — sonst müsste der Käufer zufällig selbst
+  // nachschauen, ob er noch final zustimmen muss.
+  const notifyBuyerOfSellerConfirmation = async (buyerUserId, vehicleId, vehicle) => {
+    if(!buyerUserId || isDemo) return;
+    const threadId = adminThreadId(buyerUserId);
+    const cfg = (window.PCN_CONFIG||{});
+    const vLabel = vehicle ? `${vehicle.hersteller||""} ${vehicle.modell||""}`.trim() : "das Fahrzeug";
+    try {
+      await fetch(`${cfg.supabaseUrl}/rest/v1/messages`,{
+        method:"POST",
+        headers:{
+          "apikey": cfg.supabaseKey,
+          "Authorization": "Bearer " + cfg.supabaseKey,
+          "Content-Type":"application/json",
+        },
+        body:JSON.stringify({
+          thread_id:threadId, from_id:ADMIN_UUID,
+          text:`✅ Der Verkäufer hat die Übertragung von ${vLabel} bestätigt — bitte gib jetzt deine finale Bestätigung, um die Übernahme abzuschließen.`,
+          is_system:true,
+          payload:JSON.stringify({type:"transfer_seller_confirmed",vehicleId}),
+          created_at:new Date().toISOString()
+        })
+      });
+    } catch(e) { console.warn("Käufer-Benachrichtigung nicht zugestellt:", e); }
+  };
+
   const requestTransferAsBuyer = async (vehicleId) => {
     // Weg B: Käufer ist nicht mit dem Verkäufer vor Ort, stellt einen
     // Antrag über sein eigenes Konto — Verkäufer bestätigt später.
@@ -3944,12 +3984,16 @@ Regeln:
     if(!agreed){ toast_("Bitte der Übertragung zustimmen","err"); return; }
     const DB=window.PCN_DB;
     setTransferBusy(true);
-    const {error} = await DB.vehicles.confirmSellerSide(transfer.id, me.id, true);
+    const {data,error} = await DB.vehicles.confirmSellerSide(transfer.id, me.id, true);
     setTransferBusy(false);
     if(error){ toast_(error,"err"); return; }
     setShowSellerConfirm(null);
     setPendingTransfer(null);
     if(vehicleId) setPendingTransferVehicleIds(prev=>{const next=new Set(prev); next.delete(vehicleId); return next;});
+    if(data?.requestedByUserId){
+      const fv = vehicles[data.vehicleId] || Object.values(DEMO_VEHICLES).find(x=>x.id===data.vehicleId);
+      await notifyBuyerOfSellerConfirmation(data.requestedByUserId, data.vehicleId, fv);
+    }
     toast_("Bestätigt — sobald auch der Käufer zustimmt, ist die Übertragung abgeschlossen");
   };
   const confirmAsBuyer = async (transfer, agreed) => {
