@@ -123,6 +123,11 @@ const DEF_PRIVACY = {
   kilometerstand:false, zustand:false, tuev_faelligkeit:false,
   besonderheiten:false,
   pub_logbook:false, pub_events:false, pub_phone:false, pub_gallery:false,
+  // ICE-Notfallzugang (Blutgruppe, Allergien, Notfallkontakte) — trotz des
+  // Sicherheits-/Fürsorge-Zwecks standardmäßig AUS: Gesundheitsdaten sind
+  // besonders sensibel (Art. 9 DSGVO), der Eigentümer muss bewusst
+  // zustimmen, dass der Button am Fahrzeug überhaupt sichtbar ist.
+  pub_ice:false,
   // Live-Status (inkl. "Zu verkaufen") — Standard: sichtbar, damit sich für
   // bestehende Nutzer nichts Unerwartetes ändert. Bewusst EIN Schalter für
   // alle Status-Typen, nicht nur für den Verkaufsstatus.
@@ -5109,7 +5114,9 @@ Regeln:
             <img src={LOGO_SMALL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:34,objectFit:"contain",background:"transparent"}}/>
             <span style={{fontSize:13,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
           </div>
-            {/* ── Notfall-Zugang (ICE) — roter Button mit ICE-Schriftzug, Erklaertext und weissem Kreuz-Symbol ── */}
+            {/* ── Notfall-Zugang (ICE) — roter Button mit ICE-Schriftzug, Erklaertext und weissem Kreuz-Symbol.
+                 Nur sichtbar, wenn der Eigentuemer das in den Privatsphaere-Einstellungen bewusst freigegeben hat. ── */}
+            {priv.pub_ice&&(
             <button onClick={()=>{setShowEmergencyAccess(v.id);setEmergencyRoleConfirmed(false);}}
               aria-label="Notfall-Zugang (In Case of Emergency)"
               style={{background:"#ef4444",border:"none",borderRadius:8,padding:"6px 10px",cursor:"pointer",
@@ -5122,6 +5129,7 @@ Regeln:
                 <span style={{fontSize:24,fontWeight:900,color:"#ef4444",lineHeight:1}}>✚</span>
               </span>
             </button>
+            )}
         </div>
 
         {/* ── Hero image — taller, with gallery fallback ── */}
@@ -6456,6 +6464,7 @@ Regeln:
                   [priv.pub_events,"🏁 Events"],
                   [priv.pub_logbook,"📋 Logbuch"],
                   [priv.pub_phone,"📞 Telefon"],
+                  [priv.pub_ice,"✚ Notfall (ICE)"],
                   [priv.kennzeichen!==false,"🔑 Kennzeichen"],
                   [priv.besonderheiten!==false,"✨ Besonderheiten"],
                 ].map(([on,label])=>(
@@ -6476,9 +6485,15 @@ Regeln:
                 ["Details",[["kilometerstand","Kilometerstand"],["tuev_faelligkeit","TÜV-Datum"],["zustand","Zustand"],["marktwert","Marktwert"],["besonderheiten","Besonderheiten ✨"]]],
                 ["Abschnitte",[["pub_gallery","Fotogalerie 📸"],["pub_events","Veranstaltungsteilnahmen"],["pub_logbook","Service-Logbuch"],["pub_status","Live-Status (auch \"Zu verkaufen\") ⚡"]]],
                 ["Kontakt",[["pub_phone","Telefonnummer (Direktanruf)"]]],
+                ["Notfall",[["pub_ice","ICE-Button am Fahrzeug ✚"]]],
               ].map(([group,fields])=>(
                 <div key={group} style={{marginBottom:14}}>
                   <div style={{fontSize:16,fontWeight:800,color:C.white,textTransform:"uppercase",letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>{group}</div>
+                  {group==="Notfall"&&(
+                    <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.5}}>
+                      Zeigt Rettungskräften einen roten Button zu Blutgruppe, Allergien und Notfallkontakten — geschützt durch einen zusätzlichen Code. Da das gesundheitsbezogene Daten sind, standardmäßig ausgeblendet.
+                    </div>
+                  )}
                   {fields.map(([key,label])=>(
                     <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`1px solid ${C.border}`}}>
                       <div>
