@@ -749,7 +749,7 @@ const PCN_STORAGE = (() => {
     // Bewusst NICHT die einfache, ungeschützte login(email)-Variante nutzen —
     // Werkstattkonten erhalten Zugriff auf Fahrzeug-Servicedaten, daher immer
     // passwortgeschützt über loginWithPassword.
-    async requestWorkshopSignup(workshopName, workshopAddress, contactName, email, password, phone) {
+    async requestWorkshopSignup(workshopName, workshopAddress, contactName, email, password, phone, tradeRegisterNumber) {
       const {data:existingUser} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
       if(existingUser&&existingUser.length>0) return { error: "Diese E-Mail ist bereits registriert" };
       const {data:existingReq} = await supabase._q("workshop_signup_requests",
@@ -757,8 +757,9 @@ const PCN_STORAGE = (() => {
       if(existingReq&&existingReq.length>0) return { error: "Für diese E-Mail liegt bereits eine offene Anfrage vor" };
       const pwHash = await hashPassword(password);
       const res = await supabase._post("workshop_signup_requests", {
-        workshop_name: workshopName, workshop_address: workshopAddress||null,
-        contact_name: contactName, email, pw_hash: pwHash, phone: phone||null,
+        workshop_name: workshopName, workshop_address: workshopAddress,
+        contact_name: contactName, email, pw_hash: pwHash, phone,
+        trade_register_number: tradeRegisterNumber,
         requested_at: now(),
       });
       if(res.error) return res;
@@ -770,6 +771,7 @@ const PCN_STORAGE = (() => {
       return { data: (res.data||[]).map(r => ({
         id:r.id, workshopName:r.workshop_name, workshopAddress:r.workshop_address,
         contactName:r.contact_name, email:r.email, phone:r.phone, requestedAt:r.requested_at,
+        tradeRegisterNumber:r.trade_register_number,
       })) };
     },
     async decideWorkshopSignup(requestId, adminUserId, approve) {
@@ -785,6 +787,7 @@ const PCN_STORAGE = (() => {
       const userRes = await supabase._post("users", {
         name: r.contact_name, email: r.email, role: "workshop", pw_hash: r.pw_hash,
         workshop_name: r.workshop_name, workshop_address: r.workshop_address, phone: r.phone,
+        trade_register_number: r.trade_register_number,
       });
       if(userRes.error) return userRes;
       await supabase._patch("workshop_signup_requests","id=eq."+requestId,
@@ -1917,7 +1920,7 @@ function guard(label, fn){
       registerGuest:     (name, email, consent)   => db.registerGuest(name, email, consent),
       login:             (email)                  => db.login(email),
       loginWithPassword: (email, pw)              => db.loginWithPassword ? db.loginWithPassword(email, pw) : db.login(email),
-      requestWorkshopSignup: (wsName,wsAddr,contactName,email,pw,phone) => db.requestWorkshopSignup ? db.requestWorkshopSignup(wsName,wsAddr,contactName,email,pw,phone) : Promise.resolve({error:"Not supported"}),
+      requestWorkshopSignup: (wsName,wsAddr,contactName,email,pw,phone,tradeRegNr) => db.requestWorkshopSignup ? db.requestWorkshopSignup(wsName,wsAddr,contactName,email,pw,phone,tradeRegNr) : Promise.resolve({error:"Not supported"}),
       listPendingWorkshopSignups: () => db.listPendingWorkshopSignups ? db.listPendingWorkshopSignups() : Promise.resolve({data:[]}),
       decideWorkshopSignup: (reqId,adminUid,approve) => db.decideWorkshopSignup ? db.decideWorkshopSignup(reqId,adminUid,approve) : Promise.resolve({error:"Not supported"}),
       changePassword:    (userId, newPw)          => db.changePassword    ? db.changePassword(userId, newPw) : Promise.resolve({error:"Not supported"}),
