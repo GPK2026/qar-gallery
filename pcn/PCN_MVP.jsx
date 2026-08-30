@@ -4476,11 +4476,12 @@ Regeln:
     if(!email) { toast_("E-Mail angeben","err"); return; }
     let result;
     if(contactAuthMode === "guest"){
-      if(!name) { toast_("Name angeben","err"); return; }
       // AGB-Zustimmung ist Pflicht für die Kontaktaufnahme — Marketing-Opt-in
       // ist davon unabhängig und blockiert nichts, wenn nicht angehakt.
       if(!contactAgbAccepted) { toast_("Bitte den Bedingungen zur Kontaktaufnahme zustimmen","err"); return; }
-      result = await DB.auth.registerGuest(name, email, {
+      // Kein separates Namensfeld mehr im Gast-Fall — die Email selbst dient
+      // als Anzeigename fürs Fahrzeugmitglied im Chat.
+      result = await DB.auth.registerGuest(email, email, {
         contactAccepted: true,
         marketingOptIn: contactMarketingOptIn,
       });
@@ -5398,7 +5399,7 @@ Regeln:
                 </div>
               )}
 
-              {(contactAuthMode==="guest"||contactAuthMode==="register")&&(
+              {contactAuthMode==="register"&&(
                 <input className="inp" placeholder="Dein Name" style={{marginBottom:8}}
                   value={contactAuthForm.name} onChange={e=>setContactAuthForm(p=>({...p,name:e.target.value}))}/>
               )}
@@ -6571,7 +6572,7 @@ Regeln:
                 </div>
               )}
 
-              {(contactAuthMode==="guest"||contactAuthMode==="register")&&(
+              {contactAuthMode==="register"&&(
                 <input className="inp" placeholder="Dein Name" style={{marginBottom:8}}
                   value={contactAuthForm.name} onChange={e=>setContactAuthForm(p=>({...p,name:e.target.value}))}/>
               )}
