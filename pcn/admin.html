@@ -649,8 +649,9 @@ ${DB.workshopSignups.length?`<div class="card" style="border-color:#f59e0b44">
   ${DB.workshopSignups.map(r=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">
     <div style="flex:1;min-width:0">
       <div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.workshop_name}</div>
-      <div style="font-size:12px;color:var(--muted)">${r.contact_name} · ${r.email}${r.phone?" · "+r.phone:""}</div>
-      ${r.workshop_address?`<div style="font-size:12px;color:var(--muted)">${r.workshop_address}</div>`:""}
+      <div style="font-size:12px;color:var(--muted)">${r.contact_name} · ${r.email} · ${r.phone}</div>
+      <div style="font-size:12px;color:var(--muted)">${r.workshop_address}</div>
+      <div style="font-size:12px;color:var(--muted)">HR-Nr.: ${r.trade_register_number||"—"}</div>
     </div>
     <button class="btn btn-sm btn-green" onclick="decideWorkshopSignup('${r.id}',true)">✓</button>
     <button class="btn btn-sm" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433" onclick="decideWorkshopSignup('${r.id}',false)">✕</button>
