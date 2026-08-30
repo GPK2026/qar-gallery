@@ -1709,7 +1709,7 @@ function PCNInner() {
   // ── Form state ──────────────────────────────────────────────────────────────
   const [loginForm, setLoginForm] = useState({mode:"login",code:"",email:"",name:""});
   const [showWorkshopSignup, setShowWorkshopSignup] = useState(false);
-  const [workshopSignupForm, setWorkshopSignupForm] = useState({workshopName:"",workshopAddress:"",contactName:"",email:"",password:"",phone:""});
+  const [workshopSignupForm, setWorkshopSignupForm] = useState({workshopName:"",workshopAddress:"",contactName:"",email:"",password:"",phone:"",tradeRegisterNumber:""});
   const [workshopSignupBusy, setWorkshopSignupBusy] = useState(false);
   const [workshopSignupSubmitted, setWorkshopSignupSubmitted] = useState(false);
   const [consent, setConsent] = useState(false);
@@ -4476,13 +4476,13 @@ Regeln:
   // Logs in / registers / creates guest, then immediately opens the chat
   const submitWorkshopSignup = async () => {
     const f = workshopSignupForm;
-    if(!f.workshopName||!f.contactName||!f.email||!f.password){
+    if(!f.workshopName.trim()||!f.workshopAddress.trim()||!f.contactName.trim()||!f.phone.trim()||!f.email.trim()||!f.password||!f.tradeRegisterNumber.trim()){
       toast_("Bitte alle Pflichtfelder ausfüllen","err"); return;
     }
     if(f.password.length<8){ toast_("Passwort braucht mindestens 8 Zeichen","err"); return; }
     const DB = window.PCN_DB;
     setWorkshopSignupBusy(true);
-    const {error} = await DB.auth.requestWorkshopSignup(f.workshopName,f.workshopAddress,f.contactName,f.email,f.password,f.phone);
+    const {error} = await DB.auth.requestWorkshopSignup(f.workshopName,f.workshopAddress,f.contactName,f.email,f.password,f.phone,f.tradeRegisterNumber);
     setWorkshopSignupBusy(false);
     if(error){ toast_(error,"err"); return; }
     setWorkshopSignupSubmitted(true);
@@ -4785,7 +4785,7 @@ Regeln:
               <div style={{fontSize:14,color:C.muted,lineHeight:1.6,marginBottom:20}}>
                 Der Vorstand prüft deine Werkstatt-Anfrage und schaltet dein Konto frei. Du erhältst dann eine Rückmeldung per E-Mail.
               </div>
-              <button onClick={()=>{setShowWorkshopSignup(false);setWorkshopSignupSubmitted(false);setWorkshopSignupForm({workshopName:"",workshopAddress:"",contactName:"",email:"",password:"",phone:""});}}
+              <button onClick={()=>{setShowWorkshopSignup(false);setWorkshopSignupSubmitted(false);setWorkshopSignupForm({workshopName:"",workshopAddress:"",contactName:"",email:"",password:"",phone:"",tradeRegisterNumber:""});}}
                 style={{background:"none",border:"none",color:C.gold,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                 Zurück zur Anmeldung
               </button>
@@ -4798,11 +4798,13 @@ Regeln:
               </div>
               <input className="inp" placeholder="Betriebsname *" style={{marginBottom:8}}
                 value={workshopSignupForm.workshopName} onChange={e=>setWorkshopSignupForm(p=>({...p,workshopName:e.target.value}))}/>
-              <input className="inp" placeholder="Anschrift" style={{marginBottom:8}}
+              <input className="inp" placeholder="Handelsregisternummer *" style={{marginBottom:8}}
+                value={workshopSignupForm.tradeRegisterNumber} onChange={e=>setWorkshopSignupForm(p=>({...p,tradeRegisterNumber:e.target.value}))}/>
+              <input className="inp" placeholder="Anschrift *" style={{marginBottom:8}}
                 value={workshopSignupForm.workshopAddress} onChange={e=>setWorkshopSignupForm(p=>({...p,workshopAddress:e.target.value}))}/>
               <input className="inp" placeholder="Ansprechpartner *" style={{marginBottom:8}}
                 value={workshopSignupForm.contactName} onChange={e=>setWorkshopSignupForm(p=>({...p,contactName:e.target.value}))}/>
-              <input className="inp" placeholder="Telefon" style={{marginBottom:8}}
+              <input className="inp" placeholder="Telefon *" style={{marginBottom:8}}
                 value={workshopSignupForm.phone} onChange={e=>setWorkshopSignupForm(p=>({...p,phone:e.target.value}))}/>
               <input className="inp" type="email" placeholder="E-Mail *" style={{marginBottom:8}}
                 value={workshopSignupForm.email} onChange={e=>setWorkshopSignupForm(p=>({...p,email:e.target.value}))}/>
