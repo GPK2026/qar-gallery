@@ -1897,7 +1897,7 @@ function PCNInner() {
   const [profileForm, setProfileForm]         = useState({});
   const [showContactAuth, setShowContactAuth] = useState(null); // vehicleId — triggers login/register/guest sheet
   const [contactAuthMode, setContactAuthMode] = useState("guest"); // "guest" | "login" | "register"
-  const [contactAuthForm, setContactAuthForm] = useState({name:"",email:"",code:""});
+  const [contactAuthForm, setContactAuthForm] = useState({name:"",email:"",code:"",password:""});
   // Getrennte Einwilligungen — Kopplungsverbot Art. 7 Abs. 4 DSGVO:
   // Kontakt-Zustimmung ist Pflicht (Zweck: Nachrichtenzustellung),
   // Marketing-Opt-in ist freiwillig (Zweck: eigene Werbung/Leads) und
@@ -4495,13 +4495,13 @@ Regeln:
 
   const handleContactAuth = async () => {
     const DB = window.PCN_DB;
-    const { name, email, code } = contactAuthForm;
+    const { name, email, code, password } = contactAuthForm;
     if(!email) { toast_("E-Mail angeben","err"); return; }
     let result;
     if(contactAuthMode === "guest"){
-      // AGB-Zustimmung ist Pflicht für die Kontaktaufnahme — Marketing-Opt-in
-      // ist davon unabhängig und blockiert nichts, wenn nicht angehakt.
-      if(!contactAgbAccepted) { toast_("Bitte den Bedingungen zur Kontaktaufnahme zustimmen","err"); return; }
+      // AGB-Zustimmung UND Marketing-Einwilligung sind beide Pflicht für die
+      // Kontaktaufnahme — bewusste Entscheidung, kein Senden ohne beide Haken.
+      if(!contactAgbAccepted||!contactMarketingOptIn) { toast_("Bitte beiden Punkten zustimmen","err"); return; }
       // Kein separates Namensfeld mehr im Gast-Fall — die Email selbst dient
       // als Anzeigename fürs Fahrzeugmitglied im Chat.
       result = await DB.auth.registerGuest(email, email, {
@@ -4513,7 +4513,8 @@ Regeln:
       if(code.toUpperCase() !== CLUB_CODE) { toast_("Falscher Club-Code","err"); return; }
       result = await DB.auth.register(name, email, code);
     } else {
-      result = await DB.auth.login(email);
+      if(!password) { toast_("Passwort eingeben","err"); return; }
+      result = await DB.auth.loginWithPassword(email, password);
     }
     if(result.error){ toast_(result.error,"err"); return; }
     const u = result.data;
@@ -4521,7 +4522,7 @@ Regeln:
     setAllUsers(prev=>({...prev,[u.id]:u}));
     const vehicleId = showContactAuth;
     setShowContactAuth(null);
-    setContactAuthForm({name:"",email:"",code:""});
+    setContactAuthForm({name:"",email:"",code:"",password:""});
     setContactAgbAccepted(false);
     setContactMarketingOptIn(false);
     toast_(`Willkommen, ${u.name}! 🏁`);
@@ -5438,11 +5439,11 @@ Regeln:
 
         {/* ── CONTACT AUTH SHEET — Login/Register/Guest before sending message ── */}
         {showContactAuth&&(
-          <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}}>
+          <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:"",password:""});}}}>
             <div className="sheet">
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>💬 Nachricht senden</div>
-                <button onClick={()=>{setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}
+                <button onClick={()=>{setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:"",password:""});}}
                   style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
               </div>
               <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Um eine Nachricht zu senden, identifiziere dich kurz</div>
@@ -5459,8 +5460,11 @@ Regeln:
 
               {contactAuthMode==="guest"&&(
                 <div style={{background:"#141414",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:16}}>
-                  <div style={{fontSize:14,color:C.muted,lineHeight:1.6,marginBottom:10}}>
-                    Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht.
+                  <div style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:10}}>
+                    <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
+                    <div style={{fontSize:15,color:C.white,fontWeight:800,lineHeight:1.5}}>
+                      Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht.
+                    </div>
                   </div>
                   <div style={{fontSize:15,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
                   {[
@@ -5490,9 +5494,24 @@ Regeln:
                   value={contactAuthForm.code} onChange={e=>setContactAuthForm(p=>({...p,code:e.target.value}))}/>
               )}
 
-              <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:16}}
+              {contactAuthMode==="register"&&(
+                <button onClick={()=>{setShowContactAuth(null);setShowWorkshopSignup(true);}}
+                  style={{width:"100%",background:"none",border:`1px dashed ${C.border}`,borderRadius:10,
+                    padding:"10px",marginBottom:16,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                    color:C.muted,fontSize:13,textAlign:"center"}}>
+                  🔧 Werkstatt statt Club-Mitglied? Konto beantragen →
+                </button>
+              )}
+
+              <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:contactAuthMode==="login"?10:16}}
                 value={contactAuthForm.email} onChange={e=>setContactAuthForm(p=>({...p,email:e.target.value}))}
-                onKeyDown={e=>{if(e.key==="Enter")handleContactAuth();}}/>
+                onKeyDown={e=>{if(e.key==="Enter"&&contactAuthMode!=="login")handleContactAuth();}}/>
+
+              {contactAuthMode==="login"&&(
+                <input className="inp" type="password" placeholder="Passwort" style={{marginBottom:16}}
+                  value={contactAuthForm.password} onChange={e=>setContactAuthForm(p=>({...p,password:e.target.value}))}
+                  onKeyDown={e=>{if(e.key==="Enter")handleContactAuth();}}/>
+              )}
 
               {contactAuthMode==="guest"&&(
                 <div style={{marginBottom:16}}>
@@ -5515,25 +5534,71 @@ Regeln:
                       onChange={e=>setContactMarketingOptIn(e.target.checked)}
                       style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
                     <span style={{fontSize:13,color:C.muted,lineHeight:1.5}}>
-                      Ich möchte gelegentlich Neuigkeiten und Angebote von QAR.Gallery per E-Mail erhalten (optional, jederzeit widerrufbar).
+                      Ich möchte gelegentlich Neuigkeiten und Angebote von QAR.Gallery per E-Mail erhalten. Beide Haken sind Voraussetzung, um eine Nachricht senden zu können. *
                     </span>
                   </label>
                 </div>
               )}
 
               <button className="btn"
-                disabled={contactAuthMode==="guest"&&!contactAgbAccepted}
-                style={{width:"100%",opacity:(contactAuthMode==="guest"&&!contactAgbAccepted)?.5:1}}
+                disabled={contactAuthMode==="guest"&&(!contactAgbAccepted||!contactMarketingOptIn)}
+                style={{width:"100%",opacity:(contactAuthMode==="guest"&&(!contactAgbAccepted||!contactMarketingOptIn))?.5:1}}
                 onClick={handleContactAuth}>
                 {contactAuthMode==="guest"?"Weiter zur Nachricht →":contactAuthMode==="login"?"Anmelden →":"Konto erstellen →"}
               </button>
-
-              {contactAuthMode==="login"&&(
-                <div style={{textAlign:"center",marginTop:10,fontSize:13,color:C.muted}}>Kein Passwort nötig — nur deine E-Mail</div>
-              )}
             </div>
           </div>
         )}
+      {showContactPrivacyInfo&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",zIndex:900,
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>setShowContactPrivacyInfo(false)}>
+          <div onClick={e=>e.stopPropagation()}
+            style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
+              padding:"24px 20px",maxWidth:420,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
+                color:C.white,marginBottom:6}}>🔒 Deine Nachricht</div>
+              <button onClick={()=>setShowContactPrivacyInfo(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+            </div>
+            <div style={{fontSize:14,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+              Kurz und ohne Juristendeutsch — du wirst hier kein Mitglied, du schickst nur eine Nachricht.
+            </div>
+
+            {[
+              {t:"Was gespeichert wird",
+               b:"Dein Name, deine E-Mail-Adresse und der Text deiner Nachricht. Es wird KEIN Fahrzeug für dich angelegt — das gehört ja bereits der Person, die du kontaktierst."},
+              {t:"Wer es sehen kann",
+               b:"Der Fahrzeughalter sieht ausschließlich deine Nachricht — nicht deinen Namen und nicht deine E-Mail-Adresse. Er antwortet direkt über die App."},
+              {t:"Warum wir trotzdem Name und E-Mail brauchen",
+               b:"Damit die Nachricht überhaupt zugestellt und beantwortet werden kann, und damit wir bei Missbrauch nachvollziehen können, wer sie geschickt hat."},
+              {t:"Newsletter/Marketing",
+               b:"Um eine Nachricht senden zu können, ist neben der Zustimmung zur Kontaktaufnahme auch die Einwilligung zu gelegentlichen Neuigkeiten per E-Mail erforderlich — beide Haken müssen gesetzt sein."},
+              {t:"Wo die Daten liegen",
+               b:"Auf Servern in Frankfurt am Main (Supabase, EU). Keine Übermittlung in Drittländer."},
+              {t:"Löschung",
+               b:"Du kannst jederzeit per E-Mail an den Vorstand die Löschung deiner Kontaktdaten verlangen."},
+            ].map(({t,b})=>(
+              <div key={t} style={{marginBottom:14,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
+                <div style={{fontSize:15,fontWeight:700,color:C.white,marginBottom:4}}>{t}</div>
+                <div style={{fontSize:14,color:"#999",lineHeight:1.65}}>{b}</div>
+              </div>
+            ))}
+
+            <div style={{background:`${C.gold}0d`,border:`1px solid ${C.gold}33`,borderRadius:9,
+              padding:"11px 13px",marginBottom:16}}>
+              <div style={{fontSize:13,color:"#aaa",lineHeight:1.65}}>
+                <strong style={{color:C.gold}}>Hinweis:</strong> Ausführliche AGB folgen in Kürze an dieser Stelle.
+                Bis dahin gilt diese Kurzerklärung als verbindliche Information zur Datenverarbeitung.
+              </div>
+            </div>
+
+            <button className="btn" style={{width:"100%",padding:"13px"}}
+              onClick={()=>setShowContactPrivacyInfo(false)}>Verstanden</button>
+          </div>
+        </div>
+      )}
 
       
       {lightbox&&(
@@ -6618,11 +6683,11 @@ Regeln:
 
           {/* ── CONTACT AUTH SHEET — Login/Register/Guest before sending message ── */}
         {showContactAuth&&(
-          <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}}>
+          <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:"",password:""});}}}>
             <div className="sheet">
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>💬 Nachricht senden</div>
-                <button onClick={()=>{setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:""});}}
+                <button onClick={()=>{setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:"",password:""});}}
                   style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
               </div>
               <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Um eine Nachricht zu senden, identifiziere dich kurz</div>
@@ -6639,8 +6704,11 @@ Regeln:
 
               {contactAuthMode==="guest"&&(
                 <div style={{background:"#141414",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:16}}>
-                  <div style={{fontSize:14,color:C.muted,lineHeight:1.6,marginBottom:10}}>
-                    Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht.
+                  <div style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:10}}>
+                    <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
+                    <div style={{fontSize:15,color:C.white,fontWeight:800,lineHeight:1.5}}>
+                      Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht.
+                    </div>
                   </div>
                   <div style={{fontSize:15,fontWeight:800,color:C.gold,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
                   {[
@@ -6670,9 +6738,24 @@ Regeln:
                   value={contactAuthForm.code} onChange={e=>setContactAuthForm(p=>({...p,code:e.target.value}))}/>
               )}
 
-              <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:16}}
+              {contactAuthMode==="register"&&(
+                <button onClick={()=>{setShowContactAuth(null);setShowWorkshopSignup(true);}}
+                  style={{width:"100%",background:"none",border:`1px dashed ${C.border}`,borderRadius:10,
+                    padding:"10px",marginBottom:16,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                    color:C.muted,fontSize:13,textAlign:"center"}}>
+                  🔧 Werkstatt statt Club-Mitglied? Konto beantragen →
+                </button>
+              )}
+
+              <input className="inp" placeholder="E-Mail" type="email" style={{marginBottom:contactAuthMode==="login"?10:16}}
                 value={contactAuthForm.email} onChange={e=>setContactAuthForm(p=>({...p,email:e.target.value}))}
-                onKeyDown={e=>{if(e.key==="Enter")handleContactAuth();}}/>
+                onKeyDown={e=>{if(e.key==="Enter"&&contactAuthMode!=="login")handleContactAuth();}}/>
+
+              {contactAuthMode==="login"&&(
+                <input className="inp" type="password" placeholder="Passwort" style={{marginBottom:16}}
+                  value={contactAuthForm.password} onChange={e=>setContactAuthForm(p=>({...p,password:e.target.value}))}
+                  onKeyDown={e=>{if(e.key==="Enter")handleContactAuth();}}/>
+              )}
 
               {contactAuthMode==="guest"&&(
                 <div style={{marginBottom:16}}>
@@ -6695,25 +6778,71 @@ Regeln:
                       onChange={e=>setContactMarketingOptIn(e.target.checked)}
                       style={{marginTop:2,flexShrink:0,width:16,height:16}}/>
                     <span style={{fontSize:13,color:C.muted,lineHeight:1.5}}>
-                      Ich möchte gelegentlich Neuigkeiten und Angebote von QAR.Gallery per E-Mail erhalten (optional, jederzeit widerrufbar).
+                      Ich möchte gelegentlich Neuigkeiten und Angebote von QAR.Gallery per E-Mail erhalten. Beide Haken sind Voraussetzung, um eine Nachricht senden zu können. *
                     </span>
                   </label>
                 </div>
               )}
 
               <button className="btn"
-                disabled={contactAuthMode==="guest"&&!contactAgbAccepted}
-                style={{width:"100%",opacity:(contactAuthMode==="guest"&&!contactAgbAccepted)?.5:1}}
+                disabled={contactAuthMode==="guest"&&(!contactAgbAccepted||!contactMarketingOptIn)}
+                style={{width:"100%",opacity:(contactAuthMode==="guest"&&(!contactAgbAccepted||!contactMarketingOptIn))?.5:1}}
                 onClick={handleContactAuth}>
                 {contactAuthMode==="guest"?"Weiter zur Nachricht →":contactAuthMode==="login"?"Anmelden →":"Konto erstellen →"}
               </button>
-
-              {contactAuthMode==="login"&&(
-                <div style={{textAlign:"center",marginTop:10,fontSize:13,color:C.muted}}>Kein Passwort nötig — nur deine E-Mail</div>
-              )}
             </div>
           </div>
         )}
+      {showContactPrivacyInfo&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",zIndex:900,
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>setShowContactPrivacyInfo(false)}>
+          <div onClick={e=>e.stopPropagation()}
+            style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
+              padding:"24px 20px",maxWidth:420,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
+                color:C.white,marginBottom:6}}>🔒 Deine Nachricht</div>
+              <button onClick={()=>setShowContactPrivacyInfo(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+            </div>
+            <div style={{fontSize:14,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+              Kurz und ohne Juristendeutsch — du wirst hier kein Mitglied, du schickst nur eine Nachricht.
+            </div>
+
+            {[
+              {t:"Was gespeichert wird",
+               b:"Dein Name, deine E-Mail-Adresse und der Text deiner Nachricht. Es wird KEIN Fahrzeug für dich angelegt — das gehört ja bereits der Person, die du kontaktierst."},
+              {t:"Wer es sehen kann",
+               b:"Der Fahrzeughalter sieht ausschließlich deine Nachricht — nicht deinen Namen und nicht deine E-Mail-Adresse. Er antwortet direkt über die App."},
+              {t:"Warum wir trotzdem Name und E-Mail brauchen",
+               b:"Damit die Nachricht überhaupt zugestellt und beantwortet werden kann, und damit wir bei Missbrauch nachvollziehen können, wer sie geschickt hat."},
+              {t:"Newsletter/Marketing",
+               b:"Um eine Nachricht senden zu können, ist neben der Zustimmung zur Kontaktaufnahme auch die Einwilligung zu gelegentlichen Neuigkeiten per E-Mail erforderlich — beide Haken müssen gesetzt sein."},
+              {t:"Wo die Daten liegen",
+               b:"Auf Servern in Frankfurt am Main (Supabase, EU). Keine Übermittlung in Drittländer."},
+              {t:"Löschung",
+               b:"Du kannst jederzeit per E-Mail an den Vorstand die Löschung deiner Kontaktdaten verlangen."},
+            ].map(({t,b})=>(
+              <div key={t} style={{marginBottom:14,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
+                <div style={{fontSize:15,fontWeight:700,color:C.white,marginBottom:4}}>{t}</div>
+                <div style={{fontSize:14,color:"#999",lineHeight:1.65}}>{b}</div>
+              </div>
+            ))}
+
+            <div style={{background:`${C.gold}0d`,border:`1px solid ${C.gold}33`,borderRadius:9,
+              padding:"11px 13px",marginBottom:16}}>
+              <div style={{fontSize:13,color:"#aaa",lineHeight:1.65}}>
+                <strong style={{color:C.gold}}>Hinweis:</strong> Ausführliche AGB folgen in Kürze an dieser Stelle.
+                Bis dahin gilt diese Kurzerklärung als verbindliche Information zur Datenverarbeitung.
+              </div>
+            </div>
+
+            <button className="btn" style={{width:"100%",padding:"13px"}}
+              onClick={()=>setShowContactPrivacyInfo(false)}>Verstanden</button>
+          </div>
+        </div>
+      )}
 
       {/* ── OVERLAYS (rendered in every screen) ── */}
         {lightbox&&(
@@ -9651,8 +9780,8 @@ Regeln:
                b:"Der Fahrzeughalter sieht ausschließlich deine Nachricht — nicht deinen Namen und nicht deine E-Mail-Adresse. Er antwortet direkt über die App."},
               {t:"Warum wir trotzdem Name und E-Mail brauchen",
                b:"Damit die Nachricht überhaupt zugestellt und beantwortet werden kann, und damit wir bei Missbrauch nachvollziehen können, wer sie geschickt hat."},
-              {t:"Newsletter/Marketing — komplett getrennt",
-               b:"Die zweite Checkbox (Neuigkeiten per E-Mail) ist unabhängig von der ersten. Lässt du sie leer, bekommst du niemals Marketing-E-Mails — deine Nachricht wird trotzdem zugestellt."},
+              {t:"Newsletter/Marketing",
+               b:"Um eine Nachricht senden zu können, ist neben der Zustimmung zur Kontaktaufnahme auch die Einwilligung zu gelegentlichen Neuigkeiten per E-Mail erforderlich — beide Haken müssen gesetzt sein."},
               {t:"Wo die Daten liegen",
                b:"Auf Servern in Frankfurt am Main (Supabase, EU). Keine Übermittlung in Drittländer."},
               {t:"Löschung",
