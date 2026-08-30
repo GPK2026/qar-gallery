@@ -1761,6 +1761,14 @@ function PCNInner() {
   // Doppel-Scan) und Weg B (Antrag ohne gemeinsame Anwesenheit).
   const [pendingTransfer, setPendingTransfer] = useState(null); // {id, code, expiresAt, mode, status, requestedByUserId}
   const [transferBusy, setTransferBusy] = useState(false);
+  const [workshopRequestBusy, setWorkshopRequestBusy] = useState(false);
+  const [pendingWorkshopVehicleIds, setPendingWorkshopVehicleIds] = useState(new Set()); // Fahrzeuge mit offener Werkstatt-Anfrage — roter Punkt
+  const [showWorkshopDecision, setShowWorkshopDecision] = useState(null); // {id,vehicleId,workshopUserId,...} — Eigentümer-Bestätigungsdialog
+  const [workshopDecisionScope, setWorkshopDecisionScope] = useState("once");
+  const [showWorkshopGrants, setShowWorkshopGrants] = useState(null); // vehicleId — Übersicht aktiver Werkstatt-Zugänge zum Widerrufen
+  const [workshopGrants, setWorkshopGrants] = useState({}); // vehicleId -> [{id,workshopUserId,scope,...}]
+  const [myWorkshopGrants, setMyWorkshopGrants] = useState([]); // für die Werkstatt selbst: eigene aktive/offene Zugänge
+  const [showWorkshopEntryForm, setShowWorkshopEntryForm] = useState(null); // grant-Objekt — Service-Eintrag-Formular für die Werkstatt
   const [showTransferPanel, setShowTransferPanel] = useState(null); // vehicleId — Verkäufer-Sicht am eigenen Fahrzeug
   const [pendingTransferVehicleIds, setPendingTransferVehicleIds] = useState(new Set()); // Fahrzeuge mit offenem, eingehendem Übertragungsantrag
   const [showForeignTransferStart, setShowForeignTransferStart] = useState(null); // fremdes vehicleId nach QR-Scan
@@ -2584,6 +2592,43 @@ function PCNInner() {
       if(data?.length) setShowBuyerConfirm(data[0]);
     })();
   },[me?.id]);
+
+  // ── Offene Werkstatt-Anfragen — roter Punkt am betroffenen Fahrzeug in
+  // "Meine Fahrzeuge", analog zu den Übertragungsanträgen. ──
+  useEffect(()=>{
+    if(!me?.id || isDemo || me?.role==="workshop") return;
+    const DB=window.PCN_DB; if(!DB) return;
+    (async()=>{
+      const {data} = await DB.workshopAccess.getPendingForOwner(me.id).catch(()=>({data:[]}));
+      setPendingWorkshopVehicleIds(new Set((data||[]).map(r=>r.vehicleId)));
+    })();
+  },[me?.id]);
+
+  // ── Für Werkstattkonten: eigene aktive/offene Zugänge laden, damit
+  // erkennbar ist, bei welchen Fahrzeugen bereits ein Eintrag erstellt
+  // werden darf. ──
+  useEffect(()=>{
+    if(!me?.id || isDemo || me?.role!=="workshop") return;
+    const DB=window.PCN_DB; if(!DB) return;
+    (async()=>{
+      const {data} = await DB.workshopAccess.getMyGrants(me.id).catch(()=>({data:[]}));
+      setMyWorkshopGrants(data||[]);
+    })();
+  },[me?.id]);
+
+  // ── Aktive Werkstatt-Zugänge für das gerade geöffnete Fahrzeug laden —
+  // auf oberster Komponentenebene (nicht im bedingten Screen-Block), um
+  // die React-Hooks-Regeln nicht zu verletzen. ──
+  useEffect(()=>{
+    if(!viewV?.id || !me?.id || isDemo) return;
+    const isOwnV = viewV.owner===me?.email || viewV.userId===me?.id || viewV.userId===me?.email;
+    if(!isOwnV) return;
+    const DB=window.PCN_DB; if(!DB) return;
+    (async()=>{
+      const {data} = await DB.workshopAccess.getActiveGrantsForVehicle(viewV.id).catch(()=>({data:[]}));
+      setWorkshopGrants(prev=>({...prev, [viewV.id]: data||[]}));
+    })();
+  },[viewV?.id, me?.id]);
 
   // ── Live-Sync: Nachrichten, News, Profil, Fahrzeuge ─────────────────────────
   // Ohne das merkt ein Mitglied nichts von Newslettern, Beitragsfreigaben oder
@@ -3732,6 +3777,28 @@ Regeln:
     toast_("Eintrag gespeichert ✓");
   };
 
+  // ── Werkstatt erstellt einen Service-Eintrag über ihren genehmigten
+  // Zugang — Betriebsname wird automatisch als "workshop" im Eintrag
+  // vermerkt, bei einmaligem Zugang wird er danach automatisch verbraucht.
+  const [workshopEntryForm, setWorkshopEntryForm] = useState({type:"Ölwechsel", km:"", notes:""});
+  const saveWorkshopEntry = async () => {
+    const grant = showWorkshopEntryForm; if(!grant) return;
+    if(!workshopEntryForm.km) return toast_("Kilometerstand angeben","err");
+    const DB=window.PCN_DB;
+    const {data:e,error}=await DB.logbook.add(grant.vehicleId,{
+      date:today(), ...workshopEntryForm, workshop: me?.workshopName||me?.name||"Werkstatt",
+    });
+    if(error){toast_("Fehler","err");return;}
+    setLogbook(prev=>({...prev,[grant.vehicleId]:[e,...(prev[grant.vehicleId]||[])]}));
+    if(grant.scope==="once"){
+      await DB.workshopAccess.markUsed(grant.id).catch(()=>{});
+      setMyWorkshopGrants(prev=>prev.filter(g=>g.id!==grant.id));
+    }
+    setShowWorkshopEntryForm(null);
+    setWorkshopEntryForm({type:"Ölwechsel", km:"", notes:""});
+    toast_("Service-Eintrag gespeichert ✓");
+  };
+
   const LISTING_CATEGORY_LABELS = {auto:"🚗 Fahrzeug", felgen_reifen:"⚙️ Felgen/Reifen", sonstiges:"📦 Sonstiges"};
 
   const loadListingsFor = async (vehicleId) => {
@@ -3875,6 +3942,77 @@ Regeln:
         })
       });
     } catch(e) { console.warn("Käufer-Benachrichtigung nicht zugestellt:", e); }
+  };
+
+  // ── Werkstatt-Zugang: Anfrage, Entscheidung, Widerruf ───────────────────
+  const notifyOwnerOfWorkshopRequest = async (ownerUserId, vehicleId, workshopName) => {
+    if(!ownerUserId || isDemo) return;
+    const threadId = adminThreadId(ownerUserId);
+    const cfg = (window.PCN_CONFIG||{});
+    try {
+      await fetch(`${cfg.supabaseUrl}/rest/v1/messages`,{
+        method:"POST",
+        headers:{ "apikey": cfg.supabaseKey, "Authorization": "Bearer " + cfg.supabaseKey, "Content-Type":"application/json" },
+        body:JSON.stringify({
+          thread_id:threadId, from_id:ADMIN_UUID,
+          text:`🔧 ${workshopName||"Eine Werkstatt"} möchte einen Service-Eintrag für dein Fahrzeug erstellen — bitte in deiner Fahrzeugakte bestätigen oder ablehnen.`,
+          is_system:true,
+          payload:JSON.stringify({type:"workshop_access_requested",vehicleId}),
+          created_at:new Date().toISOString()
+        })
+      });
+    } catch(e) { console.warn("Werkstatt-Anfrage-Benachrichtigung nicht zugestellt:", e); }
+  };
+  const notifyWorkshopOfDecision = async (workshopUserId, vehicleId, accepted, scope, vehicle) => {
+    if(!workshopUserId || isDemo) return;
+    const threadId = adminThreadId(workshopUserId);
+    const cfg = (window.PCN_CONFIG||{});
+    const vLabel = vehicle ? `${vehicle.hersteller||""} ${vehicle.modell||""}`.trim() : "das Fahrzeug";
+    const text = accepted
+      ? `✅ Zugang für ${vLabel} bestätigt (${scope==="ongoing"?"dauerhaft, bis widerrufen":"für einen Eintrag"}) — du kannst jetzt einen Service-Eintrag erstellen.`
+      : `❌ Die Anfrage für ${vLabel} wurde abgelehnt.`;
+    try {
+      await fetch(`${cfg.supabaseUrl}/rest/v1/messages`,{
+        method:"POST",
+        headers:{ "apikey": cfg.supabaseKey, "Authorization": "Bearer " + cfg.supabaseKey, "Content-Type":"application/json" },
+        body:JSON.stringify({
+          thread_id:threadId, from_id:ADMIN_UUID, text, is_system:true,
+          payload:JSON.stringify({type:"workshop_access_decided",vehicleId,accepted}),
+          created_at:new Date().toISOString()
+        })
+      });
+    } catch(e) { console.warn("Werkstatt-Entscheidungs-Benachrichtigung nicht zugestellt:", e); }
+  };
+  const requestWorkshopAccessForVehicle = async (vehicleId) => {
+    const DB=window.PCN_DB;
+    if(isDemo || !DB){ toast_("Im Demo-Modus nicht verfügbar — echtes Werkstattkonto nötig","err"); return; }
+    setWorkshopRequestBusy(true);
+    const {data,error} = await DB.workshopAccess.request(vehicleId, me.id);
+    setWorkshopRequestBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    const fv = vehicles[vehicleId] || Object.values(DEMO_VEHICLES).find(x=>x.id===vehicleId) || publicV;
+    await notifyOwnerOfWorkshopRequest(data?.ownerUserId, vehicleId, me?.workshopName||me?.name);
+    toast_("Anfrage gesendet — der Fahrzeugeigentümer muss zustimmen");
+  };
+  const decideWorkshopRequest = async (accept) => {
+    const req = showWorkshopDecision; if(!req) return;
+    const DB=window.PCN_DB;
+    setTransferBusy(true);
+    const {data,error} = await DB.workshopAccess.decide(req.id, me.id, accept, accept?workshopDecisionScope:undefined);
+    setTransferBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    setShowWorkshopDecision(null);
+    setPendingWorkshopVehicleIds(prev=>{const next=new Set(prev); next.delete(req.vehicleId); return next;});
+    const fv = vehicles[req.vehicleId] || Object.values(DEMO_VEHICLES).find(x=>x.id===req.vehicleId);
+    await notifyWorkshopOfDecision(req.workshopUserId, req.vehicleId, accept, accept?workshopDecisionScope:null, fv);
+    toast_(accept ? "Zugang gewährt" : "Anfrage abgelehnt");
+  };
+  const revokeWorkshopGrant = async (grantId, vehicleId) => {
+    const DB=window.PCN_DB;
+    const {error} = await DB.workshopAccess.revoke(grantId, me.id);
+    if(error){ toast_(error,"err"); return; }
+    setWorkshopGrants(prev=>({...prev, [vehicleId]: (prev[vehicleId]||[]).filter(g=>g.id!==grantId)}));
+    toast_("Werkstatt-Zugang widerrufen");
   };
 
   const requestTransferAsBuyer = async (vehicleId) => {
@@ -5088,6 +5226,19 @@ Regeln:
               </a>
             )}
 
+            {/* ── Werkstatt-Zugang beantragen — nur fuer B2B-Werkstattkonten ── */}
+            {me?.role==="workshop"&&(
+              <button onClick={()=>requestWorkshopAccessForVehicle(v.id)} disabled={workshopRequestBusy}
+                style={{display:"flex",alignItems:"center",gap:12,background:C.gold,border:"none",
+                  borderRadius:12,padding:"14px 16px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#000",width:"100%",marginBottom:10}}>
+                <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(0,0,0,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🔧</div>
+                <div style={{flex:1,textAlign:"left"}}>
+                  <div style={{fontWeight:800,fontSize:15}}>{workshopRequestBusy?"Wird gesendet…":"Service-Eintrag beantragen"}</div>
+                  <div style={{fontSize:14,color:"rgba(0,0,0,.65)",marginTop:1}}>Eigentümer muss zustimmen, bevor du einen Eintrag erstellen kannst</div>
+                </div>
+              </button>
+            )}
+
             {/* CHAT — always visible for visitors (non-owners), opens anonymous chat */}
             {(!me||(v.owner!==me.email&&v.userId!==me.id))&&(
               <button
@@ -5602,6 +5753,25 @@ Regeln:
         {/* ── Vehicle detail content ── */}
         <div style={{padding:"16px",maxWidth:560,margin:"0 auto"}}>
 
+          {/* ── Hinweis-Banner: offene Werkstatt-Anfrage ── */}
+          {isOwn&&pendingWorkshopVehicleIds.has(v.id)&&(
+            <button onClick={async()=>{
+                const DB=window.PCN_DB; if(!DB) return;
+                const {data} = await DB.workshopAccess.getPendingForOwner(me.id).catch(()=>({data:[]}));
+                const req = (data||[]).find(r=>r.vehicleId===v.id);
+                if(req){ setWorkshopDecisionScope("once"); setShowWorkshopDecision(req); }
+              }}
+              style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:`${C.gold}18`,
+                border:`1px solid ${C.gold}55`,borderRadius:12,padding:"12px 14px",marginBottom:14,cursor:"pointer",textAlign:"left"}}>
+              <span style={{fontSize:20,flexShrink:0}}>🔧</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:700,color:C.white}}>Werkstatt-Anfrage wartet</div>
+                <div style={{fontSize:12,color:C.muted}}>Antippen, um zu bestätigen oder abzulehnen</div>
+              </div>
+              <span style={{fontSize:18,color:C.gold}}>›</span>
+            </button>
+          )}
+
           {/* ── Eckdaten auf einen Blick ── */}
           <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}}>
@@ -6007,6 +6177,25 @@ Regeln:
                           style={{background:"none",border:"none",color:"#666",fontSize:16,cursor:"pointer",flexShrink:0,padding:"0 2px"}}>✕</button>
                       </div>
                     ))}
+                    {/* ── Werkstatt-Zugänge — nur für den Eigentümer, nur wenn welche bestehen ── */}
+                    {isOwn&&(workshopGrants[v.id]||[]).length>0&&(
+                      <>
+                        <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.5,marginTop:18,marginBottom:6,paddingTop:12,borderTop:`1px solid ${C.border}`}}>Werkstatt-Zugänge</div>
+                        {workshopGrants[v.id].map(g=>(
+                          <div key={g.id} style={{background:C.black,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6,display:"flex",alignItems:"center",gap:10}}>
+                            <span style={{fontSize:18,flexShrink:0}}>🔧</span>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:14,fontWeight:700,color:C.white}}>{g.workshopName}</div>
+                              <div style={{fontSize:12,color:C.muted}}>{g.scope==="ongoing"?"Dauerhafter Zugang":"Einmaliger Zugang"}</div>
+                            </div>
+                            <button onClick={()=>revokeWorkshopGrant(g.id,v.id)}
+                              style={{background:"none",border:`1px solid ${C.red}`,borderRadius:7,color:C.red,fontSize:12,fontWeight:700,cursor:"pointer",padding:"5px 9px",flexShrink:0}}>
+                              Widerrufen
+                            </button>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )
               },
@@ -6491,6 +6680,46 @@ Regeln:
                 <input className="inp" placeholder="Notizen" style={{marginBottom:16}}
                   value={addLogForm.notes} onChange={e=>setAddLogForm(p=>({...p,notes:e.target.value}))}/>
                 <button className="btn" style={{width:"100%"}} onClick={()=>addLogEntry(v.id)}>Speichern ✓</button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Werkstatt-Anfrage: Eigentümer-Entscheidung mit Dauer-Wahl ── */}
+          {showWorkshopDecision&&showWorkshopDecision.vehicleId===v.id&&(
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowWorkshopDecision(null);}}>
+              <div className="sheet">
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                  <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>🔧 Werkstatt-Anfrage</div>
+                  <button onClick={()=>setShowWorkshopDecision(null)}
+                    style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+                </div>
+                <div style={{fontSize:13,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+                  Eine Werkstatt möchte einen Service-Eintrag für dieses Fahrzeug erstellen können. Wähle, wie lange der Zugang gelten soll:
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+                  <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1.5px solid ${workshopDecisionScope==="once"?C.gold:C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer"}}>
+                    <input type="radio" checked={workshopDecisionScope==="once"} onChange={()=>setWorkshopDecisionScope("once")}/>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:700,color:C.white}}>Nur dieser eine Eintrag</div>
+                      <div style={{fontSize:12,color:C.muted}}>Zugang endet automatisch nach dem ersten Service-Eintrag</div>
+                    </div>
+                  </label>
+                  <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1.5px solid ${workshopDecisionScope==="ongoing"?C.gold:C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer"}}>
+                    <input type="radio" checked={workshopDecisionScope==="ongoing"} onChange={()=>setWorkshopDecisionScope("ongoing")}/>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:700,color:C.white}}>Dauerhaft</div>
+                      <div style={{fontSize:12,color:C.muted}}>Bis du den Zugang selbst widerrufst</div>
+                    </div>
+                  </label>
+                </div>
+                <button className="btn" style={{width:"100%",marginBottom:8}} disabled={transferBusy}
+                  onClick={()=>decideWorkshopRequest(true)}>
+                  Zugang gewähren
+                </button>
+                <button className="btn ghost" style={{width:"100%",color:C.red,borderColor:`${C.red}44`}} disabled={transferBusy}
+                  onClick={()=>decideWorkshopRequest(false)}>
+                  Ablehnen
+                </button>
               </div>
             </div>
           )}
@@ -7461,7 +7690,57 @@ Regeln:
             </button>
           </div>
         )}
-        {tab==="dashboard"&&!isGuest&&(
+        {tab==="dashboard"&&!isGuest&&me?.role==="workshop"&&(
+          <div style={{animation:"fadeIn .2s",padding:16}}>
+            <div style={{fontSize:13,fontWeight:800,color:C.white,textTransform:"uppercase",letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3}}>🔧 Werkstatt-Zugänge</div>
+            {myWorkshopGrants.length===0?(
+              <div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}>
+                <div style={{fontSize:40,marginBottom:10}}>🔧</div>
+                <div style={{fontSize:15}}>Noch keine Fahrzeugzugänge. Scanne den QR-Code eines Fahrzeugs und beantrage einen Service-Eintrag.</div>
+              </div>
+            ):myWorkshopGrants.map(g=>{
+              const fv = vehicles[g.vehicleId] || Object.values(DEMO_VEHICLES).find(x=>x.id===g.vehicleId);
+              return (
+                <div key={g.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:10}}>
+                  <div style={{fontWeight:700,fontSize:16,color:C.white,marginBottom:4}}>{fv?fv.hersteller+" "+fv.modell:"Fahrzeug "+g.vehicleId}</div>
+                  {g.status==="pending"&&<div style={{fontSize:13,color:C.gold}}>Anfrage wartet auf Bestätigung</div>}
+                  {g.status==="active"&&(
+                    <>
+                      <div style={{fontSize:13,color:C.green,marginBottom:10}}>✓ Zugang aktiv ({g.scope==="ongoing"?"dauerhaft":"einmalig"})</div>
+                      <button className="btn sm" onClick={()=>setShowWorkshopEntryForm(g)}>Service-Eintrag erstellen</button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Werkstatt: Service-Eintrag erstellen ── */}
+        {showWorkshopEntryForm&&(
+          <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowWorkshopEntryForm(null);}}>
+            <div className="sheet">
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>🔧 Service-Eintrag</div>
+                <button onClick={()=>setShowWorkshopEntryForm(null)}
+                  style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+              </div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:16}}>
+                Wird als "{me?.workshopName||me?.name}" im Logbuch vermerkt.
+              </div>
+              <select className="inp" value={workshopEntryForm.type} onChange={e=>setWorkshopEntryForm(p=>({...p,type:e.target.value}))} style={{marginBottom:8}}>
+                {["Ölwechsel","Inspektion","Reifenwechsel","Bremsenwechsel","Hauptuntersuchung","Sonstiges"].map(t=><option key={t}>{t}</option>)}
+              </select>
+              <input className="inp" type="number" inputMode="numeric" placeholder="Kilometerstand *" style={{marginBottom:8}}
+                value={workshopEntryForm.km} onChange={e=>setWorkshopEntryForm(p=>({...p,km:e.target.value}))}/>
+              <input className="inp" placeholder="Notizen" style={{marginBottom:16}}
+                value={workshopEntryForm.notes} onChange={e=>setWorkshopEntryForm(p=>({...p,notes:e.target.value}))}/>
+              <button className="btn" style={{width:"100%"}} onClick={saveWorkshopEntry}>Speichern ✓</button>
+            </div>
+          </div>
+        )}
+
+        {tab==="dashboard"&&!isGuest&&me?.role!=="workshop"&&(
           <div style={{animation:"fadeIn .2s"}}>
 
             {/* Demo-Hinweis erscheint als Popup-Overlay nach 3 Sekunden — siehe globaler Overlay-Bereich */}
@@ -7647,6 +7926,9 @@ Regeln:
                       {pendingTransferVehicleIds.has(v.id)&&
                         <span title="Übertragungsantrag wartet auf deine Bestätigung"
                           style={{width:9,height:9,borderRadius:"50%",background:C.red,flexShrink:0,boxShadow:`0 0 0 2px ${C.red}33`}}/>}
+                      {pendingWorkshopVehicleIds.has(v.id)&&
+                        <span title="Werkstatt-Anfrage wartet auf deine Bestätigung"
+                          style={{width:9,height:9,borderRadius:"50%",background:C.gold,flexShrink:0,boxShadow:`0 0 0 2px ${C.gold}33`}}/>}
                     </div>
                     <div style={{display:"flex",gap:8,marginTop:3,alignItems:"center",flexWrap:"wrap"}}>
                       <span style={{fontSize:13,color:C.muted}}>{fmtKz(v.kennzeichen,v.baujahr)} · {v.baujahr}</span>
