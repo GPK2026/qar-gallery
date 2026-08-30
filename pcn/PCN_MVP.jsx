@@ -1708,6 +1708,10 @@ function PCNInner() {
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [loginForm, setLoginForm] = useState({mode:"login",code:"",email:"",name:""});
+  const [showWorkshopSignup, setShowWorkshopSignup] = useState(false);
+  const [workshopSignupForm, setWorkshopSignupForm] = useState({workshopName:"",workshopAddress:"",contactName:"",email:"",password:"",phone:""});
+  const [workshopSignupBusy, setWorkshopSignupBusy] = useState(false);
+  const [workshopSignupSubmitted, setWorkshopSignupSubmitted] = useState(false);
   const [consent, setConsent] = useState(false);
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [showContactPrivacyInfo, setShowContactPrivacyInfo] = useState(false);
@@ -4470,6 +4474,20 @@ Regeln:
 
   // ── Triggered from the public-view "Nachricht senden" sheet ──
   // Logs in / registers / creates guest, then immediately opens the chat
+  const submitWorkshopSignup = async () => {
+    const f = workshopSignupForm;
+    if(!f.workshopName||!f.contactName||!f.email||!f.password){
+      toast_("Bitte alle Pflichtfelder ausfüllen","err"); return;
+    }
+    if(f.password.length<8){ toast_("Passwort braucht mindestens 8 Zeichen","err"); return; }
+    const DB = window.PCN_DB;
+    setWorkshopSignupBusy(true);
+    const {error} = await DB.auth.requestWorkshopSignup(f.workshopName,f.workshopAddress,f.contactName,f.email,f.password,f.phone);
+    setWorkshopSignupBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    setWorkshopSignupSubmitted(true);
+  };
+
   const handleContactAuth = async () => {
     const DB = window.PCN_DB;
     const { name, email, code } = contactAuthForm;
@@ -4759,6 +4777,49 @@ Regeln:
           ))}
         </div>
 
+        {showWorkshopSignup?(
+          workshopSignupSubmitted?(
+            <div style={{textAlign:"center",padding:"20px 0"}}>
+              <div style={{fontSize:44,marginBottom:14}}>✅</div>
+              <div style={{fontSize:17,fontWeight:800,color:C.white,marginBottom:8}}>Anfrage gesendet</div>
+              <div style={{fontSize:14,color:C.muted,lineHeight:1.6,marginBottom:20}}>
+                Der Vorstand prüft deine Werkstatt-Anfrage und schaltet dein Konto frei. Du erhältst dann eine Rückmeldung per E-Mail.
+              </div>
+              <button onClick={()=>{setShowWorkshopSignup(false);setWorkshopSignupSubmitted(false);setWorkshopSignupForm({workshopName:"",workshopAddress:"",contactName:"",email:"",password:"",phone:""});}}
+                style={{background:"none",border:"none",color:C.gold,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                Zurück zur Anmeldung
+              </button>
+            </div>
+          ):(
+            <div>
+              <div style={{fontSize:17,fontWeight:800,color:C.white,marginBottom:4}}>🔧 Werkstatt-Konto beantragen</div>
+              <div style={{fontSize:13,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+                Für Partnerwerkstätten, die Service-Einträge in Fahrzeugakten erstellen möchten. Der Vorstand prüft und schaltet dein Konto frei.
+              </div>
+              <input className="inp" placeholder="Betriebsname *" style={{marginBottom:8}}
+                value={workshopSignupForm.workshopName} onChange={e=>setWorkshopSignupForm(p=>({...p,workshopName:e.target.value}))}/>
+              <input className="inp" placeholder="Anschrift" style={{marginBottom:8}}
+                value={workshopSignupForm.workshopAddress} onChange={e=>setWorkshopSignupForm(p=>({...p,workshopAddress:e.target.value}))}/>
+              <input className="inp" placeholder="Ansprechpartner *" style={{marginBottom:8}}
+                value={workshopSignupForm.contactName} onChange={e=>setWorkshopSignupForm(p=>({...p,contactName:e.target.value}))}/>
+              <input className="inp" placeholder="Telefon" style={{marginBottom:8}}
+                value={workshopSignupForm.phone} onChange={e=>setWorkshopSignupForm(p=>({...p,phone:e.target.value}))}/>
+              <input className="inp" type="email" placeholder="E-Mail *" style={{marginBottom:8}}
+                value={workshopSignupForm.email} onChange={e=>setWorkshopSignupForm(p=>({...p,email:e.target.value}))}/>
+              <input className="inp" type="password" placeholder="Passwort * (mind. 8 Zeichen)" style={{marginBottom:16}}
+                value={workshopSignupForm.password} onChange={e=>setWorkshopSignupForm(p=>({...p,password:e.target.value}))}
+                onKeyDown={e=>{if(e.key==="Enter")submitWorkshopSignup();}}/>
+              <button className="btn" style={{width:"100%",marginBottom:10}} disabled={workshopSignupBusy} onClick={submitWorkshopSignup}>
+                {workshopSignupBusy?"Wird gesendet…":"Anfrage senden"}
+              </button>
+              <button onClick={()=>setShowWorkshopSignup(false)}
+                style={{width:"100%",background:"none",border:"none",color:C.muted,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                Zurück
+              </button>
+            </div>
+          )
+        ):(
+        <>
         {/* Login — E-Mail + Passwort, sofort einloggen */}
         {loginForm.mode==="login"&&(
           <>
@@ -4960,6 +5021,16 @@ Regeln:
               <div style={{fontSize:13,color:"#ef4444",textAlign:"center",marginTop:6}}>Passwort muss mind. 6 Zeichen haben</div>
             )}
           </>
+        )}
+        </>
+        )}
+
+        {!showWorkshopSignup&&(
+          <button onClick={()=>setShowWorkshopSignup(true)}
+            style={{width:"100%",background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",
+              fontFamily:"'Barlow',sans-serif",marginTop:14,textAlign:"center",textDecoration:"underline"}}>
+            🔧 Werkstatt? Konto beantragen
+          </button>
         )}
 
         <div style={{display:"flex",alignItems:"center",gap:10,margin:"18px 0"}}>
