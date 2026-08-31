@@ -749,50 +749,29 @@ const PCN_STORAGE = (() => {
     // Bewusst NICHT die einfache, ungeschützte login(email)-Variante nutzen —
     // Werkstattkonten erhalten Zugriff auf Fahrzeug-Servicedaten, daher immer
     // passwortgeschützt über loginWithPassword.
-    async requestWorkshopSignup(workshopName, workshopAddress, contactName, email, password, phone, tradeRegisterNumber) {
+    async registerWorkshop(workshopName, workshopAddress, contactName, email, password, phone, tradeRegisterNumber) {
+      // Bewusst OHNE Admin-Freigabeprozess — Werkstatt registriert sich
+      // selbst und ist sofort aktiv. Kontrolle findet stattdessen beim
+      // Fahrzeug-Eigentuemer statt: er muss jeden Zugriff auf eine
+      // konkrete Fahrzeugakte einzeln bestaetigen (workshopAccess-Ablauf).
       const {data:existingUser} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
       if(existingUser&&existingUser.length>0) return { error: "Diese E-Mail ist bereits registriert" };
-      const {data:existingReq} = await supabase._q("workshop_signup_requests",
-        "?email=eq."+encodeURIComponent(email)+"&status=eq.pending");
-      if(existingReq&&existingReq.length>0) return { error: "Für diese E-Mail liegt bereits eine offene Anfrage vor" };
       const pwHash = await hashPassword(password);
-      const res = await supabase._post("workshop_signup_requests", {
-        workshop_name: workshopName, workshop_address: workshopAddress,
-        contact_name: contactName, email, pw_hash: pwHash, phone,
-        trade_register_number: tradeRegisterNumber,
-        requested_at: now(),
+      const res = await supabase._post("users", {
+        name: contactName, email, role: "workshop", pw_hash: pwHash,
+        workshop_name: workshopName, workshop_address: workshopAddress, phone,
+        trade_register_number: tradeRegisterNumber, created_at: now(),
       });
       if(res.error) return res;
-      return { data: { id: res.data?.id } };
-    },
-    async listPendingWorkshopSignups() {
-      const res = await supabase._q("workshop_signup_requests","?status=eq.pending&order=requested_at.asc");
-      if(res.error) return { data: [] };
-      return { data: (res.data||[]).map(r => ({
-        id:r.id, workshopName:r.workshop_name, workshopAddress:r.workshop_address,
-        contactName:r.contact_name, email:r.email, phone:r.phone, requestedAt:r.requested_at,
-        tradeRegisterNumber:r.trade_register_number,
-      })) };
-    },
-    async decideWorkshopSignup(requestId, adminUserId, approve) {
-      const res = await supabase._q("workshop_signup_requests","?id=eq."+requestId);
-      if(res.error || !res.data?.length) return { error: "Anfrage nicht gefunden" };
-      const r = res.data[0];
-      if(r.status!=="pending") return { error: "Diese Anfrage wurde bereits bearbeitet" };
-      if(!approve){
-        await supabase._patch("workshop_signup_requests","id=eq."+requestId,
-          {status:"rejected",decided_at:now(),decided_by:adminUserId});
-        return { data: { rejected:true } };
-      }
-      const userRes = await supabase._post("users", {
-        name: r.contact_name, email: r.email, role: "workshop", pw_hash: r.pw_hash,
-        workshop_name: r.workshop_name, workshop_address: r.workshop_address, phone: r.phone,
-        trade_register_number: r.trade_register_number,
-      });
-      if(userRes.error) return userRes;
-      await supabase._patch("workshop_signup_requests","id=eq."+requestId,
-        {status:"approved",decided_at:now(),decided_by:adminUserId});
-      return { data: { userId: userRes.data?.id, email: r.email, workshopName: r.workshop_name } };
+      const u = res.data;
+      const session = {
+        id: u.id, email: u.email, name: u.name, role: u.role,
+        workshopName: u.workshop_name||"", workshopAddress: u.workshop_address||"",
+        phone: u.phone||"", createdAt: u.created_at||"",
+        notifications: { events:true, messages:true },
+      };
+      safeStore.setItem("pcn_session", JSON.stringify(session));
+      return { data: session };
     },
 
     // Ersetzt den direkten btoa()-Aufruf, der bisher in PCN_MVP.jsx lag —
@@ -1551,7 +1530,7 @@ const PCN_STORAGE = (() => {
         km: r.km, notes: r.notes, workshop: r.workshop,
         amount: r.amount, documentCategory: r.document_category,
         documentImage: r.document_image, source: r.source || "manual",
-        createdAt: r.created_at,
+        createdAt: r.created_at, createdByWorkshopId: r.created_by_workshop_id||null,
       }));
       return { data: mapped };
     },
@@ -1564,9 +1543,26 @@ const PCN_STORAGE = (() => {
         document_category: entry.documentCategory ?? null,
         document_image: entry.documentImage ?? null,
         source: entry.source || "manual",
+        created_by_workshop_id: entry.createdByWorkshopId ?? null,
         created_at: now(),
       };
       return await supabase._post("logbook", row);
+    },
+    async getLogbookForWorkshop(vehicleId, workshopUserId) {
+      // Eingeschraenkte Sicht fuer Werkstatt-Konten: nur die EIGENEN
+      // Eintraege dieser Werkstatt, nicht die anderer Werkstaetten oder des
+      // Eigentuemers selbst — damit kein Wettbewerber erkennbar wird.
+      const res = await supabase._q("logbook",
+        "?vehicle_id=eq."+vehicleId+"&created_by_workshop_id=eq."+workshopUserId+"&order=date.desc");
+      if(res.error || !res.data) return res;
+      const mapped = res.data.map(r => ({
+        id: r.id, vehicleId: r.vehicle_id, date: r.date, type: r.type,
+        km: r.km, notes: r.notes, workshop: r.workshop,
+        amount: r.amount, documentCategory: r.document_category,
+        documentImage: r.document_image, source: r.source || "manual",
+        createdAt: r.created_at,
+      }));
+      return { data: mapped };
     },
 
     // ── Verkaufsboerse ──
@@ -1920,9 +1916,7 @@ function guard(label, fn){
       registerGuest:     (name, email, consent)   => db.registerGuest(name, email, consent),
       login:             (email)                  => db.login(email),
       loginWithPassword: (email, pw)              => db.loginWithPassword ? db.loginWithPassword(email, pw) : db.login(email),
-      requestWorkshopSignup: (wsName,wsAddr,contactName,email,pw,phone,tradeRegNr) => db.requestWorkshopSignup ? db.requestWorkshopSignup(wsName,wsAddr,contactName,email,pw,phone,tradeRegNr) : Promise.resolve({error:"Not supported"}),
-      listPendingWorkshopSignups: () => db.listPendingWorkshopSignups ? db.listPendingWorkshopSignups() : Promise.resolve({data:[]}),
-      decideWorkshopSignup: (reqId,adminUid,approve) => db.decideWorkshopSignup ? db.decideWorkshopSignup(reqId,adminUid,approve) : Promise.resolve({error:"Not supported"}),
+      registerWorkshop: (wsName,wsAddr,contactName,email,pw,phone,tradeRegNr) => db.registerWorkshop ? db.registerWorkshop(wsName,wsAddr,contactName,email,pw,phone,tradeRegNr) : Promise.resolve({error:"Not supported"}),
       changePassword:    (userId, newPw)          => db.changePassword    ? db.changePassword(userId, newPw) : Promise.resolve({error:"Not supported"}),
       resetPassword:     (email)                  => db.resetPassword     ? db.resetPassword(email)         : { data: { sent: true } },
       sendMagicLink:     (email, redirect)        => db.sendMagicLink     ? db.sendMagicLink(email, redirect) : { error:"Not supported" },
@@ -2011,6 +2005,7 @@ function guard(label, fn){
     },
     logbook: {
       list:  (vid)         => db.getLogbook(vid),
+      listForWorkshop: (vid, wsUid) => db.getLogbookForWorkshop(vid, wsUid),
       add:   guard("logbook.add", (vid, entry)  => db.addLogEntry(vid, entry)),
     },
     reminders: {
