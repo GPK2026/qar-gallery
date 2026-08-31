@@ -4780,6 +4780,13 @@ Regeln:
   if(screen==="splash") return (
     <div className="vh-screen" style={{background:C.black,display:"flex",flexDirection:"column"}}>
       <style>{CSS}</style>
+      {/* ── Login-Hintergrund — immer sichtbar, unabhängig von der
+           persönlichen bgTheme-Einstellung, da vor dem Login noch kein
+           Nutzerkonto mit gespeicherten Präferenzen existiert. Verifiziert:
+           echtes Porsche-Foto, Unsplash License. ── */}
+      <div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",
+        background:`linear-gradient(180deg,#0a0a0aee,#0a0a0acc),url(https://images.unsplash.com/photo-1749521228950-b6faa1e6da5f?w=1600&q=70&fm=jpg&fit=crop)`,
+        backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>
       {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
       {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
