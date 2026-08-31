@@ -199,7 +199,7 @@ function isTestData(m){
       || m.member_nr === "HC-0000";
 }
 
-let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[],adminThreads:[],news:[],pointEvents:[],workshopSignups:[]};
+let DB={members:[],events:[],vehicles:[],participants:[],unreadMsgs:[],adminThreads:[],news:[],pointEvents:[]};
 let currentTab="dashboard";
 
 function doLogin(){
@@ -243,7 +243,7 @@ let lastKnownLeadsCount = null;
 async function loadAll(silent){
   if(!silent) toast("Lädt…");
   try{
-    const [m,e,v,p,msg,nw,rx,pe,wsr]=await Promise.all([
+    const [m,e,v,p,msg,nw,rx,pe]=await Promise.all([
       api("users?select=*&order=created_at.desc&limit=200"),
       api("events?select=*&order=date.asc&limit=100"),
       api("vehicles?select=*&order=created_at.desc&limit=200"),
@@ -252,9 +252,7 @@ async function loadAll(silent){
       api("news?select=*&order=pinned.desc,created_at.desc&limit=50").catch(()=>({data:[]})),
       api("message_reactions?select=*&limit=1000").catch(()=>({data:[]})),
       api("point_events?select=*&limit=5000").catch(()=>({data:[]})),
-      api("workshop_signup_requests?select=*&status=eq.pending&order=requested_at.asc").catch(()=>({data:[]})),
     ]);
-    DB.workshopSignups = (wsr && Array.isArray(wsr.data)) ? wsr.data : [];
     // point_events ist die neue, serverseitige Quelle fuer QR-Scans,
     // angesehene Akten, gelesene News und Geburtstags-Boni — ersetzt die
     // vorherigen, hier nicht abbildbaren localStorage-Kategorien.
@@ -642,20 +640,6 @@ ${pending.length?`<div class="card" style="border-color:#f59e0b44">
       <button class="btn btn-sm" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433" onclick="cancelParticipant('${p.id}','${p.event_id}')">✕</button>
     </div>`;}).join("")}
   ${pending.length>5?`<div style="font-size:13px;color:var(--muted);margin-top:6px;cursor:pointer" onclick="showTab('events')">+${pending.length-5} weitere →</div>`:""}
-</div>`:""}
-
-${DB.workshopSignups.length?`<div class="card" style="border-color:#f59e0b44">
-  <div class="sec-title" style="color:var(--amber)">🔧 Werkstatt-Anfragen (${DB.workshopSignups.length})</div>
-  ${DB.workshopSignups.map(r=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #131313">
-    <div style="flex:1;min-width:0">
-      <div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.workshop_name}</div>
-      <div style="font-size:12px;color:var(--muted)">${r.contact_name} · ${r.email} · ${r.phone}</div>
-      <div style="font-size:12px;color:var(--muted)">${r.workshop_address}</div>
-      <div style="font-size:12px;color:var(--muted)">HR-Nr.: ${r.trade_register_number||"—"}</div>
-    </div>
-    <button class="btn btn-sm btn-green" onclick="decideWorkshopSignup('${r.id}',true)">✓</button>
-    <button class="btn btn-sm" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433" onclick="decideWorkshopSignup('${r.id}',false)">✕</button>
-  </div>`).join("")}
 </div>`:""}
 
 ${gaeste.length?`<div class="card">
@@ -2888,27 +2872,6 @@ async function upgradeMember(id){
   await api(`users?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({role:"member"})});
   sendAdminMsg(id,"Willkommen als Mitglied im Porsche Club Nürburgring! 🏎️ Dein Konto wurde freigeschaltet.","🎉");
   toast("✓ Mitglied freigegeben"); await loadAll();
-}
-async function decideWorkshopSignup(requestId,approve){
-  const req=DB.workshopSignups.find(r=>r.id===requestId);
-  if(!req){ toast("Anfrage nicht mehr vorhanden","err"); return; }
-  if(!approve){
-    await api(`workshop_signup_requests?id=eq.${requestId}`,{method:"PATCH",
-      body:JSON.stringify({status:"rejected",decided_at:new Date().toISOString()})});
-    toast("Anfrage abgelehnt"); await loadAll();
-    return;
-  }
-  // Echtes Konto anlegen — Passwort-Hash direkt aus der Anfrage übernehmen,
-  // kein Klartext-Passwort wurde je gespeichert.
-  const {data:created,error}=await api("users",{method:"POST",body:JSON.stringify({
-    name:req.contact_name, email:req.email, role:"workshop", pw_hash:req.pw_hash,
-    workshop_name:req.workshop_name, workshop_address:req.workshop_address, phone:req.phone,
-  })});
-  if(error){ toast("Fehler beim Anlegen des Kontos","err"); return; }
-  await api(`workshop_signup_requests?id=eq.${requestId}`,{method:"PATCH",
-    body:JSON.stringify({status:"approved",decided_at:new Date().toISOString()})});
-  toast(`✓ ${req.workshop_name} freigeschaltet — bitte per E-Mail informieren`);
-  await loadAll();
 }
 async function confirmParticipant(partId,eventId){
   await api(`participants?id=eq.${partId}`,{method:"PATCH",body:JSON.stringify({status:"confirmed"})});
