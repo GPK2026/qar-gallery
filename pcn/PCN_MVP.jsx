@@ -1716,7 +1716,6 @@ function PCNInner() {
   const [showWorkshopSignup, setShowWorkshopSignup] = useState(false);
   const [workshopSignupForm, setWorkshopSignupForm] = useState({workshopName:"",workshopAddress:"",contactName:"",email:"",password:"",phone:"",tradeRegisterNumber:""});
   const [workshopSignupBusy, setWorkshopSignupBusy] = useState(false);
-  const [workshopSignupSubmitted, setWorkshopSignupSubmitted] = useState(false);
   const [consent, setConsent] = useState(false);
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [showContactPrivacyInfo, setShowContactPrivacyInfo] = useState(false);
@@ -1777,6 +1776,8 @@ function PCNInner() {
   const [showWorkshopGrants, setShowWorkshopGrants] = useState(null); // vehicleId — Übersicht aktiver Werkstatt-Zugänge zum Widerrufen
   const [workshopGrants, setWorkshopGrants] = useState({}); // vehicleId -> [{id,workshopUserId,scope,...}]
   const [myWorkshopGrants, setMyWorkshopGrants] = useState([]); // für die Werkstatt selbst: eigene aktive/offene Zugänge
+  const [showWorkshopVehicleView, setShowWorkshopVehicleView] = useState(null); // grant-Objekt — eingeschränkte Fahrzeugansicht für Werkstatt
+  const [workshopVehicleEntries, setWorkshopVehicleEntries] = useState([]); // nur die eigenen Logbuch-Einträge dieser Werkstatt
   const [showWorkshopEntryForm, setShowWorkshopEntryForm] = useState(null); // grant-Objekt — Service-Eintrag-Formular für die Werkstatt
   const [showTransferPanel, setShowTransferPanel] = useState(null); // vehicleId — Verkäufer-Sicht am eigenen Fahrzeug
   const [pendingTransferVehicleIds, setPendingTransferVehicleIds] = useState(new Set()); // Fahrzeuge mit offenem, eingehendem Übertragungsantrag
@@ -3796,9 +3797,11 @@ Regeln:
     const DB=window.PCN_DB;
     const {data:e,error}=await DB.logbook.add(grant.vehicleId,{
       date:today(), ...workshopEntryForm, workshop: me?.workshopName||me?.name||"Werkstatt",
+      createdByWorkshopId: me?.id,
     });
     if(error){toast_("Fehler","err");return;}
     setLogbook(prev=>({...prev,[grant.vehicleId]:[e,...(prev[grant.vehicleId]||[])]}));
+    setWorkshopVehicleEntries(prev=>[e,...prev]);
     if(grant.scope==="once"){
       await DB.workshopAccess.markUsed(grant.id).catch(()=>{});
       setMyWorkshopGrants(prev=>prev.filter(g=>g.id!==grant.id));
@@ -3806,6 +3809,16 @@ Regeln:
     setShowWorkshopEntryForm(null);
     setWorkshopEntryForm({type:"Ölwechsel", km:"", notes:""});
     toast_("Service-Eintrag gespeichert ✓");
+  };
+
+  // Lädt für die Werkstatt AUSSCHLIESSLICH die eigenen Logbuch-Einträge zu
+  // einem Fahrzeug — fremde Werkstatt-Einträge und die des Eigentümers
+  // bleiben unsichtbar, damit kein Wettbewerber erkennbar wird.
+  const loadWorkshopVehicleView = async (grant) => {
+    setShowWorkshopVehicleView(grant);
+    const DB = window.PCN_DB;
+    const {data} = await DB.logbook.listForWorkshop(grant.vehicleId, me.id).catch(()=>({data:[]}));
+    setWorkshopVehicleEntries(data||[]);
   };
 
   const LISTING_CATEGORY_LABELS = {auto:"🚗 Fahrzeug", felgen_reifen:"⚙️ Felgen/Reifen", sonstiges:"📦 Sonstiges"};
@@ -4487,10 +4500,17 @@ Regeln:
     if(f.password.length<8){ toast_("Passwort braucht mindestens 8 Zeichen","err"); return; }
     const DB = window.PCN_DB;
     setWorkshopSignupBusy(true);
-    const {error} = await DB.auth.requestWorkshopSignup(f.workshopName,f.workshopAddress,f.contactName,f.email,f.password,f.phone,f.tradeRegisterNumber);
+    const {data,error} = await DB.auth.registerWorkshop(f.workshopName,f.workshopAddress,f.contactName,f.email,f.password,f.phone,f.tradeRegisterNumber);
     setWorkshopSignupBusy(false);
     if(error){ toast_(error,"err"); return; }
-    setWorkshopSignupSubmitted(true);
+    // Sofort einloggen — kein Freigabeschritt mehr noetig, Kontrolle findet
+    // stattdessen beim Fahrzeug-Eigentuemer statt (Zugriff je Fahrzeug).
+    setMe(data);
+    setAllUsers(prev=>({...prev,[data.id]:data}));
+    setShowWorkshopSignup(false);
+    setWorkshopSignupForm({workshopName:"",workshopAddress:"",contactName:"",email:"",password:"",phone:"",tradeRegisterNumber:""});
+    setScreen("app");
+    toast_(`Willkommen, ${data.workshopName}! 🔧`);
   };
 
   const handleContactAuth = async () => {
@@ -4784,23 +4804,10 @@ Regeln:
         </div>
 
         {showWorkshopSignup?(
-          workshopSignupSubmitted?(
-            <div style={{textAlign:"center",padding:"20px 0"}}>
-              <div style={{fontSize:44,marginBottom:14}}>✅</div>
-              <div style={{fontSize:17,fontWeight:800,color:C.white,marginBottom:8}}>Anfrage gesendet</div>
-              <div style={{fontSize:14,color:C.muted,lineHeight:1.6,marginBottom:20}}>
-                Der Vorstand prüft deine Werkstatt-Anfrage und schaltet dein Konto frei. Du erhältst dann eine Rückmeldung per E-Mail.
-              </div>
-              <button onClick={()=>{setShowWorkshopSignup(false);setWorkshopSignupSubmitted(false);setWorkshopSignupForm({workshopName:"",workshopAddress:"",contactName:"",email:"",password:"",phone:"",tradeRegisterNumber:""});}}
-                style={{background:"none",border:"none",color:C.gold,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
-                Zurück zur Anmeldung
-              </button>
-            </div>
-          ):(
             <div>
-              <div style={{fontSize:17,fontWeight:800,color:C.white,marginBottom:4}}>🔧 Werkstatt-Konto beantragen</div>
+              <div style={{fontSize:17,fontWeight:800,color:C.white,marginBottom:4}}>🔧 Werkstatt-Konto erstellen</div>
               <div style={{fontSize:13,color:C.muted,marginBottom:16,lineHeight:1.6}}>
-                Für Partnerwerkstätten, die Service-Einträge in Fahrzeugakten erstellen möchten. Der Vorstand prüft und schaltet dein Konto frei.
+                Dein Konto ist sofort aktiv. Für jede einzelne Fahrzeugakte, in der du Service-Einträge erstellen möchtest, muss der jeweilige Eigentümer den Zugriff bestätigen.
               </div>
               <input className="inp" placeholder="Betriebsname *" style={{marginBottom:8}}
                 value={workshopSignupForm.workshopName} onChange={e=>setWorkshopSignupForm(p=>({...p,workshopName:e.target.value}))}/>
@@ -4818,14 +4825,13 @@ Regeln:
                 value={workshopSignupForm.password} onChange={e=>setWorkshopSignupForm(p=>({...p,password:e.target.value}))}
                 onKeyDown={e=>{if(e.key==="Enter")submitWorkshopSignup();}}/>
               <button className="btn" style={{width:"100%",marginBottom:10}} disabled={workshopSignupBusy} onClick={submitWorkshopSignup}>
-                {workshopSignupBusy?"Wird gesendet…":"Anfrage senden"}
+                {workshopSignupBusy?"Wird erstellt…":"Konto erstellen"}
               </button>
               <button onClick={()=>setShowWorkshopSignup(false)}
                 style={{width:"100%",background:"none",border:"none",color:C.muted,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
                 Zurück
               </button>
             </div>
-          )
         ):(
         <>
         {/* Login — E-Mail + Passwort, sofort einloggen */}
@@ -7925,7 +7931,10 @@ Regeln:
                   {g.status==="active"&&(
                     <>
                       <div style={{fontSize:13,color:C.green,marginBottom:10}}>✓ Zugang aktiv ({g.scope==="ongoing"?"dauerhaft":"einmalig"})</div>
-                      <button className="btn sm" onClick={()=>setShowWorkshopEntryForm(g)}>Service-Eintrag erstellen</button>
+                      <div style={{display:"flex",gap:8}}>
+                        <button className="btn sm ghost" style={{flex:1}} onClick={()=>loadWorkshopVehicleView(g)}>Eigene Einträge</button>
+                        <button className="btn sm" style={{flex:1}} onClick={()=>setShowWorkshopEntryForm(g)}>+ Eintrag</button>
+                      </div>
                     </>
                   )}
                 </div>
@@ -7933,6 +7942,46 @@ Regeln:
             })}
           </div>
         )}
+
+        {/* ── Werkstatt: eingeschränkte Fahrzeugansicht — nur eigene Einträge ── */}
+        {showWorkshopVehicleView&&(()=>{
+          const grant = showWorkshopVehicleView;
+          const fv = vehicles[grant.vehicleId] || Object.values(DEMO_VEHICLES).find(x=>x.id===grant.vehicleId);
+          return (
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowWorkshopVehicleView(null);}}>
+              <div className="sheet">
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                  <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>
+                    {fv?fv.hersteller+" "+fv.modell:"Fahrzeug"}
+                  </div>
+                  <button onClick={()=>setShowWorkshopVehicleView(null)}
+                    style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+                </div>
+                <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.5}}>
+                  Nur die von dir erstellten Einträge sind sichtbar — Einträge anderer Werkstätten oder des Eigentümers bleiben verborgen.
+                </div>
+                {workshopVehicleEntries.length===0?(
+                  <div style={{textAlign:"center",padding:"24px 0",color:C.muted,fontSize:14}}>
+                    Noch keine eigenen Einträge für dieses Fahrzeug.
+                  </div>
+                ):workshopVehicleEntries.map(e=>(
+                  <div key={e.id} style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
+                      <span style={{fontWeight:700,fontSize:14,color:C.white}}>{e.type}</span>
+                      <span style={{fontSize:13,color:C.muted,flexShrink:0}}>{fmtDate(e.date)}</span>
+                    </div>
+                    {e.km&&<div style={{fontSize:13,color:C.muted,marginBottom:2}}>{parseInt(e.km).toLocaleString("de-DE")} km</div>}
+                    {e.notes&&<div style={{fontSize:14,color:"#888",lineHeight:1.5}}>{e.notes}</div>}
+                  </div>
+                ))}
+                <button className="btn" style={{width:"100%",marginTop:16}}
+                  onClick={()=>{setShowWorkshopVehicleView(null);setShowWorkshopEntryForm(grant);}}>
+                  + Weiteren Eintrag erstellen
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Werkstatt: Service-Eintrag erstellen ── */}
         {showWorkshopEntryForm&&(
