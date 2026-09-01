@@ -675,7 +675,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
             {spotsLeft<=0?"Ausgebucht":`${spotsLeft} Plätze frei`}
           </span>}
         </div>
-        <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1.1}}>{ev.name}</h1>
+        <h1 style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1.1}}>{ev.name}</h1>
       </div>
 
       <div style={{padding:"16px",maxWidth:520,margin:"0 auto"}}>
@@ -721,7 +721,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                 <button onClick={()=>generateICS({title:ev.name,date:ev.date,location:ev.location||"",
                     description:`PCN Event · Klasse: ${myReg.class||""}${myReg.startNr?" · Startnr: #"+myReg.startNr:""}`,alarmMinutes:1440})}
                   style={{flex:1,background:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:14,fontWeight:700,
-                    cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                    cursor:"pointer",fontFamily:"'Inter',sans-serif",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
                   📅 Kalender
                 </button>
                 <button onClick={()=>{
@@ -729,7 +729,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                     window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${d}/${d}&location=${loc}`,"_blank");
                   }}
                   style={{flex:1,background:"#4285F4",border:"none",borderRadius:8,padding:"9px",fontSize:14,fontWeight:700,
-                    cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                    cursor:"pointer",fontFamily:"'Inter',sans-serif",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
                   🗓 Google
                 </button>
               </div>
@@ -741,11 +741,11 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                   <div style={{fontSize:15,color:"#ef4444",marginBottom:10,fontWeight:600}}>Anmeldung wirklich stornieren?</div>
                   <div style={{display:"flex",gap:8}}>
                     <button onClick={()=>{ onCancel(ev.id, myReg.id); setConfirmCancel(false); }}
-                      style={{flex:1,background:"#ef4444",border:"none",borderRadius:8,padding:"10px",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      style={{flex:1,background:"#ef4444",border:"none",borderRadius:8,padding:"10px",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                       Ja, abmelden
                     </button>
                     <button onClick={()=>setConfirmCancel(false)}
-                      style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"10px",color:C.muted,fontSize:15,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"10px",color:C.muted,fontSize:15,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                       Abbrechen
                     </button>
                   </div>
@@ -753,7 +753,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
               ):(
                 <button onClick={()=>setConfirmCancel(true)}
                   style={{background:"none",border:`1px solid #ef444433`,borderRadius:8,padding:"8px 14px",
-                    color:"#ef4444",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                    color:"#ef4444",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                   ✕ Anmeldung stornieren
                 </button>
               )
@@ -764,7 +764,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
                   setParticipants(prev=>({...prev,[ev.id]:(prev[ev.id]||[]).filter(p=>p.id!==myReg.id)}));
                 }}
                 style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"9px 14px",
-                  color:C.white,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                  color:C.white,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                 Erneut anmelden →
               </button>
             )}
@@ -774,7 +774,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
         {/* ── Anmeldung — nur wenn noch nicht angemeldet ── */}
         {!myReg&&!isPast&&me&&myVehicles.length>0&&spotsLeft>0&&(
           <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:14}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:C.white,marginBottom:4}}>Jetzt anmelden</div>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>Jetzt anmelden</div>
             {(()=>{
               const raw = String(ev.entryFee||ev.price||"").trim();
               const free = !raw || /^(kostenlos|frei|gratis|0|0\s*€|€\s*0)$/i.test(raw);
@@ -799,18 +799,18 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
             <div style={{fontSize:13,color:C.muted,marginBottom:14}}>
               Nach Anmeldung wird deine Teilnahme vom Admin bestätigt.
             </div>
-            <label style={{fontSize:15,fontWeight:700,color:C.muted,letterSpacing:1,display:"block",marginBottom:5}}>Fahrzeug</label>
+            <label style={{fontSize:15,fontWeight:700,color:C.muted,letterSpacing:.4,display:"block",marginBottom:5}}>Fahrzeug</label>
             <select value={selV} onChange={e=>setSelV(e.target.value)}
               style={{width:"100%",background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",
-                color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",marginBottom:10,appearance:"none"}}>
+                color:C.white,fontSize:14,fontFamily:"'Inter',sans-serif",marginBottom:10,appearance:"none"}}>
               {myVehicles.map(v=><option key={v.id} value={v.id}>{v.hersteller} {v.modell} · {v.kennzeichen}</option>)}
             </select>
             {(ev.classes||[]).length>1&&(
               <>
-                <label style={{fontSize:15,fontWeight:700,color:C.muted,letterSpacing:1,display:"block",marginBottom:5}}>Klasse</label>
+                <label style={{fontSize:15,fontWeight:700,color:C.muted,letterSpacing:.4,display:"block",marginBottom:5}}>Klasse</label>
                 <select value={selC} onChange={e=>setSelC(e.target.value)}
                   style={{width:"100%",background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",
-                    color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",marginBottom:14,appearance:"none"}}>
+                    color:C.white,fontSize:14,fontFamily:"'Inter',sans-serif",marginBottom:14,appearance:"none"}}>
                   {(ev.classes||[]).map(c=><option key={c}>{c}</option>)}
                 </select>
               </>
@@ -836,7 +836,7 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
         {/* ── Teilnehmerliste (nur Bestätigte) ── */}
         {confirmedParts.length>0&&(
           <div style={{marginTop:8}}>
-            <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>
+            <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>
               Bestätigte Teilnehmer ({confirmedParts.length})
             </div>
             {confirmedParts.map(p=>{
@@ -982,7 +982,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                 <div key={uid} style={{width:26,height:26,borderRadius:"50%",
                   background:`${C.red}33`,border:`1.5px solid ${C.border}`,
                   display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:13,fontWeight:800,color:C.white}}>
+                  fontSize:15,fontWeight:800,color:C.white}}>
                   {u.name[0]?.toUpperCase()}
                 </div>
               );
@@ -1001,7 +1001,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
             Du schreibst als <strong>Gast</strong>. Mitglieder bekommen eigene Fahrzeugakte & Event-Zugang.
           </div>
           <button onClick={onUpgrade}
-            style={{background:C.gold,border:"none",borderRadius:7,padding:"6px 11px",color:"#0a0a0a",fontWeight:800,fontSize:13,cursor:"pointer",flexShrink:0,fontFamily:"'Barlow',sans-serif"}}>
+            style={{background:C.gold,border:"none",borderRadius:7,padding:"6px 11px",color:"#0a0a0a",fontWeight:800,fontSize:13,cursor:"pointer",flexShrink:0,fontFamily:"'Inter',sans-serif"}}>
             Mitglied werden
           </button>
         </div>
@@ -1057,7 +1057,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
                 {scanPayload&&me&&(
                   <button onClick={()=>onConfirmScan&&onConfirmScan(scanPayload.scannerId,scanPayload.vehicleId,scanPayload.scannerName)}
                     style={{marginTop:10,background:C.green,border:"none",borderRadius:8,padding:"11px 14px",
-                      color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer",fontFamily:"'Barlow',sans-serif",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                      color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer",fontFamily:"'Inter',sans-serif",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     ✅ Scan bestätigen — {scanPayload.scannerName||"Nutzer"} erhält +{POINTS.qr_scan} Punkte
                   </button>
                 )}
@@ -1110,7 +1110,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
             display:"flex",alignItems:"center",justifyContent:"center",
             boxShadow:"0 4px 14px rgba(0,0,0,.5)",
             backdropFilter:"blur(8px)",transition:"background .2s",
-            fontFamily:"'Barlow',sans-serif"}}>
+            fontFamily:"'Inter',sans-serif"}}>
           ↓
           {newBelow>0&&(
             <span style={{position:"absolute",top:-5,right:-5,background:"#fff",color:C.red,
@@ -1159,18 +1159,18 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
               <button onClick={()=>{ onDeleteMessage(thread.id, selectedMsg.id); setSelectedMsg(null); }}
                 style={{width:"100%",background:"#ef444422",border:"1px solid #ef444444",borderRadius:10,
                   padding:"13px",color:"#ef4444",fontSize:14,fontWeight:700,cursor:"pointer",
-                  fontFamily:"'Barlow',sans-serif",marginBottom:8}}>
+                  fontFamily:"'Inter',sans-serif",marginBottom:8}}>
                 🗑 Nachricht löschen
               </button>
             )}
             <button onClick={async()=>{ await navigator.clipboard.writeText(selectedMsg.text).catch(()=>{}); setSelectedMsg(null); }}
               style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:10,
                 padding:"13px",color:C.white,fontSize:14,fontWeight:700,cursor:"pointer",
-                fontFamily:"'Barlow',sans-serif",marginBottom:8}}>
+                fontFamily:"'Inter',sans-serif",marginBottom:8}}>
               📋 Kopieren
             </button>
             <button onClick={()=>setSelectedMsg(null)}
-              style={{width:"100%",background:"none",border:"none",color:C.muted,fontSize:15,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"8px"}}>
+              style={{width:"100%",background:"none",border:"none",color:C.muted,fontSize:15,cursor:"pointer",fontFamily:"'Inter',sans-serif",padding:"8px"}}>
               Abbrechen
             </button>
           </div>
@@ -1180,7 +1180,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
       <div style={{padding:"10px 12px",background:C.dark,borderTop:`1px solid ${C.border}`,display:"flex",gap:8,flexShrink:0,paddingBottom:"calc(10px + env(safe-area-inset-bottom,0))"}}>
         <input placeholder="Nachricht…" value={msg} onChange={e=>setMsg(e.target.value)}
           onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&msg.trim()){e.preventDefault();onSend(thread.id,msg);setMsg("");}}}
-          style={{flex:1,background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"10px 14px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif"}}/>
+          style={{flex:1,background:"#191919",border:`1px solid ${C.border}`,borderRadius:9,padding:"10px 14px",color:C.white,fontSize:14,fontFamily:"'Inter',sans-serif"}}/>
         <button className="btn" style={{padding:"10px 18px",flexShrink:0}}
           onClick={()=>{if(msg.trim()){onSend(thread.id,msg);setMsg("");}}} >↑</button>
       </div>
@@ -1432,10 +1432,10 @@ function SelfTest({onClose}) {
 
   return (
     <div style={{position:"fixed",inset:0,background:C.black,zIndex:9999,overflowY:"auto",
-      padding:"20px 16px",fontFamily:"'Barlow',sans-serif"}}>
+      padding:"20px 16px",fontFamily:"'Inter',sans-serif"}}>
       <div style={{maxWidth:520,margin:"0 auto"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white}}>
+          <div style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.white}}>
             🔬 App-Selbsttest
           </div>
           <button onClick={onClose}
@@ -1473,7 +1473,7 @@ function SelfTest({onClose}) {
 
         {results.map((r,i)=>
           r.section ? (
-            <div key={i} style={{fontSize:12,fontWeight:800,color:"#555",letterSpacing:1.5,
+            <div key={i} style={{fontSize:12,fontWeight:800,color:"#555",letterSpacing:.2,
               margin:"16px 0 7px"}}>{r.section}</div>
           ) : (
             <div key={i} style={{display:"flex",gap:9,padding:"8px 0",
@@ -4709,7 +4709,7 @@ Regeln:
 
   // ── CSS ────────────────────────────────────────────────────────────────────
   const CSS = `
-    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     html,body,#root{height:100%}
     /* ── Robuste Viewport-Hoehe: 100vh als Fallback, 100dvh (dynamisch,
@@ -4719,8 +4719,8 @@ Regeln:
     @supports (height:100dvh){.vh-screen{min-height:100dvh}}
     .vh-screen-exact{height:100vh}
     @supports (height:100dvh){.vh-screen-exact{height:100dvh}}
-    body{background:linear-gradient(180deg,#1a1a1d 0%,#232326 100%);background-attachment:fixed;color:${C.white};font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased}
-    input,select,textarea{font-family:'Barlow',sans-serif;outline:none;color:${C.white};background:transparent}
+    body{background:linear-gradient(180deg,#1a1a1d 0%,#232326 100%);background-attachment:fixed;color:${C.white};font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+    input,select,textarea{font-family:'Inter',sans-serif;outline:none;color:${C.white};background:transparent}
     input::placeholder,textarea::placeholder{color:${C.muted}}
     select option{background:#191919}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:${C.border};border-radius:99px}
@@ -4734,17 +4734,17 @@ Regeln:
     .news-marquee-wrap{overflow:hidden;width:100%;mask-image:linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%);-webkit-mask-image:linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)}
     .news-marquee-track{display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;gap:12px;width:max-content !important;animation:marquee 34s linear infinite}
     .news-marquee-track:hover,.news-marquee-track:active{animation-play-state:paused}
-    .btn{background:${C.red};color:#fff;border:none;border-radius:10px;padding:14px 18px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Barlow',sans-serif;transition:opacity .15s}
+    .btn{background:${C.red};color:#fff;border:none;border-radius:10px;padding:14px 18px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s}
     .btn:active{opacity:.8}
     .btn.ghost{background:transparent;color:${C.white};border:1px solid ${C.border}}
     .btn.sm{padding:7px 13px;font-size:12px}
-    .inp{background:${C.card};border:1px solid ${C.border};border-radius:10px;padding:14px 16px;color:${C.white};font-size:17px;width:100%;transition:border-color .15s;font-family:'Barlow',sans-serif}
+    .inp{background:${C.card};border:1px solid ${C.border};border-radius:10px;padding:14px 16px;color:${C.white};font-size:17px;width:100%;transition:border-color .15s;font-family:'Inter',sans-serif}
     .inp:focus{border-color:${C.red}}
     .toast{position:fixed;bottom:80px;left:14px;right:14px;z-index:999;background:${C.dark};border:1px solid #333;border-radius:12px;padding:13px 16px;font-size:13px;font-weight:600;animation:slideUp .2s;box-shadow:0 8px 24px rgba(0,0,0,.8);white-space:pre-line}
     .toast.ok{border-color:${C.red}44;color:${C.white}}
     .toast.err{border-color:#ef444466;color:#ef4444}
     .tab-bar{position:fixed;bottom:0;left:0;right:0;background:${C.dark};border-top:1px solid ${C.border};display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
-    .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 2px;border:none;background:transparent;cursor:pointer;gap:2px;font-family:'Barlow',sans-serif;color:${C.muted};transition:color .15s;position:relative}
+    .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 2px;border:none;background:transparent;cursor:pointer;gap:2px;font-family:'Inter',sans-serif;color:${C.muted};transition:color .15s;position:relative}
     .tab-btn.on{color:${C.red}}
     .tab-btn .ico{font-size:23px;line-height:1}
     .tab-btn .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
@@ -4768,10 +4768,10 @@ Regeln:
     <div style={{position:"fixed",inset:0,background:"#000",zIndex:300,display:"flex",flexDirection:"column"}}>
       <div style={{position:"absolute",top:0,left:0,right:0,zIndex:10,padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"linear-gradient(to bottom,rgba(0,0,0,.8),transparent)"}}>
         <div>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#fff"}}>QR-Code scannen</div>
+          <div style={{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:800,color:"#fff"}}>QR-Code scannen</div>
           <div style={{fontSize:13,color:"rgba(255,255,255,.5)"}}>Halte die Kamera über den QAR-Code</div>
         </div>
-        <button onClick={closeScanner} style={{background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"8px 14px",color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>✕ Schließen</button>
+        <button onClick={closeScanner} style={{background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"8px 14px",color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>✕ Schließen</button>
       </div>
       <video ref={videoRef} style={{width:"100%",height:"100%",objectFit:"cover"}} muted playsInline/>
       <canvas ref={canvasRef} style={{display:"none"}}/>
@@ -4795,13 +4795,13 @@ Regeln:
           <div style={{color:"#ef4444",fontWeight:700,fontSize:14,marginBottom:6}}>⚠️ Kein Kamera-Zugriff</div>
           <div style={{color:"#999",fontSize:14,lineHeight:1.7,marginBottom:12,whiteSpace:"pre-line"}}>{scannerError}</div>
           <button onClick={()=>{setScannerError(null);setScannerStatus("loading");}}
-            style={{background:C.red,border:"none",borderRadius:8,padding:"10px",color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,width:"100%",fontFamily:"'Barlow',sans-serif"}}>Erneut versuchen</button>
+            style={{background:C.red,border:"none",borderRadius:8,padding:"10px",color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,width:"100%",fontFamily:"'Inter',sans-serif"}}>Erneut versuchen</button>
         </div>
       )}
       <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"14px 16px",background:"linear-gradient(to top,rgba(0,0,0,.95),transparent)",paddingBottom:"calc(20px + env(safe-area-inset-bottom,0))"}}>
         <div style={{fontSize:13,color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:8}}>Oder UID manuell eingeben</div>
         <input placeholder="QAR-XXXXXXXX" onChange={e=>{const v=e.target.value.toUpperCase();if(/^QAR-[A-Z2-9]{8}$/.test(v))handleScanResult(v);}}
-          style={{width:"100%",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:14,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:1}}/>
+          style={{width:"100%",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:14,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:.4}}/>
       </div>
     </div>
   ) : null;
@@ -4821,14 +4821,14 @@ Regeln:
         backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>
       {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
 
       {/* ── Back to chat — for guests navigating to splash ── */}
       {me?.role==="guest"&&(
         <div style={{background:C.dark,padding:"10px 16px",display:"flex",alignItems:"center",borderBottom:`1px solid ${C.border}`}}>
           <button onClick={()=>setScreen("app")}
             style={{background:"none",border:"none",color:C.red,cursor:"pointer",
-              fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:6}}>
+              fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:6}}>
             ← Zurück zum Chat
           </button>
         </div>
@@ -4841,7 +4841,7 @@ Regeln:
 
       {/* ── Titel + Subline — eigener Bereich auf dunklem Grund, klar getrennt vom Logo ── */}
       <div style={{background:C.black,padding:"22px 24px 20px",textAlign:"center"}}>
-        <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,letterSpacing:1,lineHeight:1}}>
+        <h1 style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white,letterSpacing:.4,lineHeight:1}}>
           DIGITALE <span style={{color:C.red}}>CLUBPLATTFORM</span>
         </h1>
         <p style={{fontSize:13,color:C.muted,marginTop:8}}>Fahrzeugakte · Events · QR-Code · Messenger</p>
@@ -4855,7 +4855,7 @@ Regeln:
           {[["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
             <button key={m} onClick={()=>{setLoginForm(p=>({...p,mode:m}));setLoginPassword("");setShowPassword(false);}}
               style={{flex:1,padding:"11px",border:"none",borderRadius:10,cursor:"pointer",
-                fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14,transition:"all .15s",
+                fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:14,transition:"all .15s",
                 background:loginForm.mode===m?C.red:"transparent",
                 color:loginForm.mode===m?"#fff":C.muted}}>
               {label}
@@ -4865,7 +4865,7 @@ Regeln:
 
         {showWorkshopSignup?(
             <div>
-              <div style={{fontSize:17,fontWeight:800,color:C.white,marginBottom:4}}>🔧 Werkstatt-Konto erstellen</div>
+              <div style={{fontSize:19,fontWeight:800,color:C.white,marginBottom:4}}>🔧 Werkstatt-Konto erstellen</div>
               <div style={{fontSize:13,color:C.muted,marginBottom:16,lineHeight:1.6}}>
                 Dein Konto ist sofort aktiv. Für jede einzelne Fahrzeugakte, in der du Service-Einträge erstellen möchtest, muss der jeweilige Eigentümer den Zugriff bestätigen.
               </div>
@@ -4888,7 +4888,7 @@ Regeln:
                 {workshopSignupBusy?"Wird erstellt…":"Konto erstellen"}
               </button>
               <button onClick={()=>setShowWorkshopSignup(false)}
-                style={{width:"100%",background:"none",border:"none",color:C.muted,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                style={{width:"100%",background:"none",border:"none",color:C.muted,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                 Zurück
               </button>
             </div>
@@ -4979,7 +4979,7 @@ Regeln:
               <div style={{fontSize:13,color:C.muted,marginBottom:6,fontWeight:600}}>CLUB-CODE</div>
               <input className="inp" placeholder="PCN2026" value={loginForm.code}
                 onChange={e=>setLoginForm(p=>({...p,code:e.target.value}))}
-                style={{textTransform:"uppercase",letterSpacing:4,textAlign:"center",fontWeight:800,fontSize:20,
+                style={{textTransform:"uppercase",letterSpacing:1.5,textAlign:"center",fontWeight:800,fontSize:20,
                   border:`2px solid ${loginForm.code.toUpperCase()===CLUB_CODE?C.green:loginForm.code.length>0?"#ef4444":C.border}`}}/>
               {loginForm.code.length>0&&loginForm.code.toUpperCase()!==CLUB_CODE&&(
                 <div style={{fontSize:12,color:"#ef4444",marginTop:4,textAlign:"center"}}>Falscher Club-Code</div>
@@ -5022,7 +5022,7 @@ Regeln:
                       </div>
                       <button onClick={e=>{e.preventDefault();setShowPrivacyInfo(true);}}
                         style={{background:"none",border:"none",color:C.red,fontSize:13,fontWeight:700,
-                          cursor:"pointer",padding:"6px 0 0",fontFamily:"'Barlow',sans-serif",textDecoration:"underline"}}>
+                          cursor:"pointer",padding:"6px 0 0",fontFamily:"'Inter',sans-serif",textDecoration:"underline"}}>
                         Was wird gespeichert? →
                       </button>
                     </div>
@@ -5102,7 +5102,7 @@ Regeln:
         {!showWorkshopSignup&&(
           <button onClick={()=>setShowWorkshopSignup(true)}
             style={{width:"100%",background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",
-              fontFamily:"'Barlow',sans-serif",marginTop:14,textAlign:"center",textDecoration:"underline"}}>
+              fontFamily:"'Inter',sans-serif",marginTop:14,textAlign:"center",textDecoration:"underline"}}>
             🔧 Werkstatt? Konto beantragen
           </button>
         )}
@@ -5121,7 +5121,7 @@ Regeln:
         {me?.role==="guest"&&(
           <button onClick={()=>setScreen("app")}
             style={{background:"none",border:"none",color:C.muted,cursor:"pointer",
-              fontSize:15,fontFamily:"'Barlow',sans-serif",width:"100%",marginTop:8,padding:"8px"}}>
+              fontSize:15,fontFamily:"'Inter',sans-serif",width:"100%",marginTop:8,padding:"8px"}}>
             ← Zurück zum Chat
           </button>
         )}
@@ -5129,7 +5129,7 @@ Regeln:
         {/* ── Sponsor ── */}
         {SPONSOR&&(
           <div style={{marginTop:20}}>
-            <div style={{fontSize:15,fontWeight:700,color:"#333",letterSpacing:2,textAlign:"center",marginBottom:10}}>
+            <div style={{fontSize:15,fontWeight:700,color:"#333",letterSpacing:.8,textAlign:"center",marginBottom:10}}>
               Offizieller Partner
             </div>
             <a href={SPONSOR.url} target="_blank" rel="noopener noreferrer"
@@ -5143,7 +5143,7 @@ Regeln:
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:15,fontWeight:800,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{SPONSOR.name}</div>
                 {SPONSOR.subtitle&&<div style={{fontSize:12,color:"#888",marginTop:1}}>{SPONSOR.subtitle}</div>}
-                {SPONSOR.tagline&&<div style={{fontSize:9,color:C.red,fontWeight:700,marginTop:2,letterSpacing:.5}}>{SPONSOR.tagline}</div>}
+                {SPONSOR.tagline&&<div style={{fontSize:9,color:C.red,fontWeight:700,marginTop:2,letterSpacing:.2}}>{SPONSOR.tagline}</div>}
               </div>
               <span style={{fontSize:16,color:"#ccc"}}>›</span>
             </a>
@@ -5171,7 +5171,7 @@ Regeln:
         <style>{CSS}</style>
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
 
         {/* ── Header — white, like app header ── */}
         <div style={{background:"#ffffff",borderBottom:`3px solid ${C.red}`,padding:"10px 16px",
@@ -5224,7 +5224,7 @@ Regeln:
           })()}
           <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 40%,rgba(0,0,0,.85) 100%)"}}/>
           <div style={{position:"absolute",bottom:16,left:16,right:16}}>
-            <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,
+            <h1 style={{fontFamily:"'Inter',sans-serif",fontSize:30,fontWeight:900,
               color:"#fff",lineHeight:1,marginBottom:10,textShadow:"0 2px 8px rgba(0,0,0,.5)",
               display:"flex",alignItems:"center",gap:10}}>
               {v.hersteller} {v.modell}
@@ -5233,7 +5233,7 @@ Regeln:
             {priv.kennzeichen!==false&&kz&&(
             <div style={{display:"inline-flex",alignItems:"center",background:"#fff",
               border:"2px solid #222",borderRadius:5,padding:"3px 12px"}}>
-              <span style={{fontSize:14,fontWeight:800,color:"#111",letterSpacing:2,fontFamily:"Arial,sans-serif"}}>{kz}</span>
+              <span style={{fontSize:14,fontWeight:800,color:"#111",letterSpacing:.8,fontFamily:"Arial,sans-serif"}}>{kz}</span>
             </div>
             )}
           </div>
@@ -5304,7 +5304,7 @@ Regeln:
                   style={{width:"100%",background:"rgba(255,255,255,.05)",
                     border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 14px",
                     cursor:"pointer",display:"flex",alignItems:"center",
-                    justifyContent:"center",gap:8,fontFamily:"'Barlow',sans-serif",
+                    justifyContent:"center",gap:8,fontFamily:"'Inter',sans-serif",
                     color:C.muted,fontSize:15,fontWeight:600}}>
                   <span style={{fontSize:16}}>🔄</span> Live-Status abrufen
                 </button>
@@ -5379,7 +5379,7 @@ Regeln:
             {me?.role==="workshop"&&(
               <button onClick={()=>requestWorkshopAccessForVehicle(v.id)} disabled={workshopRequestBusy}
                 style={{display:"flex",alignItems:"center",gap:12,background:C.gold,border:"none",
-                  borderRadius:12,padding:"14px 16px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#000",width:"100%",marginBottom:10}}>
+                  borderRadius:12,padding:"14px 16px",cursor:"pointer",fontFamily:"'Inter',sans-serif",color:"#000",width:"100%",marginBottom:10}}>
                 <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(0,0,0,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🔧</div>
                 <div style={{flex:1,textAlign:"left"}}>
                   <div style={{fontWeight:800,fontSize:15}}>{workshopRequestBusy?"Wird gesendet…":"Service-Eintrag beantragen"}</div>
@@ -5393,7 +5393,7 @@ Regeln:
               <button
                 onClick={()=>{ if(me){ startContact(v.id); } else { setContactAuthMode("guest"); setShowContactAuth(v.id); }}}
                 style={{display:"flex",alignItems:"center",gap:12,background:C.red,border:"none",
-                  borderRadius:12,padding:"14px 16px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",color:"#fff",width:"100%",marginBottom:10}}>
+                  borderRadius:12,padding:"14px 16px",cursor:"pointer",fontFamily:"'Inter',sans-serif",color:"#fff",width:"100%",marginBottom:10}}>
                 <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>💬</div>
                 <div style={{flex:1,textAlign:"left"}}>
                   <div style={{fontWeight:800,fontSize:15}}>Nachricht an Fahrer(in) senden</div>
@@ -5424,17 +5424,17 @@ Regeln:
 
         {nextEvent&&priv.pub_events&&(
             <div style={{background:`${C.red}11`,border:`1px solid ${C.red}33`,borderRadius:12,padding:"12px 14px",marginBottom:14}}>
-              <div style={{fontSize:15,color:C.red,fontWeight:800,letterSpacing:1,marginBottom:3}}>🏁 Nächste Veranstaltung — in {daysUntil(nextEvent.ev.date)} Tagen</div>
+              <div style={{fontSize:15,color:C.red,fontWeight:800,letterSpacing:.4,marginBottom:3}}>🏁 Nächste Veranstaltung — in {daysUntil(nextEvent.ev.date)} Tagen</div>
               <div style={{fontWeight:700,fontSize:14,color:C.white}}>{nextEvent.ev.name}</div>
               <div style={{fontSize:13,color:C.muted,marginTop:2}}>Startnr. <span style={{color:C.gold,fontWeight:700}}>#{nextEvent.startNr}</span> · {nextEvent.class}</div>
             </div>
           )}
           <div className="card" style={{padding:16,marginBottom:14}}>
-            <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Fahrzeugdaten</div>
+            <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Fahrzeugdaten</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               {[["Baujahr","baujahr"],["Kraftstoff","kraftstoff"],["Getriebe","getriebe"],["Farbe","farbe"],["Kilometerstand","kilometerstand"],["TÜV","tuev_faelligkeit"],["Marktwert","marktwert"],["FIN","fin"]].filter(([,k])=>priv[k]!==false&&v[k]).map(([label,key])=>(
                 <div key={key}>
-                  <div style={{fontSize:9,color:C.muted,letterSpacing:.5}}>{label}</div>
+                  <div style={{fontSize:9,color:C.muted,letterSpacing:.2}}>{label}</div>
                   <div style={{fontSize:15,fontWeight:600,color:"#eee",marginTop:2}}>
                     {key==="kilometerstand"?parseInt(v[key]).toLocaleString("de-DE")+" km":
                      key==="marktwert"?"€ "+parseInt(v[key]).toLocaleString("de-DE"):
@@ -5447,7 +5447,7 @@ Regeln:
           </div>
           {priv.pub_events&&vHist.length>0&&(
             <div className="card" style={{padding:16,marginBottom:14}}>
-              <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Veranstaltungshistorie</div>
+              <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Veranstaltungshistorie</div>
               {vHist.map(h=>(
                 <div key={h.id} style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
                   <div style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:6,padding:"2px 8px",fontWeight:800,fontSize:14,color:C.red,flexShrink:0}}>#{h.startNr}</div>
@@ -5464,7 +5464,7 @@ Regeln:
 
           {/* SHARE — ganz unten */}
           <div style={{borderTop:`1px solid ${C.border}`,paddingTop:14,marginTop:4}}>
-            <div style={{fontSize:15,color:C.muted,fontWeight:700,letterSpacing:1,marginBottom:8}}>
+            <div style={{fontSize:15,color:C.muted,fontWeight:700,letterSpacing:.4,marginBottom:8}}>
               Fahrzeugakte teilen
             </div>
             <div style={{display:"flex",gap:8,marginBottom:16}}>
@@ -5479,7 +5479,7 @@ Regeln:
                     }}
                     style={{flex:2,background:C.red,border:"none",borderRadius:9,padding:"11px",
                       display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                      color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                     <span style={{fontSize:16}}>↑</span> Teilen
                   </button>
                   <button
@@ -5488,7 +5488,7 @@ Regeln:
                     }}
                     style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"11px",
                       display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                      color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                     <span style={{fontSize:16}}>🔗</span> Link
                   </button>
                 </>);
@@ -5497,7 +5497,7 @@ Regeln:
           </div>
 
           <div style={{textAlign:"center",padding:"12px 0",borderTop:`1px solid ${C.border}`}}>
-            <div style={{fontSize:9,color:"#333",letterSpacing:2,marginBottom:4}}>VERIFIZIERT DURCH QAR.GALLERY</div>
+            <div style={{fontSize:9,color:"#333",letterSpacing:.8,marginBottom:4}}>VERIFIZIERT DURCH QAR.GALLERY</div>
             <div style={{fontFamily:"monospace",fontSize:13,color:"#444"}}>{v.qarId}</div>
           </div>
           {me&&<button className="btn sm ghost" style={{width:"100%",marginTop:10}} onClick={()=>setScreen(viewV?"vehicle":"app")}>← Zurück</button>}
@@ -5508,7 +5508,7 @@ Regeln:
           <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:"",password:""});}}}>
             <div className="sheet">
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>💬 Nachricht senden</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>💬 Nachricht senden</div>
                 <button onClick={()=>{setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:"",password:""});}}
                   style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
               </div>
@@ -5517,7 +5517,7 @@ Regeln:
               <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:16}}>
                 {[["guest","Als Gast"],["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
                   <button key={m} onClick={()=>setContactAuthMode(m)}
-                    style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14,
+                    style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:14,
                       background:contactAuthMode===m?C.red:"transparent",color:contactAuthMode===m?"#fff":C.muted,transition:"all .15s"}}>
                     {label}
                   </button>
@@ -5532,7 +5532,7 @@ Regeln:
                       Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht.
                     </div>
                   </div>
-                  <div style={{fontSize:15,fontWeight:800,color:C.gold,letterSpacing:1,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
+                  <div style={{fontSize:17,fontWeight:800,color:C.gold,letterSpacing:.4,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
                   {[
                     ["🚗","Eigene digitale Fahrzeugakte"],
                     ["📱","QR-Code fürs eigene Auto"],
@@ -5544,7 +5544,7 @@ Regeln:
                     </div>
                   ))}
                   <button onClick={()=>setContactAuthMode("register")}
-                    style={{background:"none",border:"none",color:C.red,fontWeight:700,fontSize:14,cursor:"pointer",padding:0,marginTop:8,fontFamily:"'Barlow',sans-serif"}}>
+                    style={{background:"none",border:"none",color:C.red,fontWeight:700,fontSize:14,cursor:"pointer",padding:0,marginTop:8,fontFamily:"'Inter',sans-serif"}}>
                     Stattdessen Mitglied werden →
                   </button>
                 </div>
@@ -5556,14 +5556,14 @@ Regeln:
               )}
 
               {contactAuthMode==="register"&&(
-                <input className="inp" placeholder="Club-Code" style={{marginBottom:8,letterSpacing:2,textAlign:"center",fontWeight:700}}
+                <input className="inp" placeholder="Club-Code" style={{marginBottom:8,letterSpacing:.8,textAlign:"center",fontWeight:700}}
                   value={contactAuthForm.code} onChange={e=>setContactAuthForm(p=>({...p,code:e.target.value}))}/>
               )}
 
               {contactAuthMode==="register"&&(
                 <button onClick={()=>{setShowContactAuth(null);setShowWorkshopSignup(true);}}
                   style={{width:"100%",background:"none",border:`1px dashed ${C.border}`,borderRadius:10,
-                    padding:"10px",marginBottom:16,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                    padding:"10px",marginBottom:16,cursor:"pointer",fontFamily:"'Inter',sans-serif",
                     color:C.muted,fontSize:13,textAlign:"center"}}>
                   🔧 Werkstatt statt Club-Mitglied? Konto beantragen →
                 </button>
@@ -5589,7 +5589,7 @@ Regeln:
                       Nachricht an den Halter nur mit Angabe einer E-Mail-Adresse möglich. *
                       <button onClick={e=>{e.preventDefault();e.stopPropagation();setShowContactPrivacyInfo(true);}}
                         style={{background:"none",border:"none",color:C.red,fontSize:13,fontWeight:700,
-                          cursor:"pointer",padding:"3px 0 0",display:"block",fontFamily:"'Barlow',sans-serif",
+                          cursor:"pointer",padding:"3px 0 0",display:"block",fontFamily:"'Inter',sans-serif",
                           textDecoration:"underline"}}>
                         Was wird gespeichert? →
                       </button>
@@ -5623,7 +5623,7 @@ Regeln:
             style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
               padding:"24px 20px",maxWidth:420,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,
                 color:C.white,marginBottom:6}}>🔒 Deine Nachricht</div>
               <button onClick={()=>setShowContactPrivacyInfo(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
@@ -5700,7 +5700,7 @@ Regeln:
           <div style={{background:C.dark,border:"1px solid #ef4444",borderRadius:20,padding:"28px 22px",maxWidth:360,width:"100%",textAlign:"center"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:36,marginBottom:10}}>🚨</div>
-            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:"#fff",marginBottom:14,lineHeight:1.3}}>
+            <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:900,color:"#fff",marginBottom:14,lineHeight:1.3}}>
               Sind Sie Ersthelfer, Polizei, Notarzt oder Rettungsdienst?
             </div>
             <div style={{fontSize:14,color:C.muted,marginBottom:22,lineHeight:1.6}}>
@@ -5723,12 +5723,12 @@ Regeln:
           <div style={{background:C.dark,border:"1px solid #ef4444",borderRadius:20,padding:"28px 22px",maxWidth:360,width:"100%",textAlign:"center"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:36,marginBottom:10}}>🚨</div>
-            <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#fff",marginBottom:8}}>Notfall-Zugang</div>
+            <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:"#fff",marginBottom:8}}>Notfall-Zugang</div>
             <div style={{fontSize:14,color:C.muted,marginBottom:20,lineHeight:1.6}}>
               4-stelligen Code eingeben — zu finden auf dem Aufkleber hinter dem QR-Code im Fahrzeuginneren.
             </div>
             <input className="inp" placeholder="0000" inputMode="numeric" maxLength={4} autoFocus
-              style={{marginBottom:14,fontFamily:"monospace",textAlign:"center",fontSize:28,letterSpacing:8}}
+              style={{marginBottom:14,fontFamily:"monospace",textAlign:"center",fontSize:28,letterSpacing:2}}
               value={emergencyCodeInput} onChange={e=>setEmergencyCodeInput(e.target.value.replace(/\D/g,"").slice(0,4))}
               onKeyDown={e=>e.key==="Enter"&&checkEmergencyAccess()}/>
             <button className="btn" style={{width:"100%",background:"#ef4444"}} disabled={emergencyBusy} onClick={checkEmergencyAccess}>
@@ -5779,7 +5779,7 @@ Regeln:
               </div>
               {(p.contacts||[]).length>0&&(
                 <>
-                  <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:6}}>Notfallkontakte</div>
+                  <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:.4,marginBottom:6}}>Notfallkontakte</div>
                   {p.contacts.map((c,j)=>(
                     <a key={j} href={"tel:"+c.phone} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.black,borderRadius:8,padding:"10px 12px",marginBottom:6,textDecoration:"none"}}>
                       <div>
@@ -5811,7 +5811,7 @@ Regeln:
         <button onClick={()=>setViewNews(null)}
           style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:"#111",padding:"0 4px"}}>←</button>
         <div style={{flex:1}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,color:"#111",letterSpacing:1}}>PCN NÜRBURGRING</div>
+          <div style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:900,color:"#111",letterSpacing:.4}}>PCN NÜRBURGRING</div>
           <div style={{fontSize:12,color:"#888"}}>Mitglieder-Information</div>
         </div>
         <img src="data:image/jpeg;base64,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REBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEQ8FHTVL6qQwUnm/Kk9yDJU1jjJ1FKNuTmeTV56ivxntTc92P8ARfOsp7eBEA58hGTgbyskNwikeGEOY4nADgqMfUV7z5dS1o/NH+i+i2tcczyySHx3Lf3AZyMBR89TJUyGCj3/AJUnIIPEzooHdRRRNdOd2cZwtiio2042nHalPF3uXulpWUzMN3uPFx5rYUBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREHxw2mkd4wo6lc6jm7LKPJc7LHjmpJR1Se010ULP6I7TndyD7cIXMJq4ZNh7BvzzC1TVNqKhksxDGRDOObitmpLqyr7O0kRR73kc/BbTaOnDtsQtyqNQ9fcDzip+fe5b0MLIYwyNuAP2rIAigIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiIMdRIIYXyH5I3KLppH09NJUBof1nygd7T4rZur8xshYfLkdwHcvU1A2Rpa15aHAeSOGRwKD1bYeqpw473SeUSVtrRo55Wy9mqANto3OHMLeQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBalXVOicIom7czuA7ltqOnjqIa108MQl224Hggxkmnm62pPW1LvMY35KyiOvqP4yQQN7m8Vko6V7JDPUO2pXd3yVuKjWpaNkDzIXGSQjG05bKIoCIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIg//Z"
@@ -5822,7 +5822,7 @@ Regeln:
           <span style={{fontSize:28}}>{viewNews.icon}</span>
           {viewNews.pinned&&<span style={{background:C.red,color:"#fff",fontSize:9,fontWeight:800,padding:"2px 8px",borderRadius:4}}>NEU</span>}
         </div>
-        <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,lineHeight:1.2,marginBottom:8}}>{viewNews.title}</h1>
+        <h1 style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.white,lineHeight:1.2,marginBottom:8}}>{viewNews.title}</h1>
         <div style={{fontSize:13,color:C.muted,marginBottom:24}}>
           {viewNews.author&&<span>{viewNews.author} · </span>}{fmtDate(viewNews.date)}
         </div>
@@ -5837,7 +5837,7 @@ Regeln:
                 style={{flex:1,background:alreadyR?C.card:`${C.green}18`,
                   border:`1px solid ${alreadyR?C.border:C.green+"44"}`,
                   borderRadius:10,padding:"12px",color:alreadyR?C.muted:C.green,
-                  fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                  fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",
                   display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                 {alreadyR?"✓ Gelesen":`✓ Gelesen · +${POINTS.news_read} 🏆`}
               </button>
@@ -5847,7 +5847,7 @@ Regeln:
             style={{flex:1,background:newsState[viewNews.id]==="remind"?`${C.amber}22`:C.card,
               border:`1px solid ${newsState[viewNews.id]==="remind"?C.amber+"44":C.border}`,
               borderRadius:10,padding:"12px",color:newsState[viewNews.id]==="remind"?C.amber:C.muted,
-              fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+              fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
             🔔 {newsState[viewNews.id]==="remind"?"Erinnerung aktiv":"Erinnern"}
           </button>
         </div>
@@ -5874,7 +5874,7 @@ Regeln:
         <style>{CSS}</style>
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         {ScannerOverlay}
         {/* ── Photo Gallery — inline ── */}
         <div style={{position:"relative"}}>
@@ -5937,7 +5937,7 @@ Regeln:
                       <button onClick={()=>{setPhotoManagerVehicle(v.id);setScreen("photos");}}
                         style={{width:"100%",background:"none",border:`1px solid ${C.border}`,borderRadius:8,
                           padding:"8px",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",
-                          fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                          fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                         ✏️ Fotos verwalten
                       </button>
                     )}
@@ -5949,14 +5949,14 @@ Regeln:
           {/* Overlay buttons on hero */}
           <div style={{position:"absolute",top:16,left:14,zIndex:5}}>
             <button onClick={()=>setScreen("app")}
-              style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"9px 14px",color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>
+              style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"9px 14px",color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
               ← Zurück
             </button>
           </div>
           {!isOwn&&(
             <div style={{position:"absolute",top:16,right:14,zIndex:5}}>
               <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
-                style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>
+                style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
                 👁 Ansicht
               </button>
             </div>
@@ -5989,7 +5989,7 @@ Regeln:
           <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}}>
               <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:C.white}}>{v.hersteller} {v.modell}</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:900,color:C.white}}>{v.hersteller} {v.modell}</div>
                 {getVehicleSealStatus(v).earned
                   ?<SealBadge size="lg" onClick={()=>setShowSealDetail(v.id)}/>
                   :(isOwn&&<button onClick={()=>setShowSealDetail(v.id)}
@@ -6003,7 +6003,7 @@ Regeln:
                 <button onClick={()=>openEditVehicle(v)}
                   style={{background:C.red,border:"none",borderRadius:8,padding:"6px 14px",
                     color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,
-                    fontFamily:"'Barlow',sans-serif",flexShrink:0,marginLeft:10}}>
+                    fontFamily:"'Inter',sans-serif",flexShrink:0,marginLeft:10}}>
                   ✏️ Bearbeiten
                 </button>
               )}
@@ -6017,7 +6017,7 @@ Regeln:
               ].map(([val,label,color],i)=>(
                 <div key={i} style={{background:C.black,borderRadius:8,padding:"9px 8px",textAlign:"center"}}>
                   <div style={{fontSize:14,fontWeight:700,color,marginBottom:2,lineHeight:1.2}}>{val}</div>
-                  <div style={{fontSize:9,color:C.muted,letterSpacing:.5}}>{label}</div>
+                  <div style={{fontSize:9,color:C.muted,letterSpacing:.2}}>{label}</div>
                 </div>
               ))}
             </div>
@@ -6048,7 +6048,7 @@ Regeln:
           {/* ── QR-Code & Aktionen — eigener Block ── */}
           {isOwn&&(
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
-              <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🔗 QR-Code & Aktionen</div>
+              <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🔗 QR-Code & Aktionen</div>
               {(()=>{
                 const slots = getActiveStatus(v.id)||[];
                 if(!slots.length) return null;
@@ -6078,7 +6078,7 @@ Regeln:
               })()}
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 <button onClick={()=>setShowStatusPicker(v.id)}
-                  style={{flex:1,background:`${C.amber}15`,border:`1.5px solid ${C.amber}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                  style={{flex:1,background:`${C.amber}15`,border:`1.5px solid ${C.amber}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Inter',sans-serif"}}>
                   <span style={{fontSize:18}}>📍</span>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:700,fontSize:15,color:C.white}}>Live-Status setzen</div>
@@ -6088,7 +6088,7 @@ Regeln:
                   </div>
                 </button>
                 <button onClick={()=>setShowPrivacy(v.id)}
-                  style={{flex:1,background:`${C.red}15`,border:`1.5px solid ${C.red}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                  style={{flex:1,background:`${C.red}15`,border:`1.5px solid ${C.red}44`,borderRadius:10,padding:"11px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Inter',sans-serif"}}>
                   <span style={{fontSize:18}}>🔒</span>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:700,fontSize:15,color:C.white}}>QR-Sichtbarkeit</div>
@@ -6103,15 +6103,15 @@ Regeln:
                       <QRCodeCanvas value={"https://qar.gallery/pcn/?v="+v.qarId} size={72}/>
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:15,color:C.muted,marginBottom:2,letterSpacing:1}}>QAR-ID</div>
-                      <div style={{fontFamily:"monospace",fontSize:15,fontWeight:700,color:C.white,letterSpacing:1,marginBottom:4}}>{v.qarId}</div>
+                      <div style={{fontSize:15,color:C.muted,marginBottom:2,letterSpacing:.4}}>QAR-ID</div>
+                      <div style={{fontFamily:"monospace",fontSize:15,fontWeight:700,color:C.white,letterSpacing:.4,marginBottom:4}}>{v.qarId}</div>
                       <div style={{fontSize:12,color:C.muted}}>Tippen zum Vergrößern · FIN wird niemals geteilt</div>
                     </div>
                     <span style={{fontSize:18,color:C.muted,flexShrink:0}}>⤢</span>
                   </div>
                 )}
                 <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
-                  style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                  style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Inter',sans-serif"}}>
                   <span style={{fontSize:18}}>👁</span>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:700,fontSize:15,color:C.white}}>Vorschau öffentliche Akte</div>
@@ -6119,7 +6119,7 @@ Regeln:
                   </div>
                 </button>
                 <button onClick={()=>{setCheckInNoteInput(v.checkinNote||"");setShowCheckInNoteDialog(v.id);}}
-                  style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                  style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Inter',sans-serif"}}>
                   <span style={{fontSize:22,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24}}>🅿️</span>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:700,fontSize:15,color:C.white}}>Standort merken</div>
@@ -6127,7 +6127,7 @@ Regeln:
                   </div>
                 </button>
                 <button onClick={()=>{setShowTransferPanel(v.id);setPendingTransfer(null);loadPendingTransfer(v.id);}}
-                  style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Barlow',sans-serif"}}>
+                  style={{width:"100%",background:C.black,border:`1.5px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Inter',sans-serif"}}>
                   <span style={{fontSize:18}}>🔑</span>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:700,fontSize:15,color:C.white}}>Fahrzeug übertragen</div>
@@ -6138,7 +6138,7 @@ Regeln:
                 {/* ── Eigener Standort-Check-in ── */}
                 {v.checkinLat!=null&&(
                   <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:8}}>📍 Zuletzt geparkt</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:.4,marginBottom:8}}>📍 Zuletzt geparkt</div>
                     <div style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
                       <div style={{height:120}}>
                         <SingleMarkerMap lat={v.checkinLat} lng={v.checkinLng}/>
@@ -6176,7 +6176,7 @@ Regeln:
                 {/* ── Standort-Historie: nur für den Eigentümer, letzte 48h ── */}
                 {(scanLocations[v.id]||[]).length>0&&(
                   <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:2}}>📍 Zuletzt gescannt</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:.4,marginBottom:2}}>📍 Zuletzt gescannt</div>
                     <div style={{fontSize:12,color:C.muted,marginBottom:8}}>Nur für dich sichtbar · automatisch nach 48h gelöscht</div>
                     {scanLocations[v.id].slice(0,5).map(s=>(
                       <div key={s.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",fontSize:14}}>
@@ -6199,7 +6199,7 @@ Regeln:
             if(vRems.length===0) return null;
             return (
               <div style={{marginBottom:14}}>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🔔 Termine & Erinnerungen</div>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🔔 Termine & Erinnerungen</div>
                 {vRems.map(r=>{
                   const days=daysUntil(r.date);
                   const overdue=days<0, urgent=days<=7;
@@ -6216,12 +6216,12 @@ Regeln:
                           const ds=r.date?r.date.replace(/-/g,""):"";
                           const t=encodeURIComponent(`TÜV ${v.hersteller} ${v.modell}`);
                           window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${ds}/${ds}`,"_blank");
-                        }} style={{background:`${C.amber}22`,border:`1px solid ${C.amber}44`,borderRadius:7,padding:"5px 9px",color:C.amber,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>
+                        }} style={{background:`${C.amber}22`,border:`1px solid ${C.amber}44`,borderRadius:7,padding:"5px 9px",color:C.amber,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0}}>
                           📅 Eintragen
                         </button>
                       )}
                       <button onClick={async()=>{const DB=window.PCN_DB;if(DB)await DB.reminders.done(me.id,r.id);setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
-                        style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:7,padding:"6px 10px",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>✓</button>
+                        style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:7,padding:"6px 10px",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0}}>✓</button>
                     </div>
                   );
                 })}
@@ -6240,7 +6240,7 @@ Regeln:
                 content:(
                   <div>
                     {/* ── Pannenhilfe: schnell griffbereit im Ernstfall ── */}
-                    <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.5,marginTop:12,marginBottom:6}}>Pannenhilfe</div>
+                    <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2,marginTop:12,marginBottom:6}}>Pannenhilfe</div>
                     <div style={{display:"flex",gap:8}}>
                       <a href="tel:+498920204000" style={{flex:1,textDecoration:"none"}}>
                         <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",textAlign:"center"}}>
@@ -6264,7 +6264,7 @@ Regeln:
                     {/* ── Notfallprofile (ICE) ── */}
                     <div style={{marginTop:18,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
                       <div style={{marginBottom:8}}>
-                        <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.5,marginBottom:6}}>Notfallprofile</div>
+                        <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2,marginBottom:6}}>Notfallprofile</div>
                         <div style={{display:"flex",justifyContent:"flex-end"}}>
                           <button onClick={()=>{loadEmergencyProfiles(v.id);setShowEmergencyEdit({vehicleId:v.id,name:"",accessCode:"",contacts:[{name:"",relationship:"",phone:""}]});}}
                             style={{background:"none",border:"none",color:C.gold,fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Hinzufügen</button>
@@ -6309,7 +6309,7 @@ Regeln:
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                               <span style={{fontWeight:700,fontSize:14,color:C.white}}>{LISTING_CATEGORY_LABELS[l.category]}</span>
-                              {l.price!=null&&<span style={{fontSize:15,fontWeight:800,color:C.gold}}>{l.price} €</span>}
+                              {l.price!=null&&<span style={{fontSize:17,fontWeight:800,color:C.gold}}>{l.price} €</span>}
                             </div>
                             {l.description&&<div style={{fontSize:14,color:"#888",lineHeight:1.5,marginTop:3}}>{l.description}</div>}
                           </div>
@@ -6338,7 +6338,7 @@ Regeln:
                   <div>
                     {/* ── Service-Logbuch ── */}
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:12,marginBottom:6}}>
-                      <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.5}}>Logbuch</div>
+                      <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2}}>Logbuch</div>
                       {isOwn&&<button onClick={()=>setShowAddLog(v.id)}
                         style={{background:"none",border:"none",color:C.gold,fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Eintrag</button>}
                     </div>
@@ -6363,7 +6363,7 @@ Regeln:
                     {/* ── Dokumentenablage — unabhängig vom Scan-Ablauf, Dokumente
                          können ohne sofortige KI-Auswertung abgelegt werden. ── */}
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:18,marginBottom:6,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                      <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.5}}>Dokumente</div>
+                      <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2}}>Dokumente</div>
                       {isOwn&&<button onClick={()=>{loadVehicleDocuments(v.id);setShowDocArchive(v.id);}}
                         style={{background:"none",border:"none",color:C.gold,fontSize:13,fontWeight:700,cursor:"pointer"}}>+ Ablegen</button>}
                     </div>
@@ -6398,7 +6398,7 @@ Regeln:
                     {/* ── Werkstatt-Zugänge — nur für den Eigentümer, nur wenn welche bestehen ── */}
                     {isOwn&&(workshopGrants[v.id]||[]).length>0&&(
                       <>
-                        <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.5,marginTop:18,marginBottom:6,paddingTop:12,borderTop:`1px solid ${C.border}`}}>Werkstatt-Zugänge</div>
+                        <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2,marginTop:18,marginBottom:6,paddingTop:12,borderTop:`1px solid ${C.border}`}}>Werkstatt-Zugänge</div>
                         {workshopGrants[v.id].map(g=>(
                           <div key={g.id} style={{background:C.black,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6,display:"flex",alignItems:"center",gap:10}}>
                             <span style={{fontSize:18,flexShrink:0}}>🔧</span>
@@ -6504,7 +6504,7 @@ Regeln:
               <div key={sec.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}>
                 {/* Accordion header */}
                 <button onClick={()=>toggleSection(v.id, sec.id)}
-                  style={{width:"100%",background:"none",border:"none",padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Barlow',sans-serif"}}>
+                  style={{width:"100%",background:"none",border:"none",padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Inter',sans-serif"}}>
                   <span style={{fontSize:18,flexShrink:0}}>{sec.icon}</span>
                   <span style={{fontWeight:700,fontSize:15,color:C.white,flex:1,textAlign:"left"}}>{sec.label}</span>
                   {sec.count>0&&<span style={{background:C.black,borderRadius:99,padding:"2px 8px",fontSize:13,fontWeight:700,color:C.muted,flexShrink:0}}>{sec.count}</span>}
@@ -6516,7 +6516,7 @@ Regeln:
                   <div style={{padding:"0 16px 14px",borderTop:`1px solid ${C.border}`}}>
                     {sec.action&&(
                       <button onClick={sec.action}
-                        style={{width:"100%",background:C.red,border:"none",borderRadius:8,padding:"9px 12px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",marginTop:12,marginBottom:4,fontFamily:"'Barlow',sans-serif"}}>
+                        style={{width:"100%",background:C.red,border:"none",borderRadius:8,padding:"9px 12px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",marginTop:12,marginBottom:4,fontFamily:"'Inter',sans-serif"}}>
                         {sec.actionLabel}
                       </button>
                     )}
@@ -6530,7 +6530,7 @@ Regeln:
           {/* Phone — pulled from profile, with inline public/private toggle */}
           {isOwn&&(
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>📞 Kontakt</div>
+              <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>📞 Kontakt</div>
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
                 <div style={{padding:"12px 14px",display:"flex",gap:10,alignItems:"center"}}>
                   <input className="inp" placeholder="Telefonnummer (aus Profil übernehmen)" type="tel"
@@ -6553,7 +6553,7 @@ Regeln:
                       setVehicles(prev=>({...prev,[viewV.id]:updated}));
                       const DB=window.PCN_DB; if(DB) DB.vehicles.save(updated);
                       toast_("Aus Profil übernommen ✓");
-                    }} style={{background:C.red,border:"none",borderRadius:7,padding:"5px 10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",flexShrink:0}}>
+                    }} style={{background:C.red,border:"none",borderRadius:7,padding:"5px 10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0}}>
                       Übernehmen
                     </button>
                   )}
@@ -6586,7 +6586,7 @@ Regeln:
                     <span style={{fontWeight:800,fontSize:15,color:C.red}}>QR</span>
                     <span style={{fontSize:16}}>🔒</span>
                   </div>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>QR-Sichtbarkeit</div>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>QR-Sichtbarkeit</div>
                 </div>
                 <button onClick={()=>setShowPrivacy(null)}
                   style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
@@ -6624,7 +6624,7 @@ Regeln:
                 ["Notfall",[["pub_ice","ICE-Button am Fahrzeug ✚"]]],
               ].map(([group,fields])=>(
                 <div key={group} style={{marginBottom:14}}>
-                  <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>{group}</div>
+                  <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>{group}</div>
                   {group==="Notfall"&&(
                     <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.5}}>
                       Zeigt Rettungskräften einen roten Button zu Blutgruppe, Allergien und Notfallkontakten — geschützt durch einen zusätzlichen Code. Da das gesundheitsbezogene Daten sind, standardmäßig ausgeblendet.
@@ -6654,14 +6654,14 @@ Regeln:
           <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowEditVehicle(null);}}>
             <div className="sheet">
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>✏️ Fahrzeugdaten bearbeiten</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>✏️ Fahrzeugdaten bearbeiten</div>
                 <button onClick={()=>setShowEditVehicle(null)}
                   style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
               </div>
               <div style={{fontSize:13,color:C.muted,marginBottom:18}}>Alle Angaben jederzeit änderbar</div>
 
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Basis</div>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Basis</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   <input className="inp" placeholder="Hersteller" value={editForm.hersteller||""}
                     onChange={e=>setEditForm(p=>({...p,hersteller:e.target.value}))}/>
@@ -6685,7 +6685,7 @@ Regeln:
               </div>
 
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Status & Technik</div>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Status & Technik</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   <input className="inp" type="number" inputMode="numeric" placeholder="Kilometerstand" value={editForm.kilometerstand||""}
                     onChange={e=>setEditForm(p=>({...p,kilometerstand:e.target.value}))}/>
@@ -6708,17 +6708,17 @@ Regeln:
               </div>
 
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Kontakt</div>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Kontakt</div>
                 <input className="inp" type="tel" placeholder="Telefonnummer (optional)" value={editForm.phone||""}
                   onChange={e=>setEditForm(p=>({...p,phone:e.target.value}))}/>
                 <div style={{fontSize:12,color:C.muted,marginTop:6}}>🔒 Sichtbarkeit über QR-Einstellungen steuerbar</div>
               </div>
 
               <div style={{marginBottom:18}}>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Besonderheiten</div>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Besonderheiten</div>
                 <textarea className="inp" placeholder="Ausstattung, Extras, Hinweise..." rows={3}
                   value={editForm.besonderheiten||""} onChange={e=>setEditForm(p=>({...p,besonderheiten:e.target.value}))}
-                  style={{resize:"vertical",fontFamily:"'Barlow',sans-serif"}}/>
+                  style={{resize:"vertical",fontFamily:"'Inter',sans-serif"}}/>
               </div>
 
               <div style={{display:"flex",gap:8}}>
@@ -6741,7 +6741,7 @@ Regeln:
                   }}
                   style={{width:"100%",background:"none",border:`1.5px solid ${C.red}44`,
                     borderRadius:10,padding:"12px",color:C.red,cursor:"pointer",
-                    fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>
+                    fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
                   🗑 Fahrzeug löschen
                 </button>
                 <div style={{fontSize:12,color:"#444",textAlign:"center",marginTop:6}}>
@@ -6757,7 +6757,7 @@ Regeln:
           <div className="overlay" style={{zIndex:550}} onClick={e=>{if(e.target===e.currentTarget){setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:"",password:""});}}}>
             <div className="sheet">
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>💬 Nachricht senden</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>💬 Nachricht senden</div>
                 <button onClick={()=>{setShowContactAuth(null);setContactAuthForm({name:"",email:"",code:"",password:""});}}
                   style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
               </div>
@@ -6766,7 +6766,7 @@ Regeln:
               <div style={{display:"flex",background:"#111",borderRadius:10,padding:3,marginBottom:16}}>
                 {[["guest","Als Gast"],["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
                   <button key={m} onClick={()=>setContactAuthMode(m)}
-                    style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14,
+                    style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:14,
                       background:contactAuthMode===m?C.red:"transparent",color:contactAuthMode===m?"#fff":C.muted,transition:"all .15s"}}>
                     {label}
                   </button>
@@ -6781,7 +6781,7 @@ Regeln:
                       Kein Account nötig — nur Name und E-Mail für die Zustellung deiner Nachricht.
                     </div>
                   </div>
-                  <div style={{fontSize:15,fontWeight:800,color:C.gold,letterSpacing:1,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
+                  <div style={{fontSize:17,fontWeight:800,color:C.gold,letterSpacing:.4,marginBottom:8}}>Als PCN-Mitglied bekommst du zusätzlich</div>
                   {[
                     ["🚗","Eigene digitale Fahrzeugakte"],
                     ["📱","QR-Code fürs eigene Auto"],
@@ -6793,7 +6793,7 @@ Regeln:
                     </div>
                   ))}
                   <button onClick={()=>setContactAuthMode("register")}
-                    style={{background:"none",border:"none",color:C.red,fontWeight:700,fontSize:14,cursor:"pointer",padding:0,marginTop:8,fontFamily:"'Barlow',sans-serif"}}>
+                    style={{background:"none",border:"none",color:C.red,fontWeight:700,fontSize:14,cursor:"pointer",padding:0,marginTop:8,fontFamily:"'Inter',sans-serif"}}>
                     Stattdessen Mitglied werden →
                   </button>
                 </div>
@@ -6805,14 +6805,14 @@ Regeln:
               )}
 
               {contactAuthMode==="register"&&(
-                <input className="inp" placeholder="Club-Code" style={{marginBottom:8,letterSpacing:2,textAlign:"center",fontWeight:700}}
+                <input className="inp" placeholder="Club-Code" style={{marginBottom:8,letterSpacing:.8,textAlign:"center",fontWeight:700}}
                   value={contactAuthForm.code} onChange={e=>setContactAuthForm(p=>({...p,code:e.target.value}))}/>
               )}
 
               {contactAuthMode==="register"&&(
                 <button onClick={()=>{setShowContactAuth(null);setShowWorkshopSignup(true);}}
                   style={{width:"100%",background:"none",border:`1px dashed ${C.border}`,borderRadius:10,
-                    padding:"10px",marginBottom:16,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                    padding:"10px",marginBottom:16,cursor:"pointer",fontFamily:"'Inter',sans-serif",
                     color:C.muted,fontSize:13,textAlign:"center"}}>
                   🔧 Werkstatt statt Club-Mitglied? Konto beantragen →
                 </button>
@@ -6838,7 +6838,7 @@ Regeln:
                       Nachricht an den Halter nur mit Angabe einer E-Mail-Adresse möglich. *
                       <button onClick={e=>{e.preventDefault();e.stopPropagation();setShowContactPrivacyInfo(true);}}
                         style={{background:"none",border:"none",color:C.red,fontSize:13,fontWeight:700,
-                          cursor:"pointer",padding:"3px 0 0",display:"block",fontFamily:"'Barlow',sans-serif",
+                          cursor:"pointer",padding:"3px 0 0",display:"block",fontFamily:"'Inter',sans-serif",
                           textDecoration:"underline"}}>
                         Was wird gespeichert? →
                       </button>
@@ -6872,7 +6872,7 @@ Regeln:
             style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
               padding:"24px 20px",maxWidth:420,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,
                 color:C.white,marginBottom:6}}>🔒 Deine Nachricht</div>
               <button onClick={()=>setShowContactPrivacyInfo(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
@@ -6946,14 +6946,14 @@ Regeln:
           {showAddLog===v.id&&(
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddLog(null);}}>
               <div className="sheet">
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:4}}>Logbuch-Eintrag</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white,marginBottom:4}}>Logbuch-Eintrag</div>
                 <button onClick={()=>{setShowAddLog(null);setDocScanOpen(v.id);setDocScanResult(null);}}
                   style={{width:"100%",marginTop:10,marginBottom:14,background:`linear-gradient(135deg, ${C.gold}22, ${C.gold}0a)`,
                     border:`1.5px solid ${C.gold}55`,borderRadius:12,padding:"14px",cursor:"pointer",
-                    display:"flex",gap:12,alignItems:"center",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                    display:"flex",gap:12,alignItems:"center",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>
                   <span style={{fontSize:26,flexShrink:0}}>📄</span>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontWeight:800,color:C.gold,marginBottom:1}}>Beleg scannen</div>
+                    <div style={{fontSize:16,fontWeight:800,color:C.gold,marginBottom:1}}>Beleg scannen</div>
                     <div style={{fontSize:13,color:"#999",lineHeight:1.4}}>Rechnung, Wartung oder Versicherung fotografieren — auch aus der Vergangenheit</div>
                   </div>
                   <span style={{fontSize:16,color:C.gold,flexShrink:0}}>→</span>
@@ -6978,7 +6978,7 @@ Regeln:
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowWorkshopDecision(null);}}>
               <div className="sheet">
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                  <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>🔧 Werkstatt-Anfrage</div>
+                  <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>🔧 Werkstatt-Anfrage</div>
                   <button onClick={()=>setShowWorkshopDecision(null)}
                     style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
                 </div>
@@ -7024,7 +7024,7 @@ Regeln:
                       {seal.earned
                         ?<SealBadge size="lg"/>
                         :<span style={{fontSize:20}}>🔍</span>}
-                      <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>
+                      <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>
                         {seal.earned?"Provenienz-Siegel":"Provenienz-Siegel — noch offen"}
                       </div>
                     </div>
@@ -7058,7 +7058,7 @@ Regeln:
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget&&!docUploadBusy)setShowDocArchive(null);}}>
               <div className="sheet">
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                  <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>📁 Dokument ablegen</div>
+                  <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>📁 Dokument ablegen</div>
                   {!docUploadBusy&&(
                     <button onClick={()=>setShowDocArchive(null)}
                       style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
@@ -7067,14 +7067,14 @@ Regeln:
                 <div style={{fontSize:13,color:C.muted,marginBottom:16,lineHeight:1.6}}>
                   Wird ohne sofortige Auswertung gespeichert — die KI-Analyse kannst du jederzeit später aus der Dokumentenliste heraus nachholen.
                 </div>
-                <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.5}}>Art des Dokuments</div>
+                <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Art des Dokuments</div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
                   {Object.entries(CATEGORY_LABELS).map(([key,label])=>(
                     <button key={key} onClick={()=>setDocUploadCategory(key)}
                       style={{padding:"7px 12px",borderRadius:8,border:`1.5px solid ${docUploadCategory===key?C.gold:C.border}`,
                         background:docUploadCategory===key?`${C.gold}22`:"transparent",
                         color:docUploadCategory===key?C.gold:C.muted,fontSize:13,fontWeight:700,
-                        cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                       {label}
                     </button>
                   ))}
@@ -7088,7 +7088,7 @@ Regeln:
                     <div style={{fontSize:34,marginBottom:8}}>📄</div>
                     <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
                       <label style={{display:"inline-block",background:C.gold,color:"#0a0a0a",borderRadius:9,
-                        padding:"11px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        padding:"11px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                         <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
                           onChange={e=>{
                             const f=e.target.files?.[0]; if(!f) return;
@@ -7098,7 +7098,7 @@ Regeln:
                         📷 Foto aufnehmen
                       </label>
                       <label style={{display:"inline-block",background:"transparent",color:C.gold,borderRadius:9,
-                        padding:"11px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                        padding:"11px 16px",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Inter',sans-serif",
                         border:`1.5px solid ${C.gold}`}}>
                         <input type="file" accept="image/*" style={{display:"none"}}
                           onChange={e=>{
@@ -7120,14 +7120,14 @@ Regeln:
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget){setShowCheckInNoteDialog(null);setCheckInNoteInput("");}}}>
               <div className="sheet">
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                  <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🅿️ Standort merken</div>
+                  <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🅿️ Standort merken</div>
                   <button onClick={()=>{setShowCheckInNoteDialog(null);setCheckInNoteInput("");}}
                     style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
                 </div>
                 <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
                   Aktueller Standort wird gespeichert — nur für dich sichtbar. Optional kannst du dir eine Notiz dazu machen.
                 </div>
-                <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:6}}>Notiz (optional)</div>
+                <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:.4,marginBottom:6}}>Notiz (optional)</div>
                 <input className="inp" placeholder="z.B. Parkhaus Ebene 3, Reihe C" style={{marginBottom:16}}
                   value={checkInNoteInput} onChange={e=>setCheckInNoteInput(e.target.value)}
                   onKeyDown={e=>e.key==="Enter"&&doCheckIn(v.id)}/>
@@ -7143,7 +7143,7 @@ Regeln:
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowEmergencyEdit(null);}}>
               <div className="sheet" style={{maxHeight:"90vh",overflowY:"auto"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>
                     {showEmergencyEdit.id?"Notfallprofil bearbeiten":"🆘 Notfallprofil anlegen"}
                   </div>
                   <button onClick={()=>setShowEmergencyEdit(null)}
@@ -7176,7 +7176,7 @@ Regeln:
                 <input className="inp" placeholder="Vorerkrankungen (oder 'keine')" style={{marginBottom:14}}
                   value={showEmergencyEdit.conditions||""} onChange={e=>setShowEmergencyEdit(p=>({...p,conditions:e.target.value}))}/>
 
-                <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:8}}>Notfallkontakte</div>
+                <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:.4,marginBottom:8}}>Notfallkontakte</div>
                 {(showEmergencyEdit.contacts||[]).map((c,i)=>(
                   <div key={i} style={{display:"flex",gap:6,marginBottom:8}}>
                     <input className="inp" placeholder="Name" style={{flex:2}} value={c.name}
@@ -7194,8 +7194,8 @@ Regeln:
                   + Kontakt hinzufügen
                 </button>
 
-                <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:6}}>4-stelliger Zugangscode</div>
-                <input className="inp" placeholder="z.B. 4271" inputMode="numeric" maxLength={4} style={{marginBottom:6,fontFamily:"monospace",letterSpacing:4,fontSize:18,textAlign:"center"}}
+                <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:.4,marginBottom:6}}>4-stelliger Zugangscode</div>
+                <input className="inp" placeholder="z.B. 4271" inputMode="numeric" maxLength={4} style={{marginBottom:6,fontFamily:"monospace",letterSpacing:1.5,fontSize:18,textAlign:"center"}}
                   value={showEmergencyEdit.accessCode||""} onChange={e=>setShowEmergencyEdit(p=>({...p,accessCode:e.target.value.replace(/\D/g,"").slice(0,4)}))}/>
                 <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.5}}>
                   Notiere diesen Code auf dem Aufkleber hinter dem QR-Code — "Nur im Notfall abziehen".
@@ -7220,7 +7220,7 @@ Regeln:
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowTransferPanel(null);}}>
               <div className="sheet">
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>🔑 Fahrzeug übertragen</div>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>🔑 Fahrzeug übertragen</div>
                   <button onClick={()=>setShowTransferPanel(null)}
                     style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
                 </div>
@@ -7265,7 +7265,7 @@ Regeln:
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowSellerConfirm(null);}}>
               <div className="sheet">
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>Übertragung bestätigen</div>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>Übertragung bestätigen</div>
                   <button onClick={()=>setShowSellerConfirm(null)}
                     style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
                 </div>
@@ -7286,20 +7286,20 @@ Regeln:
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddListing(null);}}>
               <div className="sheet">
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>
                     {typeof showAddListing==="object"&&showAddListing.editId ? "Angebot bearbeiten" : "Neues Angebot"}
                   </div>
                   <button onClick={()=>setShowAddListing(null)}
                     style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
                 </div>
-                <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.5}}>Kategorie</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Kategorie</div>
                 <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
                   {Object.entries(LISTING_CATEGORY_LABELS).map(([key,label])=>(
                     <button key={key} onClick={()=>setListingForm(p=>({...p,category:key}))}
                       style={{padding:"8px 14px",borderRadius:8,border:`1.5px solid ${listingForm.category===key?C.gold:C.border}`,
                         background:listingForm.category===key?`${C.gold}22`:"transparent",
                         color:listingForm.category===key?C.gold:C.muted,fontSize:14,fontWeight:700,
-                        cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                       {label}
                     </button>
                   ))}
@@ -7332,7 +7332,7 @@ Regeln:
                     wird, unabhängig davon, in wessen Akte man sich gerade befindet. */}
                 {listingForm.category==="auto"&&(
                   <>
-                    <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.5}}>Welches Fahrzeug?</div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Welches Fahrzeug?</div>
                     <select className="inp" style={{marginBottom:14}}
                       value={listingForm.linkedVehicleId||v.id}
                       onChange={e=>setListingForm(p=>({...p,linkedVehicleId:e.target.value}))}>
@@ -7347,7 +7347,7 @@ Regeln:
                     eigenes Fahrzeug mit vorhandenen Fotos existiert. */}
                 {(listingForm.category==="felgen_reifen"||listingForm.category==="sonstiges")&&(
                   <>
-                    <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.5}}>Foto</div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Foto</div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
                       {(listingForm.images||[]).map((img,i)=>(
                         <div key={i} style={{position:"relative"}}>
@@ -7368,11 +7368,11 @@ Regeln:
                   </>
                 )}
 
-                <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.5}}>Preis</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Preis</div>
                 <input className="inp" type="number" inputMode="decimal" placeholder="€ (leer lassen für VB)" style={{marginBottom:14}}
                   value={listingForm.price} onChange={e=>setListingForm(p=>({...p,price:e.target.value}))}/>
 
-                <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.5}}>Beschreibung</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Beschreibung</div>
                 <textarea className="inp" placeholder="Zustand, Details, Kontaktwunsch …" rows={3} style={{marginBottom:16,resize:"vertical"}}
                   value={listingForm.description} onChange={e=>setListingForm(p=>({...p,description:e.target.value}))}/>
 
@@ -7398,7 +7398,7 @@ Regeln:
 
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
               <div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>
                   📄 Beleg digitalisieren
                 </div>
                 <div style={{fontSize:13,color:C.muted,marginTop:1}}>Auch Dokumente aus der Vergangenheit — nicht nur ab heute</div>
@@ -7419,14 +7419,14 @@ Regeln:
             {!docScanBusy&&!docScanResult&&(
               <>
                 <div style={{marginBottom:14}}>
-                  <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.5}}>Art des Belegs</div>
+                  <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Art des Belegs</div>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     {Object.entries(CATEGORY_LABELS).map(([key,label])=>(
                       <button key={key} onClick={()=>setDocScanCategory(key)}
                         style={{padding:"8px 14px",borderRadius:8,border:`1.5px solid ${docScanCategory===key?C.gold:C.border}`,
                           background:docScanCategory===key?`${C.gold}22`:"transparent",
                           color:docScanCategory===key?C.gold:C.muted,fontSize:14,fontWeight:700,
-                          cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                          cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                         {label}
                       </button>
                     ))}
@@ -7439,7 +7439,7 @@ Regeln:
                   </div>
                   <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
                     <label style={{display:"inline-block",background:C.gold,color:"#0a0a0a",borderRadius:9,
-                      padding:"12px 18px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      padding:"12px 18px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                       <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
                         onChange={e=>{
                           const f=e.target.files?.[0]; if(!f) return;
@@ -7448,7 +7448,7 @@ Regeln:
                       📷 Foto aufnehmen
                     </label>
                     <label style={{display:"inline-block",background:"transparent",color:C.gold,borderRadius:9,
-                      padding:"12px 18px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                      padding:"12px 18px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Inter',sans-serif",
                       border:`1.5px solid ${C.gold}66`}}>
                       {/* Kein capture-Attribut — der Browser bietet dann die Fotobibliothek/Dateien als
                           Option an, statt zwingend die Kamera zu öffnen. Wichtig für bereits vorhandene,
@@ -7529,7 +7529,7 @@ Regeln:
                 </button>
                 <button onClick={()=>setDocScanResult(null)}
                   style={{width:"100%",marginTop:7,background:"none",border:"none",color:"#666",
-                    fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"6px"}}>
+                    fontSize:13,cursor:"pointer",fontFamily:"'Inter',sans-serif",padding:"6px"}}>
                   ↻ Nochmal scannen
                 </button>
                 <div style={{fontSize:12,color:"#555",textAlign:"center",marginTop:8,lineHeight:1.4}}>
@@ -7550,7 +7550,7 @@ Regeln:
         <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget){setShowStatusPicker(null);setStatusEditSlot(null);setStatusCustom("");setStatusPresetIcon(null);setStatusUseDate(false);setStatusDateTime("");}}}>
           <div className="sheet" style={{maxHeight:"92vh",overflowY:"auto"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>📍 Live-Status</div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>📍 Live-Status</div>
               <button onClick={()=>{setShowStatusPicker(null);setStatusEditSlot(null);setStatusCustom("");setStatusPresetIcon(null);setStatusUseDate(false);setStatusDateTime("");}}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
@@ -7577,7 +7577,7 @@ Regeln:
               if(!slots.length) return null;
               return (
                 <div style={{marginBottom:14}}>
-                  <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Aktive Status ({slots.length}/3)</div>
+                  <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Aktive Status ({slots.length}/3)</div>
                   {slots.map(s=>{
                     const remaining = s.expiresAt ? Math.max(0,Math.ceil((s.expiresAt-Date.now())/60000)) : null;
                     const expDate = s.expiresAt ? new Date(s.expiresAt) : null;
@@ -7605,9 +7605,9 @@ Regeln:
                             setStatusUseDate(false);
                             const rem = s.expiresAt ? Math.ceil((s.expiresAt-Date.now())/60000) : 30;
                             setStatusCustomMins(Math.min(480, Math.max(5, rem)));
-                          }} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✏️</button>
+                          }} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 8px",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>✏️</button>
                           <button onClick={()=>{clearStatus(showStatusPicker,s.id);toast_("Status gelöscht");}}
-                            style={{background:"#ef444418",border:"1px solid #ef444433",borderRadius:6,padding:"4px 8px",color:"#ef4444",fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>✕</button>
+                            style={{background:"#ef444418",border:"1px solid #ef444433",borderRadius:6,padding:"4px 8px",color:"#ef4444",fontSize:13,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>✕</button>
                         </div>
                       </div>
                     );
@@ -7628,7 +7628,7 @@ Regeln:
                       style={{display:"flex",gap:12,alignItems:"center",
                         background:statusCustom===p.text?C.red+"22":C.card,
                         border:`1px solid ${statusCustom===p.text?C.red:C.border}`,
-                        borderRadius:12,padding:"12px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                        borderRadius:12,padding:"12px",cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>
                       <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
                       <div style={{flex:1}}>
                         <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.text}</div>
@@ -7653,11 +7653,11 @@ Regeln:
                     <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:10}}>⏱ Wie lange soll der Status angezeigt werden?</div>
                     <div style={{display:"flex",gap:8,marginBottom:10}}>
                       <button onClick={()=>setStatusUseDate(false)}
-                        style={{flex:1,background:!statusUseDate?C.red:"#1a1a1a",border:`1px solid ${!statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:!statusUseDate?"#fff":C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        style={{flex:1,background:!statusUseDate?C.red:"#1a1a1a",border:`1px solid ${!statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:!statusUseDate?"#fff":C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                         ⏱ Dauer
                       </button>
                       <button onClick={()=>{setStatusUseDate(true); if(!statusDateTime){const d=new Date(Date.now()+24*60*60*1000); setStatusDateTime(d.toISOString().slice(0,16));}}}
-                        style={{flex:1,background:statusUseDate?C.red:"#1a1a1a",border:`1px solid ${statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:statusUseDate?"#fff":C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        style={{flex:1,background:statusUseDate?C.red:"#1a1a1a",border:`1px solid ${statusUseDate?C.red:C.border}`,borderRadius:8,padding:"8px",color:statusUseDate?"#fff":C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                         📅 Bis Uhrzeit
                       </button>
                     </div>
@@ -7684,7 +7684,7 @@ Regeln:
                               style={{flex:"1 1 auto",background:statusCustomMins===mn?C.red:"#1a1a1a",
                                 border:`1px solid ${statusCustomMins===mn?C.red:C.border}`,borderRadius:7,
                                 padding:"6px 4px",color:statusCustomMins===mn?"#fff":C.muted,fontSize:13,fontWeight:700,
-                                cursor:"pointer",fontFamily:"'Barlow',sans-serif",whiteSpace:"nowrap"}}>
+                                cursor:"pointer",fontFamily:"'Inter',sans-serif",whiteSpace:"nowrap"}}>
                               {lbl}
                             </button>
                           ))}
@@ -7697,7 +7697,7 @@ Regeln:
                           value={statusDateTime}
                           min={new Date(Date.now()+5*60000).toISOString().slice(0,16)}
                           onChange={e=>setStatusDateTime(e.target.value)}
-                          style={{width:"100%",background:"#1a1a1a",border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 12px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",outline:"none"}}/>
+                          style={{width:"100%",background:"#1a1a1a",border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 12px",color:C.white,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none"}}/>
                       </>
                     )}
                   </div>
@@ -7744,7 +7744,7 @@ Regeln:
           <button onClick={()=>{setScreen("vehicle");setPhotoManagerVehicle(null);}}
             style={{background:"none",border:"none",color:C.white,fontSize:20,cursor:"pointer",padding:0}}>←</button>
           <div>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:800,color:C.white}}>Fotos verwalten</div>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:21,fontWeight:800,color:C.white}}>Fotos verwalten</div>
             <div style={{fontSize:13,color:C.muted}}>{v.hersteller} {v.modell}</div>
           </div>
         </div>
@@ -7773,7 +7773,7 @@ Regeln:
                       toast_("Titelbild gesetzt 👑");
                     }} style={{position:"absolute",top:4,left:4,background:"rgba(0,0,0,.75)",
                       border:`1px solid ${C.border}`,color:C.white,fontSize:12,fontWeight:700,
-                      borderRadius:6,padding:"3px 7px",cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      borderRadius:6,padding:"3px 7px",cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                       👑 Setzen
                     </button>
                 }
@@ -7816,7 +7816,7 @@ Regeln:
         <style>{CSS}</style>
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         <EventDetail
           ev={viewEv} me={me} myVehicles={myVehicles} vehicles={vehicles}
           participants={participants}
@@ -7839,7 +7839,7 @@ Regeln:
         <style>{CSS}</style>
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         <ChatScreen
           thread={t} me={me} allUsers={allUsers} vehicles={vehicles}
           reactions={reactions} bgTheme={bgTheme}
@@ -7914,7 +7914,7 @@ Regeln:
       <style>{CSS}</style>
       {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
       {ScannerOverlay}
 
       {/* Nav — mit permanentem Punktezähler */}
@@ -7926,24 +7926,24 @@ Regeln:
           <button onClick={()=>setShowInfoModal("points")}
             style={{display:"flex",alignItems:"center",gap:7,background:pointsPulse?"#C8A96E22":"#f5f2ec",
               border:`1.5px solid ${pointsPulse?C.gold:"#e2ddd3"}`,borderRadius:99,
-              padding:"5px 11px 5px 8px",cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+              padding:"5px 11px 5px 8px",cursor:"pointer",fontFamily:"'Inter',sans-serif",
               flexShrink:0,transition:"all .3s ease",
               transform:pointsPulse?"scale(1.06)":"scale(1)",
               boxShadow:pointsPulse?`0 0 12px ${C.gold}55`:"none"}}>
             <span style={{fontSize:14,lineHeight:1}}>{currentTier?.icon||"🏆"}</span>
             <div style={{textAlign:"left",lineHeight:1.15}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,
-                color:pointsPulse?"#8a6d1f":"#1a1a1a",letterSpacing:.3}}>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:16,fontWeight:900,
+                color:pointsPulse?"#8a6d1f":"#1a1a1a",letterSpacing:.15}}>
                 {myPoints.toLocaleString("de-DE")}
               </div>
-              <div style={{fontSize:8,color:"#999",fontWeight:600,letterSpacing:.5,}}>
+              <div style={{fontSize:8,color:"#999",fontWeight:600,letterSpacing:.2,}}>
                 Punkte
               </div>
             </div>
             {pointsDelta>0&&(
               <span style={{position:"absolute",marginLeft:52,marginTop:-26,fontSize:13,fontWeight:900,
                 color:C.green,animation:"floatUp 1.8s ease-out forwards",pointerEvents:"none",
-                fontFamily:"'Barlow Condensed',sans-serif",whiteSpace:"nowrap"}}>
+                fontFamily:"'Inter',sans-serif",whiteSpace:"nowrap"}}>
                 +{pointsDelta.toLocaleString("de-DE")}
               </span>
             )}
@@ -7973,7 +7973,7 @@ Regeln:
         {tab==="dashboard"&&isGuest&&(
           <div style={{padding:"32px 20px",textAlign:"center",animation:"fadeIn .2s"}}>
             <div style={{fontSize:48,marginBottom:16}}>🔒</div>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:"#fff",marginBottom:8}}>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,color:"#fff",marginBottom:8}}>
               Gast-Modus
             </div>
             <div style={{fontSize:14,color:C.muted,lineHeight:1.7,marginBottom:24}}>
@@ -7981,18 +7981,18 @@ Regeln:
               Für alle Club-Features benötigst du ein Mitgliedskonto.
             </div>
             <button onClick={()=>{setScreen("splash");setLoginForm(p=>({...p,mode:"register"}));}}
-              style={{background:"none",border:`1.5px solid ${C.red}`,borderRadius:10,padding:"12px",color:C.red,cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"'Barlow',sans-serif",width:"100%",marginBottom:10}}>
+              style={{background:"none",border:`1.5px solid ${C.red}`,borderRadius:10,padding:"12px",color:C.red,cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif",width:"100%",marginBottom:10}}>
               🏁 Jetzt Mitglied werden
             </button>
             <button onClick={()=>{setMe(null);setScreen("splash");}}
-              style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:15,fontFamily:"'Barlow',sans-serif"}}>
+              style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:15,fontFamily:"'Inter',sans-serif"}}>
               Abmelden
             </button>
           </div>
         )}
         {tab==="dashboard"&&!isGuest&&me?.role==="workshop"&&(
           <div style={{animation:"fadeIn .2s",padding:16}}>
-            <div style={{fontSize:13,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3}}>🔧 Werkstatt-Zugänge</div>
+            <div style={{fontSize:15,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3}}>🔧 Werkstatt-Zugänge</div>
             {myWorkshopGrants.length===0?(
               <div style={{textAlign:"center",padding:"40px 20px",color:C.muted}}>
                 <div style={{fontSize:40,marginBottom:10}}>🔧</div>
@@ -8027,7 +8027,7 @@ Regeln:
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowWorkshopVehicleView(null);}}>
               <div className="sheet">
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                  <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>
+                  <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>
                     {fv?fv.hersteller+" "+fv.modell:"Fahrzeug"}
                   </div>
                   <button onClick={()=>setShowWorkshopVehicleView(null)}
@@ -8064,7 +8064,7 @@ Regeln:
           <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowWorkshopEntryForm(null);}}>
             <div className="sheet">
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>🔧 Service-Eintrag</div>
+                <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>🔧 Service-Eintrag</div>
                 <button onClick={()=>setShowWorkshopEntryForm(null)}
                   style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
               </div>
@@ -8090,7 +8090,7 @@ Regeln:
             {/* ── 1. Infos & Neuigkeiten ── */}
             <div style={{marginBottom:32}}>
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>📰 Infos & Neuigkeiten</div>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>📰 Infos & Neuigkeiten</div>
                 <div style={{display:"flex",justifyContent:"flex-end"}}>
                   <button onClick={()=>setShowNewsArchive(p=>!p)}
                     style={{background:"none",border:"none",color:showNewsArchive?C.gold:C.muted,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
@@ -8212,10 +8212,10 @@ Regeln:
                   border:`1px solid ${C.gold}33`,borderRadius:14,padding:"15px",marginBottom:16}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
                     <div>
-                      <div style={{fontSize:14,fontWeight:800,color:C.gold}}>Willkommen im PCN 🏁</div>
+                      <div style={{fontSize:16,fontWeight:800,color:C.gold}}>Willkommen im PCN 🏁</div>
                       <div style={{fontSize:13,color:C.muted,marginTop:1}}>Noch {steps.length-doneCount} Schritt{steps.length-doneCount!==1?"e":""} bis alles eingerichtet ist</div>
                     </div>
-                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:C.gold}}>
+                    <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:900,color:C.gold}}>
                       {doneCount}/{steps.length}
                     </div>
                   </div>
@@ -8227,7 +8227,7 @@ Regeln:
                       style={{width:"100%",display:"flex",gap:11,alignItems:"center",padding:"9px 0",
                         borderBottom:`1px solid ${C.border}`,background:"none",border:"none",
                         borderBottomStyle:"solid",cursor:s.done?"default":"pointer",textAlign:"left",
-                        opacity:s.done?.45:1,fontFamily:"'Barlow',sans-serif"}}>
+                        opacity:s.done?.45:1,fontFamily:"'Inter',sans-serif"}}>
                       <span style={{fontSize:15,width:22,textAlign:"center",flexShrink:0}}>{s.done?"✓":s.icon}</span>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:15,fontWeight:600,color:s.done?C.muted:C.white,
@@ -8236,7 +8236,7 @@ Regeln:
                       </div>
                       {!s.done&&(
                         <span style={{fontSize:13,color:C.gold,fontWeight:700,flexShrink:0,
-                          fontFamily:"'Barlow Condensed',sans-serif"}}>+{s.pts.toLocaleString("de-DE")}</span>
+                          fontFamily:"'Inter',sans-serif"}}>+{s.pts.toLocaleString("de-DE")}</span>
                       )}
                     </button>
                   ))}
@@ -8247,7 +8247,7 @@ Regeln:
             {/* ── 2. Meine Fahrzeuge ── */}
             <div style={{marginBottom:32}}>
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:10,lineHeight:1.3,display:"block"}}>🚗 Meine Fahrzeuge</div>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:10,lineHeight:1.3,display:"block"}}>🚗 Meine Fahrzeuge</div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
                   <button className="btn sm ghost" onClick={()=>setShowTransferPanel("__request__")}>🔑 Fremde QAR-ID beantragen</button>
                   <button className="btn sm" style={{background:C.gold,color:"#000"}} onClick={()=>setShowAddV(true)}>Fahrzeug hinzufügen</button>
@@ -8294,11 +8294,11 @@ Regeln:
             {displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).length>0&&(
               <div style={{marginBottom:32}}>
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>
                   🚗 Neueste Mitglieder-Fahrzeuge
                 </div>
                 <div style={{display:"flex",justifyContent:"flex-end"}}>
-                  <button onClick={()=>setTab("community")} style={{background:"none",border:"none",color:C.red,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"2px 0"}}>
+                  <button onClick={()=>setTab("community")} style={{background:"none",border:"none",color:C.red,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",padding:"2px 0"}}>
                     Alle ansehen →
                   </button>
                 </div>
@@ -8352,7 +8352,7 @@ Regeln:
               {/* ── Zuletzt angesehen ── */}
               {recentVehicles.length>0&&(
                 <div style={{marginBottom:18}}>
-                  <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🕐 Zuletzt angesehen</div>
+                  <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🕐 Zuletzt angesehen</div>
                   <div style={{display:"flex",gap:10,overflowX:"auto",scrollbarWidth:"none",paddingBottom:4,paddingTop:8,
                     maskImage:recentVehicles.length>2?"linear-gradient(90deg,#000 88%,transparent)":"none",
                     WebkitMaskImage:recentVehicles.length>2?"linear-gradient(90deg,#000 88%,transparent)":"none"}}>
@@ -8421,7 +8421,7 @@ Regeln:
               {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(
             <div style={{marginBottom:8}}>
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>⚙️ Plattform-Funktionen</div>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>⚙️ Plattform-Funktionen</div>
                 <div style={{display:"flex",justifyContent:"flex-end"}}>
                   <button onClick={()=>setShowInfoModal(true)}
                     style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
@@ -8501,14 +8501,14 @@ Regeln:
             {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
             <div style={{marginBottom:32}}>
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>🗺️ Live-Ausfahrt</div>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>🗺️ Live-Ausfahrt</div>
                 <div style={{display:"flex",justifyContent:"flex-end"}}>
                   <button className="btn sm ghost" onClick={()=>setShowCreateLiveGroup(true)}>+ Starten</button>
                 </div>
               </div>
               {myLiveGroups.length>0?myLiveGroups.map(g=>(
                 <button key={g.id} onClick={()=>openLiveGroup(g.id)}
-                  style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:"'Barlow',sans-serif"}}>
+                  style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:"'Inter',sans-serif"}}>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:700,fontSize:14,color:C.white}}>{g.name}</div>
                     <div style={{fontSize:13,color:C.muted}}>{g.myStatus==="invited"?"Du wurdest eingeladen":"Läuft gerade"}</div>
@@ -8522,7 +8522,7 @@ Regeln:
 
             {/* View toggle + Filter */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,gap:8}}>
-              <div style={{fontSize:15,fontWeight:800,color:C.white}}>Veranstaltungen 2026</div>
+              <div style={{fontSize:17,fontWeight:800,color:C.white}}>Veranstaltungen 2026</div>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 {(()=>{
                   const activeCount = [eventFilters.onlyMine, eventFilters.category, eventFilters.price,
@@ -8545,7 +8545,7 @@ Regeln:
                   {[["list","☰ Liste"],["calendar","📅 Kalender"]].map(([v,label])=>(
                     <button key={v} onClick={()=>setEventsView(v)}
                       style={{padding:"7px 12px",border:"none",borderRadius:6,cursor:"pointer",
-                        fontFamily:"'Barlow',sans-serif",fontWeight:700,fontSize:14,
+                        fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:14,
                         background:eventsView===v?C.red:"transparent",
                         color:eventsView===v?"#fff":C.muted,transition:"all .15s"}}>
                       {label}
@@ -8566,7 +8566,7 @@ Regeln:
               const pointsEarned = pastConfirmed.length * POINTS.event_confirmed;
               return (
                 <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:14}}>
-                  <div style={{fontSize:15,fontWeight:800,color:C.muted,marginBottom:10,letterSpacing:.5}}>
+                  <div style={{fontSize:17,fontWeight:800,color:C.muted,marginBottom:10,letterSpacing:.2}}>
                     📖 Meine Event-Historie
                   </div>
                   <div style={{display:"flex",gap:20,marginBottom:pastConfirmed.length?12:0}}>
@@ -8648,7 +8648,7 @@ Regeln:
                         <div style={{fontSize:15,color:C.muted}}>{fmtDate(ev.date)} · {ev.location}</div>
                       </div>
                       <div style={{textAlign:"center",background:days<=0?"#1a1a1a":days<=7?`${C.amber}22`:`${C.border}33`,borderRadius:10,padding:"8px 10px",marginLeft:10,flexShrink:0}}>
-                        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:days<=0?C.red:days<=7?C.amber:C.white,lineHeight:1}}>
+                        <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:days<=0?C.red:days<=7?C.amber:C.white,lineHeight:1}}>
                           {days<=0?"Heute":days}
                         </div>
                         {days>0&&<div style={{fontSize:12,color:C.muted}}>Tage</div>}
@@ -8687,12 +8687,12 @@ Regeln:
                   {/* Month nav */}
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
                     <button onClick={()=>setCalMonth(new Date(year,month-1,1))}
-                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 14px",color:C.white,cursor:"pointer",fontSize:16,fontFamily:"'Barlow',sans-serif"}}>‹</button>
-                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>
+                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 14px",color:C.white,cursor:"pointer",fontSize:16,fontFamily:"'Inter',sans-serif"}}>‹</button>
+                    <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>
                       {new Date(year,month).toLocaleDateString("de-DE",{month:"long",year:"numeric"})}
                     </div>
                     <button onClick={()=>setCalMonth(new Date(year,month+1,1))}
-                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 14px",color:C.white,cursor:"pointer",fontSize:16,fontFamily:"'Barlow',sans-serif"}}>›</button>
+                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 14px",color:C.white,cursor:"pointer",fontSize:16,fontFamily:"'Inter',sans-serif"}}>›</button>
                   </div>
 
                   {/* Day headers */}
@@ -8732,7 +8732,7 @@ Regeln:
                   {/* Events this month */}
                   {eventsThisMonth.length>0&&(
                     <>
-                      <div style={{fontSize:15,fontWeight:800,color:C.muted,letterSpacing:2,marginBottom:10}}>
+                      <div style={{fontSize:17,fontWeight:800,color:C.muted,letterSpacing:.8,marginBottom:10}}>
                         Events im {new Date(year,month).toLocaleDateString("de-DE",{month:"long"})}
                       </div>
                       {eventsThisMonth.map(ev=>{
@@ -8786,7 +8786,7 @@ Regeln:
             {/* ── Meine anonymen Chats (Gast + Mitglied) ── */}
             {guestThreads.length>0&&(
               <div style={{marginBottom:18}}>
-                <div style={{fontSize:15,fontWeight:800,color:C.muted,letterSpacing:1.5,marginBottom:12}}>🔒 MEINE CHATS</div>
+                <div style={{fontSize:17,fontWeight:800,color:C.muted,letterSpacing:.2,marginBottom:12}}>🔒 MEINE CHATS</div>
                 {[...guestThreads].sort((a,b)=>{
                   const at=threads[a.id]?.messages?.filter(m=>!m.isSystem)?.slice(-1)[0];
                   const bt=threads[b.id]?.messages?.filter(m=>!m.isSystem)?.slice(-1)[0];
@@ -8871,7 +8871,7 @@ Regeln:
                 : null;
               return (
                 <div style={{marginBottom:16}}>
-                  <div style={{fontSize:15,fontWeight:800,color:C.muted,letterSpacing:2,marginBottom:10}}>📡 Club-Kanal</div>
+                  <div style={{fontSize:17,fontWeight:800,color:C.muted,letterSpacing:.8,marginBottom:10}}>📡 Club-Kanal</div>
                   <div style={{background:`linear-gradient(135deg, #1a0a0a, #200808)`,border:`2px solid ${C.red}44`,borderRadius:14,padding:"14px",cursor:"pointer",display:"flex",gap:14,alignItems:"center"}}
                     onClick={()=>{ setActiveThread(liveClub?CLUB_CHANNEL_ID:"GROUP_PCN"); setScreen("chat"); }}>
                     <div style={{width:52,height:52,borderRadius:14,background:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>🏎️</div>
@@ -8895,7 +8895,7 @@ Regeln:
             {/* ── Direktnachrichten — nur für Mitglieder ── */}
             {!isGuest&&(
             <div>
-            <div style={{fontSize:15,fontWeight:800,color:C.muted,letterSpacing:2,marginBottom:10}}>💬 Direktnachrichten</div>
+            <div style={{fontSize:17,fontWeight:800,color:C.muted,letterSpacing:.8,marginBottom:10}}>💬 Direktnachrichten</div>
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:12,display:"flex",gap:8,alignItems:"center"}}>
               <span style={{fontSize:16}}>🔒</span>
               <span style={{fontSize:15,color:C.muted,lineHeight:1.5}}>Direktnachrichten sind anonym — Name und E-Mail bleiben geschützt.</span>
@@ -9015,7 +9015,7 @@ Regeln:
         {tab==="reminders"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>Erinnerungen</div>
+              <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>Erinnerungen</div>
               <div style={{display:"flex",justifyContent:"flex-end"}}>
                 <button className="btn sm ghost" onClick={()=>setShowAddRem(true)}>+ Neu</button>
               </div>
@@ -9052,7 +9052,7 @@ Regeln:
                                     description: rv?`Fahrzeug: ${rv.hersteller} ${rv.modell} (${rv.kennzeichen||""})\nQAR.Gallery: https://qar.gallery/pcn/`:"",
                                     alarmMinutes: 1440,
                                   })}
-                                  style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",borderRadius:7,padding:"4px 9px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
+                                  style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",borderRadius:7,padding:"4px 9px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>
                                   📅 .ics
                                 </button>
                                 <button
@@ -9061,7 +9061,7 @@ Regeln:
                                     const title = encodeURIComponent(r.title+(rv?` — ${rv.hersteller} ${rv.modell}`:""));
                                     window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}`,"_blank");
                                   }}
-                                  style={{background:"#4285F422",border:"1px solid #4285F444",borderRadius:7,padding:"4px 9px",color:"#4285F4",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",display:"flex",alignItems:"center",gap:4}}>
+                                  style={{background:"#4285F422",border:"1px solid #4285F444",borderRadius:7,padding:"4px 9px",color:"#4285F4",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>
                                   🗓 Google
                                 </button>
                               </div>
@@ -9074,7 +9074,7 @@ Regeln:
                         </div>
                       </div>
                       <button onClick={async()=>{const DB=window.PCN_DB;if(DB)await DB.reminders.done(me.id,r.id);setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
-                        style={{background:C.red,border:"none",borderRadius:10,padding:"10px 16px",color:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,flexShrink:0,fontFamily:"'Barlow',sans-serif"}}>
+                        style={{background:C.red,border:"none",borderRadius:10,padding:"10px 16px",color:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,flexShrink:0,fontFamily:"'Inter',sans-serif"}}>
                         ✓
                       </button>
                     </div>
@@ -9090,7 +9090,7 @@ Regeln:
         {tab==="community"&&!isGuest&&(
           <div style={{animation:"fadeIn .2s"}}>
             {/* Header */}
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,marginBottom:4}}>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,color:C.white,marginBottom:4}}>
               Community
             </div>
             <div style={{fontSize:14,color:C.muted,marginBottom:12}}>Fahrzeuge die dich begeistern</div>
@@ -9133,12 +9133,12 @@ Regeln:
                 return (
                   <div>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                      <div style={{fontSize:12,color:C.muted,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase"}}>
+                      <div style={{fontSize:12,color:C.muted,fontWeight:700,letterSpacing:.2,textTransform:"uppercase"}}>
                         {filtered.length} von {allVehicles.length} Fahrzeug{allVehicles.length!==1?"en":""} {q||f!=="all"?"· gefiltert":"im Club"}
                       </div>
                       {(q||f!=="all")&&(
                         <button onClick={()=>{setCommunitySearch("");setCommunityFilter("all");}}
-                          style={{background:"none",border:"none",color:C.red,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                          style={{background:"none",border:"none",color:C.red,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                           Zurücksetzen
                         </button>
                       )}
@@ -9161,7 +9161,7 @@ Regeln:
                           <div style={{padding:"11px 12px",flex:1,minWidth:0}}>
                             <div style={{fontWeight:700,fontSize:14,color:C.white,marginBottom:3}}>{v.hersteller} {v.modell}</div>
                             <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                              <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:3,padding:"1px 6px",fontSize:12,fontWeight:800,color:"#111",letterSpacing:1,fontFamily:"Arial,sans-serif"}}>
+                              <span style={{background:"#fff",border:"1.5px solid #222",borderRadius:3,padding:"1px 6px",fontSize:12,fontWeight:800,color:"#111",letterSpacing:.4,fontFamily:"Arial,sans-serif"}}>
                                 {fmtKz(v.kennzeichen,v.baujahr)}
                               </span>
                               <span style={{fontSize:12,color:C.muted}}>{v.baujahr}</span>
@@ -9187,7 +9187,7 @@ Regeln:
             <div style={{marginBottom:24}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
                 <span style={{fontSize:18}}>❤️</span>
-                <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>
                   Meine Favoriten ({favorites.length})
                 </div>
               </div>
@@ -9255,7 +9255,7 @@ Regeln:
                 <div style={{marginBottom:32}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
                     <span style={{fontSize:16}}>👁</span>
-                    <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>
+                    <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>
                       Zuletzt angesehen
                     </div>
                   </div>
@@ -9301,7 +9301,7 @@ Regeln:
               if(!pending.length) return null;
               return (
                 <div style={{background:`${C.gold}11`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:"13px 16px",marginBottom:12}}>
-                  <div style={{fontSize:15,fontWeight:800,color:C.gold,letterSpacing:1.5,marginBottom:8}}>
+                  <div style={{fontSize:17,fontWeight:800,color:C.gold,letterSpacing:.2,marginBottom:8}}>
                     📱 QR-Scans — Bestätigung ausstehend ({pending.length})
                   </div>
                   <div style={{fontSize:14,color:C.muted,lineHeight:1.6}}>
@@ -9314,7 +9314,7 @@ Regeln:
 
             {/* Scan stats */}
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px"}}>
-              <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>📊 Meine Aktivität</div>
+              <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>📊 Meine Aktivität</div>
               {[
                 ["❤️","Favoriten",favorites.length+" Fahrzeuge"],
                 ["👁","Angesehen",getViewedVehicles().length+" Akten · +"+(getViewedVehicles().length*POINTS.view_akte).toLocaleString("de-DE")+" Pkt"],
@@ -9341,18 +9341,18 @@ Regeln:
                   onClick={openEditProfile}>
                   {me?.avatar
                     ?<img src={me.avatar} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                    :<span style={{fontSize:26,fontWeight:900,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif"}}>{(me?.name||"?")[0].toUpperCase()}</span>
+                    :<span style={{fontSize:26,fontWeight:900,color:"#fff",fontFamily:"'Inter',sans-serif"}}>{(me?.name||"?")[0].toUpperCase()}</span>
                   }
                   <div style={{position:"absolute",bottom:0,right:0,width:22,height:22,background:C.red,borderRadius:"50%",border:"2px solid #1a0808",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>📷</div>
                 </div>
                 <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
                   <div style={{minWidth:0}}>
-                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1}}>{me?.name}</div>
+                    <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1}}>{me?.name}</div>
                     <div style={{fontSize:15,color:C.muted,marginTop:3}}>{me?.role==="guest"?"Gast-Account":"PCN-Mitglied"}{me?.memberNr?" · "+me.memberNr:""}</div>
                     {me?.city&&<div style={{fontSize:15,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
                   </div>
                   <button onClick={()=>setShowInfoModal("points")} style={{background:"none",border:"none",cursor:"pointer",padding:0,textAlign:"right",flexShrink:0}}>
-                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.gold,lineHeight:1}}>{myPoints.toLocaleString("de-DE")}</div>
+                    <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,color:C.gold,lineHeight:1}}>{myPoints.toLocaleString("de-DE")}</div>
                     <div style={{fontSize:12,color:C.muted}}>Punkte</div>
                   </button>
                 </div>
@@ -9399,7 +9399,7 @@ Regeln:
             <button onClick={()=>setShowBgPicker(true)}
               style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:14,
                 padding:"14px 16px",marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",
-                gap:12,fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                gap:12,fontFamily:"'Inter',sans-serif",textAlign:"left"}}>
               <div style={{width:40,height:40,borderRadius:10,flexShrink:0,
                 background:bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]?BACKGROUND_THEMES[bgTheme].preview:C.black,
                 backgroundSize:"cover",backgroundPosition:"center",
@@ -9413,7 +9413,7 @@ Regeln:
 
             {/* ── Statistiken ── */}
             <div className="card" style={{padding:16,marginBottom:12}}>
-              <div style={{fontSize:15,fontWeight:800,color:C.muted,letterSpacing:2,marginBottom:12}}>Statistiken · zum Öffnen tippen</div>
+              <div style={{fontSize:17,fontWeight:800,color:C.muted,letterSpacing:.8,marginBottom:12}}>Statistiken · zum Öffnen tippen</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 {[
                   ["🚗","Fahrzeuge",myVehicles.length,"im System",()=>setTab("dashboard")],
@@ -9427,12 +9427,12 @@ Regeln:
                 ].map(([icon,label,val,sub,onTap])=>(
                   <button key={label} onClick={onTap}
                     style={{background:C.black,borderRadius:10,padding:"12px",textAlign:"center",
-                      border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                      border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:"'Inter',sans-serif",
                       WebkitTapHighlightColor:"transparent",position:"relative",transition:"border-color .15s"}}
                     onMouseEnter={e=>e.currentTarget.style.borderColor=C.red}
                     onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
                     <div style={{fontSize:20,marginBottom:3}}>{icon}</div>
-                    <div style={{fontSize:24,fontWeight:800,color:C.white,fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>{val}</div>
+                    <div style={{fontSize:26,fontWeight:800,color:C.white,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{val}</div>
                     <div style={{fontSize:13,color:C.muted,marginTop:2,fontWeight:600}}>{label}</div>
                     {sub&&<div style={{fontSize:9,color:"#555",marginTop:1}}>{sub}</div>}
                     <span style={{position:"absolute",top:8,right:9,fontSize:13,color:"#444"}}>›</span>
@@ -9443,7 +9443,7 @@ Regeln:
 
             {/* ── Milestones ── */}
             <div className="card" style={{padding:16,marginBottom:14}}>
-              <div style={{fontSize:15,fontWeight:800,color:C.muted,letterSpacing:2,marginBottom:12}}>Milestones</div>
+              <div style={{fontSize:17,fontWeight:800,color:C.muted,letterSpacing:.8,marginBottom:12}}>Milestones</div>
               {MILESTONES.map(m=>{const done=m.check(appState);return(
                 <div key={m.id} style={{display:"flex",gap:12,alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
                   <div style={{width:28,height:28,borderRadius:"50%",background:done?C.green:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:done?"#fff":C.muted,flexShrink:0,fontWeight:700}}>{done?"✓":"○"}</div>
@@ -9456,7 +9456,7 @@ Regeln:
             {/* ── Wallet / Bezahldaten ── */}
             <div className="card" style={{padding:16,marginBottom:14}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontSize:15,fontWeight:800,color:C.muted,letterSpacing:2}}>💳 Wallet & Mitgliedschaft</div>
+                <div style={{fontSize:17,fontWeight:800,color:C.muted,letterSpacing:.8}}>💳 Wallet & Mitgliedschaft</div>
               </div>
               {(()=>{
                 const isPaid = !!(me?.beitrag_bezahlt ?? me?.beitragBezahlt);
@@ -9526,7 +9526,7 @@ Regeln:
 
             {/* ── Pannenhilfe-Mitgliedschaften ── */}
             <div className="card" style={{padding:16,marginBottom:14}}>
-              <div style={{fontSize:15,fontWeight:800,color:C.muted,letterSpacing:2,marginBottom:12}}>🚨 Pannenhilfe</div>
+              <div style={{fontSize:17,fontWeight:800,color:C.muted,letterSpacing:.8,marginBottom:12}}>🚨 Pannenhilfe</div>
               <div style={{fontSize:13,color:C.muted,marginBottom:12,lineHeight:1.6}}>
                 Mitgliedsnummer hinterlegen — bei einer Panne dann direkt in der Fahrzeugakte griffbereit, mit Anruf-Button.
               </div>
@@ -9563,7 +9563,7 @@ Regeln:
 
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
               <div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>
                   📄 Fahrzeugschein scannen
                 </div>
                 <div style={{fontSize:13,color:C.muted,marginTop:1}}>Zulassungsbescheinigung Teil I</div>
@@ -9597,7 +9597,7 @@ Regeln:
                   </div>
                   <label style={{display:"inline-block",background:C.gold,color:"#0a0a0a",
                     borderRadius:9,padding:"12px 22px",fontSize:14,fontWeight:800,cursor:"pointer",
-                    fontFamily:"'Barlow',sans-serif"}}>
+                    fontFamily:"'Inter',sans-serif"}}>
                     <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
                       onChange={e=>{
                         const f=e.target.files?.[0]; if(!f) return;
@@ -9716,7 +9716,7 @@ Regeln:
                 </button>
                 <button onClick={()=>setScheinResult(null)}
                   style={{width:"100%",marginTop:7,background:"none",border:"none",color:"#666",
-                    fontSize:13,cursor:"pointer",fontFamily:"'Barlow',sans-serif",padding:"6px"}}>
+                    fontSize:13,cursor:"pointer",fontFamily:"'Inter',sans-serif",padding:"6px"}}>
                   ↻ Nochmal scannen
                 </button>
                 <div style={{fontSize:12,color:"#555",textAlign:"center",marginTop:8,lineHeight:1.4}}>
@@ -9737,7 +9737,7 @@ Regeln:
             style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
               padding:"24px 20px",maxWidth:420,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,
                 color:C.white,marginBottom:6}}>🔒 Deine Daten</div>
               <button onClick={()=>setShowPrivacyInfo(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
@@ -9787,7 +9787,7 @@ Regeln:
         <div className="overlay" style={{zIndex:850}} onClick={e=>{if(e.target===e.currentTarget)setShowEventFilters(false);}}>
           <div className="sheet" style={{maxHeight:"85vh",overflowY:"auto"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>⚙️ Events filtern</div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>⚙️ Events filtern</div>
               <button onClick={()=>setShowEventFilters(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:22,cursor:"pointer",padding:"0 4px"}}>✕</button>
             </div>
@@ -9810,14 +9810,14 @@ Regeln:
 
             {/* Zeitraum */}
             <div style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
-              <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.5}}>Zeitraum</div>
+              <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Zeitraum</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[["","Alle"],["week","Diese Woche"],["month","Diesen Monat"],["past","Vergangen"]].map(([v,label])=>(
                   <button key={v} onClick={()=>setEventFilters(p=>({...p,period:v}))}
                     style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.period===v?C.red:C.border}`,
                       background:eventFilters.period===v?`${C.red}22`:"transparent",
                       color:eventFilters.period===v?C.red:C.muted,fontSize:14,fontWeight:700,
-                      cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                     {label}
                   </button>
                 ))}
@@ -9826,14 +9826,14 @@ Regeln:
 
             {/* Preis */}
             <div style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
-              <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.5}}>Preis</div>
+              <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Preis</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[["","Alle"],["free","Kostenlos"],["paid","Kostenpflichtig"]].map(([v,label])=>(
                   <button key={v} onClick={()=>setEventFilters(p=>({...p,price:v}))}
                     style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.price===v?C.red:C.border}`,
                       background:eventFilters.price===v?`${C.red}22`:"transparent",
                       color:eventFilters.price===v?C.red:C.muted,fontSize:14,fontWeight:700,
-                      cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                      cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                     {label}
                   </button>
                 ))}
@@ -9846,13 +9846,13 @@ Regeln:
               if(!cats.length) return null;
               return (
                 <div style={{padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
-                  <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.5}}>Kategorie</div>
+                  <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Kategorie</div>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     <button onClick={()=>setEventFilters(p=>({...p,category:""}))}
                       style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${!eventFilters.category?C.red:C.border}`,
                         background:!eventFilters.category?`${C.red}22`:"transparent",
                         color:!eventFilters.category?C.red:C.muted,fontSize:14,fontWeight:700,
-                        cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                        cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                       Alle
                     </button>
                     {cats.map(cat=>(
@@ -9860,7 +9860,7 @@ Regeln:
                         style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.category===cat?C.red:C.border}`,
                           background:eventFilters.category===cat?`${C.red}22`:"transparent",
                           color:eventFilters.category===cat?C.red:C.muted,fontSize:14,fontWeight:700,
-                          cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                          cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                         {cat}
                       </button>
                     ))}
@@ -9872,12 +9872,12 @@ Regeln:
             <div style={{display:"flex",gap:8,marginTop:16}}>
               <button onClick={()=>setEventFilters({onlyMine:false,category:"",price:"",period:"",onlySpotsLeft:false})}
                 style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",
-                  color:C.muted,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                  color:C.muted,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                 Zurücksetzen
               </button>
               <button onClick={()=>setShowEventFilters(false)}
                 style={{flex:1,background:C.red,border:"none",borderRadius:10,padding:"12px",
-                  color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                  color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                 Anwenden
               </button>
             </div>
@@ -9893,7 +9893,7 @@ Regeln:
             style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:16,
               padding:"24px 20px",maxWidth:420,width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,
                 color:C.white,marginBottom:6}}>🔒 Deine Nachricht</div>
               <button onClick={()=>setShowContactPrivacyInfo(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
@@ -9952,8 +9952,8 @@ Regeln:
                 fontFamily:"sans-serif",fontWeight:700}}>✕</button>
             <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:10,paddingRight:28}}>
               <span style={{fontSize:22}}>🎭</span>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:900,
-                color:"#6b7fff",letterSpacing:.5}}>Demo-Modus aktiv</div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:19,fontWeight:900,
+                color:"#6b7fff",letterSpacing:.2}}>Demo-Modus aktiv</div>
             </div>
             <div style={{fontSize:15,color:"#ccc",lineHeight:1.65,marginBottom:10}}>
               Du bist als <strong style={{color:"#fff"}}>Max Mustermann</strong> unterwegs.
@@ -9991,7 +9991,7 @@ Regeln:
                   </div>
                   <div>
                     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>{showFeatureDetail.label}</div>
+                      <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>{showFeatureDetail.label}</div>
                       <span style={{fontSize:14}}>{isUnlocked?"✅":"🔒"}</span>
                     </div>
                     <div style={{fontSize:14,color:accent,fontWeight:700}}>
@@ -10004,7 +10004,7 @@ Regeln:
                 </div>
                 {!isUnlocked&&(
                   <div style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:20}}>
-                    <div style={{fontSize:15,fontWeight:800,color:"#888",letterSpacing:1,marginBottom:10}}>So freischalten</div>
+                    <div style={{fontSize:15,fontWeight:800,color:"#888",letterSpacing:.4,marginBottom:10}}>So freischalten</div>
                     {[
                       ["💳","Premium-Mitgliedschaft aktivieren","Sofortzugang zu allen Funktionen"],
                       ["🏆","Punkte durch Events sammeln","Aktive Teilnahme schaltet Features frei"],
@@ -10035,7 +10035,7 @@ Regeln:
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"28px 24px",maxWidth:380,width:"100%",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:6}}>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:6}}>
                 ⚙️ Funktionen freischalten
               </div>
               <button onClick={()=>setShowInfoModal(false)}
@@ -10071,14 +10071,14 @@ Regeln:
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-              <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🔑 Fahrzeug beantragen</div>
+              <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🔑 Fahrzeug beantragen</div>
               <button onClick={()=>{setShowTransferPanel(null);setQarIdRequestInput("");}}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
             </div>
             <div style={{fontSize:14,color:C.muted,marginBottom:16,lineHeight:1.6}}>
               QAR-ID des Fahrzeugs eingeben, das du übernehmen möchtest. Der bisherige Eigentümer erhält eine Anfrage und muss sie bestätigen — das Fahrzeug wechselt nicht sofort.
             </div>
-            <input className="inp" placeholder="z.B. QAR-XXXXXXXX" style={{marginBottom:14,fontFamily:"monospace",textAlign:"center",fontSize:16,letterSpacing:1}}
+            <input className="inp" placeholder="z.B. QAR-XXXXXXXX" style={{marginBottom:14,fontFamily:"monospace",textAlign:"center",fontSize:16,letterSpacing:.4}}
               value={qarIdRequestInput} onChange={e=>setQarIdRequestInput(e.target.value.toUpperCase())}
               onKeyDown={e=>e.key==="Enter"&&requestTransferByQarId()}/>
             <button className="btn" style={{width:"100%"}} disabled={transferBusy} onClick={requestTransferByQarId}>
@@ -10098,16 +10098,16 @@ Regeln:
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-              <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>Fahrzeug übernehmen</div>
+              <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>Fahrzeug übernehmen</div>
               <button onClick={()=>setShowBuyerConfirm(null)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
-            <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:8}}>1. Nutzungsbedingungen</div>
+            <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:.4,marginBottom:8}}>1. Nutzungsbedingungen</div>
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:14,color:C.muted,lineHeight:1.6}}>
               „Ich übernehme die digitale QAR-Akte dieses Fahrzeugs und akzeptiere die Allgemeinen Geschäftsbedingungen von QAR.Gallery für die weitere Nutzung. Mir ist bewusst, dass nach einer 30-tägigen kostenlosen Probezeit eine Zahlung erforderlich wird, andernfalls die Akte gesperrt wird."
             </div>
 
-            <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:8}}>2. Sichtbarkeit der übernommenen Historie</div>
+            <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:.4,marginBottom:8}}>2. Sichtbarkeit der übernommenen Historie</div>
             <div style={{fontSize:13,color:C.muted,marginBottom:10,lineHeight:1.6}}>
               Was von den Einträgen des vorherigen Eigentümers öffentlich sichtbar bleiben soll — ohne Auswahl bleibt alles zunächst privat.
             </div>
@@ -10138,7 +10138,7 @@ Regeln:
             <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
               onClick={e=>e.stopPropagation()}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🔑 Fahrzeug übernehmen?</div>
+                <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🔑 Fahrzeug übernehmen?</div>
                 <button onClick={()=>setShowForeignTransferStart(null)}
                   style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
               </div>
@@ -10167,7 +10167,7 @@ Regeln:
             onClick={()=>setShowCheckInPrompt(null)}>
             <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",animation:"fadeIn .2s"}}
               onClick={e=>e.stopPropagation()}>
-              <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>📍 Standort merken?</div>
+              <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white,marginBottom:4}}>📍 Standort merken?</div>
               <div style={{fontSize:14,color:C.muted,marginBottom:14,lineHeight:1.6}}>
                 Speichert, wo du gerade geparkt hast — nur für dich sichtbar, in {cv?`${cv.hersteller||""} ${cv.modell||""}`.trim()||"deiner Fahrzeugakte":"deiner Fahrzeugakte"}.
               </div>
@@ -10194,14 +10194,14 @@ Regeln:
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-              <div className="cond" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🗺️ Live-Ausfahrt starten</div>
+              <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>🗺️ Live-Ausfahrt starten</div>
               <button onClick={()=>{setShowCreateLiveGroup(false);setLiveGroupName("");setLiveGroupInvitees([]);}}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
             </div>
             <input className="inp" placeholder="Name der Ausfahrt, z.B. 'Eifel-Runde'" style={{marginBottom:14}}
               value={liveGroupName} onChange={e=>setLiveGroupName(e.target.value)}/>
 
-            <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:8}}>Route (optional)</div>
+            <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:.4,marginBottom:8}}>Route (optional)</div>
             <div style={{marginBottom:6}}>
               {routeStops.map((stop,i)=>(
                 <div key={i} style={{display:"flex",gap:6,alignItems:"center",marginBottom:8}}>
@@ -10232,7 +10232,7 @@ Regeln:
               + Zwischenstopp
             </button>
 
-            <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:8}}>Wen einladen?</div>
+            <div style={{fontSize:13,fontWeight:700,color:C.muted,letterSpacing:.4,marginBottom:8}}>Wen einladen?</div>
             <div style={{maxHeight:220,overflowY:"auto",marginBottom:16}}>
               {(()=>{
                 // Demo-Nutzer duerfen nicht in die Einladungsliste — allUsers
@@ -10296,7 +10296,7 @@ Regeln:
                 <button onClick={()=>setRoutePlanMode(p=>!p)}
                   style={{position:"absolute",bottom:14,right:14,zIndex:500,background:routePlanMode?C.gold:C.dark,
                     color:routePlanMode?"#000":"#fff",border:`1px solid ${routePlanMode?C.gold:C.border}`,borderRadius:99,
-                    padding:"9px 14px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif",
+                    padding:"9px 14px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",
                     display:"flex",alignItems:"center",gap:6,boxShadow:"0 2px 8px rgba(0,0,0,.4)"}}>
                   🗺️ {routePlanMode?"Route aktiv — auf Karte tippen":"Route planen"}
                 </button>
@@ -10334,7 +10334,7 @@ Regeln:
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:4}}>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:4}}>
                 🎨 Persönlicher Hintergrund
               </div>
               <button onClick={()=>setShowBgPicker(false)}
@@ -10359,7 +10359,7 @@ Regeln:
                   style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",borderRadius:12,
                     border:`1.5px solid ${bgTheme===theme.id?C.gold:C.border}`,
                     background:bgTheme===theme.id?`${C.gold}15`:"transparent",
-                    cursor:"pointer",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                    cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>
                   <div style={{width:44,height:44,borderRadius:10,flexShrink:0,background:theme.preview,backgroundSize:"cover",backgroundPosition:"center",border:`1px solid ${C.border}`}}/>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:14,color:C.white}}>{theme.label}</div>
@@ -10379,7 +10379,7 @@ Regeln:
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white}}>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.white}}>
                 ✉️ Neuigkeiten & offene Punkte
               </div>
               <button onClick={()=>setShowInfoModal(false)}
@@ -10413,7 +10413,7 @@ Regeln:
           <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:4}}>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.white,marginBottom:4}}>
                 🏆 Das PCN-Punktesystem
               </div>
               <button onClick={()=>setShowInfoModal(false)}
@@ -10426,10 +10426,10 @@ Regeln:
             {/* Kurs-Box */}
             <div style={{background:`${C.gold}12`,border:`1px solid ${C.gold}33`,borderRadius:12,padding:"14px",marginBottom:18}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                <span style={{fontSize:14,fontWeight:700,color:C.gold,letterSpacing:.5}}>WECHSELKURS</span>
+                <span style={{fontSize:14,fontWeight:700,color:C.gold,letterSpacing:.2}}>WECHSELKURS</span>
                 <span style={{fontSize:12,color:"#666"}}>🏁 die 911 im Kurs</span>
               </div>
-              <div style={{fontSize:22,fontWeight:900,color:C.white,fontFamily:"'Barlow Condensed',sans-serif"}}>
+              <div style={{fontSize:22,fontWeight:900,color:C.white,fontFamily:"'Inter',sans-serif"}}>
                 911 Punkte = 3 €
               </div>
               <div style={{fontSize:13,color:C.muted,marginTop:3}}>
@@ -10464,12 +10464,12 @@ Regeln:
               ]},
             ].map(sec=>(
               <div key={sec.group} style={{marginBottom:14}}>
-                <div style={{fontSize:13,fontWeight:800,color:sec.color,letterSpacing:.5,marginBottom:6}}>{sec.group}</div>
+                <div style={{fontSize:13,fontWeight:800,color:sec.color,letterSpacing:.2,marginBottom:6}}>{sec.group}</div>
                 {sec.items.map(([i,l,p])=>(
                   <div key={l} style={{display:"flex",gap:9,padding:"6px 0",borderBottom:`1px solid ${C.border}`,alignItems:"center"}}>
                     <span style={{width:20,textAlign:"center",fontSize:14}}>{i}</span>
                     <span style={{flex:1,color:"#ddd",fontSize:15}}>{l}</span>
-                    <span style={{color:C.gold,fontWeight:800,fontSize:15,fontFamily:"'Barlow Condensed',sans-serif"}}>{p}</span>
+                    <span style={{color:C.gold,fontWeight:800,fontSize:15,fontFamily:"'Inter',sans-serif"}}>{p}</span>
                   </div>
                 ))}
               </div>
@@ -10477,7 +10477,7 @@ Regeln:
 
             {/* Stufen */}
             <div style={{background:"#ffffff06",borderRadius:12,padding:"14px",marginBottom:14}}>
-              <div style={{fontSize:13,fontWeight:800,color:"#aaa",letterSpacing:.5,marginBottom:8}}>🏆 STUFEN</div>
+              <div style={{fontSize:13,fontWeight:800,color:"#aaa",letterSpacing:.2,marginBottom:8}}>🏆 STUFEN</div>
               {TIERS.map(t=>(
                 <div key={t.name} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",
                   borderBottom:`1px solid ${C.border}`,alignItems:"center",
@@ -10507,14 +10507,14 @@ Regeln:
               </div>
               {/* Prämien-Beispiele */}
               <div style={{background:"#00000044",borderRadius:8,padding:"10px 11px",marginBottom:10}}>
-                <div style={{fontSize:15,color:"#666",fontWeight:700,letterSpacing:1,marginBottom:7}}>Beispiele</div>
+                <div style={{fontSize:15,color:"#666",fontWeight:700,letterSpacing:.4,marginBottom:7}}>Beispiele</div>
                 {[["QR-Sticker",5.9],["Schlüsselanhänger",25],["Porsche Cap",35],["Modellauto 1:43",60]].map(([n,p])=>{
                   const need = eurToPts(p);
                   const have = myPoints>=need;
                   return (
                     <div key={n} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0"}}>
                       <span style={{fontSize:13,color:have?C.green:"#888"}}>{have?"✓ ":""}{n}</span>
-                      <span style={{fontSize:13,color:have?C.green:"#666",fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif"}}>
+                      <span style={{fontSize:13,color:have?C.green:"#666",fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
                         {need.toLocaleString("de-DE")} Pkt
                       </span>
                     </div>
@@ -10550,7 +10550,7 @@ Regeln:
         <div className="overlay" style={{zIndex:500}} onClick={e=>{if(e.target===e.currentTarget)setShowEditProfile(false);}}>
           <div className="sheet">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>✏️ Profil bearbeiten</div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>✏️ Profil bearbeiten</div>
               <button onClick={()=>setShowEditProfile(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
@@ -10561,13 +10561,13 @@ Regeln:
               <div style={{width:72,height:72,borderRadius:"50%",overflow:"hidden",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,position:"relative"}}>
                 {profileForm.avatar
                   ?<img src={profileForm.avatar} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                  :<span style={{fontSize:28,fontWeight:900,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif"}}>{(profileForm.name||me?.name||"?")[0]?.toUpperCase()}</span>
+                  :<span style={{fontSize:28,fontWeight:900,color:"#fff",fontFamily:"'Inter',sans-serif"}}>{(profileForm.name||me?.name||"?")[0]?.toUpperCase()}</span>
                 }
               </div>
               <div style={{flex:1}}>
                 <div style={{fontSize:15,fontWeight:700,color:C.white,marginBottom:6}}>Profilbild</div>
                 <div style={{display:"flex",gap:8}}>
-                  <label style={{background:C.red,borderRadius:8,padding:"8px 14px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+                  <label style={{background:C.red,borderRadius:8,padding:"8px 14px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                     <input type="file" accept="image/*" style={{display:"none"}}
                       onChange={e=>{
                         const file=e.target.files[0]; if(!file) return;
@@ -10593,7 +10593,7 @@ Regeln:
                   </label>
                   {profileForm.avatar&&(
                     <button onClick={()=>setProfileForm(p=>({...p,avatar:""}))}
-                      style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 12px",color:C.muted,cursor:"pointer",fontSize:14,fontFamily:"'Barlow',sans-serif"}}>
+                      style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 12px",color:C.muted,cursor:"pointer",fontSize:14,fontFamily:"'Inter',sans-serif"}}>
                       Entfernen
                     </button>
                   )}
@@ -10602,7 +10602,7 @@ Regeln:
             </div>
 
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Persönlich</div>
+              <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Persönlich</div>
               <input className="inp" placeholder="Name *" value={profileForm.name||""}
                 onChange={e=>setProfileForm(p=>({...p,name:e.target.value}))} style={{marginBottom:8}}/>
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -10623,21 +10623,21 @@ Regeln:
                   max={new Date().toISOString().slice(0,10)}
                   onChange={e=>setProfileForm(p=>({...p,geburtstag:e.target.value}))}
                   style={{width:"100%",background:"#1a1a1a",border:`1px solid ${C.border}`,borderRadius:7,
-                    padding:"9px 11px",color:C.white,fontSize:14,fontFamily:"'Barlow',sans-serif",outline:"none"}}/>
+                    padding:"9px 11px",color:C.white,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none"}}/>
                 <div style={{fontSize:12,color:"#555",marginTop:5,lineHeight:1.5}}>
                   Nur für den Vorstand sichtbar — damit der Club dir gratulieren kann. Wird nicht öffentlich angezeigt.
                 </div>
               </div>
               <textarea className="inp" placeholder="Kurzbeschreibung (optional, z.B. Porsche-Fan seit 2010, Nordschleife-Enthusiast)"
                 rows={2} value={profileForm.bio||""} onChange={e=>setProfileForm(p=>({...p,bio:e.target.value}))}
-                style={{resize:"none",fontFamily:"'Barlow',sans-serif"}}/>
+                style={{resize:"none",fontFamily:"'Inter',sans-serif"}}/>
 
               {/* ── Passwort ändern ── */}
               <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px",marginTop:8}}>
                 <button onClick={()=>setShowPwChange(p=>!p)}
                   style={{background:"none",border:"none",width:"100%",display:"flex",
                     justifyContent:"space-between",alignItems:"center",cursor:"pointer",padding:0,
-                    fontFamily:"'Barlow',sans-serif"}}>
+                    fontFamily:"'Inter',sans-serif"}}>
                   <span style={{fontSize:15,color:"#aaa",fontWeight:600}}>🔒 Passwort ändern</span>
                   <span style={{fontSize:14,color:C.muted,transform:showPwChange?"rotate(90deg)":"none",
                     transition:"transform .2s"}}>›</span>
@@ -10681,7 +10681,7 @@ Regeln:
             </div>
 
             <div style={{marginBottom:18}}>
-              <div style={{fontSize:16,fontWeight:800,color:C.white,letterSpacing:1.5,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Benachrichtigungen</div>
+              <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>Benachrichtigungen</div>
               {[
                 ["notifications_events","🏁  Event-Erinnerungen","Neue Events und Anmeldungsbestätigungen"],
                 ["notifications_messages","💬  Neue Nachrichten","Eingehende Nachrichten im Chat"],
@@ -10710,7 +10710,7 @@ Regeln:
         <div className="overlay" onClick={e=>{if(e.target===e.currentTarget){setShowAddV(false);setAnalyzeResult(null);setAnalyzing(false);setAnalyzeHiRes(null);}}}>
           <div className="sheet">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>Fahrzeug hinzufügen</div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>Fahrzeug hinzufügen</div>
               <button onClick={()=>{setShowAddV(false);setAnalyzeResult(null);setAnalyzing(false);setAnalyzeHiRes(null);}}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
@@ -10745,10 +10745,10 @@ Regeln:
                 <button onClick={()=>{setScheinOpen(true);setScheinResult(null);}}
                   style={{width:"100%",background:`linear-gradient(135deg, ${C.gold}22, ${C.gold}0a)`,
                     border:`1.5px solid ${C.gold}55`,borderRadius:12,padding:"14px",cursor:"pointer",
-                    display:"flex",gap:12,alignItems:"center",fontFamily:"'Barlow',sans-serif",textAlign:"left"}}>
+                    display:"flex",gap:12,alignItems:"center",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>
                   <span style={{fontSize:26,flexShrink:0}}>📄</span>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontWeight:800,color:C.gold,marginBottom:1}}>
+                    <div style={{fontSize:16,fontWeight:800,color:C.gold,marginBottom:1}}>
                       Fahrzeugschein scannen
                     </div>
                     <div style={{fontSize:13,color:"#999",lineHeight:1.4}}>
@@ -10838,7 +10838,7 @@ Regeln:
                   <button onClick={()=>analyzeVehiclePhoto(addVForm.images[0])}
                     style={{width:"100%",marginTop:9,background:"transparent",border:`1px solid ${C.border}`,
                       borderRadius:7,padding:"8px",color:"#888",fontSize:14,fontWeight:600,cursor:"pointer",
-                      fontFamily:"'Barlow',sans-serif"}}>
+                      fontFamily:"'Inter',sans-serif"}}>
                     ↻ Nochmal versuchen
                   </button>
                 )}
@@ -10851,8 +10851,8 @@ Regeln:
                 padding:"13px 14px",marginBottom:10}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
                   <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                    <span style={{fontSize:14,fontWeight:800,color:C.gold,letterSpacing:.3}}>✨ Aus dem Foto erkannt</span>
-                    <span style={{fontSize:8,fontWeight:800,letterSpacing:.5,color:"#0a0a0a",
+                    <span style={{fontSize:16,fontWeight:800,color:C.gold,letterSpacing:.15}}>✨ Aus dem Foto erkannt</span>
+                    <span style={{fontSize:8,fontWeight:800,letterSpacing:.2,color:"#0a0a0a",
                       background:C.gold,padding:"1px 5px",borderRadius:3}}>BETA</span>
                   </div>
                   <button onClick={()=>setAnalyzeResult(null)}
@@ -10885,7 +10885,7 @@ Regeln:
                 <button onClick={applyAnalysis}
                   style={{width:"100%",marginTop:11,background:C.gold,border:"none",borderRadius:8,
                     padding:"10px",color:"#0a0a0a",fontSize:15,fontWeight:800,cursor:"pointer",
-                    fontFamily:"'Barlow',sans-serif"}}>
+                    fontFamily:"'Inter',sans-serif"}}>
                   Übernehmen &amp; prüfen ✓
                 </button>
                 <div style={{fontSize:12,color:"#555",textAlign:"center",marginTop:6,lineHeight:1.4}}>
@@ -10917,20 +10917,20 @@ Regeln:
         <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowAddRem(false);}}>
           <div className="sheet">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>🔔 Erinnerung</div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:800,color:C.white}}>🔔 Erinnerung</div>
               <button onClick={()=>setShowAddRem(false)}
                 style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
             </div>
             <div style={{fontSize:14,color:C.muted,marginBottom:14}}>Neue Aufgabe oder Termin anlegen</div>
 
             {/* Quick presets */}
-            <div style={{fontSize:15,fontWeight:800,color:C.muted,letterSpacing:1,marginBottom:8}}>Schnellauswahl</div>
+            <div style={{fontSize:17,fontWeight:800,color:C.muted,letterSpacing:.4,marginBottom:8}}>Schnellauswahl</div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
               {[["🔧","TÜV vereinbaren"],["🛢️","Ölwechsel"],["🏎️","Reifenwechsel"],["📋","Inspektion"],["🏁","Event vorbereiten"]].map(([icon,label])=>(
                 <button key={label} onClick={()=>setRemForm(p=>({...p,title:label}))}
                   style={{background:remForm.title===label?C.red:C.card,border:`1px solid ${remForm.title===label?C.red:C.border}`,
                     borderRadius:8,padding:"8px 10px",color:remForm.title===label?"#fff":C.muted,
-                    cursor:"pointer",fontSize:14,fontFamily:"'Barlow',sans-serif",display:"flex",gap:4,alignItems:"center"}}>
+                    cursor:"pointer",fontSize:14,fontFamily:"'Inter',sans-serif",display:"flex",gap:4,alignItems:"center"}}>
                   <span>{icon}</span><span>{label}</span>
                 </button>
               ))}
