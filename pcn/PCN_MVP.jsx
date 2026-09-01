@@ -7951,6 +7951,10 @@ Regeln:
         )}
 
         <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{textAlign:"right",minWidth:0}}>
+            <div style={{fontSize:15,fontWeight:700,color:"#1a1a1a",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{me?.name}</div>
+            <div style={{fontSize:12,color:"#888"}}>{me?.memberNr}</div>
+          </div>
           {!isGuest&&(
             <button onClick={()=>setShowInfoModal("catchall")}
               style={{background:"none",border:"none",cursor:"pointer",padding:2,position:"relative",flexShrink:0,lineHeight:1}}
@@ -7960,10 +7964,6 @@ Regeln:
                 <span style={{position:"absolute",top:0,right:0,width:9,height:9,borderRadius:"50%",background:C.red,boxShadow:"0 0 0 2px #fff"}}/>}
             </button>
           )}
-          <div style={{textAlign:"right",minWidth:0}}>
-            <div style={{fontSize:15,fontWeight:700,color:"#1a1a1a",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{me?.name}</div>
-            <div style={{fontSize:12,color:"#888"}}>{me?.memberNr}</div>
-          </div>
         </div>
       </div>
 
