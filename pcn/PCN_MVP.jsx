@@ -8153,7 +8153,11 @@ Regeln:
                 const items = [...dbNews, ...DEMO_NEWS]
                   .filter(n=>n.type!=="welcome" && newsState[n.id]!=="read" && !readPts.includes(String(n.id)))
                   .sort((a,b)=>new Date(b.date)-new Date(a.date));
-                if(!items.length) return null;
+                if(!items.length) return (
+                  <div style={{background:"#0d0d0d",border:`1px solid ${C.border}`,borderRadius:12,padding:"16px 14px",marginBottom:8,textAlign:"center"}}>
+                    <div style={{fontSize:14,color:C.muted,lineHeight:1.6}}>Keine Neuigkeiten. Du hast alles gelesen. ✔️</div>
+                  </div>
+                );
                 return (
                   <div style={{display:"flex",gap:12,overflowX:"auto",scrollbarWidth:"none",
                     WebkitOverflowScrolling:"touch",paddingBottom:4,marginBottom:8,
