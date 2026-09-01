@@ -10384,7 +10384,7 @@ Regeln:
             {catchAllItems.length===0?(
               <div style={{textAlign:"center",padding:"30px 0",color:C.muted}}>
                 <div style={{fontSize:36,marginBottom:10}}>✓</div>
-                <div style={{fontSize:15}}>Alles erledigt — nichts wartet gerade auf dich.</div>
+                <div style={{fontSize:15}}>Du bist auf dem neuesten Stand.</div>
               </div>
             ):catchAllItems.map(item=>(
               <button key={item.id} onClick={item.action}
