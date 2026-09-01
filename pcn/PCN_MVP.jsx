@@ -7959,9 +7959,9 @@ Regeln:
             <button onClick={()=>setShowInfoModal("catchall")}
               style={{background:"none",border:"none",cursor:"pointer",padding:2,position:"relative",flexShrink:0,lineHeight:1}}
               title="Neuigkeiten & offene Punkte">
-              <span style={{fontSize:20}}>✉️</span>
+              <span style={{fontSize:28}}>✉️</span>
               {catchAllItems.length>0&&
-                <span style={{position:"absolute",top:0,right:0,width:9,height:9,borderRadius:"50%",background:C.red,boxShadow:"0 0 0 2px #fff"}}/>}
+                <span style={{position:"absolute",top:-1,right:-1,width:12,height:12,borderRadius:"50%",background:C.red,boxShadow:"0 0 0 2px #fff"}}/>}
             </button>
           )}
         </div>
