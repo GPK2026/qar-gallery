@@ -1976,6 +1976,38 @@ function PCNInner() {
   const appState = {logbook,participants,vehicles,me};
   const unlockedFeatures = new Set(MILESTONES.filter(m=>m.check(appState)).flatMap(m=>m.unlocks));
 
+  // ── Catch-all: buendelt alle bestehenden Benachrichtigungsquellen (Chat,
+  // News, Werkstatt-Anfragen, Uebertragungsantraege) zu einer einzigen
+  // Liste fuer das Info-Icon im Profil. Dupliziert keine Logik — jeder
+  // Eintrag fuehrt zur bereits bestehenden, funktionsfaehigen Stelle. ──
+  const catchAllItems = [
+    ...(unreadCount>0?[{
+      id:"messages", icon:"💬", label:"Ungelesene Nachrichten",
+      detail:`${unreadCount} ${unreadCount===1?"Chat wartet":"Chats warten"} auf Antwort`,
+      action:()=>{setShowInfoModal(null); setTab("messages"); setScreen("app");},
+    }]:[]),
+    ...(unreadNews>0?[{
+      id:"news", icon:"📰", label:"Neuigkeiten",
+      detail:`${unreadNews} ${unreadNews===1?"neuer Beitrag":"neue Beiträge"} im Club-Newsfeed`,
+      action:()=>{setShowInfoModal(null); setTab("dashboard"); setScreen("app");},
+    }]:[]),
+    ...(pendingTransferVehicleIds.size>0?[{
+      id:"transfers", icon:"🔑", label:"Übertragungsanträge",
+      detail:`${pendingTransferVehicleIds.size} ${pendingTransferVehicleIds.size===1?"Fahrzeug wartet":"Fahrzeuge warten"} auf deine Bestätigung`,
+      action:()=>{setShowInfoModal(null); setTab("dashboard"); setScreen("app");},
+    }]:[]),
+    ...(pendingWorkshopVehicleIds.size>0?[{
+      id:"workshop", icon:"🔧", label:"Werkstatt-Anfragen",
+      detail:`${pendingWorkshopVehicleIds.size} ${pendingWorkshopVehicleIds.size===1?"Fahrzeug wartet":"Fahrzeuge warten"} auf deine Bestätigung`,
+      action:()=>{setShowInfoModal(null); setTab("dashboard"); setScreen("app");},
+    }]:[]),
+    ...(isOffline?[{
+      id:"offline", icon:"📡", label:"Keine Verbindung",
+      detail:"Änderungen werden gespeichert, sobald du wieder online bist",
+      action:()=>setShowInfoModal(null),
+    }]:[]),
+  ];
+
   // Punkte-Berechnung: Basis-Aktivitäten + Events
   // ── View/Scan points — serverseitig in point_events, ersetzt localStorage ──
   const [dbPointEvents, setDbPointEvents] = useState([]);
@@ -9300,7 +9332,16 @@ Regeln:
                 </div>
                 <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
                   <div style={{minWidth:0}}>
-                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1}}>{me?.name}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1}}>{me?.name}</div>
+                      <button onClick={()=>setShowInfoModal("catchall")}
+                        style={{background:"none",border:"none",cursor:"pointer",padding:2,position:"relative",flexShrink:0,lineHeight:1}}
+                        title="Neuigkeiten & offene Punkte">
+                        <span style={{fontSize:18}}>✉️</span>
+                        {catchAllItems.length>0&&
+                          <span style={{position:"absolute",top:-2,right:-2,width:9,height:9,borderRadius:"50%",background:C.red,boxShadow:`0 0 0 2px ${C.red}33`}}/>}
+                      </button>
+                    </div>
                     <div style={{fontSize:15,color:C.muted,marginTop:3}}>{me?.role==="guest"?"Gast-Account":"PCN-Mitglied"}{me?.memberNr?" · "+me.memberNr:""}</div>
                     {me?.city&&<div style={{fontSize:15,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
                   </div>
@@ -10322,6 +10363,40 @@ Regeln:
               ))}
             </div>
             <button className="btn ghost" style={{width:"100%",marginTop:16}} onClick={()=>setShowBgPicker(false)}>Schließen</button>
+          </div>
+        </div>
+      )}
+
+      {showInfoModal==="catchall"&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>setShowInfoModal(false)}>
+          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:C.white}}>
+                ✉️ Neuigkeiten & offene Punkte
+              </div>
+              <button onClick={()=>setShowInfoModal(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+            </div>
+            {catchAllItems.length===0?(
+              <div style={{textAlign:"center",padding:"30px 0",color:C.muted}}>
+                <div style={{fontSize:36,marginBottom:10}}>✓</div>
+                <div style={{fontSize:15}}>Alles erledigt — nichts wartet gerade auf dich.</div>
+              </div>
+            ):catchAllItems.map(item=>(
+              <button key={item.id} onClick={item.action}
+                style={{width:"100%",display:"flex",gap:12,alignItems:"center",background:C.card,
+                  border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:8,
+                  cursor:"pointer",textAlign:"left"}}>
+                <span style={{fontSize:22,flexShrink:0}}>{item.icon}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:15,fontWeight:700,color:C.white}}>{item.label}</div>
+                  <div style={{fontSize:13,color:C.muted,marginTop:1}}>{item.detail}</div>
+                </div>
+                <span style={{fontSize:18,color:C.muted,flexShrink:0}}>›</span>
+              </button>
+            ))}
           </div>
         </div>
       )}
