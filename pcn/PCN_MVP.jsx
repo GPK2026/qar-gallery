@@ -6141,58 +6141,6 @@ Regeln:
                   </div>
                 )}
 
-                {/* ── Pannenhilfe: schnell griffbereit im Ernstfall ── */}
-                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                  <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🚨 Pannenhilfe</div>
-                  <div style={{display:"flex",gap:8}}>
-                    <a href="tel:+498920204000" style={{flex:1,textDecoration:"none"}}>
-                      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",textAlign:"center"}}>
-                        <div style={{fontSize:14,fontWeight:700,color:C.white}}>📞 ADAC</div>
-                        {me?.adacMemberNr&&<div style={{fontSize:9,color:C.muted,marginTop:2}}>Mitglied {me.adacMemberNr}</div>}
-                      </div>
-                    </a>
-                    <a href="tel:+498009909909" style={{flex:1,textDecoration:"none"}}>
-                      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",textAlign:"center"}}>
-                        <div style={{fontSize:14,fontWeight:700,color:C.white}}>📞 AvD</div>
-                        {me?.avdMemberNr&&<div style={{fontSize:9,color:C.muted,marginTop:2}}>Mitglied {me.avdMemberNr}</div>}
-                      </div>
-                    </a>
-                  </div>
-                  {!me?.adacMemberNr&&!me?.avdMemberNr&&(
-                    <div style={{fontSize:12,color:C.muted,marginTop:6}}>
-                      Pannenhilfe erreichst du auch ohne Mitgliedschaft — Mitgliedsnummer im Profil hinterlegen für schnelleren Ablauf.
-                    </div>
-                  )}
-                </div>
-
-                {/* ── Notfallprofile (ICE) ── */}
-                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                  <div style={{marginBottom:8}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>🆘 Notfallprofile</div>
-                    <div style={{display:"flex",justifyContent:"flex-end"}}>
-                      <button onClick={()=>{loadEmergencyProfiles(v.id);setShowEmergencyEdit({vehicleId:v.id,name:"",accessCode:"",contacts:[{name:"",relationship:"",phone:""}]});}}
-                        style={{background:"none",border:"none",color:C.gold,fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Hinzufügen</button>
-                    </div>
-                  </div>
-                  <div style={{fontSize:12,color:C.muted,marginBottom:8,lineHeight:1.5}}>
-                    Für Ersthelfer im Ernstfall — Zugang nur mit 4-stelligem Code, den du hinter dem "Nur im Notfall abziehen"-Aufkleber im Fahrzeug notierst.
-                  </div>
-                  {emergencyProfiles.length===0&&(
-                    <button onClick={()=>loadEmergencyProfiles(v.id)} style={{fontSize:13,color:C.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
-                      Profile laden
-                    </button>
-                  )}
-                  {emergencyProfiles.map(p=>(
-                    <div key={p.id} onClick={()=>setShowEmergencyEdit({...p,vehicleId:v.id})}
-                      style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <div>
-                        <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.name}</div>
-                        <div style={{fontSize:12,color:C.muted}}>Code: {p.accessCode} · {(p.contacts||[]).length} Kontakt(e)</div>
-                      </div>
-                      <span style={{fontSize:16,color:C.muted}}>›</span>
-                    </div>
-                  ))}
-                </div>
                 {/* ── Standort-Historie: nur für den Eigentümer, letzte 48h ── */}
                 {(scanLocations[v.id]||[]).length>0&&(
                   <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
@@ -6255,6 +6203,63 @@ Regeln:
             const vInsurance = (DEMO_INSURANCE[v.id]||[]);
             const vGutachten = (DEMO_GUTACHTEN[v.id]||[]);
             const sections = [
+              {
+                id:"emergency", icon:"🆘", label:"Notfall & Pannenhilfe", count:emergencyProfiles.length,
+                content:(
+                  <div>
+                    {/* ── Pannenhilfe: schnell griffbereit im Ernstfall ── */}
+                    <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.5,marginTop:12,marginBottom:6}}>Pannenhilfe</div>
+                    <div style={{display:"flex",gap:8}}>
+                      <a href="tel:+498920204000" style={{flex:1,textDecoration:"none"}}>
+                        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",textAlign:"center"}}>
+                          <div style={{fontSize:14,fontWeight:700,color:C.white}}>📞 ADAC</div>
+                          {me?.adacMemberNr&&<div style={{fontSize:9,color:C.muted,marginTop:2}}>Mitglied {me.adacMemberNr}</div>}
+                        </div>
+                      </a>
+                      <a href="tel:+498009909909" style={{flex:1,textDecoration:"none"}}>
+                        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",textAlign:"center"}}>
+                          <div style={{fontSize:14,fontWeight:700,color:C.white}}>📞 AvD</div>
+                          {me?.avdMemberNr&&<div style={{fontSize:9,color:C.muted,marginTop:2}}>Mitglied {me.avdMemberNr}</div>}
+                        </div>
+                      </a>
+                    </div>
+                    {!me?.adacMemberNr&&!me?.avdMemberNr&&(
+                      <div style={{fontSize:12,color:C.muted,marginTop:6}}>
+                        Pannenhilfe erreichst du auch ohne Mitgliedschaft — Mitgliedsnummer im Profil hinterlegen für schnelleren Ablauf.
+                      </div>
+                    )}
+
+                    {/* ── Notfallprofile (ICE) ── */}
+                    <div style={{marginTop:18,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
+                      <div style={{marginBottom:8}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.5,marginBottom:6}}>Notfallprofile</div>
+                        <div style={{display:"flex",justifyContent:"flex-end"}}>
+                          <button onClick={()=>{loadEmergencyProfiles(v.id);setShowEmergencyEdit({vehicleId:v.id,name:"",accessCode:"",contacts:[{name:"",relationship:"",phone:""}]});}}
+                            style={{background:"none",border:"none",color:C.gold,fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Hinzufügen</button>
+                        </div>
+                      </div>
+                      <div style={{fontSize:12,color:C.muted,marginBottom:8,lineHeight:1.5}}>
+                        Für Ersthelfer im Ernstfall — Zugang nur mit 4-stelligem Code, den du hinter dem "Nur im Notfall abziehen"-Aufkleber im Fahrzeug notierst.
+                      </div>
+                      {emergencyProfiles.length===0&&(
+                        <button onClick={()=>loadEmergencyProfiles(v.id)} style={{fontSize:13,color:C.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+                          Profile laden
+                        </button>
+                      )}
+                      {emergencyProfiles.map(p=>(
+                        <div key={p.id} onClick={()=>setShowEmergencyEdit({...p,vehicleId:v.id})}
+                          style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <div>
+                            <div style={{fontSize:15,fontWeight:700,color:C.white}}>{p.name}</div>
+                            <div style={{fontSize:12,color:C.muted}}>Code: {p.accessCode} · {(p.contacts||[]).length} Kontakt(e)</div>
+                          </div>
+                          <span style={{fontSize:16,color:C.muted}}>›</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              },
               {
                 id:"listings", icon:"💰", label:"Verkaufsbörse", count:vListings.length,
                 action:isOwn?()=>{setShowAddListing(v.id);setListingForm({category:"auto",description:"",price:"",images:[],linkedVehicleId:v.id});}:null,
