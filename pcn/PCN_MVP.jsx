@@ -8617,26 +8617,29 @@ Regeln:
           <div style={{animation:"fadeIn .2s"}}>
 
             {/* ── Kalender abonnieren — alle Events automatisch & dauerhaft im eigenen Kalender ── */}
-            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:20,flexShrink:0}}>📆</span>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:14,fontWeight:700,color:C.white}}>Kalender abonnieren</div>
-                <div style={{fontSize:12,color:C.muted}}>Alle Events automatisch in deinem Kalender</div>
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:16}}>
+              <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:20,flexShrink:0}}>📆</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:14,fontWeight:700,color:C.white}}>Kalender abonnieren</div>
+                  <div style={{fontSize:12,color:C.muted}}>Alle Events automatisch in deinem Kalender</div>
+                </div>
+                <button onClick={async()=>{
+                    await navigator.clipboard.writeText(ICAL_FEED_URL);
+                    toast_("Abo-Link kopiert ✓");
+                  }}
+                  style={{background:"none",border:`1px solid ${C.gold}`,borderRadius:7,padding:"6px 10px",
+                    color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>
+                  Link kopieren
+                </button>
               </div>
-              <button onClick={async()=>{
-                  await navigator.clipboard.writeText(ICAL_FEED_URL);
-                  toast_("Abo-Link kopiert ✓");
-                }}
-                style={{background:"none",border:`1px solid ${C.gold}`,borderRadius:7,padding:"6px 10px",
-                  color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>
-                Link kopieren
+              <button onClick={()=>setShowCalHelp(true)}
+                style={{width:"100%",background:"none",border:"none",borderTop:`1px solid ${C.border}`,
+                  color:C.muted,fontSize:12,cursor:"pointer",padding:"9px 14px",
+                  display:"flex",alignItems:"center",gap:4,fontFamily:"'Inter',sans-serif"}}>
+                ▸ Wie geht das?
               </button>
             </div>
-            <button onClick={()=>setShowCalHelp(true)}
-              style={{background:"none",border:"none",color:C.muted,fontSize:12,cursor:"pointer",
-                padding:"6px 2px",marginBottom:16,display:"flex",alignItems:"center",gap:4}}>
-              ▸ Wie geht das?
-            </button>
 
             {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
             <div style={{marginBottom:32}}>
