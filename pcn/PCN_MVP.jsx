@@ -53,6 +53,59 @@ const today = () => new Date().toISOString().split("T")[0];
 const fmtDate = d => d ? new Date(d).toLocaleDateString("de-DE",{day:"2-digit",month:"short",year:"numeric"}) : "–";
 const fmtTime = () => new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
 const daysUntil = d => Math.ceil((new Date(d)-new Date())/86400000);
+
+// ── Einzelnes Event als .ics-Datei — gleiche Logik wie der serverseitige
+// Sammel-Feed (ical-feed Edge Function), damit beide Wege konsistente
+// Kalendereinträge erzeugen. ──
+const escapeICalText = (text) => {
+  if(!text) return "";
+  return String(text).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+};
+const icalDateOnly = (dateStr) => dateStr.replace(/-/g,"");
+const icalAddOneDay = (dateStr) => {
+  const d = new Date(dateStr+"T00:00:00Z");
+  d.setUTCDate(d.getUTCDate()+1);
+  return d.toISOString().slice(0,10);
+};
+const buildEventICS = (ev) => {
+  const dtStart = icalDateOnly(ev.date);
+  const dtEnd = icalDateOnly(icalAddOneDay(ev.endDate||ev.date));
+  const lines = [
+    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//QAR.Gallery//PCN Events//DE","CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${ev.id}@qar.gallery`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").split(".")[0]}Z`,
+    `DTSTART;VALUE=DATE:${dtStart}`,
+    `DTEND;VALUE=DATE:${dtEnd}`,
+    `SUMMARY:${escapeICalText(ev.name||"PCN Event")}`,
+    ev.location?`LOCATION:${escapeICalText(ev.location)}`:"",
+    ev.description?`DESCRIPTION:${escapeICalText(ev.description)}`:"",
+    `URL:https://qar.gallery/pcn/?event=${ev.id}`,
+    "END:VEVENT","END:VCALENDAR",
+  ];
+  return lines.filter(l=>l!=="").join("\r\n");
+};
+const downloadEventICS = (ev) => {
+  const blob = new Blob([buildEventICS(ev)], {type:"text/calendar;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `${(ev.name||"event").replace(/[^a-z0-9]/gi,"_")}.ics`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+// Google-Calendar-Weblink — oeffnet Googles "Termin hinzufuegen"-Formular
+// direkt vorausgefuellt, komplett ohne eigene Serverinfrastruktur.
+const googleCalendarLink = (ev) => {
+  const dtStart = icalDateOnly(ev.date);
+  const dtEnd = icalDateOnly(icalAddOneDay(ev.endDate||ev.date));
+  const params = new URLSearchParams({
+    action:"TEMPLATE", text: ev.name||"PCN Event",
+    dates:`${dtStart}/${dtEnd}`,
+    details: ev.description||"", location: ev.location||"",
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
 const QAR_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const genQARId = () => { let id="QAR-"; for(let i=0;i<8;i++) id+=QAR_CHARS[Math.floor(Math.random()*QAR_CHARS.length)]; return id; };
 const isH = (baujahr) => baujahr && (new Date().getFullYear()-parseInt(baujahr)>=30);
@@ -225,6 +278,7 @@ const store = {
 };
 
 const CLUB_CODE = "PCN2026";
+const ICAL_FEED_URL = "https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/ical-feed";
 // Sponsor config — set in pcn_config.js: window.PCN_SPONSOR = {name:"Porschezentrum Koblenz", url:"https://...", logo:"https://..."}
 const SPONSOR = {
   name: "Porsche Zentrum Koblenz",
@@ -638,7 +692,8 @@ function Carousel({items, renderItem, cardWidth=150, gap=10, emptyState=null}) {
   );
 }
 
-function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin, onCancel, onViewVehicle}) {
+function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin, onCancel, onViewVehicle, toast_}) {
+  const [showCalMenu, setShowCalMenu] = useState(false);
   const [selV, setSelV] = useState(myVehicles[0]?.id||"");
   const [selC, setSelC] = useState((ev.classes||["Alle Modelle"])[0]);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -676,6 +731,44 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
           </span>}
         </div>
         <h1 style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1.1}}>{ev.name}</h1>
+        <div style={{display:"flex",gap:8,marginTop:10}}>
+          <div style={{position:"relative",flex:1}}>
+            <button onClick={()=>setShowCalMenu(s=>!s)}
+              style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,borderRadius:8,
+                padding:"8px 10px",color:C.white,fontSize:13,fontWeight:700,cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              📅 Zum Kalender
+            </button>
+            {showCalMenu&&(
+              <div style={{position:"absolute",top:"110%",left:0,right:0,background:C.dark,
+                border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden",zIndex:20,
+                boxShadow:"0 4px 16px rgba(0,0,0,.4)"}}>
+                <button onClick={()=>{downloadEventICS(ev);setShowCalMenu(false);}}
+                  style={{width:"100%",background:"none",border:"none",padding:"10px 12px",
+                    color:C.white,fontSize:13,textAlign:"left",cursor:"pointer",display:"block"}}>
+                  📥 Als .ics herunterladen (iCal/Outlook)
+                </button>
+                <a href={googleCalendarLink(ev)} target="_blank" rel="noopener noreferrer"
+                  onClick={()=>setShowCalMenu(false)}
+                  style={{display:"block",padding:"10px 12px",color:C.white,fontSize:13,
+                    textDecoration:"none",borderTop:`1px solid ${C.border}`}}>
+                  🌐 Zu Google Kalender hinzufügen
+                </a>
+              </div>
+            )}
+          </div>
+          <button onClick={async()=>{
+              const shareUrl = `https://qar.gallery/pcn/?event=${ev.id}`;
+              const shareData = {title:ev.name, text:`${ev.name} — ${fmtDate(ev.date)}`, url:shareUrl};
+              if(navigator.share){ try{ await navigator.share(shareData); }catch(e){} }
+              else { await navigator.clipboard.writeText(shareUrl); toast_("Link kopiert ✓"); }
+            }}
+            style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:8,
+              padding:"8px 10px",color:C.white,fontSize:13,fontWeight:700,cursor:"pointer",
+              display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            🔗 Teilen
+          </button>
+        </div>
       </div>
 
       <div style={{padding:"16px",maxWidth:520,margin:"0 auto"}}>
@@ -7847,6 +7940,7 @@ Regeln:
           onJoin={joinEvent}
           onCancel={cancelEvent}
           onViewVehicle={v=>{ setViewV(v); setScreen("vehicle"); }}
+          toast_={toast_}
         />
       </>
     );
@@ -8520,6 +8614,23 @@ Regeln:
           });
           return (
           <div style={{animation:"fadeIn .2s"}}>
+
+            {/* ── Kalender abonnieren — alle Events automatisch & dauerhaft im eigenen Kalender ── */}
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:20,flexShrink:0}}>📆</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:700,color:C.white}}>Kalender abonnieren</div>
+                <div style={{fontSize:12,color:C.muted}}>Alle Events automatisch in deinem Kalender</div>
+              </div>
+              <button onClick={async()=>{
+                  await navigator.clipboard.writeText(ICAL_FEED_URL);
+                  toast_("Abo-Link kopiert ✓");
+                }}
+                style={{background:"none",border:`1px solid ${C.gold}`,borderRadius:7,padding:"6px 10px",
+                  color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>
+                Link kopieren
+              </button>
+            </div>
 
             {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
             <div style={{marginBottom:32}}>
