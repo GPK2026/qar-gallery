@@ -8622,7 +8622,7 @@ Regeln:
                 <span style={{fontSize:20,flexShrink:0}}>📆</span>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:14,fontWeight:700,color:C.white}}>Kalender abonnieren</div>
-                  <div style={{fontSize:12,color:C.muted}}>Alle Events automatisch in deinem Kalender</div>
+                  <div style={{fontSize:12,color:C.muted}}>Alle Events in deinem Handy-Kalender abonnieren</div>
                 </div>
                 <button onClick={async()=>{
                     await navigator.clipboard.writeText(ICAL_FEED_URL);
