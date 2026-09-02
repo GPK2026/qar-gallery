@@ -1545,16 +1545,28 @@ const LIVE_MAP_COLORS = ["#D5001C","#2563EB","#16A34A","#D97706","#7C3AED","#089
 // Fahrzeuge. Zwei Größen: "sm" für Listen/Karussells, "lg" für die eigentliche
 // Fahrzeugakte. Rein informativ zur Dokumentationsvollständigkeit — kein
 // Echtheits- oder Wertgutachten, das wird im begleitenden Infotext klar.
+// Gezackte Medaillenform statt einfachem Kreis — bewusst KEINE Wappen- oder
+// Markenanlehnung, sondern eine generische, mathematisch erzeugte
+// Sternenkranz-Silhouette wie bei klassischen Gütesiegeln/Münzen.
+const SEAL_EDGE_PATH = "M50,2 L60.4,11.4 L74,8.4 L78.3,21.7 L91.6,26 L88.6,39.6 L98,50 L88.6,60.4 L91.6,74 L78.3,78.3 L74,91.6 L60.4,88.6 L50,98 L39.6,88.6 L26,91.6 L21.7,78.3 L8.4,74 L11.4,60.4 L2,50 L11.4,39.6 L8.4,26 L21.7,21.7 L26,8.4 L39.6,11.4 Z";
 function SealBadge({size="sm", onClick}){
-  const dims = size==="lg" ? {box:28,font:15} : {box:18,font:10};
+  const dims = size==="lg" ? {box:32,font:15} : {box:20,font:10};
   return (
     <span onClick={onClick} title="Vollständig dokumentiertes Fahrzeug"
       style={{display:"inline-flex",alignItems:"center",justifyContent:"center",
-        width:dims.box,height:dims.box,borderRadius:"50%",
-        background:"linear-gradient(135deg,#e8cd94,#c8a96e)",
-        border:"1px solid #a3854f",flexShrink:0,cursor:onClick?"pointer":"default",
-        boxShadow:"0 1px 3px rgba(0,0,0,.3)"}}>
-      <span style={{fontSize:dims.font,lineHeight:1}}>✓</span>
+        width:dims.box,height:dims.box,flexShrink:0,cursor:onClick?"pointer":"default",
+        position:"relative"}}>
+      <svg viewBox="0 0 100 100" width={dims.box} height={dims.box} style={{position:"absolute",inset:0}}>
+        <defs>
+          <linearGradient id={`sealGrad-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#e8cd94"/>
+            <stop offset="100%" stopColor="#c8a96e"/>
+          </linearGradient>
+        </defs>
+        <path d={SEAL_EDGE_PATH} fill={`url(#sealGrad-${size})`} stroke="#a3854f" strokeWidth="1.5"
+          style={{filter:"drop-shadow(0 1px 2px rgba(0,0,0,.35))"}}/>
+      </svg>
+      <span style={{fontSize:dims.font,lineHeight:1,position:"relative",color:"#4a3a1f"}}>✓</span>
     </span>
   );
 }
@@ -5987,27 +5999,25 @@ Regeln:
 
           {/* ── Eckdaten auf einen Blick ── */}
           <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
-                <div style={{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:900,color:C.white}}>{v.hersteller} {v.modell}</div>
-                {getVehicleSealStatus(v).earned
-                  ?<SealBadge size="lg" onClick={()=>setShowSealDetail(v.id)}/>
-                  :(isOwn&&<button onClick={()=>setShowSealDetail(v.id)}
-                      style={{background:"none",border:`1px dashed ${C.muted}`,borderRadius:"50%",width:20,height:20,flexShrink:0,
-                        display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}
-                      title="Provenienz-Siegel — Fortschritt ansehen">
-                      <span style={{fontSize:10,color:C.muted}}>?</span>
-                    </button>)}
-              </div>
-              {isOwn&&(
-                <button onClick={()=>openEditVehicle(v)}
-                  style={{background:C.red,border:"none",borderRadius:8,padding:"6px 14px",
-                    color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,
-                    fontFamily:"'Inter',sans-serif",flexShrink:0,marginLeft:10}}>
-                  ✏️ Bearbeiten
-                </button>
-              )}
+            <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0,marginBottom:4}}>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.white,lineHeight:1.15}}>{v.hersteller} {v.modell}</div>
+              {getVehicleSealStatus(v).earned
+                ?<SealBadge size="lg" onClick={()=>setShowSealDetail(v.id)}/>
+                :(isOwn&&<button onClick={()=>setShowSealDetail(v.id)}
+                    style={{background:"none",border:`1px dashed ${C.muted}`,borderRadius:"50%",width:20,height:20,flexShrink:0,
+                      display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}
+                    title="Provenienz-Siegel — Fortschritt ansehen">
+                    <span style={{fontSize:10,color:C.muted}}>?</span>
+                  </button>)}
             </div>
+            {isOwn&&(
+              <button onClick={()=>openEditVehicle(v)}
+                style={{background:"none",border:`1px solid ${C.border}`,borderRadius:7,padding:"4px 10px",
+                  color:C.muted,cursor:"pointer",fontSize:12,fontWeight:600,
+                  fontFamily:"'Inter',sans-serif",marginBottom:8}}>
+                ✏️ Bearbeiten
+              </button>
+            )}
             <div style={{fontSize:14,color:C.muted,marginBottom:12}}>{v.baujahr} · {v.farbe} · {v.getriebe}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
               {[
@@ -6500,12 +6510,24 @@ Regeln:
               },
             ];
 
-            return sections.map(sec=>(
-              <div key={sec.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}>
+            return sections.map(sec=>{
+              const isEmergency = sec.id==="emergency";
+              return (
+              <div key={sec.id} style={{background:C.card,
+                border:isEmergency?`1.5px solid ${C.red}77`:`1px solid ${C.border}`,
+                borderRadius:12,marginBottom:10,overflow:"hidden",
+                boxShadow:isEmergency?`0 0 0 1px ${C.red}22`:"none"}}>
                 {/* Accordion header */}
                 <button onClick={()=>toggleSection(v.id, sec.id)}
                   style={{width:"100%",background:"none",border:"none",padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Inter',sans-serif"}}>
-                  <span style={{fontSize:18,flexShrink:0}}>{sec.icon}</span>
+                  {isEmergency?(
+                    <span style={{width:26,height:26,borderRadius:7,background:C.red,flexShrink:0,
+                      display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 1px 4px ${C.red}55`}}>
+                      <span style={{fontSize:15,color:"#fff",fontWeight:900,lineHeight:1}}>✚</span>
+                    </span>
+                  ):(
+                    <span style={{fontSize:18,flexShrink:0}}>{sec.icon}</span>
+                  )}
                   <span style={{fontWeight:700,fontSize:15,color:C.white,flex:1,textAlign:"left"}}>{sec.label}</span>
                   {sec.count>0&&<span style={{background:C.black,borderRadius:99,padding:"2px 8px",fontSize:13,fontWeight:700,color:C.muted,flexShrink:0}}>{sec.count}</span>}
                   <span style={{fontSize:16,color:C.muted,flexShrink:0,transition:"transform .2s",
@@ -6524,7 +6546,8 @@ Regeln:
                   </div>
                 )}
               </div>
-            ));
+              );
+            });
           })()}
 
           {/* Phone — pulled from profile, with inline public/private toggle */}
