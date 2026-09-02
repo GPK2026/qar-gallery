@@ -6098,13 +6098,21 @@ Regeln:
             const bannerColor = seal.earned ? "#c8a96e" : C.border;
             return (
           <div style={{marginBottom:14}}>
-            <button onClick={()=>setShowSealDetail(v.id)}
-              style={{width:"100%",border:`2px solid ${bannerColor}`,borderBottom:"none",
+            <div style={{width:"100%",border:`2px solid ${bannerColor}`,borderBottom:"none",
                 borderRadius:"14px 14px 0 0",background:seal.earned?"linear-gradient(135deg,#e8cd94,#c8a96e)":"#161618",
-                padding:"5px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <span style={{fontSize:12}}>{seal.earned?"✓":"○"}</span>
-              <span style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:seal.earned?"#4a3a1f":C.muted}}>APPROVAL</span>
-            </button>
+                padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+              <button onClick={()=>setShowSealDetail(v.id)}
+                style={{background:"none",border:"none",padding:0,cursor:"pointer",
+                  display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:13}}>{seal.earned?"✓":"○"}</span>
+                <span style={{fontSize:11,fontWeight:800,letterSpacing:1.5,color:seal.earned?"#4a3a1f":C.muted}}>APPROVAL</span>
+              </button>
+              <button onClick={()=>setShowSealDetail(v.id)} title="Was bedeutet Approval?"
+                style={{width:22,height:22,borderRadius:"50%",background:"#fff",border:"none",
+                  flexShrink:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>
+                <span style={{fontSize:12,fontWeight:900,color:seal.earned?"#4a3a1f":"#111",fontStyle:"italic",fontFamily:"Georgia,serif"}}>i</span>
+              </button>
+            </div>
             <div style={{background:C.card,border:`2px solid ${bannerColor}`,borderTop:"none",borderRadius:"0 0 14px 14px",padding:"14px"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0,marginBottom:4}}>
               <div style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.white,lineHeight:1.15}}>{v.hersteller} {v.modell}</div>
