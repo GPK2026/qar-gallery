@@ -2017,6 +2017,7 @@ function PCNInner() {
     onlyMine: false, category: "", price: "", period: "", onlySpotsLeft: false,
   });
   const [showCalHelp, setShowCalHelp] = useState(false);
+  const [showPlatformFeatures, setShowPlatformFeatures] = useState(false);
   const [demoBannerClosed, setDemoBannerClosed] = useState(false);
   const [demoBannerVisible, setDemoBannerVisible] = useState(false);
   const [communitySearch, setCommunitySearch] = useState("");
@@ -8536,15 +8537,27 @@ Regeln:
               )}
 
               {/* ── 3. Plattform-Funktionen — nur solange noch etwas gesperrt ist ── */}
-              {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(
-            <div style={{marginBottom:8}}>
-              <div style={{marginBottom:16}}>
-                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>⚙️ Plattform-Funktionen</div>
-                <div style={{display:"flex",justifyContent:"flex-end"}}>
+              {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(()=>{
+                const unlockedCount = LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).length;
+                return (
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8}}>
+              <button onClick={()=>setShowPlatformFeatures(s=>!s)}
+                style={{width:"100%",background:"none",border:"none",padding:"12px 14px",
+                  display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
+                <span style={{fontSize:20,flexShrink:0}}>⚙️</span>
+                <div style={{flex:1,minWidth:0,textAlign:"left"}}>
+                  <div style={{fontSize:14,fontWeight:700,color:C.white}}>Plattform-Funktionen</div>
+                  <div style={{fontSize:12,color:C.muted}}>{unlockedCount} von {LOCKED_FEATURES.length} freigeschaltet</div>
+                </div>
+                <span style={{fontSize:16,color:C.muted,flexShrink:0,transition:"transform .2s",
+                  transform:showPlatformFeatures?"rotate(180deg)":"rotate(0deg)"}}>▾</span>
+              </button>
+              {showPlatformFeatures&&(
+              <div style={{padding:"0 14px 14px",borderTop:`1px solid ${C.border}`}}>
+                <div style={{display:"flex",justifyContent:"flex-end",marginTop:10,marginBottom:4}}>
                   <button onClick={()=>setShowInfoModal(true)}
                     style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
                 </div>
-              </div>
 
               {/* Active functions */}
               {LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).length>0&&(
@@ -8581,8 +8594,11 @@ Regeln:
               <div style={{fontSize:12,color:"#444",marginTop:10,textAlign:"center",lineHeight:1.6}}>
                 Mehr Funktionen freischalten: Fahrzeug anlegen · Logbuch führen · Events besuchen
               </div>
-            </div>
+              </div>
               )}
+            </div>
+                );
+              })()}
           </div>
         )}
 
