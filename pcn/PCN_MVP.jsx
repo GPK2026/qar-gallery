@@ -2016,6 +2016,7 @@ function PCNInner() {
   const [eventFilters, setEventFilters] = useState({
     onlyMine: false, category: "", price: "", period: "", onlySpotsLeft: false,
   });
+  const [showCalHelp, setShowCalHelp] = useState(false);
   const [demoBannerClosed, setDemoBannerClosed] = useState(false);
   const [demoBannerVisible, setDemoBannerVisible] = useState(false);
   const [communitySearch, setCommunitySearch] = useState("");
@@ -8616,7 +8617,7 @@ Regeln:
           <div style={{animation:"fadeIn .2s"}}>
 
             {/* ── Kalender abonnieren — alle Events automatisch & dauerhaft im eigenen Kalender ── */}
-            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:showCalHelp?0:16,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:20,flexShrink:0}}>📆</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:14,fontWeight:700,color:C.white}}>Kalender abonnieren</div>
@@ -8631,6 +8632,33 @@ Regeln:
                 Link kopieren
               </button>
             </div>
+            <button onClick={()=>setShowCalHelp(s=>!s)}
+              style={{background:"none",border:"none",color:C.muted,fontSize:12,cursor:"pointer",
+                padding:"6px 2px",marginBottom:showCalHelp?8:16,display:"flex",alignItems:"center",gap:4}}>
+              {showCalHelp?"▾":"▸"} Wie geht das?
+            </button>
+            {showCalHelp&&(
+              <div style={{background:"#0d0d0d",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:16}}>
+                <div style={{marginBottom:12}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:3}}>Google Kalender</div>
+                  <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
+                    Link kopieren → auf calendar.google.com links bei "Weitere Kalender" auf + klicken → "Per URL" → Link einfügen → "Kalender hinzufügen".
+                  </div>
+                </div>
+                <div style={{marginBottom:12}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:3}}>Apple Kalender (iPhone/Mac)</div>
+                  <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
+                    Link kopieren → Einstellungen → Kalender → Account hinzufügen → "Andere" → "Kalenderabo hinzufügen" → Link einfügen.
+                  </div>
+                </div>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:3}}>Outlook</div>
+                  <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
+                    Link kopieren → Kalender öffnen → "Kalender hinzufügen" → "Aus dem Internet abonnieren" → Link einfügen → "Importieren".
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
             <div style={{marginBottom:32}}>
