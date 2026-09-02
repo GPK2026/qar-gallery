@@ -6092,18 +6092,22 @@ Regeln:
             </button>
           )}
 
-          {/* ── Eckdaten auf einen Blick ── */}
-          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px",marginBottom:14}}>
+          {/* ── Eckdaten auf einen Blick — Approval-Rahmen zeigt Dokumentations-Vollstaendigkeit ── */}
+          {(()=>{
+            const seal = getVehicleSealStatus(v);
+            const bannerColor = seal.earned ? "#c8a96e" : C.border;
+            return (
+          <div style={{marginBottom:14}}>
+            <button onClick={()=>setShowSealDetail(v.id)}
+              style={{width:"100%",border:`2px solid ${bannerColor}`,borderBottom:"none",
+                borderRadius:"14px 14px 0 0",background:seal.earned?"linear-gradient(135deg,#e8cd94,#c8a96e)":"#161618",
+                padding:"5px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <span style={{fontSize:12}}>{seal.earned?"✓":"○"}</span>
+              <span style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:seal.earned?"#4a3a1f":C.muted}}>APPROVAL</span>
+            </button>
+            <div style={{background:C.card,border:`2px solid ${bannerColor}`,borderTop:"none",borderRadius:"0 0 14px 14px",padding:"14px"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0,marginBottom:4}}>
               <div style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.white,lineHeight:1.15}}>{v.hersteller} {v.modell}</div>
-              {getVehicleSealStatus(v).earned
-                ?<SealBadge size="lg" onClick={()=>setShowSealDetail(v.id)}/>
-                :(isOwn&&<button onClick={()=>setShowSealDetail(v.id)}
-                    style={{background:"none",border:`1px dashed ${C.muted}`,borderRadius:"50%",width:20,height:20,flexShrink:0,
-                      display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}
-                    title="Provenienz-Siegel — Fortschritt ansehen">
-                    <span style={{fontSize:10,color:C.muted}}>?</span>
-                  </button>)}
             </div>
             {isOwn&&(
               <button onClick={()=>openEditVehicle(v)}
@@ -6148,7 +6152,10 @@ Regeln:
               </div>
             )}
 
+            </div>
           </div>
+            );
+          })()}
 
           {/* ── QR-Code & Aktionen — eigener Block ── */}
           {isOwn&&(
@@ -7139,18 +7146,16 @@ Regeln:
                 <div className="sheet">
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      {seal.earned
-                        ?<SealBadge size="lg"/>
-                        :<span style={{fontSize:20}}>🔍</span>}
+                      <span style={{fontSize:20}}>{seal.earned?"✅":"🔍"}</span>
                       <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:900,color:C.white}}>
-                        {seal.earned?"Provenienz-Siegel":"Provenienz-Siegel — noch offen"}
+                        {seal.earned?"Dokumentations-Approval":"Approval — noch offen"}
                       </div>
                     </div>
                     <button onClick={()=>setShowSealDetail(null)}
                       style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
                   </div>
                   <div style={{fontSize:13,color:C.muted,marginBottom:16,lineHeight:1.6}}>
-                    Zeigt an, wie vollständig dieses Fahrzeug dokumentiert ist — Fotos, Logbuch und Club-Teilnahme. Kein Echtheits- oder Wertgutachten, sondern ein Hinweis auf gepflegte Dokumentation.
+                    "Approval" heißt: Dieses Fahrzeug erfüllt vier feste Kriterien für eine vollständig gepflegte Dokumentation — Fotos, Logbuch und Club-Teilnahme. Kein Echtheits- oder Wertgutachten, sondern ein Hinweis, dass hier sorgfältig dokumentiert wurde.
                   </div>
                   {seal.criteria.map((c,i)=>(
                     <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:i<seal.criteria.length-1?`1px solid ${C.border}`:"none"}}>
