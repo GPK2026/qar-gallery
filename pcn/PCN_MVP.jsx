@@ -8617,7 +8617,7 @@ Regeln:
           <div style={{animation:"fadeIn .2s"}}>
 
             {/* ── Kalender abonnieren — alle Events automatisch & dauerhaft im eigenen Kalender ── */}
-            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:showCalHelp?0:16,display:"flex",alignItems:"center",gap:10}}>
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:20,flexShrink:0}}>📆</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:14,fontWeight:700,color:C.white}}>Kalender abonnieren</div>
@@ -8632,33 +8632,11 @@ Regeln:
                 Link kopieren
               </button>
             </div>
-            <button onClick={()=>setShowCalHelp(s=>!s)}
+            <button onClick={()=>setShowCalHelp(true)}
               style={{background:"none",border:"none",color:C.muted,fontSize:12,cursor:"pointer",
-                padding:"6px 2px",marginBottom:showCalHelp?8:16,display:"flex",alignItems:"center",gap:4}}>
-              {showCalHelp?"▾":"▸"} Wie geht das?
+                padding:"6px 2px",marginBottom:16,display:"flex",alignItems:"center",gap:4}}>
+              ▸ Wie geht das?
             </button>
-            {showCalHelp&&(
-              <div style={{background:"#0d0d0d",border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:16}}>
-                <div style={{marginBottom:12}}>
-                  <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:3}}>Google Kalender</div>
-                  <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
-                    Link kopieren → auf calendar.google.com links bei "Weitere Kalender" auf + klicken → "Per URL" → Link einfügen → "Kalender hinzufügen".
-                  </div>
-                </div>
-                <div style={{marginBottom:12}}>
-                  <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:3}}>Apple Kalender (iPhone/Mac)</div>
-                  <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
-                    Link kopieren → Einstellungen → Kalender → Account hinzufügen → "Andere" → "Kalenderabo hinzufügen" → Link einfügen.
-                  </div>
-                </div>
-                <div>
-                  <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:3}}>Outlook</div>
-                  <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
-                    Link kopieren → Kalender öffnen → "Kalender hinzufügen" → "Aus dem Internet abonnieren" → Link einfügen → "Importieren".
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* ── Live-Standort-Gruppen für Ausfahrten ── */}
             <div style={{marginBottom:32}}>
@@ -10350,6 +10328,39 @@ Regeln:
       })()}
 
       {/* ── Live-Ausfahrt erstellen ── */}
+      {showCalHelp&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>setShowCalHelp(false)}>
+          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+              <div className="cond" style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:900,color:C.white}}>📆 Kalender abonnieren</div>
+              <button onClick={()=>setShowCalHelp(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+            </div>
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:3}}>Google Kalender</div>
+              <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
+                Link kopieren → auf calendar.google.com links bei "Weitere Kalender" auf + klicken → "Per URL" → Link einfügen → "Kalender hinzufügen".
+              </div>
+            </div>
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:3}}>Apple Kalender (iPhone/Mac)</div>
+              <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
+                Link kopieren → Einstellungen → Kalender → Account hinzufügen → "Andere" → "Kalenderabo hinzufügen" → Link einfügen.
+              </div>
+            </div>
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:3}}>Outlook</div>
+              <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>
+                Link kopieren → Kalender öffnen → "Kalender hinzufügen" → "Aus dem Internet abonnieren" → Link einfügen → "Importieren".
+              </div>
+            </div>
+            <button className="btn" style={{width:"100%"}} onClick={()=>setShowCalHelp(false)}>Verstanden</button>
+          </div>
+        </div>
+      )}
+
       {showCreateLiveGroup&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
           onClick={()=>{setShowCreateLiveGroup(false);setLiveGroupName("");setLiveGroupInvitees([]);}}>
