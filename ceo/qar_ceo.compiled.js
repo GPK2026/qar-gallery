@@ -162,6 +162,58 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   const STATUS_DONE = [{
+    t: "Provenienz-Siegel zu 'Approval'-Banner umgestaltet",
+    d: "Kleines Icon neben dem Modellnamen ersetzt durch einen dicken, farbigen Rahmen um die gesamte Eckdaten-Karte (Gold bei erfüllten Kriterien, Grau bei offenen), mit nahtlos angesetztem 'APPROVAL'-Banner und separatem Info-Symbol — Design vorab per Skizze mit dem Vorstand abgestimmt, dann umgesetzt",
+    date: "Sep 2026"
+  }, {
+    t: "Plattform-Funktionen, Kalender & Live-Ausfahrt als einheitliche Dropdowns",
+    d: "Drei bisher unterschiedlich gestaltete Dashboard-Bereiche (permanent sichtbare Listen bzw. Überschrift-mit-Trennlinie) auf ein gemeinsames, klappbares Kartendesign vereinheitlicht — Kopfzeile mit Icon/Titel/Zähler immer sichtbar, Inhalt erst nach Antippen",
+    date: "Sep 2026"
+  }, {
+    t: "Typografie auf Inter umgestellt",
+    d: "Bisherige Zwei-Familien-Lösung (Barlow + Barlow Condensed) durch eine einzige, für Bildschirme optimierte Google-Schriftart ersetzt (182 Textstellen), Überschriften-Schriftgrößen durchgängig vergrößert, Laufweite reduziert",
+    date: "Sep 2026"
+  }, {
+    t: "ICE-Notfallzugang: Sichtbarkeit jetzt nutzergesteuert",
+    d: "Der rote Notfall-Button war bislang immer sichtbar — jetzt standardmäßig ausgeblendet (Privacy-by-Default für Gesundheitsdaten, Art. 9 DSGVO), Eigentümer schaltet ihn bewusst frei. Bestehende Fahrzeuge isoliert getestet: kein Fahrzeug wurde durch das Update versehentlich sichtbar",
+    date: "Sep 2026"
+  }, {
+    t: "Kalender-Integration (iCal-Abo, Einzelexport, Teilen)",
+    d: "Neue öffentliche Supabase Edge Function liefert alle Events als Abo-Feed für Google/Apple/Outlook-Kalender, mit Schritt-für-Schritt-Anleitungsdialog; einzelne Events als .ics herunterladbar oder direkt zu Google Kalender hinzufügbar; Teilen-Funktion über native Geräte-Freigabe. Ein echter Datumsfehler (falsches Zeitformat) vor dem Deploy gefunden und mit einer echten iCalendar-Bibliothek gegen Produktivdaten verifiziert",
+    date: "Sep 2026"
+  }, {
+    t: "Notfallprofile & Pannenhilfe zu einem Dropdown zusammengelegt",
+    d: "Vorher zwei separate, immer sichtbare Boxen — jetzt ein gemeinsames, markant hervorgehobenes Dropdown mit eigenem rotem Kreuz-Icon statt generischem Emoji",
+    date: "Sep 2026"
+  }, {
+    t: "Werkstatt-B2B-Prozess grundlegend vereinfacht",
+    d: "Ursprünglich mit Admin-Freigabeprozess gebaut, auf ausdrücklichen Wunsch durch sofortige Selbstregistrierung ersetzt — Kontrolle liegt jetzt vollständig beim Fahrzeugeigentümer, der jeden Zugriff je Fahrzeug einzeln bestätigt (einmalig oder dauerhaft). Wettbewerbsschutz ergänzt: Werkstatt sieht ausschließlich eigene Logbucheinträge, keine anderer Werkstätten — direkt gegen die Datenbank mit mehreren Werkstätten getestet",
+    date: "Sep 2026"
+  }, {
+    t: "Werkstatt-Registrierung: Handelsregisternummer als Pflichtfeld",
+    d: "Alle Angaben im B2B-Antrag sind jetzt verpflichtend, inklusive neuer Handelsregisternummer — auch in der Admin-Prüfung sichtbar gemacht (später obsolet durch Vereinfachung auf Selbstregistrierung)",
+    date: "Sep 2026"
+  }, {
+    t: "Fahrzeugübertragung: Benachrichtigungslücken geschlossen",
+    d: "Käufer erfuhr bislang nicht aktiv, wenn der Verkäufer seinen Teil bestätigt hatte (kein Trigger für den finalen Bestätigungsdialog) — durch Nutzerrückmeldung entdeckt und behoben, symmetrisch zur bereits bestehenden Verkäufer-Benachrichtigung. Zusätzlich: roter Punkt direkt am betroffenen Fahrzeug in 'Meine Fahrzeuge' bei offenen Anträgen",
+    date: "Sep 2026"
+  }, {
+    t: "Nachricht senden (Gast, öffentliche Akte): 5 Korrekturen",
+    d: "Werkstattoption jetzt im Registrieren-Modus verlinkt; Hinweistext fetter und auffälliger; 'Was wird gespeichert?'-Link repariert (Dialog lag im unerreichbaren Teil des Codes); beide Zustimmungs-Häkchen jetzt Pflicht zum Senden; Passwort-Feld bei Anmelden ergänzt (vorher ungeschützte Nur-Email-Anmeldung)",
+    date: "Sep 2026"
+  }, {
+    t: "Design-System: mehr Kontrast, Hintergründe, Boxen-Transparenz",
+    d: "Von 3 auf 8 Hintergrundthemen erweitert (2 neue lizenzverifizierte Fotos, 3 reine Farbverläufe, 1 neues reines Schwarz-Theme), Karten-Hintergründe leicht transparent für sichtbaren Themen-Effekt. Dabei einen echten CSS-Stacking-Bug gefunden (Hintergrund legte sich über den Inhalt statt dahinter) — mit isoliertem Playwright-Test reproduziert und die Korrektur verifiziert",
+    date: "Sep 2026"
+  }, {
+    t: "Großschreibung bei Überschriften entfernt",
+    d: "App-weit 78 von 82 Stellen von Versalien auf normale Schreibweise umgestellt — bewusste Ausnahmen für Club-Code-Eingabefelder und wenige funktionale/dekorative Fälle beibehalten",
+    date: "Sep 2026"
+  }, {
+    t: "Zentrales Benachrichtigungs-Icon im App-Header",
+    d: "Neues Briefumschlag-Symbol im durchgängigen App-Header, bündelt ungelesene Nachrichten, Neuigkeiten, offene Übertragungs- und Werkstatt-Anfragen sowie Offline-Status an einer Stelle — dupliziert keine bestehende Logik, jeder Eintrag führt zur jeweils zuständigen Stelle",
+    date: "Sep 2026"
+  }, {
     t: "Fahrzeugfotos: Mehrfach-Upload & Obergrenze",
     d: "Bis zu 3 Bilder gleichzeitig aus der Fotobibliothek auswählbar und hochladbar (an beiden Upload-Stellen der Fahrzeugakte) — vorher nur einzeln. Zusätzlich maximale Bildanzahl auf 12 pro Fahrzeug begrenzt, mit klarer Fehlermeldung statt stillem Abschneiden",
     date: "Aug 2026"
@@ -176,10 +228,6 @@
   }, {
     t: "Dokumentenablage in der Fahrzeugakte",
     d: "Rechnungen, Werkstattbelege, Fahrzeugschein können ohne sofortige KI-Auswertung abgelegt werden — Auswertung über 'KI auslesen'-Button jederzeit nachholbar, verknüpft sich automatisch mit dem entstehenden Logbuch-Eintrag. Mit Service-Logbuch zu einem gemeinsamen Dropdown 'Service & Dokumente' zusammengelegt",
-    date: "Aug 2026"
-  }, {
-    t: "Provenienz-Siegel",
-    d: "Sichtbares Abzeichen für vollständig dokumentierte Fahrzeuge (mind. 5 Fotos, 3 Logbuch-Einträge, 1 bestätigte Event-Teilnahme, vollständige Stammdaten) — in eigener Fahrzeugakte, öffentlicher Ansicht und Fahrzeugliste sichtbar, mit klarer Kennzeichnung als Dokumentations- statt Wertgutachten",
     date: "Aug 2026"
   }, {
     t: "Login-Screen verbessert",
@@ -281,7 +329,7 @@
   }, {
     t: "DSGVO-Anwalt beauftragen",
     own: "Business/Legal",
-    note: "Interne Bewertung liegt vor (siehe Recht-Tab), keine rechtsverbindliche Prüfung — jetzt dringlicher durch Notfall-Zugang (Gesundheitsdaten) und Standort-Features"
+    note: "Interne Bewertung liegt vor (siehe Recht-Tab), keine rechtsverbindliche Prüfung — Notfall-Zugang ist seit Sep 2026 standardmäßig ausgeblendet (Nutzer schaltet ihn bewusst frei), das ändert aber nichts an der grundsätzlichen Prüfpflicht für Gesundheitsdaten, sobald aktiviert"
   }, {
     t: "Pilotvertrag unterschreiben",
     own: "Business",
@@ -310,11 +358,19 @@
     t: "Anwaltliche Prüfung Übertragungstext",
     own: "Legal",
     note: "Rechtlicher Opt-in-Text für die Eigentumsübertragung ist als Arbeitsentwurf fertig, noch nicht anwaltlich geprüft"
+  }, {
+    t: "Werkstatt-B2B: rechtlicher Rahmen fehlt noch",
+    own: "Legal",
+    note: "Werkstätten registrieren sich seit Sep 2026 selbst und erhalten nach Freigabe durch den Fahrzeugeigentümer Schreibzugriff auf Teile der Fahrzeugakte — es gibt noch keine geprüften Nutzungsbedingungen oder Auftragsverarbeitungs-Regelung für diese neue B2B-Beziehung"
   }];
   const LEGAL_POINTS = [{
     sev: "high",
     t: "Notfall-Feature verarbeitet Gesundheitsdaten",
-    d: "Blutgruppe, Allergien, Medikamente fallen unter Art. 9 DSGVO (besondere Kategorien) — physischer Code als Zugangsschranke ist ein plausibles, aber anwaltlich ungeprüftes Schutzkonzept."
+    d: "Blutgruppe, Allergien, Medikamente fallen unter Art. 9 DSGVO (besondere Kategorien) — physischer Code als Zugangsschranke ist ein plausibles, aber anwaltlich ungeprüftes Schutzkonzept. Seit Sep 2026 zusätzlich standardmäßig ausgeblendet (nutzergesteuerte Freigabe), was das Grundrisiko mindert, aber nicht ersetzt."
+  }, {
+    sev: "high",
+    t: "Werkstatt-B2B: neue Drittpartei-Datenbeziehung ungeprüft",
+    d: "Werkstätten registrieren sich seit Sep 2026 selbst und erhalten fahrzeugweise Schreibzugriff auf Teile der Fahrzeugakte, freigegeben vom Eigentümer — es fehlt noch eine geprüfte vertragliche Grundlage (Nutzungsbedingungen, ggf. Auftragsverarbeitung) für diese neue Konstellation zwischen Werkstatt, Eigentümer und Plattform."
   }, {
     sev: "medium",
     t: "Eigentumsübertragung berührt Vertragsverhältnis",
@@ -368,25 +424,25 @@
     d: "Jeder QR-Code am Fahrzeug ist physischer, dauerhafter Werbeträger ohne laufende Kosten — wirkt direkt am faszinierenden Objekt."
   }];
   const JOURNAL = [{
-    icon: "📁",
-    t: "Dokumentenablage mit nachholbarer KI-Auswertung",
-    d: "Rechnungen und Belege lassen sich jetzt ablegen, ohne dass die KI-Analyse sofort laufen muss — Auswertung ist jederzeit über einen 'KI auslesen'-Button nachholbar. Mit dem Service-Logbuch zu einem gemeinsamen Dropdown zusammengelegt, nach entsprechender Rückmeldung.",
-    date: "Aug 2026"
-  }, {
     icon: "🏅",
-    t: "Provenienz-Siegel eingeführt",
-    d: "Direkt aus der eigenen Marktanalyse abgeleitet: ein sichtbares Abzeichen für Fahrzeuge mit vollständiger Dokumentation (Fotos, Logbuch, Event-Teilnahme), klar als Dokumentations- statt Wertgutachten gekennzeichnet.",
-    date: "Aug 2026"
+    t: "Approval-Banner: neues Design für das Provenienz-Siegel",
+    d: "Nach Rückmeldung, dass das bisherige kleine Icon zu unauffällig war: jetzt ein dicker, farbiger Rahmen um die gesamte Fahrzeugkarte mit eingebettetem 'APPROVAL'-Banner — Optik vorab per Skizze abgestimmt.",
+    date: "Sep 2026"
   }, {
-    icon: "📍",
-    t: "Zwei Standort-Karten-Bugs behoben",
-    d: "Nutzer meldeten, dass die 'Zuletzt geparkt'-Karte erst nach erneutem Öffnen der Fahrzeugakte erschien, und dass sie sich teils über andere Dialoge legte — beide Ursachen gefunden und behoben.",
-    date: "Aug 2026"
+    icon: "📆",
+    t: "Kalender-Integration eingeführt",
+    d: "Events lassen sich jetzt als dauerhafter Abo-Feed in Google/Apple/Outlook-Kalender einbinden, einzeln exportieren oder per Link teilen. Ein echter Datumsfehler vor dem Go-Live gefunden und mit einer Prüfbibliothek gegen Produktivdaten verifiziert.",
+    date: "Sep 2026"
   }, {
-    icon: "📷",
-    t: "Fahrzeugfotos: Mehrfach-Upload eingeführt",
-    d: "Bis zu 3 Bilder gleichzeitig aus der Fotobibliothek hochladbar, mit neuer Obergrenze von 12 Fotos pro Fahrzeug — verhindert unkontrolliertes Anwachsen der Datenmenge pro Akte.",
-    date: "Aug 2026"
+    icon: "🔧",
+    t: "Werkstatt-B2B-Prozess vereinfacht",
+    d: "Von einem Admin-Freigabeprozess auf sofortige Selbstregistrierung umgestellt, Kontrolle liegt jetzt beim Fahrzeugeigentümer je Fahrzeug. Wettbewerbsschutz ergänzt, damit Werkstätten sich gegenseitig nicht sehen können.",
+    date: "Sep 2026"
+  }, {
+    icon: "✉️",
+    t: "Zentrales Benachrichtigungs-Icon eingeführt",
+    d: "Neues Symbol im App-Header bündelt Nachrichten, Neuigkeiten und offene Anfragen an einer Stelle, nach mehreren Korrekturrunden zur Position (App-Header statt Profil-Tab, rechts statt links vom Namen).",
+    date: "Sep 2026"
   }];
   const T_ICON = {
     info: "ℹ️",
