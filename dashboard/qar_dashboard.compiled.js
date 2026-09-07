@@ -270,11 +270,11 @@
     evidence: "Heute vollständig gebaut: Notfallprofile, Code-Zugang, Anruf-Buttons für Notfallkontakte."
   }, {
     group: "Werkstätten & Gutachter",
-    fit: "mittel",
-    color: T.amber,
+    fit: "mittel bis stark — B2B-Zugang jetzt gebaut",
+    color: T.gold,
     problem: "Bei Anfrage/Übergabe fehlt oft eine verlässliche, lückenlose Fahrzeughistorie — Kunde muss Papierbelege suchen oder Angaben sind ungeprüft.",
-    solution: "Digitales Logbuch mit Belegen wäre einsehbar (mit Zustimmung des Eigentümers) — Grundlage vorhanden, aber noch keine dedizierte Werkstatt-Ansicht oder API-Anbindung gebaut.",
-    evidence: "Datenbasis vorhanden (Logbuch, Belege), Werkstatt-spezifischer Zugang/Workflow ist noch nicht umgesetzt — Potenzial, kein fertiges Produkt."
+    solution: "Seit Sep 2026 tatsächlich umgesetzt: Werkstätten registrieren sich selbst als eigener B2B-Kontotyp, beantragen fahrzeugweise Zugang, der Eigentümer entscheidet einmalig oder dauerhaft — Werkstatt sieht dabei ausschließlich ihre eigenen Einträge, keine anderer Werkstätten (Wettbewerbsschutz).",
+    evidence: "Vollständiger Antrags-/Freigabe-/Eintrags-Workflow gebaut und gegen die Datenbank getestet, inkl. Sichtbarkeits-Isolation zwischen konkurrierenden Werkstätten. Noch offen: kein Pilotkontakt zu einer echten Werkstatt, keine rechtliche Grundlage (Nutzungsbedingungen) für diese neue B2B-Beziehung."
   }, {
     group: "Versicherungen",
     fit: "mittel, noch unbewiesen",
@@ -650,7 +650,7 @@
     id: "T6",
     cat: "Architektur",
     sev: "medium",
-    finding: "5.400-Zeilen JSX-Monolith (446 KB) + 137 KB Admin-HTML. Funktioniert, aber jede Änderung erfordert Vollkompilierung. Für Scale: Vite + TypeScript + Module.",
+    finding: "Auf 11.200+ Zeilen JSX-Monolith gewachsen (770 KB, Stand Sep 2026, vorher 5.400 Zeilen/446 KB) + 205 KB Admin-HTML. Funktioniert weiterhin, aber jede Änderung erfordert Vollkompilierung, Wachstum beschleunigt sich mit jedem neuen Feature. Für Scale: Vite + TypeScript + Module — Dringlichkeit steigt.",
     status: "open"
   }, {
     id: "T7",
@@ -667,9 +667,9 @@
   }, {
     id: "T13",
     cat: "KI-Analyse",
-    sev: "info",
-    finding: "Fotoerkennung (Modell/Farbe/Kennzeichen) gebaut, aber deaktiviert: Direktaufruf der Anthropic-API aus dem Browser unmöglich (401, Key darf nicht in den Client). Edge-Function-Proxy liegt fertig bereit (analyze-vehicle-function.ts + AI_SETUP.md, ~20 Min). Reifeprüfung eingebaut — Freigabe als Premium erst ab 80% Trefferquote.",
-    status: "noted"
+    sev: "resolved",
+    finding: "Fotoerkennung und Dokumenten-Scanner (Wartung/Reparatur/Rechnung/Versicherung) sind seit Aug 2026 aktiv — Edge-Function-Proxy (ai-proxy) läuft produktiv, Direktaufruf-Problem gelöst. Dokumente lassen sich seitdem auch ohne sofortige KI-Auswertung ablegen, Analyse jederzeit über 'KI auslesen'-Button nachholbar.",
+    status: "resolved"
   }, {
     id: "T9",
     cat: "Security",
