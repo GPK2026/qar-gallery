@@ -289,6 +289,13 @@
     problem: "Kein akutes Problem, das wir für diese Anbieter selbst lösen — sie haben etablierte, funktionierende Prozesse.",
     solution: "Wir integrieren SIE als Service für unsere Nutzer (Kontaktdaten, Direktwahl), nicht umgekehrt — echte Kooperation (z.B. Co-Branding, Datenaustausch) ist ein möglicher, aber unbestätigter nächster Schritt.",
     evidence: "Heute gebaut: Anruf-Integration mit verifizierten Nummern — einseitig, keine Gegenleistung oder Vereinbarung mit ADAC/AvD."
+  }, {
+    group: "Spezialisierte Verkehrsrechts-Kanzleien",
+    fit: "mittel bis stark, erste konkrete Anfrage bewertet",
+    color: T.gold,
+    problem: "Bei Unfallregulierung von Oldtimern entscheidet die Beweisführung (Matching Numbers, Originalität, Vorbesitzerkette) — genau diese Rekonstruktion aus verstreuten Papierbelegen kostet in der Fallvorbereitung am meisten Zeit.",
+    solution: "Fahrzeugakte-Handover im Schadensfall (Logbuch, Belege, Approval-Status) nach dem bereits bestehenden, mehrfach genutzten Freigabe-Muster (wie bei Werkstatt-Zugang, Kalender-Export) — Nutzer entscheidet je Fall freiwillig, kein Automatismus.",
+    evidence: "Erster konkreter Kandidat identifiziert (debug Rechtsanwälte, Fokus Oldtimer-Schadensregulierung) — inhaltliche Passung anhand von deren eigenem Fachartikel geprüft. Vier Nutzenpunkte herausgearbeitet, Synopse für Erstgespräch erstellt. Noch unverbindlich: kein Kontakt, keine technische Umsetzung, berufsrechtliche Zulässigkeit (§ 49b BRAO) ungeklärt."
   }];
   const MARKET_SEGS = [{
     name: "Club SaaS",
@@ -638,7 +645,13 @@
     id: "T4",
     cat: "qar.codes",
     sev: "medium",
-    finding: "Cloudflare Worker auf qar.codes: 301 Redirect qar.codes/v/[QAR-ID] → qar.gallery/pcn/?v=[QAR-ID]. ~2h Aufwand, nach Pilotvertrag. Nicht blockierend — Share-Links funktionieren aktuell direkt.",
+    finding: "Cloudflare Worker auf qar.codes: 301 Redirect qar.codes/v/[QAR-ID] → qar.gallery/pcn/?v=[QAR-ID]. ~2h Aufwand, nach Pilotvertrag. Nicht blockierend — Share-Links funktionieren aktuell direkt. Im Sep 2026 im Rahmen der QR-Aufkleber-Onboarding-Konzeption erneut geprüft: reine Weiterleitung bleibt der richtige Ansatz, eine eigenständige zweite Anwendung (z.B. für einen Blockchain-/Token-Ansatz) ist bewusst nicht empfohlen, solange dahinter kein echter, über Ankündigungstext hinausgehender Inhalt steht.",
+    status: "open"
+  }, {
+    id: "T14",
+    cat: "QR-Onboarding",
+    sev: "medium",
+    finding: "Konzept für die geplante Aufkleber-Charge (Druckerei, Mindestmenge, Vorlaufzeit) steht: Codes werden vorab als 'frei' angelegt, erst beim ersten Scan einem Fahrzeug zugeordnet, FIN-Endziffern als Sicherheitsabfrage statt Aufdruck. Voraussetzung fehlt noch: aktuell speichert die QAR-ID ausschließlich als Feld auf einem bereits existierenden Fahrzeugdatensatz — eine neue, eigenständige Tabelle für vorab reservierte, unzugeordnete Codes ist nicht gebaut.",
     status: "open"
   }, {
     id: "T5",
