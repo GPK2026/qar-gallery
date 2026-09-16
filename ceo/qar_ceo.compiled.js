@@ -362,6 +362,14 @@
     t: "Werkstatt-B2B: rechtlicher Rahmen fehlt noch",
     own: "Legal",
     note: "Werkstätten registrieren sich seit Sep 2026 selbst und erhalten nach Freigabe durch den Fahrzeugeigentümer Schreibzugriff auf Teile der Fahrzeugakte — es gibt noch keine geprüften Nutzungsbedingungen oder Auftragsverarbeitungs-Regelung für diese neue B2B-Beziehung"
+  }, {
+    t: "QR-Aufkleber-Charge bestellen",
+    own: "Business/Tech",
+    note: "Onboarding-Konzept steht (siehe Recht/Roadmap-Unterlagen), technische Voraussetzung (neue Tabelle für vorab reservierte, unzugeordnete Codes) ist noch nicht gebaut — vor einer Druckbestellung bei der Druckerei nötig"
+  }, {
+    t: "Erstgespräch debug Rechtsanwälte",
+    own: "Business",
+    note: "Kooperationsidee bewertet, Synopse für ein Erstgespräch liegt vor — noch kein Kontakt aufgenommen. Offene Frage vorab zu klären: berufsrechtliche Zulässigkeit einer Vermittlungs-/Werbekooperation (§ 49b BRAO)"
   }];
   const LEGAL_POINTS = [{
     sev: "high",
@@ -422,8 +430,21 @@
   }, {
     t: "Marketing über den QR-Code selbst",
     d: "Jeder QR-Code am Fahrzeug ist physischer, dauerhafter Werbeträger ohne laufende Kosten — wirkt direkt am faszinierenden Objekt."
+  }, {
+    t: "Potenzieller Partnerkanal: spezialisierte Verkehrsrechts-Kanzlei",
+    d: "Debug Rechtsanwälte (Fokus Oldtimer-Schadensregulierung) als erster konkreter externer Kooperationskandidat bewertet — vierfacher Nutzen (Werbepartnerschaft im geplanten Sponsoring-System, Fahrzeugakte-Handover im Schadensfall nach bestehendem Freigabe-Muster, deren Fachartikel-Reichweite als vorqualifizierter Akquisekanal für QAR.Gallery, Dokumentation als Differenzierung für die Kanzlei). Noch unverbindlich, Erstgespräch nicht terminiert."
   }];
   const JOURNAL = [{
+    icon: "📋",
+    t: "QR-Aufkleber-Onboarding konzipiert",
+    d: "Frage aus der Praxis: Wie kommen 150 vorab bei einer Druckerei bestellte QR-Aufkleber zu den richtigen Fahrzeugen? Konzept liegt vor — Codes werden als 'frei' vorab in der Datenbank angelegt, erst beim ersten Scan einem Fahrzeug zugeordnet, FIN-Endziffern als Sicherheitsabfrage statt Aufdruck. Braucht eine neue Datenbanktabelle, noch nicht gebaut. Dabei auch die qar.codes-Domain-Idee bewertet — aktuell nicht empfohlen, da noch keine echte Blockchain-Funktion dahintersteht.",
+    date: "Sep 2026"
+  }, {
+    icon: "⚖️",
+    t: "Erste externe Kooperationsanfrage bewertet: debug Rechtsanwälte",
+    d: "Auf Verkehrsrecht spezialisierte Kanzlei mit eigenem Themenschwerpunkt zu Oldtimer-Schadensregulierung — inhaltliche Passung zur bereits geführten Fahrzeugakte ungewöhnlich hoch. Vier Nutzenpunkte identifiziert (Werbeeinnahmen, schnellere Fallbearbeitung per Akte-Handover, debugs Content als Akquisekanal, Dokumentation als Differenzierung für die Kanzlei). Synopse für ein Erstgespräch erstellt, noch kein Kontakt aufgenommen.",
+    date: "Sep 2026"
+  }, {
     icon: "🏅",
     t: "Approval-Banner: neues Design für das Provenienz-Siegel",
     d: "Nach Rückmeldung, dass das bisherige kleine Icon zu unauffällig war: jetzt ein dicker, farbiger Rahmen um die gesamte Fahrzeugkarte mit eingebettetem 'APPROVAL'-Banner — Optik vorab per Skizze abgestimmt.",
@@ -432,16 +453,6 @@
     icon: "📆",
     t: "Kalender-Integration eingeführt",
     d: "Events lassen sich jetzt als dauerhafter Abo-Feed in Google/Apple/Outlook-Kalender einbinden, einzeln exportieren oder per Link teilen. Ein echter Datumsfehler vor dem Go-Live gefunden und mit einer Prüfbibliothek gegen Produktivdaten verifiziert.",
-    date: "Sep 2026"
-  }, {
-    icon: "🔧",
-    t: "Werkstatt-B2B-Prozess vereinfacht",
-    d: "Von einem Admin-Freigabeprozess auf sofortige Selbstregistrierung umgestellt, Kontrolle liegt jetzt beim Fahrzeugeigentümer je Fahrzeug. Wettbewerbsschutz ergänzt, damit Werkstätten sich gegenseitig nicht sehen können.",
-    date: "Sep 2026"
-  }, {
-    icon: "✉️",
-    t: "Zentrales Benachrichtigungs-Icon eingeführt",
-    d: "Neues Symbol im App-Header bündelt Nachrichten, Neuigkeiten und offene Anfragen an einer Stelle, nach mehreren Korrekturrunden zur Position (App-Header statt Profil-Tab, rechts statt links vom Namen).",
     date: "Sep 2026"
   }];
   const T_ICON = {
