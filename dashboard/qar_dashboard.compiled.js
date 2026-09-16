@@ -645,8 +645,20 @@
     id: "T4",
     cat: "qar.codes",
     sev: "medium",
-    finding: "Cloudflare Worker auf qar.codes: 301 Redirect qar.codes/v/[QAR-ID] → qar.gallery/pcn/?v=[QAR-ID]. ~2h Aufwand, nach Pilotvertrag. Nicht blockierend — Share-Links funktionieren aktuell direkt. Im Sep 2026 im Rahmen der QR-Aufkleber-Onboarding-Konzeption erneut geprüft: reine Weiterleitung bleibt der richtige Ansatz, eine eigenständige zweite Anwendung (z.B. für einen Blockchain-/Token-Ansatz) ist bewusst nicht empfohlen, solange dahinter kein echter, über Ankündigungstext hinausgehender Inhalt steht.",
+    finding: "Ursprünglicher Plan bestätigt und im Sep 2026 präzisiert: qar.codes ist als reine Weiterleitungsebene konzipiert (Cloudflare Worker, 301 Redirect qar.codes/v/[QAR-ID] → qar.gallery/pcn/?v=[QAR-ID]), keine eigene Datenhaltung. Kürzere URL (28 vs. 36+ Zeichen) verbessert QR-Code-Robustheit auf Aufklebern messbar. ~2h Aufwand, technisch schon vor dem Pilotvertrag risikofrei umsetzbar, kein Breaking Change an der laufenden App.",
     status: "open"
+  }, {
+    id: "T15",
+    cat: "qar.codes — Rollen-Routing",
+    sev: "info",
+    finding: "Zielarchitektur sieht vor, dass qar.codes je nach Zugriffskontext (Werkstatt-Token, Versicherungs-API-Key, Gutachter-Zertifikat, Händler-Partner-Token) auf unterschiedliche Ansichten derselben Fahrzeugakte weiterleitet — architektonisch sauber (Plattform hält Daten, Interface routet nur), aber erst sinnvoll baubar, sobald die erste dieser Partnerrollen technisch tatsächlich existiert. Heute läuft z.B. der Werkstatt-Zugriff über normale App-Anmeldung, nicht über einen Token-Routing-Layer. Bewusst an einen konkreten Meilenstein gekoppelt (erste echte Partnerintegration), nicht vorab spekulativ gebaut.",
+    status: "noted"
+  }, {
+    id: "T16",
+    cat: "Blockchain / RWA-Token",
+    sev: "info",
+    finding: "Digitaler Fahrzeugpass auf Blockchain-Basis ist als späteres, für einen Investorenpitch hochrelevantes Zukunftsfeature vorgesehen — bewusst nach der ersten Testphase mit dem Porsche Club Nürburgring, nicht davor. Architektonisch bewusst von der qar.codes-Weiterleitung entkoppelt: eigene, deutlich größere Entscheidung (Blockchain-Infrastruktur, Wallet-Anbindung, regulatorische Fragen), die nicht an die einfache Redirect-Funktion gebunden werden sollte, um keinen falschen Abhängigkeits-Eindruck zwischen beiden Themen entstehen zu lassen.",
+    status: "noted"
   }, {
     id: "T14",
     cat: "QR-Onboarding",
