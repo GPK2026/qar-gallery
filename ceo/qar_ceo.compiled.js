@@ -435,9 +435,14 @@
     d: "Debug Rechtsanwälte (Fokus Oldtimer-Schadensregulierung) als erster konkreter externer Kooperationskandidat bewertet — vierfacher Nutzen (Werbepartnerschaft im geplanten Sponsoring-System, Fahrzeugakte-Handover im Schadensfall nach bestehendem Freigabe-Muster, deren Fachartikel-Reichweite als vorqualifizierter Akquisekanal für QAR.Gallery, Dokumentation als Differenzierung für die Kanzlei). Noch unverbindlich, Erstgespräch nicht terminiert."
   }];
   const JOURNAL = [{
+    icon: "🏗️",
+    t: "Architekturprüfung qar.gallery / qar.codes korrigiert eigene Einschätzung",
+    d: "Vertiefte Prüfung in der Rolle Software-Architekt ergab: qar.codes war ursprünglich primär als rollenbasierter Routing-Layer geplant (Werkstatt/Versicherung/Gutachter/Händler jeweils eigene Ansicht derselben Akte), nicht primär für Blockchain — eigene vorherige Einschätzung dazu war unvollständig. Ergebnis jetzt klar getrennt in drei Stufen: (1) reine URL-Weiterleitung schon jetzt risikofrei baubar (2) Rollen-Routing erst mit der ersten echten Partnerintegration (3) Blockchain/RWA-Token als eigenständiges, bewusst für die Zeit nach der PCN-Testphase vorgesehenes Investoren-Thema, technisch entkoppelt von den ersten beiden Stufen.",
+    date: "Sep 2026"
+  }, {
     icon: "📋",
     t: "QR-Aufkleber-Onboarding konzipiert",
-    d: "Frage aus der Praxis: Wie kommen 150 vorab bei einer Druckerei bestellte QR-Aufkleber zu den richtigen Fahrzeugen? Konzept liegt vor — Codes werden als 'frei' vorab in der Datenbank angelegt, erst beim ersten Scan einem Fahrzeug zugeordnet, FIN-Endziffern als Sicherheitsabfrage statt Aufdruck. Braucht eine neue Datenbanktabelle, noch nicht gebaut. Dabei auch die qar.codes-Domain-Idee bewertet — aktuell nicht empfohlen, da noch keine echte Blockchain-Funktion dahintersteht.",
+    d: "Frage aus der Praxis: Wie kommen 150 vorab bei einer Druckerei bestellte QR-Aufkleber zu den richtigen Fahrzeugen? Konzept liegt vor — Codes werden als 'frei' vorab in der Datenbank angelegt, erst beim ersten Scan einem Fahrzeug zugeordnet, FIN-Endziffern als Sicherheitsabfrage statt Aufdruck. Braucht eine neue Datenbanktabelle, noch nicht gebaut.",
     date: "Sep 2026"
   }, {
     icon: "⚖️",
@@ -448,11 +453,6 @@
     icon: "🏅",
     t: "Approval-Banner: neues Design für das Provenienz-Siegel",
     d: "Nach Rückmeldung, dass das bisherige kleine Icon zu unauffällig war: jetzt ein dicker, farbiger Rahmen um die gesamte Fahrzeugkarte mit eingebettetem 'APPROVAL'-Banner — Optik vorab per Skizze abgestimmt.",
-    date: "Sep 2026"
-  }, {
-    icon: "📆",
-    t: "Kalender-Integration eingeführt",
-    d: "Events lassen sich jetzt als dauerhafter Abo-Feed in Google/Apple/Outlook-Kalender einbinden, einzeln exportieren oder per Link teilen. Ein echter Datumsfehler vor dem Go-Live gefunden und mit einer Prüfbibliothek gegen Produktivdaten verifiziert.",
     date: "Sep 2026"
   }];
   const T_ICON = {
