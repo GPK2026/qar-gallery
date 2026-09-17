@@ -323,9 +323,9 @@
     date: "Jul 2026"
   }];
   const STATUS_OPEN = [{
-    t: "Backups einschalten",
+    t: "Backups + Leaked-Password-Schutz — Pro-Plan-Upgrade",
     own: "Business",
-    note: "Supabase-Dashboard-Einstellung, keine Entwicklungsarbeit"
+    note: "Beide Supabase-Dashboard-Einstellungen sind nur im Pro-Plan verfügbar, keine Entwicklungsarbeit. Bewusste Entscheidung: Upgrade erfolgt erst nach schriftlicher Bestätigung des Clubs (nicht vorher, um keine Kosten vor gesichertem Pilotvertrag einzugehen) — Backups sollten aber vor Freigabe echter Mitgliederdaten stehen, nicht erst am Ende der Pilotphase nachgeholt werden"
   }, {
     t: "DSGVO-Anwalt beauftragen",
     own: "Business/Legal",
@@ -435,6 +435,11 @@
     d: "Debug Rechtsanwälte (Fokus Oldtimer-Schadensregulierung) als erster konkreter externer Kooperationskandidat bewertet — vierfacher Nutzen (Werbepartnerschaft im geplanten Sponsoring-System, Fahrzeugakte-Handover im Schadensfall nach bestehendem Freigabe-Muster, deren Fachartikel-Reichweite als vorqualifizierter Akquisekanal für QAR.Gallery, Dokumentation als Differenzierung für die Kanzlei). Noch unverbindlich, Erstgespräch nicht terminiert."
   }];
   const JOURNAL = [{
+    icon: "🔒",
+    t: "Readiness-Prüfung & Stresstest durchgeführt, ein Fund sofort behoben",
+    d: "Aktiver Test gegen die echte Datenbank zeigte kritischen Befund: Datenzugriffsregeln (RLS) sind formal aktiv, aber praktisch wirkungslos — Nutzerdaten waren ohne jede Anmeldung les- und Fahrzeugdaten schreibbar. Ursache: App nutzt eigenes Login statt Supabase Auth. Sofort behoben: drei intern aufrufbare Datenbankfunktionen gegen Direktaufruf abgesichert, mit Test verifiziert. Migrationsplan für echte Authentifizierung erstellt (5 Schritte, Kernaufwand mehrere Arbeitstage). Backups und Leaked-Password-Schutz brauchen ein Pro-Plan-Upgrade — Entscheidung: Upgrade erst nach schriftlicher Bestätigung des Clubs, nicht vorher.",
+    date: "Sep 2026"
+  }, {
     icon: "🏗️",
     t: "Architekturprüfung qar.gallery / qar.codes korrigiert eigene Einschätzung",
     d: "Vertiefte Prüfung in der Rolle Software-Architekt ergab: qar.codes war ursprünglich primär als rollenbasierter Routing-Layer geplant (Werkstatt/Versicherung/Gutachter/Händler jeweils eigene Ansicht derselben Akte), nicht primär für Blockchain — eigene vorherige Einschätzung dazu war unvollständig. Ergebnis jetzt klar getrennt in drei Stufen: (1) reine URL-Weiterleitung schon jetzt risikofrei baubar (2) Rollen-Routing erst mit der ersten echten Partnerintegration (3) Blockchain/RWA-Token als eigenständiges, bewusst für die Zeit nach der PCN-Testphase vorgesehenes Investoren-Thema, technisch entkoppelt von den ersten beiden Stufen.",
@@ -448,11 +453,6 @@
     icon: "⚖️",
     t: "Erste externe Kooperationsanfrage bewertet: debug Rechtsanwälte",
     d: "Auf Verkehrsrecht spezialisierte Kanzlei mit eigenem Themenschwerpunkt zu Oldtimer-Schadensregulierung — inhaltliche Passung zur bereits geführten Fahrzeugakte ungewöhnlich hoch. Vier Nutzenpunkte identifiziert (Werbeeinnahmen, schnellere Fallbearbeitung per Akte-Handover, debugs Content als Akquisekanal, Dokumentation als Differenzierung für die Kanzlei). Synopse für ein Erstgespräch erstellt, noch kein Kontakt aufgenommen.",
-    date: "Sep 2026"
-  }, {
-    icon: "🏅",
-    t: "Approval-Banner: neues Design für das Provenienz-Siegel",
-    d: "Nach Rückmeldung, dass das bisherige kleine Icon zu unauffällig war: jetzt ein dicker, farbiger Rahmen um die gesamte Fahrzeugkarte mit eingebettetem 'APPROVAL'-Banner — Optik vorab per Skizze abgestimmt.",
     date: "Sep 2026"
   }];
   const T_ICON = {
