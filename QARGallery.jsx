@@ -1647,7 +1647,7 @@ Antworte auf Deutsch in 1-2 Sätzen mit einer hilfreichen Erklärung oder Handlu
       createdAt: today(),
     };
     setLegalCases(p=>({...p,[vehicleId]:[...(p[vehicleId]||[]),legalCase]}));
-    toast_("Ersteinschätzung gespeichert ✓");
+    toast_("Angaben gespeichert ✓ – noch nicht an die Kanzlei übermittelt");
     setLegalCaseModal(null);
     setLegalCaseForm(LEGAL_CASE_FORM_DEFAULT);
   };
@@ -2508,6 +2508,11 @@ Variiere org zwischen TÜV, DEKRA, GTÜ entsprechend dem Filter. Mach die Daten 
               <div style={{gridColumn:"1/-1",borderTop:"1px solid #2a3d50",paddingTop:10,marginTop:4,fontSize:12,color:"#9aaabb",fontWeight:700,textTransform:"uppercase"}}>Rückruf</div>
               <div><label style={S.lbl}>Telefonnummer</label><input className="q-input" value={legalCaseForm.callbackPhone} onChange={e=>setLegalCaseForm(p=>({...p,callbackPhone:e.target.value}))}/></div>
               <div><label style={S.lbl}>Bevorzugte Zeit (optional)</label><input className="q-input" placeholder="z.B. werktags ab 17 Uhr" value={legalCaseForm.callbackPreferredTime} onChange={e=>setLegalCaseForm(p=>({...p,callbackPreferredTime:e.target.value}))}/></div>
+
+              <label style={{gridColumn:"1/-1",display:"flex",alignItems:"center",gap:8,fontSize:13,color:"#aabbcc"}}>
+                <input type="checkbox" checked={legalCaseForm.photosAvailable} onChange={e=>setLegalCaseForm(p=>({...p,photosAvailable:e.target.checked}))}/> Fotos vom Unfall vorhanden
+              </label>
+              <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>Anmerkungen (optional)</label><textarea className="q-input" rows={2} value={legalCaseForm.notes} onChange={e=>setLegalCaseForm(p=>({...p,notes:e.target.value}))}/></div>
             </div>
 
             <label style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:12,color:"#aabbcc",lineHeight:1.5,marginTop:16,background:"#1e2d3d",border:"1px solid #2a3d50",borderRadius:10,padding:"10px 12px"}}>
@@ -2515,8 +2520,12 @@ Variiere org zwischen TÜV, DEKRA, GTÜ entsprechend dem Filter. Mach die Daten 
               Ich stimme zu, dass meine Angaben zu diesem Fall an {LEGAL_CASE_PARTNER.name} als unabhängigen Kooperationspartner weitergegeben werden dürfen.
             </label>
 
+            <div style={{fontSize:12,color:"#f59e0b",marginTop:12,lineHeight:1.5}}>
+              ℹ️ Die Übermittlung an die Kanzlei ist noch nicht freigeschaltet – deine Angaben werden vorerst nur gespeichert, nicht versendet.
+            </div>
+
             <div style={{...S.mBtns,marginTop:16}}>
-              <button className="q-cta fl" disabled={!legalCaseForm.description.trim()||!legalCaseForm.consentGiven} onClick={()=>saveLegalCase(legalCaseModal)}>Ersteinschätzung anfragen</button>
+              <button className="q-cta fl" disabled={!legalCaseForm.description.trim()||!legalCaseForm.consentGiven} onClick={()=>saveLegalCase(legalCaseModal)}>Angaben speichern</button>
               <button className="q-ghost" onClick={()=>setLegalCaseModal(null)}>Abbrechen</button>
             </div>
           </div>
@@ -5054,6 +5063,7 @@ Variiere org zwischen TÜV, DEKRA, GTÜ entsprechend dem Filter. Mach die Daten 
                   ))}
                   <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>
                     <button className="q-cta sm" onClick={()=>{setClaimForm({type:DAMAGE_TYPES[0],date:today(),location:"",description:"",mediaFiles:[]});setClaimModal(v.id);}}>📷 Schaden dokumentieren</button>
+                    <button className="q-outline sm" onClick={()=>{setLegalCaseForm(LEGAL_CASE_FORM_DEFAULT);setLegalCaseModal(v.id);}}>⚖️ Rechtliche Ersteinschätzung</button>
                     {(claims[v.id]||[]).length>0&&<button className="q-ghost sm" onClick={()=>{setViewV(v);setScreen("claimList");}}>Alle Schäden →</button>}
                   </div>
                 </DropSec>
