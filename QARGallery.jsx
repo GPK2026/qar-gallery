@@ -233,6 +233,20 @@ const ROLES = [
 ];
 
 const DAMAGE_TYPES = ["Kollision","Parkschaden","Hagelschaden","Glasbruch","Wildunfall","Brand","Diebstahl / Teildiebstahl","Vandalismus","Überschwemmung","Sonstiger Schaden"];
+
+// Kooperationspartner für rechtliche Ersteinschätzung nach Verkehrsunfällen.
+// Drittservice – kein Teil von QAR.Gallery, siehe disclosure unten.
+const LEGAL_CASE_PARTNER = {
+  slug: "debug-anwaelte",
+  name: "debug Rechtsanwälte",
+  website: "https://www.debug-anwaelte.de/",
+  disclosure: "Drittservice: debug Rechtsanwälte ist ein unabhängiger Kooperationspartner, kein Teil von QAR.Gallery. QAR.Gallery vermittelt lediglich den Kontakt – die rechtliche Beratung erfolgt eigenständig durch die Kanzlei.",
+};
+const OWN_ROLE_OPTIONS = [
+  { id:"geschaedigter", label:"Ich bin Geschädigte/r" },
+  { id:"verursacher",   label:"Ich bin Unfallverursacher/in" },
+  { id:"unklar",        label:"Noch unklar" },
+];
 const CLAIM_STATUSES = [
   { id:"Eingereicht",    label:"Eingereicht",       color:"#f59e0b", bg:"#f59e0b22", icon:"📥", action:true  },
   { id:"In Prüfung",     label:"In Prüfung",        color:"#3b82f6", bg:"#3b82f622", icon:"🔍", action:true  },
@@ -572,6 +586,14 @@ function QARGalleryInner() {
   const [insuranceModal, setInsuranceModal]= useState(null); // vehicleId
   const [claimModal,     setClaimModal]    = useState(null); // vehicleId
   const [claimForm,      setClaimForm]     = useState({type:DAMAGE_TYPES[0],date:today(),location:"",description:"",mediaFiles:[]});
+  // legalCases: { vehicleId: [{ id, accidentDate, accidentLocation, ownRole, description, policeInvolved,
+  //   policeReference, injuries, injuriesDescription, otherPartyName, otherPartyInsurance,
+  //   otherPartyLicensePlate, photosAvailable, callbackPhone, callbackPreferredTime, notes,
+  //   consentGiven, consentGivenAt, status, createdAt }] }
+  const [legalCases,     setLegalCases]    = useState({});
+  const [legalCaseModal, setLegalCaseModal]= useState(null); // vehicleId
+  const LEGAL_CASE_FORM_DEFAULT = {accidentDate:today(),accidentLocation:"",ownRole:OWN_ROLE_OPTIONS[0].id,description:"",policeInvolved:false,policeReference:"",injuries:false,injuriesDescription:"",otherPartyName:"",otherPartyInsurance:"",otherPartyLicensePlate:"",photosAvailable:false,callbackPhone:"",callbackPreferredTime:"",notes:"",consentGiven:false};
+  const [legalCaseForm,  setLegalCaseForm] = useState(LEGAL_CASE_FORM_DEFAULT);
   const [cameraActive,   setCameraActive]  = useState(false);
   const [cameraStream,   setCameraStream]  = useState(null);
   const [cameraMode,     setCameraMode]    = useState("photo"); // photo | video
@@ -1613,6 +1635,23 @@ Antworte auf Deutsch in 1-2 Sätzen mit einer hilfreichen Erklärung oder Handlu
     stopCamera();
   };
 
+  const saveLegalCase = (vehicleId) => {
+    if(!legalCaseForm.description.trim()) return toast_("Unfallhergang erforderlich","err");
+    if(!legalCaseForm.consentGiven) return toast_("Bitte der Weitergabe an den Partner zustimmen","err");
+    const legalCase = {
+      id: uid(),
+      ...legalCaseForm,
+      partner: LEGAL_CASE_PARTNER.slug,
+      status: "draft", // draft | submitted | forwarded | closed – Übergabeweg an die Kanzlei noch in Abstimmung
+      consentGivenAt: new Date().toISOString(),
+      createdAt: today(),
+    };
+    setLegalCases(p=>({...p,[vehicleId]:[...(p[vehicleId]||[]),legalCase]}));
+    toast_("Ersteinschätzung gespeichert ✓");
+    setLegalCaseModal(null);
+    setLegalCaseForm(LEGAL_CASE_FORM_DEFAULT);
+  };
+
   const saveInsurance = (vehicleId) => {
     setInsurance(p=>({...p,[vehicleId]:{...insuranceForm,createdAt:today()}}));
     toast_("Versicherungsdaten gespeichert ✓"); setInsuranceModal(null);
@@ -2420,6 +2459,65 @@ Variiere org zwischen TÜV, DEKRA, GTÜ entsprechend dem Filter. Mach die Daten 
             <div style={{...S.mBtns,marginTop:16}}>
               <button className="q-cta fl" onClick={()=>saveClaim(claimModal)}>Schaden speichern</button>
               <button className="q-ghost" onClick={()=>{setClaimModal(null);stopCamera();}}>Abbrechen</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── RECHTLICHE ERSTEINSCHÄTZUNG (Unfall) – Drittservice debug Rechtsanwälte ── */}
+      {legalCaseModal && (
+        <div style={S.overlay} onClick={()=>setLegalCaseModal(null)}>
+          <div style={{...S.modal,maxWidth:620,maxHeight:"92vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+            <MHead title="⚖️ Rechtliche Ersteinschätzung" sub={`${vehicles[legalCaseModal]?.hersteller} ${vehicles[legalCaseModal]?.modell}`} onClose={()=>setLegalCaseModal(null)}/>
+
+            <div style={{background:"#1e2d3d",border:"1px solid #2a3d50",borderRadius:10,padding:"10px 12px",marginTop:14,marginBottom:4,fontSize:12,color:"#9aaabb",lineHeight:1.5}}>
+              {LEGAL_CASE_PARTNER.disclosure}
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 16px",marginTop:14}}>
+              <div><label style={S.lbl}>Unfalldatum</label><input className="q-input" type="date" value={legalCaseForm.accidentDate} onChange={e=>setLegalCaseForm(p=>({...p,accidentDate:e.target.value}))}/></div>
+              <div><label style={S.lbl}>Unfallort</label><input className="q-input" placeholder="z.B. München, A9" value={legalCaseForm.accidentLocation} onChange={e=>setLegalCaseForm(p=>({...p,accidentLocation:e.target.value}))}/></div>
+
+              <div style={{gridColumn:"1/-1"}}>
+                <label style={S.lbl}>Eigene Rolle</label>
+                <select className="q-input" value={legalCaseForm.ownRole} onChange={e=>setLegalCaseForm(p=>({...p,ownRole:e.target.value}))}>
+                  {OWN_ROLE_OPTIONS.map(o=><option key={o.id} value={o.id}>{o.label}</option>)}
+                </select>
+              </div>
+
+              <div style={{gridColumn:"1/-1"}}>
+                <label style={S.lbl}>Unfallhergang *</label>
+                <textarea className="q-input" rows={3} placeholder="Was ist passiert?" value={legalCaseForm.description} onChange={e=>setLegalCaseForm(p=>({...p,description:e.target.value}))} autoFocus/>
+              </div>
+
+              <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:"#aabbcc"}}>
+                <input type="checkbox" checked={legalCaseForm.policeInvolved} onChange={e=>setLegalCaseForm(p=>({...p,policeInvolved:e.target.checked}))}/> Polizei vor Ort
+              </label>
+              {legalCaseForm.policeInvolved&&<div><label style={S.lbl}>Aktenzeichen (optional)</label><input className="q-input" value={legalCaseForm.policeReference} onChange={e=>setLegalCaseForm(p=>({...p,policeReference:e.target.value}))}/></div>}
+
+              <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:"#aabbcc"}}>
+                <input type="checkbox" checked={legalCaseForm.injuries} onChange={e=>setLegalCaseForm(p=>({...p,injuries:e.target.checked}))}/> Es gab Verletzungen
+              </label>
+              {legalCaseForm.injuries&&<div style={{gridColumn:"1/-1"}}><label style={S.lbl}>Verletzungen – kurze Beschreibung</label><textarea className="q-input" rows={2} value={legalCaseForm.injuriesDescription} onChange={e=>setLegalCaseForm(p=>({...p,injuriesDescription:e.target.value}))}/></div>}
+
+              <div style={{gridColumn:"1/-1",borderTop:"1px solid #2a3d50",paddingTop:10,marginTop:4,fontSize:12,color:"#9aaabb",fontWeight:700,textTransform:"uppercase"}}>Unfallgegner (falls bekannt)</div>
+              <div><label style={S.lbl}>Name</label><input className="q-input" value={legalCaseForm.otherPartyName} onChange={e=>setLegalCaseForm(p=>({...p,otherPartyName:e.target.value}))}/></div>
+              <div><label style={S.lbl}>Kennzeichen</label><input className="q-input" value={legalCaseForm.otherPartyLicensePlate} onChange={e=>setLegalCaseForm(p=>({...p,otherPartyLicensePlate:e.target.value}))}/></div>
+              <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>Versicherung</label><input className="q-input" value={legalCaseForm.otherPartyInsurance} onChange={e=>setLegalCaseForm(p=>({...p,otherPartyInsurance:e.target.value}))}/></div>
+
+              <div style={{gridColumn:"1/-1",borderTop:"1px solid #2a3d50",paddingTop:10,marginTop:4,fontSize:12,color:"#9aaabb",fontWeight:700,textTransform:"uppercase"}}>Rückruf</div>
+              <div><label style={S.lbl}>Telefonnummer</label><input className="q-input" value={legalCaseForm.callbackPhone} onChange={e=>setLegalCaseForm(p=>({...p,callbackPhone:e.target.value}))}/></div>
+              <div><label style={S.lbl}>Bevorzugte Zeit (optional)</label><input className="q-input" placeholder="z.B. werktags ab 17 Uhr" value={legalCaseForm.callbackPreferredTime} onChange={e=>setLegalCaseForm(p=>({...p,callbackPreferredTime:e.target.value}))}/></div>
+            </div>
+
+            <label style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:12,color:"#aabbcc",lineHeight:1.5,marginTop:16,background:"#1e2d3d",border:"1px solid #2a3d50",borderRadius:10,padding:"10px 12px"}}>
+              <input type="checkbox" style={{marginTop:2}} checked={legalCaseForm.consentGiven} onChange={e=>setLegalCaseForm(p=>({...p,consentGiven:e.target.checked}))}/>
+              Ich stimme zu, dass meine Angaben zu diesem Fall an {LEGAL_CASE_PARTNER.name} als unabhängigen Kooperationspartner weitergegeben werden dürfen.
+            </label>
+
+            <div style={{...S.mBtns,marginTop:16}}>
+              <button className="q-cta fl" disabled={!legalCaseForm.description.trim()||!legalCaseForm.consentGiven} onClick={()=>saveLegalCase(legalCaseModal)}>Ersteinschätzung anfragen</button>
+              <button className="q-ghost" onClick={()=>setLegalCaseModal(null)}>Abbrechen</button>
             </div>
           </div>
         </div>
@@ -4141,8 +4239,12 @@ Variiere org zwischen TÜV, DEKRA, GTÜ entsprechend dem Filter. Mach die Daten 
             <button className="q-ghost sm" style={{marginBottom:16}} onClick={()=>setScreen("view")}>← Zurück zur Akte</button>
             <div style={S.pH}>
               <div><h2 style={S.pT}>Schadenshistorie</h2><p style={S.pS}>{viewV.hersteller} {viewV.modell} · {(claims[viewV.id]||[]).length} Schadensfälle</p></div>
-              <button className="q-cta sm" onClick={()=>{setClaimForm({type:DAMAGE_TYPES[0],date:today(),location:"",description:"",mediaFiles:[]});setClaimModal(viewV.id);}}>+ Schaden dokumentieren</button>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button className="q-outline sm" onClick={()=>{setLegalCaseForm(LEGAL_CASE_FORM_DEFAULT);setLegalCaseModal(viewV.id);}}>⚖️ Rechtliche Ersteinschätzung</button>
+                <button className="q-cta sm" onClick={()=>{setClaimForm({type:DAMAGE_TYPES[0],date:today(),location:"",description:"",mediaFiles:[]});setClaimModal(viewV.id);}}>+ Schaden dokumentieren</button>
+              </div>
             </div>
+            <div style={{fontSize:11,color:"#6b7d8f",marginTop:-6,marginBottom:12}}>⚖️ Rechtliche Ersteinschätzung: {LEGAL_CASE_PARTNER.disclosure}</div>
             {(claims[viewV.id]||[]).length===0?<Empty icon="⚠️" text="Noch keine Schadensfälle."/>:
               [...(claims[viewV.id]||[])].reverse().map(c=>(
                 <div key={c.id} style={{background:"#1e2d3d",border:"1px solid #2a3d50",borderRadius:16,padding:"16px 18px",marginBottom:12}}>
@@ -6885,6 +6987,7 @@ const SPONSORED_ADS = [
   { id:"ad1", type:"banner", brand:"Continental Reifen", headline:"Bereit für den Winter?", sub:"Jetzt Winterreifen zum Bestpreis – Montage ab 39 €.", cta:"Reifen finden", color:"#1a3a4a", accent:"#0dcfb4", logo:"🔵", tag:"Reifen & Montage", screens:["dashboard","view"] },
   { id:"ad2", type:"banner", brand:"HUK-COBURG", headline:"Kfz-Versicherung ab 26 €/Monat", sub:"Jetzt Beitrag berechnen – schnell & kostenlos.", cta:"Beitrag berechnen", color:"#2a1a3a", accent:"#8b5cf6", logo:"🛡️", tag:"Versicherung", screens:["dashboard"] },
   { id:"ad3", type:"banner", brand:"ADAC", headline:"Panne? Wir sind für dich da.", sub:"ADAC Mitgliedschaft – Europaweit abgesichert ab 14,90 €.", cta:"Mitglied werden", color:"#2a2800", accent:"#f59e0b", logo:"🟡", tag:"Pannenhilfe", screens:["view"] },
+  { id:"ad3b", type:"banner", brand:"debug Rechtsanwälte", headline:"Unfall gehabt? Kostenlose Ersteinschätzung.", sub:"Drittservice – unabhängiger Kooperationspartner, auch für Oldtimer-Unfälle.", cta:"Zur Schadenshistorie", color:"#1a2a3a", accent:"#0dcfb4", logo:"⚖️", tag:"Rechtsberatung", screens:["view"] },
   { id:"ad4", type:"native", brand:"Sixt Leasing", headline:"Neuwagen leasen ab 199 €/Mo", sub:"Flexible Laufzeiten, kein Kapitalbindung.", cta:"Angebot ansehen", color:"#1a2d3e", accent:"#f59e0b", logo:"🚙", tag:"Leasing" },
   { id:"ad5", type:"native", brand:"Carglass", headline:"Steinschlag? Reparatur oft kostenlos", sub:"Termin in 24h – Versicherung übernimmt oft.", cta:"Termin buchen", color:"#1e2d3d", accent:"#22c55e", logo:"🔍", tag:"Scheibe & Glas" },
   { id:"ad6", type:"native", brand:"AutoScout24", headline:"Dein Fahrzeug verkaufen", sub:"Jetzt inserieren – 15 Mio. potenzielle Käufer.", cta:"Inserat starten", color:"#1a2035", accent:"#0dcfb4", logo:"📋", tag:"Marktplatz" },
