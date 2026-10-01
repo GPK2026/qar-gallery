@@ -125,6 +125,20 @@ const C = {
   surface:"#eeeff2", // Porsche --pds-theme-light-background-surface
 };
 
+// Kooperationspartner für rechtliche Ersteinschätzung nach Verkehrsunfällen
+// (gleicher Partner wie in QAR.Gallery). Drittservice – kein Teil von PCN/QAR.Gallery.
+const LEGAL_CASE_PARTNER = {
+  slug: "debug-anwaelte",
+  name: "debug Rechtsanwälte",
+  disclosure: "Drittservice: debug Rechtsanwälte ist ein unabhängiger Kooperationspartner, kein Teil von QAR.Gallery. QAR.Gallery vermittelt lediglich den Kontakt – die rechtliche Beratung erfolgt eigenständig durch die Kanzlei.",
+};
+const LEGAL_OWN_ROLES = [
+  { id:"geschaedigter", label:"Ich bin Geschädigte/r" },
+  { id:"verursacher",   label:"Ich bin Unfallverursacher/in" },
+  { id:"unklar",        label:"Noch unklar" },
+];
+const legalCaseEmpty = () => ({accidentDate:new Date().toISOString().slice(0,10),accidentLocation:"",ownRole:"geschaedigter",description:"",policeInvolved:false,policeReference:"",injuries:false,injuriesDescription:"",otherPartyName:"",otherPartyLicensePlate:"",otherPartyInsurance:"",photosAvailable:false,callbackPhone:"",callbackPreferredTime:"",notes:"",consentGiven:false});
+
 // Zeilenhoehen-Skala, orientiert an Porsche Design System Typografie-
 // Verhaeltnissen (durchgehend 1.3–1.5, nicht die knappe 1.0–1.15, die
 // zuvor bei vielen Ueberschriften genutzt wurde).
@@ -1923,6 +1937,10 @@ function PCNInner() {
   const [emergencyBusy, setEmergencyBusy] = useState(false);
   const [emergencyProfiles, setEmergencyProfiles] = useState([]); // Eigentümer-Verwaltung
   const [showEmergencyEdit, setShowEmergencyEdit] = useState(null); // Profil-Objekt oder {} für neu
+  // Rechtliche Ersteinschätzung: { vehicleId, ...Formular } oder null.
+  // Speichert vorerst nur lokal – Übermittlung an die Kanzlei noch nicht freigeschaltet.
+  const [legalCaseEdit, setLegalCaseEdit] = useState(null);
+  const [legalCases, setLegalCases] = useState({});
   const [emergencyEditBusy, setEmergencyEditBusy] = useState(false);
   const [scanLocations, setScanLocations] = useState({}); // vehicleId -> array
   const [showCheckInPrompt, setShowCheckInPrompt] = useState(null); // vehicleId
@@ -6381,6 +6399,20 @@ Regeln:
                       </div>
                     )}
 
+                    {/* ── Nach einem Unfall: rechtliche Ersteinschätzung (Drittservice) ── */}
+                    {isOwn&&(
+                      <div style={{marginTop:18,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2,marginBottom:6}}>Nach einem Unfall</div>
+                        <button className="btn ghost" style={{width:"100%"}} onClick={()=>setLegalCaseEdit({vehicleId:v.id,...legalCaseEmpty()})}>
+                          ⚖️ Rechtliche Ersteinschätzung
+                        </button>
+                        <div style={{fontSize:11,color:C.muted,marginTop:6,lineHeight:1.5}}>{LEGAL_CASE_PARTNER.disclosure}</div>
+                        {(legalCases[v.id]||[]).length>0&&(
+                          <div style={{fontSize:12,color:C.muted,marginTop:6}}>{(legalCases[v.id]||[]).length} Fall/Fälle gespeichert · noch nicht übermittelt</div>
+                        )}
+                      </div>
+                    )}
+
                     {/* ── Notfallprofile (ICE) ── */}
                     <div style={{marginTop:18,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
                       <div style={{marginBottom:8}}>
@@ -7268,6 +7300,75 @@ Regeln:
               </div>
             </div>
           )}
+
+          {/* ── Rechtliche Ersteinschätzung (Unfall) – Drittservice debug Rechtsanwälte ── */}
+          {legalCaseEdit&&legalCaseEdit.vehicleId===v.id&&(()=>{
+            const f=legalCaseEdit, set=patch=>setLegalCaseEdit(p=>({...p,...patch}));
+            const lbl={fontSize:12,fontWeight:700,color:C.muted,marginBottom:4,display:"block"};
+            const chk={display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.white,marginBottom:10};
+            const save=()=>{
+              if(!f.description.trim()){toast_("Unfallhergang erforderlich","err");return;}
+              if(!f.consentGiven){toast_("Bitte der Weitergabe an den Partner zustimmen","err");return;}
+              const {vehicleId,...data}=f;
+              setLegalCases(p=>({...p,[vehicleId]:[...(p[vehicleId]||[]),{id:Date.now().toString(36),...data,partner:LEGAL_CASE_PARTNER.slug,status:"draft",consentGivenAt:new Date().toISOString()}]}));
+              toast_("Angaben gespeichert ✓ – noch nicht an die Kanzlei übermittelt");
+              setLegalCaseEdit(null);
+            };
+            return (
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setLegalCaseEdit(null);}}>
+              <div className="sheet" style={{maxHeight:"90vh",overflowY:"auto"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white}}>⚖️ Rechtliche Ersteinschätzung</div>
+                  <button onClick={()=>setLegalCaseEdit(null)}
+                    style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+                </div>
+                <div style={{fontSize:12,color:C.muted,lineHeight:1.5,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:14}}>
+                  {LEGAL_CASE_PARTNER.disclosure}
+                </div>
+
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+                  <div><label style={lbl}>Unfalldatum</label><input className="inp" type="date" value={f.accidentDate} onChange={e=>set({accidentDate:e.target.value})}/></div>
+                  <div><label style={lbl}>Unfallort</label><input className="inp" placeholder="z.B. Nürburg, B258" value={f.accidentLocation} onChange={e=>set({accidentLocation:e.target.value})}/></div>
+                </div>
+                <label style={lbl}>Eigene Rolle</label>
+                <select className="inp" style={{marginBottom:10}} value={f.ownRole} onChange={e=>set({ownRole:e.target.value})}>
+                  {LEGAL_OWN_ROLES.map(o=><option key={o.id} value={o.id}>{o.label}</option>)}
+                </select>
+                <label style={lbl}>Unfallhergang *</label>
+                <textarea className="inp" rows={3} style={{marginBottom:10}} placeholder="Was ist passiert?" value={f.description} onChange={e=>set({description:e.target.value})}/>
+
+                <label style={chk}><input type="checkbox" checked={f.policeInvolved} onChange={e=>set({policeInvolved:e.target.checked})}/> Polizei vor Ort</label>
+                {f.policeInvolved&&<input className="inp" style={{marginBottom:10}} placeholder="Aktenzeichen (optional)" value={f.policeReference} onChange={e=>set({policeReference:e.target.value})}/>}
+                <label style={chk}><input type="checkbox" checked={f.injuries} onChange={e=>set({injuries:e.target.checked})}/> Es gab Verletzungen</label>
+                {f.injuries&&<textarea className="inp" rows={2} style={{marginBottom:10}} placeholder="Verletzungen – kurze Beschreibung" value={f.injuriesDescription} onChange={e=>set({injuriesDescription:e.target.value})}/>}
+                <label style={chk}><input type="checkbox" checked={f.photosAvailable} onChange={e=>set({photosAvailable:e.target.checked})}/> Fotos vom Unfall vorhanden</label>
+
+                <div style={{...lbl,marginTop:8}}>Unfallgegner (falls bekannt)</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                  <input className="inp" placeholder="Name" value={f.otherPartyName} onChange={e=>set({otherPartyName:e.target.value})}/>
+                  <input className="inp" placeholder="Kennzeichen" value={f.otherPartyLicensePlate} onChange={e=>set({otherPartyLicensePlate:e.target.value})}/>
+                </div>
+                <input className="inp" style={{marginBottom:10}} placeholder="Versicherung" value={f.otherPartyInsurance} onChange={e=>set({otherPartyInsurance:e.target.value})}/>
+
+                <div style={{...lbl,marginTop:8}}>Rückruf</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+                  <input className="inp" type="tel" placeholder="Telefonnummer" value={f.callbackPhone} onChange={e=>set({callbackPhone:e.target.value})}/>
+                  <input className="inp" placeholder="Bevorzugte Zeit" value={f.callbackPreferredTime} onChange={e=>set({callbackPreferredTime:e.target.value})}/>
+                </div>
+                <textarea className="inp" rows={2} style={{marginBottom:12}} placeholder="Anmerkungen (optional)" value={f.notes} onChange={e=>set({notes:e.target.value})}/>
+
+                <label style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:13,color:C.white,lineHeight:1.5,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:10}}>
+                  <input type="checkbox" style={{marginTop:3}} checked={f.consentGiven} onChange={e=>set({consentGiven:e.target.checked})}/>
+                  <span>Ich stimme zu, dass meine Angaben zu diesem Fall an {LEGAL_CASE_PARTNER.name} als unabhängigen Kooperationspartner weitergegeben werden dürfen.</span>
+                </label>
+                <div style={{fontSize:12,color:C.amber,lineHeight:1.5,marginBottom:12}}>
+                  ℹ️ Die Übermittlung an die Kanzlei ist noch nicht freigeschaltet – deine Angaben werden vorerst nur gespeichert, nicht versendet.
+                </div>
+                <button className="btn" style={{width:"100%"}} disabled={!f.description.trim()||!f.consentGiven} onClick={save}>Angaben speichern</button>
+              </div>
+            </div>
+            );
+          })()}
 
           {/* ── Notfallprofil bearbeiten/anlegen ── */}
           {showEmergencyEdit&&showEmergencyEdit.vehicleId===v.id&&(
