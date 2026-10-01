@@ -7306,7 +7306,7 @@ Regeln:
             const f=legalCaseEdit, set=patch=>setLegalCaseEdit(p=>({...p,...patch}));
             const lbl={fontSize:12,fontWeight:700,color:C.muted,marginBottom:4,display:"block"};
             // kompaktere Felder als die globale .inp-Klasse – das Formular ist lang
-            const inpS={padding:"9px 12px",fontSize:15,borderRadius:8};
+            const inpS={padding:"9px 12px",fontSize:15,borderRadius:8,minWidth:0,maxWidth:"100%",display:"block"};
             // Auswahl aus den bereits angelegten Fahrzeugen – deren Daten werden übernommen
             const vehicleChoices = myVehicles.length ? myVehicles : [v];
             const av = vehicleChoices.find(x=>x.id===f.affectedVehicleId) || vehicles[f.affectedVehicleId] || v;
@@ -7337,7 +7337,7 @@ Regeln:
                 <select className="inp" style={{...inpS,marginBottom:8}} value={av.id} onChange={e=>set({affectedVehicleId:e.target.value})}>
                   {vehicleChoices.map(x=><option key={x.id} value={x.id}>{[x.hersteller,x.modell].filter(Boolean).join(" ")}{x.kennzeichen?" · "+x.kennzeichen:""}</option>)}
                 </select>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 12px",background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",marginBottom:12}}>
+                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:"4px 12px",background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",marginBottom:12}}>
                   {avRows.map(([k,val])=>(
                     <div key={k} style={{minWidth:0}}>
                       <div style={{fontSize:11,color:C.muted}}>{k}</div>
@@ -7346,9 +7346,9 @@ Regeln:
                   ))}
                 </div>
 
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                  <div><label style={lbl}>Unfalldatum</label><input className="inp" style={inpS} type="date" value={f.accidentDate} onChange={e=>set({accidentDate:e.target.value})}/></div>
-                  <div><label style={lbl}>Unfallort</label><input className="inp" style={inpS} placeholder="z.B. Nürburg, B258" value={f.accidentLocation} onChange={e=>set({accidentLocation:e.target.value})}/></div>
+                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8,marginBottom:8}}>
+                  <div style={{minWidth:0}}><label style={lbl}>Unfalldatum</label><input className="inp" style={{...inpS,WebkitAppearance:"none",appearance:"none",minHeight:40}} type="date" value={f.accidentDate} onChange={e=>set({accidentDate:e.target.value})}/></div>
+                  <div style={{minWidth:0}}><label style={lbl}>Unfallort</label><input className="inp" style={inpS} placeholder="z.B. Nürburg, B258" value={f.accidentLocation} onChange={e=>set({accidentLocation:e.target.value})}/></div>
                 </div>
                 <label style={lbl}>Eigene Rolle</label>
                 <select className="inp" style={{...inpS,marginBottom:8}} value={f.ownRole} onChange={e=>set({ownRole:e.target.value})}>
@@ -7366,14 +7366,14 @@ Regeln:
                 {f.injuries&&<textarea className="inp" style={inpS} rows={2} style={{marginBottom:8}} placeholder="Verletzungen – kurze Beschreibung" value={f.injuriesDescription} onChange={e=>set({injuriesDescription:e.target.value})}/>}
 
                 <div style={{...lbl,marginTop:8}}>Unfallgegner (falls bekannt)</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8,marginBottom:8}}>
                   <input className="inp" style={inpS} placeholder="Name" value={f.otherPartyName} onChange={e=>set({otherPartyName:e.target.value})}/>
                   <input className="inp" style={inpS} placeholder="Kennzeichen" value={f.otherPartyLicensePlate} onChange={e=>set({otherPartyLicensePlate:e.target.value})}/>
                 </div>
                 <input className="inp" style={{...inpS,marginBottom:8}} placeholder="Versicherung" value={f.otherPartyInsurance} onChange={e=>set({otherPartyInsurance:e.target.value})}/>
 
                 <div style={{...lbl,marginTop:8}}>Rückruf</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8,marginBottom:8}}>
                   <input className="inp" style={inpS} type="tel" placeholder="Telefonnummer" value={f.callbackPhone} onChange={e=>set({callbackPhone:e.target.value})}/>
                   <input className="inp" style={inpS} placeholder="Bevorzugte Zeit" value={f.callbackPreferredTime} onChange={e=>set({callbackPreferredTime:e.target.value})}/>
                 </div>
