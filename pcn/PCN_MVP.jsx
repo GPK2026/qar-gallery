@@ -6374,11 +6374,11 @@ Regeln:
             const vGutachten = (DEMO_GUTACHTEN[v.id]||[]);
             const sections = [
               {
-                id:"emergency", icon:"🆘", label:"Notfall & Pannenhilfe", count:emergencyProfiles.length,
+                id:"emergency", icon:"🆘", label:"Notfall-, Pannen- & Unfallhilfe", count:emergencyProfiles.length,
                 content:(
                   <div>
                     {/* ── Pannenhilfe: schnell griffbereit im Ernstfall ── */}
-                    <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2,marginTop:12,marginBottom:6}}>Pannenhilfe</div>
+                    <div style={{fontSize:12,fontWeight:700,color:C.white,letterSpacing:.2,marginTop:12,marginBottom:6}}>Pannenhilfe</div>
                     <div style={{display:"flex",gap:8}}>
                       <a href="tel:+498920204000" style={{flex:1,textDecoration:"none"}}>
                         <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px",textAlign:"center"}}>
@@ -6402,8 +6402,8 @@ Regeln:
                     {/* ── Nach einem Unfall: rechtliche Ersteinschätzung (Drittservice) ── */}
                     {isOwn&&(
                       <div style={{marginTop:18,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                        <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2,marginBottom:6}}>Nach einem Unfall</div>
-                        <button className="btn ghost" style={{width:"100%"}} onClick={()=>setLegalCaseEdit({vehicleId:v.id,...legalCaseEmpty()})}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.white,letterSpacing:.2,marginBottom:6}}>Nach einem Unfall</div>
+                        <button className="btn ghost" style={{width:"100%"}} onClick={()=>setLegalCaseEdit({vehicleId:v.id,affectedVehicleId:v.id,...legalCaseEmpty()})}>
                           ⚖️ Rechtliche Ersteinschätzung
                         </button>
                         <div style={{fontSize:11,color:C.muted,marginTop:6,lineHeight:1.5}}>{LEGAL_CASE_PARTNER.disclosure}</div>
@@ -6416,7 +6416,7 @@ Regeln:
                     {/* ── Notfallprofile (ICE) ── */}
                     <div style={{marginTop:18,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
                       <div style={{marginBottom:8}}>
-                        <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2,marginBottom:6}}>Notfallprofile</div>
+                        <div style={{fontSize:12,fontWeight:700,color:C.white,letterSpacing:.2,marginBottom:6}}>Notfallprofile</div>
                         <div style={{display:"flex",justifyContent:"flex-end"}}>
                           <button onClick={()=>{loadEmergencyProfiles(v.id);setShowEmergencyEdit({vehicleId:v.id,name:"",accessCode:"",contacts:[{name:"",relationship:"",phone:""}]});}}
                             style={{background:"none",border:"none",color:C.gold,fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Hinzufügen</button>
@@ -7305,12 +7305,17 @@ Regeln:
           {legalCaseEdit&&legalCaseEdit.vehicleId===v.id&&(()=>{
             const f=legalCaseEdit, set=patch=>setLegalCaseEdit(p=>({...p,...patch}));
             const lbl={fontSize:12,fontWeight:700,color:C.muted,marginBottom:4,display:"block"};
+            // Auswahl aus den bereits angelegten Fahrzeugen – deren Daten werden übernommen
+            const vehicleChoices = myVehicles.length ? myVehicles : [v];
+            const av = vehicleChoices.find(x=>x.id===f.affectedVehicleId) || vehicles[f.affectedVehicleId] || v;
+            const avRows = [["Fahrzeug",[av.hersteller,av.modell].filter(Boolean).join(" ")],["Kennzeichen",av.kennzeichen],["FIN",av.fin],["Baujahr",av.baujahr],["Kilometerstand",av.kilometerstand?av.kilometerstand+" km":""],["QAR-ID",av.qarId]].filter(([,val])=>val);
             const chk={display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.white,marginBottom:10};
             const save=()=>{
               if(!f.description.trim()){toast_("Unfallhergang erforderlich","err");return;}
               if(!f.consentGiven){toast_("Bitte der Weitergabe an den Partner zustimmen","err");return;}
-              const {vehicleId,...data}=f;
-              setLegalCases(p=>({...p,[vehicleId]:[...(p[vehicleId]||[]),{id:Date.now().toString(36),...data,partner:LEGAL_CASE_PARTNER.slug,status:"draft",consentGivenAt:new Date().toISOString()}]}));
+              const {vehicleId,affectedVehicleId,...data}=f;
+              const vehicleData=Object.fromEntries(avRows);
+              setLegalCases(p=>({...p,[av.id]:[...(p[av.id]||[]),{id:Date.now().toString(36),vehicleId:av.id,vehicleData,...data,partner:LEGAL_CASE_PARTNER.slug,status:"draft",consentGivenAt:new Date().toISOString()}]}));
               toast_("Angaben gespeichert ✓ – noch nicht an die Kanzlei übermittelt");
               setLegalCaseEdit(null);
             };
@@ -7324,6 +7329,19 @@ Regeln:
                 </div>
                 <div style={{fontSize:12,color:C.muted,lineHeight:1.5,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:14}}>
                   {LEGAL_CASE_PARTNER.disclosure}
+                </div>
+
+                <label style={lbl}>Betroffenes Fahrzeug</label>
+                <select className="inp" style={{marginBottom:8}} value={av.id} onChange={e=>set({affectedVehicleId:e.target.value})}>
+                  {vehicleChoices.map(x=><option key={x.id} value={x.id}>{[x.hersteller,x.modell].filter(Boolean).join(" ")}{x.kennzeichen?" · "+x.kennzeichen:""}</option>)}
+                </select>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 12px",background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:14}}>
+                  {avRows.map(([k,val])=>(
+                    <div key={k} style={{minWidth:0}}>
+                      <div style={{fontSize:11,color:C.muted}}>{k}</div>
+                      <div style={{fontSize:13,color:C.white,fontWeight:600,overflowWrap:"anywhere"}}>{val}</div>
+                    </div>
+                  ))}
                 </div>
 
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
