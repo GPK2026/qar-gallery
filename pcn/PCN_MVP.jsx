@@ -137,7 +137,115 @@ const LEGAL_OWN_ROLES = [
   { id:"verursacher",   label:"Ich bin Unfallverursacher/in" },
   { id:"unklar",        label:"Noch unklar" },
 ];
-const legalCaseEmpty = () => ({accidentDate:new Date().toISOString().slice(0,10),accidentLocation:"",ownRole:"geschaedigter",description:"",policeInvolved:false,policeReference:"",injuries:false,injuriesDescription:"",otherPartyName:"",otherPartyLicensePlate:"",otherPartyInsurance:"",photosAvailable:false,callbackPhone:"",callbackPreferredTime:"",notes:"",consentGiven:false});
+const legalCaseEmpty = () => ({accidentDate:new Date().toISOString().slice(0,10),accidentLocation:"",ownRole:"geschaedigter",description:"",policeInvolved:false,policeReference:"",injuries:false,injuriesDescription:"",otherPartyName:"",otherPartyLicensePlate:"",otherPartyInsurance:"",photos:[],callbackPhone:"",callbackPreferredTime:"",notes:"",consentGiven:false});
+const LEGAL_MAX_PHOTOS = 10;
+const LEGAL_ROLE_LABEL = id => (LEGAL_OWN_ROLES.find(r=>r.id===id)||{}).label||id;
+
+// Unfallfoto verkleinern: 1600px / JPEG 0.8 – Schäden bleiben gut erkennbar,
+// die Unfallmappe bleibt trotzdem per Mail verschickbar.
+const compressAccidentPhoto = file => new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onerror=reject;
+  reader.onload=e=>{
+    const img=new Image();
+    img.onerror=reject;
+    img.onload=()=>{
+      const MAX=1600, sc=Math.min(1,MAX/img.width,MAX/img.height);
+      const cv=document.createElement("canvas");
+      cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
+      const ctx=cv.getContext("2d");
+      ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high";
+      ctx.drawImage(img,0,0,cv.width,cv.height);
+      resolve({dataUrl:cv.toDataURL("image/jpeg",0.8),w:cv.width,h:cv.height,name:file.name||"Foto.jpg"});
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+const loadJsPdf = async () => {
+  if(window.jspdf?.jsPDF) return window.jspdf.jsPDF;
+  await new Promise((res,rej)=>{
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    s.onload=res; s.onerror=()=>rej(new Error("PDF-Bibliothek konnte nicht geladen werden"));
+    document.head.appendChild(s);
+  });
+  return window.jspdf.jsPDF;
+};
+
+// Unfallmappe als PDF: Fahrzeugdaten, Unfallangaben, Einwilligung, Fotos.
+const buildLegalCasePdf = async (c, member) => {
+  const jsPDF = await loadJsPdf();
+  const doc = new jsPDF({unit:"mm",format:"a4"});
+  const W=210, M=16, CW=W-2*M; let y=0;
+  const dark=[22,22,24], red=[213,0,28], gray=[110,112,116], black=[20,20,22];
+  const fmtDate = d => { if(!d) return "–"; const x=new Date(d); return isNaN(x)?d:x.toLocaleDateString("de-DE"); };
+  const ensure = h => { if(y+h>280){ doc.addPage(); y=M; } };
+  const section = title => {
+    ensure(14); y+=4;
+    doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...dark); doc.text(title,M,y);
+    y+=2; doc.setDrawColor(...red); doc.setLineWidth(0.4); doc.line(M,y,W-M,y); y+=5;
+  };
+  const row = (k,v) => {
+    if(v===undefined||v===null||v==="") return;
+    const lines=doc.splitTextToSize(String(v),CW-48);
+    ensure(lines.length*5+1);
+    doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...gray); doc.text(k,M,y);
+    doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(...black); doc.text(lines,M+48,y);
+    y+=lines.length*5+1;
+  };
+  const para = text => {
+    const lines=doc.splitTextToSize(String(text||"–"),CW);
+    doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(...black);
+    lines.forEach(l=>{ ensure(5); doc.text(l,M,y); y+=5; });
+  };
+
+  doc.setFillColor(...dark); doc.rect(0,0,W,26,"F");
+  doc.setFont("helvetica","bold"); doc.setFontSize(17); doc.setTextColor(255,255,255); doc.text("Unfallmappe",M,13);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(200,200,205);
+  doc.text("QAR.Gallery · Rechtliche Ersteinschätzung",M,20);
+  doc.text("Erstellt: "+new Date().toLocaleString("de-DE"),W-M,20,{align:"right"});
+  y=34;
+
+  section("Fahrzeug");
+  Object.entries(c.vehicleData||{}).forEach(([k,v])=>row(k,v));
+  section("Mitglied / Kontakt");
+  row("Name",member?.name); row("E-Mail",member?.email);
+  row("Rückruf-Telefon",c.callbackPhone); row("Rückruf-Zeit",c.callbackPreferredTime);
+  section("Unfall");
+  row("Datum",fmtDate(c.accidentDate)); row("Ort",c.accidentLocation); row("Eigene Rolle",LEGAL_ROLE_LABEL(c.ownRole));
+  row("Polizei vor Ort",c.policeInvolved?"Ja":"Nein"); if(c.policeInvolved) row("Aktenzeichen",c.policeReference);
+  row("Verletzungen",c.injuries?"Ja":"Nein"); if(c.injuries) row("Verletzungen (Beschr.)",c.injuriesDescription);
+  row("Fotos",(c.photos||[]).length+" angehängt");
+  section("Unfallhergang"); para(c.description);
+  if(c.otherPartyName||c.otherPartyLicensePlate||c.otherPartyInsurance){
+    section("Unfallgegner");
+    row("Name",c.otherPartyName); row("Kennzeichen",c.otherPartyLicensePlate); row("Versicherung",c.otherPartyInsurance);
+  }
+  if(c.notes){ section("Anmerkungen"); para(c.notes); }
+  section("Einwilligung");
+  para(`Das Mitglied hat am ${c.consentGivenAt?new Date(c.consentGivenAt).toLocaleString("de-DE"):"–"} eingewilligt, dass die Angaben zu diesem Fall an ${LEGAL_CASE_PARTNER.name} als unabhängigen Kooperationspartner weitergegeben werden dürfen.`);
+  y+=2; doc.setFontSize(8); doc.setTextColor(...gray);
+  doc.splitTextToSize(LEGAL_CASE_PARTNER.disclosure,CW).forEach(l=>{ ensure(4); doc.text(l,M,y); y+=4; });
+
+  (c.photos||[]).forEach((ph,i)=>{
+    if(i%2===0){ doc.addPage(); y=M; doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...dark); doc.text("Unfallfotos",M,y); y+=6; }
+    const maxH=120, sc=Math.min(CW/ph.w, maxH/ph.h), w=ph.w*sc, h=ph.h*sc;
+    doc.addImage(ph.dataUrl,"JPEG",M+(CW-w)/2,y,w,h);
+    y+=h+3; doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...gray);
+    doc.text(`Foto ${i+1} von ${c.photos.length}`,M,y); y+=8;
+  });
+
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i); doc.setFontSize(8); doc.setTextColor(...gray);
+    doc.text(`Fall ${c.id} · ${(c.vehicleData||{}).Kennzeichen||""}`,M,291);
+    doc.text(`Seite ${i} / ${pages}`,W-M,291,{align:"right"});
+  }
+  return doc;
+};
+const legalCasePdfName = c => `Unfallmappe_${((c.vehicleData||{}).Kennzeichen||"Fahrzeug").replace(/[^A-Za-z0-9]+/g,"-")}_${c.accidentDate||""}.pdf`;
 
 // Zeilenhoehen-Skala, orientiert an Porsche Design System Typografie-
 // Verhaeltnissen (durchgehend 1.3–1.5, nicht die knappe 1.0–1.15, die
@@ -1941,6 +2049,25 @@ function PCNInner() {
   // Speichert vorerst nur lokal – Übermittlung an die Kanzlei noch nicht freigeschaltet.
   const [legalCaseEdit, setLegalCaseEdit] = useState(null);
   const [legalCases, setLegalCases] = useState({});
+  const [legalPdfBusy, setLegalPdfBusy] = useState(null); // Fall-ID während PDF erzeugt wird
+  const legalCasePdf = async (c, mode) => {
+    setLegalPdfBusy(c.id);
+    try {
+      const doc = await buildLegalCasePdf(c, me);
+      const name = legalCasePdfName(c);
+      if(mode==="share"){
+        const file = new File([doc.output("blob")], name, {type:"application/pdf"});
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          await navigator.share({files:[file], title:"Unfallmappe", text:"Unfallmappe zur rechtlichen Ersteinschätzung"});
+          return;
+        }
+        toast_("Teilen wird hier nicht unterstützt – PDF wird heruntergeladen");
+      }
+      doc.save(name);
+    } catch(e){
+      if(e?.name!=="AbortError") toast_(e?.message||"PDF konnte nicht erstellt werden","err");
+    } finally { setLegalPdfBusy(null); }
+  };
   const [emergencyEditBusy, setEmergencyEditBusy] = useState(false);
   const [scanLocations, setScanLocations] = useState({}); // vehicleId -> array
   const [showCheckInPrompt, setShowCheckInPrompt] = useState(null); // vehicleId
@@ -6403,13 +6530,26 @@ Regeln:
                     {isOwn&&(
                       <div style={{marginTop:18,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
                         <div style={{fontSize:12,fontWeight:700,color:C.white,letterSpacing:.2,marginBottom:6}}>Nach einem Unfall</div>
-                        <button className="btn ghost" style={{width:"100%"}} onClick={()=>setLegalCaseEdit({vehicleId:v.id,affectedVehicleId:v.id,...legalCaseEmpty()})}>
+                        <button className="btn ghost" style={{width:"100%"}} onClick={()=>setLegalCaseEdit({vehicleId:v.id,affectedVehicleId:v.id,...legalCaseEmpty(),callbackPhone:me?.phone||""})}>
                           ⚖️ Rechtliche Ersteinschätzung
                         </button>
                         <div style={{fontSize:11,color:C.muted,marginTop:6,lineHeight:1.5}}>{LEGAL_CASE_PARTNER.disclosure}</div>
-                        {(legalCases[v.id]||[]).length>0&&(
-                          <div style={{fontSize:12,color:C.muted,marginTop:6}}>{(legalCases[v.id]||[]).length} Fall/Fälle gespeichert · noch nicht übermittelt</div>
-                        )}
+                        {(legalCases[v.id]||[]).map(c=>(
+                          <div key={c.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginTop:8}}>
+                            <div style={{fontSize:14,fontWeight:700,color:C.white}}>
+                              Unfall {c.accidentDate?new Date(c.accidentDate).toLocaleDateString("de-DE"):""}{c.accidentLocation?" · "+c.accidentLocation:""}
+                            </div>
+                            <div style={{fontSize:12,color:C.muted,marginTop:2}}>{(c.photos||[]).length} Foto(s) · noch nicht an die Kanzlei übermittelt</div>
+                            <div style={{display:"flex",gap:8,marginTop:8}}>
+                              <button className="btn ghost" style={{flex:1,padding:"8px 10px",fontSize:13}} disabled={legalPdfBusy===c.id} onClick={()=>legalCasePdf(c,"download")}>
+                                {legalPdfBusy===c.id?"…":"📄 PDF"}
+                              </button>
+                              <button className="btn ghost" style={{flex:1,padding:"8px 10px",fontSize:13}} disabled={legalPdfBusy===c.id} onClick={()=>legalCasePdf(c,"share")}>
+                                📤 Teilen
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
 
@@ -7317,8 +7457,9 @@ Regeln:
               if(!f.consentGiven){toast_("Bitte der Weitergabe an den Partner zustimmen","err");return;}
               const {vehicleId,affectedVehicleId,...data}=f;
               const vehicleData=Object.fromEntries(avRows);
-              setLegalCases(p=>({...p,[av.id]:[...(p[av.id]||[]),{id:Date.now().toString(36),vehicleId:av.id,vehicleData,...data,partner:LEGAL_CASE_PARTNER.slug,status:"draft",consentGivenAt:new Date().toISOString()}]}));
-              toast_("Angaben gespeichert ✓ – noch nicht an die Kanzlei übermittelt");
+              const saved={id:Date.now().toString(36).toUpperCase(),vehicleId:av.id,vehicleData,...data,photosAvailable:(data.photos||[]).length>0,partner:LEGAL_CASE_PARTNER.slug,status:"draft",consentGivenAt:new Date().toISOString(),createdAt:new Date().toISOString()};
+              setLegalCases(p=>({...p,[av.id]:[...(p[av.id]||[]),saved]}));
+              toast_("Gespeichert ✓ – Unfallmappe als PDF darunter abrufbar");
               setLegalCaseEdit(null);
             };
             return (
@@ -7360,7 +7501,29 @@ Regeln:
                 <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",marginBottom:8}}>
                   <label style={chk}><input type="checkbox" checked={f.policeInvolved} onChange={e=>set({policeInvolved:e.target.checked})}/> Polizei vor Ort</label>
                   <label style={chk}><input type="checkbox" checked={f.injuries} onChange={e=>set({injuries:e.target.checked})}/> Verletzungen</label>
-                  <label style={chk}><input type="checkbox" checked={f.photosAvailable} onChange={e=>set({photosAvailable:e.target.checked})}/> Fotos vorhanden</label>
+                </div>
+                <label style={lbl}>Unfallfotos ({(f.photos||[]).length}/{LEGAL_MAX_PHOTOS})</label>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                  {(f.photos||[]).map((ph,i)=>(
+                    <div key={i} style={{position:"relative",width:64,height:64}}>
+                      <img src={ph.dataUrl} alt="" style={{width:64,height:64,objectFit:"cover",borderRadius:8,display:"block"}}/>
+                      <button aria-label="Foto entfernen" onClick={()=>set({photos:f.photos.filter((_,j)=>j!==i)})}
+                        style={{position:"absolute",top:-6,right:-6,width:20,height:20,borderRadius:10,border:"none",background:C.red,color:"#fff",fontSize:12,lineHeight:"20px",cursor:"pointer",padding:0}}>×</button>
+                    </div>
+                  ))}
+                  {(f.photos||[]).length<LEGAL_MAX_PHOTOS&&(
+                    <label style={{width:64,height:64,borderRadius:8,border:`1.5px dashed ${C.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.muted,fontSize:11}}>
+                      <span style={{fontSize:20}}>📷</span>Foto
+                      <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={async e=>{
+                        const files=Array.from(e.target.files||[]).slice(0,LEGAL_MAX_PHOTOS-(f.photos||[]).length);
+                        e.target.value="";
+                        try{
+                          const added=await Promise.all(files.map(compressAccidentPhoto));
+                          setLegalCaseEdit(p=>p&&({...p,photos:[...(p.photos||[]),...added].slice(0,LEGAL_MAX_PHOTOS)}));
+                        }catch{ toast_("Foto konnte nicht gelesen werden","err"); }
+                      }}/>
+                    </label>
+                  )}
                 </div>
                 {f.policeInvolved&&<input className="inp" style={{...inpS,marginBottom:8}} placeholder="Aktenzeichen (optional)" value={f.policeReference} onChange={e=>set({policeReference:e.target.value})}/>}
                 {f.injuries&&<textarea className="inp" style={inpS} rows={2} style={{marginBottom:8}} placeholder="Verletzungen – kurze Beschreibung" value={f.injuriesDescription} onChange={e=>set({injuriesDescription:e.target.value})}/>}
