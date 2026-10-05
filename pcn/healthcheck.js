@@ -148,7 +148,7 @@ async function cleanupOldTestData() {
       "beitrag_bezahlt", "beitrag_datum",          // add_beitrag_column.sql
       "geburtstag",                                 // add_geburtstag_column.sql
       "consent_at", "consent_version", "consent_withdrawn_at", // add_consent_columns.sql
-      "pw_hash", "avatar", "city", "bio", "phone",   // add_user_columns.sql
+      "avatar", "city", "bio", "phone",              // add_user_columns.sql (pw_hash → user_credentials)
       "paused", "paused_at",                        // add_paused_column.sql
       "contact_consent_at", "contact_consent_version",
       "marketing_consent_at", "marketing_consent_version",

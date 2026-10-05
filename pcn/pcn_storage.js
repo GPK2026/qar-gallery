@@ -448,6 +448,41 @@ const PCN_STORAGE = (() => {
   // ── SUPABASE BACKEND ─────────────────────────────────────────────────────────
   // Full REST implementation — matches local backend API exactly
   // Switch: set BACKEND = "supabase" and fill SUPABASE_URL_get() + SUPABASE_KEY_get()
+  // ── Server-Funktion "pcn-secure" ───────────────────────────────────────────
+  // Passwort-Hashes und Notfallprofile sind für den öffentlichen Schlüssel
+  // gesperrt; Login, Registrierung, Passwortwechsel und Notfallprofile laufen
+  // über diese Funktion. Sie liefert beim Login ein signiertes Sitzungs-Token
+  // (session.st), das Eigentümer-Aktionen am Server nachweist.
+  const secureApi = async (action, body={}) => {
+    let r;
+    try {
+      r = await fetch(SUPABASE_URL_get().replace(/\/rest\/v1\/?$/,"")+"/functions/v1/pcn-secure", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", apikey:SUPABASE_KEY_get(), Authorization:"Bearer "+SUPABASE_KEY_get() },
+        body: JSON.stringify({ action, ...body }),
+      });
+    } catch(e) { return { error: "Keine Verbindung zum Server" }; }
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok) return { error: d.error || ("Serverfehler ("+r.status+")"), code: d.code };
+    return { data: d };
+  };
+  const sessionToken = () => { try { return JSON.parse(safeStore.getItem("pcn_session")||"null")?.st || null; } catch { return null; } };
+  // Gleiche Session-Struktur wie bisher, ergänzt um das Server-Token
+  const sessionFromUser = (u, st) => ({
+    id: u.id, email: u.email, name: u.name, role: u.role,
+    memberNr: u.member_nr, avatar: u.avatar||"",
+    city: u.city||"", bio: u.bio||"", phone: u.phone||"",
+    beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
+    geburtstag: u.geburtstag||"",
+    isAdmin: !!u.is_admin,
+    bgTheme: u.bg_theme||"none", welcomeSeen: !!u.welcome_seen,
+    adacMemberNr: u.adac_member_nr||"", avdMemberNr: u.avd_member_nr||"",
+    notifications: { events:true, messages:true },
+    createdAt: u.created_at||"",
+    workshopName: u.workshop_name||"", workshopAddress: u.workshop_address||"",
+    st,
+  });
+
   const supabase = {
     _h: () => ({
       "Content-Type": "application/json",
@@ -581,46 +616,12 @@ const PCN_STORAGE = (() => {
 
     // Register: create/update user profile row after Supabase Auth creates the account
     async register(name, email, clubCode, password) {
-      // MVP: Club-Code = Verifikation. Kein Supabase Auth nötig.
-      const pwHash = password ? await hashPassword(password) : "";
-      const memberNr = "PCN-"+Math.floor(1000+Math.random()*8999);
-
-      // Check if already registered
-      const {data:existing} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
-      if(existing&&existing.length>0){
-        const ex = existing[0];
-        if(ex.role !== "guest") return { error: "E-Mail bereits registriert" };
-        // Guest upgrade
-        // Bugfix: dieser Pfad setzte bisher KEINEN Passwort-Hash — jemand,
-        // der vorher nur eine Kontaktanfrage war und sich jetzt registriert,
-        // hätte kein Passwort in der DB gehabt und sich nie wieder einloggen
-        // können.
-        await supabase._patch("users","email=eq."+encodeURIComponent(email),
-          { name, club_code:clubCode, role:"member", member_nr:memberNr, converted_from_guest:true, pw_hash:pwHash });
-        const u = { id:ex.id, name, email, role:"member", memberNr, avatar:"" };
-        safeStore.setItem("pcn_session", JSON.stringify(u));
-        return { data: u };
-      }
-
-      // Try with pw_hash first, fall back without if column missing
-      let user = { name, email, club_code:clubCode, role:"member",
-        pw_hash:pwHash, member_nr:memberNr };
-      let res = await supabase._post("users", user);
-
-      // If pw_hash column doesn't exist yet — retry without it
-      if(res.error && res.error.includes && res.error.includes("pw_hash")) {
-        user = { name, email, club_code:clubCode, role:"member", member_nr:memberNr };
-        res = await supabase._post("users", user);
-      }
-      if(res.error) return res;
-
-      const saved = res.data || {};
-      const u = {
-        id: saved.id||("tmp-"+Date.now()), name, email,
-        role:"member", memberNr: saved.member_nr||memberNr, avatar:"",
-      };
-      safeStore.setItem("pcn_session", JSON.stringify(u));
-      return { data: u };
+      // Club-Code-Prüfung, Gast→Mitglied und Passwort-Hash laufen am Server
+      const res = await secureApi("register", { name, email, clubCode, password: password||"" });
+      if(res.error) return { error: res.error };
+      const session = sessionFromUser(res.data.user, res.data.st);
+      safeStore.setItem("pcn_session", JSON.stringify(session));
+      return { data: session };
     },
 
     // consent: { contactAccepted: bool (Pflicht), marketingOptIn: bool (optional) }
@@ -670,78 +671,16 @@ const PCN_STORAGE = (() => {
     },
 
     async login(email) {
-      const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
-      if(error){
-        console.error("[Login] DB-Abfrage fehlgeschlagen:", error);
-        const s = String(error);
-        if(/apikey|JWT|401/i.test(s)) return { error: "App-Zugangsdaten ungültig — Seite neu laden (Strg+Shift+R)" };
-        if(/Failed to fetch|NetworkError/i.test(s)) return { error: "Keine Verbindung zur Datenbank" };
-        return { error: "Anmeldung fehlgeschlagen: " + s.slice(0,60) };
-      }
-      if(!users||users.length===0) return { error: "Kein Account mit dieser E-Mail" };
-      const u = users[0];
-      const session = { id:u.id, name:u.name, email:u.email, role:u.role,
-        memberNr:u.member_nr, avatar:u.avatar||"", city:u.city||"", bio:u.bio||"",
-        beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
-        geburtstag: u.geburtstag||"", phone: u.phone||"",
-        isAdmin: !!u.is_admin,
-        bgTheme: u.bg_theme||"none", welcomeSeen: !!u.welcome_seen,
-        adacMemberNr: u.adac_member_nr||"", avdMemberNr: u.avd_member_nr||"",
-        createdAt: u.created_at||"" };
-      safeStore.setItem("pcn_session", JSON.stringify(session));
-      await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
-      return { data: session };
-
+      // Anmeldung ohne Passwort ist abgeschaltet (war nirgends mehr in Gebrauch).
+      return { error: "Bitte mit E-Mail und Passwort anmelden" };
     },
 
     async loginWithPassword(email, password) {
-      // MVP: check password against pw_hash in our users table (no Supabase Auth)
-      const {data:users,error} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
-      if(error){
-        console.error("[Login] DB-Abfrage fehlgeschlagen:", error);
-        const s = String(error);
-        if(/apikey|JWT|401/i.test(s)) return { error: "App-Zugangsdaten ungültig — Seite neu laden (Strg+Shift+R)" };
-        if(/Failed to fetch|NetworkError/i.test(s)) return { error: "Keine Verbindung zur Datenbank" };
-        return { error: "Anmeldung fehlgeschlagen: " + s.slice(0,60) };
-      }
-      if(!users||users.length===0) return { error: "Kein Account mit dieser E-Mail" };
-      const u = users[0];
-      // Check password hash
-      if(u.pw_hash) {
-        let valid = false;
-        if(isLegacyHash(u.pw_hash)) {
-          // Altes, unsicheres Format (btoa) — noch einmal so prüfen,
-          // aber bei Erfolg sofort und unbemerkt auf das neue,
-          // PBKDF2-basierte Format migrieren. Niemand muss sein
-          // Passwort zurücksetzen.
-          const legacyHash = btoa(encodeURIComponent(password)).slice(0,32);
-          valid = (u.pw_hash === legacyHash);
-          if(valid) {
-            const newHash = await hashPassword(password);
-            await supabase._patch("users","email=eq."+encodeURIComponent(email),{pw_hash:newHash});
-          }
-        } else {
-          valid = await verifyPassword(password, u.pw_hash);
-        }
-        if(!valid) return { error: "Falsches Passwort" };
-      }
-      // Build session
-      const session = {
-        id: u.id, email: u.email, name: u.name, role: u.role,
-        memberNr: u.member_nr, avatar: u.avatar||"",
-        city: u.city||"", bio: u.bio||"", phone: u.phone||"",
-        beitrag_bezahlt: !!u.beitrag_bezahlt, beitrag_datum: u.beitrag_datum||null,
-        geburtstag: u.geburtstag||"",
-        isAdmin: !!u.is_admin,
-        bgTheme: u.bg_theme||"none", welcomeSeen: !!u.welcome_seen,
-        adacMemberNr: u.adac_member_nr||"", avdMemberNr: u.avd_member_nr||"",
-        notifications: { events:true, messages:true },
-        createdAt: u.created_at||"",
-        // Werkstatt-Profildaten — nur relevant, wenn role==="workshop".
-        workshopName: u.workshop_name||"", workshopAddress: u.workshop_address||"",
-      };
+      // Passwortprüfung am Server — Hashes sind für die App nicht mehr lesbar
+      const res = await secureApi("login", { email, password });
+      if(res.error) return { error: res.error };
+      const session = sessionFromUser(res.data.user, res.data.st);
       safeStore.setItem("pcn_session", JSON.stringify(session));
-      await supabase._patch("users","email=eq."+encodeURIComponent(email),{last_seen:now()});
       return { data: session };
     },
 
@@ -754,22 +693,9 @@ const PCN_STORAGE = (() => {
       // selbst und ist sofort aktiv. Kontrolle findet stattdessen beim
       // Fahrzeug-Eigentuemer statt: er muss jeden Zugriff auf eine
       // konkrete Fahrzeugakte einzeln bestaetigen (workshopAccess-Ablauf).
-      const {data:existingUser} = await supabase._q("users","?email=eq."+encodeURIComponent(email));
-      if(existingUser&&existingUser.length>0) return { error: "Diese E-Mail ist bereits registriert" };
-      const pwHash = await hashPassword(password);
-      const res = await supabase._post("users", {
-        name: contactName, email, role: "workshop", pw_hash: pwHash,
-        workshop_name: workshopName, workshop_address: workshopAddress, phone,
-        trade_register_number: tradeRegisterNumber, created_at: now(),
-      });
-      if(res.error) return res;
-      const u = res.data;
-      const session = {
-        id: u.id, email: u.email, name: u.name, role: u.role,
-        workshopName: u.workshop_name||"", workshopAddress: u.workshop_address||"",
-        phone: u.phone||"", createdAt: u.created_at||"",
-        notifications: { events:true, messages:true },
-      };
+      const res = await secureApi("registerWorkshop", { workshopName, workshopAddress, contactName, email, password, phone, tradeRegisterNumber });
+      if(res.error) return { error: res.error };
+      const session = sessionFromUser(res.data.user, res.data.st);
       safeStore.setItem("pcn_session", JSON.stringify(session));
       return { data: session };
     },
@@ -778,9 +704,8 @@ const PCN_STORAGE = (() => {
     // Passwort-Hashing gehört in den Storage-Layer, nicht in die UI-Komponente.
     async changePassword(userId, newPassword) {
       if(!newPassword || newPassword.length < 6) return { error: "Mindestens 6 Zeichen" };
-      const newHash = await hashPassword(newPassword);
-      const res = await supabase._patch("users","id=eq."+userId,{pw_hash:newHash});
-      if(res.error) return res;
+      const res = await secureApi("changePassword", { st: sessionToken(), newPassword });
+      if(res.error) return { error: res.error };
       return { data: { changed: true } };
     },
 
@@ -1184,92 +1109,31 @@ const PCN_STORAGE = (() => {
     // Eigentuemer (bereits eingeloggt, kein zusaetzlicher Code noetig).
     // Der code-geschuetzte Abruf ist die eigentliche Sicherheitsschranke
     // fuer Rettungskraefte ohne eigenes Konto.
+    // Notfallprofile enthalten Gesundheitsdaten — Tabellen sind für den
+    // öffentlichen Schlüssel gesperrt, Zugriff nur über pcn-secure.
     async listEmergencyProfiles(vehicleId, ownerUserId) {
-      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id");
-      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
-      if(vRes.data[0].user_id!==ownerUserId) return { error: "Nur der Eigentümer kann Notfallprofile verwalten" };
-      const res = await supabase._q("emergency_profiles","?vehicle_id=eq."+vehicleId+"&select=*");
-      if(res.error) return res;
-      const profiles = res.data||[];
-      // Kontakte für alle Profile in einem Rutsch laden
-      const ids = profiles.map(p=>p.id);
-      let contactsByProfile = {};
-      if(ids.length){
-        const cRes = await supabase._q("emergency_contacts","?emergency_profile_id=in.("+ids.join(",")+")&order=sort_order.asc");
-        for(const c of (cRes.data||[])){
-          (contactsByProfile[c.emergency_profile_id] ??= []).push({id:c.id, name:c.name, relationship:c.relationship, phone:c.phone});
-        }
-      }
-      return { data: profiles.map(p => ({
-        id:p.id, name:p.name, photoUrl:p.photo_url, birthDate:p.birth_date,
-        bloodType:p.blood_type, allergies:p.allergies, medications:p.medications,
-        conditions:p.conditions, accessCode:p.access_code,
-        contacts: contactsByProfile[p.id]||[],
-      })) };
+      const res = await secureApi("emergencyList", { st: sessionToken(), vehicleId });
+      if(res.error) return { error: res.error };
+      return { data: res.data.profiles||[] };
     },
     async saveEmergencyProfile(vehicleId, ownerUserId, profile) {
-      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id");
-      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
-      if(vRes.data[0].user_id!==ownerUserId) return { error: "Nur der Eigentümer kann Notfallprofile verwalten" };
-
-      const row = {
-        vehicle_id: vehicleId, created_by_user_id: ownerUserId, name: profile.name,
-        photo_url: profile.photoUrl||null, birth_date: profile.birthDate||null,
-        blood_type: profile.bloodType||null, allergies: profile.allergies||null,
-        medications: profile.medications||null, conditions: profile.conditions||null,
-        access_code: profile.accessCode, updated_at: now(),
-      };
-      let profileId = profile.id;
-      if(profileId){
-        const res = await supabase._patch("emergency_profiles","id=eq."+profileId, row);
-        if(res.error) return res;
-      } else {
-        row.created_at = now();
-        const res = await supabase._post("emergency_profiles", row);
-        if(res.error) return res;
-        profileId = res.data.id;
-        // Bestehende Kontakte bei Neuanlage löschen (falls versehentlich vorhanden)
-      }
-      // Kontakte komplett ersetzen — einfacher und robuster als Diffing.
-      await supabase._delete("emergency_contacts","emergency_profile_id=eq."+profileId);
-      for(let i=0;i<(profile.contacts||[]).length;i++){
-        const c = profile.contacts[i];
-        if(!c.name || !c.phone) continue;
-        await supabase._post("emergency_contacts", {
-          emergency_profile_id: profileId, name:c.name, relationship:c.relationship||null,
-          phone:c.phone, sort_order:i,
-        });
-      }
-      return { data: { id: profileId } };
+      const res = await secureApi("emergencySave", { st: sessionToken(), vehicleId, profile });
+      if(res.error) return { error: res.error };
+      return { data: { id: res.data.id } };
     },
     async deleteEmergencyProfile(profileId, ownerUserId) {
-      const pRes = await supabase._q("emergency_profiles","?id=eq."+profileId+"&select=vehicle_id");
-      if(pRes.error || !pRes.data?.length) return { error: "Profil nicht gefunden" };
-      const vRes = await supabase._q("vehicles","?id=eq."+pRes.data[0].vehicle_id+"&select=user_id");
-      if(vRes.error || vRes.data?.[0]?.user_id!==ownerUserId) return { error: "Nur der Eigentümer kann Notfallprofile löschen" };
-      return await supabase._delete("emergency_profiles","id=eq."+profileId);
+      const res = await secureApi("emergencyDelete", { st: sessionToken(), profileId });
+      if(res.error) return { error: res.error };
+      return { data: true };
     },
     async getEmergencyProfilesByCode(vehicleId, accessCode) {
       // KEIN Login nötig — das ist der Weg für Rettungskräfte. Der Code
-      // ist die einzige Zugangsschranke hier (siehe Sicherheitskonzept:
-      // Code liegt physisch verborgen im Fahrzeuginneren).
+      // ist die Zugangsschranke; der Server begrenzt Fehlversuche.
       const code = (accessCode||"").trim();
       if(!/^\d{4}$/.test(code)) return { error: "Ungültiger Code" };
-      const res = await supabase._q("emergency_profiles","?vehicle_id=eq."+vehicleId+"&access_code=eq."+code);
-      if(res.error) return res;
-      if(!res.data?.length) return { error: "Falscher Code" };
-      const profiles = res.data;
-      const ids = profiles.map(p=>p.id);
-      const cRes = await supabase._q("emergency_contacts","?emergency_profile_id=in.("+ids.join(",")+")&order=sort_order.asc");
-      let contactsByProfile = {};
-      for(const c of (cRes.data||[])){
-        (contactsByProfile[c.emergency_profile_id] ??= []).push({name:c.name, relationship:c.relationship, phone:c.phone});
-      }
-      return { data: profiles.map(p => ({
-        name:p.name, photoUrl:p.photo_url, birthDate:p.birth_date,
-        bloodType:p.blood_type, allergies:p.allergies, medications:p.medications,
-        conditions:p.conditions, contacts: contactsByProfile[p.id]||[],
-      })) };
+      const res = await secureApi("emergencyByCode", { vehicleId, code });
+      if(res.error) return { error: res.error };
+      return { data: res.data.profiles||[] };
     },
 
     // ── Eigentumsübertragung ──

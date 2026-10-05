@@ -4496,7 +4496,8 @@ Regeln:
   };
   const loadEmergencyProfiles = async (vehicleId) => {
     const DB=window.PCN_DB; if(!DB || isDemo) return;
-    const {data} = await DB.emergencyProfiles.list(vehicleId, me.id);
+    const {data,error} = await DB.emergencyProfiles.list(vehicleId, me.id);
+    if(error){ toast_(error,"err"); return; }
     setEmergencyProfiles(data||[]);
   };
   const saveEmergencyProfileNow = async (vehicleId, profile) => {
@@ -4515,8 +4516,9 @@ Regeln:
   const deleteEmergencyProfileNow = async (profileId, vehicleId) => {
     const DB=window.PCN_DB;
     setEmergencyEditBusy(true);
-    await DB.emergencyProfiles.remove(profileId, me.id);
+    const {error} = await DB.emergencyProfiles.remove(profileId, me.id);
     setEmergencyEditBusy(false);
+    if(error){ toast_(error,"err"); return; }
     await loadEmergencyProfiles(vehicleId);
     toast_("Notfallprofil gelöscht");
   };
@@ -4641,9 +4643,7 @@ Regeln:
       const res = await DB.auth.changePassword(me.id, pwNew);
       if(res?.error){
         console.error("Passwort speichern:", res.error);
-        toast_(/PGRST204/.test(String(res.error))
-          ? "Passwort-Feld fehlt in der Datenbank — bitte Vorstand melden"
-          : "Speichern fehlgeschlagen", "err");
+        toast_(String(res.error||"Speichern fehlgeschlagen"), "err");
         return;
       }
       setPwNew(""); setPwConfirm(""); setShowPwChange(false);
