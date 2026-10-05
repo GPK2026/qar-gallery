@@ -225,16 +225,18 @@ const buildLegalCasePdf = async (c, member) => {
   }
   if(c.notes){ section("Anmerkungen"); para(c.notes); }
   section("Einwilligung");
-  para(`Das Mitglied hat am ${c.consentGivenAt?new Date(c.consentGivenAt).toLocaleString("de-DE"):"–"} eingewilligt, dass die Angaben zu diesem Fall an ${LEGAL_CASE_PARTNER.name} als unabhängigen Kooperationspartner weitergegeben werden dürfen.`);
+  para(`Erteilt am ${c.consentGivenAt?new Date(c.consentGivenAt).toLocaleString("de-DE"):"–"}:`);
+  para(LEGAL_CONSENT_TEXT(LEGAL_CASE_PARTNER.name));
   y+=2; doc.setFontSize(8); doc.setTextColor(...gray);
   doc.splitTextToSize(LEGAL_CASE_PARTNER.disclosure,CW).forEach(l=>{ ensure(4); doc.text(l,M,y); y+=4; });
 
-  (c.photos||[]).forEach((ph,i)=>{
+  const pdfPhotos = await Promise.all((c.photos||[]).map(ph=>ph.dataUrl?ph:remotePhotoForPdf(ph.url).catch(()=>null)));
+  pdfPhotos.filter(Boolean).forEach((ph,i,arr)=>{
     if(i%2===0){ doc.addPage(); y=M; doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...dark); doc.text("Unfallfotos",M,y); y+=6; }
     const maxH=120, sc=Math.min(CW/ph.w, maxH/ph.h), w=ph.w*sc, h=ph.h*sc;
     doc.addImage(ph.dataUrl,"JPEG",M+(CW-w)/2,y,w,h);
     y+=h+3; doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...gray);
-    doc.text(`Foto ${i+1} von ${c.photos.length}`,M,y); y+=8;
+    doc.text(`Foto ${i+1} von ${arr.length}`,M,y); y+=8;
   });
 
   const pages=doc.internal.getNumberOfPages();
@@ -245,6 +247,54 @@ const buildLegalCasePdf = async (c, member) => {
   }
   return doc;
 };
+// Fotos gespeicherter Fälle kommen als kurzlebige signierte URL vom Server.
+const remotePhotoForPdf = async url => {
+  const blob = await (await fetch(url)).blob();
+  const dataUrl = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); });
+  const {w,h} = await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res({w:im.width,h:im.height}); im.onerror=rej; im.src=dataUrl; });
+  return {dataUrl,w,h};
+};
+
+// ── Server: Edge Function "accident-report" (Daten liegen gesperrt in Supabase,
+// Zugriff nur mit dem Fall-Token, das ausschließlich auf diesem Gerät liegt) ──
+const LEGAL_REFS_KEY = "pcn_accident_reports_v1";
+const LEGAL_CONSENT_TEXT = name => `Ich willige ausdrücklich ein, dass meine Angaben zu diesem Unfall einschließlich der Angaben zu Verletzungen (Gesundheitsdaten, Art. 9 DSGVO), der Angaben zum Unfallgegner und der Fotos gespeichert und an ${name} als unabhängigen Kooperationspartner zur rechtlichen Ersteinschätzung übermittelt werden. Die Einwilligung ist freiwillig und kann jederzeit mit Wirkung für die Zukunft widerrufen werden (Fall löschen).`;
+const accidentApi = async body => {
+  const base=(window.PCN_CONFIG||{}).supabaseUrl, key=(window.PCN_CONFIG||{}).supabaseKey;
+  if(!base) throw new Error("Server nicht konfiguriert");
+  const r = await fetch(base+"/functions/v1/accident-report",{method:"POST",
+    headers:{"Content-Type":"application/json",apikey:key,Authorization:"Bearer "+key},body:JSON.stringify(body)});
+  const d = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.error||"Server nicht erreichbar");
+  return d;
+};
+const newCaseToken = () => {
+  const b=new Uint8Array(32); crypto.getRandomValues(b);
+  return btoa(String.fromCharCode(...b)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+};
+const loadLegalRefs = () => { try { return JSON.parse(store.getItem(LEGAL_REFS_KEY)||"[]"); } catch { return []; } };
+const saveLegalRefs = refs => store.setItem(LEGAL_REFS_KEY, JSON.stringify(refs));
+const caseFromServer = (ref, d) => {
+  const r=d.report||{}, op=r.other_party||{};
+  const lawyer=(d.dispatches||[]).find(x=>x.recipient_type==="lawyer")||{};
+  return {
+    id:r.id, serverId:r.id, vehicleId:r.vehicle_id||ref.vehicleId, vehicleData:r.vehicle_data||{},
+    accidentDate:r.accident_date||"", accidentLocation:r.accident_location||"", ownRole:r.own_role,
+    description:r.description||"", policeInvolved:!!r.police_involved, policeReference:r.police_reference||"",
+    injuries:!!r.injuries, injuriesDescription:r.injuries_description||"",
+    otherPartyName:op.name||"", otherPartyLicensePlate:op.licensePlate||"", otherPartyInsurance:op.insurance||"",
+    callbackPhone:r.callback_phone||"", callbackPreferredTime:r.callback_preferred_time||"", notes:r.notes||"",
+    photos:(d.photos||[]).map(url=>({url})), consentGivenAt:r.consent_given_at, createdAt:r.created_at,
+    status:"server", dispatchStatus:lawyer.status||"queued", dispatchSentAt:lawyer.sent_at||null,
+  };
+};
+const legalStatusText = c =>
+  c.status==="demo" ? "Demo – nicht übermittelt" :
+  c.status==="error" ? "Noch nicht gespeichert – bitte erneut senden" :
+  c.dispatchStatus==="sent" ? `An ${LEGAL_CASE_PARTNER.name} übermittelt${c.dispatchSentAt?" am "+new Date(c.dispatchSentAt).toLocaleDateString("de-DE"):""}` :
+  c.dispatchStatus==="failed" ? "Übermittlung fehlgeschlagen – wird erneut versucht" :
+  `Sicher gespeichert · Weiterleitung an ${LEGAL_CASE_PARTNER.name} vorgemerkt`;
+
 const legalCasePdfName = c => `Unfallmappe_${((c.vehicleData||{}).Kennzeichen||"Fahrzeug").replace(/[^A-Za-z0-9]+/g,"-")}_${c.accidentDate||""}.pdf`;
 
 // Zeilenhoehen-Skala, orientiert an Porsche Design System Typografie-
@@ -2046,10 +2096,60 @@ function PCNInner() {
   const [emergencyProfiles, setEmergencyProfiles] = useState([]); // Eigentümer-Verwaltung
   const [showEmergencyEdit, setShowEmergencyEdit] = useState(null); // Profil-Objekt oder {} für neu
   // Rechtliche Ersteinschätzung: { vehicleId, ...Formular } oder null.
-  // Speichert vorerst nur lokal – Übermittlung an die Kanzlei noch nicht freigeschaltet.
+  // Fälle liegen gesperrt in Supabase (Edge Function "accident-report");
+  // dieses Gerät kennt pro Fall ein Token (LEGAL_REFS_KEY). Mailversand folgt.
   const [legalCaseEdit, setLegalCaseEdit] = useState(null);
+  const [legalSubmitBusy, setLegalSubmitBusy] = useState(false);
   const [legalCases, setLegalCases] = useState({});
   const [legalPdfBusy, setLegalPdfBusy] = useState(null); // Fall-ID während PDF erzeugt wird
+  const addLegalCase = c => setLegalCases(p=>({...p,[c.vehicleId]:[...(p[c.vehicleId]||[]).filter(x=>x.id!==c.id),c]}));
+  const dropLegalCase = c => setLegalCases(p=>({...p,[c.vehicleId]:(p[c.vehicleId]||[]).filter(x=>x.id!==c.id)}));
+
+  // Gespeicherte Fälle dieses Mitglieds vom Server holen (nach Login / Neuladen)
+  useEffect(()=>{
+    if(!me?.id || isDemo) return;
+    const refs = loadLegalRefs().filter(r=>r.memberId===me.id);
+    refs.forEach(ref=>{
+      accidentApi({action:"get",id:ref.id,token:ref.token})
+        .then(d=>addLegalCase(caseFromServer(ref,d)))
+        .catch(e=>{ if(/nicht gefunden/i.test(e.message)) saveLegalRefs(loadLegalRefs().filter(r=>r.id!==ref.id)); });
+    });
+  }, [me?.id]);
+
+  const submitLegalCase = async c => {
+    if(isDemo){ addLegalCase({...c,status:"demo"}); toast_("Demo: Fall nur lokal gespeichert, nicht übermittelt"); return true; }
+    setLegalSubmitBusy(true);
+    try {
+      const token = newCaseToken();
+      const {photos, ...rest} = c;
+      const res = await accidentApi({action:"submit", token,
+        report:{...rest, source:"pcn", memberId:me?.id, memberEmail:me?.email, memberName:me?.name,
+          consentText:LEGAL_CONSENT_TEXT(LEGAL_CASE_PARTNER.name)},
+        photos:(photos||[]).map(ph=>ph.dataUrl)});
+      saveLegalRefs([...loadLegalRefs(), {id:res.id, token, memberId:me?.id, vehicleId:c.vehicleId}]);
+      dropLegalCase(c);
+      addLegalCase({...c, id:res.id, serverId:res.id, status:"server", dispatchStatus:"queued", createdAt:res.createdAt});
+      toast_("Fall sicher gespeichert ✓ – Weiterleitung an "+LEGAL_CASE_PARTNER.name+" vorgemerkt");
+      return true;
+    } catch(e){
+      addLegalCase({...c, status:"error"});
+      toast_("Senden fehlgeschlagen: "+e.message+" – Fall bleibt auf diesem Gerät, bitte erneut senden","err");
+      return false;
+    } finally { setLegalSubmitBusy(false); }
+  };
+
+  const deleteLegalCase = async c => {
+    if(!window.confirm("Fall endgültig löschen? Damit widerrufst du auch die Einwilligung zur Weitergabe.")) return;
+    if(c.serverId){
+      const ref = loadLegalRefs().find(r=>r.id===c.serverId);
+      try { if(ref) await accidentApi({action:"delete",id:ref.id,token:ref.token}); }
+      catch(e){ toast_("Löschen fehlgeschlagen: "+e.message,"err"); return; }
+      saveLegalRefs(loadLegalRefs().filter(r=>r.id!==c.serverId));
+    }
+    dropLegalCase(c);
+    toast_("Fall gelöscht");
+  };
+
   const legalCasePdf = async (c, mode) => {
     setLegalPdfBusy(c.id);
     try {
@@ -6539,13 +6639,24 @@ Regeln:
                             <div style={{fontSize:14,fontWeight:700,color:C.white}}>
                               Unfall {c.accidentDate?new Date(c.accidentDate).toLocaleDateString("de-DE"):""}{c.accidentLocation?" · "+c.accidentLocation:""}
                             </div>
-                            <div style={{fontSize:12,color:C.muted,marginTop:2}}>{(c.photos||[]).length} Foto(s) · noch nicht an die Kanzlei übermittelt</div>
+                            <div style={{fontSize:12,color:c.status==="error"?C.amber:C.muted,marginTop:2}}>{(c.photos||[]).length} Foto(s) · {legalStatusText(c)}</div>
                             <div style={{display:"flex",gap:8,marginTop:8}}>
                               <button className="btn ghost" style={{flex:1,padding:"8px 10px",fontSize:13}} disabled={legalPdfBusy===c.id} onClick={()=>legalCasePdf(c,"download")}>
                                 {legalPdfBusy===c.id?"…":"📄 PDF"}
                               </button>
                               <button className="btn ghost" style={{flex:1,padding:"8px 10px",fontSize:13}} disabled={legalPdfBusy===c.id} onClick={()=>legalCasePdf(c,"share")}>
                                 📤 Teilen
+                              </button>
+                            </div>
+                            <div style={{display:"flex",gap:8,marginTop:6}}>
+                              {c.status==="error"&&(
+                                <button className="btn" style={{flex:1,padding:"8px 10px",fontSize:13}} disabled={legalSubmitBusy} onClick={()=>submitLegalCase(c)}>
+                                  {legalSubmitBusy?"Sende…":"↻ Erneut senden"}
+                                </button>
+                              )}
+                              <button onClick={()=>deleteLegalCase(c)}
+                                style={{background:"none",border:"none",color:C.muted,fontSize:12,cursor:"pointer",textDecoration:"underline",padding:"4px 0",marginLeft:"auto"}}>
+                                Fall löschen / Einwilligung widerrufen
                               </button>
                             </div>
                           </div>
@@ -7452,14 +7563,13 @@ Regeln:
             const av = vehicleChoices.find(x=>x.id===f.affectedVehicleId) || vehicles[f.affectedVehicleId] || v;
             const avRows = [["Fahrzeug",[av.hersteller,av.modell].filter(Boolean).join(" ")],["Kennzeichen",av.kennzeichen],["FIN",av.fin],["Baujahr",av.baujahr],["Kilometerstand",av.kilometerstand?av.kilometerstand+" km":""],["QAR-ID",av.qarId]].filter(([,val])=>val);
             const chk={display:"flex",alignItems:"center",gap:6,fontSize:14,color:C.white};
-            const save=()=>{
+            const save=async()=>{
               if(!f.description.trim()){toast_("Unfallhergang erforderlich","err");return;}
               if(!f.consentGiven){toast_("Bitte der Weitergabe an den Partner zustimmen","err");return;}
               const {vehicleId,affectedVehicleId,...data}=f;
               const vehicleData=Object.fromEntries(avRows);
-              const saved={id:Date.now().toString(36).toUpperCase(),vehicleId:av.id,vehicleData,...data,photosAvailable:(data.photos||[]).length>0,partner:LEGAL_CASE_PARTNER.slug,status:"draft",consentGivenAt:new Date().toISOString(),createdAt:new Date().toISOString()};
-              setLegalCases(p=>({...p,[av.id]:[...(p[av.id]||[]),saved]}));
-              toast_("Gespeichert ✓ – Unfallmappe als PDF darunter abrufbar");
+              const draft={id:"L"+Date.now().toString(36).toUpperCase(),vehicleId:av.id,vehicleData,...data,photosAvailable:(data.photos||[]).length>0,partner:LEGAL_CASE_PARTNER.slug,consentGivenAt:new Date().toISOString(),createdAt:new Date().toISOString()};
+              await submitLegalCase(draft);
               setLegalCaseEdit(null);
             };
             return (
@@ -7544,12 +7654,14 @@ Regeln:
 
                 <label style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:13,color:C.white,lineHeight:1.5,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                   <input type="checkbox" style={{marginTop:3}} checked={f.consentGiven} onChange={e=>set({consentGiven:e.target.checked})}/>
-                  <span>Ich stimme zu, dass meine Angaben zu diesem Fall an {LEGAL_CASE_PARTNER.name} als unabhängigen Kooperationspartner weitergegeben werden dürfen.</span>
+                  <span>{LEGAL_CONSENT_TEXT(LEGAL_CASE_PARTNER.name)}</span>
                 </label>
-                <div style={{fontSize:12,color:C.amber,lineHeight:1.5,marginBottom:12}}>
-                  ℹ️ Die Übermittlung an die Kanzlei ist noch nicht freigeschaltet – deine Angaben werden vorerst nur gespeichert, nicht versendet.
+                <div style={{fontSize:12,color:C.muted,lineHeight:1.5,marginBottom:12}}>
+                  🔒 Dein Fall wird verschlüsselt übertragen und geschützt gespeichert. Die Weiterleitung an {LEGAL_CASE_PARTNER.name} wird vorgemerkt; als PDF kannst du die Unfallmappe jederzeit selbst teilen.
                 </div>
-                <button className="btn" style={{width:"100%",padding:"12px 16px",fontSize:15}} disabled={!f.description.trim()||!f.consentGiven} onClick={save}>Angaben speichern</button>
+                <button className="btn" style={{width:"100%",padding:"12px 16px",fontSize:15}} disabled={legalSubmitBusy||!f.description.trim()||!f.consentGiven} onClick={save}>
+                  {legalSubmitBusy?"Wird gesendet…":"Ersteinschätzung anfragen"}
+                </button>
               </div>
             </div>
             );
