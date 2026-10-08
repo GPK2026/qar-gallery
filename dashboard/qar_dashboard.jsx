@@ -84,6 +84,34 @@ const INITIAL={
   dd_status:{},goals_done:{},
   journal:[
     {
+      id:"J_20261005C",
+      date:"5. Oktober 2026 · 23:30 Uhr",
+      type:"risk",
+      title:"Lehre: Login-Ausfall, weil die App-Veröffentlichung hing",
+      text:"WAS PASSIERT IST:\nDie Datenbank wurde gesperrt (Passwort-Hashes aus der öffentlichen Spalte entfernt), während GitHub Pages die neue App-Version noch gar nicht ausgeliefert hatte. Drei Veröffentlichungen ab ca. 20:00 Uhr wurden abgebrochen, weil kein GitHub-Runner frei wurde (15 Min Wartezeit → Abbruch), die vierte schlug aus demselben Grund fehl.\n\nFOLGE:\nCa. 1 Stunde konnte sich niemand neu anmelden — die alte App fand nur noch den Platzhalter und meldete „Falsches Passwort“ (aufgefallen bei Michael Brandt). Bereits eingeloggte Mitglieder waren nicht betroffen.\n\nWIE GEFUNDEN:\nSupabase-Edge-Logs zeigten: Login-Anfragen kamen noch im alten Muster (direkte users-Abfrage), die neue Server-Funktion wurde nie aufgerufen → Deploy-Status geprüft → hängender Pages-Build.\n\nBEHOBEN:\nPages-Build neu angestoßen (21:28 live), angeheftete Info „Sicherheitsupdate: bitte App einmal neu laden“ an alle Mitglieder.\n\nKONSEQUENZ:\n• Datenbank-Umstellungen erst NACH bestätigt erfolgreicher Veröffentlichung, nicht nach dem Push.\n• Health-Check prüft bisher nur /pcn/-Dateien, nicht den Login — Login-Prüfung über pcn-secure ergänzen.",
+    },
+    {
+      id:"J_20261005B",
+      date:"5. Oktober 2026 · 22:45 Uhr",
+      type:"milestone",
+      title:"Sofort-Härtung: Passwörter und Notfalldaten nicht mehr öffentlich",
+      text:"AUSGANGSLAGE (Prüfung 5.10.):\nMit dem öffentlichen App-Schlüssel ließen sich fast alle Tabellen lesen, ändern und löschen — darunter Passwort-Hashes (users.pw_hash), Notfallprofile mit Blutgruppe/Allergien/Medikamenten, Notfall-Codes und Übertragungscodes. Konten waren über die API änderbar.\n\nUMGESETZT:\n✅ Neue Server-Funktion pcn-secure: Login, Registrierung, Werkstatt-Registrierung, Passwortwechsel, Notfallprofile\n✅ Passwort-Hashes in gesperrter Tabelle user_credentials (7 Konten, Format unverändert — niemand musste ein neues Passwort setzen)\n✅ Öffentliche Spalte mit Platzhalter überschrieben, Trigger verhindert neue Hashes dort\n✅ Notfallprofile/-kontakte für den öffentlichen Schlüssel gesperrt; Notfall-Code-Zugang mit Begrenzung der Fehlversuche\n✅ Signiertes Sitzungs-Token (30 Tage) für Eigentümer-Aktionen\n✅ Passwortlose Anmeldung (nur E-Mail) abgeschaltet\n✅ Ungenutzte Tabelle workshop_signup_requests gesperrt\n\nWEITERHIN OFFEN (braucht Supabase Auth, blockiert durch fehlenden Mailversand):\n• Fahrzeuge, Logbuch, Chats, Termine, Übertragungen weiterhin les- und änderbar\n• Sitzung im Browser außerhalb von pcn-secure nicht fälschungssicher\n• Admin-Code und Club-Code stehen im öffentlichen Quelltext\n• dashboard_state (dieses Dashboard) ebenfalls öffentlich les-/schreibbar",
+    },
+    {
+      id:"J_20261005A",
+      date:"5. Oktober 2026 · 22:15 Uhr",
+      type:"milestone",
+      title:"Unfallmeldung: Fotos, PDF-Unfallmappe, sichere Übermittlung",
+      text:"IN DER CLUB-APP (Notfall-, Pannen- & Unfallhilfe → Nach einem Unfall):\n✅ Formular mit Fahrzeugauswahl (Daten aus der Akte: FIN, Kennzeichen, km, QAR-ID)\n✅ Bis zu 10 Unfallfotos (Kamera/Galerie)\n✅ Unfallmappe als PDF (Fahrzeug, Unfall, Hergang, Gegner, Einwilligung, Fotos) — herunterladen oder teilen\n✅ Übermittlung an Supabase über Edge Function accident-report; Tabellen und Foto-Bucket für die App gesperrt, Zugriff nur mit Fall-Token\n✅ Einwilligung nennt Gesundheitsdaten (Art. 9 DSGVO), Unfallgegner, Fotos, Widerruf; „Fall löschen“ löscht serverseitig\n\nNEUTRALER DATENSATZ:\nEmpfänger als eigene Einträge (accident_report_dispatches): heute debug Rechtsanwälte (Status „vorgemerkt“), später auch Versicherer — ohne Umbau.\n\nOFFEN:\n• Mailversand an debug (Mail-Dienst, Absender-Domain mit SPF/DKIM, Empfängeradresse der Kanzlei)\n• Freigabe des Einwilligungstexts durch debug / Datenschutz\n• Freigabe der Werbeaussage „kostenlose Ersteinschätzung“ durch die Kanzlei",
+    },
+    {
+      id:"J_20261001",
+      date:"1. Oktober 2026 · 20:00 Uhr",
+      type:"partner",
+      title:"debug Rechtsanwälte als erster Kooperationspartner integriert",
+      text:"UMGESETZT:\n✅ Rechtliche Ersteinschätzung in QAR.Gallery (Schadenshistorie, Fahrzeugakte) und in der PCN-App (Abschnitt umbenannt in „Notfall-, Pannen- & Unfallhilfe“)\n✅ Drittservice-Hinweis: debug ist unabhängiger Partner, kein Teil von QAR.Gallery\n✅ Nebenbei gefunden und behoben: Fuhrpark-Tab auf qar.gallery stürzte ab (Recharts brauchte prop-types)\n\nSTRATEGISCHE EINORDNUNG:\nZiel ist, dass Versicherer die App später kaufen wollen. Eine Kanzlei für Geschädigte arbeitet gegen Versicherer — direkt an sie zu routen wäre für Versicherer eher ein Kostenrisiko. Deshalb: Unfallmeldung als neutraler Datensatz, der dem Mitglied gehört; es entscheidet über Empfänger (Kanzlei, eigene Versicherung, beide). Für Versicherer zählt: schnelle strukturierte Schadenmeldung + belegte Vorschadens-/Wertdokumentation aus der Akte.\n\nRECHTLICH BEACHTEN:\nProvisionsverbot für Mandatsvermittlung (§ 49b BRAO) — Vergütung pro Fall vermutlich unzulässig; eher feste Partnerschaft/Werbung.",
+    },
+    {
       id:"J_20260716",
       date:"16. Juli 2026 · 01:30 Uhr",
       type:"milestone",
@@ -282,16 +310,17 @@ const DD_BIZ=[
   {id:"B5",cat:"Pilotkunden",sev:"positive",finding:"Mehrere Club-Entscheider bereit für 12-Monats-Pilotvertrag.",status:"validated"},
   {id:"B6",cat:"Wettbewerb",sev:"positive",finding:"Carfax/Carvertical: statische Reports. QAR: lebendiger Token. Kein direkter Wettbewerber mit RWA-Ansatz.",status:"noted"},
   {id:"B7",cat:"RISIKO",sev:"critical",finding:"Noch kein unterzeichneter Vertrag. Kein Unternehmen ohne signierten Pilotvertrag diese Woche.",status:"open"},
-  {id:"B8",cat:"RISIKO",sev:"critical",finding:"DSGVO: Fahrzeughalter + Chat + Versicherungsdaten = komplex. Anwalt sofort beauftragen.",status:"open"},
+  {id:"B8",cat:"RISIKO",sev:"critical",finding:"DSGVO: Fahrzeughalter + Chat + Versicherungs- und jetzt Unfall-/Gesundheitsdaten = komplex. Okt 2026: Notfall- und Unfalldaten technisch gesperrt, Einwilligung nach Art. 9 formuliert — Freigabe durch Anwalt/Datenschutz steht aus. Anwalt sofort beauftragen.",status:"open"},
   {id:"B9",cat:"RISIKO",sev:"medium",finding:"MiCA/RWA: Token-Regulatorik in EU noch unklar. Erstgespräch Rechtsanwalt für digitale Assets.",status:"open"},
   {id:"B10",cat:"Metriken",sev:"medium",finding:"Keine Nutzungsdaten. PostHog sofort einbinden. Funnel-Daten = Pflicht für Investor-Pitch.",status:"open"},
   {id:"B11",cat:"Pricing",sev:"medium",finding:"Kein definiertes Pricing-Dokument. Basic €99 / Pro €299 / Enterprise €799 empfohlen.",status:"open"},
+  {id:"B12",cat:"Versicherer",sev:"medium",finding:"Ziel: Versicherer als Käufer. Konflikt: debug vertritt Geschädigte gegen Versicherer. Lösung: Unfallmeldung als neutraler, mitgliedseigener Datensatz mit wählbaren Empfängern; Wert für Versicherer = schnelle strukturierte Schadenmeldung + belegte Fahrzeughistorie. Vergütung der Kanzlei pro Fall wegen § 49b BRAO vermutlich unzulässig.",status:"noted"},
 ];
 
 const DD_TECH=[
-  {id:"T1",cat:"Auth",sev:"critical",finding:"Kein echtes Auth — Login per E-Mail ohne Token, Session in localStorage. Für geschlossene Pilot-Community mit Club-Code vertretbar, VOR 2. Club zwingend auf Supabase Auth umstellen.",status:"open"},
-  {id:"T2",cat:"RLS",sev:"critical",finding:"BEWUSSTE SCHULD: Policies nutzen USING(true) — die DB vertraut der App-Schicht. Ursprüngliche auth.uid()-Policies blockierten alles (App nutzt Custom-Sessions → auth.uid() = NULL). 9 von 21 Policies waren lautlos kaputt: Live-Status, Logbuch, Event-Anmeldung, Profil. Fix liegt bereit (fix_all_rls_policies.sql), echte Absicherung erst mit Supabase Auth.",status:"progress"},
-  {id:"T3",cat:"Security",sev:"high",finding:"Kein Error Monitoring. Kein Rate-Limiting. Input-Sanitization: escapeHtml() im Admin-Chat vorhanden, App-Seite noch offen.",status:"open"},
+  {id:"T1",cat:"Auth",sev:"critical",finding:"Kein echtes Auth — Sitzung liegt unsigniert im Browser. TEILWEISE ENTSCHÄRFT (Okt 2026): Login, Registrierung und Passwortwechsel laufen über die Server-Funktion pcn-secure, die ein signiertes Sitzungs-Token ausgibt; passwortlose Anmeldung abgeschaltet. Vollständige Umstellung auf Supabase Auth weiterhin VOR 2. Club nötig — blockiert durch fehlenden Mailversand (Magic Link / Passwort-Reset).",status:"progress"},
+  {id:"T2",cat:"RLS",sev:"critical",finding:"BEWUSSTE SCHULD: Policies nutzen USING(true) — die DB vertraut der App-Schicht. Okt 2026 gesperrt: Passwort-Hashes (→ user_credentials), Notfallprofile/-kontakte (Gesundheitsdaten), workshop_signup_requests, Unfallmeldungen. Weiterhin offen les- und schreibbar: vehicles, logbook, messages/threads, events, vehicle_transfers (inkl. Übertragungscodes), users-Profile, dashboard_state. Admin- und Club-Code im öffentlichen Quelltext. Echte Absicherung erst mit Supabase Auth.",status:"progress"},
+  {id:"T3",cat:"Security",sev:"high",finding:"Kein Error Monitoring. Rate-Limiting jetzt in den Server-Funktionen pcn-secure (Login, Notfall-Code) und accident-report (In-Memory pro Instanz). Für die direkten Tabellenzugriffe der App weiterhin keins. Input-Sanitization: escapeHtml() im Admin-Chat vorhanden, App-Seite noch offen.",status:"open"},
   {id:"T10",cat:"Fehlerkultur",sev:"high",finding:"BEHOBEN, aber lehrreich: catch(e){} verschluckte Fehler an mehreren Stellen — 4 Bugs blieben stundenlang unsichtbar. RLS blockiert mit 204 = Erfolg, ohne Verifikation merkt man nichts. Konsequenz: Löschungen werden jetzt verifiziert, Fehler durchgereicht.",status:"resolved"},
   {id:"T11",cat:"Diagnose",sev:"positive",finding:"System-Selbsttest in der Admin-Console: prüft alle DB-Operationen mit echten Schreibvorgängen und räumt auf. Übersetzt Fehlercodes (42501 → RLS-Policy blockiert). Findet Probleme vor den Mitgliedern.",status:"resolved"},
   {id:"T12",cat:"Schema",sev:"medium",finding:"Wiederkehrendes Muster: App sendet Felder die es in der DB nicht gibt (beitrag_bezahlt, images, phone, geburtstag) → PGRST204. saveVehicle hat jetzt Retry-Logik die unbekannte Spalten entfernt. Schema und Code sollten systematisch abgeglichen werden.",status:"progress"},
@@ -300,11 +329,14 @@ const DD_TECH=[
   {id:"T16",cat:"Blockchain / RWA-Token",sev:"info",finding:"Digitaler Fahrzeugpass auf Blockchain-Basis ist als späteres, für einen Investorenpitch hochrelevantes Zukunftsfeature vorgesehen — bewusst nach der ersten Testphase mit dem Porsche Club Nürburgring, nicht davor. Architektonisch bewusst von der qar.codes-Weiterleitung entkoppelt: eigene, deutlich größere Entscheidung (Blockchain-Infrastruktur, Wallet-Anbindung, regulatorische Fragen), die nicht an die einfache Redirect-Funktion gebunden werden sollte, um keinen falschen Abhängigkeits-Eindruck zwischen beiden Themen entstehen zu lassen.",status:"noted"},
   {id:"T14",cat:"QR-Onboarding",sev:"medium",finding:"Konzept für die geplante Aufkleber-Charge (Druckerei, Mindestmenge, Vorlaufzeit) steht: Codes werden vorab als 'frei' angelegt, erst beim ersten Scan einem Fahrzeug zugeordnet, FIN-Endziffern als Sicherheitsabfrage statt Aufdruck. Voraussetzung fehlt noch: aktuell speichert die QAR-ID ausschließlich als Feld auf einem bereits existierenden Fahrzeugdatensatz — eine neue, eigenständige Tabelle für vorab reservierte, unzugeordnete Codes ist nicht gebaut.",status:"open"},
   {id:"T5",cat:"Realtime",sev:"medium",finding:"5s-Polling statt Supabase WebSocket. Skaliert nicht. 1 Tag Aufwand.",status:"open"},
-  {id:"T6",cat:"Architektur",sev:"medium",finding:"Auf 11.200+ Zeilen JSX-Monolith gewachsen (770 KB, Stand Sep 2026, vorher 5.400 Zeilen/446 KB) + 205 KB Admin-HTML. Funktioniert weiterhin, aber jede Änderung erfordert Vollkompilierung, Wachstum beschleunigt sich mit jedem neuen Feature. Für Scale: Vite + TypeScript + Module — Dringlichkeit steigt.",status:"open"},
+  {id:"T6",cat:"Architektur",sev:"medium",finding:"Auf 11.600+ Zeilen JSX-Monolith gewachsen (817 KB, Stand Okt 2026) + 210 KB Admin-HTML. Funktioniert weiterhin, aber jede Änderung erfordert Vollkompilierung, Wachstum beschleunigt sich.",status:"open"},
   {id:"T7",cat:"Testing",sev:"medium",finding:"Zero Tests. Jeder Deploy ist riskant. Vitest + GitHub Actions.",status:"open"},
   {id:"T8",cat:"Blockchain",sev:"info",finding:"Phase 4: ERC-4337 Account Abstraction. Nutzer brauchen kein Wallet. Polygon/Base.",status:"noted"},
   {id:"T13",cat:"KI-Analyse",sev:"resolved",finding:"Fotoerkennung und Dokumenten-Scanner (Wartung/Reparatur/Rechnung/Versicherung) sind seit Aug 2026 aktiv — Edge-Function-Proxy (ai-proxy) läuft produktiv, Direktaufruf-Problem gelöst. Dokumente lassen sich seitdem auch ohne sofortige KI-Auswertung ablegen, Analyse jederzeit über 'KI auslesen'-Button nachholbar.",status:"resolved"},
   {id:"T9",cat:"Security",sev:"resolved",finding:"API Key rotiert, aus Code entfernt, .gitignore gesetzt.",status:"resolved"},
+  {id:"T17",cat:"Unfallmeldung",sev:"positive",finding:"Unfallmeldung mit Fotos und PDF-Unfallmappe (Okt 2026). Daten liegen gesperrt in accident_reports / accident_report_dispatches / Bucket accident-reports, Zugriff nur über Edge Function accident-report mit Fall-Token. Neutraler Datensatz: Empfänger (Kanzlei, später Versicherer) als eigene Einträge. Mailversand an debug noch offen (Fälle stehen auf „vorgemerkt“).",status:"progress"},
+  {id:"T18",cat:"Deployment",sev:"high",finding:"GitHub Pages ist der einzige Deploy-Weg und kann ohne Meldung hängen (5.10.: Runner-Engpass, 4 Veröffentlichungen abgebrochen/fehlgeschlagen → ca. 1 Std Login-Ausfall nach DB-Umstellung). Regel: DB-Änderungen erst nach bestätigtem Deploy. Health-Check prüft den Login noch nicht.",status:"open"},
+  {id:"T19",cat:"Abhängigkeiten",sev:"resolved",finding:"Fuhrpark-Tab auf qar.gallery stürzte ab: Recharts-UMD braucht window.PropTypes, das nie geladen wurde. prop-types vor Recharts eingebunden (Okt 2026).",status:"resolved"},
 ];
 
 const WEEKS=[
@@ -1223,7 +1255,7 @@ function Dashboard({onLogout}){
                     </div>
                     <span style={{fontSize:10,color:T.muted}}>{e.date}</span>
                   </div>
-                  {e.text&&<div style={{fontSize:12,color:T.muted,lineHeight:1.7}}>{e.text}</div>}
+                  {e.text&&<div style={{fontSize:12,color:T.muted,lineHeight:1.7,whiteSpace:"pre-line"}}>{e.text}</div>}
                 </div>
               ))
             }
