@@ -148,7 +148,10 @@ Deno.serve(async (req: Request) => {
     return data?.[0] || null;
   };
   const getCredential = async (userId: string): Promise<string | null> => {
-    const { data } = await db.from("user_credentials").select("pw_hash").eq("user_id", userId).maybeSingle();
+    // Lesefehler NIE als "kein Passwort" werten — sonst würde das erste
+    // Login ein neues Passwort setzen (Kontoübernahme).
+    const { data, error } = await db.from("user_credentials").select("pw_hash").eq("user_id", userId).maybeSingle();
+    if (error) throw new Error("user_credentials: " + error.message);
     return data?.pw_hash || null;
   };
   const setCredential = async (userId: string, password: string) => {
@@ -157,7 +160,8 @@ Deno.serve(async (req: Request) => {
     if (error) throw new Error(error.message);
   };
   const vehicleOwner = async (vehicleId: string) => {
-    const { data } = await db.from("vehicles").select("user_id").eq("id", vehicleId).maybeSingle();
+    const { data, error } = await db.from("vehicles").select("user_id").eq("id", vehicleId).maybeSingle();
+    if (error) throw new Error("vehicles: " + error.message);
     return data?.user_id || null;
   };
   const loadProfiles = async (vehicleId: string, withCode: boolean) => {

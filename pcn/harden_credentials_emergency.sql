@@ -41,3 +41,11 @@ revoke all on public.emergency_contacts from anon, authenticated;
 update public.workshop_signup_requests set pw_hash = null where pw_hash is not null;
 drop policy if exists workshop_signup_requests_all on public.workshop_signup_requests;
 revoke all on public.workshop_signup_requests from anon, authenticated;
+
+-- ── Nachtrag 9.10.: Rechte für die Edge Functions ─────────────────────────
+-- Neu angelegte Tabellen bekommen in diesem Projekt KEINE automatischen
+-- Rechte — auch nicht für service_role. Ohne diese Zeilen scheitern Login
+-- (pcn-secure) und Unfallmeldung (accident-report) mit "permission denied".
+grant select, insert, update, delete on public.user_credentials to service_role;
+grant select, insert, update, delete on public.accident_reports to service_role;
+grant select, insert, update, delete on public.accident_report_dispatches to service_role;

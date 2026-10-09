@@ -58,6 +58,9 @@ alter table public.accident_reports enable row level security;
 alter table public.accident_report_dispatches enable row level security;
 revoke all on public.accident_reports from anon, authenticated;
 revoke all on public.accident_report_dispatches from anon, authenticated;
+-- Nachtrag 9.10.: service_role bekommt hier keine automatischen Rechte
+grant select, insert, update, delete on public.accident_reports to service_role;
+grant select, insert, update, delete on public.accident_report_dispatches to service_role;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('accident-reports', 'accident-reports', false, 3145728, array['image/jpeg'])
