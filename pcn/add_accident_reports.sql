@@ -65,3 +65,10 @@ grant select, insert, update, delete on public.accident_report_dispatches to ser
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('accident-reports', 'accident-reports', false, 3145728, array['image/jpeg'])
 on conflict (id) do nothing;
+
+-- Nachtrag 12.10.: geführter Unfall-Ablauf
+alter table public.accident_reports
+  add column if not exists witnesses jsonb not null default '[]'::jsonb,
+  add column if not exists european_report boolean not null default false,
+  add column if not exists fault_admission jsonb,
+  add column if not exists photo_categories text[] not null default '{}';

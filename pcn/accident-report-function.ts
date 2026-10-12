@@ -39,11 +39,13 @@ const ALLOWED_ORIGINS = [
 ];
 
 const BUCKET = "accident-reports";
-const MAX_BODY_BYTES = 14 * 1024 * 1024;  // 10 Fotos à ~1 MB + Text, base64
-const MAX_PHOTOS = 10;
+const MAX_BODY_BYTES = 20 * 1024 * 1024;  // 15 Fotos + Unterschrift + Text, base64
+const MAX_PHOTOS = 15;
 const MAX_PHOTO_BYTES = 3 * 1024 * 1024;
 const LAWYER_SLUG = "debug-anwaelte";
 const ROLES = ["geschaedigter", "verursacher", "unklar"];
+// Foto-Kategorien aus dem geführten Ablauf (Reihenfolge = Reihenfolge in der Unfallmappe)
+const PHOTO_CATEGORIES = ["gegner", "unfallstelle", "unfallbericht", "schuldanerkenntnis", "unterschrift", "sonstiges"];
 
 const LIMITS: Record<string, number> = { submit: 5, get: 60, delete: 10 }; // pro Stunde/IP
 const WINDOW_MS = 60 * 60 * 1000;
@@ -136,16 +138,20 @@ Deno.serve(async (req: Request) => {
       const photosIn = Array.isArray(body.photos) ? body.photos : [];
       if (photosIn.length > MAX_PHOTOS) return json({ error: `Maximal ${MAX_PHOTOS} Fotos` }, 400);
       const photos: Uint8Array[] = [];
+      const categories: string[] = [];
       for (const p of photosIn) {
-        const bytes = decodeJpeg(p);
+        // Foto entweder als data-URL oder als { dataUrl, category }
+        const bytes = decodeJpeg(typeof p === "string" ? p : p?.dataUrl);
         if (!bytes) return json({ error: "Foto ungültig oder zu groß (nur JPEG, max. 3 MB)" }, 400);
         photos.push(bytes);
+        const cat = typeof p === "object" && PHOTO_CATEGORIES.includes(p?.category) ? p.category : "sonstiges";
+        categories.push(cat);
       }
 
       const id = crypto.randomUUID();
       const paths: string[] = [];
       for (let i = 0; i < photos.length; i++) {
-        const path = `${id}/foto-${i + 1}.jpg`;
+        const path = `${id}/foto-${i + 1}-${categories[i]}.jpg`;
         const { error } = await db.storage.from(BUCKET).upload(path, photos[i], { contentType: "image/jpeg" });
         if (error) {
           if (paths.length) await db.storage.from(BUCKET).remove(paths);
@@ -161,6 +167,14 @@ Deno.serve(async (req: Request) => {
           if (sv) vehicleData[String(k).slice(0, 40)] = sv;
         }
       }
+      const witnesses = (Array.isArray(r.witnesses) ? r.witnesses : []).slice(0, 10)
+        .map((w: any) => ({ name: str(w?.name, 200), address: str(w?.address, 300), phone: str(w?.phone, 50) }))
+        .filter((w: any) => w.name || w.address || w.phone);
+      const fa = r.faultAdmission && typeof r.faultAdmission === "object" ? r.faultAdmission : null;
+      const faultAdmission = fa && ["digital", "papier"].includes(fa.mode) ? {
+        mode: fa.mode, name: str(fa.name, 200), text: str(fa.text, 2000),
+        signedAt: str(fa.signedAt, 40),
+      } : null;
       const date = typeof r.accidentDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.accidentDate) ? r.accidentDate : null;
       const consentAt = new Date().toISOString();
 
@@ -190,6 +204,10 @@ Deno.serve(async (req: Request) => {
         callback_preferred_time: str(r.callbackPreferredTime, 200),
         notes: str(r.notes, 4000),
         photo_paths: paths,
+        photo_categories: categories,
+        witnesses,
+        european_report: r.europeanReport === true,
+        fault_admission: faultAdmission,
         consent_text: str(r.consentText, 4000),
         consent_given_at: consentAt,
       });
@@ -224,10 +242,11 @@ Deno.serve(async (req: Request) => {
     // action === "get"
     const { data: dispatches } = await db.from("accident_report_dispatches")
       .select("recipient_type,recipient_slug,status,sent_at,created_at").eq("report_id", row.id);
-    const photos: string[] = [];
+    // gleiche Reihenfolge wie photo_categories — fehlgeschlagene Links als null
+    const photos: (string | null)[] = [];
     for (const path of row.photo_paths || []) {
       const { data } = await db.storage.from(BUCKET).createSignedUrl(path, 600);
-      if (data?.signedUrl) photos.push(data.signedUrl);
+      photos.push(data?.signedUrl || null);
     }
     const { access_token_hash: _h, photo_paths: _p, ...report } = row;
     return json({ report, dispatches: dispatches || [], photos });

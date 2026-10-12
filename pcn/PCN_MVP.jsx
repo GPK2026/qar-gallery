@@ -137,8 +137,57 @@ const LEGAL_OWN_ROLES = [
   { id:"verursacher",   label:"Ich bin Unfallverursacher/in" },
   { id:"unklar",        label:"Noch unklar" },
 ];
-const legalCaseEmpty = () => ({accidentDate:new Date().toISOString().slice(0,10),accidentLocation:"",ownRole:"geschaedigter",description:"",policeInvolved:false,policeReference:"",injuries:false,injuriesDescription:"",otherPartyName:"",otherPartyLicensePlate:"",otherPartyInsurance:"",photos:[],callbackPhone:"",callbackPreferredTime:"",notes:"",consentGiven:false});
-const LEGAL_MAX_PHOTOS = 10;
+const legalCaseEmpty = () => ({accidentDate:new Date().toISOString().slice(0,10),accidentLocation:"",ownRole:"geschaedigter",description:"",policeInvolved:false,policeReference:"",injuries:false,injuriesDescription:"",otherPartyName:"",otherPartyLicensePlate:"",otherPartyInsurance:"",photos:[],witnesses:[],europeanReport:false,faultAdmission:null,step:0,callbackPhone:"",callbackPreferredTime:"",notes:"",consentGiven:false});
+const LEGAL_MAX_PHOTOS = 15;
+
+// Geführter Ablauf nach einem Unfall (Reihenfolge nach Empfehlung von debug
+// Rechtsanwälte für Geschädigte). Der Schritt "schuld" entfällt, wenn das
+// Mitglied selbst Verursacher ist.
+const LEGAL_STEPS = [
+  { id:"start",      title:"Erst die Sicherheit" },
+  { id:"kennzeichen",title:"Kennzeichen des Unfallgegners" },
+  { id:"fotos",      title:"Fotos von der Unfallstelle" },
+  { id:"polizei",    title:"Polizei oder Unfallbericht" },
+  { id:"schuld",     title:"Schuldanerkenntnis (optional)" },
+  { id:"zeugen",     title:"Zeugen" },
+  { id:"hergang",    title:"Was ist passiert?" },
+  { id:"absenden",   title:"Prüfen und absenden" },
+];
+const legalStepsFor = f => LEGAL_STEPS.filter(s => s.id!=="schuld" || f.ownRole!=="verursacher");
+const LEGAL_PHOTO_LABEL = {
+  gegner:"Fahrzeug des Unfallgegners (mit Kennzeichen)", unfallstelle:"Unfallstelle",
+  unfallbericht:"Europäischer Unfallbericht", schuldanerkenntnis:"Schuldanerkenntnis (Papier)",
+  unterschrift:"Schuldanerkenntnis – Unterschrift", sonstiges:"Weitere Fotos",
+};
+const LEGAL_PHOTO_ORDER = ["gegner","unfallstelle","unfallbericht","schuldanerkenntnis","unterschrift","sonstiges"];
+const legalFaultText = f => `Ich, ${f.faultAdmission?.name||"[Name]"}, erkenne an, den Verkehrsunfall am ${f.accidentDate?new Date(f.accidentDate).toLocaleDateString("de-DE"):"[Datum]"}${f.accidentLocation?" in "+f.accidentLocation:""} als Fahrer/in des Fahrzeugs mit dem Kennzeichen ${f.otherPartyLicensePlate||"[Kennzeichen]"} allein verschuldet zu haben.`;
+
+// Unterschriftenfeld (Finger/Maus) – liefert ein JPEG mit weißem Hintergrund
+function SignaturePad({ onChange, height=150 }) {
+  const ref = useRef(null);
+  const drawing = useRef(false);
+  const dirty = useRef(false);
+  useEffect(()=>{
+    const c = ref.current; if(!c) return;
+    const r = c.getBoundingClientRect();
+    c.width = Math.round(r.width*2); c.height = Math.round(height*2);
+    const ctx = c.getContext("2d");
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
+    ctx.lineWidth=4; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle="#111";
+  },[height]);
+  const pos = e => { const r=ref.current.getBoundingClientRect(); return [(e.clientX-r.left)*2,(e.clientY-r.top)*2]; };
+  const down = e => { e.preventDefault(); ref.current.setPointerCapture?.(e.pointerId); drawing.current=true; const ctx=ref.current.getContext("2d"); const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(x,y); };
+  const move = e => { if(!drawing.current) return; e.preventDefault(); const ctx=ref.current.getContext("2d"); const [x,y]=pos(e); ctx.lineTo(x,y); ctx.stroke(); dirty.current=true; };
+  const up = () => { if(!drawing.current) return; drawing.current=false; if(dirty.current) onChange(ref.current.toDataURL("image/jpeg",0.85)); };
+  const clear = () => { const c=ref.current, ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); dirty.current=false; onChange(null); };
+  return (
+    <div>
+      <canvas ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up}
+        style={{width:"100%",height,background:"#fff",borderRadius:8,touchAction:"none",display:"block"}}/>
+      <button type="button" onClick={clear} style={{background:"none",border:"none",color:"#8b8d90",fontSize:12,textDecoration:"underline",cursor:"pointer",padding:"4px 0"}}>Unterschrift löschen</button>
+    </div>
+  );
+}
 const LEGAL_ROLE_LABEL = id => (LEGAL_OWN_ROLES.find(r=>r.id===id)||{}).label||id;
 
 // Unfallfoto verkleinern: 1600px / JPEG 0.8 – Schäden bleiben gut erkennbar,
@@ -156,7 +205,7 @@ const compressAccidentPhoto = file => new Promise((resolve,reject)=>{
       const ctx=cv.getContext("2d");
       ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high";
       ctx.drawImage(img,0,0,cv.width,cv.height);
-      resolve({dataUrl:cv.toDataURL("image/jpeg",0.8),w:cv.width,h:cv.height,name:file.name||"Foto.jpg"});
+      resolve({dataUrl:cv.toDataURL("image/jpeg",0.78),w:cv.width,h:cv.height,name:file.name||"Foto.jpg"});
     };
     img.src=e.target.result;
   };
@@ -216,12 +265,35 @@ const buildLegalCasePdf = async (c, member) => {
   section("Unfall");
   row("Datum",fmtDate(c.accidentDate)); row("Ort",c.accidentLocation); row("Eigene Rolle",LEGAL_ROLE_LABEL(c.ownRole));
   row("Polizei vor Ort",c.policeInvolved?"Ja":"Nein"); if(c.policeInvolved) row("Aktenzeichen",c.policeReference);
+  if(!c.policeInvolved) row("Europ. Unfallbericht",c.europeanReport?"Ausgefüllt (Foto anbei)":"Nein");
   row("Verletzungen",c.injuries?"Ja":"Nein"); if(c.injuries) row("Verletzungen (Beschr.)",c.injuriesDescription);
-  row("Fotos",(c.photos||[]).length+" angehängt");
+  row("Fotos",(c.photos||[]).filter(p=>p.category!=="unterschrift").length+" angehängt");
   section("Unfallhergang"); para(c.description);
   if(c.otherPartyName||c.otherPartyLicensePlate||c.otherPartyInsurance){
     section("Unfallgegner");
     row("Name",c.otherPartyName); row("Kennzeichen",c.otherPartyLicensePlate); row("Versicherung",c.otherPartyInsurance);
+  }
+  const wit=(c.witnesses||[]).filter(w=>w.name||w.address||w.phone);
+  if(wit.length){
+    section(`Zeugen (${wit.length})`);
+    wit.forEach((w,i)=>row(`Zeuge ${i+1}`,[w.name,w.address,w.phone].filter(Boolean).join(" · ")));
+  }
+  // Fotos vorab laden — die Unterschrift gehört in den Abschnitt Schuldanerkenntnis
+  const pdfPhotos = (await Promise.all((c.photos||[]).map(async ph=>{
+    const img = ph.dataUrl ? ph : await remotePhotoForPdf(ph.url).catch(()=>null);
+    return img ? {...img, category: ph.category||"sonstiges"} : null;
+  }))).filter(Boolean);
+  const fa=c.faultAdmission;
+  if(fa){
+    section("Schuldanerkenntnis des Unfallgegners");
+    if(fa.mode==="digital"){
+      para(fa.text||"");
+      row("Unterschrieben von",fa.name); row("Zeitpunkt",fa.signedAt?new Date(fa.signedAt).toLocaleString("de-DE"):"");
+      const sig=pdfPhotos.find(p=>p.category==="unterschrift");
+      if(sig){ const w=70, h=w*sig.h/sig.w; ensure(h+4); doc.addImage(sig.dataUrl,"JPEG",M,y,w,h); y+=h+4; }
+    } else {
+      para("Schriftliches Schuldanerkenntnis auf Papier — siehe Foto im Anhang.");
+    }
   }
   if(c.notes){ section("Anmerkungen"); para(c.notes); }
   section("Einwilligung");
@@ -230,13 +302,15 @@ const buildLegalCasePdf = async (c, member) => {
   y+=2; doc.setFontSize(8); doc.setTextColor(...gray);
   doc.splitTextToSize(LEGAL_CASE_PARTNER.disclosure,CW).forEach(l=>{ ensure(4); doc.text(l,M,y); y+=4; });
 
-  const pdfPhotos = await Promise.all((c.photos||[]).map(ph=>ph.dataUrl?ph:remotePhotoForPdf(ph.url).catch(()=>null)));
-  pdfPhotos.filter(Boolean).forEach((ph,i,arr)=>{
-    if(i%2===0){ doc.addPage(); y=M; doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...dark); doc.text("Unfallfotos",M,y); y+=6; }
-    const maxH=120, sc=Math.min(CW/ph.w, maxH/ph.h), w=ph.w*sc, h=ph.h*sc;
+  // Fotos nach Kategorie (Gegner mit Kennzeichen zuerst), je Seite max. 2
+  const ordered = LEGAL_PHOTO_ORDER.flatMap(cat=>pdfPhotos.filter(p=>p.category===cat && cat!=="unterschrift"));
+  let onPage=2;
+  ordered.forEach((ph,i,arr)=>{
+    if(onPage>=2){ doc.addPage(); y=M; onPage=0; doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...dark); doc.text("Unfallfotos",M,y); y+=6; }
+    const maxH=115, sc=Math.min(CW/ph.w, maxH/ph.h), w=ph.w*sc, h=ph.h*sc;
     doc.addImage(ph.dataUrl,"JPEG",M+(CW-w)/2,y,w,h);
     y+=h+3; doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...gray);
-    doc.text(`Foto ${i+1} von ${arr.length}`,M,y); y+=8;
+    doc.text(`Foto ${i+1} von ${arr.length} · ${LEGAL_PHOTO_LABEL[ph.category]||""}`,M,y); y+=9; onPage++;
   });
 
   const pages=doc.internal.getNumberOfPages();
@@ -284,7 +358,9 @@ const caseFromServer = (ref, d) => {
     injuries:!!r.injuries, injuriesDescription:r.injuries_description||"",
     otherPartyName:op.name||"", otherPartyLicensePlate:op.licensePlate||"", otherPartyInsurance:op.insurance||"",
     callbackPhone:r.callback_phone||"", callbackPreferredTime:r.callback_preferred_time||"", notes:r.notes||"",
-    photos:(d.photos||[]).map(url=>({url})), consentGivenAt:r.consent_given_at, createdAt:r.created_at,
+    photos:(d.photos||[]).map((url,i)=>({url, category:(r.photo_categories||[])[i]||"sonstiges"})).filter(p=>p.url),
+    witnesses:r.witnesses||[], europeanReport:!!r.european_report, faultAdmission:r.fault_admission||null,
+    consentGivenAt:r.consent_given_at, createdAt:r.created_at,
     status:"server", dispatchStatus:lawyer.status||"queued", dispatchSentAt:lawyer.sent_at||null,
   };
 };
@@ -2125,7 +2201,7 @@ function PCNInner() {
       const res = await accidentApi({action:"submit", token,
         report:{...rest, source:"pcn", memberId:me?.id, memberEmail:me?.email, memberName:me?.name,
           consentText:LEGAL_CONSENT_TEXT(LEGAL_CASE_PARTNER.name)},
-        photos:(photos||[]).map(ph=>ph.dataUrl)});
+        photos:(photos||[]).map(ph=>({dataUrl:ph.dataUrl, category:ph.category||"sonstiges"}))});
       saveLegalRefs([...loadLegalRefs(), {id:res.id, token, memberId:me?.id, vehicleId:c.vehicleId}]);
       dropLegalCase(c);
       addLegalCase({...c, id:res.id, serverId:res.id, status:"server", dispatchStatus:"queued", createdAt:res.createdAt});
@@ -7552,116 +7628,309 @@ Regeln:
             </div>
           )}
 
-          {/* ── Rechtliche Ersteinschätzung (Unfall) – Drittservice debug Rechtsanwälte ── */}
+          {/* ── Rechtliche Ersteinschätzung (Unfall) – geführter Ablauf, Drittservice debug Rechtsanwälte ── */}
           {legalCaseEdit&&legalCaseEdit.vehicleId===v.id&&(()=>{
             const f=legalCaseEdit, set=patch=>setLegalCaseEdit(p=>({...p,...patch}));
             const lbl={fontSize:12,fontWeight:700,color:C.muted,marginBottom:4,display:"block"};
-            // kompaktere Felder als die globale .inp-Klasse – das Formular ist lang
-            const inpS={padding:"9px 12px",fontSize:15,borderRadius:8,minWidth:0,maxWidth:"100%",display:"block"};
+            // kompaktere Felder als die globale .inp-Klasse
+            const inpS={padding:"9px 12px",fontSize:15,borderRadius:8,minWidth:0,maxWidth:"100%",display:"block",width:"100%"};
+            const hint={fontSize:13,color:C.muted,lineHeight:1.5,marginBottom:12};
+            const box={background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:12};
+            const choice=on=>({flex:1,minWidth:0,padding:"10px 8px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",
+              background:on?`${C.red}22`:C.card,color:on?C.white:C.muted,border:`1.5px solid ${on?C.red:C.border}`});
             // Auswahl aus den bereits angelegten Fahrzeugen – deren Daten werden übernommen
             const vehicleChoices = myVehicles.length ? myVehicles : [v];
             const av = vehicleChoices.find(x=>x.id===f.affectedVehicleId) || vehicles[f.affectedVehicleId] || v;
             const avRows = [["Fahrzeug",[av.hersteller,av.modell].filter(Boolean).join(" ")],["Kennzeichen",av.kennzeichen],["FIN",av.fin],["Baujahr",av.baujahr],["Kilometerstand",av.kilometerstand?av.kilometerstand+" km":""],["QAR-ID",av.qarId]].filter(([,val])=>val);
-            const chk={display:"flex",alignItems:"center",gap:6,fontSize:14,color:C.white};
+
+            const steps=legalStepsFor(f);
+            const idx=Math.min(f.step||0, steps.length-1);
+            const step=steps[idx];
+            const go=i=>{ set({step:Math.max(0,Math.min(steps.length-1,i))}); document.querySelector(".legal-wizard")?.scrollTo?.(0,0); };
+            const photosOf=cat=>(f.photos||[]).filter(p=>p.category===cat);
+
+            const addPhotos=async(fileList,cat)=>{
+              const room=LEGAL_MAX_PHOTOS-(f.photos||[]).filter(p=>p.category!=="unterschrift").length;
+              const files=Array.from(fileList||[]).slice(0,Math.max(0,room));
+              if(!files.length){ toast_(`Maximal ${LEGAL_MAX_PHOTOS} Fotos`,"err"); return; }
+              try{
+                const added=(await Promise.all(files.map(compressAccidentPhoto))).map(p=>({...p,category:cat}));
+                setLegalCaseEdit(p=>p&&({...p,photos:[...(p.photos||[]),...added]}));
+              }catch{ toast_("Foto konnte nicht gelesen werden","err"); }
+            };
+            const PhotoGrid=({cat,label="Foto"})=>(
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
+                {(f.photos||[]).map((ph,i)=>ph.category!==cat?null:(
+                  <div key={i} style={{position:"relative",width:72,height:72}}>
+                    <img src={ph.dataUrl} alt="" style={{width:72,height:72,objectFit:"cover",borderRadius:8,display:"block"}}/>
+                    <button aria-label="Foto entfernen" onClick={()=>set({photos:f.photos.filter((_,j)=>j!==i)})}
+                      style={{position:"absolute",top:-6,right:-6,width:22,height:22,borderRadius:11,border:"none",background:C.red,color:"#fff",fontSize:13,lineHeight:"22px",cursor:"pointer",padding:0}}>×</button>
+                  </div>
+                ))}
+                <label style={{width:72,height:72,borderRadius:8,border:`1.5px dashed ${C.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.muted,fontSize:11,textAlign:"center"}}>
+                  <span style={{fontSize:22}}>📷</span>{label}
+                  <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{const fl=e.target.files; addPhotos(fl,cat); e.target.value="";}}/>
+                </label>
+              </div>
+            );
+            const setFault=patch=>set({faultAdmission:{...(f.faultAdmission||{}),...patch}});
+            const setSignature=dataUrl=>{
+              const rest=(f.photos||[]).filter(p=>p.category!=="unterschrift");
+              if(!dataUrl){ set({photos:rest, faultAdmission:{...(f.faultAdmission||{}),mode:"digital",signedAt:null,text:null}}); return; }
+              const img=new Image();
+              // Text wird beim Unterschreiben eingefroren — gespeichert wird genau das, was unterschrieben wurde
+              img.onload=()=>setLegalCaseEdit(p=>p&&({...p,
+                photos:[...(p.photos||[]).filter(x=>x.category!=="unterschrift"),{dataUrl,w:img.width,h:img.height,name:"Unterschrift.jpg",category:"unterschrift"}],
+                faultAdmission:{...(p.faultAdmission||{}),mode:"digital",signedAt:new Date().toISOString(),text:legalFaultText(p)}}));
+              img.src=dataUrl;
+            };
+            const witnesses=f.witnesses||[];
+            const setWitness=(i,patch)=>set({witnesses:witnesses.map((w,j)=>j===i?{...w,...patch}:w)});
+
             const save=async()=>{
-              if(!f.description.trim()){toast_("Unfallhergang erforderlich","err");return;}
+              if(!f.description.trim()){toast_("Bitte beschreibe kurz, was passiert ist","err");go(steps.findIndex(s=>s.id==="hergang"));return;}
               if(!f.consentGiven){toast_("Bitte der Weitergabe an den Partner zustimmen","err");return;}
-              const {vehicleId,affectedVehicleId,...data}=f;
+              const {vehicleId,affectedVehicleId,step:_s,...data}=f;
               const vehicleData=Object.fromEntries(avRows);
-              const draft={id:"L"+Date.now().toString(36).toUpperCase(),vehicleId:av.id,vehicleData,...data,photosAvailable:(data.photos||[]).length>0,partner:LEGAL_CASE_PARTNER.slug,consentGivenAt:new Date().toISOString(),createdAt:new Date().toISOString()};
+              let faultAdmission=data.faultAdmission;
+              const signed=(data.photos||[]).some(p=>p.category==="unterschrift");
+              if(f.ownRole!=="verursacher" && faultAdmission?.mode==="digital" && signed && faultAdmission.text!==legalFaultText(f)){
+                toast_("Angaben wurden nach der Unterschrift geändert — bitte neu unterschreiben lassen","err");
+                go(steps.findIndex(s=>s.id==="schuld")); return;
+              }
+              if(faultAdmission?.mode==="digital" && !(data.photos||[]).some(p=>p.category==="unterschrift")) faultAdmission=null;
+              if(faultAdmission?.mode==="papier" && !(data.photos||[]).some(p=>p.category==="schuldanerkenntnis")) faultAdmission=null;
+              if(f.ownRole==="verursacher") faultAdmission=null;
+              const draft={id:"L"+Date.now().toString(36).toUpperCase(),vehicleId:av.id,vehicleData,...data,faultAdmission,
+                witnesses:witnesses.filter(w=>w.name||w.address||w.phone),
+                photosAvailable:(data.photos||[]).length>0,partner:LEGAL_CASE_PARTNER.slug,consentGivenAt:new Date().toISOString(),createdAt:new Date().toISOString()};
+              // Bei Fehlern bleibt der Fall mit "Erneut senden" in der Liste — Formular trotzdem schließen
               await submitLegalCase(draft);
               setLegalCaseEdit(null);
             };
+
+            // Zusammenfassung für den letzten Schritt
+            const fa=f.faultAdmission;
+            const checks=[
+              ["kennzeichen","Kennzeichen des Unfallgegners",!!f.otherPartyLicensePlate.trim(),f.otherPartyLicensePlate||"fehlt"],
+              ["fotos","Fotos Fahrzeug des Gegners",photosOf("gegner").length>0,`${photosOf("gegner").length} Foto(s)`],
+              ["fotos","Fotos der Unfallstelle",photosOf("unfallstelle").length>0,`${photosOf("unfallstelle").length} Foto(s)`],
+              ["polizei","Polizei / Unfallbericht",f.policeInvolved||f.europeanReport,f.policeInvolved?("Polizei vor Ort"+(f.policeReference?" · "+f.policeReference:"")):f.europeanReport?"Unfallbericht ausgefüllt":"offen"],
+              ...(steps.some(s=>s.id==="schuld")?[["schuld","Schuldanerkenntnis",fa?.mode==="digital"?(photosOf("unterschrift").length>0&&fa.text===legalFaultText(f)):fa?.mode==="papier"?photosOf("schuldanerkenntnis").length>0:false,
+                fa?.mode==="digital"&&photosOf("unterschrift").length?"digital unterschrieben":fa?.mode==="papier"&&photosOf("schuldanerkenntnis").length?"auf Papier (Foto)":"keins (optional)"]]:[]),
+              ["zeugen","Zeugen",witnesses.some(w=>w.name),`${witnesses.filter(w=>w.name).length} notiert`],
+              ["hergang","Unfallhergang",!!f.description.trim(),f.description.trim()?"beschrieben":"fehlt – Pflichtfeld"],
+            ];
+
+            const body = {
+              start:(
+                <>
+                  <div style={{...box,borderColor:`${C.red}66`}}>
+                    <div style={{fontSize:14,fontWeight:800,color:C.white,marginBottom:6}}>⚠️ Sicherheit geht vor</div>
+                    <div style={{fontSize:13,color:C.white,lineHeight:1.6}}>
+                      • Warnblinklicht an, Warnweste anziehen<br/>
+                      • Unfallstelle mit dem Warndreieck absichern<br/>
+                      • Bei Verletzten sofort den Notruf wählen
+                    </div>
+                    <a href="tel:112" style={{display:"block",textAlign:"center",marginTop:10,padding:"10px",borderRadius:10,background:C.red,color:"#fff",fontWeight:800,textDecoration:"none",fontSize:15}}>📞 Notruf 112</a>
+                  </div>
+                  <label style={lbl}>Wie warst du beteiligt?</label>
+                  <div style={{display:"flex",gap:6,marginBottom:12}}>
+                    {[["geschaedigter","Geschädigt"],["verursacher","Verursacht"],["unklar","Noch unklar"]].map(([id,l])=>(
+                      <button key={id} type="button" style={choice(f.ownRole===id)} onClick={()=>set({ownRole:id})}>{l}</button>
+                    ))}
+                  </div>
+                  <label style={lbl}>Betroffenes Fahrzeug</label>
+                  <select className="inp" style={{...inpS,marginBottom:6}} value={av.id} onChange={e=>set({affectedVehicleId:e.target.value})}>
+                    {vehicleChoices.map(x=><option key={x.id} value={x.id}>{[x.hersteller,x.modell].filter(Boolean).join(" ")}{x.kennzeichen?" · "+x.kennzeichen:""}</option>)}
+                  </select>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Fahrzeugdaten (FIN, Kennzeichen, km) werden aus deiner Akte übernommen.</div>
+                </>
+              ),
+              kennzeichen:(
+                <>
+                  <div style={hint}><b style={{color:C.white}}>Das Wichtigste zuerst.</b> Über das Kennzeichen lassen sich Halter und Versicherung des anderen Fahrzeugs später immer ermitteln — auch wenn sonst nichts mehr klappt.</div>
+                  <input className="inp" autoFocus placeholder="z.B. K-AB 1234" value={f.otherPartyLicensePlate}
+                    onChange={e=>set({otherPartyLicensePlate:e.target.value.toUpperCase()})}
+                    style={{...inpS,fontSize:24,fontWeight:800,letterSpacing:2,textAlign:"center",padding:"14px 12px",marginBottom:10,fontFamily:"monospace"}}/>
+                  <label style={{...choice(false),display:"block",textAlign:"center",marginBottom:14}}>
+                    📷 Kennzeichen zusätzlich fotografieren
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{addPhotos(e.target.files,"gegner"); e.target.value="";}}/>
+                  </label>
+                  {photosOf("gegner").length>0&&<div style={{fontSize:12,color:C.green,marginBottom:10}}>✓ {photosOf("gegner").length} Foto(s) vom Fahrzeug des Gegners gespeichert</div>}
+                  <label style={lbl}>Falls bekannt</label>
+                  <input className="inp" style={{...inpS,marginBottom:8}} placeholder="Name des Fahrers / der Fahrerin" value={f.otherPartyName} onChange={e=>set({otherPartyName:e.target.value})}/>
+                  <input className="inp" style={inpS} placeholder="Versicherung des Gegners" value={f.otherPartyInsurance} onChange={e=>set({otherPartyInsurance:e.target.value})}/>
+                </>
+              ),
+              fotos:(
+                <>
+                  <div style={{fontSize:14,fontWeight:800,color:C.white,marginBottom:4}}>1. Fahrzeug des Unfallgegners — mit Kennzeichen</div>
+                  <div style={hint}>Zuerst das andere Fahrzeug so fotografieren, dass Kennzeichen und Schaden zu sehen sind.</div>
+                  <PhotoGrid cat="gegner"/>
+                  <div style={{fontSize:14,fontWeight:800,color:C.white,marginBottom:4}}>2. Alles, was den Hergang zeigt</div>
+                  <div style={{...hint,marginBottom:8}}>
+                    • Gesamtübersicht aus mehreren Richtungen<br/>
+                    • Endposition beider Fahrzeuge<br/>
+                    • Schäden aus der Nähe<br/>
+                    • Brems- und Schleifspuren, Splitter<br/>
+                    • Verkehrszeichen, Ampeln, Sichtverhältnisse
+                  </div>
+                  <PhotoGrid cat="unfallstelle"/>
+                  <div style={{fontSize:11,color:C.muted}}>{(f.photos||[]).filter(p=>p.category!=="unterschrift").length} von {LEGAL_MAX_PHOTOS} Fotos</div>
+                </>
+              ),
+              polizei:(
+                <>
+                  <a href="tel:110" style={{display:"block",textAlign:"center",marginBottom:12,padding:"11px",borderRadius:10,background:C.red,color:"#fff",fontWeight:800,textDecoration:"none",fontSize:15}}>📞 Polizei rufen (110)</a>
+                  <div style={{display:"flex",gap:6,marginBottom:12}}>
+                    <button type="button" style={choice(f.policeInvolved)} onClick={()=>set({policeInvolved:true})}>Polizei ist da / war da</button>
+                    <button type="button" style={choice(!f.policeInvolved&&f.policeChoice)} onClick={()=>set({policeInvolved:false,policeChoice:true})}>Polizei kommt nicht</button>
+                  </div>
+                  {f.policeInvolved&&(
+                    <>
+                      <label style={lbl}>Aktenzeichen / Vorgangsnummer (falls bekannt)</label>
+                      <input className="inp" style={inpS} value={f.policeReference} onChange={e=>set({policeReference:e.target.value})}/>
+                    </>
+                  )}
+                  {!f.policeInvolved&&f.policeChoice&&(
+                    <>
+                      <div style={box}>
+                        <div style={{fontSize:14,fontWeight:800,color:C.white,marginBottom:6}}>Europäischen Unfallbericht ausfüllen</div>
+                        <div style={{fontSize:13,color:C.white,lineHeight:1.6}}>
+                          Füllt den Bericht gemeinsam aus. Beide unterschreiben, jede Seite bekommt ein Exemplar. Das Formular gibt es bei deiner Versicherung, oft liegt es im Handschuhfach.
+                        </div>
+                      </div>
+                      <label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.white,marginBottom:10}}>
+                        <input type="checkbox" checked={f.europeanReport} onChange={e=>set({europeanReport:e.target.checked})}/> Unfallbericht ist ausgefüllt und unterschrieben
+                      </label>
+                      <label style={lbl}>Foto vom ausgefüllten Bericht</label>
+                      <PhotoGrid cat="unfallbericht" label="Bericht"/>
+                    </>
+                  )}
+                </>
+              ),
+              schuld:(
+                <>
+                  <div style={hint}>Erkennt der Unfallgegner an, den Unfall verursacht zu haben, kann er das hier bestätigen. <b style={{color:C.white}}>Freiwillig</b> — niemand muss unterschreiben.</div>
+                  <div style={{display:"flex",gap:6,marginBottom:12}}>
+                    <button type="button" style={choice(fa?.mode==="digital")} onClick={()=>setFault({mode:"digital",name:fa?.name||f.otherPartyName})}>Auf dem Handy</button>
+                    <button type="button" style={choice(fa?.mode==="papier")} onClick={()=>setFault({mode:"papier"})}>Auf Papier</button>
+                    <button type="button" style={choice(!fa?.mode)} onClick={()=>set({faultAdmission:null,photos:(f.photos||[]).filter(p=>p.category!=="unterschrift")})}>Keins</button>
+                  </div>
+                  {fa?.mode==="digital"&&(()=>{
+                    const signedNow=photosOf("unterschrift").length>0;
+                    const stale=signedNow&&fa.text&&fa.text!==legalFaultText(f);
+                    return (
+                    <>
+                      <label style={lbl}>Name des Unfallgegners</label>
+                      <input className="inp" style={{...inpS,marginBottom:8}} value={fa.name||""} onChange={e=>setFault({name:e.target.value})}/>
+                      <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8,marginBottom:8}}>
+                        <div style={{minWidth:0}}><label style={lbl}>Unfalldatum</label><input className="inp" style={{...inpS,WebkitAppearance:"none",appearance:"none",minHeight:40}} type="date" value={f.accidentDate} onChange={e=>set({accidentDate:e.target.value})}/></div>
+                        <div style={{minWidth:0}}><label style={lbl}>Unfallort</label><input className="inp" style={inpS} placeholder="z.B. Nürburg, B258" value={f.accidentLocation} onChange={e=>set({accidentLocation:e.target.value})}/></div>
+                      </div>
+                      <div style={{...box,fontSize:13,color:C.white,lineHeight:1.55}}>{signedNow&&!stale?fa.text:legalFaultText(f)}</div>
+                      {stale&&<div style={{fontSize:12,color:C.amber,marginBottom:8}}>Die Angaben wurden nach der Unterschrift geändert. Bitte Unterschrift löschen und neu unterschreiben lassen.</div>}
+                      <label style={lbl}>Unterschrift des Unfallgegners</label>
+                      <SignaturePad onChange={setSignature}/>
+                      {signedNow&&!stale&&<div style={{fontSize:12,color:C.green}}>✓ Unterschrift gespeichert</div>}
+                    </>
+                    );
+                  })()}
+                  {fa?.mode==="papier"&&(
+                    <>
+                      <div style={hint}>Kurz handschriftlich festhalten (Datum, Ort, Kennzeichen, „Ich erkenne an, den Unfall verschuldet zu haben“), unterschreiben lassen und fotografieren.</div>
+                      <PhotoGrid cat="schuldanerkenntnis" label="Dokument"/>
+                    </>
+                  )}
+                </>
+              ),
+              zeugen:(
+                <>
+                  <div style={hint}>Wer hat den Unfall gesehen? <b style={{color:C.white}}>Name und Anschrift</b> sind wichtig, eine Telefonnummer hilft zusätzlich.</div>
+                  {witnesses.map((w,i)=>(
+                    <div key={i} style={{...box,position:"relative"}}>
+                      <button aria-label="Zeuge entfernen" onClick={()=>set({witnesses:witnesses.filter((_,j)=>j!==i)})}
+                        style={{position:"absolute",top:6,right:8,background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer"}}>×</button>
+                      <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:6}}>Zeuge {i+1}</div>
+                      <input className="inp" style={{...inpS,marginBottom:6}} placeholder="Vor- und Nachname" value={w.name||""} onChange={e=>setWitness(i,{name:e.target.value})}/>
+                      <input className="inp" style={{...inpS,marginBottom:6}} placeholder="Straße, PLZ, Ort" value={w.address||""} onChange={e=>setWitness(i,{address:e.target.value})}/>
+                      <input className="inp" style={inpS} type="tel" placeholder="Telefon (optional)" value={w.phone||""} onChange={e=>setWitness(i,{phone:e.target.value})}/>
+                    </div>
+                  ))}
+                  {witnesses.length<10&&(
+                    <button type="button" className="btn ghost" style={{width:"100%",padding:"10px",fontSize:14}} onClick={()=>set({witnesses:[...witnesses,{name:"",address:"",phone:""}]})}>+ Zeuge hinzufügen</button>
+                  )}
+                </>
+              ),
+              hergang:(
+                <>
+                  <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8,marginBottom:8}}>
+                    <div style={{minWidth:0}}><label style={lbl}>Datum</label><input className="inp" style={{...inpS,WebkitAppearance:"none",appearance:"none",minHeight:40}} type="date" value={f.accidentDate} onChange={e=>set({accidentDate:e.target.value})}/></div>
+                    <div style={{minWidth:0}}><label style={lbl}>Ort</label><input className="inp" style={inpS} placeholder="z.B. Nürburg, B258" value={f.accidentLocation} onChange={e=>set({accidentLocation:e.target.value})}/></div>
+                  </div>
+                  <label style={lbl}>Was ist passiert? *</label>
+                  <textarea className="inp" style={{...inpS,marginBottom:10}} rows={4} placeholder="z.B. Ich stand an der roten Ampel, das andere Fahrzeug ist von hinten aufgefahren." value={f.description} onChange={e=>set({description:e.target.value})}/>
+                  <label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.white,marginBottom:8}}>
+                    <input type="checkbox" checked={f.injuries} onChange={e=>set({injuries:e.target.checked})}/> Es gab Verletzte
+                  </label>
+                  {f.injuries&&<textarea className="inp" style={inpS} rows={2} placeholder="Wer wurde wie verletzt? (kurz)" value={f.injuriesDescription} onChange={e=>set({injuriesDescription:e.target.value})}/>}
+                </>
+              ),
+              absenden:(
+                <>
+                  <div style={{...box,padding:"4px 12px"}}>
+                    {checks.map(([sid,l,ok,detail],i)=>(
+                      <div key={i} onClick={()=>go(steps.findIndex(s=>s.id===sid))}
+                        style={{display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:i<checks.length-1?`1px solid ${C.border}`:"none",cursor:"pointer"}}>
+                        <span style={{fontSize:15,color:ok?C.green:C.muted,width:18}}>{ok?"✓":"○"}</span>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,color:C.white,fontWeight:600}}>{l}</div>
+                          <div style={{fontSize:11,color:C.muted,overflowWrap:"anywhere"}}>{detail}</div>
+                        </div>
+                        <span style={{color:C.muted,fontSize:14}}>›</span>
+                      </div>
+                    ))}
+                  </div>
+                  <label style={lbl}>Rückruf durch die Kanzlei</label>
+                  <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8,marginBottom:8}}>
+                    <input className="inp" style={inpS} type="tel" placeholder="Telefonnummer" value={f.callbackPhone} onChange={e=>set({callbackPhone:e.target.value})}/>
+                    <input className="inp" style={inpS} placeholder="Bevorzugte Zeit" value={f.callbackPreferredTime} onChange={e=>set({callbackPreferredTime:e.target.value})}/>
+                  </div>
+                  <textarea className="inp" style={{...inpS,marginBottom:12}} rows={2} placeholder="Anmerkungen (optional)" value={f.notes} onChange={e=>set({notes:e.target.value})}/>
+                  <label style={{...box,display:"flex",alignItems:"flex-start",gap:8,fontSize:13,color:C.white,lineHeight:1.5,marginBottom:8}}>
+                    <input type="checkbox" style={{marginTop:3}} checked={f.consentGiven} onChange={e=>set({consentGiven:e.target.checked})}/>
+                    <span>{LEGAL_CONSENT_TEXT(LEGAL_CASE_PARTNER.name)}</span>
+                  </label>
+                  <div style={{fontSize:11,color:C.muted,lineHeight:1.45}}>{LEGAL_CASE_PARTNER.disclosure}</div>
+                </>
+              ),
+            }[step.id];
+
+            const last=idx===steps.length-1;
             return (
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setLegalCaseEdit(null);}}>
-              <div className="sheet">
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:19,fontWeight:800,color:C.white}}>⚖️ Rechtliche Ersteinschätzung</div>
-                  <button onClick={()=>setLegalCaseEdit(null)}
-                    style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+              <div className="sheet legal-wizard" style={{paddingBottom:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.muted}}>⚖️ Nach einem Unfall · Schritt {idx+1} von {steps.length}</div>
+                  <button aria-label="Schließen" onClick={()=>setLegalCaseEdit(null)}
+                    style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
                 </div>
-                <div style={{fontSize:11,color:C.muted,lineHeight:1.45,marginBottom:12}}>
-                  {LEGAL_CASE_PARTNER.disclosure}
-                </div>
-
-                <label style={lbl}>Betroffenes Fahrzeug</label>
-                <select className="inp" style={{...inpS,marginBottom:8}} value={av.id} onChange={e=>set({affectedVehicleId:e.target.value})}>
-                  {vehicleChoices.map(x=><option key={x.id} value={x.id}>{[x.hersteller,x.modell].filter(Boolean).join(" ")}{x.kennzeichen?" · "+x.kennzeichen:""}</option>)}
-                </select>
-                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:"4px 12px",background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",marginBottom:12}}>
-                  {avRows.map(([k,val])=>(
-                    <div key={k} style={{minWidth:0}}>
-                      <div style={{fontSize:11,color:C.muted}}>{k}</div>
-                      <div style={{fontSize:12,color:C.white,fontWeight:600,overflowWrap:"anywhere"}}>{val}</div>
-                    </div>
+                <div style={{display:"flex",gap:3,marginBottom:12}}>
+                  {steps.map((s,i)=>(
+                    <button key={s.id} aria-label={s.title} onClick={()=>go(i)}
+                      style={{flex:1,height:4,borderRadius:2,border:"none",padding:0,cursor:"pointer",background:i<=idx?C.red:C.border}}/>
                   ))}
                 </div>
-
-                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8,marginBottom:8}}>
-                  <div style={{minWidth:0}}><label style={lbl}>Unfalldatum</label><input className="inp" style={{...inpS,WebkitAppearance:"none",appearance:"none",minHeight:40}} type="date" value={f.accidentDate} onChange={e=>set({accidentDate:e.target.value})}/></div>
-                  <div style={{minWidth:0}}><label style={lbl}>Unfallort</label><input className="inp" style={inpS} placeholder="z.B. Nürburg, B258" value={f.accidentLocation} onChange={e=>set({accidentLocation:e.target.value})}/></div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:10}}>{step.title}</div>
+                {body}
+                <div style={{position:"sticky",bottom:0,background:C.dark,margin:"14px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
+                  {idx>0&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} onClick={()=>go(idx-1)}>← Zurück</button>}
+                  {!last&&<button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} onClick={()=>go(idx+1)}>Weiter →</button>}
+                  {last&&<button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} disabled={legalSubmitBusy||!f.description.trim()||!f.consentGiven} onClick={save}>
+                    {legalSubmitBusy?"Wird gesendet…":"Ersteinschätzung anfragen"}
+                  </button>}
                 </div>
-                <label style={lbl}>Eigene Rolle</label>
-                <select className="inp" style={{...inpS,marginBottom:8}} value={f.ownRole} onChange={e=>set({ownRole:e.target.value})}>
-                  {LEGAL_OWN_ROLES.map(o=><option key={o.id} value={o.id}>{o.label}</option>)}
-                </select>
-                <label style={lbl}>Unfallhergang *</label>
-                <textarea className="inp" style={inpS} rows={2} style={{marginBottom:8}} placeholder="Was ist passiert?" value={f.description} onChange={e=>set({description:e.target.value})}/>
-
-                <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",marginBottom:8}}>
-                  <label style={chk}><input type="checkbox" checked={f.policeInvolved} onChange={e=>set({policeInvolved:e.target.checked})}/> Polizei vor Ort</label>
-                  <label style={chk}><input type="checkbox" checked={f.injuries} onChange={e=>set({injuries:e.target.checked})}/> Verletzungen</label>
-                </div>
-                <label style={lbl}>Unfallfotos ({(f.photos||[]).length}/{LEGAL_MAX_PHOTOS})</label>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                  {(f.photos||[]).map((ph,i)=>(
-                    <div key={i} style={{position:"relative",width:64,height:64}}>
-                      <img src={ph.dataUrl} alt="" style={{width:64,height:64,objectFit:"cover",borderRadius:8,display:"block"}}/>
-                      <button aria-label="Foto entfernen" onClick={()=>set({photos:f.photos.filter((_,j)=>j!==i)})}
-                        style={{position:"absolute",top:-6,right:-6,width:20,height:20,borderRadius:10,border:"none",background:C.red,color:"#fff",fontSize:12,lineHeight:"20px",cursor:"pointer",padding:0}}>×</button>
-                    </div>
-                  ))}
-                  {(f.photos||[]).length<LEGAL_MAX_PHOTOS&&(
-                    <label style={{width:64,height:64,borderRadius:8,border:`1.5px dashed ${C.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.muted,fontSize:11}}>
-                      <span style={{fontSize:20}}>📷</span>Foto
-                      <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={async e=>{
-                        const files=Array.from(e.target.files||[]).slice(0,LEGAL_MAX_PHOTOS-(f.photos||[]).length);
-                        e.target.value="";
-                        try{
-                          const added=await Promise.all(files.map(compressAccidentPhoto));
-                          setLegalCaseEdit(p=>p&&({...p,photos:[...(p.photos||[]),...added].slice(0,LEGAL_MAX_PHOTOS)}));
-                        }catch{ toast_("Foto konnte nicht gelesen werden","err"); }
-                      }}/>
-                    </label>
-                  )}
-                </div>
-                {f.policeInvolved&&<input className="inp" style={{...inpS,marginBottom:8}} placeholder="Aktenzeichen (optional)" value={f.policeReference} onChange={e=>set({policeReference:e.target.value})}/>}
-                {f.injuries&&<textarea className="inp" style={inpS} rows={2} style={{marginBottom:8}} placeholder="Verletzungen – kurze Beschreibung" value={f.injuriesDescription} onChange={e=>set({injuriesDescription:e.target.value})}/>}
-
-                <div style={{...lbl,marginTop:8}}>Unfallgegner (falls bekannt)</div>
-                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8,marginBottom:8}}>
-                  <input className="inp" style={inpS} placeholder="Name" value={f.otherPartyName} onChange={e=>set({otherPartyName:e.target.value})}/>
-                  <input className="inp" style={inpS} placeholder="Kennzeichen" value={f.otherPartyLicensePlate} onChange={e=>set({otherPartyLicensePlate:e.target.value})}/>
-                </div>
-                <input className="inp" style={{...inpS,marginBottom:8}} placeholder="Versicherung" value={f.otherPartyInsurance} onChange={e=>set({otherPartyInsurance:e.target.value})}/>
-
-                <div style={{...lbl,marginTop:8}}>Rückruf</div>
-                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8,marginBottom:8}}>
-                  <input className="inp" style={inpS} type="tel" placeholder="Telefonnummer" value={f.callbackPhone} onChange={e=>set({callbackPhone:e.target.value})}/>
-                  <input className="inp" style={inpS} placeholder="Bevorzugte Zeit" value={f.callbackPreferredTime} onChange={e=>set({callbackPreferredTime:e.target.value})}/>
-                </div>
-                <textarea className="inp" style={inpS} rows={2} style={{marginBottom:12}} placeholder="Anmerkungen (optional)" value={f.notes} onChange={e=>set({notes:e.target.value})}/>
-
-                <label style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:13,color:C.white,lineHeight:1.5,background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
-                  <input type="checkbox" style={{marginTop:3}} checked={f.consentGiven} onChange={e=>set({consentGiven:e.target.checked})}/>
-                  <span>{LEGAL_CONSENT_TEXT(LEGAL_CASE_PARTNER.name)}</span>
-                </label>
-                <div style={{fontSize:12,color:C.muted,lineHeight:1.5,marginBottom:12}}>
-                  🔒 Dein Fall wird verschlüsselt übertragen und geschützt gespeichert. Die Weiterleitung an {LEGAL_CASE_PARTNER.name} wird vorgemerkt; als PDF kannst du die Unfallmappe jederzeit selbst teilen.
-                </div>
-                <button className="btn" style={{width:"100%",padding:"12px 16px",fontSize:15}} disabled={legalSubmitBusy||!f.description.trim()||!f.consentGiven} onClick={save}>
-                  {legalSubmitBusy?"Wird gesendet…":"Ersteinschätzung anfragen"}
-                </button>
               </div>
             </div>
             );
