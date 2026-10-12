@@ -7331,7 +7331,7 @@ Regeln:
                 )
               },
               {
-                id:"logbook", icon:"📋", label:"Service & Dokumente", count:vLog.length+(vehicleDocuments[v.id]||[]).length,
+                id:"logbook", icon:"📋", label:"Service & Dokumente", count:vLog.length+(vehicleDocuments[v.id]||[]).length+(isOwn?(legalCases[v.id]||[]).length:0),
                 content:(
                   <div>
                     {/* ── Service-Logbuch ── */}
@@ -7393,6 +7393,33 @@ Regeln:
                           style={{background:"none",border:"none",color:"#666",fontSize:16,cursor:"pointer",flexShrink:0,padding:"0 2px"}}>✕</button>
                       </div>
                     ))}
+                    {/* ── Unfallakte — nur Verweis auf die gesperrt gespeicherten Fälle
+                         (accident-report). Bewusst NICHT in vehicle_documents ablegen:
+                         die Tabelle ist mit dem öffentlichen Schlüssel lesbar, Unfallmappen
+                         enthalten Gesundheitsdaten, Gegner-Daten und Unterschriften. ── */}
+                    {isOwn&&(legalCases[v.id]||[]).length>0&&(
+                      <>
+                        <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2,marginTop:18,marginBottom:6,paddingTop:12,borderTop:`1px solid ${C.border}`}}>Unfallakte</div>
+                        {[...legalCases[v.id]].sort((a,b)=>String(b.accidentDate||"").localeCompare(String(a.accidentDate||""))).map(c=>(
+                          <div key={c.id} style={{background:C.black,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6}}>
+                            <div style={{display:"flex",alignItems:"center",gap:10}}>
+                              <div style={{width:44,height:44,borderRadius:8,background:C.card,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🔒</div>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:14,fontWeight:700,color:C.white}}>Unfallmappe {c.accidentDate?new Date(c.accidentDate).toLocaleDateString("de-DE"):""}</div>
+                                <div style={{fontSize:12,color:C.muted,overflowWrap:"anywhere"}}>
+                                  {[c.accidentLocation,c.otherPartyLicensePlate&&"Gegner "+c.otherPartyLicensePlate,c.europeanReportData&&"mit Unfallbericht"].filter(Boolean).join(" · ")||"Unfall"}
+                                </div>
+                              </div>
+                            </div>
+                            <div style={{display:"flex",gap:6,marginTop:8}}>
+                              <button className="btn ghost" style={{flex:1,padding:"7px 8px",fontSize:12}} disabled={legalPdfBusy===c.id} onClick={()=>legalCasePdf(c,"download")}>{legalPdfBusy===c.id?"…":"📄 Unfallmappe"}</button>
+                              {c.europeanReportData&&<button className="btn ghost" style={{flex:1,padding:"7px 8px",fontSize:12}} disabled={legalPdfBusy===c.id} onClick={()=>legalCasePdf(c,"eu-download")}>📝 Unfallbericht</button>}
+                            </div>
+                          </div>
+                        ))}
+                        <div style={{fontSize:11,color:C.muted,lineHeight:1.45}}>Gesperrt gespeichert, nur für dich sichtbar — auch bei geteilter Akte oder Werkstatt-Zugang nicht einsehbar. Verwalten unter „Notfall-, Pannen- & Unfallhilfe“.</div>
+                      </>
+                    )}
                     {/* ── Werkstatt-Zugänge — nur für den Eigentümer, nur wenn welche bestehen ── */}
                     {isOwn&&(workshopGrants[v.id]||[]).length>0&&(
                       <>
