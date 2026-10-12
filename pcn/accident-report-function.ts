@@ -40,12 +40,14 @@ const ALLOWED_ORIGINS = [
 
 const BUCKET = "accident-reports";
 const MAX_BODY_BYTES = 20 * 1024 * 1024;  // 15 Fotos + Unterschrift + Text, base64
-const MAX_PHOTOS = 15;
+const MAX_PHOTOS = 20; // 15 Unfallfotos + Unterschrift, Skizze, 2 Unterschriften Unfallbericht
 const MAX_PHOTO_BYTES = 3 * 1024 * 1024;
 const LAWYER_SLUG = "debug-anwaelte";
 const ROLES = ["geschaedigter", "verursacher", "unklar"];
 // Foto-Kategorien aus dem geführten Ablauf (Reihenfolge = Reihenfolge in der Unfallmappe)
-const PHOTO_CATEGORIES = ["gegner", "unfallstelle", "unfallbericht", "schuldanerkenntnis", "unterschrift", "sonstiges"];
+const PHOTO_CATEGORIES = ["gegner", "unfallstelle", "unfallbericht", "schuldanerkenntnis", "unterschrift", "sonstiges",
+  "eu_skizze", "eu_sig_a", "eu_sig_b"]; // eu_* = digital ausgefüllter Unfallbericht
+const MAX_EU_JSON = 40000; // Zeichen — Formulardaten Ziff. 1–15 ohne Bilder
 
 const LIMITS: Record<string, number> = { submit: 5, get: 60, delete: 10 }; // pro Stunde/IP
 const WINDOW_MS = 60 * 60 * 1000;
@@ -175,6 +177,13 @@ Deno.serve(async (req: Request) => {
         mode: fa.mode, name: str(fa.name, 200), text: str(fa.text, 2000),
         signedAt: str(fa.signedAt, 40),
       } : null;
+      // Digitaler Unfallbericht: reine Formulardaten (Texte/Checkboxen), Bilder kommen als Fotos
+      let euData: unknown = null;
+      if (r.europeanReportData && typeof r.europeanReportData === "object" && !Array.isArray(r.europeanReportData)) {
+        const raw = JSON.stringify(r.europeanReportData);
+        if (raw.length > MAX_EU_JSON) return json({ error: "Unfallbericht zu umfangreich" }, 400);
+        euData = JSON.parse(raw);
+      }
       const date = typeof r.accidentDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.accidentDate) ? r.accidentDate : null;
       const consentAt = new Date().toISOString();
 
@@ -207,6 +216,7 @@ Deno.serve(async (req: Request) => {
         photo_categories: categories,
         witnesses,
         european_report: r.europeanReport === true,
+        european_report_data: euData,
         fault_admission: faultAdmission,
         consent_text: str(r.consentText, 4000),
         consent_given_at: consentAt,

@@ -72,3 +72,8 @@ alter table public.accident_reports
   add column if not exists european_report boolean not null default false,
   add column if not exists fault_admission jsonb,
   add column if not exists photo_categories text[] not null default '{}';
+
+-- Nachtrag 12.10.: digital ausgefüllter Europäischer Unfallbericht (Ziff. 1–15,
+-- ohne Bilder; Skizze/Unterschriften liegen als Fotos eu_skizze/eu_sig_a/eu_sig_b)
+alter table public.accident_reports
+  add column if not exists european_report_data jsonb;

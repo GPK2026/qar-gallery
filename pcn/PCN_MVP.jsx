@@ -159,24 +159,28 @@ const LEGAL_PHOTO_LABEL = {
   unfallbericht:"Europäischer Unfallbericht", schuldanerkenntnis:"Schuldanerkenntnis (Papier)",
   unterschrift:"Schuldanerkenntnis – Unterschrift", sonstiges:"Weitere Fotos",
 };
+const legalUserPhoto = p => p.category!=="unterschrift" && !/^eu_/.test(p.category||"");
 const LEGAL_PHOTO_ORDER = ["gegner","unfallstelle","unfallbericht","schuldanerkenntnis","unterschrift","sonstiges"];
 const legalFaultText = f => `Ich, ${f.faultAdmission?.name||"[Name]"}, erkenne an, den Verkehrsunfall am ${f.accidentDate?new Date(f.accidentDate).toLocaleDateString("de-DE"):"[Datum]"}${f.accidentLocation?" in "+f.accidentLocation:""} als Fahrer/in des Fahrzeugs mit dem Kennzeichen ${f.otherPartyLicensePlate||"[Kennzeichen]"} allein verschuldet zu haben.`;
 
-// Unterschriftenfeld (Finger/Maus) – liefert ein JPEG mit weißem Hintergrund
-function SignaturePad({ onChange, height=150 }) {
+// Unterschriftenfeld (Finger/Maus) – liefert ein JPEG mit weißem Hintergrund.
+// Auch als Zeichenfläche für die Unfallskizze (color, initial = vorhandenes Bild).
+function SignaturePad({ onChange, height=150, color="#111", lineWidth=4, initial=null, clearLabel="Unterschrift löschen" }) {
   const ref = useRef(null);
   const drawing = useRef(false);
   const dirty = useRef(false);
+  const colorRef = useRef(color); colorRef.current = color;
   useEffect(()=>{
     const c = ref.current; if(!c) return;
     const r = c.getBoundingClientRect();
     c.width = Math.round(r.width*2); c.height = Math.round(height*2);
     const ctx = c.getContext("2d");
     ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
-    ctx.lineWidth=4; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle="#111";
+    ctx.lineWidth=lineWidth; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle=colorRef.current;
+    if(initial){ const im=new Image(); im.onload=()=>{ ctx.drawImage(im,0,0,c.width,c.height); dirty.current=true; }; im.src=initial; }
   },[height]);
   const pos = e => { const r=ref.current.getBoundingClientRect(); return [(e.clientX-r.left)*2,(e.clientY-r.top)*2]; };
-  const down = e => { e.preventDefault(); ref.current.setPointerCapture?.(e.pointerId); drawing.current=true; const ctx=ref.current.getContext("2d"); const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(x,y); };
+  const down = e => { e.preventDefault(); ref.current.setPointerCapture?.(e.pointerId); drawing.current=true; const ctx=ref.current.getContext("2d"); ctx.strokeStyle=colorRef.current; ctx.lineWidth=lineWidth; const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(x,y); };
   const move = e => { if(!drawing.current) return; e.preventDefault(); const ctx=ref.current.getContext("2d"); const [x,y]=pos(e); ctx.lineTo(x,y); ctx.stroke(); dirty.current=true; };
   const up = () => { if(!drawing.current) return; drawing.current=false; if(dirty.current) onChange(ref.current.toDataURL("image/jpeg",0.85)); };
   const clear = () => { const c=ref.current, ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); dirty.current=false; onChange(null); };
@@ -184,10 +188,442 @@ function SignaturePad({ onChange, height=150 }) {
     <div>
       <canvas ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up}
         style={{width:"100%",height,background:"#fff",borderRadius:8,touchAction:"none",display:"block"}}/>
-      <button type="button" onClick={clear} style={{background:"none",border:"none",color:"#8b8d90",fontSize:12,textDecoration:"underline",cursor:"pointer",padding:"4px 0"}}>Unterschrift löschen</button>
+      <button type="button" onClick={clear} style={{background:"none",border:"none",color:"#8b8d90",fontSize:12,textDecoration:"underline",cursor:"pointer",padding:"4px 0"}}>{clearLabel}</button>
     </div>
   );
 }
+
+// ── Europäischer Unfallbericht – digital ausgefüllt ──
+// Eigene Umsetzung mit der Nummerierung 1–15 des Europäischen Unfallberichts
+// (das Original-Formular von Insurance Europe wird nicht reproduziert).
+// Fahrzeug A = Mitglied, Fahrzeug B = Unfallgegner. Bilder (Skizze,
+// Unterschriften) laufen als Fotos mit den Kategorien eu_skizze/eu_sig_a/eu_sig_b.
+const EU_CIRCUMSTANCES = [
+  "parkte / hielt",
+  "verließ einen Parkplatz / öffnete eine Wagentür",
+  "parkte ein",
+  "verließ einen Parkplatz, ein privates Grundstück, einen Weg",
+  "begann, in einen Parkplatz, ein privates Grundstück, einen Weg einzufahren",
+  "fuhr in einen Kreisverkehr ein",
+  "fuhr in einem Kreisverkehr",
+  "prallte beim Fahren in der gleichen Richtung und in der gleichen Kolonne auf das Heck auf",
+  "fuhr in der gleichen Richtung und in einer anderen Kolonne",
+  "wechselte die Kolonne",
+  "überholte",
+  "bog nach rechts ab",
+  "bog nach links ab",
+  "setzte zurück",
+  "wechselte auf die Gegenfahrbahn",
+  "kam von rechts (auf einer Kreuzung)",
+  "hatte ein Vorfahrtszeichen oder eine rote Ampel missachtet",
+];
+// Anstoßstelle (Ziff. 10) – Raster um das Fahrzeug, Blick von oben, Front oben
+const EU_IMPACT = [
+  ["vl","vorne links","↖"],["v","vorne","↑"],["vr","vorne rechts","↗"],
+  ["l","links","←"],null,["r","rechts","→"],
+  ["hl","hinten links","↙"],["h","hinten","↓"],["hr","hinten rechts","↘"],
+];
+const EU_IMPACT_LABEL = Object.fromEntries(EU_IMPACT.filter(Boolean).map(([id,l])=>[id,l]));
+const EU_SIDE = { A:{color:"#2f6fdb",rgb:[47,111,219],sig:"eu_sig_a"}, B:{color:"#e8a317",rgb:[232,163,23],sig:"eu_sig_b"} };
+const euPartyEmpty = () => ({
+  holderName:"",holderFirst:"",holderAddress:"",holderZip:"",holderCountry:"D",holderContact:"",
+  make:"",plate:"",regCountry:"D",trailerPlate:"",
+  insurer:"",policyNo:"",greenCard:"",validFrom:"",validTo:"",agencyName:"",agencyAddress:"",agencyContact:"",kasko:null,
+  driverSame:true,driverName:"",driverFirst:"",driverBirth:"",driverAddress:"",driverCountry:"D",driverContact:"",
+  licenseNo:"",licenseClass:"",licenseValid:"",
+  impact:[],damage:"",circ:[],remarks:"",
+});
+// Vorbelegung: A aus Mitglied + Fahrzeugakte (+ Versicherung), B aus dem Kennzeichen-Schritt
+const euReportInit = (f, av, member, insurance) => {
+  const name=(member?.name||"").trim().split(/\s+/);
+  const ins=(insurance||[]).find(i=>i.status==="aktiv")||(insurance||[])[0]||{};
+  const opName=(f.otherPartyName||"").trim().split(/\s+/);
+  return {
+    time:"", injured:!!f.injuries, dmgVehicles:false, dmgObjects:false, sig:{},
+    A:{...euPartyEmpty(), holderFirst:name.length>1?name.slice(0,-1).join(" "):"", holderName:name[name.length-1]||"",
+      holderContact:[member?.phone,member?.email].filter(Boolean).join(" · "),
+      make:[av?.hersteller,av?.modell].filter(Boolean).join(" "), plate:av?.kennzeichen||"",
+      insurer:ins.provider||"", policyNo:ins.nr||"", validFrom:ins.since||"", validTo:ins.until||"",
+      kasko:ins.type?/kasko/i.test(ins.type):null},
+    B:{...euPartyEmpty(), plate:f.otherPartyLicensePlate||"", insurer:f.otherPartyInsurance||"",
+      holderFirst:opName.length>1?opName.slice(0,-1).join(" "):"", holderName:opName.length?opName[opName.length-1]:""},
+  };
+};
+// Fingerabdruck dessen, was unterschrieben wurde — Änderungen danach machen die Unterschrift ungültig
+const euStrHash = str => { let h=5381; for(let i=0;i<str.length;i++) h=((h<<5)+h+str.charCodeAt(i))|0; return (h>>>0).toString(36); };
+const euHash = f => {
+  const {sig,...d}=f.europeanReportData||{};
+  const sketch=(f.photos||[]).find(p=>p.category==="eu_skizze");
+  return euStrHash(JSON.stringify([d,f.accidentDate,f.accidentLocation,(f.witnesses||[]).map(w=>[w.name,w.address,w.phone]),sketch?euStrHash(sketch.dataUrl||sketch.url||""):""]));
+};
+const euSigState = (f, side) => {
+  const s=(f.europeanReportData?.sig||{})[side];
+  const img=(f.photos||[]).some(p=>p.category===EU_SIDE[side].sig);
+  if(!s||!img) return "offen";
+  return s.hash===euHash(f) ? "ok" : "veraltet";
+};
+const euComplete = f => !!f.europeanReportData && euSigState(f,"A")==="ok" && euSigState(f,"B")==="ok";
+const EU_PAGES = ["Allgemein (1–5)","Fahrzeug A – du (6–9)","Fahrzeug B – Unfallgegner (6–9)","Unfallumstände (12)","Anstoßstelle & Schäden (10–11)","Skizze (13)","Bemerkungen & Unterschriften (14–15)"];
+
+function EuReportEditor({ f, set, setEdit, onClose, onPdf, pdfBusy }) {
+  const [page,setPage] = useState(0);
+  const [skColor,setSkColor] = useState("#111");
+  const d=f.europeanReportData;
+  const setD=patch=>set({europeanReportData:{...d,...patch}});
+  const setP=(side,patch)=>setD({[side]:{...d[side],...patch}});
+  const lbl={fontSize:12,fontWeight:700,color:C.muted,marginBottom:4,display:"block"};
+  const inpS={padding:"9px 12px",fontSize:15,borderRadius:8,minWidth:0,maxWidth:"100%",display:"block",width:"100%",marginBottom:8};
+  const grid2={display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8};
+  const box={background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:12};
+  const h={fontSize:14,fontWeight:800,color:C.white,margin:"6px 0 8px"};
+  const yn=(val,on)=>(
+    <div style={{display:"flex",gap:6,marginBottom:10}}>
+      {[[false,"nein"],[true,"ja"]].map(([b,l])=>(
+        <button key={l} type="button" onClick={()=>on(b)} style={{flex:1,padding:"8px",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",
+          background:val===b?`${C.red}22`:C.card,color:val===b?C.white:C.muted,border:`1.5px solid ${val===b?C.red:C.border}`}}>{l}</button>
+      ))}
+    </div>
+  );
+  const fld=(side,key,label,extra={})=>(
+    <div style={{minWidth:0}}>
+      <label style={lbl}>{label}</label>
+      <input className="inp" maxLength={160} style={{...inpS,...(extra.type==="date"?{WebkitAppearance:"none",appearance:"none",minHeight:40}:{})}} type={extra.type}
+        value={d[side][key]||""} onChange={e=>setP(side,{[key]:extra.upper?e.target.value.toUpperCase():e.target.value})}/>
+    </div>
+  );
+  const sigOf=side=>(f.photos||[]).find(p=>p.category===EU_SIDE[side].sig);
+  const setImage=(cat,dataUrl,extra)=>{
+    if(!dataUrl){ setEdit(p=>p&&({...p,photos:(p.photos||[]).filter(x=>x.category!==cat),...(extra?extra(p,false):{})})); return; }
+    const img=new Image();
+    img.onload=()=>setEdit(p=>{
+      if(!p) return p;
+      const next={...p,photos:[...(p.photos||[]).filter(x=>x.category!==cat),{dataUrl,w:img.width,h:img.height,name:cat+".jpg",category:cat}]};
+      return {...next,...(extra?extra(next,true):{})};
+    });
+    img.src=dataUrl;
+  };
+  const sign=(side,dataUrl)=>setImage(EU_SIDE[side].sig,dataUrl,(p,on)=>({europeanReportData:{...p.europeanReportData,
+    sig:{...(p.europeanReportData.sig||{}),[side]:on?{at:new Date().toISOString(),hash:euHash(p)}:undefined}}}));
+
+  const party=side=>{
+    const P=d[side];
+    return (
+      <>
+        <div style={h}>6. Versicherungsnehmer / Versicherter</div>
+        <div style={grid2}>{fld(side,"holderName","Name")}{fld(side,"holderFirst","Vorname")}</div>
+        {fld(side,"holderAddress","Anschrift")}
+        <div style={grid2}>{fld(side,"holderZip","Postleitzahl")}{fld(side,"holderCountry","Land")}</div>
+        {fld(side,"holderContact","Telefon oder E-Mail")}
+        <div style={h}>7. Fahrzeug</div>
+        {fld(side,"make","Marke, Typ")}
+        <div style={grid2}>{fld(side,"plate","Amtl. Kennzeichen",{upper:true})}{fld(side,"regCountry","Land der Zulassung")}</div>
+        {fld(side,"trailerPlate","Anhänger – Kennzeichen (falls vorhanden)",{upper:true})}
+        <div style={h}>8. Versicherungsunternehmen</div>
+        {fld(side,"insurer","Name")}
+        <div style={grid2}>{fld(side,"policyNo","Vertragsnummer")}{fld(side,"greenCard","Nr. der Grünen Karte")}</div>
+        <div style={grid2}>{fld(side,"validFrom","Gültig vom",{type:"date"})}{fld(side,"validTo","bis",{type:"date"})}</div>
+        {fld(side,"agencyName","Geschäftsstelle (Büro oder Makler)")}
+        {fld(side,"agencyAddress","Anschrift Geschäftsstelle")}
+        {fld(side,"agencyContact","Telefon oder E-Mail Geschäftsstelle")}
+        <label style={lbl}>Sind die Sachschäden am Fahrzeug aufgrund des Vertrags versichert?</label>
+        {yn(P.kasko,b=>setP(side,{kasko:b}))}
+        <div style={h}>9. Fahrer (siehe Führerschein)</div>
+        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.white,marginBottom:10}}>
+          <input type="checkbox" checked={P.driverSame} onChange={e=>setP(side,{driverSame:e.target.checked})}/> Fahrer ist der Versicherungsnehmer
+        </label>
+        {!P.driverSame&&(
+          <>
+            <div style={grid2}>{fld(side,"driverName","Name")}{fld(side,"driverFirst","Vorname")}</div>
+            {fld(side,"driverAddress","Anschrift")}
+            <div style={grid2}>{fld(side,"driverCountry","Land")}{fld(side,"driverContact","Telefon oder E-Mail")}</div>
+          </>
+        )}
+        <div style={grid2}>{fld(side,"driverBirth","Geburtsdatum",{type:"date"})}{fld(side,"licenseNo","Führerschein-Nr.")}</div>
+        <div style={grid2}>{fld(side,"licenseClass","Klasse (A, B, …)")}{fld(side,"licenseValid","Gültig bis",{type:"date"})}</div>
+      </>
+    );
+  };
+  const toggleIn=(arr,v)=>arr.includes(v)?arr.filter(x=>x!==v):[...arr,v];
+
+  const body=[
+    <>
+      <div style={{fontSize:13,color:C.muted,lineHeight:1.5,marginBottom:12}}>Gemeinsam mit dem Unfallgegner auf einem Handy ausfüllen. Am Ende unterschreiben beide — jede Seite bekommt das PDF. <b style={{color:C.white}}>Der Bericht ist kein Schuldanerkenntnis.</b></div>
+      <div style={grid2}>
+        <div style={{minWidth:0}}><label style={lbl}>1. Datum des Unfalls</label><input className="inp" type="date" style={{...inpS,WebkitAppearance:"none",appearance:"none",minHeight:40}} value={f.accidentDate} onChange={e=>set({accidentDate:e.target.value})}/></div>
+        <div style={{minWidth:0}}><label style={lbl}>Zeit</label><input className="inp" type="time" style={{...inpS,WebkitAppearance:"none",appearance:"none",minHeight:40}} value={d.time} onChange={e=>setD({time:e.target.value})}/></div>
+      </div>
+      <label style={lbl}>2. PLZ / Ort</label>
+      <input className="inp" style={inpS} placeholder="z.B. 53520 Nürburg, B258" value={f.accidentLocation} onChange={e=>set({accidentLocation:e.target.value})}/>
+      <label style={lbl}>3. Verletzte, einschl. Leichtverletzte</label>
+      {yn(d.injured,b=>{ setD({injured:b}); })}
+      <label style={lbl}>4. Sachschäden an anderen Fahrzeugen als A und B</label>
+      {yn(d.dmgVehicles,b=>setD({dmgVehicles:b}))}
+      <label style={lbl}>… an anderen Gegenständen als Fahrzeugen</label>
+      {yn(d.dmgObjects,b=>setD({dmgObjects:b}))}
+      <label style={lbl}>5. Zeugen: Namen, Anschriften, Telefon</label>
+      {(f.witnesses||[]).map((w,i)=>{
+        const setW=patch=>set({witnesses:f.witnesses.map((x,j)=>j===i?{...x,...patch}:x)});
+        return (
+          <div key={i} style={{...box,position:"relative"}}>
+            <button type="button" aria-label="Zeuge entfernen" onClick={()=>set({witnesses:f.witnesses.filter((_,j)=>j!==i)})}
+              style={{position:"absolute",top:6,right:8,background:"none",border:"none",color:C.muted,fontSize:18,cursor:"pointer"}}>×</button>
+            <input className="inp" style={inpS} placeholder="Vor- und Nachname" value={w.name||""} onChange={e=>setW({name:e.target.value})}/>
+            <input className="inp" style={inpS} placeholder="Straße, PLZ, Ort" value={w.address||""} onChange={e=>setW({address:e.target.value})}/>
+            <input className="inp" style={{...inpS,marginBottom:0}} type="tel" placeholder="Telefon (optional)" value={w.phone||""} onChange={e=>setW({phone:e.target.value})}/>
+          </div>
+        );
+      })}
+      {(f.witnesses||[]).length<10&&<button type="button" className="btn ghost" style={{width:"100%",padding:"9px",fontSize:14}} onClick={()=>set({witnesses:[...(f.witnesses||[]),{name:"",address:"",phone:""}]})}>+ Zeuge hinzufügen</button>}
+    </>,
+    party("A"),
+    party("B"),
+    <>
+      <div style={{fontSize:13,color:C.muted,lineHeight:1.5,marginBottom:10}}>Zutreffendes für jedes Fahrzeug antippen.</div>
+      <div style={{display:"grid",gridTemplateColumns:"44px minmax(0,1fr) 44px",gap:6,alignItems:"center",marginBottom:6}}>
+        <div style={{textAlign:"center",fontWeight:800,color:EU_SIDE.A.color}}>A</div><div/>
+        <div style={{textAlign:"center",fontWeight:800,color:EU_SIDE.B.color}}>B</div>
+        {EU_CIRCUMSTANCES.map((t,i)=>{
+          const n=i+1, tog=side=>(
+            <button type="button" aria-label={`${side} ${n}`} onClick={()=>setP(side,{circ:toggleIn(d[side].circ,n)})}
+              style={{height:36,borderRadius:8,cursor:"pointer",fontWeight:800,fontSize:15,
+                background:d[side].circ.includes(n)?EU_SIDE[side].color:C.card,color:d[side].circ.includes(n)?"#fff":C.muted,
+                border:`1.5px solid ${d[side].circ.includes(n)?EU_SIDE[side].color:C.border}`}}>{d[side].circ.includes(n)?"✕":n}</button>
+          );
+          return [<React.Fragment key={n}>{tog("A")}<div style={{fontSize:12.5,color:C.white,lineHeight:1.35}}>{t}</div>{tog("B")}</React.Fragment>];
+        })}
+        <div style={{textAlign:"center",fontWeight:800,color:C.white}}>{d.A.circ.length}</div>
+        <div style={{fontSize:12,color:C.muted,textAlign:"center"}}>Anzahl angekreuzter Felder</div>
+        <div style={{textAlign:"center",fontWeight:800,color:C.white}}>{d.B.circ.length}</div>
+      </div>
+    </>,
+    <>
+      {["A","B"].map(side=>(
+        <div key={side} style={{...box,borderColor:EU_SIDE[side].color+"88"}}>
+          <div style={{...h,marginTop:0,color:EU_SIDE[side].color}}>Fahrzeug {side}{d[side].plate?" · "+d[side].plate:""}</div>
+          <label style={lbl}>10. Ursprüngliche Anstoßstelle (Front oben)</label>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,52px)",gap:4,justifyContent:"center",marginBottom:10}}>
+            {EU_IMPACT.map((z,i)=>z?(
+              <button key={z[0]} type="button" title={z[1]} aria-label={z[1]} onClick={()=>setP(side,{impact:toggleIn(d[side].impact,z[0])})}
+                style={{height:44,borderRadius:8,fontSize:20,cursor:"pointer",
+                  background:d[side].impact.includes(z[0])?EU_SIDE[side].color:C.card,color:d[side].impact.includes(z[0])?"#fff":C.muted,
+                  border:`1.5px solid ${d[side].impact.includes(z[0])?EU_SIDE[side].color:C.border}`}}>{z[2]}</button>
+            ):(
+              <div key={i} style={{height:44,borderRadius:"14px 14px 8px 8px",background:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🚗</div>
+            ))}
+          </div>
+          <div style={{fontSize:12,color:C.muted,textAlign:"center",marginBottom:8}}>{d[side].impact.map(x=>EU_IMPACT_LABEL[x]).join(", ")||"nichts markiert"}</div>
+          <label style={lbl}>11. Sichtbare Schäden am Fahrzeug {side}</label>
+          <textarea className="inp" rows={2} maxLength={600} style={inpS} value={d[side].damage} onChange={e=>setP(side,{damage:e.target.value})}/>
+        </div>
+      ))}
+    </>,
+    <>
+      <div style={{fontSize:13,color:C.muted,lineHeight:1.5,marginBottom:10}}>Skizze zum Zeitpunkt des Aufpralls: 1. Verlauf der Fahrspuren · 2. Fahrtrichtung von A und B (Pfeile) · 3. Position beim Aufprall · 4. Verkehrszeichen · 5. Straßennamen</div>
+      <div style={{display:"flex",gap:6,marginBottom:8}}>
+        {[["#111","Straße"],[EU_SIDE.A.color,"Fahrzeug A"],[EU_SIDE.B.color,"Fahrzeug B"]].map(([c,l])=>(
+          <button key={c} type="button" onClick={()=>setSkColor(c)} style={{flex:1,padding:"8px 4px",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",
+            background:skColor===c?c:C.card,color:skColor===c?"#fff":C.muted,border:`1.5px solid ${skColor===c?c:C.border}`}}>{l}</button>
+        ))}
+      </div>
+      <SignaturePad height={300} lineWidth={5} color={skColor} clearLabel="Skizze löschen"
+        initial={(f.photos||[]).find(p=>p.category==="eu_skizze")?.dataUrl||null}
+        onChange={url=>setImage("eu_skizze",url)}/>
+    </>,
+    <>
+      {["A","B"].map(side=>(
+        <div key={side}>
+          <label style={{...lbl,color:EU_SIDE[side].color}}>14. Bemerkungen Fahrer {side}</label>
+          <textarea className="inp" rows={2} maxLength={600} style={inpS} value={d[side].remarks} onChange={e=>setP(side,{remarks:e.target.value})}/>
+        </div>
+      ))}
+      <div style={{...box,fontSize:12.5,color:C.white,lineHeight:1.5}}>
+        <b>15. Unterschrift beider Fahrer.</b> Stellt keine Anerkennung der Haftung dar, sondern eine Feststellung der Identität und der Umstände, die der Beschleunigung der Regulierung dient. Vor dem Unterschreiben alles gemeinsam prüfen — Änderungen danach machen die Unterschriften ungültig.
+      </div>
+      {["A","B"].map(side=>{
+        const st=euSigState(f,side), img=sigOf(side);
+        return (
+          <div key={side} style={{marginBottom:12}}>
+            <label style={{...lbl,color:EU_SIDE[side].color}}>Unterschrift Fahrer {side}{side==="B"&&d.B.holderName?" ("+[d.B.holderFirst,d.B.holderName].filter(Boolean).join(" ")+")":""}</label>
+            {st==="ok"?(
+              <div>
+                <img src={img.dataUrl||img.url} alt="" style={{width:"100%",maxHeight:120,objectFit:"contain",background:"#fff",borderRadius:8,display:"block"}}/>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
+                  <span style={{fontSize:12,color:C.green}}>✓ unterschrieben</span>
+                  <button type="button" onClick={()=>sign(side,null)} style={{background:"none",border:"none",color:"#8b8d90",fontSize:12,textDecoration:"underline",cursor:"pointer"}}>Neu unterschreiben</button>
+                </div>
+              </div>
+            ):(
+              <>
+                {st==="veraltet"&&<div style={{fontSize:12,color:C.amber,marginBottom:6}}>Angaben wurden nach der Unterschrift geändert — bitte neu unterschreiben.</div>}
+                <SignaturePad key={side+st} onChange={url=>url&&sign(side,url)}/>
+              </>
+            )}
+          </div>
+        );
+      })}
+      {euComplete(f)
+        ? <button type="button" className="btn ghost" style={{width:"100%",padding:"10px",fontSize:14,marginBottom:6}} disabled={pdfBusy} onClick={onPdf}>{pdfBusy?"PDF wird erstellt…":"📤 Unfallbericht als PDF teilen (Exemplar für B)"}</button>
+        : <div style={{fontSize:12,color:C.muted,marginBottom:6}}>Sobald beide unterschrieben haben, kannst du dem Unfallgegner sein Exemplar als PDF schicken.</div>}
+    </>,
+  ][page];
+
+  const last=page===EU_PAGES.length-1;
+  return (
+    <div className="overlay">
+      <div className="sheet legal-wizard" style={{paddingBottom:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.muted}}>📝 Europäischer Unfallbericht · {page+1} von {EU_PAGES.length}</div>
+          <button aria-label="Unfallbericht schließen" onClick={onClose}
+            style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
+        </div>
+        <div style={{display:"flex",gap:3,marginBottom:12}}>
+          {EU_PAGES.map((t,i)=>(
+            <button key={i} aria-label={t} onClick={()=>setPage(i)}
+              style={{flex:1,height:4,borderRadius:2,border:"none",padding:0,cursor:"pointer",background:i<=page?C.red:C.border}}/>
+          ))}
+        </div>
+        <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:10}}>{EU_PAGES[page]}</div>
+        {body}
+        <div style={{position:"sticky",bottom:0,background:C.dark,margin:"14px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
+          {page>0&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} onClick={()=>{setPage(page-1);document.querySelector(".legal-wizard")?.scrollTo?.(0,0);}}>← Zurück</button>}
+          {!last&&<button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} onClick={()=>{setPage(page+1);document.querySelector(".legal-wizard")?.scrollTo?.(0,0);}}>Weiter →</button>}
+          {last&&<button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} onClick={onClose}>{euComplete(f)?"Fertig ✓":"Speichern & zurück"}</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// PDF-Seiten des Unfallberichts — werden an die Unfallmappe angehängt oder als
+// eigenes PDF (Exemplar für den Unfallgegner) erzeugt.
+const addEuReportPages = (doc, c, pdfPhotos, newPage=true) => {
+  const d=c.europeanReportData; if(!d) return;
+  const W=210, M=12, CW=W-2*M; let y;
+  const dark=[22,22,24], gray=[110,112,116], black=[20,20,22];
+  const fmt = v => { if(!v) return ""; if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ const x=new Date(v); return isNaN(x)?v:x.toLocaleDateString("de-DE"); } return String(v); };
+  const ensure = hh => { if(y+hh>284){ doc.addPage(); y=M+4; } };
+  if(newPage) doc.addPage();
+  doc.setFillColor(...dark); doc.rect(0,0,W,22,"F");
+  doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.setTextColor(255,255,255);
+  doc.text("Europäischer Unfallbericht",M,11);
+  doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(200,200,205);
+  doc.text("Digital erfasst mit QAR.Gallery · Nummerierung entspricht dem Europäischen Unfallbericht",M,17);
+  y=29;
+  const kv=(x,w,k,v)=>{ // Label + Wert in einer Spalte, gibt Höhe zurück
+    const lines=doc.splitTextToSize(String(v||"–"),w);
+    doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(...gray); doc.text(k,x,y);
+    doc.setFontSize(8.5); doc.setTextColor(...black); doc.text(lines,x,y+3.4);
+    return 3.4+lines.length*3.6+1.2;
+  };
+  const head=(x,w,t,rgb=dark)=>{ doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...rgb); doc.text(t,x,y); doc.setDrawColor(...rgb); doc.setLineWidth(.3); doc.line(x,y+1,x+w,y+1); };
+  const yn=b=>b===true?"ja":b===false?"nein":"–";
+  // 1–5
+  const c4=CW/4;
+  let hh=Math.max(kv(M,c4-3,"1. Datum / Zeit",[fmt(c.accidentDate),d.time].filter(Boolean).join(" · ")), kv(M+c4,2*c4-3,"2. PLZ / Ort",c.accidentLocation), kv(M+3*c4,c4,"3. Verletzte",yn(d.injured)));
+  y+=hh;
+  const wit=(c.witnesses||[]).filter(w=>w.name).map(w=>[w.name,w.address,w.phone].filter(Boolean).join(", ")).join(" | ");
+  hh=Math.max(kv(M,c4-3,"4. Sachschäden andere Fahrzeuge",yn(d.dmgVehicles)), kv(M+c4,c4-3,"… andere Gegenstände",yn(d.dmgObjects)), kv(M+2*c4,2*c4,"5. Zeugen",wit||"keine"));
+  y+=hh+3;
+  // 6–9 + 10/11/14 in zwei Spalten
+  const colW=(CW-6)/2, top=y; let yEnd=y;
+  ["A","B"].forEach((side,si)=>{
+    const P=d[side], x=M+si*(colW+6), rgb=EU_SIDE[side].rgb; y=top;
+    doc.setFillColor(...rgb); doc.rect(x,y-4,colW,6,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(255,255,255); doc.text(`FAHRZEUG ${side}`,x+2,y);
+    y+=6;
+    const half=(colW-3)/2;
+    const pair=(k1,v1,k2,v2)=>{ y+=Math.max(kv(x,half,k1,v1),kv(x+half+3,half,k2,v2)); };
+    const one=(k,v)=>{ y+=kv(x,colW,k,v); };
+    head(x,colW,"6. Versicherungsnehmer/Versicherter",rgb); y+=4.5;
+    pair("Name",P.holderName,"Vorname",P.holderFirst);
+    one("Anschrift",[P.holderAddress,[P.holderZip,P.holderCountry].filter(Boolean).join(" ")].filter(Boolean).join(", "));
+    one("Telefon oder E-Mail",P.holderContact);
+    head(x,colW,"7. Fahrzeug",rgb); y+=4.5;
+    pair("Marke, Typ",P.make,"Amtl. Kennzeichen / Land",[P.plate,P.regCountry].filter(Boolean).join(" / "));
+    if(P.trailerPlate) one("Anhänger – Kennzeichen",P.trailerPlate);
+    head(x,colW,"8. Versicherungsunternehmen",rgb); y+=4.5;
+    pair("Name",P.insurer,"Vertragsnummer",P.policyNo);
+    pair("Nr. der Grünen Karte",P.greenCard,"Gültig vom – bis",[fmt(P.validFrom),fmt(P.validTo)].filter(Boolean).join(" – "));
+    one("Geschäftsstelle (Büro oder Makler)",[P.agencyName,P.agencyAddress,P.agencyContact].filter(Boolean).join(", "));
+    one("Sachschäden am Fahrzeug aufgrund des Vertrags versichert?",yn(P.kasko));
+    head(x,colW,"9. Fahrer",rgb); y+=4.5;
+    if(P.driverSame) one("Fahrer","wie Versicherungsnehmer");
+    else { pair("Name",P.driverName,"Vorname",P.driverFirst); one("Anschrift / Land",[P.driverAddress,P.driverCountry].filter(Boolean).join(", ")); one("Telefon oder E-Mail",P.driverContact); }
+    pair("Geburtsdatum",fmt(P.driverBirth),"Führerschein-Nr.",P.licenseNo);
+    pair("Klasse",P.licenseClass,"Gültig bis",fmt(P.licenseValid));
+    head(x,colW,"10. Ursprüngliche Anstoßstelle",rgb); y+=3;
+    // Fahrzeug von oben, markierte Anstoßstellen als Punkte
+    const cx=x+14, cy=y+1, cw=12, ch=22;
+    doc.setDrawColor(...gray); doc.setLineWidth(.3); doc.roundedRect(cx,cy,cw,ch,3,3,"S"); doc.line(cx+1,cy+6,cx+cw-1,cy+6);
+    const pos={vl:[0,0],v:[.5,0],vr:[1,0],l:[0,.5],r:[1,.5],hl:[0,1],h:[.5,1],hr:[1,1]};
+    doc.setFillColor(...rgb);
+    (P.impact||[]).forEach(z=>{ const p=pos[z]; if(p) doc.circle(cx+p[0]*cw,cy+p[1]*ch,1.8,"F"); });
+    doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...black);
+    doc.text(doc.splitTextToSize((P.impact||[]).map(z=>EU_IMPACT_LABEL[z]).join(", ")||"–",colW-36),x+34,y+4);
+    doc.setFontSize(6.5); doc.setTextColor(...gray); doc.text("Front",cx+cw/2,cy-1,{align:"center"});
+    y+=ch+5;
+    head(x,colW,"11. Sichtbare Schäden",rgb); y+=4.5; one("",P.damage);
+    yEnd=Math.max(yEnd,y);
+  });
+  // 12 Unfallumstände
+  doc.addPage(); y=M+4;
+  doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...dark); doc.text("12. Unfallumstände",M,y); y+=6;
+  const cA=M+4, cB=W-M-4, tx=M+14, tw=CW-28;
+  doc.setFontSize(9); doc.setTextColor(...EU_SIDE.A.rgb); doc.text("A",cA,y,{align:"center"}); doc.setTextColor(...EU_SIDE.B.rgb); doc.text("B",cB,y,{align:"center"}); y+=3;
+  EU_CIRCUMSTANCES.forEach((t,i)=>{
+    const n=i+1, lines=doc.splitTextToSize(`${n}. ${t}`,tw), rh=Math.max(6,lines.length*3.8+2.2);
+    doc.setDrawColor(200,200,205); doc.setLineWidth(.2); doc.line(M,y,W-M,y);
+    [["A",cA],["B",cB]].forEach(([side,cx])=>{
+      doc.setDrawColor(...gray); doc.rect(cx-2.2,y+1.2,4.4,4.4,"S");
+      if(d[side].circ.includes(n)){ doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...EU_SIDE[side].rgb); doc.text("X",cx,y+4.7,{align:"center"}); }
+    });
+    doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...black); doc.text(lines,tx,y+4.3);
+    y+=rh;
+  });
+  doc.line(M,y,W-M,y); y+=5;
+  doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...black);
+  doc.text(String(d.A.circ.length),cA,y,{align:"center"}); doc.text(String(d.B.circ.length),cB,y,{align:"center"});
+  doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.text("Anzahl der angekreuzten Felder",W/2,y,{align:"center"}); y+=8;
+  // 13 Skizze
+  const sk=pdfPhotos.find(p=>p.category==="eu_skizze");
+  doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...dark); doc.text("13. Skizze des Unfalls zum Zeitpunkt des Aufpralls",M,y); y+=3;
+  if(sk){ doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...gray); doc.text("Blau = Fahrzeug A · Orange = Fahrzeug B",W-M,y-3,{align:"right"}); const sc=Math.min(CW/sk.w,68/sk.h), w=sk.w*sc, h2=sk.h*sc; doc.setDrawColor(...gray); doc.rect(M,y,CW,h2+2,"S"); doc.addImage(sk.dataUrl,"JPEG",M+(CW-w)/2,y+1,w,h2); y+=h2+7; }
+  else { doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...gray); y+=4; doc.text("Keine Skizze erstellt.",M,y); y+=6; }
+  // 14 Bemerkungen
+  ["A","B"].forEach(side=>{
+    const lines=doc.splitTextToSize(d[side].remarks||"–",CW-30);
+    ensure(lines.length*3.8+4);
+    doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...EU_SIDE[side].rgb); doc.text(`14. Bemerkungen ${side}`,M,y);
+    doc.setFont("helvetica","normal"); doc.setTextColor(...black); doc.text(lines,M+30,y); y+=lines.length*3.8+2.5;
+  });
+  y+=3;
+  // 15 Unterschriften
+  ensure(50);
+  doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...dark); doc.text("15. Unterschrift der Fahrer",M,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...gray);
+  doc.text(doc.splitTextToSize("Stellt keine Anerkennung der Haftung dar, sondern eine Feststellung der Identität und der Umstände, die der Beschleunigung der Regulierung dient.",CW),M,y); y+=8;
+  const sw=(CW-6)/2, sy=y;
+  ["A","B"].forEach((side,si)=>{
+    const x=M+si*(sw+6), img=pdfPhotos.find(p=>p.category===EU_SIDE[side].sig), s=(d.sig||{})[side];
+    doc.setDrawColor(...EU_SIDE[side].rgb); doc.setLineWidth(.4); doc.rect(x,sy,sw,32,"S");
+    if(img){ const sc=Math.min((sw-4)/img.w,24/img.h); doc.addImage(img.dataUrl,"JPEG",x+2,sy+2,img.w*sc,img.h*sc); }
+    doc.setFontSize(7.5); doc.setTextColor(...EU_SIDE[side].rgb);
+    doc.text(`Fahrer ${side}${s?.at?" · unterschrieben "+new Date(s.at).toLocaleString("de-DE"):" · nicht unterschrieben"}`,x+2,sy+30);
+  });
+  y=sy+38;
+};
+const buildEuReportPdf = async c => {
+  const jsPDF = await loadJsPdf();
+  const doc = new jsPDF({unit:"mm",format:"a4"});
+  const pdfPhotos = (await Promise.all((c.photos||[]).filter(p=>/^eu_/.test(p.category||"")).map(async ph=>{
+    const img = ph.dataUrl ? ph : await remotePhotoForPdf(ph.url).catch(()=>null);
+    return img ? {...img, category: ph.category} : null;
+  }))).filter(Boolean);
+  addEuReportPages(doc, c, pdfPhotos, false);
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){ doc.setPage(i); doc.setFontSize(7.5); doc.setTextColor(110,112,116); doc.text(`Seite ${i} / ${pages}`,198,291,{align:"right"}); }
+  return doc;
+};
 const LEGAL_ROLE_LABEL = id => (LEGAL_OWN_ROLES.find(r=>r.id===id)||{}).label||id;
 
 // Unfallfoto verkleinern: 1600px / JPEG 0.8 – Schäden bleiben gut erkennbar,
@@ -265,9 +701,9 @@ const buildLegalCasePdf = async (c, member) => {
   section("Unfall");
   row("Datum",fmtDate(c.accidentDate)); row("Ort",c.accidentLocation); row("Eigene Rolle",LEGAL_ROLE_LABEL(c.ownRole));
   row("Polizei vor Ort",c.policeInvolved?"Ja":"Nein"); if(c.policeInvolved) row("Aktenzeichen",c.policeReference);
-  if(!c.policeInvolved) row("Europ. Unfallbericht",c.europeanReport?"Ausgefüllt (Foto anbei)":"Nein");
+  if(!c.policeInvolved) row("Europ. Unfallbericht",c.europeanReportData?(euComplete(c)?"Digital ausgefüllt, von beiden unterschrieben (siehe Anhang)":"Digital erfasst, nicht vollständig unterschrieben (siehe Anhang)"):c.europeanReport?"Ausgefüllt (Foto anbei)":"Nein");
   row("Verletzungen",c.injuries?"Ja":"Nein"); if(c.injuries) row("Verletzungen (Beschr.)",c.injuriesDescription);
-  row("Fotos",(c.photos||[]).filter(p=>p.category!=="unterschrift").length+" angehängt");
+  row("Fotos",(c.photos||[]).filter(legalUserPhoto).length+" angehängt");
   section("Unfallhergang"); para(c.description);
   if(c.otherPartyName||c.otherPartyLicensePlate||c.otherPartyInsurance){
     section("Unfallgegner");
@@ -312,6 +748,7 @@ const buildLegalCasePdf = async (c, member) => {
     y+=h+3; doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...gray);
     doc.text(`Foto ${i+1} von ${arr.length} · ${LEGAL_PHOTO_LABEL[ph.category]||""}`,M,y); y+=9; onPage++;
   });
+  if(c.europeanReportData) addEuReportPages(doc, c, pdfPhotos);
 
   const pages=doc.internal.getNumberOfPages();
   for(let i=1;i<=pages;i++){
@@ -359,7 +796,7 @@ const caseFromServer = (ref, d) => {
     otherPartyName:op.name||"", otherPartyLicensePlate:op.licensePlate||"", otherPartyInsurance:op.insurance||"",
     callbackPhone:r.callback_phone||"", callbackPreferredTime:r.callback_preferred_time||"", notes:r.notes||"",
     photos:(d.photos||[]).map((url,i)=>({url, category:(r.photo_categories||[])[i]||"sonstiges"})).filter(p=>p.url),
-    witnesses:r.witnesses||[], europeanReport:!!r.european_report, faultAdmission:r.fault_admission||null,
+    witnesses:r.witnesses||[], europeanReport:!!r.european_report, europeanReportData:r.european_report_data||null, faultAdmission:r.fault_admission||null,
     consentGivenAt:r.consent_given_at, createdAt:r.created_at,
     status:"server", dispatchStatus:lawyer.status||"queued", dispatchSentAt:lawyer.sent_at||null,
   };
@@ -2229,8 +2666,16 @@ function PCNInner() {
   const legalCasePdf = async (c, mode) => {
     setLegalPdfBusy(c.id);
     try {
-      const doc = await buildLegalCasePdf(c, me);
-      const name = legalCasePdfName(c);
+      const eu = mode==="eu" || mode==="eu-download";
+      const doc = eu ? await buildEuReportPdf(c) : await buildLegalCasePdf(c, me);
+      const name = eu ? legalCasePdfName(c).replace("Unfallmappe","Unfallbericht") : legalCasePdfName(c);
+      if(mode==="eu"){
+        const file = new File([doc.output("blob")], name, {type:"application/pdf"});
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          await navigator.share({files:[file], title:"Europäischer Unfallbericht", text:"Unfallbericht – dein Exemplar"});
+          return;
+        }
+      }
       if(mode==="share"){
         const file = new File([doc.output("blob")], name, {type:"application/pdf"});
         if(navigator.canShare && navigator.canShare({files:[file]})){
@@ -6715,7 +7160,7 @@ Regeln:
                             <div style={{fontSize:14,fontWeight:700,color:C.white}}>
                               Unfall {c.accidentDate?new Date(c.accidentDate).toLocaleDateString("de-DE"):""}{c.accidentLocation?" · "+c.accidentLocation:""}
                             </div>
-                            <div style={{fontSize:12,color:c.status==="error"?C.amber:C.muted,marginTop:2}}>{(c.photos||[]).length} Foto(s) · {legalStatusText(c)}</div>
+                            <div style={{fontSize:12,color:c.status==="error"?C.amber:C.muted,marginTop:2}}>{(c.photos||[]).filter(legalUserPhoto).length} Foto(s){c.europeanReportData?" · Unfallbericht":""} · {legalStatusText(c)}</div>
                             <div style={{display:"flex",gap:8,marginTop:8}}>
                               <button className="btn ghost" style={{flex:1,padding:"8px 10px",fontSize:13}} disabled={legalPdfBusy===c.id} onClick={()=>legalCasePdf(c,"download")}>
                                 {legalPdfBusy===c.id?"…":"📄 PDF"}
@@ -6724,6 +7169,11 @@ Regeln:
                                 📤 Teilen
                               </button>
                             </div>
+                            {c.europeanReportData&&(
+                              <button className="btn ghost" style={{width:"100%",padding:"8px 10px",fontSize:13,marginTop:6}} disabled={legalPdfBusy===c.id} onClick={()=>legalCasePdf(c,"eu")}>
+                                📝 Unfallbericht (Exemplar für Unfallgegner)
+                              </button>
+                            )}
                             <div style={{display:"flex",gap:8,marginTop:6}}>
                               {c.status==="error"&&(
                                 <button className="btn" style={{flex:1,padding:"8px 10px",fontSize:13}} disabled={legalSubmitBusy} onClick={()=>submitLegalCase(c)}>
@@ -7650,7 +8100,7 @@ Regeln:
             const photosOf=cat=>(f.photos||[]).filter(p=>p.category===cat);
 
             const addPhotos=async(fileList,cat)=>{
-              const room=LEGAL_MAX_PHOTOS-(f.photos||[]).filter(p=>p.category!=="unterschrift").length;
+              const room=LEGAL_MAX_PHOTOS-(f.photos||[]).filter(legalUserPhoto).length;
               const files=Array.from(fileList||[]).slice(0,Math.max(0,room));
               if(!files.length){ toast_(`Maximal ${LEGAL_MAX_PHOTOS} Fotos`,"err"); return; }
               try{
@@ -7690,7 +8140,12 @@ Regeln:
             const save=async()=>{
               if(!f.description.trim()){toast_("Bitte beschreibe kurz, was passiert ist","err");go(steps.findIndex(s=>s.id==="hergang"));return;}
               if(!f.consentGiven){toast_("Bitte der Weitergabe an den Partner zustimmen","err");return;}
-              const {vehicleId,affectedVehicleId,step:_s,...data}=f;
+              const {vehicleId,affectedVehicleId,step:_s,euOpen:_e,...data}=f;
+              if(!f.policeInvolved && f.europeanReportData && ["A","B"].some(sd=>euSigState(f,sd)==="veraltet")){
+                toast_("Unfallbericht wurde nach der Unterschrift geändert — bitte neu unterschreiben lassen","err");
+                go(steps.findIndex(s=>s.id==="polizei")); set({euOpen:true}); return;
+              }
+              data.europeanReport = !!f.europeanReport || euComplete(f);
               const vehicleData=Object.fromEntries(avRows);
               let faultAdmission=data.faultAdmission;
               const signed=(data.photos||[]).some(p=>p.category==="unterschrift");
@@ -7715,7 +8170,7 @@ Regeln:
               ["kennzeichen","Kennzeichen des Unfallgegners",!!f.otherPartyLicensePlate.trim(),f.otherPartyLicensePlate||"fehlt"],
               ["fotos","Fotos Fahrzeug des Gegners",photosOf("gegner").length>0,`${photosOf("gegner").length} Foto(s)`],
               ["fotos","Fotos der Unfallstelle",photosOf("unfallstelle").length>0,`${photosOf("unfallstelle").length} Foto(s)`],
-              ["polizei","Polizei / Unfallbericht",f.policeInvolved||f.europeanReport,f.policeInvolved?("Polizei vor Ort"+(f.policeReference?" · "+f.policeReference:"")):f.europeanReport?"Unfallbericht ausgefüllt":"offen"],
+              ["polizei","Polizei / Unfallbericht",f.policeInvolved||f.europeanReport||euComplete(f),f.policeInvolved?("Polizei vor Ort"+(f.policeReference?" · "+f.policeReference:"")):euComplete(f)?"Unfallbericht digital, von beiden unterschrieben":f.europeanReportData?"Unfallbericht begonnen – Unterschriften fehlen":f.europeanReport?"Unfallbericht (Papier) ausgefüllt":"offen"],
               ...(steps.some(s=>s.id==="schuld")?[["schuld","Schuldanerkenntnis",fa?.mode==="digital"?(photosOf("unterschrift").length>0&&fa.text===legalFaultText(f)):fa?.mode==="papier"?photosOf("schuldanerkenntnis").length>0:false,
                 fa?.mode==="digital"&&photosOf("unterschrift").length?"digital unterschrieben":fa?.mode==="papier"&&photosOf("schuldanerkenntnis").length?"auf Papier (Foto)":"keins (optional)"]]:[]),
               ["zeugen","Zeugen",witnesses.some(w=>w.name),`${witnesses.filter(w=>w.name).length} notiert`],
@@ -7777,7 +8232,7 @@ Regeln:
                     • Verkehrszeichen, Ampeln, Sichtverhältnisse
                   </div>
                   <PhotoGrid cat="unfallstelle"/>
-                  <div style={{fontSize:11,color:C.muted}}>{(f.photos||[]).filter(p=>p.category!=="unterschrift").length} von {LEGAL_MAX_PHOTOS} Fotos</div>
+                  <div style={{fontSize:11,color:C.muted}}>{(f.photos||[]).filter(legalUserPhoto).length} von {LEGAL_MAX_PHOTOS} Fotos</div>
                 </>
               ),
               polizei:(
@@ -7797,15 +8252,27 @@ Regeln:
                     <>
                       <div style={box}>
                         <div style={{fontSize:14,fontWeight:800,color:C.white,marginBottom:6}}>Europäischen Unfallbericht ausfüllen</div>
-                        <div style={{fontSize:13,color:C.white,lineHeight:1.6}}>
-                          Füllt den Bericht gemeinsam aus. Beide unterschreiben, jede Seite bekommt ein Exemplar. Das Formular gibt es bei deiner Versicherung, oft liegt es im Handschuhfach.
+                        <div style={{fontSize:13,color:C.white,lineHeight:1.6,marginBottom:10}}>
+                          Füllt den Bericht gemeinsam aus — direkt hier auf dem Handy. Beide unterschreiben auf dem Display, der Unfallgegner bekommt sein Exemplar als PDF. Deine Daten und die Fahrzeugdaten sind schon eingetragen.
                         </div>
+                        <button type="button" className="btn" style={{width:"100%",padding:"11px",fontSize:15}}
+                          onClick={()=>set({euOpen:true,europeanReportData:f.europeanReportData||euReportInit(f,av,me,isDemo?DEMO_INSURANCE[av.id]:null)})}>
+                          {f.europeanReportData?"📝 Unfallbericht weiter bearbeiten":"📝 Unfallbericht digital ausfüllen"}
+                        </button>
+                        {f.europeanReportData&&(
+                          <div style={{fontSize:12,marginTop:8,color:euComplete(f)?C.green:C.amber}}>
+                            {euComplete(f)?"✓ Von beiden unterschrieben":["A","B"].some(sd=>euSigState(f,sd)==="veraltet")?"Angaben nach der Unterschrift geändert — bitte neu unterschreiben":"Noch nicht von beiden unterschrieben"}
+                          </div>
+                        )}
                       </div>
-                      <label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.white,marginBottom:10}}>
-                        <input type="checkbox" checked={f.europeanReport} onChange={e=>set({europeanReport:e.target.checked})}/> Unfallbericht ist ausgefüllt und unterschrieben
-                      </label>
-                      <label style={lbl}>Foto vom ausgefüllten Bericht</label>
-                      <PhotoGrid cat="unfallbericht" label="Bericht"/>
+                      <details style={{marginBottom:10}}>
+                        <summary style={{fontSize:13,color:C.muted,cursor:"pointer",marginBottom:8}}>Stattdessen Papierformular verwendet?</summary>
+                        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.white,margin:"8px 0 10px"}}>
+                          <input type="checkbox" checked={f.europeanReport} onChange={e=>set({europeanReport:e.target.checked})}/> Papier-Unfallbericht ist ausgefüllt und unterschrieben
+                        </label>
+                        <label style={lbl}>Foto vom ausgefüllten Bericht</label>
+                        <PhotoGrid cat="unfallbericht" label="Bericht"/>
+                      </details>
                     </>
                   )}
                 </>
@@ -7908,6 +8375,10 @@ Regeln:
             }[step.id];
 
             const last=idx===steps.length-1;
+            if(f.euOpen&&f.europeanReportData) return (
+              <EuReportEditor f={f} set={set} setEdit={setLegalCaseEdit} onClose={()=>set({euOpen:false})}
+                pdfBusy={legalPdfBusy==="eu"} onPdf={()=>legalCasePdf({...f,id:"eu",vehicleData:Object.fromEntries(avRows)},"eu")}/>
+            );
             return (
             <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setLegalCaseEdit(null);}}>
               <div className="sheet legal-wizard" style={{paddingBottom:0}}>
