@@ -77,3 +77,10 @@ alter table public.accident_reports
 -- ohne Bilder; Skizze/Unterschriften liegen als Fotos eu_skizze/eu_sig_a/eu_sig_b)
 alter table public.accident_reports
   add column if not exists european_report_data jsonb;
+
+-- Nachtrag 12.10.: Fälle dem angemeldeten Mitglied zuordnen (geprüftes
+-- Sitzungs-Token von pcn-secure) — abrufbar auf jedem Gerät
+alter table public.accident_reports
+  add column if not exists member_verified boolean not null default false;
+create index if not exists accident_reports_member_idx
+  on public.accident_reports (member_id) where member_verified;

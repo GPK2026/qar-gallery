@@ -137,7 +137,7 @@ const LEGAL_OWN_ROLES = [
   { id:"verursacher",   label:"Ich bin Unfallverursacher/in" },
   { id:"unklar",        label:"Noch unklar" },
 ];
-const legalCaseEmpty = () => ({accidentDate:new Date().toISOString().slice(0,10),accidentLocation:"",ownRole:"geschaedigter",description:"",policeInvolved:false,policeReference:"",injuries:false,injuriesDescription:"",otherPartyName:"",otherPartyLicensePlate:"",otherPartyInsurance:"",photos:[],witnesses:[],europeanReport:false,faultAdmission:null,step:0,callbackPhone:"",callbackPreferredTime:"",notes:"",consentGiven:false});
+const legalCaseEmpty = () => ({draftId:"D"+Date.now().toString(36),accidentDate:new Date().toISOString().slice(0,10),accidentLocation:"",ownRole:"geschaedigter",description:"",policeInvolved:false,policeReference:"",injuries:false,injuriesDescription:"",otherPartyName:"",otherPartyLicensePlate:"",otherPartyInsurance:"",photos:[],witnesses:[],europeanReport:false,faultAdmission:null,step:0,callbackPhone:"",callbackPreferredTime:"",notes:"",consentGiven:false});
 const LEGAL_MAX_PHOTOS = 15;
 
 // Geführter Ablauf nach einem Unfall (Reihenfolge nach Empfehlung von debug
@@ -783,6 +783,19 @@ const newCaseToken = () => {
   const b=new Uint8Array(32); crypto.getRandomValues(b);
   return btoa(String.fromCharCode(...b)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 };
+// Sitzungs-Token der Anmeldung (pcn-secure) — ordnet Fälle dem Mitgliedskonto zu
+const legalSt = () => { try { return JSON.parse(store.getItem("pcn_session")||"null")?.st || null; } catch { return null; } };
+// Entwurf des Unfall-Ablaufs auf dem Gerät (IndexedDB, weil Fotos/Unterschriften
+// für localStorage zu groß sind). Ein Entwurf pro Mitglied; bleibt bis zum
+// erfolgreichen Absenden oder bis er verworfen wird.
+const legalDraftKey = memberId => "legal_draft:"+memberId;
+const draftStore = async (mode, fn) => {
+  const db = await new Promise((res,rej)=>{ const r=indexedDB.open("pcn_drafts",1); r.onupgradeneeded=()=>r.result.createObjectStore("d"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+  return new Promise((res,rej)=>{ const tx=db.transaction("d",mode); const req=fn(tx.objectStore("d")); tx.oncomplete=()=>{ db.close(); res(req.result); }; tx.onerror=()=>{ db.close(); rej(tx.error); }; });
+};
+const draftGet = k => draftStore("readonly", s=>s.get(k)).catch(()=>null);
+const draftSet = (k,v) => draftStore("readwrite", s=>s.put(v,k)).catch(()=>{});
+const draftDel = k => draftStore("readwrite", s=>s.delete(k)).catch(()=>{});
 const loadLegalRefs = () => { try { return JSON.parse(store.getItem(LEGAL_REFS_KEY)||"[]"); } catch { return []; } };
 const saveLegalRefs = refs => store.setItem(LEGAL_REFS_KEY, JSON.stringify(refs));
 const caseFromServer = (ref, d) => {
@@ -2622,12 +2635,46 @@ function PCNInner() {
   useEffect(()=>{
     if(!me?.id || isDemo) return;
     const refs = loadLegalRefs().filter(r=>r.memberId===me.id);
-    refs.forEach(ref=>{
+    const st = legalSt();
+    (async ()=>{
+      // 1) alle Fälle des Kontos (geräteübergreifend)
+      let known = new Set();
+      if(st){
+        try {
+          const {cases} = await accidentApi({action:"list",st});
+          cases.forEach(d=>{ const ref=refs.find(r=>r.id===d.report?.id)||{}; known.add(d.report?.id); addLegalCase(caseFromServer(ref,d)); });
+        } catch {}
+      }
+      // 2) ältere Fälle, die nur über das Fall-Token auf diesem Gerät erreichbar sind
+      refs.filter(ref=>!known.has(ref.id)).forEach(ref=>{
       accidentApi({action:"get",id:ref.id,token:ref.token})
         .then(d=>addLegalCase(caseFromServer(ref,d)))
         .catch(e=>{ if(/nicht gefunden/i.test(e.message)) saveLegalRefs(loadLegalRefs().filter(r=>r.id!==ref.id)); });
-    });
+      });
+    })();
   }, [me?.id]);
+
+  // Entwurf laden und während der Eingabe laufend sichern
+  const [legalDraft, setLegalDraft] = useState(null);
+  useEffect(()=>{ if(me?.id) draftGet(legalDraftKey(me.id)).then(d=>setLegalDraft(d||null)); else setLegalDraft(null); }, [me?.id]);
+  useEffect(()=>{
+    if(!legalCaseEdit || !me?.id) return;
+    const t = setTimeout(()=>{
+      const d = {...legalCaseEdit, euOpen:false, savedAt:new Date().toISOString()};
+      draftSet(legalDraftKey(me.id), d); setLegalDraft(d);
+    }, 600);
+    return ()=>clearTimeout(t);
+  }, [legalCaseEdit, me?.id]);
+  // Schließen ohne Absenden: Stand sofort sichern (nicht auf den Timer warten)
+  const closeLegalWizard = () => {
+    if(legalCaseEdit && me?.id){
+      const d = {...legalCaseEdit, euOpen:false, savedAt:new Date().toISOString()};
+      draftSet(legalDraftKey(me.id), d); setLegalDraft(d);
+      toast_("Entwurf gespeichert – du kannst jederzeit weitermachen");
+    }
+    setLegalCaseEdit(null);
+  };
+  const discardLegalDraft = () => { if(me?.id) draftDel(legalDraftKey(me.id)); setLegalDraft(null); };
 
   const submitLegalCase = async c => {
     if(isDemo){ addLegalCase({...c,status:"demo"}); toast_("Demo: Fall nur lokal gespeichert, nicht übermittelt"); return true; }
@@ -2635,13 +2682,17 @@ function PCNInner() {
     try {
       const token = newCaseToken();
       const {photos, ...rest} = c;
-      const res = await accidentApi({action:"submit", token,
+      const res = await accidentApi({action:"submit", token, st:legalSt(),
         report:{...rest, source:"pcn", memberId:me?.id, memberEmail:me?.email, memberName:me?.name,
           consentText:LEGAL_CONSENT_TEXT(LEGAL_CASE_PARTNER.name)},
         photos:(photos||[]).map(ph=>({dataUrl:ph.dataUrl, category:ph.category||"sonstiges"}))});
       saveLegalRefs([...loadLegalRefs(), {id:res.id, token, memberId:me?.id, vehicleId:c.vehicleId}]);
       dropLegalCase(c);
       addLegalCase({...c, id:res.id, serverId:res.id, status:"server", dispatchStatus:"queued", createdAt:res.createdAt});
+      if(me?.id && c.draftId){
+        const d = await draftGet(legalDraftKey(me.id));
+        if(d?.draftId===c.draftId){ draftDel(legalDraftKey(me.id)); setLegalDraft(null); }
+      }
       toast_("Fall sicher gespeichert ✓ – Weiterleitung an "+LEGAL_CASE_PARTNER.name+" vorgemerkt");
       return true;
     } catch(e){
@@ -2655,7 +2706,7 @@ function PCNInner() {
     if(!window.confirm("Fall endgültig löschen? Damit widerrufst du auch die Einwilligung zur Weitergabe.")) return;
     if(c.serverId){
       const ref = loadLegalRefs().find(r=>r.id===c.serverId);
-      try { if(ref) await accidentApi({action:"delete",id:ref.id,token:ref.token}); }
+      try { await accidentApi(ref ? {action:"delete",id:ref.id,token:ref.token,st:legalSt()} : {action:"delete",id:c.serverId,st:legalSt()}); }
       catch(e){ toast_("Löschen fehlgeschlagen: "+e.message,"err"); return; }
       saveLegalRefs(loadLegalRefs().filter(r=>r.id!==c.serverId));
     }
@@ -7151,7 +7202,25 @@ Regeln:
                     {isOwn&&(
                       <div style={{marginTop:18,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
                         <div style={{fontSize:12,fontWeight:700,color:C.white,letterSpacing:.2,marginBottom:6}}>Nach einem Unfall</div>
-                        <button className="btn ghost" style={{width:"100%"}} onClick={()=>setLegalCaseEdit({vehicleId:v.id,affectedVehicleId:v.id,...legalCaseEmpty(),callbackPhone:me?.phone||""})}>
+                        {legalDraft&&!legalCaseEdit&&(
+                          <div style={{background:`${C.amber}14`,border:`1px solid ${C.amber}66`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
+                            <div style={{fontSize:14,fontWeight:700,color:C.white}}>📝 Angefangene Unfallmeldung</div>
+                            <div style={{fontSize:12,color:C.muted,marginTop:2}}>
+                              Zuletzt gespeichert {legalDraft.savedAt?new Date(legalDraft.savedAt).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"}):""}
+                              {legalDraft.otherPartyLicensePlate?" · Gegner "+legalDraft.otherPartyLicensePlate:""}
+                              {(legalDraft.photos||[]).filter(legalUserPhoto).length?" · "+(legalDraft.photos||[]).filter(legalUserPhoto).length+" Foto(s)":""}
+                              {legalDraft.europeanReportData?" · Unfallbericht":""}
+                            </div>
+                            <div style={{display:"flex",gap:8,marginTop:8}}>
+                              <button className="btn" style={{flex:2,padding:"8px 10px",fontSize:13}} onClick={()=>setLegalCaseEdit({...legalDraft,vehicleId:v.id})}>Fortsetzen</button>
+                              <button className="btn ghost" style={{flex:1,padding:"8px 10px",fontSize:13}} onClick={()=>{ if(window.confirm("Entwurf verwerfen? Fotos, Angaben und Unterschriften darin gehen verloren.")) discardLegalDraft(); }}>Verwerfen</button>
+                            </div>
+                          </div>
+                        )}
+                        <button className="btn ghost" style={{width:"100%"}} onClick={()=>{
+                          if(legalDraft && !window.confirm("Es gibt eine angefangene Unfallmeldung. Neu beginnen und den Entwurf ersetzen?")) return;
+                          setLegalCaseEdit({vehicleId:v.id,affectedVehicleId:v.id,...legalCaseEmpty(),callbackPhone:me?.phone||""});
+                        }}>
                           ⚖️ Rechtliche Ersteinschätzung
                         </button>
                         <div style={{fontSize:11,color:C.muted,marginTop:6,lineHeight:1.5}}>{LEGAL_CASE_PARTNER.disclosure}</div>
@@ -8380,11 +8449,11 @@ Regeln:
                 pdfBusy={legalPdfBusy==="eu"} onPdf={()=>legalCasePdf({...f,id:"eu",vehicleData:Object.fromEntries(avRows)},"eu")}/>
             );
             return (
-            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setLegalCaseEdit(null);}}>
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)closeLegalWizard();}}>
               <div className="sheet legal-wizard" style={{paddingBottom:0}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <div style={{fontSize:12,fontWeight:700,color:C.muted}}>⚖️ Nach einem Unfall · Schritt {idx+1} von {steps.length}</div>
-                  <button aria-label="Schließen" onClick={()=>setLegalCaseEdit(null)}
+                  <button aria-label="Schließen" onClick={closeLegalWizard}
                     style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1}}>✕</button>
                 </div>
                 <div style={{display:"flex",gap:3,marginBottom:12}}>
