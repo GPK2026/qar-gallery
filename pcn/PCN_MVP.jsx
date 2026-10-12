@@ -265,7 +265,7 @@ const euSigState = (f, side) => {
 const euComplete = f => !!f.europeanReportData && euSigState(f,"A")==="ok" && euSigState(f,"B")==="ok";
 const EU_PAGES = ["Allgemein (1–5)","Fahrzeug A – du (6–9)","Fahrzeug B – Unfallgegner (6–9)","Unfallumstände (12)","Anstoßstelle & Schäden (10–11)","Skizze (13)","Bemerkungen & Unterschriften (14–15)"];
 
-function EuReportEditor({ f, set, setEdit, onClose, onPdf, pdfBusy }) {
+function EuReportEditor({ f, set, setEdit, onClose, onSkip, onPdf, pdfBusy }) {
   const [page,setPage] = useState(0);
   const [skColor,setSkColor] = useState("#111");
   const d=f.europeanReportData;
@@ -482,7 +482,10 @@ function EuReportEditor({ f, set, setEdit, onClose, onPdf, pdfBusy }) {
               style={{flex:1,height:4,borderRadius:2,border:"none",padding:0,cursor:"pointer",background:i<=page?C.red:C.border}}/>
           ))}
         </div>
-        <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:10}}>{EU_PAGES[page]}</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,marginBottom:10}}>
+          <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>{EU_PAGES[page]}</div>
+          {onSkip&&<button type="button" onClick={onSkip} style={{background:"none",border:"none",color:C.muted,fontSize:12,textDecoration:"underline",cursor:"pointer",flexShrink:0,padding:0}}>Überspringen</button>}
+        </div>
         {body}
         <div style={{position:"sticky",bottom:0,background:C.dark,margin:"14px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
           {page>0&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} onClick={()=>{setPage(page-1);document.querySelector(".legal-wizard")?.scrollTo?.(0,0);}}>← Zurück</button>}
@@ -8230,13 +8233,26 @@ Regeln:
                 faultAdmission:{...(p.faultAdmission||{}),mode:"digital",signedAt:new Date().toISOString(),text:legalFaultText(p)}}));
               img.src=dataUrl;
             };
+            // Unfallbericht: ausdrückliche Wahl (digital / Papier / überspringen);
+            // ältere Entwürfe ohne Wahl werden aus den vorhandenen Daten abgeleitet
+            const euChoice = f.euChoice || (f.europeanReportData?"digital":(f.europeanReport||(f.photos||[]).some(p=>p.category==="unfallbericht"))?"papier":null);
+            const chooseEu = id => {
+              if(id===euChoice) return;
+              const hasDigital=!!f.europeanReportData, hasPaper=f.europeanReport||(f.photos||[]).some(p=>p.category==="unfallbericht");
+              if(id!=="digital" && hasDigital && !window.confirm("Den angefangenen digitalen Unfallbericht verwerfen?")) return;
+              if(id!=="papier" && hasPaper && !window.confirm("Foto/Angabe zum Papier-Unfallbericht verwerfen?")) return;
+              setLegalCaseEdit(p=>p&&({...p, euChoice:id,
+                ...(id!=="digital"?{europeanReportData:null}:{}),
+                ...(id!=="papier"?{europeanReport:false}:{}),
+                photos:(p.photos||[]).filter(x=>!(id!=="digital"&&/^eu_/.test(x.category||""))&&!(id!=="papier"&&x.category==="unfallbericht"))}));
+            };
             const witnesses=f.witnesses||[];
             const setWitness=(i,patch)=>set({witnesses:witnesses.map((w,j)=>j===i?{...w,...patch}:w)});
 
             const save=async()=>{
               if(!f.description.trim()){toast_("Bitte beschreibe kurz, was passiert ist","err");go(steps.findIndex(s=>s.id==="hergang"));return;}
               if(!f.consentGiven){toast_("Bitte der Weitergabe an den Partner zustimmen","err");return;}
-              const {vehicleId,affectedVehicleId,step:_s,euOpen:_e,...data}=f;
+              const {vehicleId,affectedVehicleId,step:_s,euOpen:_e,euChoice:_c,...data}=f;
               if(!f.policeInvolved && f.europeanReportData && ["A","B"].some(sd=>euSigState(f,sd)==="veraltet")){
                 toast_("Unfallbericht wurde nach der Unterschrift geändert — bitte neu unterschreiben lassen","err");
                 go(steps.findIndex(s=>s.id==="polizei")); set({euOpen:true}); return;
@@ -8266,7 +8282,7 @@ Regeln:
               ["kennzeichen","Kennzeichen des Unfallgegners",!!f.otherPartyLicensePlate.trim(),f.otherPartyLicensePlate||"fehlt"],
               ["fotos","Fotos Fahrzeug des Gegners",photosOf("gegner").length>0,`${photosOf("gegner").length} Foto(s)`],
               ["fotos","Fotos der Unfallstelle",photosOf("unfallstelle").length>0,`${photosOf("unfallstelle").length} Foto(s)`],
-              ["polizei","Polizei / Unfallbericht",f.policeInvolved||f.europeanReport||euComplete(f),f.policeInvolved?("Polizei vor Ort"+(f.policeReference?" · "+f.policeReference:"")):euComplete(f)?"Unfallbericht digital, von beiden unterschrieben":f.europeanReportData?"Unfallbericht begonnen – Unterschriften fehlen":f.europeanReport?"Unfallbericht (Papier) ausgefüllt":"offen"],
+              ["polizei","Polizei / Unfallbericht",f.policeInvolved||f.europeanReport||euComplete(f)||euChoice==="skip",f.policeInvolved?("Polizei vor Ort"+(f.policeReference?" · "+f.policeReference:"")):euComplete(f)?"Unfallbericht digital, von beiden unterschrieben":f.europeanReportData?"Unfallbericht begonnen – Unterschriften fehlen":f.europeanReport?"Unfallbericht (Papier) ausgefüllt":euChoice==="skip"?"Keine Polizei, Unfallbericht übersprungen":"offen"],
               ...(steps.some(s=>s.id==="schuld")?[["schuld","Schuldanerkenntnis",fa?.mode==="digital"?(photosOf("unterschrift").length>0&&fa.text===legalFaultText(f)):fa?.mode==="papier"?photosOf("schuldanerkenntnis").length>0:false,
                 fa?.mode==="digital"&&photosOf("unterschrift").length?"digital unterschrieben":fa?.mode==="papier"&&photosOf("schuldanerkenntnis").length?"auf Papier (Foto)":"keins (optional)"]]:[]),
               ["zeugen","Zeugen",witnesses.some(w=>w.name),`${witnesses.filter(w=>w.name).length} notiert`],
@@ -8346,29 +8362,42 @@ Regeln:
                   )}
                   {!f.policeInvolved&&f.policeChoice&&(
                     <>
-                      <div style={box}>
-                        <div style={{fontSize:14,fontWeight:800,color:C.white,marginBottom:6}}>Europäischen Unfallbericht ausfüllen</div>
-                        <div style={{fontSize:13,color:C.white,lineHeight:1.6,marginBottom:10}}>
-                          Füllt den Bericht gemeinsam aus — direkt hier auf dem Handy. Beide unterschreiben auf dem Display, der Unfallgegner bekommt sein Exemplar als PDF. Deine Daten und die Fahrzeugdaten sind schon eingetragen.
-                        </div>
-                        <button type="button" className="btn" style={{width:"100%",padding:"11px",fontSize:15}}
-                          onClick={()=>set({euOpen:true,europeanReportData:f.europeanReportData||euReportInit(f,av,me,isDemo?DEMO_INSURANCE[av.id]:null)})}>
-                          {f.europeanReportData?"📝 Unfallbericht weiter bearbeiten":"📝 Unfallbericht digital ausfüllen"}
-                        </button>
-                        {f.europeanReportData&&(
-                          <div style={{fontSize:12,marginTop:8,color:euComplete(f)?C.green:C.amber}}>
-                            {euComplete(f)?"✓ Von beiden unterschrieben":["A","B"].some(sd=>euSigState(f,sd)==="veraltet")?"Angaben nach der Unterschrift geändert — bitte neu unterschreiben":"Noch nicht von beiden unterschrieben"}
-                          </div>
-                        )}
+                      <div style={{fontSize:14,fontWeight:800,color:C.white,marginBottom:4}}>Möchtest du den Europäischen Unfallbericht ausfüllen?</div>
+                      <div style={hint}>Empfohlen, wenn keine Polizei kommt: Beide Seiten halten gemeinsam fest, was passiert ist. Das ist <b style={{color:C.white}}>kein Schuldanerkenntnis</b> und freiwillig.</div>
+                      <div style={{display:"flex",gap:6,marginBottom:12}}>
+                        {[["digital","Ja, hier digital"],["papier","Ja, auf Papier"],["skip","Nein, überspringen"]].map(([id,l])=>(
+                          <button key={id} type="button" style={choice(euChoice===id)} onClick={()=>chooseEu(id)}>{l}</button>
+                        ))}
                       </div>
-                      <details style={{marginBottom:10}}>
-                        <summary style={{fontSize:13,color:C.muted,cursor:"pointer",marginBottom:8}}>Stattdessen Papierformular verwendet?</summary>
-                        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.white,margin:"8px 0 10px"}}>
-                          <input type="checkbox" checked={f.europeanReport} onChange={e=>set({europeanReport:e.target.checked})}/> Papier-Unfallbericht ist ausgefüllt und unterschrieben
-                        </label>
-                        <label style={lbl}>Foto vom ausgefüllten Bericht</label>
-                        <PhotoGrid cat="unfallbericht" label="Bericht"/>
-                      </details>
+                      {euChoice==="digital"&&(
+                        <div style={box}>
+                          <div style={{fontSize:13,color:C.white,lineHeight:1.6,marginBottom:10}}>
+                            Füllt den Bericht gemeinsam aus — direkt hier auf dem Handy. Beide unterschreiben auf dem Display, der Unfallgegner bekommt sein Exemplar als PDF. Deine Daten und die Fahrzeugdaten sind schon eingetragen.
+                          </div>
+                          <button type="button" className="btn" style={{width:"100%",padding:"11px",fontSize:15}}
+                            onClick={()=>set({euOpen:true,europeanReportData:f.europeanReportData||euReportInit(f,av,me,isDemo?DEMO_INSURANCE[av.id]:null)})}>
+                            {f.europeanReportData?"📝 Unfallbericht weiter bearbeiten":"📝 Unfallbericht ausfüllen"}
+                          </button>
+                          {f.europeanReportData&&(
+                            <div style={{fontSize:12,marginTop:8,color:euComplete(f)?C.green:C.amber}}>
+                              {euComplete(f)?"✓ Von beiden unterschrieben":["A","B"].some(sd=>euSigState(f,sd)==="veraltet")?"Angaben nach der Unterschrift geändert — bitte neu unterschreiben":"Noch nicht von beiden unterschrieben"}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {euChoice==="papier"&&(
+                        <>
+                          <div style={hint}>Füllt das Papierformular gemeinsam aus (gibt es bei deiner Versicherung, oft im Handschuhfach), beide unterschreiben, jede Seite bekommt ein Exemplar.</div>
+                          <label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.white,marginBottom:10}}>
+                            <input type="checkbox" checked={f.europeanReport} onChange={e=>set({europeanReport:e.target.checked})}/> Papier-Unfallbericht ist ausgefüllt und unterschrieben
+                          </label>
+                          <label style={lbl}>Foto vom ausgefüllten Bericht</label>
+                          <PhotoGrid cat="unfallbericht" label="Bericht"/>
+                        </>
+                      )}
+                      {euChoice==="skip"&&(
+                        <div style={{fontSize:13,color:C.muted,lineHeight:1.5}}>Kein Problem — weiter mit „Weiter“. Wichtig sind vor allem Kennzeichen, Fotos und Zeugen.</div>
+                      )}
                     </>
                   )}
                 </>
@@ -8473,6 +8502,8 @@ Regeln:
             const last=idx===steps.length-1;
             if(f.euOpen&&f.europeanReportData) return (
               <EuReportEditor f={f} set={set} setEdit={setLegalCaseEdit} onClose={()=>set({euOpen:false})}
+                onSkip={()=>{ if(!window.confirm("Unfallbericht nicht ausfüllen? Bisherige Eingaben im Bericht werden verworfen.")) return;
+                  setLegalCaseEdit(p=>p&&({...p,euOpen:false,euChoice:"skip",europeanReportData:null,photos:(p.photos||[]).filter(x=>!/^eu_/.test(x.category||""))})); }}
                 pdfBusy={legalPdfBusy==="eu"} onPdf={()=>legalCasePdf({...f,id:"eu",vehicleData:Object.fromEntries(avRows)},"eu")}/>
             );
             return (
