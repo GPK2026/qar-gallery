@@ -6269,8 +6269,14 @@ Regeln:
       .tab-btn .lbl{font-size:13px;letter-spacing:.3px}
       .tab-btn .badge{top:6px;left:32px;right:auto}
       .app-shell{padding-left:220px;padding-bottom:0 !important}
-      .app-main{max-width:820px !important;padding:24px 32px 48px !important}
+      .app-main{max-width:1080px !important;padding:24px 32px 48px !important}
       .app-main.tab-dashboard{max-width:1180px !important}
+      /* Größere Fotos */
+      .veh-hero{height:clamp(380px,46vh,560px) !important}
+      .veh-thumb{width:128px !important;height:84px !important}
+      .veh-card{flex-direction:column}
+      .veh-card-img{width:100% !important;height:240px !important}
+      .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
       .dash-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:start}
       .veh-gallery{max-width:1180px;margin:0 auto;padding:20px 32px 0}
       .veh-gallery > div{border-radius:16px;overflow:hidden}
@@ -6278,6 +6284,17 @@ Regeln:
       .toast{left:auto;right:32px;bottom:100px;width:420px}
       .voice-fab{bottom:28px !important;right:32px !important}
       .voice-panel{left:auto !important;right:32px !important;width:420px;bottom:96px !important}
+    }
+    /* Große Bildschirme: Inhalt (Schrift, Bilder, Abstände) proportional größer,
+       damit die Fläche genutzt wird statt schwarzer Ränder. */
+    @media(min-width:1280px){
+      .app-main,.veh-grid,.veh-gallery{zoom:1.14}
+      .app-main{max-width:1060px !important}
+      .app-main.tab-dashboard,.veh-grid,.veh-gallery{max-width:1120px !important}
+    }
+    @media(min-width:1680px){
+      .app-main,.veh-grid,.veh-gallery{zoom:1.28}
+      .app-main.tab-dashboard,.veh-grid,.veh-gallery{max-width:1160px !important}
     }
     .tog{width:44px;height:24px;border-radius:99px;border:none;cursor:pointer;transition:background .2s;flex-shrink:0;position:relative;background:${C.border}}
     .tog::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:99px;background:#fff;transition:transform .2s}
@@ -7459,7 +7476,7 @@ Regeln:
             return (
               <div>
                 {/* Hero image */}
-                <div style={{height:280,position:"relative",overflow:"hidden",background:"#111"}}
+                <div className="veh-hero" style={{height:280,position:"relative",overflow:"hidden",background:"#111"}}
                   onTouchStart={e=>{touchX=e.touches[0].clientX;}}
                   onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchX;if(Math.abs(dx)>40)goTo(cur+(dx<0?1:-1));}}>
                   <img src={imgs[cur]} alt="" draggable={false}
@@ -7488,7 +7505,7 @@ Regeln:
                       {imgs.map((img,i)=>(
                         <div key={i} style={{position:"relative",flexShrink:0}}>
                           <img src={img} alt="" onClick={()=>{goTo(i);setLightbox({images:imgs,index:i});}}
-                            style={{width:90,height:64,objectFit:"cover",borderRadius:8,cursor:"pointer",display:"block",
+                            className="veh-thumb" style={{width:90,height:64,objectFit:"cover",borderRadius:8,cursor:"pointer",display:"block",
                               border:`2.5px solid ${i===cur?C.blue:"transparent"}`,
                               opacity:i===cur?1:0.7,transition:"all .15s"}}
                             onError={e=>e.target.style.display="none"}/>
@@ -10803,9 +10820,9 @@ Regeln:
                   <div style={{fontSize:13,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+{POINTS.vehicle_added} Pkt</span></div>
                 </div>
               ):myVehicles.map(v=>(
-                <div key={v.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",display:"flex",alignItems:"stretch",cursor:"pointer"}}
+                <div key={v.id} className="veh-card" style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",display:"flex",alignItems:"stretch",cursor:"pointer"}}
                   onClick={()=>{setViewV(v);setScreen("vehicle");}}>
-                  <div style={{width:140,height:100,background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <div className="veh-card-img" style={{width:140,height:100,background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     {getCoverImage(v)?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>:<span style={{fontSize:36}}>🏎️</span>}
                   </div>
                   <div style={{flex:1,minWidth:0,padding:"12px 14px",display:"flex",alignItems:"center",gap:8}}>
@@ -12008,7 +12025,7 @@ Regeln:
             {/* ── Statistiken ── */}
             <div className="card" style={{padding:16,marginBottom:12}}>
               <div style={{fontSize:17,fontWeight:800,color:C.muted,letterSpacing:.8,marginBottom:12}}>Statistiken · zum Öffnen tippen</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <div className="stats-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 {[
                   ["🚗","Fahrzeuge",myVehicles.length,"im System",()=>setTab("dashboard")],
                   ["📋","Logbuch",Object.values(logbook).flat().length,"Einträge",()=>{ if(myVehicles[0]){setViewV(myVehicles[0]);setScreen("vehicle");} else setTab("dashboard"); }],
