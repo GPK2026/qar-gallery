@@ -11986,23 +11986,21 @@ Regeln:
                   }
                   <div style={{position:"absolute",bottom:0,right:0,width:22,height:22,background:C.red,borderRadius:"50%",border:"2px solid #1a0808",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>📷</div>
                 </div>
-                <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-                  <div style={{minWidth:0}}>
-                    <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1}}>{me?.name}</div>
-                    <div style={{fontSize:15,color:C.muted,marginTop:3}}>{me?.role==="guest"?"Gast-Account":"PCN-Mitglied"}{me?.memberNr?" · "+me.memberNr:""}</div>
-                    {me?.city&&<div style={{fontSize:15,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
-                  </div>
-                  <button onClick={()=>setShowInfoModal("points")} style={{background:"none",border:"none",cursor:"pointer",padding:0,textAlign:"right",flexShrink:0}}>
-                    <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,color:C.gold,lineHeight:1}}>{myPoints.toLocaleString("de-DE")}</div>
-                    <div style={{fontSize:12,color:C.muted}}>Punkte</div>
-                  </button>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:900,color:C.white,lineHeight:1.15,overflowWrap:"anywhere"}}>{me?.name}</div>
+                  <div style={{fontSize:15,color:C.muted,marginTop:3}}>{me?.role==="guest"?"Gast-Account":"PCN-Mitglied"}{me?.memberNr?" · "+me.memberNr:""}</div>
+                  {me?.city&&<div style={{fontSize:15,color:C.muted,marginTop:2}}>📍 {me.city}</div>}
                 </div>
                 <button className="btn sm ghost" style={{flexShrink:0,borderColor:"rgba(255,255,255,.2)",color:"#fff"}} onClick={openEditProfile}>✏️</button>
               </div>
 
               {/* Naechste Stufe & Fortschritt */}
               <div style={{marginTop:16}}>
-                <div style={{display:"flex",justifyContent:"flex-end",alignItems:"baseline",marginBottom:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:12,marginBottom:8}}>
+                  <button onClick={()=>setShowInfoModal("points")} style={{background:"none",border:"none",cursor:"pointer",padding:0,textAlign:"left",flexShrink:0}}>
+                    <div style={{fontFamily:"'Inter',sans-serif",fontSize:28,fontWeight:900,color:C.gold,lineHeight:1}}>{myPoints.toLocaleString("de-DE")}</div>
+                    <div style={{fontSize:13,color:C.muted,marginTop:2}}>Punkte</div>
+                  </button>
                   <div style={{textAlign:"right"}}>
                     <div style={{fontSize:14,color:C.muted}}>Nächste Stufe</div>
                     <div style={{fontSize:15,fontWeight:700,color:C.gold}}>
@@ -12015,14 +12013,14 @@ Regeln:
                   <div style={{height:"100%",width:`${pointsProgress}%`,background:`linear-gradient(90deg, ${C.red}, ${C.gold})`,borderRadius:99,transition:"width .6s ease"}}/>
                 </div>
                 {/* Gegenwert + aktuelle Stufe */}
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
-                  <div style={{fontSize:13,color:C.muted}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",columnGap:12,rowGap:4,marginTop:8}}>
+                  <div style={{fontSize:13,color:C.muted,whiteSpace:"nowrap"}}>
                     {currentTier
                       ? <span style={{color:currentTier.color,fontWeight:700}}>{currentTier.icon} {currentTier.name}</span>
                       : <span>Noch keine Stufe</span>}
                     {" · "}🏁 {myParticipations.length} Events · 🚗 {myVehicles.length} Fzg
                   </div>
-                  <div style={{fontSize:13,color:C.gold,fontWeight:700}}>
+                  <div style={{fontSize:13,color:C.gold,fontWeight:700,whiteSpace:"nowrap"}}>
                     ≈ {ptsToEur(myPoints).toFixed(2).replace(".",",")} € Gegenwert
                   </div>
                 </div>
