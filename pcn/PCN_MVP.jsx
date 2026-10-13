@@ -6209,6 +6209,11 @@ Regeln:
     }
     /* ── Desktop (ab 1024 px): Navigation als Seitenleiste, breiterer Inhalt,
        Startseite und Fahrzeugakte zweispaltig. Handy/Tablet unverändert. ── */
+    /* Reiter/Aufklapp-Boxen: Blau = aktiv. Hover nur auf Geräten mit Maus,
+       damit es auf dem Handy nach dem Antippen nicht "hängen" bleibt. */
+    @media(hover:hover){
+      .acc-box:hover{border-color:${C.blue} !important;box-shadow:0 0 0 3px ${C.blue}1f !important}
+    }
     .tab-brand{display:none}
     .tab-bar.desk-only{display:none}
     @media(min-width:1024px){
@@ -8215,7 +8220,7 @@ Regeln:
             return sections.map(sec=>{
               const isEmergency = sec.id==="emergency";
               return (
-              <div key={sec.id} id={`sec-${v.id}-${sec.id}`} style={{scrollMarginTop:70,background:C.card,
+              <div key={sec.id} id={`sec-${v.id}-${sec.id}`} className="acc-box" style={{scrollMarginTop:70,background:C.card,
                 border:isOpen(v.id,sec.id)?`2px solid ${C.blue}`:isEmergency?`1.5px solid ${C.red}77`:`1px solid ${C.border}`,
                 borderRadius:12,marginBottom:10,overflow:"hidden",
                 boxShadow:isOpen(v.id,sec.id)?`0 0 0 3px ${C.blue}26`:isEmergency?`0 0 0 1px ${C.red}22`:"none",
@@ -10903,7 +10908,7 @@ Regeln:
               {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(()=>{
                 const unlockedCount = LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).length;
                 return (
-            <div style={{background:C.card,border:showPlatformFeatures?`2px solid ${C.blue}`:`1px solid ${C.border}`,boxShadow:showPlatformFeatures?`0 0 0 3px ${C.blue}26`:"none",borderRadius:12,marginBottom:8,transition:"border-color .15s, box-shadow .15s"}}>
+            <div className="acc-box" style={{background:C.card,border:showPlatformFeatures?`2px solid ${C.blue}`:`1px solid ${C.border}`,boxShadow:showPlatformFeatures?`0 0 0 3px ${C.blue}26`:"none",borderRadius:12,marginBottom:8,transition:"border-color .15s, box-shadow .15s"}}>
               <button onClick={()=>setShowPlatformFeatures(s=>!s)}
                 style={{width:"100%",background:"none",border:"none",padding:"12px 14px",
                   display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
