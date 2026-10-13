@@ -875,6 +875,190 @@ const BRIEFING_TOKENS_KEY = "pcn_briefing_tokens_v1";
 const briefingTokens = () => { try { return JSON.parse(store.getItem(BRIEFING_TOKENS_KEY)||"{}"); } catch { return {}; } };
 const briefingLink = (id, token) => `${location.origin}/pcn/briefing.html#b=${id}.${token}`;
 
+// ── Sprachsteuerung (Stufe 1): Navigation + Diktat ins aktive Feld ──
+// Spracherkennung des Browsers (Chrome/Android: Google, Safari: Apple).
+// Kein KI-Dienst. Sprache füllt nur aus bzw. navigiert — Speichern, Senden,
+// Löschen und Unterschreiben bleiben immer ein bewusster Tipp.
+const SpeechRec = typeof window!=="undefined" ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+const VOICE_OK_KEY = "pcn_voice_ok_v1";
+const VOICE_HELP = [
+  ["Navigation", ["„Startseite“, „Events“, „Community“, „Nachrichten“, „Profil“","„QR scannen“","„Öffne den 964“ – Fahrzeugakte öffnen","„Zurück“"]],
+  ["Fahrzeug", ["„Neues Fahrzeug“","„Unfall melden“ (auch „Unfall mit dem 964“)","„Pannenhilfe“ / „Notfall“","„Mangel erfassen“ / „Kratzer melden“","„Logbuch-Eintrag“","„Reparatur-Briefing“"]],
+  ["Diktieren", ["Erst ins Feld tippen, dann Mikrofon: Gesagtes wird eingefügt","„Punkt“, „Komma“, „Fragezeichen“, „neue Zeile“","Kennzeichen: „K Bindestrich AB 1234“ → K-AB 1234"]],
+];
+const voiceNorm = t => String(t||"").toLowerCase().replace(/[.,!?;:]/g," ").replace(/\s+/g," ").trim();
+// Befehl erkennen (rein, ohne Seiteneffekte — testbar)
+const parseVoiceCommand = (text, vehicles) => {
+  const t = " "+voiceNorm(text)+" ";
+  const has = re => re.test(t);
+  // Fahrzeug im Satz finden (Modell, Hersteller-Modell, Kennzeichen)
+  let vehicle = null, best = 0;
+  (vehicles||[]).forEach(v=>{
+    const words = [v.modell, v.hersteller&&v.modell?v.hersteller+" "+v.modell:null].filter(Boolean).map(voiceNorm);
+    const tokens = voiceNorm(v.modell||"").split(" ").filter(w=>w.length>=2);
+    const plate = (v.kennzeichen||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+    let score = 0;
+    words.forEach(w=>{ if(w && t.includes(" "+w+" ")) score = Math.max(score, 10+w.length); });
+    tokens.forEach(w=>{ if(t.includes(" "+w+" ")) score = Math.max(score, w.length + (/\d/.test(w)?5:0)); });
+    if(plate && plate.length>=4 && t.replace(/[^a-z0-9]/g,"").includes(plate)) score = Math.max(score, 30);
+    if(score>best){ best=score; vehicle=v; }
+  });
+  if(has(/ (hilfe|was kann ich sagen|befehle) /)) return {type:"help"};
+  if(has(/ (unfall|unfallbericht|crash|zusammenstoß) /)) return {type:"accident", vehicle};
+  if(has(/ (pannenhilfe|panne|abschleppen|adac|avd|notfall|notfallprofil) /)) return {type:"emergency", vehicle};
+  if(has(/ (briefing|reparaturbriefing|reparatur briefing|an (die )?werkstatt) /)) return {type:"briefing", vehicle};
+  if(has(/ (mangel|mängel|kratzer|delle|beule|schramme|steinschlag|feststellung|bordstein) /)) return {type:"finding", vehicle};
+  if(has(/ (logbuch|service eintrag|serviceeintrag|wartung eintragen) /)) return {type:"logbook", vehicle};
+  if(has(/ (neues|neuen|weiteres) (fahrzeug|auto) | fahrzeug (anlegen|hinzufügen) | auto (anlegen|hinzufügen) /)) return {type:"addVehicle"};
+  if(has(/ (scannen|scanner|qr code|qr-code|qr) /)) return {type:"scan"};
+  if(has(/ (zurück|schließen|zur übersicht) /)) return {type:"back"};
+  if(has(/ (event|events|termine|termin|veranstaltung|veranstaltungen|ausfahrt|ausfahrten) /)) return {type:"tab", tab:"events"};
+  if(has(/ (community|mitglieder|club mitglieder) /)) return {type:"tab", tab:"community"};
+  if(has(/ (nachricht|nachrichten|chat|chats|postfach) /)) return {type:"tab", tab:"messages"};
+  if(has(/ (profil|einstellungen|mein konto|punkte|punktestand) /)) return {type:"tab", tab:"profile"};
+  if(vehicle && best>=3) return {type:"openVehicle", vehicle};
+  if(has(/ (start|startseite|home|übersicht|dashboard|news|neuigkeiten|meine fahrzeuge|garage|fahrzeuge) /)) return {type:"tab", tab:"dashboard"};
+  return {type:"unknown"};
+};
+// Diktat: Satzzeichen-Wörter umsetzen, Kennzeichen normalisieren
+const voiceDictation = (text, el) => {
+  let out = String(text||"").trim()
+    .replace(/\s*\b(neue zeile|neuer absatz)\b\s*/gi, el?.tagName==="TEXTAREA" ? "\n" : " ")
+    .replace(/\s*\bpunkt\b/gi, ".").replace(/\s*\bkomma\b/gi, ",")
+    .replace(/\s*\bfragezeichen\b/gi, "?").replace(/\s*\bausrufezeichen\b/gi, "!")
+    .replace(/\s*\bdoppelpunkt\b/gi, ":")
+    .replace(/([.!?]\s+)([a-zäöü])/g, (m,p1,p2)=>p1+p2.toUpperCase());
+  const ph = (el?.placeholder||"")+" "+(el?.getAttribute?.("aria-label")||"");
+  if(/kennzeichen|K-AB/i.test(ph) || el?.dataset?.voice==="plate"){
+    out = out.toUpperCase().replace(/\s*(BINDESTRICH|STRICH|MINUS)\s*/g, "-").replace(/\s*-\s*/g, "-").replace(/\s+/g, " ");
+  }
+  return out;
+};
+const voiceInsert = (el, text) => {
+  const proto = el.tagName==="TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
+  const v = el.value||"";
+  let start = el.selectionStart ?? v.length, end = el.selectionEnd ?? v.length;
+  if(start==null){ start=v.length; end=v.length; }
+  const before = v.slice(0,start), after = v.slice(end);
+  const sep = before && !/[\s\n-]$/.test(before) && !/^[.,!?:]/.test(text) ? " " : "";
+  let ins = text;
+  if(!before.trim() || /[.!?]\s*$/.test(before)) ins = ins.charAt(0).toUpperCase()+ins.slice(1);
+  const nv = before + sep + ins + after;
+  const max = Number(el.getAttribute("maxlength")) || 0;
+  setter.call(el, max>0 ? nv.slice(0,max) : nv);
+  el.dispatchEvent(new Event("input", {bubbles:true}));
+  const pos = (before+sep+ins).length;
+  try { el.setSelectionRange(pos,pos); } catch {}
+};
+const voiceTarget = el => {
+  if(!el) return null;
+  if(el.tagName==="TEXTAREA") return el;
+  if(el.tagName==="INPUT" && ["text","search","tel","email","url",""].includes((el.getAttribute("type")||"").toLowerCase())) return el;
+  return null;
+};
+
+function VoiceControl({ onCommand, bottom=76, toast }) {
+  const [listening, setListening] = useState(false);
+  const [text, setText] = useState("");
+  const [askConsent, setAskConsent] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const recRef = useRef(null);
+  const targetRef = useRef(null);
+  const finalRef = useRef("");
+  if(!SpeechRec) return null;
+
+  const start = () => {
+    let ok = false; try { ok = localStorage.getItem(VOICE_OK_KEY)==="1"; } catch {}
+    if(!ok){ setAskConsent(true); return; }
+    const rec = new SpeechRec();
+    rec.lang = "de-DE"; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+    finalRef.current = ""; setText("");
+    rec.onresult = e => {
+      let interim = "", fin = "";
+      for(let i=0;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) fin += r[0].transcript; else interim += r[0].transcript; }
+      finalRef.current = fin || finalRef.current;
+      setText(fin || interim);
+    };
+    rec.onerror = e => {
+      if(e.error==="not-allowed"||e.error==="service-not-allowed") toast?.("Mikrofon-Zugriff ist blockiert — bitte in den Browser-Einstellungen erlauben","err");
+      else if(e.error==="no-speech") toast?.("Nichts gehört — bitte nochmal");
+      else if(e.error!=="aborted") toast?.("Spracherkennung nicht verfügbar ("+e.error+")","err");
+    };
+    rec.onend = () => {
+      setListening(false); recRef.current = null;
+      const said = (finalRef.current||"").trim();
+      if(!said) return;
+      const el = targetRef.current;
+      if(el && document.body.contains(el)){
+        voiceInsert(el, voiceDictation(said, el)); el.focus?.();
+      } else {
+        const r = onCommand(said);
+        if(r==="help") setShowHelp(true);
+      }
+      setTimeout(()=>setText(""), 1500);
+    };
+    recRef.current = rec;
+    try { rec.start(); setListening(true); } catch { setListening(false); }
+  };
+  const stop = () => { try { recRef.current?.stop(); } catch {} };
+
+  return (
+    <>
+      {(listening||text)&&(
+        <div style={{position:"fixed",right:12,left:12,bottom:bottom+64,zIndex:1200,background:C.dark,border:`1px solid ${listening?C.red:C.border}`,borderRadius:14,padding:"10px 14px",boxShadow:"0 8px 30px rgba(0,0,0,.5)"}}>
+          <div style={{fontSize:11,fontWeight:700,color:listening?C.red:C.muted,marginBottom:3}}>
+            {listening ? (targetRef.current ? "🎙️ Diktat ins Feld …" : "🎙️ Ich höre … (z. B. „Unfall melden“)") : "Erkannt"}
+          </div>
+          <div style={{fontSize:16,color:C.white,minHeight:22,overflowWrap:"anywhere"}}>{text||"…"}</div>
+        </div>
+      )}
+      <button type="button" aria-label={listening?"Spracheingabe beenden":"Sprachsteuerung"}
+        onPointerDown={e=>{ e.preventDefault(); targetRef.current = voiceTarget(document.activeElement); }}
+        onClick={()=>{ listening ? stop() : start(); }}
+        onContextMenu={e=>{ e.preventDefault(); setShowHelp(true); }}
+        style={{position:"fixed",right:14,bottom,zIndex:1200,width:54,height:54,borderRadius:27,border:"none",cursor:"pointer",
+          background:listening?C.red:C.dark,color:"#fff",fontSize:24,boxShadow:listening?`0 0 0 6px ${C.red}44, 0 6px 20px rgba(0,0,0,.5)`:"0 6px 20px rgba(0,0,0,.5)",
+          outline:`1.5px solid ${listening?C.red:C.border}`,transition:"box-shadow .2s"}}>
+        {listening?"■":"🎙️"}
+      </button>
+      {askConsent&&(
+        <div className="overlay" style={{zIndex:1300}} onClick={e=>{if(e.target===e.currentTarget)setAskConsent(false);}}>
+          <div className="sheet">
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:8}}>🎙️ Sprachsteuerung</div>
+            <div style={{fontSize:14,color:C.white,lineHeight:1.55,marginBottom:10}}>
+              Tippe aufs Mikrofon und sprich: zum Navigieren („Öffne den 964“, „Unfall melden“) oder — wenn du vorher in ein Feld tippst — zum Diktieren.
+            </div>
+            <div style={{fontSize:13,color:C.muted,lineHeight:1.55,marginBottom:12}}>
+              <b style={{color:C.white}}>Datenschutz:</b> Die Spracherkennung übernimmt dein Browser. Dabei wird die Aufnahme an den Dienst des Browser-Herstellers übertragen (Chrome/Android: Google, Safari/iPhone: Apple) und dort in Text umgewandelt. QAR.Gallery speichert keine Aufnahmen. Die Sprache füllt nur aus oder navigiert — Speichern, Senden und Löschen tippst du immer selbst.
+            </div>
+            <button className="btn" style={{width:"100%",padding:"12px",fontSize:15,marginBottom:8}}
+              onClick={()=>{ try{ localStorage.setItem(VOICE_OK_KEY,"1"); }catch{} setAskConsent(false); setTimeout(start,50); }}>Verstanden, Mikrofon starten</button>
+            <button className="btn ghost" style={{width:"100%",padding:"10px",fontSize:14}} onClick={()=>{ setAskConsent(false); setShowHelp(true); }}>Was kann ich sagen?</button>
+          </div>
+        </div>
+      )}
+      {showHelp&&(
+        <div className="overlay" style={{zIndex:1300}} onClick={e=>{if(e.target===e.currentTarget)setShowHelp(false);}}>
+          <div className="sheet" style={{maxHeight:"85vh",overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>🎙️ Was kann ich sagen?</div>
+              <button aria-label="Schließen" onClick={()=>setShowHelp(false)} style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer"}}>✕</button>
+            </div>
+            {VOICE_HELP.map(([h,items])=>(
+              <div key={h} style={{marginBottom:12}}>
+                <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:4}}>{h}</div>
+                {items.map(i=><div key={i} style={{fontSize:14,color:C.white,lineHeight:1.5,padding:"2px 0"}}>› {i}</div>)}
+              </div>
+            ))}
+            <div style={{fontSize:12,color:C.muted,lineHeight:1.5}}>Sprache füllt nur aus oder navigiert. Speichern, Senden, Löschen und Unterschreiben bleiben immer ein bewusster Tipp.</div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // Zeilenhoehen-Skala, orientiert an Porsche Design System Typografie-
 // Verhaeltnissen (durchgehend 1.3–1.5, nicht die knappe 1.0–1.15, die
 // zuvor bei vielen Ueberschriften genutzt wurde).
@@ -4917,6 +5101,52 @@ Regeln:
     setFindingEdit(null); toast_("Eintrag gelöscht");
   };
 
+  // ── Sprachsteuerung: erkannten Befehl ausführen (nur Navigation/Öffnen) ──
+  const handleVoiceCommand = (said) => {
+    const cmd = parseVoiceCommand(said, myVehicles);
+    const own = v => v && myVehicles.some(x=>x.id===v.id);
+    const pickVehicle = () => cmd.vehicle || (screen==="vehicle" && own(viewV) ? viewV : myVehicles.length===1 ? myVehicles[0] : null);
+    const openSection = (v, sec) => {
+      setViewV(v); setScreen("vehicle");
+      setOpenSections(p=>({...p,[v.id+"_"+sec]:true}));
+      setTimeout(()=>document.getElementById(`sec-${v.id}-${sec}`)?.scrollIntoView({behavior:"smooth",block:"start"}), 350);
+    };
+    const needVehicle = what => toast_(myVehicles.length ? `Für welches Fahrzeug? Sag z. B. „${what} mit dem ${myVehicles[0].modell||myVehicles[0].hersteller||"…"}“` : "Lege zuerst ein Fahrzeug an","err");
+    switch(cmd.type){
+      case "help": return "help";
+      case "tab":
+        if(isGuest && cmd.tab!=="messages"){ toast_("Nur für Mitglieder"); return; }
+        setScreen("app"); setTab(cmd.tab); toast_("🎙️ "+({dashboard:"Startseite",events:"Events",community:"Community",messages:"Nachrichten",profile:"Profil"}[cmd.tab]));
+        return;
+      case "back": if(screen==="vehicle") setScreen("app"); else setTab("dashboard"); return;
+      case "scan": setScreen("app"); openScanner(); return;
+      case "addVehicle": setScreen("app"); setTab("dashboard"); setShowAddV(true); return;
+      case "openVehicle": setViewV(cmd.vehicle); setScreen("vehicle"); toast_("🎙️ "+[cmd.vehicle.hersteller,cmd.vehicle.modell].filter(Boolean).join(" ")); return;
+      case "accident": {
+        const v = pickVehicle(); if(!v) return needVehicle("Unfall");
+        openSection(v, "emergency");
+        if(legalDraft && (legalDraft.affectedVehicleId===v.id || legalDraft.vehicleId===v.id)) setLegalCaseEdit({...legalDraft, vehicleId:v.id});
+        else setLegalCaseEdit({vehicleId:v.id,affectedVehicleId:v.id,...legalCaseEmpty(),callbackPhone:me?.phone||""});
+        return;
+      }
+      case "emergency": { const v = pickVehicle(); if(!v) return needVehicle("Pannenhilfe"); openSection(v, "emergency"); return; }
+      case "finding": {
+        const v = pickVehicle(); if(!v) return needVehicle("Mangel");
+        openSection(v, "findings"); loadFindings(v.id); loadBriefings(v.id);
+        setFindingEdit({vehicleId:v.id,...findingEmpty(),km:v.kilometerstand||""});
+        return;
+      }
+      case "briefing": {
+        const v = pickVehicle(); if(!v) return needVehicle("Reparatur-Briefing");
+        openSection(v, "findings"); loadFindings(v.id); loadBriefings(v.id);
+        toast_("Wähle unter „Mängel & Feststellungen“ die Punkte fürs Briefing");
+        return;
+      }
+      case "logbook": { const v = pickVehicle(); if(!v) return needVehicle("Logbuch-Eintrag"); openSection(v, "logbook"); setShowAddLog(v.id); return; }
+      default: toast_(`Nicht verstanden: „${said}“ — sag „Hilfe“`, "err");
+    }
+  };
+
   // ── Dokumentenablage: laden, hochladen, löschen, nachträglich auswerten ──
   const loadVehicleDocuments = async (vehicleId) => {
     const DB = window.PCN_DB; if(!DB || isDemo) return;
@@ -7052,6 +7282,7 @@ Regeln:
     return (
       <div className="vh-screen" style={{background:"transparent",paddingBottom:80}}>
         <style>{CSS}</style>
+        {!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
@@ -7866,7 +8097,7 @@ Regeln:
             return sections.map(sec=>{
               const isEmergency = sec.id==="emergency";
               return (
-              <div key={sec.id} style={{background:C.card,
+              <div key={sec.id} id={`sec-${v.id}-${sec.id}`} style={{scrollMarginTop:70,background:C.card,
                 border:isEmergency?`1.5px solid ${C.red}77`:`1px solid ${C.border}`,
                 borderRadius:12,marginBottom:10,overflow:"hidden",
                 boxShadow:isEmergency?`0 0 0 1px ${C.red}22`:"none"}}>
@@ -9908,6 +10139,7 @@ Regeln:
   return (
     <div className="vh-screen" style={{background:"transparent",paddingBottom:62}}>
       <style>{CSS}</style>
+      {!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
       {/* ── Geführte Einführung: jeder Schritt mit "Verstanden" bestätigen ── */}
       {showOnboarding&&(()=>{
         const n=ONBOARDING_STEPS.length, idx=Math.min(onboardingIdx,n), finished=idx>=n;
