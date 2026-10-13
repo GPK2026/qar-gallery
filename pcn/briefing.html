@@ -70,6 +70,16 @@
       .card { break-inside:avoid; border-color:#bbb; }
     }
     .video-note { display:none; color:var(--muted); font-size:12px; }
+    .thread { margin-top:10px; }
+    .bubble { max-width:85%; border:1px solid var(--border); border-radius:10px; padding:6px 10px; margin-bottom:6px; background:#f6f6f8; }
+    .bubble.owner { margin-left:auto; background:#eef4ff; }
+    .bubble .k { font-size:11px; }
+    .appr { border:1.5px solid var(--border); border-radius:10px; padding:8px 10px; margin:8px 0; }
+    .appr.angefragt { border-color:#e0b54a; } .appr.freigegeben { border-color:var(--green); background:#f2faf5; }
+    .appr .st { font-size:12px; font-weight:700; }
+    .inline { display:flex; gap:6px; margin-top:6px; } .inline input { flex:1; min-width:0; }
+    .small { font-size:12px; color:var(--muted); }
+    details.req summary { cursor:pointer; font-size:13px; font-weight:700; margin-top:8px; }
   </style>
 </head>
 <body>
@@ -91,6 +101,8 @@
     var NOTE_LABEL = { erledigt:"Was wurde gemacht? (optional)", nicht_erledigt:"Warum nicht erledigt? *", rueckfrage:"Ihre Frage an den Eigentümer *" };
     var POSITIONS = ["vorne links","vorne","vorne rechts","links","rechts","hinten links","hinten","hinten rechts","Dach","Innenraum","Motorraum","Unterboden"];
     var NAME_KEY = "qar_briefing_by";
+    var AP_LABEL = { angefragt:"🟡 Freigabe angefragt – wartet auf den Eigentümer", freigegeben:"✅ Vom Eigentümer kostenpflichtig freigegeben", abgelehnt:"Vom Eigentümer abgelehnt – bitte nicht ausführen", widerrufen:"Vom Eigentümer widerrufen – bitte nicht ausführen", zurueckgezogen:"Zurückgezogen" };
+    var lastSig = "";
     var B = null, editing = {}, link = null;
 
     function el(tag, attrs, kids){
@@ -124,7 +136,23 @@
         body: JSON.stringify(Object.assign({ action:action, id:link.id, token:link.token }, body||{}))
       }).then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ if(!r.ok) throw new Error(d.error || "Server nicht erreichbar"); return d; }); });
     }
-    api("get").then(function(d){ B = d.briefing; render(); }).catch(function(e){ fail(e.message || "Briefing konnte nicht geladen werden."); });
+    function sig(b){ var w=(b&&b.work)||{}; return JSON.stringify([w.threads||{}, (w.approvals||[]).map(function(a){ return [a.id,a.status,a.ackAt]; }), b&&b.completedAt]); }
+    api("get").then(function(d){ B = d.briefing; lastSig = sig(B); render(); }).catch(function(e){ fail(e.message || "Briefing konnte nicht geladen werden."); });
+    // Neue Antworten / Freigaben des Eigentümers alle 45 Sekunden abholen (Eingaben bleiben erhalten)
+    function poll(){
+      if(!B || document.hidden) return;
+      var active = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+      api("get",{poll:true}).then(function(d){
+        var s2 = sig(d.briefing); if(s2 === lastSig) return;
+        lastSig = s2; B.work = d.briefing.work; B.completedAt = d.briefing.completedAt;
+        toast("Neue Nachricht oder Freigabe vom Eigentümer");
+        if(!active) render(); else needsRender = true;
+      }).catch(function(){});
+    }
+    var needsRender = false;
+    setInterval(poll, 45000);
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden) poll(); });
+    document.addEventListener("focusout", function(){ setTimeout(function(){ if(needsRender && !(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))){ needsRender=false; render(); } }, 200); });
 
     // Foto verkleinern (max. 1000 px, JPEG) — Nachher-Fotos der Werkstatt
     function compress(file){
@@ -185,8 +213,8 @@
       main.appendChild(actions);
 
       main.appendChild(el("div",{class:"note"},[
-        "Dieses Briefing ist eine Information des Fahrzeugeigentümers, ", el("b",{text:"kein Auftrag"}),
-        ". Auftrag, Umfang und Preis vereinbaren Sie direkt mit dem Eigentümer. Die Dokumentation hier ersetzt keine Abnahme — diese erfolgt vor Ort nach Sichtprüfung."
+        "Dieses Briefing ist eine Information des Fahrzeugeigentümers, ", el("b",{text:"noch kein Auftrag"}),
+        ". Verbindlich sind nur Leistungen, die der Eigentümer hier ausdrücklich „kostenpflichtig freigegeben“ hat, oder Vereinbarungen, die Sie direkt mit ihm treffen. Die Dokumentation ersetzt keine Abnahme — diese erfolgt vor Ort nach Sichtprüfung."
       ]));
 
       main.appendChild(el("div",{class:"card"},[ el("h2",{text:"Fahrzeug"}), el("div",{class:"grid"},[
@@ -231,16 +259,18 @@
           }
         });
         card.appendChild(docBlock(f, items[f.id], locked));
+        var dlg = dialogBlock(f.id, locked); if(dlg) card.appendChild(dlg);
         main.appendChild(card);
       });
 
       main.appendChild(extrasCard(work.extras || [], locked));
 
       if(!locked){
-        var ready = documented === total && questions === 0;
+        var openAps = ((B.work||{}).approvals||[]).filter(function(a){ return a.status==="angefragt"; }).length;
+        var ready = documented === total && questions === 0 && openAps === 0;
         var done = el("div",{class:"card no-print"},[
           el("h2",{text:"Abschluss"}),
-          el("div",{class:"meta",text: ready ? "Alle Punkte sind dokumentiert." : (documented < total ? "Noch " + (total-documented) + " Punkt(e) ohne Ergebnis." : "Offene Rückfragen bitte erst mit dem Eigentümer klären und den Punkt aktualisieren.")}),
+          el("div",{class:"meta",text: ready ? "Alle Punkte sind dokumentiert." : (documented < total ? "Noch " + (total-documented) + " Punkt(e) ohne Ergebnis." : openAps ? "Offene Freigabe-Anfragen: Entscheidung des Eigentümers abwarten oder Anfrage zurückziehen." : "Offene Rückfragen bitte erst mit dem Eigentümer klären und den Punkt aktualisieren.")}),
           el("button",{class:"btn red",disabled:!ready,text:"Dokumentation abschließen",onclick:function(){
             var by = getName(); if(!by){ toast("Bitte oben Ihren Namen angeben"); return; }
             if(!confirm("Dokumentation abschließen? Danach sind keine Änderungen mehr möglich.\n\nHinweis: Das ist keine Abnahme — diese erfolgt vor Ort mit dem Eigentümer.")) return;
@@ -306,6 +336,68 @@
       return box;
     }
 
+    function dialogBlock(ref, locked){
+      var w = B.work || {}, msgs = (w.threads||{})[ref] || [], aps = (w.approvals||[]).filter(function(a){ return a.ref===ref; });
+      if(locked && !msgs.length && !aps.length) return null;
+      var box = el("div",{class:"thread"});
+      msgs.forEach(function(m){
+        box.appendChild(el("div",{class:"bubble" + (m.from==="eigentuemer" ? " owner" : "")},[
+          el("div",{class:"k",text:(m.from==="eigentuemer" ? "Eigentümer" : "Werkstatt · " + m.by) + " · " + fmtDT(m.at)}),
+          el("div",{class:"msg",text:m.text})
+        ]));
+      });
+      aps.forEach(function(a){
+        var c = el("div",{class:"appr " + a.status},[
+          el("div",{class:"st",text:AP_LABEL[a.status] || a.status}),
+          el("div",{style:"font-weight:700",text:a.title}),
+          el("div",{class:"small",text:"Kostenschätzung " + eur(a.estimate) + " · angefragt von " + a.requestedBy + ", " + fmtDT(a.requestedAt)})
+        ]);
+        if(a.status==="freigegeben"){
+          c.appendChild(el("div",{style:"margin-top:4px",text:"„" + a.text + "“"}));
+          c.appendChild(el("div",{class:"small",text:"Freigegeben " + fmtDT(a.decidedAt) + " · Kostenrahmen bis max. " + eur(a.limit) + (a.ackAt ? " · Empfang bestätigt von " + a.ackBy : "")}));
+          if(!a.ackAt && !locked) c.appendChild(el("button",{class:"btn",type:"button",style:"margin-top:8px",text:"Empfang der Freigabe bestätigen",onclick:function(){
+            var by=getName(); if(!by){ toast("Bitte oben Ihren Namen angeben"); return; }
+            api("approvalAck",{approvalId:a.id,by:by}).then(function(){ a.ackAt=new Date().toISOString(); a.ackBy=by; lastSig=sig(B); toast("Bestätigt ✓"); render(); }).catch(function(e){ toast(e.message); });
+          }}));
+        }
+        if(a.status==="angefragt" && !locked) c.appendChild(el("button",{class:"btn ghost",type:"button",style:"margin-top:8px;padding:6px 10px;font-size:12px",text:"Anfrage zurückziehen",onclick:function(){
+          var by=getName(); if(!by){ toast("Bitte oben Ihren Namen angeben"); return; }
+          api("approvalWithdraw",{approvalId:a.id,by:by}).then(function(){ a.status="zurueckgezogen"; lastSig=sig(B); render(); }).catch(function(e){ toast(e.message); });
+        }}));
+        box.appendChild(c);
+      });
+      if(!locked){
+        var inp = el("input",{type:"text",maxlength:"2000",placeholder: msgs.length ? "Antworten …" : "Rückfrage an den Eigentümer …"});
+        var send = el("button",{class:"btn",type:"button",text:"Senden",onclick:function(){
+          var by=getName(); if(!by){ toast("Bitte oben Ihren Namen angeben"); return; }
+          var t=inp.value.trim(); if(!t) return; send.disabled=true;
+          api("message",{ref:ref,text:t,by:by}).then(function(){
+            w.threads = w.threads || {}; w.threads[ref] = (w.threads[ref]||[]).concat([{id:"tmp"+Date.now(),from:"werkstatt",by:by,text:t,at:new Date().toISOString()}]);
+            lastSig=sig(B); render();
+          }).catch(function(e){ toast(e.message); send.disabled=false; });
+        }});
+        inp.onkeydown = function(e){ if(e.key==="Enter"){ e.preventDefault(); send.click(); } };
+        box.appendChild(el("div",{class:"inline no-print"},[inp, send]));
+        box.appendChild(el("div",{class:"small no-print",style:"margin-top:4px",text:"Nachrichten dienen der Klärung. Zusätzliche, kostenpflichtige Arbeiten bitte über „Freigabe anfragen“ — verbindlich ist nur die Freigabe des Eigentümers."}));
+        var title = el("input",{type:"text",maxlength:"500",placeholder:"Leistung, z. B. Bremsscheiben VA erneuern"});
+        var est = el("input",{type:"text",inputmode:"decimal",placeholder:"Kosten ca. € inkl. MwSt."});
+        var reqBtn = el("button",{class:"btn",type:"button",style:"margin-top:8px",text:"Freigabe beim Eigentümer anfragen",onclick:function(){
+          var by=getName(); if(!by){ toast("Bitte oben Ihren Namen angeben"); return; }
+          if(!title.value.trim()){ toast("Bitte die Leistung beschreiben"); return; }
+          if(!(Number(est.value.replace(",","."))>0)){ toast("Bitte die voraussichtlichen Kosten angeben"); return; }
+          reqBtn.disabled=true;
+          api("approvalRequest",{ref:ref,title:title.value,estimate:est.value,by:by}).then(function(d){
+            w.approvals = (w.approvals||[]).concat([{id:d.approvalId,ref:ref,title:title.value.trim(),estimate:Number(est.value.replace(",",".")),requestedBy:by,requestedAt:new Date().toISOString(),status:"angefragt"}]);
+            lastSig=sig(B); toast("Freigabe angefragt ✓ — der Eigentümer entscheidet in seiner App"); render();
+          }).catch(function(e){ toast(e.message); reqBtn.disabled=false; });
+        }});
+        box.appendChild(el("details",{class:"req no-print"},[ el("summary",{text:"➕ Zusätzliche Leistung: Freigabe anfragen"}),
+          el("div",{class:"small",style:"margin:6px 0",text:"Der Eigentümer gibt die Leistung in seiner App mit einem Kostenrahmen frei oder lehnt ab. Bitte erst nach Freigabe ausführen."}),
+          title, el("div",{style:"margin-top:6px"},[est]), reqBtn ]));
+      }
+      return box;
+    }
+
     function extrasCard(extras, locked){
       var card = el("div",{class:"card"},[
         el("h2",{text:"Zusätzlich festgestellt"}),
@@ -317,7 +409,8 @@
           el("div",{style:"font-weight:700",text:x.title}),
           el("div",{class:"meta",style:"margin:0",text:[CAT[x.category], x.position, x.by + ", " + fmtDT(x.at), x.decision==="uebernehmen" ? "vom Eigentümer notiert" : x.decision==="verwerfen" ? "vom Eigentümer verworfen" : null].filter(Boolean).join(" · ")}),
           x.description ? el("div",{class:"msg",text:x.description}) : null,
-          thumbs(x.photos)
+          thumbs(x.photos),
+          dialogBlock("x:" + x.id, locked)
         ]);
         if(!locked && !x.decision) row.appendChild(el("button",{class:"btn ghost edit",type:"button",style:"margin-top:6px;padding:6px 10px;font-size:12px",text:"Entfernen",onclick:function(){
           if(!confirm("Hinweis entfernen?")) return;

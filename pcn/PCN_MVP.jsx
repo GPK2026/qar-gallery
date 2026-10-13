@@ -870,6 +870,13 @@ const uploadFindingVideo = (signedUrl, file, onProgress) => new Promise((resolve
   xhr.send(fd);
 });
 const FINDING_MAX_VIDEOS = 2, FINDING_MAX_VIDEO_MB = 50;
+// Freigabe-Text — muss wörtlich dem Server (repair-briefing, approvalText) entsprechen,
+// dort wird er beim Freigeben eingefroren. Formulierung mit debug Rechtsanwälte abstimmen.
+const eurDE = n => Number(n).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const APPROVAL_TEXT = (workshop, title, limit) =>
+  `Ich beauftrage ${workshop} kostenpflichtig mit folgender Leistung: ${title}. Kostenrahmen bis maximal ${eurDE(limit)} inkl. MwSt. Darüber hinausgehende Kosten nur nach erneuter Freigabe.`;
+const APPROVAL_NOTICE = "Der Vertrag kommt direkt zwischen dir und der Werkstatt zustande. QAR.Gallery übermittelt und dokumentiert deine Freigabe nur.";
+const DIALOG_NOTICE = "Nachrichten dienen der Klärung. Verbindlich beauftragt wird nur über „Kostenpflichtig freigeben“.";
 // Reparatur-Briefing: Link-Token liegt nur auf diesem Gerät (Server kennt den Hash)
 const BRIEFING_TOKENS_KEY = "pcn_briefing_tokens_v1";
 const briefingTokens = () => { try { return JSON.parse(store.getItem(BRIEFING_TOKENS_KEY)||"{}"); } catch { return {}; } };
@@ -5032,6 +5039,40 @@ Regeln:
     if(error){ toast_(error,"err"); setBriefingView(null); return; }
     setBriefingView({vehicleId, id, data});
   };
+  const [briefingReply, setBriefingReply] = useState({});   // ref -> Text
+  const [briefingLimit, setBriefingLimit] = useState({});   // approvalId -> Betrag
+  const refreshBriefing = async () => { const bv=briefingView; if(bv){ await openBriefing(bv.vehicleId, bv.id); loadBriefings(bv.vehicleId); } };
+  const sendBriefingReply = async (ref) => {
+    const bv = briefingView; const text=(briefingReply[ref]||"").trim(); if(!bv||!text) return;
+    const {error} = await window.PCN_DB.briefings.ownerMessage(bv.id, ref, text).catch(e=>({error:e?.message}));
+    if(error){ toast_(error,"err"); return; }
+    setBriefingReply(p=>({...p,[ref]:""})); toast_("Antwort gesendet ✓"); refreshBriefing();
+  };
+  const decideApproval = async (a, decision) => {
+    const bv = briefingView; if(!bv) return;
+    if(decision==="freigeben"){
+      const limit = Number(String(briefingLimit[a.id] ?? a.estimate).replace(",","."));
+      if(!(limit>0)){ toast_("Bitte einen Kostenrahmen angeben","err"); return; }
+      const text = APPROVAL_TEXT(bv.data?.recipientLabel||"die Werkstatt", a.title, limit);
+      if(!window.confirm("Kostenpflichtig beauftragen?\n\n„"+text+"“\n\n"+APPROVAL_NOTICE)) return;
+      const {error} = await window.PCN_DB.briefings.approvalDecide(bv.id, a.id, "freigeben", limit, null).catch(e=>({error:e?.message}));
+      if(error){ toast_(error,"err"); return; }
+      toast_("Freigabe erteilt ✓ — die Werkstatt sieht sie sofort");
+    } else {
+      if(!window.confirm("Anfrage ablehnen? Die Werkstatt führt diese Leistung dann nicht aus.")) return;
+      const {error} = await window.PCN_DB.briefings.approvalDecide(bv.id, a.id, "ablehnen", null, null).catch(e=>({error:e?.message}));
+      if(error){ toast_(error,"err"); return; }
+      toast_("Abgelehnt");
+    }
+    refreshBriefing();
+  };
+  const revokeApproval = async (a) => {
+    const bv = briefingView; if(!bv) return;
+    if(!window.confirm("Freigabe widerrufen? Das geht nur, solange die Werkstatt sie noch nicht bestätigt hat.")) return;
+    const {error} = await window.PCN_DB.briefings.approvalRevoke(bv.id, a.id).catch(e=>({error:e?.message}));
+    if(error){ toast_(error,"err"); return; }
+    toast_("Freigabe widerrufen"); refreshBriefing();
+  };
   const decideBriefingExtra = async (extraId, decision) => {
     const bv = briefingView; if(!bv) return;
     if(decision==="uebernehmen" && !window.confirm("In deine Mängelliste übernehmen? Das ist nur eine Notiz für dich — kein Auftrag an die Werkstatt.")) return;
@@ -8047,6 +8088,13 @@ Regeln:
                                 <div style={{fontSize:12,marginTop:2,color:bf.revokedAt||expired?C.muted:bf.firstViewedAt?C.green:C.amber}}>
                                   {bf.revokedAt?"Link zurückgezogen":expired?"Link abgelaufen":bf.firstViewedAt?`✓ Geöffnet${bf.viewCount>1?` (${bf.viewCount}×)`:""}, zuletzt ${new Date(bf.lastViewedAt).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}`:"Noch nicht geöffnet"}
                                 </div>
+                                {bf.progress&&(bf.progress.approvalsOpen>0||bf.progress.unanswered>0)&&!bf.completedAt&&(
+                                  <div style={{fontSize:12,marginTop:2,color:C.amber,fontWeight:700}}>
+                                    {bf.progress.approvalsOpen>0&&`🟡 ${bf.progress.approvalsOpen} Freigabe-Anfrage${bf.progress.approvalsOpen>1?"n":""} der Werkstatt`}
+                                    {bf.progress.approvalsOpen>0&&bf.progress.unanswered>0&&" · "}
+                                    {bf.progress.unanswered>0&&`💬 ${bf.progress.unanswered} Rückfrage${bf.progress.unanswered>1?"n":""} wartet auf dich`}
+                                  </div>
+                                )}
                                 {bf.progress&&(bf.progress.documented>0||bf.completedAt)&&(
                                   <div style={{fontSize:12,marginTop:2,color:bf.logbookTransferredAt?C.muted:bf.completedAt?C.green:C.white}}>
                                     {bf.logbookTransferredAt?"📋 Ins Logbuch übernommen":bf.completedAt?`🔧 Werkstatt hat dokumentiert (${bf.progress.done}/${bf.progress.total} erledigt)`:`🔧 In Arbeit: ${bf.progress.documented}/${bf.progress.total} dokumentiert`}
@@ -8818,6 +8866,64 @@ Regeln:
             const d=briefingView.data;
             const RES={erledigt:["✅ Erledigt",C.green],nicht_erledigt:["⏸ Nicht erledigt",C.amber],rueckfrage:["❓ Rückfrage",C.amber]};
             const box={background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:10};
+            const open=!d?.completedAt;
+            const APS={angefragt:["🟡 Freigabe angefragt",C.amber],freigegeben:["✅ Freigegeben",C.green],abgelehnt:["Abgelehnt",C.muted],widerrufen:["Widerrufen",C.muted],zurueckgezogen:["Von der Werkstatt zurückgezogen",C.muted]};
+            const dialog=(ref)=>{
+              const msgs=(d?.work?.threads||{})[ref]||[];
+              const aps=(d?.work?.approvals||[]).filter(a=>a.ref===ref);
+              if(!msgs.length&&!aps.length&&!open) return null;
+              return (
+                <div style={{marginTop:8,borderTop:`1px dashed ${C.border}`,paddingTop:8}}>
+                  {msgs.map(m=>(
+                    <div key={m.id} style={{display:"flex",justifyContent:m.from==="eigentuemer"?"flex-end":"flex-start",marginBottom:6}}>
+                      <div style={{maxWidth:"85%",background:m.from==="eigentuemer"?`${C.red}26`:C.black,border:`1px solid ${C.border}`,borderRadius:10,padding:"6px 10px"}}>
+                        <div style={{fontSize:11,color:C.muted}}>{m.from==="eigentuemer"?"Du":"Werkstatt · "+m.by} · {new Date(m.at).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}</div>
+                        <div style={{fontSize:13,color:C.white,whiteSpace:"pre-line",lineHeight:1.4}}>{m.text}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {aps.map(a=>{
+                    const st=APS[a.status]||[a.status,C.muted];
+                    return (
+                      <div key={a.id} style={{border:`1.5px solid ${a.status==="angefragt"?C.amber:a.status==="freigegeben"?C.green:C.border}`,borderRadius:10,padding:"8px 10px",marginBottom:8}}>
+                        <div style={{fontSize:12,fontWeight:700,color:st[1]}}>{st[0]}</div>
+                        <div style={{fontSize:14,fontWeight:700,color:C.white,marginTop:2}}>{a.title}</div>
+                        <div style={{fontSize:12,color:C.muted}}>Kostenschätzung der Werkstatt: {eurDE(a.estimate)} · {a.requestedBy}, {new Date(a.requestedAt).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}</div>
+                        {a.status==="freigegeben"&&<div style={{fontSize:12,color:C.white,marginTop:4,lineHeight:1.45}}>„{a.text}“<br/><span style={{color:C.muted}}>{new Date(a.decidedAt).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}{a.ackAt?` · von ${a.ackBy} bestätigt`:" · Bestätigung der Werkstatt ausstehend"}</span></div>}
+                        {a.status==="angefragt"&&open&&(
+                          <>
+                            <label style={{fontSize:12,fontWeight:700,color:C.muted,display:"block",margin:"8px 0 4px"}}>Kostenrahmen bis max. (€ inkl. MwSt.)</label>
+                            <input className="inp" inputMode="decimal" value={briefingLimit[a.id] ?? String(a.estimate).replace(".",",")}
+                              onChange={e=>setBriefingLimit(p=>({...p,[a.id]:e.target.value.replace(/[^0-9.,]/g,"")}))}
+                              style={{padding:"8px 12px",fontSize:15,borderRadius:8,width:"100%",marginBottom:8}}/>
+                            <div style={{display:"flex",gap:8}}>
+                              <button className="btn" style={{flex:2,padding:"9px",fontSize:13}} onClick={()=>decideApproval(a,"freigeben")}>Kostenpflichtig freigeben</button>
+                              <button className="btn ghost" style={{flex:1,padding:"9px",fontSize:13}} onClick={()=>decideApproval(a,"ablehnen")}>Ablehnen</button>
+                            </div>
+                            <div style={{fontSize:11,color:C.muted,lineHeight:1.45,marginTop:6}}>{APPROVAL_NOTICE}</div>
+                          </>
+                        )}
+                        {a.status==="freigegeben"&&!a.ackAt&&open&&(
+                          <button onClick={()=>revokeApproval(a)} style={{background:"none",border:"none",color:C.muted,fontSize:12,textDecoration:"underline",cursor:"pointer",padding:0,marginTop:6}}>Freigabe widerrufen</button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {open&&!d.revokedAt&&(
+                    <>
+                      <div style={{display:"flex",gap:6}}>
+                        <input className="inp" placeholder={msgs.length?"Antworten …":"Nachricht an die Werkstatt …"} value={briefingReply[ref]||""}
+                          onChange={e=>setBriefingReply(p=>({...p,[ref]:e.target.value}))} maxLength={2000}
+                          onKeyDown={e=>{ if(e.key==="Enter") sendBriefingReply(ref); }}
+                          style={{padding:"8px 12px",fontSize:14,borderRadius:8,flex:1,minWidth:0}}/>
+                        <button className="btn" style={{padding:"8px 12px",fontSize:13}} disabled={!(briefingReply[ref]||"").trim()} onClick={()=>sendBriefingReply(ref)}>Senden</button>
+                      </div>
+                      <div style={{fontSize:11,color:C.muted,marginTop:4}}>{DIALOG_NOTICE}</div>
+                    </>
+                  )}
+                </div>
+              );
+            };
             const thumbs=list=>(list||[]).length>0&&(
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>
                 {list.map((p,i)=><img key={i} src={p} alt="" onClick={()=>setLightbox({images:list,index:i})} style={{width:64,height:64,objectFit:"cover",borderRadius:6,cursor:"pointer"}}/>)}
@@ -8847,9 +8953,9 @@ Regeln:
                               {it.note&&<div style={{fontSize:13,color:C.white,lineHeight:1.45,whiteSpace:"pre-line",marginTop:2}}>{it.note}</div>}
                               <div style={{fontSize:12,color:C.muted,marginTop:2}}>{[it.parts&&"Teile: "+it.parts,it.cost!=null&&it.cost!==""&&Number(it.cost).toLocaleString("de-DE",{style:"currency",currency:"EUR"}),`${it.by}, ${new Date(it.at).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}`].filter(Boolean).join(" · ")}</div>
                               {thumbs(it.photos)}
-                              {it.result==="rueckfrage"&&<div style={{fontSize:12,color:C.amber,marginTop:4}}>Bitte direkt mit der Werkstatt klären.</div>}
                             </>
                           )}
+                          {dialog(f.id)}
                         </div>
                       );
                     })}
@@ -8863,6 +8969,7 @@ Regeln:
                             <div style={{fontSize:12,color:C.muted}}>{[x.position,`${x.by}, ${new Date(x.at).toLocaleDateString("de-DE")}`].filter(Boolean).join(" · ")}</div>
                             {x.description&&<div style={{fontSize:13,color:C.white,lineHeight:1.45,whiteSpace:"pre-line",marginTop:2}}>{x.description}</div>}
                             {thumbs(x.photos)}
+                            {dialog("x:"+x.id)}
                             {x.decision
                               ?<div style={{fontSize:12,color:C.muted,marginTop:6}}>{x.decision==="uebernehmen"?"✓ In deine Mängelliste übernommen":"Verworfen"}</div>
                               :<div style={{display:"flex",gap:8,marginTop:8}}>

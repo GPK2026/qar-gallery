@@ -35,6 +35,22 @@
 //     extraAdd { id, token, title, category, position, description, photos, by } → { ok, extraId }
 //     extraDelete { id, token, extraId }        → { ok }
 //     complete { id, token, by }                → { ok }
+//     message  { id, token, ref, text, by }     → { ok }   (Rückfrage-Dialog, nur Klärung)
+//     approvalRequest  { id, token, ref, title, estimate, by } → { ok, approvalId }
+//     approvalWithdraw { id, token, approvalId, by } → { ok }
+//     approvalAck      { id, token, approvalId, by } → { ok }  (Werkstatt bestätigt Empfang)
+//   Eigentümer zusätzlich:
+//     ownerMessage   { briefingId, ref, text }   → { ok }
+//     approvalDecide { briefingId, approvalId, decision:"freigeben"|"ablehnen", limit, note } → { ok }
+//     approvalRevoke { briefingId, approvalId }  → { ok }  (nur solange Werkstatt nicht bestätigt hat)
+//
+// BEAUFTRAGUNG
+//   Verbindlich ist nur die ausdrückliche Freigabe des angemeldeten Eigentümers
+//   mit Kostenrahmen (approvalDecide). Der Text der Freigabe wird beim Freigeben
+//   eingefroren und unverändert gespeichert. Der Vertrag kommt zwischen
+//   Eigentümer und Werkstatt zustande; QAR.Gallery übermittelt und dokumentiert.
+//   Nachrichten im Dialog sind reine Klärung.
+//   ref = Mängel-ID oder "x:<id>" für zusätzlich Festgestelltes.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -49,7 +65,9 @@ const MAX_EXTRAS = 10;
 
 const LIMITS: Record<string, number> = {
   create: 30, list: 240, detail: 240, revoke: 30, extraDecide: 60, transfer: 20,
-  get: 240, itemSave: 240, extraAdd: 60, extraDelete: 60, complete: 20,
+  get: 600, itemSave: 240, extraAdd: 60, extraDelete: 60, complete: 20,
+  message: 120, approvalRequest: 60, approvalWithdraw: 60, approvalAck: 60,
+  ownerMessage: 120, approvalDecide: 60, approvalRevoke: 30,
 };
 const WINDOW_MS = 60 * 60 * 1000;
 const hits = new Map<string, number[]>();
@@ -102,6 +120,13 @@ const money = (v: unknown) => {
   const n = Number(String(v).replace(",", "."));
   return Number.isFinite(n) ? Math.max(0, Math.min(9_999_999, Math.round(n * 100) / 100)) : null;
 };
+const MAX_MESSAGES = 60;
+const MAX_APPROVALS = 30;
+const eur = (n: number) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+// Freigabe-Text (beim Freigeben eingefroren) — Formulierung mit debug Rechtsanwälte abstimmen
+const approvalText = (workshop: string, title: string, limit: number) =>
+  `Ich beauftrage ${workshop} kostenpflichtig mit folgender Leistung: ${title}. ` +
+  `Kostenrahmen bis maximal ${eur(limit)} inkl. MwSt. Darüber hinausgehende Kosten nur nach erneuter Freigabe.`;
 const RESULT_LABEL: Record<string, string> = { erledigt: "erledigt", nicht_erledigt: "nicht erledigt", rueckfrage: "Rückfrage" };
 
 Deno.serve(async (req: Request) => {
@@ -159,6 +184,10 @@ Deno.serve(async (req: Request) => {
       done: ids.filter((id: string) => items[id]?.result === "erledigt").length,
       questions: ids.filter((id: string) => items[id]?.result === "rueckfrage").length,
       extrasOpen: extras.filter((x: any) => !x.decision).length,
+      approvalsOpen: (row.work?.approvals || []).filter((a: any) => a.status === "angefragt").length,
+      approvalsGranted: (row.work?.approvals || []).filter((a: any) => a.status === "freigegeben").length,
+      // Threads, deren letzte Nachricht von der Werkstatt kommt (= wartet auf Eigentümer)
+      unanswered: Object.values(row.work?.threads || {}).filter((t: any) => t.length && t[t.length - 1].from === "werkstatt").length,
     };
   };
   // Werkstatt-Zugriff über Link: gültig, nicht zurückgezogen, nicht abgelaufen
@@ -175,6 +204,17 @@ Deno.serve(async (req: Request) => {
   const logEntry = (work: any, entry: Record<string, unknown>) => {
     work.log = [...(work.log || []), { at: new Date().toISOString(), ...entry }].slice(-200);
   };
+  const validRef = (row: any, ref: unknown) => typeof ref === "string" && (
+    (row.snapshot?.findings || []).some((f: any) => f.id === ref) ||
+    (ref.startsWith("x:") && (row.work?.extras || []).some((x: any) => "x:" + x.id === ref)));
+  const addMessage = (work: any, ref: string, msg: Record<string, unknown>) => {
+    const threads = { ...(work.threads || {}) };
+    const list = threads[ref] || [];
+    if (list.length >= MAX_MESSAGES) return false;
+    threads[ref] = [...list, { id: crypto.randomUUID(), at: new Date().toISOString(), ...msg }];
+    work.threads = threads;
+    return true;
+  };
   const saveWork = async (id: string, work: any, extra: Record<string, unknown> = {}) => {
     const { error } = await db.from("repair_briefings").update({ work, ...extra }).eq("id", id);
     if (error) throw new Error(error.message);
@@ -185,6 +225,7 @@ Deno.serve(async (req: Request) => {
     if (action === "get") {
       const { row, err } = await byLink(false); if (err) return err;
       const nowIso = new Date().toISOString();
+      if (b.poll === true) return json({ briefing: await present(row, 7200) });
       await db.from("repair_briefings").update({
         first_viewed_at: row.first_viewed_at || nowIso, last_viewed_at: nowIso, view_count: (row.view_count || 0) + 1,
       }).eq("id", row.id);
@@ -247,9 +288,62 @@ Deno.serve(async (req: Request) => {
       const s = summary(row);
       if (s.documented < s.total) return json({ error: `Noch ${s.total - s.documented} Punkt(e) ohne Ergebnis` }, 400);
       if (s.questions > 0) return json({ error: "Offene Rückfragen bitte erst mit dem Eigentümer klären und den Punkt aktualisieren" }, 400);
+      if (s.approvalsOpen > 0) return json({ error: "Offene Freigabe-Anfragen: bitte Entscheidung des Eigentümers abwarten oder Anfrage zurückziehen" }, 400);
       const work = { ...(row.work || {}) };
       logEntry(work, { by, action: "complete" });
       await saveWork(row.id, work, { completed_at: new Date().toISOString(), completed_by: by });
+      return json({ ok: true });
+    }
+
+    if (action === "message") {
+      const { row, err } = await byLink(true); if (err) return err;
+      const by = str(b.by, 120), text = str(b.text, 2000);
+      if (!by) return json({ error: "Bitte Namen des Bearbeiters angeben" }, 400);
+      if (!text) return json({ error: "Nachricht ist leer" }, 400);
+      if (!validRef(row, b.ref)) return json({ error: "Punkt gehört nicht zu diesem Briefing" }, 400);
+      const work = { ...(row.work || {}) };
+      if (!addMessage(work, b.ref, { from: "werkstatt", by, text })) return json({ error: "Zu viele Nachrichten zu diesem Punkt" }, 400);
+      logEntry(work, { by, action: "message", ref: b.ref });
+      await saveWork(row.id, work);
+      return json({ ok: true });
+    }
+
+    if (action === "approvalRequest") {
+      const { row, err } = await byLink(true); if (err) return err;
+      const by = str(b.by, 120), title = str(b.title, 500);
+      const estimate = money(b.estimate);
+      if (!by) return json({ error: "Bitte Namen des Bearbeiters angeben" }, 400);
+      if (!title) return json({ error: "Bitte die Leistung beschreiben" }, 400);
+      if (!estimate || estimate <= 0) return json({ error: "Bitte die voraussichtlichen Kosten angeben" }, 400);
+      if (!validRef(row, b.ref)) return json({ error: "Punkt gehört nicht zu diesem Briefing" }, 400);
+      const work = { ...(row.work || {}) };
+      if ((work.approvals || []).length >= MAX_APPROVALS) return json({ error: "Zu viele Freigabe-Anfragen" }, 400);
+      const approvalId = crypto.randomUUID();
+      work.approvals = [...(work.approvals || []), {
+        id: approvalId, ref: b.ref, title, estimate, requestedBy: by, requestedAt: new Date().toISOString(), status: "angefragt",
+      }];
+      logEntry(work, { by, action: "approvalRequest", approvalId, ref: b.ref, estimate });
+      await saveWork(row.id, work);
+      return json({ ok: true, approvalId });
+    }
+
+    if (action === "approvalWithdraw" || action === "approvalAck") {
+      const { row, err } = await byLink(true); if (err) return err;
+      const by = str(b.by, 120);
+      if (!by) return json({ error: "Bitte Namen des Bearbeiters angeben" }, 400);
+      const work = { ...(row.work || {}) };
+      const a = (work.approvals || []).find((x: any) => x.id === b.approvalId);
+      if (!a) return json({ error: "Freigabe nicht gefunden" }, 404);
+      if (action === "approvalWithdraw") {
+        if (a.status !== "angefragt") return json({ error: "Nur offene Anfragen können zurückgezogen werden" }, 409);
+        work.approvals = work.approvals.map((x: any) => x.id === a.id ? { ...x, status: "zurueckgezogen", decidedAt: new Date().toISOString() } : x);
+      } else {
+        if (a.status !== "freigegeben") return json({ error: "Diese Freigabe ist nicht (mehr) gültig" }, 409);
+        if (a.ackAt) return json({ ok: true });
+        work.approvals = work.approvals.map((x: any) => x.id === a.id ? { ...x, ackAt: new Date().toISOString(), ackBy: by } : x);
+      }
+      logEntry(work, { by, action, approvalId: a.id });
+      await saveWork(row.id, work);
       return json({ ok: true });
     }
 
@@ -312,6 +406,44 @@ Deno.serve(async (req: Request) => {
 
     if (action === "detail") return json({ briefing: { id: row.id, recipientLabel: row.recipient_label, ...(await present(row, 3600)) } });
 
+    if (action === "ownerMessage" || action === "approvalDecide" || action === "approvalRevoke") {
+      if (row.revoked_at) return json({ error: "Der Link ist zurückgezogen" }, 409);
+      if (row.completed_at) return json({ error: "Die Werkstatt hat die Dokumentation bereits abgeschlossen" }, 409);
+      const work = { ...(row.work || {}) };
+      if (action === "ownerMessage") {
+        const text = str(b.text, 2000);
+        if (!text) return json({ error: "Nachricht ist leer" }, 400);
+        if (!validRef(row, b.ref)) return json({ error: "Punkt gehört nicht zu diesem Briefing" }, 400);
+        if (!addMessage(work, b.ref, { from: "eigentuemer", by: "Eigentümer", text })) return json({ error: "Zu viele Nachrichten zu diesem Punkt" }, 400);
+        logEntry(work, { by: "Eigentümer", action: "message", ref: b.ref });
+      } else {
+        const a = (work.approvals || []).find((x: any) => x.id === b.approvalId);
+        if (!a) return json({ error: "Freigabe nicht gefunden" }, 404);
+        const nowIso = new Date().toISOString();
+        if (action === "approvalDecide") {
+          if (a.status !== "angefragt") return json({ error: "Über diese Anfrage wurde bereits entschieden" }, 409);
+          if (b.decision === "freigeben") {
+            const limit = money(b.limit);
+            if (!limit || limit <= 0) return json({ error: "Bitte einen Kostenrahmen angeben" }, 400);
+            const text = approvalText(row.recipient_label || "die Werkstatt", a.title, limit);
+            work.approvals = work.approvals.map((x: any) => x.id === a.id
+              ? { ...x, status: "freigegeben", limit, text, ownerNote: str(b.note, 1000), decidedAt: nowIso, decidedBy: userId } : x);
+          } else if (b.decision === "ablehnen") {
+            work.approvals = work.approvals.map((x: any) => x.id === a.id
+              ? { ...x, status: "abgelehnt", ownerNote: str(b.note, 1000), decidedAt: nowIso, decidedBy: userId } : x);
+          } else return json({ error: "Ungültige Entscheidung" }, 400);
+          logEntry(work, { by: "Eigentümer", action: "approval_" + b.decision, approvalId: a.id, limit: money(b.limit) });
+        } else {
+          if (a.status !== "freigegeben") return json({ error: "Nur erteilte Freigaben können widerrufen werden" }, 409);
+          if (a.ackAt) return json({ error: "Die Werkstatt hat die Freigabe bereits bestätigt — bitte direkt mit ihr sprechen" }, 409);
+          work.approvals = work.approvals.map((x: any) => x.id === a.id ? { ...x, status: "widerrufen", revokedAt: nowIso } : x);
+          logEntry(work, { by: "Eigentümer", action: "approvalRevoke", approvalId: a.id });
+        }
+      }
+      await saveWork(row.id, work);
+      return json({ ok: true });
+    }
+
     if (action === "revoke") {
       const { error } = await db.from("repair_briefings").update({ revoked_at: new Date().toISOString() }).eq("id", row.id);
       if (error) throw new Error(error.message);
@@ -356,9 +488,21 @@ Deno.serve(async (req: Request) => {
         return `${i + 1}. ${f.title}: ${RESULT_LABEL[it.result] || "–"}${it.note ? " — " + it.note : ""}${it.parts ? " (Teile: " + it.parts + ")" : ""}`;
       });
       const total = findings.reduce((s: number, f: any) => s + (items[f.id]?.cost || 0), 0);
+      const granted = (row.work?.approvals || []).filter((a: any) => a.status === "freigegeben");
+      const extraTitle = (ref: string) => {
+        const f = findings.find((x: any) => x.id === ref); if (f) return f.title;
+        const x = (row.work?.extras || []).find((e: any) => "x:" + e.id === ref); return x ? x.title + " (zusätzlich festgestellt)" : ref;
+      };
+      const threadLines = Object.entries(row.work?.threads || {}).flatMap(([ref, list]: any) => [
+        `Rückfrage zu „${extraTitle(ref)}“:`,
+        ...list.map((m: any) => `  ${new Date(m.at).toLocaleString("de-DE")} ${m.from === "werkstatt" ? "Werkstatt (" + m.by + ")" : "Eigentümer"}: ${m.text}`),
+      ]);
       const notes = [
         `Werkstatt-Dokumentation (Reparatur-Briefing), abgeschlossen von ${row.completed_by} am ${new Date(row.completed_at).toLocaleDateString("de-DE")}.`,
         ...lines,
+        ...(granted.length ? ["Freigaben des Eigentümers:", ...granted.map((a: any) =>
+          `  ${a.title} — bis max. ${eur(a.limit)}, freigegeben am ${new Date(a.decidedAt).toLocaleString("de-DE")}${a.ackAt ? ", von der Werkstatt bestätigt" : ""}`)] : []),
+        ...threadLines,
         onSite ? `Fahrzeug vor Ort geprüft am ${new Date(onSite).toLocaleDateString("de-DE")} (Angabe des Eigentümers).` : null,
       ].filter(Boolean).join("\n");
       const firstPhoto = findings.map((f: any) => (items[f.id]?.photos || [])[0]).find(Boolean) || null;

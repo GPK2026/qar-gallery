@@ -1175,6 +1175,21 @@ const PCN_STORAGE = (() => {
       if(res.error) return { error: res.error };
       return { data: res.data };
     },
+    async briefingOwnerMessage(briefingId, ref, text) {
+      const res = await secureApi("ownerMessage", { st: sessionToken(), briefingId, ref, text }, "repair-briefing");
+      if(res.error) return { error: res.error };
+      return { data: true };
+    },
+    async briefingApprovalDecide(briefingId, approvalId, decision, limit, note) {
+      const res = await secureApi("approvalDecide", { st: sessionToken(), briefingId, approvalId, decision, limit, note }, "repair-briefing");
+      if(res.error) return { error: res.error };
+      return { data: true };
+    },
+    async briefingApprovalRevoke(briefingId, approvalId) {
+      const res = await secureApi("approvalRevoke", { st: sessionToken(), briefingId, approvalId }, "repair-briefing");
+      if(res.error) return { error: res.error };
+      return { data: true };
+    },
     async transferBriefing(briefingId, onSiteDate) {
       const res = await secureApi("transfer", { st: sessionToken(), briefingId, onSiteDate }, "repair-briefing");
       if(res.error) return { error: res.error };
@@ -1917,6 +1932,9 @@ function guard(label, fn){
       detail: (bid) => db.briefingDetail ? db.briefingDetail(bid) : Promise.resolve({data:null}),
       decideExtra: guard("briefings.decideExtra", (bid,xid,dec) => db.decideBriefingExtra(bid,xid,dec)),
       transfer: guard("briefings.transfer", (bid,date) => db.transferBriefing(bid,date)),
+      ownerMessage: guard("briefings.ownerMessage", (bid,ref,text) => db.briefingOwnerMessage(bid,ref,text)),
+      approvalDecide: guard("briefings.approvalDecide", (bid,aid,dec,limit,note) => db.briefingApprovalDecide(bid,aid,dec,limit,note)),
+      approvalRevoke: guard("briefings.approvalRevoke", (bid,aid) => db.briefingApprovalRevoke(bid,aid)),
     },
     emergencyProfiles: {
       list: guard("emergencyProfiles.list", (vid,ownerUid) => db.listEmergencyProfiles(vid,ownerUid)),
