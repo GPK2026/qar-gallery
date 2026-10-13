@@ -883,6 +883,8 @@ const BRIEFING_TOKENS_KEY = "pcn_briefing_tokens_v1";
 const briefingTokens = () => { try { return JSON.parse(store.getItem(BRIEFING_TOKENS_KEY)||"{}"); } catch { return {}; } };
 const briefingLink = (id, token) => `${location.origin}/pcn/briefing.html#b=${id}.${token}`;
 
+// Vorerst ausgeblendet (Entscheidung 13.10.2026) — Code bleibt für später erhalten.
+const VOICE_ENABLED = false;
 // ── Sprachsteuerung (Stufe 1): Navigation + Diktat ins aktive Feld ──
 // Spracherkennung des Browsers (Chrome/Android: Google, Safari: Apple).
 // Kein KI-Dienst. Sprache füllt nur aus bzw. navigiert — Speichern, Senden,
@@ -7830,7 +7832,7 @@ Regeln:
       <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:80}}>
         <style>{CSS}</style>
         {!isGuest&&renderTabBar("desk-only")}
-        {!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
+        {VOICE_ENABLED&&!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
@@ -10602,7 +10604,7 @@ Regeln:
   return (
     <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:62}}>
       <style>{CSS}</style>
-      {!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
+      {VOICE_ENABLED&&!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
       {/* ── Geführte Einführung: jeder Schritt mit "Verstanden" bestätigen ── */}
       {showOnboarding&&(()=>{
         const n=ONBOARDING_STEPS.length, idx=Math.min(onboardingIdx,n), finished=idx>=n;
