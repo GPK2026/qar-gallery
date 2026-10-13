@@ -453,10 +453,10 @@ const PCN_STORAGE = (() => {
   // gesperrt; Login, Registrierung, Passwortwechsel und Notfallprofile laufen
   // über diese Funktion. Sie liefert beim Login ein signiertes Sitzungs-Token
   // (session.st), das Eigentümer-Aktionen am Server nachweist.
-  const secureApi = async (action, body={}) => {
+  const secureApi = async (action, body={}, fn="pcn-secure") => {
     let r;
     try {
-      r = await fetch(SUPABASE_URL_get().replace(/\/rest\/v1\/?$/,"")+"/functions/v1/pcn-secure", {
+      r = await fetch(SUPABASE_URL_get().replace(/\/rest\/v1\/?$/,"")+"/functions/v1/"+fn, {
         method:"POST",
         headers:{ "Content-Type":"application/json", apikey:SUPABASE_KEY_get(), Authorization:"Bearer "+SUPABASE_KEY_get() },
         body: JSON.stringify({ action, ...body }),
@@ -1149,20 +1149,36 @@ const PCN_STORAGE = (() => {
       return { data: res.data };
     },
     // ── Reparatur-Briefing (Link für die Werkstatt) ──
+    // Eigene Edge Function "repair-briefing" (getrennt vom Login in pcn-secure)
     async createBriefing(vehicleId, payload) {
-      const res = await secureApi("briefingCreate", { st: sessionToken(), vehicleId, ...payload });
+      const res = await secureApi("create", { st: sessionToken(), vehicleId, ...payload }, "repair-briefing");
       if(res.error) return { error: res.error };
       return { data: res.data };
     },
     async listBriefings(vehicleId) {
-      const res = await secureApi("briefingList", { st: sessionToken(), vehicleId });
+      const res = await secureApi("list", { st: sessionToken(), vehicleId }, "repair-briefing");
       if(res.error) return { error: res.error };
       return { data: res.data.briefings||[] };
     },
+    async briefingDetail(briefingId) {
+      const res = await secureApi("detail", { st: sessionToken(), briefingId }, "repair-briefing");
+      if(res.error) return { error: res.error };
+      return { data: res.data.briefing };
+    },
     async revokeBriefing(briefingId) {
-      const res = await secureApi("briefingRevoke", { st: sessionToken(), briefingId });
+      const res = await secureApi("revoke", { st: sessionToken(), briefingId }, "repair-briefing");
       if(res.error) return { error: res.error };
       return { data: true };
+    },
+    async decideBriefingExtra(briefingId, extraId, decision) {
+      const res = await secureApi("extraDecide", { st: sessionToken(), briefingId, extraId, decision }, "repair-briefing");
+      if(res.error) return { error: res.error };
+      return { data: res.data };
+    },
+    async transferBriefing(briefingId, onSiteDate) {
+      const res = await secureApi("transfer", { st: sessionToken(), briefingId, onSiteDate }, "repair-briefing");
+      if(res.error) return { error: res.error };
+      return { data: res.data };
     },
     async getEmergencyProfilesByCode(vehicleId, accessCode) {
       // KEIN Login nötig — das ist der Weg für Rettungskräfte. Der Code
@@ -1898,6 +1914,9 @@ function guard(label, fn){
       create: guard("briefings.create", (vid,payload) => db.createBriefing(vid,payload)),
       list: (vid) => db.listBriefings ? db.listBriefings(vid) : Promise.resolve({data:[]}),
       revoke: guard("briefings.revoke", (bid) => db.revokeBriefing(bid)),
+      detail: (bid) => db.briefingDetail ? db.briefingDetail(bid) : Promise.resolve({data:null}),
+      decideExtra: guard("briefings.decideExtra", (bid,xid,dec) => db.decideBriefingExtra(bid,xid,dec)),
+      transfer: guard("briefings.transfer", (bid,date) => db.transferBriefing(bid,date)),
     },
     emergencyProfiles: {
       list: guard("emergencyProfiles.list", (vid,ownerUid) => db.listEmergencyProfiles(vid,ownerUid)),

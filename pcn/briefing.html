@@ -6,9 +6,11 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
   <title>Reparatur-Briefing</title>
-  <!-- Ansicht für die Werkstatt: lädt das Briefing über pcn-secure (briefingGet)
-       mit der ID und dem Token aus dem Link-Fragment (#b=<id>.<token>). Das
-       Fragment geht nicht an Server-Logs. Alles wird per textContent gesetzt. -->
+  <!-- Ansicht für die Werkstatt: lädt das Briefing über die Edge Function
+       repair-briefing mit ID und Token aus dem Link-Fragment (#b=<id>.<token>).
+       Das Fragment geht nicht an Server-Logs. Inhalte werden per textContent
+       gesetzt. Die Werkstatt dokumentiert je Punkt das Ergebnis; das ist
+       ausdrücklich keine Abnahme und zusätzlich Festgestelltes kein Auftrag. -->
   <style>
     :root { --bg:#f5f5f6; --card:#fff; --text:#16161a; --muted:#6b6d72; --border:#e3e4e8; --red:#d5001c; --amber:#b7791f; --green:#2f855a; }
     * { box-sizing:border-box; }
@@ -26,21 +28,43 @@
     .finding h3 { margin:0 0 2px; font-size:18px; }
     .meta { color:var(--muted); font-size:13px; margin-bottom:8px; }
     .pill { display:inline-block; font-size:12px; font-weight:700; border-radius:99px; padding:1px 9px; border:1px solid currentColor; margin-left:6px; vertical-align:2px; }
-    .photos { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; margin-top:8px; }
+    .photos { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-top:8px; }
     .photos img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:8px; cursor:zoom-in; background:#eee; }
     video { width:100%; max-height:420px; border-radius:8px; background:#000; margin-top:8px; display:block; }
     .num { display:inline-flex; width:26px; height:26px; border-radius:13px; background:var(--red); color:#fff; font-weight:800; align-items:center; justify-content:center; font-size:14px; margin-right:8px; }
     .actions { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
-    .btn { border:0; border-radius:10px; padding:10px 14px; font-weight:700; font-size:14px; cursor:pointer; background:#16161a; color:#fff; text-decoration:none; }
+    .btn { border:0; border-radius:10px; padding:10px 14px; font-weight:700; font-size:14px; cursor:pointer; background:#16161a; color:#fff; text-decoration:none; font-family:inherit; }
     .btn.ghost { background:#fff; color:#16161a; border:1px solid var(--border); }
+    .btn.red { background:var(--red); }
+    .btn:disabled { opacity:.45; cursor:default; }
     .state { text-align:center; padding:60px 16px; color:var(--muted); }
+    .note { background:#fff8e6; border:1px solid #f0d9a6; color:#5c4510; border-radius:10px; padding:10px 12px; font-size:13px; margin-bottom:14px; }
+    .doc { border-top:1px dashed var(--border); margin-top:12px; padding-top:12px; }
+    .doc .label { font-size:12px; font-weight:700; color:var(--muted); margin:8px 0 4px; display:block; }
+    .choice { display:flex; gap:6px; flex-wrap:wrap; }
+    .choice button { flex:1; min-width:96px; padding:9px 6px; border-radius:10px; border:1.5px solid var(--border); background:#fff; font-weight:700; font-size:13px; cursor:pointer; font-family:inherit; }
+    .choice button.on { border-color:#16161a; background:#16161a; color:#fff; }
+    input[type=text], input[type=number], textarea, select { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; font:inherit; background:#fff; }
+    textarea { min-height:70px; }
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .result { border-radius:10px; padding:8px 10px; margin-top:8px; font-size:14px; }
+    .result.erledigt { background:#e9f6ef; }
+    .result.nicht_erledigt, .result.rueckfrage { background:#fdf3e1; }
+    .progress { height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:6px; }
+    .progress div { height:100%; background:var(--green); }
+    .thumbs { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+    .thumbs .t { position:relative; }
+    .thumbs img { width:64px; height:64px; object-fit:cover; border-radius:6px; display:block; }
+    .thumbs .x { position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:10px; border:0; background:var(--red); color:#fff; font-size:12px; cursor:pointer; }
+    .addphoto { display:inline-flex; align-items:center; justify-content:center; width:64px; height:64px; border:1.5px dashed var(--border); border-radius:6px; cursor:pointer; color:var(--muted); font-size:22px; }
     footer { color:var(--muted); font-size:12px; text-align:center; padding:8px 16px 32px; }
     #zoom { position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; align-items:center; justify-content:center; z-index:9; }
     #zoom img { max-width:96vw; max-height:92vh; }
+    #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#16161a; color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; display:none; z-index:10; max-width:92vw; }
     @media print {
       header { background:none; color:#000; border-bottom:2px solid #000; }
       header .brand { color:#555; }
-      .actions, video, #zoom { display:none !important; }
+      .actions, video, #zoom, .no-print, .doc form, .choice, .addphoto, .edit { display:none !important; }
       .video-note { display:block !important; }
       body { background:#fff; }
       .card { break-inside:avoid; border-color:#bbb; }
@@ -56,79 +80,277 @@
   <main id="main"><div class="state">Briefing wird geladen …</div></main>
   <footer>Vertraulich — nur für die beauftragte Werkstatt bestimmt. Bereitgestellt über QAR.Gallery.</footer>
   <div id="zoom"><img alt=""></div>
+  <div id="toast"></div>
   <script src="pcn_config.js"></script>
   <script>
   (function(){
     var main = document.getElementById("main");
     var CAT = { lack:"Lack / Kratzer", delle:"Delle / Beule", felge:"Felge / Bordstein", reifen:"Reifen", glas:"Glas / Scheibe", innenraum:"Innenraum", technik:"Technik", sonstiges:"Sonstiges" };
     var STATUS = { offen:["Offen","var(--red)"], beobachten:["Beobachten","var(--amber)"], behoben:["Behoben","var(--green)"] };
+    var RESULT = { erledigt:"✅ Erledigt", nicht_erledigt:"⏸ Nicht erledigt", rueckfrage:"❓ Rückfrage" };
+    var NOTE_LABEL = { erledigt:"Was wurde gemacht? (optional)", nicht_erledigt:"Warum nicht erledigt? *", rueckfrage:"Ihre Frage an den Eigentümer *" };
+    var POSITIONS = ["vorne links","vorne","vorne rechts","links","rechts","hinten links","hinten","hinten rechts","Dach","Innenraum","Motorraum","Unterboden"];
+    var NAME_KEY = "qar_briefing_by";
+    var B = null, editing = {}, link = null;
+
     function el(tag, attrs, kids){
       var n = document.createElement(tag);
-      Object.keys(attrs||{}).forEach(function(k){ if(k==="text") n.textContent = attrs[k]; else if(k==="style") n.style.cssText = attrs[k]; else n.setAttribute(k, attrs[k]); });
-      (kids||[]).forEach(function(c){ if(c) n.appendChild(c); });
+      Object.keys(attrs||{}).forEach(function(k){
+        if(k==="text") n.textContent = attrs[k];
+        else if(k==="style") n.style.cssText = attrs[k];
+        else if(k.slice(0,2)==="on") n[k] = attrs[k];
+        else if(attrs[k]!==false && attrs[k]!==null && attrs[k]!==undefined) n.setAttribute(k, attrs[k]===true ? "" : attrs[k]);
+      });
+      (kids||[]).forEach(function(c){ if(c) n.appendChild(typeof c==="string" ? document.createTextNode(c) : c); });
       return n;
     }
     function fmtDate(d){ if(!d) return ""; var x = new Date(d); return isNaN(x) ? String(d) : x.toLocaleDateString("de-DE"); }
+    function fmtDT(d){ var x = new Date(d); return isNaN(x) ? "" : x.toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"}); }
+    function eur(n){ return (n===null||n===undefined||n==="") ? "" : Number(n).toLocaleString("de-DE",{style:"currency",currency:"EUR"}); }
     function kv(k, v){ return v ? el("div", {}, [el("div",{class:"k",text:k}), el("div",{class:"v",text:String(v)})]) : null; }
     function fail(msg){ document.getElementById("title").textContent = "Reparatur-Briefing"; main.innerHTML = ""; main.appendChild(el("div",{class:"state",text:msg})); }
+    function toast(msg){ var t=document.getElementById("toast"); t.textContent=msg; t.style.display="block"; clearTimeout(toast._t); toast._t=setTimeout(function(){ t.style.display="none"; }, 3200); }
+    function getName(){ try { return localStorage.getItem(NAME_KEY)||""; } catch(e){ return ""; } }
+    function setName(v){ try { localStorage.setItem(NAME_KEY, v); } catch(e){} }
 
     var m = /(?:^|[#&])b=([0-9a-f-]{36})\.([A-Za-z0-9_-]{32,128})/i.exec(location.hash || "");
     if(!m){ fail("Der Link ist unvollständig. Bitte den kompletten Link aus der Nachricht öffnen."); return; }
+    link = { id:m[1], token:m[2] };
     var cfg = window.PCN_CONFIG || {};
-    fetch(cfg.supabaseUrl + "/functions/v1/pcn-secure", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json", apikey:cfg.supabaseKey, Authorization:"Bearer " + cfg.supabaseKey },
-      body: JSON.stringify({ action:"briefingGet", id:m[1], token:m[2] })
-    }).then(function(r){ return r.json().then(function(d){ return { ok:r.ok, d:d }; }); })
-      .then(function(res){ if(!res.ok) throw new Error(res.d && res.d.error || "Briefing nicht verfügbar"); render(res.d.briefing); })
-      .catch(function(e){ fail(e.message || "Briefing konnte nicht geladen werden."); });
+    function api(action, body){
+      return fetch(cfg.supabaseUrl + "/functions/v1/repair-briefing", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", apikey:cfg.supabaseKey, Authorization:"Bearer " + cfg.supabaseKey },
+        body: JSON.stringify(Object.assign({ action:action, id:link.id, token:link.token }, body||{}))
+      }).then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ if(!r.ok) throw new Error(d.error || "Server nicht erreichbar"); return d; }); });
+    }
+    api("get").then(function(d){ B = d.briefing; render(); }).catch(function(e){ fail(e.message || "Briefing konnte nicht geladen werden."); });
 
-    function render(b){
-      var v = b.vehicle || {}, o = b.owner || {};
+    // Foto verkleinern (max. 1000 px, JPEG) — Nachher-Fotos der Werkstatt
+    function compress(file){
+      return new Promise(function(res, rej){
+        var fr = new FileReader(); fr.onerror = rej;
+        fr.onload = function(){
+          var img = new Image(); img.onerror = rej;
+          img.onload = function(){
+            var sc = Math.min(1, 1000/img.width, 1000/img.height), cv = document.createElement("canvas");
+            cv.width = Math.round(img.width*sc); cv.height = Math.round(img.height*sc);
+            cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+            res(cv.toDataURL("image/jpeg", 0.72));
+          };
+          img.src = fr.result;
+        };
+        fr.readAsDataURL(file);
+      });
+    }
+    function photoPicker(list, max, onChange){
+      var wrap = el("div",{class:"thumbs"});
+      function draw(){
+        wrap.innerHTML = "";
+        list.forEach(function(p, i){
+          wrap.appendChild(el("div",{class:"t"},[ el("img",{src:p,alt:""}), el("button",{class:"x",type:"button",text:"×",onclick:function(){ list.splice(i,1); draw(); onChange&&onChange(); }}) ]));
+        });
+        if(list.length < max){
+          var inp = el("input",{type:"file",accept:"image/*",multiple:true,style:"display:none"});
+          inp.onchange = function(){
+            var files = Array.prototype.slice.call(inp.files||[], 0, max-list.length);
+            Promise.all(files.map(compress)).then(function(urls){ urls.forEach(function(u){ list.push(u); }); draw(); onChange&&onChange(); })
+              .catch(function(){ toast("Foto konnte nicht gelesen werden"); });
+          };
+          wrap.appendChild(el("label",{class:"addphoto",title:"Foto hinzufügen"},["📷", inp]));
+        }
+      }
+      draw();
+      return wrap;
+    }
+    function thumbs(list){
+      if(!list || !list.length) return null;
+      var g = el("div",{class:"photos"});
+      list.forEach(function(p){ if(/^data:image\/jpeg;base64,/.test(p)) g.appendChild(el("img",{src:p,alt:"Foto",onclick:function(){ zoom(p); }})); });
+      return g;
+    }
+
+    function render(){
+      var v = B.vehicle || {}, o = B.owner || {}, work = B.work || {}, items = work.items || {};
+      var locked = !!B.completedAt;
       document.title = "Reparatur-Briefing · " + (v.make || "Fahrzeug");
       document.getElementById("title").textContent = [v.make, v.plate].filter(Boolean).join(" · ") || "Reparatur-Briefing";
       main.innerHTML = "";
 
-      var actions = el("div",{class:"actions"},[]);
-      var printBtn = el("button",{class:"btn",text:"Drucken / als PDF speichern"}); printBtn.onclick = function(){ window.print(); };
-      actions.appendChild(printBtn);
-      if(o.phone){ actions.appendChild(el("a",{class:"btn ghost",href:"tel:"+o.phone.replace(/[^+0-9]/g,""),text:"Anrufen"})); }
-      if(o.email){ actions.appendChild(el("a",{class:"btn ghost",href:"mailto:"+o.email+"?subject="+encodeURIComponent("Ihr Reparatur-Briefing"),text:"E-Mail"})); }
+      var actions = el("div",{class:"actions"},[
+        el("button",{class:"btn",text:"Drucken / als PDF speichern",onclick:function(){ window.print(); }})
+      ]);
+      if(o.phone) actions.appendChild(el("a",{class:"btn ghost",href:"tel:"+o.phone.replace(/[^+0-9]/g,""),text:"Eigentümer anrufen"}));
+      if(o.email) actions.appendChild(el("a",{class:"btn ghost",href:"mailto:"+o.email+"?subject="+encodeURIComponent("Ihr Reparatur-Briefing"),text:"E-Mail"}));
       main.appendChild(actions);
+
+      main.appendChild(el("div",{class:"note"},[
+        "Dieses Briefing ist eine Information des Fahrzeugeigentümers, ", el("b",{text:"kein Auftrag"}),
+        ". Auftrag, Umfang und Preis vereinbaren Sie direkt mit dem Eigentümer. Die Dokumentation hier ersetzt keine Abnahme — diese erfolgt vor Ort nach Sichtprüfung."
+      ]));
 
       main.appendChild(el("div",{class:"card"},[ el("h2",{text:"Fahrzeug"}), el("div",{class:"grid"},[
         kv("Fahrzeug", v.make), kv("Baujahr", v.year), kv("Kennzeichen", v.plate),
         kv("Kilometerstand", v.km ? Number(v.km).toLocaleString("de-DE") + " km" : ""), kv("FIN", v.fin)
       ]) ]));
-      main.appendChild(el("div",{class:"card"},[ el("h2",{text:"Auftraggeber"}), el("div",{class:"grid"},[
+      main.appendChild(el("div",{class:"card"},[ el("h2",{text:"Eigentümer"}), el("div",{class:"grid"},[
         kv("Name", o.name), kv("Telefon", o.phone), kv("E-Mail", o.email), kv("Wunschtermin / Erreichbarkeit", o.preferred),
-        kv("Erstellt am", fmtDate(b.createdAt))
+        kv("Erstellt am", fmtDate(B.createdAt))
       ]) ]));
-      if(b.message){ main.appendChild(el("div",{class:"card"},[ el("h2",{text:"Nachricht des Eigentümers"}), el("div",{class:"msg",text:b.message}) ])); }
+      if(B.message) main.appendChild(el("div",{class:"card"},[ el("h2",{text:"Nachricht des Eigentümers"}), el("div",{class:"msg",text:B.message}) ]));
 
-      (b.findings || []).forEach(function(f, i){
+      // Dokumentation: Bearbeiter + Fortschritt
+      var total = (B.findings||[]).length;
+      var documented = (B.findings||[]).filter(function(f){ return items[f.id] && items[f.id].result; }).length;
+      var questions = (B.findings||[]).filter(function(f){ return items[f.id] && items[f.id].result==="rueckfrage"; }).length;
+      var docCard = el("div",{class:"card"},[ el("h2",{text:"Dokumentation der Werkstatt"}) ]);
+      if(locked){
+        docCard.appendChild(el("div",{text:"✓ Abgeschlossen von " + B.completedBy + " am " + fmtDT(B.completedAt) + ". Keine weiteren Änderungen möglich."}));
+      } else {
+        docCard.appendChild(el("div",{class:"meta",text:"Bitte jeden Punkt mit einem Ergebnis dokumentieren. Der Eigentümer sieht Ihre Angaben in seiner App."}));
+        var nameIn = el("input",{type:"text",maxlength:"120",placeholder:"Ihr Name / Bearbeiter *",value:getName()});
+        nameIn.oninput = function(){ setName(nameIn.value.trim()); };
+        docCard.appendChild(el("label",{class:"k",text:"Bearbeitet von"}));
+        docCard.appendChild(nameIn);
+      }
+      docCard.appendChild(el("div",{class:"meta",style:"margin:10px 0 0",text:documented + " von " + total + " Punkten dokumentiert" + (questions ? " · " + questions + " offene Rückfrage(n)" : "")}));
+      docCard.appendChild(el("div",{class:"progress"},[ el("div",{style:"width:" + (total ? Math.round(documented/total*100) : 0) + "%"}) ]));
+      main.appendChild(docCard);
+
+      (B.findings || []).forEach(function(f, i){
         var st = STATUS[f.status] || STATUS.offen;
-        var h3 = el("h3",{},[ el("span",{class:"num",text:String(i+1)}), document.createTextNode(f.title || "Punkt") ]);
-        h3.appendChild(el("span",{class:"pill",style:"color:"+st[1],text:st[0]}));
+        var h3 = el("h3",{},[ el("span",{class:"num",text:String(i+1)}), f.title || "Punkt", el("span",{class:"pill",style:"color:"+st[1],text:st[0]}) ]);
         var meta = [CAT[f.category] || "", f.position, f.foundAt && "festgestellt " + fmtDate(f.foundAt), f.km && Number(f.km).toLocaleString("de-DE") + " km"].filter(Boolean).join(" · ");
         var card = el("div",{class:"card finding"},[ h3, el("div",{class:"meta",text:meta}) ]);
         if(f.description) card.appendChild(el("div",{class:"msg",text:f.description}));
-        var photos = (f.photos || []).filter(function(p){ return typeof p === "string" && /^data:image\/jpeg;base64,/.test(p); });
-        if(photos.length){
-          var g = el("div",{class:"photos"},[]);
-          photos.forEach(function(p){ var img = el("img",{src:p,alt:"Foto"}); img.onclick = function(){ zoom(p); }; g.appendChild(img); });
-          card.appendChild(g);
-        }
+        var t = thumbs(f.photos); if(t) card.appendChild(t);
         (f.videos || []).forEach(function(vd){
           if(vd.url && /^https:\/\//.test(vd.url)){
-            card.appendChild(el("video",{src:vd.url,controls:"",playsinline:"",preload:"metadata"}));
+            card.appendChild(el("video",{src:vd.url,controls:true,playsinline:true,preload:"metadata"}));
             card.appendChild(el("div",{class:"video-note",text:"🎥 Video: im Online-Briefing ansehen"}));
           }
         });
+        card.appendChild(docBlock(f, items[f.id], locked));
         main.appendChild(card);
       });
-      main.appendChild(el("div",{class:"meta",style:"text-align:center",text:"Link gültig bis " + fmtDate(b.expiresAt) + ". Videos laden aus Sicherheitsgründen nach 2 Stunden neu — dann Seite neu laden."}));
+
+      main.appendChild(extrasCard(work.extras || [], locked));
+
+      if(!locked){
+        var ready = documented === total && questions === 0;
+        var done = el("div",{class:"card no-print"},[
+          el("h2",{text:"Abschluss"}),
+          el("div",{class:"meta",text: ready ? "Alle Punkte sind dokumentiert." : (documented < total ? "Noch " + (total-documented) + " Punkt(e) ohne Ergebnis." : "Offene Rückfragen bitte erst mit dem Eigentümer klären und den Punkt aktualisieren.")}),
+          el("button",{class:"btn red",disabled:!ready,text:"Dokumentation abschließen",onclick:function(){
+            var by = getName(); if(!by){ toast("Bitte oben Ihren Namen angeben"); return; }
+            if(!confirm("Dokumentation abschließen? Danach sind keine Änderungen mehr möglich.\n\nHinweis: Das ist keine Abnahme — diese erfolgt vor Ort mit dem Eigentümer.")) return;
+            api("complete",{by:by}).then(function(){ B.completedAt = new Date().toISOString(); B.completedBy = by; toast("Dokumentation abgeschlossen ✓"); render(); })
+              .catch(function(e){ toast(e.message); });
+          }})
+        ]);
+        main.appendChild(done);
+      }
+      main.appendChild(el("div",{class:"meta",style:"text-align:center",text:"Link gültig bis " + fmtDate(B.expiresAt) + ". Videos laden aus Sicherheitsgründen nach 2 Stunden neu — dann Seite neu laden."}));
     }
+
+    function docBlock(f, it, locked){
+      var box = el("div",{class:"doc"});
+      if(it && !editing[f.id]){
+        var r = el("div",{class:"result " + it.result},[
+          el("div",{style:"font-weight:700",text:RESULT[it.result] || it.result}),
+          it.note ? el("div",{class:"msg",text:it.note}) : null,
+          el("div",{class:"meta",style:"margin:2px 0 0",text:[it.parts && "Teile: " + it.parts, it.cost!=null && eur(it.cost), it.by + ", " + fmtDT(it.at)].filter(Boolean).join(" · ")})
+        ]);
+        box.appendChild(r);
+        var t = thumbs(it.photos); if(t) box.appendChild(t);
+        if(!locked) box.appendChild(el("button",{class:"btn ghost edit",type:"button",style:"margin-top:8px",text:"Ändern",onclick:function(){ editing[f.id]=true; render(); }}));
+        return box;
+      }
+      if(locked){ box.appendChild(el("div",{class:"meta",text:"Nicht dokumentiert"})); return box; }
+      var state = { result: it ? it.result : null, photos: it ? (it.photos||[]).slice() : [] };
+      var form = el("form",{});
+      var noteLbl = el("span",{class:"label",text:NOTE_LABEL[state.result] || "Notiz"});
+      var note = el("textarea",{maxlength:"3000",placeholder:"z.B. Bremsbeläge VA erneuert, Scheiben im Toleranzbereich"}); note.value = it ? (it.note||"") : "";
+      var parts = el("input",{type:"text",maxlength:"1000",placeholder:"Teile (optional)"}); parts.value = it ? (it.parts||"") : "";
+      var cost = el("input",{type:"text",inputmode:"decimal",placeholder:"Kosten € (optional)"}); cost.value = it && it.cost!=null ? String(it.cost).replace(".",",") : "";
+      var choice = el("div",{class:"choice"});
+      Object.keys(RESULT).forEach(function(k){
+        var btn = el("button",{type:"button",class: state.result===k ? "on" : "",text:RESULT[k],onclick:function(){
+          state.result = k; Array.prototype.forEach.call(choice.children, function(c){ c.className = ""; }); btn.className = "on"; noteLbl.textContent = NOTE_LABEL[k];
+        }});
+        choice.appendChild(btn);
+      });
+      form.appendChild(el("span",{class:"label",text:"Ergebnis *"}));
+      form.appendChild(choice);
+      form.appendChild(noteLbl); form.appendChild(note);
+      form.appendChild(el("div",{class:"row2",style:"margin-top:8px"},[parts, cost]));
+      form.appendChild(el("span",{class:"label",text:"Fotos nach der Arbeit (max. 3)"}));
+      form.appendChild(photoPicker(state.photos, 3));
+      var save = el("button",{type:"submit",class:"btn",style:"margin-top:10px",text:"Speichern"});
+      form.appendChild(save);
+      if(it) form.appendChild(el("button",{type:"button",class:"btn ghost",style:"margin:10px 0 0 8px",text:"Abbrechen",onclick:function(){ editing[f.id]=false; render(); }}));
+      form.onsubmit = function(e){
+        e.preventDefault();
+        var by = getName(); if(!by){ toast("Bitte oben Ihren Namen angeben"); return; }
+        if(!state.result){ toast("Bitte ein Ergebnis wählen"); return; }
+        save.disabled = true; save.textContent = "Speichert …";
+        var payload = { findingId:f.id, result:state.result, note:note.value, parts:parts.value, cost:cost.value, photos:state.photos, by:by };
+        api("itemSave", payload).then(function(){
+          B.work = B.work || {}; B.work.items = B.work.items || {};
+          B.work.items[f.id] = { result:state.result, note:note.value.trim()||null, parts:parts.value.trim()||null,
+            cost: cost.value.trim() ? Number(cost.value.replace(",", ".")) : null, photos:state.photos, by:by, at:new Date().toISOString() };
+          editing[f.id] = false; toast("Gespeichert ✓"); render();
+        }).catch(function(err){ toast(err.message); save.disabled = false; save.textContent = "Speichern"; });
+      };
+      box.appendChild(form);
+      return box;
+    }
+
+    function extrasCard(extras, locked){
+      var card = el("div",{class:"card"},[
+        el("h2",{text:"Zusätzlich festgestellt"}),
+        el("div",{class:"meta",text:"Hinweise an den Eigentümer — kein Auftrag. Ob und was gemacht wird, klären Sie bitte direkt mit dem Eigentümer."})
+      ]);
+      if(!extras.length) card.appendChild(el("div",{class:"meta",text:"Keine zusätzlichen Hinweise."}));
+      extras.forEach(function(x){
+        var row = el("div",{class:"result rueckfrage",style:"background:#f6f6f8"},[
+          el("div",{style:"font-weight:700",text:x.title}),
+          el("div",{class:"meta",style:"margin:0",text:[CAT[x.category], x.position, x.by + ", " + fmtDT(x.at), x.decision==="uebernehmen" ? "vom Eigentümer notiert" : x.decision==="verwerfen" ? "vom Eigentümer verworfen" : null].filter(Boolean).join(" · ")}),
+          x.description ? el("div",{class:"msg",text:x.description}) : null,
+          thumbs(x.photos)
+        ]);
+        if(!locked && !x.decision) row.appendChild(el("button",{class:"btn ghost edit",type:"button",style:"margin-top:6px;padding:6px 10px;font-size:12px",text:"Entfernen",onclick:function(){
+          if(!confirm("Hinweis entfernen?")) return;
+          api("extraDelete",{extraId:x.id,by:getName()}).then(function(){ B.work.extras = B.work.extras.filter(function(e){ return e.id!==x.id; }); render(); }).catch(function(e){ toast(e.message); });
+        }}));
+        card.appendChild(row);
+      });
+      if(!locked){
+        var st = { photos:[] };
+        var title = el("input",{type:"text",maxlength:"160",placeholder:"Was ist aufgefallen? *"});
+        var cat = el("select",{}); Object.keys(CAT).forEach(function(k){ cat.appendChild(el("option",{value:k,text:CAT[k]})); }); cat.value = "technik";
+        var pos = el("select",{}); pos.appendChild(el("option",{value:"",text:"Position (optional)"})); POSITIONS.forEach(function(p){ pos.appendChild(el("option",{value:p,text:p})); });
+        var desc = el("textarea",{maxlength:"3000",placeholder:"Beschreibung, Dringlichkeit (optional)"});
+        var add = el("button",{type:"submit",class:"btn",style:"margin-top:10px",text:"Hinweis hinzufügen"});
+        var form = el("form",{class:"doc"},[ el("span",{class:"label",text:"Neuen Hinweis erfassen"}), title, el("div",{class:"row2",style:"margin-top:8px"},[cat,pos]),
+          el("div",{style:"margin-top:8px"},[desc]), el("span",{class:"label",text:"Fotos (max. 3)"}), photoPicker(st.photos, 3), add ]);
+        form.onsubmit = function(e){
+          e.preventDefault();
+          var by = getName(); if(!by){ toast("Bitte oben Ihren Namen angeben"); return; }
+          if(!title.value.trim()){ toast("Bitte kurz beschreiben, was festgestellt wurde"); return; }
+          add.disabled = true;
+          var payload = { title:title.value, category:cat.value, position:pos.value, description:desc.value, photos:st.photos, by:by };
+          api("extraAdd", payload).then(function(d){
+            B.work = B.work || {}; B.work.extras = (B.work.extras||[]).concat([{ id:d.extraId, title:title.value.trim(), category:cat.value, position:pos.value||null,
+              description:desc.value.trim()||null, photos:st.photos, by:by, at:new Date().toISOString(), decision:null }]);
+            toast("Hinweis gespeichert ✓"); render();
+          }).catch(function(err){ toast(err.message); add.disabled = false; });
+        };
+        card.appendChild(form);
+      }
+      return card;
+    }
+
     var zoomEl = document.getElementById("zoom");
     function zoom(src){ zoomEl.firstElementChild.src = src; zoomEl.style.display = "flex"; }
     zoomEl.onclick = function(){ zoomEl.style.display = "none"; };

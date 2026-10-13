@@ -4839,14 +4839,42 @@ Regeln:
     if(navigator.share){ try { await navigator.share({title:"Reparatur-Briefing", text, url:link}); return; } catch(e){ if(e?.name==="AbortError") return; } }
     try { await navigator.clipboard.writeText(link); toast_("Link kopiert ✓"); } catch { window.prompt("Link kopieren:", link); }
   };
+  // Detailansicht für den Eigentümer: Dokumentation der Werkstatt
+  const [briefingView, setBriefingView] = useState(null); // {vehicleId, id, data}
+  const [briefingOnSite, setBriefingOnSite] = useState("");
+  const openBriefing = async (vehicleId, id) => {
+    setBriefingView({vehicleId, id, data:null}); setBriefingOnSite("");
+    const {data, error} = await window.PCN_DB.briefings.detail(id).catch(e=>({error:e?.message}));
+    if(error){ toast_(error,"err"); setBriefingView(null); return; }
+    setBriefingView({vehicleId, id, data});
+  };
+  const decideBriefingExtra = async (extraId, decision) => {
+    const bv = briefingView; if(!bv) return;
+    if(decision==="uebernehmen" && !window.confirm("In deine Mängelliste übernehmen? Das ist nur eine Notiz für dich — kein Auftrag an die Werkstatt.")) return;
+    const {error} = await window.PCN_DB.briefings.decideExtra(bv.id, extraId, decision).catch(e=>({error:e?.message}));
+    if(error){ toast_(error,"err"); return; }
+    toast_(decision==="uebernehmen" ? "In die Mängelliste übernommen ✓" : "Verworfen");
+    await openBriefing(bv.vehicleId, bv.id); loadFindings(bv.vehicleId, true); loadBriefings(bv.vehicleId);
+  };
+  const transferBriefing = async () => {
+    const bv = briefingView; if(!bv) return;
+    if(!window.confirm("Dokumentation der Werkstatt ins Logbuch übernehmen? Erledigte Punkte werden in deiner Mängelliste auf „behoben“ gesetzt.")) return;
+    const {error} = await window.PCN_DB.briefings.transfer(bv.id, briefingOnSite||null).catch(e=>({error:e?.message}));
+    if(error){ toast_(error,"err"); return; }
+    const {data:lb} = await window.PCN_DB.logbook.list(bv.vehicleId).catch(()=>({data:null}));
+    if(lb) setLogbook(prev=>({...prev, [bv.vehicleId]: lb}));
+    loadFindings(bv.vehicleId, true); loadBriefings(bv.vehicleId);
+    setBriefingView(null);
+    toast_(`Ins Logbuch übernommen ✓ (+${POINTS.logbook} Pkt)`);
+  };
   const revokeBriefing = async (vehicleId, id) => {
     if(!window.confirm("Link zurückziehen? Die Werkstatt kann das Briefing dann nicht mehr öffnen.")) return;
     const {error} = await window.PCN_DB.briefings.revoke(id).catch(e=>({error:e?.message}));
     if(error){ toast_(error,"err"); return; }
     loadBriefings(vehicleId); toast_("Link zurückgezogen");
   };
-  const loadFindings = async (vehicleId) => {
-    const DB = window.PCN_DB; if(!DB || isDemo || findings[vehicleId]) return;
+  const loadFindings = async (vehicleId, force=false) => {
+    const DB = window.PCN_DB; if(!DB || isDemo || (findings[vehicleId] && !force)) return;
     const {data, error} = await DB.findings.list(vehicleId).catch(e=>({error:e?.message}));
     if(error){ toast_("Mängelliste konnte nicht geladen werden: "+error,"err"); return; }
     setFindings(prev=>({...prev, [vehicleId]: data||[]}));
@@ -7719,12 +7747,22 @@ Regeln:
                                 <div style={{fontSize:12,marginTop:2,color:bf.revokedAt||expired?C.muted:bf.firstViewedAt?C.green:C.amber}}>
                                   {bf.revokedAt?"Link zurückgezogen":expired?"Link abgelaufen":bf.firstViewedAt?`✓ Geöffnet${bf.viewCount>1?` (${bf.viewCount}×)`:""}, zuletzt ${new Date(bf.lastViewedAt).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}`:"Noch nicht geöffnet"}
                                 </div>
-                                {!bf.revokedAt&&!expired&&(
-                                  <div style={{display:"flex",gap:10,marginTop:4}}>
-                                    {tok&&<button onClick={()=>shareBriefingLink(briefingLink(bf.id,tok),bf.recipientLabel)} style={{background:"none",border:"none",color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",padding:0}}>Link erneut teilen</button>}
-                                    <button onClick={()=>revokeBriefing(v.id,bf.id)} style={{background:"none",border:"none",color:C.muted,fontSize:12,textDecoration:"underline",cursor:"pointer",padding:0}}>Zurückziehen</button>
+                                {bf.progress&&(bf.progress.documented>0||bf.completedAt)&&(
+                                  <div style={{fontSize:12,marginTop:2,color:bf.logbookTransferredAt?C.muted:bf.completedAt?C.green:C.white}}>
+                                    {bf.logbookTransferredAt?"📋 Ins Logbuch übernommen":bf.completedAt?`🔧 Werkstatt hat dokumentiert (${bf.progress.done}/${bf.progress.total} erledigt)`:`🔧 In Arbeit: ${bf.progress.documented}/${bf.progress.total} dokumentiert`}
+                                    {bf.progress.questions>0&&<span style={{color:C.amber}}> · ❓ {bf.progress.questions} Rückfrage{bf.progress.questions>1?"n":""}</span>}
+                                    {bf.progress.extrasOpen>0&&<span style={{color:C.amber}}> · ➕ {bf.progress.extrasOpen} Hinweis{bf.progress.extrasOpen>1?"e":""} der Werkstatt</span>}
                                   </div>
                                 )}
+                                <div style={{display:"flex",gap:10,marginTop:4,flexWrap:"wrap"}}>
+                                  <button onClick={()=>openBriefing(v.id,bf.id)} style={{background:"none",border:"none",color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",padding:0}}>Ansehen</button>
+                                {!bf.revokedAt&&!expired&&(
+                                  <>
+                                    {tok&&<button onClick={()=>shareBriefingLink(briefingLink(bf.id,tok),bf.recipientLabel)} style={{background:"none",border:"none",color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",padding:0}}>Link erneut teilen</button>}
+                                    <button onClick={()=>revokeBriefing(v.id,bf.id)} style={{background:"none",border:"none",color:C.muted,fontSize:12,textDecoration:"underline",cursor:"pointer",padding:0}}>Zurückziehen</button>
+                                  </>
+                                )}
+                                </div>
                               </div>
                             );
                           })}
@@ -8473,6 +8511,88 @@ Regeln:
               </div>
             </div>
           )}
+
+          {/* ── Reparatur-Briefing: Dokumentation der Werkstatt ansehen ── */}
+          {briefingView&&briefingView.vehicleId===v.id&&(()=>{
+            const d=briefingView.data;
+            const RES={erledigt:["✅ Erledigt",C.green],nicht_erledigt:["⏸ Nicht erledigt",C.amber],rueckfrage:["❓ Rückfrage",C.amber]};
+            const box={background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:10};
+            const thumbs=list=>(list||[]).length>0&&(
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>
+                {list.map((p,i)=><img key={i} src={p} alt="" onClick={()=>setLightbox({images:list,index:i})} style={{width:64,height:64,objectFit:"cover",borderRadius:6,cursor:"pointer"}}/>)}
+              </div>
+            );
+            return (
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setBriefingView(null);}}>
+              <div className="sheet legal-wizard" style={{paddingBottom:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>🔧 {d?.recipientLabel||"Werkstatt"}</div>
+                  <button aria-label="Schließen" onClick={()=>setBriefingView(null)} style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",lineHeight:1}}>✕</button>
+                </div>
+                {!d?<div style={{color:C.muted,fontSize:14,padding:"20px 0"}}>Wird geladen …</div>:(
+                  <>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:12}}>
+                      Gesendet {new Date(d.createdAt).toLocaleDateString("de-DE")}{d.completedAt?` · Dokumentation abgeschlossen von ${d.completedBy} am ${new Date(d.completedAt).toLocaleDateString("de-DE")}`:" · Werkstatt dokumentiert noch"}
+                    </div>
+                    {d.findings.map((f,i)=>{
+                      const it=(d.work?.items||{})[f.id];
+                      const r=it&&RES[it.result];
+                      return (
+                        <div key={f.id} style={box}>
+                          <div style={{fontSize:14,fontWeight:700,color:C.white}}>{i+1}. {f.title}</div>
+                          {!it?<div style={{fontSize:12,color:C.muted,marginTop:2}}>Noch nicht dokumentiert</div>:(
+                            <>
+                              <div style={{fontSize:13,fontWeight:700,color:r[1],marginTop:3}}>{r[0]}</div>
+                              {it.note&&<div style={{fontSize:13,color:C.white,lineHeight:1.45,whiteSpace:"pre-line",marginTop:2}}>{it.note}</div>}
+                              <div style={{fontSize:12,color:C.muted,marginTop:2}}>{[it.parts&&"Teile: "+it.parts,it.cost!=null&&it.cost!==""&&Number(it.cost).toLocaleString("de-DE",{style:"currency",currency:"EUR"}),`${it.by}, ${new Date(it.at).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}`].filter(Boolean).join(" · ")}</div>
+                              {thumbs(it.photos)}
+                              {it.result==="rueckfrage"&&<div style={{fontSize:12,color:C.amber,marginTop:4}}>Bitte direkt mit der Werkstatt klären.</div>}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {(d.work?.extras||[]).length>0&&(
+                      <>
+                        <div style={{fontSize:14,fontWeight:800,color:C.white,margin:"14px 0 4px"}}>➕ Zusätzlich festgestellt</div>
+                        <div style={{fontSize:12,color:C.muted,lineHeight:1.45,marginBottom:8}}>Hinweise der Werkstatt — <b style={{color:C.white}}>kein Auftrag</b>. Ob und was gemacht wird, klärst du direkt mit der Werkstatt. Du kannst die Punkte in deine Mängelliste übernehmen.</div>
+                        {d.work.extras.map(x=>(
+                          <div key={x.id} style={box}>
+                            <div style={{fontSize:14,fontWeight:700,color:C.white}}>{x.title}</div>
+                            <div style={{fontSize:12,color:C.muted}}>{[x.position,`${x.by}, ${new Date(x.at).toLocaleDateString("de-DE")}`].filter(Boolean).join(" · ")}</div>
+                            {x.description&&<div style={{fontSize:13,color:C.white,lineHeight:1.45,whiteSpace:"pre-line",marginTop:2}}>{x.description}</div>}
+                            {thumbs(x.photos)}
+                            {x.decision
+                              ?<div style={{fontSize:12,color:C.muted,marginTop:6}}>{x.decision==="uebernehmen"?"✓ In deine Mängelliste übernommen":"Verworfen"}</div>
+                              :<div style={{display:"flex",gap:8,marginTop:8}}>
+                                <button className="btn" style={{flex:2,padding:"8px",fontSize:13}} onClick={()=>decideBriefingExtra(x.id,"uebernehmen")}>In Mängelliste übernehmen</button>
+                                <button className="btn ghost" style={{flex:1,padding:"8px",fontSize:13}} onClick={()=>decideBriefingExtra(x.id,"verwerfen")}>Verwerfen</button>
+                              </div>}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    {d.completedAt&&!d.logbookTransferredAt&&(
+                      <div style={{...box,borderColor:`${C.gold}66`,marginTop:14}}>
+                        <div style={{fontSize:14,fontWeight:800,color:C.white,marginBottom:4}}>📋 Ins Logbuch übernehmen</div>
+                        <div style={{fontSize:12,color:C.muted,lineHeight:1.5,marginBottom:8}}>
+                          Übernimmt die Dokumentation der Werkstatt als Logbuch-Eintrag „Werkstatt dokumentiert“ und setzt erledigte Punkte auf „behoben“.
+                          <b style={{color:C.white}}> Das ist keine Abnahme der Arbeiten.</b> Die Abnahme erfolgt vor Ort nach Sichtprüfung des Fahrzeugs.
+                        </div>
+                        <label style={{fontSize:12,fontWeight:700,color:C.muted,display:"block",marginBottom:4}}>Fahrzeug vor Ort geprüft am (optional)</label>
+                        <input className="inp" type="date" value={briefingOnSite} onChange={e=>setBriefingOnSite(e.target.value)}
+                          style={{padding:"9px 12px",fontSize:15,borderRadius:8,width:"100%",marginBottom:8,WebkitAppearance:"none",appearance:"none",minHeight:40}}/>
+                        <button className="btn" style={{width:"100%",padding:"11px",fontSize:14}} onClick={transferBriefing}>Ins Logbuch übernehmen</button>
+                      </div>
+                    )}
+                    {d.logbookTransferredAt&&<div style={{fontSize:13,color:C.green,margin:"10px 0"}}>✓ Am {new Date(d.logbookTransferredAt).toLocaleDateString("de-DE")} ins Logbuch übernommen</div>}
+                  </>
+                )}
+                <div style={{height:16}}/>
+              </div>
+            </div>
+            );
+          })()}
 
           {/* ── Reparatur-Briefing zusammenstellen ── */}
           {briefingEdit&&briefingEdit.vehicleId===v.id&&(()=>{

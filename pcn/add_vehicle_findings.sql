@@ -55,3 +55,13 @@ grant select, insert, update, delete on public.repair_briefings to service_role;
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('finding-media', 'finding-media', false, 52428800, array['video/mp4','video/quicktime','video/webm'])
 on conflict (id) do nothing;
+
+-- Werkstatt-Dokumentation zum Briefing (Edge Function repair-briefing)
+-- Bewusst KEINE Abnahme (§ 640 BGB) und keine Auftragsvergabe: completed_at =
+-- Werkstatt hat dokumentiert, logbook_transferred_at = Eigentümer hat ins
+-- Logbuch übernommen. Zusätzlich Festgestelltes (work.extras) ist ein Hinweis.
+alter table public.repair_briefings
+  add column if not exists work jsonb not null default '{}'::jsonb,
+  add column if not exists completed_at timestamptz,
+  add column if not exists completed_by text,
+  add column if not exists logbook_transferred_at timestamptz;
