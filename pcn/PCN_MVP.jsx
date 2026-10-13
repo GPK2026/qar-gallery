@@ -1017,9 +1017,9 @@ function VoiceControl({ onCommand, bottom=76, toast }) {
         onPointerDown={e=>{ e.preventDefault(); targetRef.current = voiceTarget(document.activeElement); }}
         onClick={()=>{ listening ? stop() : start(); }}
         onContextMenu={e=>{ e.preventDefault(); setShowHelp(true); }}
-        style={{position:"fixed",right:14,bottom,zIndex:1200,width:54,height:54,borderRadius:27,border:"none",cursor:"pointer",
+        style={{position:"fixed",right:14,bottom,zIndex:1200,width:54,height:54,borderRadius:27,cursor:"pointer",
           background:listening?C.red:C.dark,color:"#fff",fontSize:24,boxShadow:listening?`0 0 0 6px ${C.red}44, 0 6px 20px rgba(0,0,0,.5)`:"0 6px 20px rgba(0,0,0,.5)",
-          outline:`1.5px solid ${listening?C.red:C.border}`,transition:"box-shadow .2s"}}>
+          border:`2px solid ${listening?C.red:C.gold}`,transition:"box-shadow .2s, border-color .2s"}}>
         {listening?"■":"🎙️"}
       </button>
       {askConsent&&(
