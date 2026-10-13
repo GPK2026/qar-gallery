@@ -6453,6 +6453,7 @@ Regeln:
         transition:outline-color .15s}
     }
     .tab-brand{display:none}
+    .veh-desk-only{display:none}
     .dash-desk{display:none}
     @media(min-width:1024px){.dash-desk{display:block}}
     .tab-bar.desk-only{display:none}
@@ -6482,7 +6483,11 @@ Regeln:
       .dash-grid > .dash-col:first-child{order:2}
       .veh-gallery{max-width:1180px;margin:0 auto;padding:20px 32px 0}
       .veh-gallery > div{border-radius:16px;overflow:hidden}
-      .veh-grid{max-width:1180px !important;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:start;padding:24px 32px 48px !important}
+      .veh-grid{max-width:1180px !important;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:start;padding:24px 32px 48px !important}
+      .veh-desk-only{display:block}
+      .veh-mob-only{display:none}
+      .veh-col .veh-gallery{padding:0 !important;max-width:none !important;margin:0 0 16px !important;zoom:1 !important}
+      .veh-col .veh-hero{height:340px !important}
       .toast{left:auto;right:32px;bottom:100px;width:420px}
       .voice-fab{bottom:28px !important;right:32px !important}
       .voice-panel{left:auto !important;right:32px !important;width:420px;bottom:96px !important}
@@ -7652,16 +7657,9 @@ Regeln:
     const tuevColor=!tuevDays?C.muted:tuevDays<0?C.red:tuevDays<90?C.amber:C.green;
     const kz=fmtKz(v.kennzeichen,v.baujahr);
     const priv=v.privacy||DEF_PRIVACY;
-    return (
-      <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:80}}>
-        <style>{CSS}</style>
-        {!isGuest&&renderTabBar("desk-only")}
-        {!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
-        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
-        {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
-        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
-        {ScannerOverlay}
-        {/* ── Photo Gallery — inline ── */}
+    // Desktop: Galerie, Termine, Kontakt in der linken Spalte (Fahrzeuginfos), rechts nur die Reiter.
+    // Am Handy bleiben sie an ihrer bisherigen Stelle — daher als Variablen, an zwei Orten eingesetzt.
+    const vGallery = (
         <div className="veh-gallery" style={{position:"relative"}}>
           {(()=>{
             const imgs=getImages(v);
@@ -7747,10 +7745,103 @@ Regeln:
             </div>
           )}
         </div>
+    );
+    const vTermine = ((()=>{
+            const vRems = myReminders.filter(r=>r.vehicleId===v.id||r.vehicle_id===v.id);
+            if(vRems.length===0) return null;
+            return (
+              <div style={{marginBottom:14}}>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🔔 Termine & Erinnerungen</div>
+                {vRems.map(r=>{
+                  const days=daysUntil(r.date);
+                  const overdue=days<0, urgent=days<=7;
+                  return (
+                    <div key={r.id} style={{background:C.card,border:`1.5px solid ${overdue?C.red+"55":urgent?C.amber+"44":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:6,display:"flex",gap:10,alignItems:"center"}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:700,fontSize:14,color:overdue?C.red:urgent?C.amber:C.white}}>{r.title}</div>
+                        <div style={{fontSize:13,color:overdue?C.red:urgent?C.amber:C.muted,marginTop:2}}>
+                          {overdue?"⚠️ Überfällig":days===0?"📅 Heute":days===1?"📅 Morgen":`📅 In ${days} Tagen`} · {fmtDate(r.date)}
+                        </div>
+                      </div>
+                      {r.title.toLowerCase().includes("tüv")&&(
+                        <button onClick={()=>{
+                          const ds=r.date?r.date.replace(/-/g,""):"";
+                          const t=encodeURIComponent(`TÜV ${v.hersteller} ${v.modell}`);
+                          window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${ds}/${ds}`,"_blank");
+                        }} style={{background:`${C.amber}22`,border:`1px solid ${C.amber}44`,borderRadius:7,padding:"5px 9px",color:C.amber,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0}}>
+                          📅 Eintragen
+                        </button>
+                      )}
+                      <button onClick={async()=>{const DB=window.PCN_DB;if(DB)await DB.reminders.done(me.id,r.id);setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
+                        style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:7,padding:"6px 10px",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0}}>✓</button>
+                    </div>
+                  );
+                })}
+                {isOwn&&<button className="btn sm ghost" style={{marginTop:4}} onClick={()=>{setRemForm({vehicleId:v.id,title:"",date:""});setShowAddRem(true);}}>+ Erinnerung</button>}
+              </div>
+            );
+          })());
+    const vKontakt = (isOwn&&(
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>📞 Kontakt</div>
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
+                <div style={{padding:"12px 14px",display:"flex",gap:10,alignItems:"center"}}>
+                  <input className="inp" placeholder="Telefonnummer (aus Profil übernehmen)" type="tel"
+                    value={viewV.phone||me?.phone||""}
+                    onChange={e=>{
+                      const val=e.target.value;
+                      const updated={...viewV,phone:val};
+                      setViewV(updated);
+                      setVehicles(prev=>({...prev,[viewV.id]:updated}));
+                      clearTimeout(window._phoneSaveTimer);
+                      window._phoneSaveTimer=setTimeout(async()=>{
+                        const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
+                      }, 800);
+                    }}
+                    style={{flex:1,fontSize:14,border:"none",background:"transparent",padding:0}}/>
+                  {!viewV.phone&&me?.phone&&(
+                    <button onClick={()=>{
+                      const updated={...viewV,phone:me.phone};
+                      setViewV(updated);
+                      setVehicles(prev=>({...prev,[viewV.id]:updated}));
+                      const DB=window.PCN_DB; if(DB) DB.vehicles.save(updated);
+                      toast_("Aus Profil übernommen ✓");
+                    }} style={{background:C.red,border:"none",borderRadius:7,padding:"5px 10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0}}>
+                      Übernehmen
+                    </button>
+                  )}
+                </div>
+                <div style={{borderTop:`1px solid ${C.border}`,padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:600,color:priv.pub_phone?C.green:C.white}}>
+                      {priv.pub_phone?"🔓 Öffentlich sichtbar":"🔒 Nur privat"}
+                    </div>
+                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>
+                      {priv.pub_phone?"Besucher sehen Direktanruf-Button":"Nummer nicht im QR-Profil sichtbar"}
+                    </div>
+                  </div>
+                  <button className={`tog ${priv.pub_phone?"on":"off"}`}
+                    onClick={()=>togglePrivacy(v.id,"pub_phone")}/>
+                </div>
+              </div>
+            </div>
+          ));
+    return (
+      <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:80}}>
+        <style>{CSS}</style>
+        {!isGuest&&renderTabBar("desk-only")}
+        {!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
+        {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
+        {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
+        {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
+        {ScannerOverlay}
+        {/* ── Photo Gallery — inline ── */}
+        <div className="veh-mob-only">{vGallery}</div>
 
         {/* ── Vehicle detail content ── */}
         <div className="veh-grid" style={{padding:"16px",maxWidth:560,margin:"0 auto"}}>
           <div className="veh-col">
+          <div className="veh-desk-only">{vGallery}</div>
 
           {/* ── Hinweis-Banner: offene Werkstatt-Anfrage ── */}
           {isOwn&&pendingWorkshopVehicleIds.has(v.id)&&(
@@ -7992,44 +8083,11 @@ Regeln:
             </div>
           )}
 
+          <div className="veh-desk-only">{vTermine}{vKontakt}</div>
           </div>
           <div className="veh-col">
           {/* ── Fahrzeugspezifische Termine & Erinnerungen ── */}
-          {(()=>{
-            const vRems = myReminders.filter(r=>r.vehicleId===v.id||r.vehicle_id===v.id);
-            if(vRems.length===0) return null;
-            return (
-              <div style={{marginBottom:14}}>
-                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🔔 Termine & Erinnerungen</div>
-                {vRems.map(r=>{
-                  const days=daysUntil(r.date);
-                  const overdue=days<0, urgent=days<=7;
-                  return (
-                    <div key={r.id} style={{background:C.card,border:`1.5px solid ${overdue?C.red+"55":urgent?C.amber+"44":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:6,display:"flex",gap:10,alignItems:"center"}}>
-                      <div style={{flex:1}}>
-                        <div style={{fontWeight:700,fontSize:14,color:overdue?C.red:urgent?C.amber:C.white}}>{r.title}</div>
-                        <div style={{fontSize:13,color:overdue?C.red:urgent?C.amber:C.muted,marginTop:2}}>
-                          {overdue?"⚠️ Überfällig":days===0?"📅 Heute":days===1?"📅 Morgen":`📅 In ${days} Tagen`} · {fmtDate(r.date)}
-                        </div>
-                      </div>
-                      {r.title.toLowerCase().includes("tüv")&&(
-                        <button onClick={()=>{
-                          const ds=r.date?r.date.replace(/-/g,""):"";
-                          const t=encodeURIComponent(`TÜV ${v.hersteller} ${v.modell}`);
-                          window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&dates=${ds}/${ds}`,"_blank");
-                        }} style={{background:`${C.amber}22`,border:`1px solid ${C.amber}44`,borderRadius:7,padding:"5px 9px",color:C.amber,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0}}>
-                          📅 Eintragen
-                        </button>
-                      )}
-                      <button onClick={async()=>{const DB=window.PCN_DB;if(DB)await DB.reminders.done(me.id,r.id);setReminders(p=>p.map(x=>x.id===r.id?{...x,done:true}:x));toast_("Erledigt ✓");}}
-                        style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:7,padding:"6px 10px",color:C.muted,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0}}>✓</button>
-                    </div>
-                  );
-                })}
-                {isOwn&&<button className="btn sm ghost" style={{marginTop:4}} onClick={()=>{setRemForm({vehicleId:v.id,title:"",date:""});setShowAddRem(true);}}>+ Erinnerung</button>}
-              </div>
-            );
-          })()}
+          <div className="veh-mob-only">{vTermine}</div>
 
           {/* ── ACCORDION SECTIONS ── */}
           {(()=>{
@@ -8524,51 +8582,7 @@ Regeln:
           })()}
 
           {/* Phone — pulled from profile, with inline public/private toggle */}
-          {isOwn&&(
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>📞 Kontakt</div>
-              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-                <div style={{padding:"12px 14px",display:"flex",gap:10,alignItems:"center"}}>
-                  <input className="inp" placeholder="Telefonnummer (aus Profil übernehmen)" type="tel"
-                    value={viewV.phone||me?.phone||""}
-                    onChange={e=>{
-                      const val=e.target.value;
-                      const updated={...viewV,phone:val};
-                      setViewV(updated);
-                      setVehicles(prev=>({...prev,[viewV.id]:updated}));
-                      clearTimeout(window._phoneSaveTimer);
-                      window._phoneSaveTimer=setTimeout(async()=>{
-                        const DB=window.PCN_DB; if(DB) await DB.vehicles.save(updated);
-                      }, 800);
-                    }}
-                    style={{flex:1,fontSize:14,border:"none",background:"transparent",padding:0}}/>
-                  {!viewV.phone&&me?.phone&&(
-                    <button onClick={()=>{
-                      const updated={...viewV,phone:me.phone};
-                      setViewV(updated);
-                      setVehicles(prev=>({...prev,[viewV.id]:updated}));
-                      const DB=window.PCN_DB; if(DB) DB.vehicles.save(updated);
-                      toast_("Aus Profil übernommen ✓");
-                    }} style={{background:C.red,border:"none",borderRadius:7,padding:"5px 10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0}}>
-                      Übernehmen
-                    </button>
-                  )}
-                </div>
-                <div style={{borderTop:`1px solid ${C.border}`,padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <div>
-                    <div style={{fontSize:14,fontWeight:600,color:priv.pub_phone?C.green:C.white}}>
-                      {priv.pub_phone?"🔓 Öffentlich sichtbar":"🔒 Nur privat"}
-                    </div>
-                    <div style={{fontSize:12,color:C.muted,marginTop:2}}>
-                      {priv.pub_phone?"Besucher sehen Direktanruf-Button":"Nummer nicht im QR-Profil sichtbar"}
-                    </div>
-                  </div>
-                  <button className={`tog ${priv.pub_phone?"on":"off"}`}
-                    onClick={()=>togglePrivacy(v.id,"pub_phone")}/>
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="veh-mob-only">{vKontakt}</div>
 
           </div>
         </div>
