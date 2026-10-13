@@ -281,7 +281,7 @@ function EuReportEditor({ f, set, setEdit, onClose, onSkip, onPdf, pdfBusy }) {
     <div style={{display:"flex",gap:6,marginBottom:10}}>
       {[[false,"nein"],[true,"ja"]].map(([b,l])=>(
         <button key={l} type="button" onClick={()=>on(b)} style={{flex:1,padding:"8px",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",
-          background:val===b?`${C.red}22`:C.card,color:val===b?C.white:C.muted,border:`1.5px solid ${val===b?C.red:C.border}`}}>{l}</button>
+          background:val===b?`${C.blue}22`:C.card,color:val===b?C.white:C.muted,border:`1.5px solid ${val===b?C.blue:C.border}`}}>{l}</button>
       ))}
     </div>
   );
@@ -480,7 +480,7 @@ function EuReportEditor({ f, set, setEdit, onClose, onSkip, onPdf, pdfBusy }) {
         <div style={{display:"flex",gap:3,marginBottom:12}}>
           {EU_PAGES.map((t,i)=>(
             <button key={i} aria-label={t} onClick={()=>setPage(i)}
-              style={{flex:1,height:4,borderRadius:2,border:"none",padding:0,cursor:"pointer",background:i<=page?C.red:C.border}}/>
+              style={{flex:1,height:4,borderRadius:2,border:"none",padding:0,cursor:"pointer",background:i<=page?C.blue:C.border}}/>
           ))}
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,marginBottom:10}}>
@@ -1668,7 +1668,7 @@ function Carousel({items, renderItem, cardWidth=150, gap=10, emptyState=null}) {
             <button key={i} onClick={()=>scrollTo(i)}
               aria-label={`Zu Element ${i+1}`}
               style={{width:active===i?16:5,height:5,borderRadius:99,border:"none",padding:0,
-                background:active===i?C.red:"#333",cursor:"pointer",
+                background:active===i?C.blue:"#333",cursor:"pointer",
                 transition:"width .25s, background .25s"}}/>
           ))}
         </div>
@@ -6190,13 +6190,13 @@ Regeln:
     .btn.ghost{background:transparent;color:${C.white};border:1px solid ${C.border}}
     .btn.sm{padding:7px 13px;font-size:12px}
     .inp{background:${C.card};border:1px solid ${C.border};border-radius:10px;padding:14px 16px;color:${C.white};font-size:17px;width:100%;transition:border-color .15s;font-family:'Inter',sans-serif}
-    .inp:focus{border-color:${C.red}}
+    .inp:focus{border-color:${C.blue}}
     .toast{position:fixed;bottom:80px;left:14px;right:14px;z-index:999;background:${C.dark};border:1px solid #333;border-radius:12px;padding:13px 16px;font-size:13px;font-weight:600;animation:slideUp .2s;box-shadow:0 8px 24px rgba(0,0,0,.8);white-space:pre-line}
     .toast.ok{border-color:${C.red}44;color:${C.white}}
     .toast.err{border-color:#ef444466;color:#ef4444}
     .tab-bar{position:fixed;bottom:0;left:0;right:0;background:${C.dark};border-top:1px solid ${C.border};display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
     .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 2px;border:none;background:transparent;cursor:pointer;gap:2px;font-family:'Inter',sans-serif;color:${C.muted};transition:color .15s;position:relative}
-    .tab-btn.on{color:${C.red}}
+    .tab-btn.on{color:${C.blue}}
     .tab-btn .ico{font-size:23px;line-height:1}
     .tab-btn .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
     .badge{position:absolute;top:5px;right:calc(50% - 18px);background:${C.red};color:#fff;border-radius:99px;padding:1px 5px;font-size:9px;font-weight:800;min-width:16px;text-align:center;line-height:14px}
@@ -6222,7 +6222,7 @@ Regeln:
       .tab-brand{display:block;padding:4px 14px 20px;font-weight:900;font-size:14px;color:${C.white};letter-spacing:.4px;border-bottom:1px solid ${C.border};margin-bottom:12px}
       .tab-btn{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:10px}
       .tab-btn:hover{background:#ffffff0d;color:${C.white}}
-      .tab-btn.on{background:${C.red}1f}
+      .tab-btn.on{background:${C.blue}1f}
       .tab-btn .ico{font-size:20px;width:26px;text-align:center}
       .tab-btn .lbl{font-size:13px;letter-spacing:.3px}
       .tab-btn .badge{top:6px;left:32px;right:auto}
@@ -6337,7 +6337,7 @@ Regeln:
             <button key={m} onClick={()=>{setLoginForm(p=>({...p,mode:m}));setLoginPassword("");setShowPassword(false);}}
               style={{flex:1,padding:"11px",border:"none",borderRadius:10,cursor:"pointer",
                 fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:14,transition:"all .15s",
-                background:loginForm.mode===m?C.red:"transparent",
+                background:loginForm.mode===m?C.blue:"transparent",
                 color:loginForm.mode===m?"#fff":C.muted}}>
               {label}
             </button>
@@ -7000,7 +7000,7 @@ Regeln:
                 {[["guest","Als Gast"],["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
                   <button key={m} onClick={()=>setContactAuthMode(m)}
                     style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:14,
-                      background:contactAuthMode===m?C.red:"transparent",color:contactAuthMode===m?"#fff":C.muted,transition:"all .15s"}}>
+                      background:contactAuthMode===m?C.blue:"transparent",color:contactAuthMode===m?"#fff":C.muted,transition:"all .15s"}}>
                     {label}
                   </button>
                 ))}
@@ -7447,7 +7447,7 @@ Regeln:
                         <div key={i} style={{position:"relative",flexShrink:0}}>
                           <img src={img} alt="" onClick={()=>{goTo(i);setLightbox({images:imgs,index:i});}}
                             style={{width:90,height:64,objectFit:"cover",borderRadius:8,cursor:"pointer",display:"block",
-                              border:`2.5px solid ${i===cur?C.red:"transparent"}`,
+                              border:`2.5px solid ${i===cur?C.blue:"transparent"}`,
                               opacity:i===cur?1:0.7,transition:"all .15s"}}
                             onError={e=>e.target.style.display="none"}/>
                           {i===0&&<div style={{position:"absolute",top:2,left:2,fontSize:12,background:"rgba(0,0,0,.6)",borderRadius:4,padding:"1px 4px"}}>👑</div>}
@@ -8499,7 +8499,7 @@ Regeln:
                 {[["guest","Als Gast"],["login","Anmelden"],["register","Registrieren"]].map(([m,label])=>(
                   <button key={m} onClick={()=>setContactAuthMode(m)}
                     style={{flex:1,padding:"9px 4px",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:14,
-                      background:contactAuthMode===m?C.red:"transparent",color:contactAuthMode===m?"#fff":C.muted,transition:"all .15s"}}>
+                      background:contactAuthMode===m?C.blue:"transparent",color:contactAuthMode===m?"#fff":C.muted,transition:"all .15s"}}>
                     {label}
                   </button>
                 ))}
@@ -8718,14 +8718,14 @@ Regeln:
                   Eine Werkstatt möchte einen Service-Eintrag für dieses Fahrzeug erstellen können. Wähle, wie lange der Zugang gelten soll:
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
-                  <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1.5px solid ${workshopDecisionScope==="once"?C.gold:C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer"}}>
+                  <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1.5px solid ${workshopDecisionScope==="once"?C.blue:C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer"}}>
                     <input type="radio" checked={workshopDecisionScope==="once"} onChange={()=>setWorkshopDecisionScope("once")}/>
                     <div>
                       <div style={{fontSize:14,fontWeight:700,color:C.white}}>Nur dieser eine Eintrag</div>
                       <div style={{fontSize:12,color:C.muted}}>Zugang endet automatisch nach dem ersten Service-Eintrag</div>
                     </div>
                   </label>
-                  <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1.5px solid ${workshopDecisionScope==="ongoing"?C.gold:C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer"}}>
+                  <label style={{display:"flex",alignItems:"center",gap:10,background:C.card,border:`1.5px solid ${workshopDecisionScope==="ongoing"?C.blue:C.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer"}}>
                     <input type="radio" checked={workshopDecisionScope==="ongoing"} onChange={()=>setWorkshopDecisionScope("ongoing")}/>
                     <div>
                       <div style={{fontSize:14,fontWeight:700,color:C.white}}>Dauerhaft</div>
@@ -8801,9 +8801,9 @@ Regeln:
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
                   {Object.entries(CATEGORY_LABELS).map(([key,label])=>(
                     <button key={key} onClick={()=>setDocUploadCategory(key)}
-                      style={{padding:"7px 12px",borderRadius:8,border:`1.5px solid ${docUploadCategory===key?C.gold:C.border}`,
-                        background:docUploadCategory===key?`${C.gold}22`:"transparent",
-                        color:docUploadCategory===key?C.gold:C.muted,fontSize:13,fontWeight:700,
+                      style={{padding:"7px 12px",borderRadius:8,border:`1.5px solid ${docUploadCategory===key?C.blue:C.border}`,
+                        background:docUploadCategory===key?`${C.blue}22`:"transparent",
+                        color:docUploadCategory===key?C.blue:C.muted,fontSize:13,fontWeight:700,
                         cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                       {label}
                     </button>
@@ -9087,7 +9087,7 @@ Regeln:
             const inpS={padding:"9px 12px",fontSize:15,borderRadius:8,minWidth:0,maxWidth:"100%",display:"block",width:"100%",marginBottom:10};
             const dateS={...inpS,WebkitAppearance:"none",appearance:"none",minHeight:40};
             const chip=on=>({padding:"7px 10px",borderRadius:99,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",
-              background:on?`${C.red}22`:C.card,color:on?C.white:C.muted,border:`1.5px solid ${on?C.red:C.border}`});
+              background:on?`${C.blue}22`:C.card,color:on?C.white:C.muted,border:`1.5px solid ${on?C.blue:C.border}`});
             const cat=FINDING_CAT[f.category]||FINDING_CAT.sonstiges;
             const addPhotos=async files=>{
               const room=4-(f.photos||[]).length; const list=Array.from(files||[]).slice(0,Math.max(0,room));
@@ -9200,7 +9200,7 @@ Regeln:
             const hint={fontSize:13,color:C.muted,lineHeight:1.5,marginBottom:12};
             const box={background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:12};
             const choice=on=>({flex:1,minWidth:0,padding:"10px 8px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",
-              background:on?`${C.red}22`:C.card,color:on?C.white:C.muted,border:`1.5px solid ${on?C.red:C.border}`});
+              background:on?`${C.blue}22`:C.card,color:on?C.white:C.muted,border:`1.5px solid ${on?C.blue:C.border}`});
             // Auswahl aus den bereits angelegten Fahrzeugen – deren Daten werden übernommen
             const vehicleChoices = myVehicles.length ? myVehicles : [v];
             const av = vehicleChoices.find(x=>x.id===f.affectedVehicleId) || vehicles[f.affectedVehicleId] || v;
@@ -9531,7 +9531,7 @@ Regeln:
                 <div style={{display:"flex",gap:3,marginBottom:12}}>
                   {steps.map((s,i)=>(
                     <button key={s.id} aria-label={s.title} onClick={()=>go(i)}
-                      style={{flex:1,height:4,borderRadius:2,border:"none",padding:0,cursor:"pointer",background:i<=idx?C.red:C.border}}/>
+                      style={{flex:1,height:4,borderRadius:2,border:"none",padding:0,cursor:"pointer",background:i<=idx?C.blue:C.border}}/>
                   ))}
                 </div>
                 <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:10}}>{step.title}</div>
@@ -9706,9 +9706,9 @@ Regeln:
                 <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
                   {Object.entries(LISTING_CATEGORY_LABELS).map(([key,label])=>(
                     <button key={key} onClick={()=>setListingForm(p=>({...p,category:key}))}
-                      style={{padding:"8px 14px",borderRadius:8,border:`1.5px solid ${listingForm.category===key?C.gold:C.border}`,
-                        background:listingForm.category===key?`${C.gold}22`:"transparent",
-                        color:listingForm.category===key?C.gold:C.muted,fontSize:14,fontWeight:700,
+                      style={{padding:"8px 14px",borderRadius:8,border:`1.5px solid ${listingForm.category===key?C.blue:C.border}`,
+                        background:listingForm.category===key?`${C.blue}22`:"transparent",
+                        color:listingForm.category===key?C.blue:C.muted,fontSize:14,fontWeight:700,
                         cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                       {label}
                     </button>
@@ -9833,9 +9833,9 @@ Regeln:
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     {Object.entries(CATEGORY_LABELS).map(([key,label])=>(
                       <button key={key} onClick={()=>setDocScanCategory(key)}
-                        style={{padding:"8px 14px",borderRadius:8,border:`1.5px solid ${docScanCategory===key?C.gold:C.border}`,
-                          background:docScanCategory===key?`${C.gold}22`:"transparent",
-                          color:docScanCategory===key?C.gold:C.muted,fontSize:14,fontWeight:700,
+                        style={{padding:"8px 14px",borderRadius:8,border:`1.5px solid ${docScanCategory===key?C.blue:C.border}`,
+                          background:docScanCategory===key?`${C.blue}22`:"transparent",
+                          color:docScanCategory===key?C.blue:C.muted,fontSize:14,fontWeight:700,
                           cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                         {label}
                       </button>
@@ -10037,7 +10037,7 @@ Regeln:
                     <button key={i} onClick={()=>{setStatusCustom(p.text);setStatusPresetIcon(p.icon);setStatusCustomMins(p.mins||30);setStatusUseDate(false);}}
                       style={{display:"flex",gap:12,alignItems:"center",
                         background:statusCustom===p.text?C.red+"22":C.card,
-                        border:`1px solid ${statusCustom===p.text?C.red:C.border}`,
+                        border:`1px solid ${statusCustom===p.text?C.blue:C.border}`,
                         borderRadius:12,padding:"12px",cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>
                       <span style={{fontSize:22,flexShrink:0}}>{p.icon}</span>
                       <div style={{flex:1}}>
@@ -10091,8 +10091,8 @@ Regeln:
                         <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>
                           {[["15 Min",15],["30 Min",30],["1 Std",60],["2 Std",120],["Ganzer Tag",480]].map(([lbl,mn])=>(
                             <button key={mn} onClick={()=>setStatusCustomMins(mn)}
-                              style={{flex:"1 1 auto",background:statusCustomMins===mn?C.red:"#1a1a1a",
-                                border:`1px solid ${statusCustomMins===mn?C.red:C.border}`,borderRadius:7,
+                              style={{flex:"1 1 auto",background:statusCustomMins===mn?C.blue:"#1a1a1a",
+                                border:`1px solid ${statusCustomMins===mn?C.blue:C.border}`,borderRadius:7,
                                 padding:"6px 4px",color:statusCustomMins===mn?"#fff":C.muted,fontSize:13,fontWeight:700,
                                 cursor:"pointer",fontFamily:"'Inter',sans-serif",whiteSpace:"nowrap"}}>
                               {lbl}
@@ -10343,7 +10343,7 @@ Regeln:
               <div style={{display:"flex",gap:3,marginBottom:14}}>
                 {ONBOARDING_STEPS.map((x,i)=>(
                   <button key={x.id} aria-label={x.title} disabled={!reachable(i)} onClick={()=>go(i)}
-                    style={{flex:1,height:4,borderRadius:2,border:"none",padding:0,cursor:reachable(i)?"pointer":"default",background:onboardingConfirmed.has(x.id)?C.gold:i===idx?C.red:C.border}}/>
+                    style={{flex:1,height:4,borderRadius:2,border:"none",padding:0,cursor:reachable(i)?"pointer":"default",background:onboardingConfirmed.has(x.id)?C.gold:i===idx?C.blue:C.border}}/>
                 ))}
               </div>
               {!finished?(
@@ -11063,8 +11063,8 @@ Regeln:
                     eventFilters.period, eventFilters.onlySpotsLeft].filter(Boolean).length;
                   return (
                     <button onClick={()=>setShowEventFilters(true)}
-                      style={{position:"relative",background:activeCount?`${C.red}22`:"#1a1a1a",
-                        border:`1px solid ${activeCount?C.red+"66":C.border}`,borderRadius:8,
+                      style={{position:"relative",background:activeCount?`${C.blue}22`:"#1a1a1a",
+                        border:`1px solid ${activeCount?C.blue+"66":C.border}`,borderRadius:8,
                         padding:"8px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
                       <span style={{fontSize:14}}>⚙️</span>
                       {activeCount>0&&(
@@ -11080,7 +11080,7 @@ Regeln:
                     <button key={v} onClick={()=>setEventsView(v)}
                       style={{padding:"7px 12px",border:"none",borderRadius:6,cursor:"pointer",
                         fontFamily:"'Inter',sans-serif",fontWeight:700,fontSize:14,
-                        background:eventsView===v?C.red:"transparent",
+                        background:eventsView===v?C.blue:"transparent",
                         color:eventsView===v?"#fff":C.muted,transition:"all .15s"}}>
                       {label}
                     </button>
@@ -12348,9 +12348,9 @@ Regeln:
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[["","Alle"],["week","Diese Woche"],["month","Diesen Monat"],["past","Vergangen"]].map(([v,label])=>(
                   <button key={v} onClick={()=>setEventFilters(p=>({...p,period:v}))}
-                    style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.period===v?C.red:C.border}`,
-                      background:eventFilters.period===v?`${C.red}22`:"transparent",
-                      color:eventFilters.period===v?C.red:C.muted,fontSize:14,fontWeight:700,
+                    style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.period===v?C.blue:C.border}`,
+                      background:eventFilters.period===v?`${C.blue}22`:"transparent",
+                      color:eventFilters.period===v?C.blue:C.muted,fontSize:14,fontWeight:700,
                       cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                     {label}
                   </button>
@@ -12364,9 +12364,9 @@ Regeln:
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[["","Alle"],["free","Kostenlos"],["paid","Kostenpflichtig"]].map(([v,label])=>(
                   <button key={v} onClick={()=>setEventFilters(p=>({...p,price:v}))}
-                    style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.price===v?C.red:C.border}`,
-                      background:eventFilters.price===v?`${C.red}22`:"transparent",
-                      color:eventFilters.price===v?C.red:C.muted,fontSize:14,fontWeight:700,
+                    style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.price===v?C.blue:C.border}`,
+                      background:eventFilters.price===v?`${C.blue}22`:"transparent",
+                      color:eventFilters.price===v?C.blue:C.muted,fontSize:14,fontWeight:700,
                       cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                     {label}
                   </button>
@@ -12383,17 +12383,17 @@ Regeln:
                   <div style={{fontSize:15,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:.2}}>Kategorie</div>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     <button onClick={()=>setEventFilters(p=>({...p,category:""}))}
-                      style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${!eventFilters.category?C.red:C.border}`,
-                        background:!eventFilters.category?`${C.red}22`:"transparent",
-                        color:!eventFilters.category?C.red:C.muted,fontSize:14,fontWeight:700,
+                      style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${!eventFilters.category?C.blue:C.border}`,
+                        background:!eventFilters.category?`${C.blue}22`:"transparent",
+                        color:!eventFilters.category?C.blue:C.muted,fontSize:14,fontWeight:700,
                         cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                       Alle
                     </button>
                     {cats.map(cat=>(
                       <button key={cat} onClick={()=>setEventFilters(p=>({...p,category:cat}))}
-                        style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.category===cat?C.red:C.border}`,
-                          background:eventFilters.category===cat?`${C.red}22`:"transparent",
-                          color:eventFilters.category===cat?C.red:C.muted,fontSize:14,fontWeight:700,
+                        style={{padding:"7px 13px",borderRadius:8,border:`1.5px solid ${eventFilters.category===cat?C.blue:C.border}`,
+                          background:eventFilters.category===cat?`${C.blue}22`:"transparent",
+                          color:eventFilters.category===cat?C.blue:C.muted,fontSize:14,fontWeight:700,
                           cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
                         {cat}
                       </button>
@@ -12924,8 +12924,8 @@ Regeln:
                     toast_(`Hintergrund: ${theme.label}`);
                   }}
                   style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",borderRadius:12,
-                    border:`1.5px solid ${bgTheme===theme.id?C.gold:C.border}`,
-                    background:bgTheme===theme.id?`${C.gold}15`:"transparent",
+                    border:`1.5px solid ${bgTheme===theme.id?C.blue:C.border}`,
+                    background:bgTheme===theme.id?`${C.blue}15`:"transparent",
                     cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>
                   <div style={{width:44,height:44,borderRadius:10,flexShrink:0,background:theme.preview,backgroundSize:"cover",backgroundPosition:"center",border:`1px solid ${C.border}`}}/>
                   <div style={{flex:1}}>
@@ -13495,7 +13495,7 @@ Regeln:
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
               {[["🔧","TÜV vereinbaren"],["🛢️","Ölwechsel"],["🏎️","Reifenwechsel"],["📋","Inspektion"],["🏁","Event vorbereiten"]].map(([icon,label])=>(
                 <button key={label} onClick={()=>setRemForm(p=>({...p,title:label}))}
-                  style={{background:remForm.title===label?C.red:C.card,border:`1px solid ${remForm.title===label?C.red:C.border}`,
+                  style={{background:remForm.title===label?C.blue:C.card,border:`1px solid ${remForm.title===label?C.blue:C.border}`,
                     borderRadius:8,padding:"8px 10px",color:remForm.title===label?"#fff":C.muted,
                     cursor:"pointer",fontSize:14,fontFamily:"'Inter',sans-serif",display:"flex",gap:4,alignItems:"center"}}>
                   <span>{icon}</span><span>{label}</span>

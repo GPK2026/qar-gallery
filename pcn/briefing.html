@@ -43,9 +43,10 @@
     .doc .label { font-size:12px; font-weight:700; color:var(--muted); margin:8px 0 4px; display:block; }
     .choice { display:flex; gap:6px; flex-wrap:wrap; }
     .choice button { flex:1; min-width:96px; padding:9px 6px; border-radius:10px; border:1.5px solid var(--border); background:#fff; font-weight:700; font-size:13px; cursor:pointer; font-family:inherit; }
-    .choice button.on { border-color:#16161a; background:#16161a; color:#fff; }
+    .choice button.on { border-color:#178BFF; background:#178BFF; color:#fff; } /* Blau = aktiv/ausgewählt */
     input[type=text], input[type=number], textarea, select { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; font:inherit; background:#fff; }
     textarea { min-height:70px; }
+    input:focus, textarea:focus, select:focus { outline:none; border-color:#178BFF; box-shadow:0 0 0 3px #178BFF26; }
     .row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .result { border-radius:10px; padding:8px 10px; margin-top:8px; font-size:14px; }
     .result.erledigt { background:#e9f6ef; }
