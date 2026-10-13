@@ -6213,6 +6213,14 @@ Regeln:
        damit es auf dem Handy nach dem Antippen nicht "hängen" bleibt. */
     @media(hover:hover){
       .acc-box:hover{border-color:${C.blue} !important;box-shadow:0 0 0 3px ${C.blue}1f !important}
+      /* Alle anklickbaren Karten/Kacheln (Fahrzeugakten, News, Events, Mängel,
+         Aktionen, Auswahl-Buttons …): blauer Rahmen beim Überfahren. Erkannt an
+         cursor:pointer + abgerundeten Ecken; rote Aktions-Buttons (.btn) und die
+         Navigation sind ausgenommen. outline statt border = kein Layout-Sprung. */
+      :is(div,button,label,a,img)[style*="cursor: pointer"][style*="border-radius"]:not(.btn):not(.tab-btn):not(.voice-fab):not(:disabled):not([style*="background: rgb(213, 0, 28)"]):hover,
+      .hov:not(:disabled):hover{
+        outline:2px solid ${C.blue};outline-offset:-2px;
+        transition:outline-color .15s}
     }
     .tab-brand{display:none}
     .tab-bar.desk-only{display:none}
@@ -10708,7 +10716,7 @@ Regeln:
                     <div style={{height:"100%",width:`${doneCount/steps.length*100}%`,background:C.gold,borderRadius:99,transition:"width .5s ease"}}/>
                   </div>
                   {steps.map(s=>(
-                    <button key={s.label} onClick={s.done?undefined:s.go} disabled={s.done}
+                    <button key={s.label} className="hov" onClick={s.done?undefined:s.go} disabled={s.done}
                       style={{width:"100%",display:"flex",gap:11,alignItems:"center",padding:"9px 0",
                         borderBottom:`1px solid ${C.border}`,background:"none",border:"none",
                         borderBottomStyle:"solid",cursor:s.done?"default":"pointer",textAlign:"left",
