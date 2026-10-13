@@ -1453,47 +1453,22 @@ const PCN_STORAGE = (() => {
     },
 
     // ── Logbook ──
+    // Service-Logbuch nur über pcn-secure: Eigentümer sieht/schreibt alles,
+    // Werkstatt mit aktivem Zugang schreibt und sieht nur eigene Einträge.
+    // Die Tabelle ist für den öffentlichen Schlüssel gesperrt.
     async getLogbook(vehicleId) {
-      const res = await supabase._q("logbook","?vehicle_id=eq."+vehicleId+"&order=date.desc");
-      if(res.error || !res.data) return res;
-      const mapped = res.data.map(r => ({
-        id: r.id, vehicleId: r.vehicle_id, date: r.date, type: r.type,
-        km: r.km, notes: r.notes, workshop: r.workshop,
-        amount: r.amount, documentCategory: r.document_category,
-        documentImage: r.document_image, source: r.source || "manual",
-        createdAt: r.created_at, createdByWorkshopId: r.created_by_workshop_id||null,
-      }));
-      return { data: mapped };
+      const res = await secureApi("logList", { st: sessionToken(), vehicleId });
+      if(res.error) return { error: res.error };
+      return { data: res.data.entries||[] };
     },
     async addLogEntry(vehicleId, entry) {
-      const row = {
-        vehicle_id: vehicleId,
-        date: entry.date, type: entry.type, km: entry.km,
-        notes: entry.notes, workshop: entry.workshop,
-        amount: entry.amount ?? null,
-        document_category: entry.documentCategory ?? null,
-        document_image: entry.documentImage ?? null,
-        source: entry.source || "manual",
-        created_by_workshop_id: entry.createdByWorkshopId ?? null,
-        created_at: now(),
-      };
-      return await supabase._post("logbook", row);
+      const res = await secureApi("logAdd", { st: sessionToken(), vehicleId, entry });
+      if(res.error) return { error: res.error };
+      return { data: res.data.entry };
     },
     async getLogbookForWorkshop(vehicleId, workshopUserId) {
-      // Eingeschraenkte Sicht fuer Werkstatt-Konten: nur die EIGENEN
-      // Eintraege dieser Werkstatt, nicht die anderer Werkstaetten oder des
-      // Eigentuemers selbst — damit kein Wettbewerber erkennbar wird.
-      const res = await supabase._q("logbook",
-        "?vehicle_id=eq."+vehicleId+"&created_by_workshop_id=eq."+workshopUserId+"&order=date.desc");
-      if(res.error || !res.data) return res;
-      const mapped = res.data.map(r => ({
-        id: r.id, vehicleId: r.vehicle_id, date: r.date, type: r.type,
-        km: r.km, notes: r.notes, workshop: r.workshop,
-        amount: r.amount, documentCategory: r.document_category,
-        documentImage: r.document_image, source: r.source || "manual",
-        createdAt: r.created_at,
-      }));
-      return { data: mapped };
+      // Server liefert Werkstatt-Konten automatisch nur die EIGENEN Einträge
+      return await this.getLogbook(vehicleId);
     },
 
     // ── Verkaufsboerse ──

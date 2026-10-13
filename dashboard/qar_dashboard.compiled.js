@@ -792,6 +792,12 @@
     finding: "vehicle_documents (Belege der Fahrzeugakte) war mit dem öffentlichen Schlüssel les- und löschbar. Seit 13.10.2026 nur noch über pcn-secure (docList/docUpload/docMarkAnalyzed/docDelete) mit Sitzungs-Token und Eigentümer-Prüfung; anon/authenticated haben keine Rechte mehr.",
     status: "resolved"
   }, {
+    id: "T24",
+    cat: "Service-Logbuch",
+    sev: "resolved",
+    finding: "logbook war mit dem öffentlichen Schlüssel les-, änder- und löschbar (Grundlage für Siegel und Marktwert). Seit 13.10.2026 nur noch über pcn-secure (logList/logAdd): Eigentümer sieht alles, Werkstatt nur eigene Einträge und schreibt nur mit aktivem Zugang. Healthcheck und Admin-Konsole prüfen jetzt, dass die Tabelle gesperrt ist.",
+    status: "resolved"
+  }, {
     id: "T21",
     cat: "Edge Functions",
     sev: "positive",

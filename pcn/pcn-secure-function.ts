@@ -43,6 +43,10 @@
 //   docMarkAnalyzed  { st, documentId, logbookEntryId }        → { ok }
 //   docDelete        { st, documentId }                        → { ok }
 //   (Dokumentenablage der Fahrzeugakte — nur Eigentümer; Tabelle für anon gesperrt)
+//   logList          { st, vehicleId }                         → { entries }
+//   logAdd           { st, vehicleId, entry }                  → { entry }
+//   (Service-Logbuch: Eigentümer liest/schreibt alles; Werkstatt mit aktivem
+//    Zugang darf eintragen und sieht nur ihre eigenen Einträge)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -79,6 +83,7 @@ const LIMITS: Record<string, number> = {
   findingsList: 240, findingSave: 120, findingDelete: 60, findingVideoUploadUrl: 40,
   briefingCreate: 30, briefingList: 120, briefingRevoke: 30, briefingGet: 120,
   docList: 240, docUpload: 60, docMarkAnalyzed: 120, docDelete: 60,
+  logList: 600, logAdd: 120,
 };
 
 function cors(origin: string | null) {
@@ -490,6 +495,63 @@ Deno.serve(async (req: Request) => {
       const { error } = await q;
       if (error) throw new Error(error.message);
       return json({ ok: true });
+    }
+
+    // ── Service-Logbuch ────────────────────────────────────────────────────
+    // Eigentümer: alle Einträge. Werkstatt: nur eigene Einträge lesen und mit
+    // aktivem Zugang (workshop_access) neue anlegen; bei Zugang "once" wird er
+    // danach verbraucht. Grundlage für Siegel und Marktwert — daher nur hier.
+    if (action === "logList" || action === "logAdd") {
+      const vehicleId = str(b.vehicleId, 100);
+      if (!vehicleId) return json({ error: "Fahrzeug fehlt" }, 400);
+      const isOwner = (await vehicleOwner(vehicleId)) === userId;
+      const mapEntry = (r: any) => ({
+        id: r.id, vehicleId: r.vehicle_id, date: r.date, type: r.type, km: r.km, notes: r.notes,
+        workshop: r.workshop, amount: r.amount, documentCategory: r.document_category,
+        documentImage: r.document_image, source: r.source || "manual", createdAt: r.created_at,
+        createdByWorkshopId: r.created_by_workshop_id || null,
+      });
+      if (action === "logList") {
+        let q = db.from("logbook").select("*").eq("vehicle_id", vehicleId);
+        if (!isOwner) q = q.eq("created_by_workshop_id", userId);
+        const { data, error } = await q.order("date", { ascending: false });
+        if (error) throw new Error(error.message);
+        return json({ entries: (data || []).map(mapEntry) });
+      }
+      let grant: any = null;
+      if (!isOwner) {
+        const { data: g, error: ge } = await db.from("workshop_access").select("id,scope,expires_at")
+          .eq("vehicle_id", vehicleId).eq("workshop_user_id", userId).eq("status", "active").limit(1);
+        if (ge) throw new Error(ge.message);
+        grant = g?.[0];
+        if (!grant || (grant.expires_at && new Date(grant.expires_at).getTime() < Date.now()))
+          return json({ error: "Kein aktiver Zugang zu diesem Fahrzeug" }, 403);
+      }
+      const e = b.entry || {};
+      const date = typeof e.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date) ? e.date : new Date().toISOString().slice(0, 10);
+      const type = str(e.type, 120);
+      if (!type) return json({ error: "Art des Eintrags fehlt" }, 400);
+      const amountNum = Number(String(e.amount ?? "").replace(",", "."));
+      const amount = e.amount !== null && e.amount !== undefined && e.amount !== "" && Number.isFinite(amountNum)
+        ? Math.max(0, Math.min(9_999_999, amountNum)) : null;
+      const image = typeof e.documentImage === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(e.documentImage) && e.documentImage.length < 1_500_000
+        ? e.documentImage : null;
+      let workshop = str(e.workshop, 200);
+      if (!isOwner) {
+        const { data: w } = await db.from("users").select("name,workshop_name").eq("id", userId).maybeSingle();
+        workshop = w?.workshop_name || w?.name || "Werkstatt";
+      }
+      const { data: ins, error } = await db.from("logbook").insert({
+        vehicle_id: vehicleId, date, type, km: str(String(e.km ?? ""), 20), notes: str(e.notes, 8000), workshop, amount,
+        document_category: str(e.documentCategory, 40), document_image: image,
+        source: isOwner ? (["manual", "document_scan", "finding"].includes(e.source) ? e.source : "manual") : "workshop",
+        created_by_workshop_id: isOwner ? null : userId, created_at: new Date().toISOString(),
+      }).select("*").single();
+      if (error) throw new Error(error.message);
+      if (grant?.scope === "once") {
+        await db.from("workshop_access").update({ status: "revoked", used_at: new Date().toISOString() }).eq("id", grant.id);
+      }
+      return json({ entry: mapEntry(ins) });
     }
 
     // ── Video-Upload: signierte Upload-URL in den Fahrzeug-Ordner ──────────

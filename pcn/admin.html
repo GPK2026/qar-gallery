@@ -2422,11 +2422,12 @@ async function runFullDiagnostics(){
     const vUpd = await api(`vehicles?id=eq.${testVid}`,{method:"PATCH",body:JSON.stringify({farbe:"Testfarbe"})});
     check(vUpd,"Fahrzeug ändern (vehicles UPDATE)");
     // Logbuch
-    const lIns = await api("logbook",{method:"POST",body:JSON.stringify({
-      vehicle_id:testVid, date:new Date().toISOString().slice(0,10), type:"Diagnose", km:"1", created_at:new Date().toISOString()
-    })});
-    check(lIns,"Logbuch-Eintrag (logbook INSERT)", lIns?.error?"Mitglieder können nichts ins Logbuch eintragen":"");
-    if(!lIns?.error) await api(`logbook?vehicle_id=eq.${testVid}`,{method:"DELETE"}).catch(()=>{});
+    // Logbuch & Dokumente laufen nur über pcn-secure — mit dem öffentlichen
+    // Schlüssel müssen sie gesperrt sein.
+    for(const [tbl,label] of [["logbook","Logbuch"],["vehicle_documents","Dokumentenablage"]]){
+      const r = await api(`${tbl}?select=id&limit=1`);
+      check(r?.error?{}:{error:"mit dem öffentlichen Schlüssel lesbar"}, `${label} gesperrt (nur über pcn-secure)`);
+    }
     // Live-Status
     const sIns = await api("vehicle_status",{method:"POST",body:JSON.stringify({
       vehicle_id:testVid, text:"Diagnose-Test", icon:"🔧",
@@ -2966,7 +2967,7 @@ async function delMember(id, name){
 
       // 1. Fahrzeugbezogenes (Logbuch, Live-Status, Event-Historie)
       for(const vid of vehIds){
-        steps.push(["Logbuch",      "logbook?vehicle_id=eq." + vid]);
+        // Logbuch wird mit dem Fahrzeug gelöscht (ON DELETE CASCADE)
         steps.push(["Live-Status",  "vehicle_status?vehicle_id=eq." + vid]);
         steps.push(["Event-Historie","event_history?vehicle_id=eq." + vid]);
       }

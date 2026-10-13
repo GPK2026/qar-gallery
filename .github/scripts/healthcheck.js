@@ -63,7 +63,6 @@ async function cleanupTestUser(uid, vehId) {
   if (!uid) return;
   const tid = `ad000000-0000-4000-8000-${String(uid).replace(/-/g, "").slice(-12)}`;
   const steps = [
-    `logbook?vehicle_id=eq.${vehId}`,
     `vehicle_status?vehicle_id=eq.${vehId}`,
     `participants?user_id=eq.${uid}`,
     `messages?thread_id=eq.${tid}`,
@@ -128,7 +127,7 @@ async function cleanupOldTestData() {
     r.error ? bad(`Lesen: ${t}`, r.error) : ok(`Lesen: ${t}`);
   }
   // Optionale Tabellen: fehlen nur einzelne Funktionen, kein Totalausfall
-  for (const [t, feature] of [["news", "Newsletter"], ["vehicle_status", "Live-Status"], ["logbook", "Logbuch"]]) {
+  for (const [t, feature] of [["news", "Newsletter"], ["vehicle_status", "Live-Status"]]) {
     const r = await q(`${t}?select=*&limit=1`);
     if (!r.error) { ok(`Lesen: ${t}`); continue; }
     const s = String(r.error);
@@ -137,6 +136,13 @@ async function cleanupOldTestData() {
     } else {
       bad(`Lesen: ${t}`, r.error);
     }
+  }
+
+  // Geschützte Tabellen: dürfen mit dem öffentlichen Schlüssel NICHT lesbar
+  // sein (Zugriff nur über die Edge Function pcn-secure).
+  for (const t of ["logbook", "vehicle_documents", "user_credentials", "emergency_profiles"]) {
+    const r = await q(`${t}?select=*&limit=1`);
+    r.error ? ok(`Gesperrt: ${t}`) : bad(`Gesperrt: ${t}`, "mit dem öffentlichen Schlüssel lesbar");
   }
 
   // ── 2. Schreibtest an einem Wegwerf-Datensatz ──
@@ -182,16 +188,7 @@ async function cleanupOldTestData() {
     vIns.error ? bad("Fahrzeug anlegen (vehicles INSERT)", vIns.error) : ok("Fahrzeug anlegen (vehicles INSERT)");
 
     if (!vIns.error) {
-      // Logbuch
-      const lIns = await q("logbook", {
-        method: "POST",
-        body: JSON.stringify({
-          vehicle_id: testId, date: new Date().toISOString().slice(0, 10),
-          type: "Healthcheck", km: "1", created_at: new Date().toISOString(),
-        }),
-      });
-      lIns.error ? bad("Logbuch-Eintrag (logbook INSERT)", lIns.error) : ok("Logbuch-Eintrag (logbook INSERT)");
-      if (!lIns.error) await q(`logbook?vehicle_id=eq.${testId}`, { method: "DELETE" });
+      // Logbuch: nur noch über pcn-secure (oben als "Gesperrt" geprüft)
 
       // Live-Status
       const sIns = await q("vehicle_status", {
