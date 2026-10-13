@@ -788,9 +788,9 @@
   }, {
     id: "T20",
     cat: "Dokumentenablage",
-    sev: "high",
-    finding: "vehicle_documents (Belege der Fahrzeugakte) ist mit dem öffentlichen Schlüssel lesbar (Policy USING(true), Stand 13.10.: 3 Dokumente). Vorschlag: wie Notfallprofile hinter pcn-secure legen. Unfallmappen werden deshalb bewusst NICHT dort abgelegt.",
-    status: "open"
+    sev: "resolved",
+    finding: "vehicle_documents (Belege der Fahrzeugakte) war mit dem öffentlichen Schlüssel les- und löschbar. Seit 13.10.2026 nur noch über pcn-secure (docList/docUpload/docMarkAnalyzed/docDelete) mit Sitzungs-Token und Eigentümer-Prüfung; anon/authenticated haben keine Rechte mehr.",
+    status: "resolved"
   }, {
     id: "T21",
     cat: "Edge Functions",
