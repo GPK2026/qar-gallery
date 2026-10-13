@@ -5181,8 +5181,7 @@ Regeln:
     if(pendingTransferVehicleIds.has(v.id)) out.push({id:v.id+"_t", v, sec:"dashboard", icon:"🔑", label:"Übertragungsantrag wartet auf deine Bestätigung"});
     return out;
   });
-  // Startseite: "Neueste Mitglieder-Fahrzeuge" + "Zuletzt angesehen". Auf dem Handy
-  // unter "Meine Fahrzeuge", am Desktop in der linken Spalte (gleicht die Spalten aus).
+  // Startseite: "Neueste Mitglieder-Fahrzeuge" + "Zuletzt angesehen" (unter "Meine Fahrzeuge")
   const renderDashDiscover = () => (<>
             {/* ── Neueste Mitglieder-Fahrzeuge: max 3, Rest in Community ── */}
             {displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).length>0&&(
@@ -5311,6 +5310,72 @@ Regeln:
                 </div>
               )}
 
+  </>);
+  // Plattform-Funktionen: Handy unter den Fahrzeugen, Desktop rechts unter den News
+  const renderDashPlatform = () => (<>
+              {/* ── 3. Plattform-Funktionen — nur solange noch etwas gesperrt ist ── */}
+              {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(()=>{
+                const unlockedCount = LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).length;
+                return (
+            <div className="acc-box" style={{background:C.card,border:showPlatformFeatures?`2px solid ${C.blue}`:`1px solid ${C.border}`,boxShadow:showPlatformFeatures?`0 0 0 3px ${C.blue}26`:"none",borderRadius:12,marginBottom:8,transition:"border-color .15s, box-shadow .15s"}}>
+              <button onClick={()=>setShowPlatformFeatures(s=>!s)}
+                style={{width:"100%",background:"none",border:"none",padding:"12px 14px",
+                  display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
+                <span style={{fontSize:20,flexShrink:0}}>⚙️</span>
+                <div style={{flex:1,minWidth:0,textAlign:"left"}}>
+                  <div style={{fontSize:14,fontWeight:700,color:C.white}}>Plattform-Funktionen</div>
+                  <div style={{fontSize:12,color:C.muted}}>{unlockedCount} von {LOCKED_FEATURES.length} freigeschaltet</div>
+                </div>
+                <span style={{fontSize:16,color:C.muted,flexShrink:0,transition:"transform .2s",
+                  transform:showPlatformFeatures?"rotate(180deg)":"rotate(0deg)"}}>▾</span>
+              </button>
+              {showPlatformFeatures&&(
+              <div style={{padding:"0 14px 14px",borderTop:`1px solid ${C.border}`}}>
+                <div style={{display:"flex",justifyContent:"flex-end",marginTop:10,marginBottom:4}}>
+                  <button onClick={()=>setShowInfoModal(true)}
+                    style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
+                </div>
+
+              {/* Active functions */}
+              {LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).length>0&&(
+                <div style={{marginBottom:10}}>
+                  {LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).map(f=>(
+                    <div key={f.id} onClick={()=>setShowFeatureDetail(f)}
+                      style={{background:`${C.green}0d`,border:`1px solid ${C.green}33`,borderRadius:11,padding:"12px 14px",marginBottom:7,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}>
+                      <span style={{fontSize:22,flexShrink:0}}>{f.icon}</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:15,fontWeight:700,color:C.white}}>{f.label}</div>
+                        <div style={{fontSize:12,color:C.green,marginTop:2}}>✓ Freigeschaltet · {f.desc}</div>
+                      </div>
+                      <span style={{fontSize:16,color:C.green,flexShrink:0}}>›</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Locked functions — greyed out grid, tappable for explanation */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {LOCKED_FEATURES.filter(f=>!unlockedFeatures.has(f.id)).map(f=>(
+                  <div key={f.id} onClick={()=>setShowFeatureDetail(f)}
+                    style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:11,padding:"12px 11px",
+                      opacity:.6,position:"relative",cursor:"pointer",transition:"opacity .15s"}}
+                    onMouseEnter={e=>e.currentTarget.style.opacity=".85"}
+                    onMouseLeave={e=>e.currentTarget.style.opacity=".6"}>
+                    <div style={{position:"absolute",top:7,right:8,fontSize:13}}>🔒</div>
+                    <div style={{fontSize:20,marginBottom:5}}>{f.icon}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:"#888",marginBottom:2}}>{f.label}</div>
+                    <div style={{fontSize:9,color:"#444",lineHeight:1.4}}>{f.milestone}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{fontSize:12,color:"#444",marginTop:10,textAlign:"center",lineHeight:1.6}}>
+                Mehr Funktionen freischalten: Fahrzeug anlegen · Logbuch führen · Events besuchen
+              </div>
+              </div>
+              )}
+            </div>
+                );
+              })()}
   </>);
   const RedDot = ({title}) => <span title={title} aria-label={title} style={{width:9,height:9,borderRadius:"50%",background:C.red,flexShrink:0,display:"inline-block",boxShadow:`0 0 0 2px ${C.red}33`}}/>;
   const handleVoiceCommand = (said) => {
@@ -6413,7 +6478,8 @@ Regeln:
       .veh-list:has(> .veh-card:nth-child(2)) .veh-card-img{height:180px !important}
       .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
       .dash-mob{display:none}
-      .dash-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:start}
+      .dash-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:32px;align-items:start}
+      .dash-grid > .dash-col:first-child{order:2}
       .veh-gallery{max-width:1180px;margin:0 auto;padding:20px 32px 0}
       .veh-gallery > div{border-radius:16px;overflow:hidden}
       .veh-grid{max-width:1180px !important;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:start;padding:24px 32px 48px !important}
@@ -10938,7 +11004,7 @@ Regeln:
               );
             })()}
 
-            <div className="dash-desk">{renderDashDiscover()}</div>
+            <div className="dash-desk">{renderDashPlatform()}</div>
             </div>
             <div className="dash-col">
             {/* ── 2. Meine Fahrzeuge ── */}
@@ -10991,71 +11057,9 @@ Regeln:
               ))}</div>}
             </div>
 
-            <div className="dash-mob">{renderDashDiscover()}</div>
+            {renderDashDiscover()}
 
-              {/* ── 3. Plattform-Funktionen — nur solange noch etwas gesperrt ist ── */}
-              {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(()=>{
-                const unlockedCount = LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).length;
-                return (
-            <div className="acc-box" style={{background:C.card,border:showPlatformFeatures?`2px solid ${C.blue}`:`1px solid ${C.border}`,boxShadow:showPlatformFeatures?`0 0 0 3px ${C.blue}26`:"none",borderRadius:12,marginBottom:8,transition:"border-color .15s, box-shadow .15s"}}>
-              <button onClick={()=>setShowPlatformFeatures(s=>!s)}
-                style={{width:"100%",background:"none",border:"none",padding:"12px 14px",
-                  display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
-                <span style={{fontSize:20,flexShrink:0}}>⚙️</span>
-                <div style={{flex:1,minWidth:0,textAlign:"left"}}>
-                  <div style={{fontSize:14,fontWeight:700,color:C.white}}>Plattform-Funktionen</div>
-                  <div style={{fontSize:12,color:C.muted}}>{unlockedCount} von {LOCKED_FEATURES.length} freigeschaltet</div>
-                </div>
-                <span style={{fontSize:16,color:C.muted,flexShrink:0,transition:"transform .2s",
-                  transform:showPlatformFeatures?"rotate(180deg)":"rotate(0deg)"}}>▾</span>
-              </button>
-              {showPlatformFeatures&&(
-              <div style={{padding:"0 14px 14px",borderTop:`1px solid ${C.border}`}}>
-                <div style={{display:"flex",justifyContent:"flex-end",marginTop:10,marginBottom:4}}>
-                  <button onClick={()=>setShowInfoModal(true)}
-                    style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,lineHeight:1}}>ℹ️</button>
-                </div>
-
-              {/* Active functions */}
-              {LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).length>0&&(
-                <div style={{marginBottom:10}}>
-                  {LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).map(f=>(
-                    <div key={f.id} onClick={()=>setShowFeatureDetail(f)}
-                      style={{background:`${C.green}0d`,border:`1px solid ${C.green}33`,borderRadius:11,padding:"12px 14px",marginBottom:7,display:"flex",gap:12,alignItems:"center",cursor:"pointer"}}>
-                      <span style={{fontSize:22,flexShrink:0}}>{f.icon}</span>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:15,fontWeight:700,color:C.white}}>{f.label}</div>
-                        <div style={{fontSize:12,color:C.green,marginTop:2}}>✓ Freigeschaltet · {f.desc}</div>
-                      </div>
-                      <span style={{fontSize:16,color:C.green,flexShrink:0}}>›</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Locked functions — greyed out grid, tappable for explanation */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                {LOCKED_FEATURES.filter(f=>!unlockedFeatures.has(f.id)).map(f=>(
-                  <div key={f.id} onClick={()=>setShowFeatureDetail(f)}
-                    style={{background:"#111",border:`1px solid ${C.border}`,borderRadius:11,padding:"12px 11px",
-                      opacity:.6,position:"relative",cursor:"pointer",transition:"opacity .15s"}}
-                    onMouseEnter={e=>e.currentTarget.style.opacity=".85"}
-                    onMouseLeave={e=>e.currentTarget.style.opacity=".6"}>
-                    <div style={{position:"absolute",top:7,right:8,fontSize:13}}>🔒</div>
-                    <div style={{fontSize:20,marginBottom:5}}>{f.icon}</div>
-                    <div style={{fontSize:13,fontWeight:700,color:"#888",marginBottom:2}}>{f.label}</div>
-                    <div style={{fontSize:9,color:"#444",lineHeight:1.4}}>{f.milestone}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{fontSize:12,color:"#444",marginTop:10,textAlign:"center",lineHeight:1.6}}>
-                Mehr Funktionen freischalten: Fahrzeug anlegen · Logbuch führen · Events besuchen
-              </div>
-              </div>
-              )}
-            </div>
-                );
-              })()}
+              <div className="dash-mob">{renderDashPlatform()}</div>
             </div>
           </div>
         )}
