@@ -1006,14 +1006,14 @@ function VoiceControl({ onCommand, bottom=76, toast }) {
   return (
     <>
       {(listening||text)&&(
-        <div style={{position:"fixed",right:12,left:12,bottom:bottom+64,zIndex:1200,background:C.dark,border:`1px solid ${listening?C.red:C.border}`,borderRadius:14,padding:"10px 14px",boxShadow:"0 8px 30px rgba(0,0,0,.5)"}}>
+        <div className="voice-panel" style={{position:"fixed",right:12,left:12,bottom:bottom+64,zIndex:1200,background:C.dark,border:`1px solid ${listening?C.red:C.border}`,borderRadius:14,padding:"10px 14px",boxShadow:"0 8px 30px rgba(0,0,0,.5)"}}>
           <div style={{fontSize:11,fontWeight:700,color:listening?C.red:C.muted,marginBottom:3}}>
             {listening ? (targetRef.current ? "🎙️ Diktat ins Feld …" : "🎙️ Ich höre … (z. B. „Unfall melden“)") : "Erkannt"}
           </div>
           <div style={{fontSize:16,color:C.white,minHeight:22,overflowWrap:"anywhere"}}>{text||"…"}</div>
         </div>
       )}
-      <button type="button" aria-label={listening?"Spracheingabe beenden":"Sprachsteuerung"}
+      <button type="button" className="voice-fab" aria-label={listening?"Spracheingabe beenden":"Sprachsteuerung"}
         onPointerDown={e=>{ e.preventDefault(); targetRef.current = voiceTarget(document.activeElement); }}
         onClick={()=>{ listening ? stop() : start(); }}
         onContextMenu={e=>{ e.preventDefault(); setShowHelp(true); }}
@@ -6165,6 +6165,31 @@ Regeln:
       .overlay{align-items:center}
       .sheet{border-radius:20px;max-height:80vh}
     }
+    /* ── Desktop (ab 1024 px): Navigation als Seitenleiste, breiterer Inhalt,
+       Startseite und Fahrzeugakte zweispaltig. Handy/Tablet unverändert. ── */
+    .tab-brand{display:none}
+    .tab-bar.desk-only{display:none}
+    @media(min-width:1024px){
+      .tab-bar{top:0;bottom:0;right:auto;width:220px;flex-direction:column;justify-content:flex-start;border-top:none;border-right:1px solid ${C.border};padding:18px 12px;gap:2px;z-index:150;overflow-y:auto}
+      .tab-bar.desk-only{display:flex}
+      .tab-brand{display:block;padding:4px 14px 20px;font-weight:900;font-size:14px;color:${C.white};letter-spacing:.4px;border-bottom:1px solid ${C.border};margin-bottom:12px}
+      .tab-btn{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:10px}
+      .tab-btn:hover{background:#ffffff0d;color:${C.white}}
+      .tab-btn.on{background:${C.red}1f}
+      .tab-btn .ico{font-size:20px;width:26px;text-align:center}
+      .tab-btn .lbl{font-size:13px;letter-spacing:.3px}
+      .tab-btn .badge{top:6px;left:32px;right:auto}
+      .app-shell{padding-left:220px;padding-bottom:0 !important}
+      .app-main{max-width:820px !important;padding:24px 32px 48px !important}
+      .app-main.tab-dashboard{max-width:1180px !important}
+      .dash-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:start}
+      .veh-gallery{max-width:1180px;margin:0 auto;padding:20px 32px 0}
+      .veh-gallery > div{border-radius:16px;overflow:hidden}
+      .veh-grid{max-width:1180px !important;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:start;padding:24px 32px 48px !important}
+      .toast{left:auto;right:32px;bottom:100px;width:420px}
+      .voice-fab{bottom:28px !important;right:32px !important}
+      .voice-panel{left:auto !important;right:32px !important;width:420px;bottom:96px !important}
+    }
     .tog{width:44px;height:24px;border-radius:99px;border:none;cursor:pointer;transition:background .2s;flex-shrink:0;position:relative;background:${C.border}}
     .tog::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:99px;background:#fff;transition:transform .2s}
     .tog.on{background:${C.red}}.tog.on::after{transform:translateX(20px)}
@@ -7266,6 +7291,46 @@ Regeln:
     </div>
   );
 
+  // Navigation: unten (Handy) bzw. als Seitenleiste links (Desktop, per CSS).
+  // In der Fahrzeugakte nur auf dem Desktop sichtbar ("desk-only").
+  const renderTabBar = (extraClass) => (
+      <div className={"tab-bar"+(extraClass?" "+extraClass:"")}>
+        <div className="tab-brand">PCN · QAR.Gallery</div>
+        {/* Scan button — only for members */}
+        {!isGuest&&(
+          <button className="tab-btn" onClick={openScanner} style={{color:C.red}}>
+            <span className="ico">📷</span>
+            <span className="lbl">Scan</span>
+          </button>
+        )}
+        {(isGuest
+          ? [["messages","💬","Chats"]]
+          : [["dashboard","🏠","Start"],["events","🏁","Events"],["community","❤️","Community"],["messages","💬","Chats"],["profile","👤","Profil"]]
+        ).map(([id,icon,label])=>(
+          <button key={id} className={`tab-btn ${tab===id?"on":""}`} onClick={()=>{ setScreen("app"); setTab(id); }}>
+            {id==="messages"&&unreadCount>0&&<div className="badge">{unreadCount}</div>}
+            {id==="dashboard"&&unreadNews>0&&<div className="badge">{unreadNews}</div>}
+            <span className="ico">{icon}</span>
+            <span className="lbl">{label}</span>
+          </button>
+        ))}
+        {/* Guest: back to public vehicle page */}
+        {isGuest&&publicV&&(
+          <button className="tab-btn" onClick={()=>setScreen("public")}>
+            <span className="ico">🚗</span>
+            <span className="lbl">Fahrzeugakte</span>
+          </button>
+        )}
+        {/* Guest: upgrade prompt */}
+        {isGuest&&(
+          <button className="tab-btn" onClick={()=>{setScreen("splash");setLoginForm(p=>({...p,mode:"register"}));}}>
+            <span className="ico">🔓</span>
+            <span className="lbl">Mitglied</span>
+          </button>
+        )}
+      </div>
+  );
+
   if(screen==="vehicle"&&viewV) {
     const v=viewV;
     const vLog=logbook[v.id]||[];
@@ -7280,15 +7345,16 @@ Regeln:
     const kz=fmtKz(v.kennzeichen,v.baujahr);
     const priv=v.privacy||DEF_PRIVACY;
     return (
-      <div className="vh-screen" style={{background:"transparent",paddingBottom:80}}>
+      <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:80}}>
         <style>{CSS}</style>
+        {!isGuest&&renderTabBar("desk-only")}
         {!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
         {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
         {ScannerOverlay}
         {/* ── Photo Gallery — inline ── */}
-        <div style={{position:"relative"}}>
+        <div className="veh-gallery" style={{position:"relative"}}>
           {(()=>{
             const imgs=getImages(v);
             const cur=Math.min(gallerySwipe[v.id]||0, Math.max(0,imgs.length-1));
@@ -7375,7 +7441,8 @@ Regeln:
         </div>
 
         {/* ── Vehicle detail content ── */}
-        <div style={{padding:"16px",maxWidth:560,margin:"0 auto"}}>
+        <div className="veh-grid" style={{padding:"16px",maxWidth:560,margin:"0 auto"}}>
+          <div className="veh-col">
 
           {/* ── Hinweis-Banner: offene Werkstatt-Anfrage ── */}
           {isOwn&&pendingWorkshopVehicleIds.has(v.id)&&(
@@ -7617,6 +7684,8 @@ Regeln:
             </div>
           )}
 
+          </div>
+          <div className="veh-col">
           {/* ── Fahrzeugspezifische Termine & Erinnerungen ── */}
           {(()=>{
             const vRems = myReminders.filter(r=>r.vehicleId===v.id||r.vehicle_id===v.id);
@@ -8181,6 +8250,7 @@ Regeln:
             </div>
           )}
 
+          </div>
         </div>
 
         {/* Privacy Sheet */}
@@ -10137,7 +10207,7 @@ Regeln:
   // MAIN APP TABS
   // ══════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="vh-screen" style={{background:"transparent",paddingBottom:62}}>
+    <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:62}}>
       <style>{CSS}</style>
       {!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
       {/* ── Geführte Einführung: jeder Schritt mit "Verstanden" bestätigen ── */}
@@ -10266,7 +10336,7 @@ Regeln:
         </div>
       </div>
 
-      <div style={{padding:"14px 14px 0",maxWidth:560,margin:"0 auto"}}>
+      <div className={`app-main tab-${tab}`} style={{padding:"14px 14px 0",maxWidth:560,margin:"0 auto"}}>
 
         {/* DASHBOARD */}
         {tab==="dashboard"&&isGuest&&(
@@ -10383,7 +10453,8 @@ Regeln:
         )}
 
         {tab==="dashboard"&&!isGuest&&me?.role!=="workshop"&&(
-          <div style={{animation:"fadeIn .2s"}}>
+          <div className="dash-grid" style={{animation:"fadeIn .2s"}}>
+            <div className="dash-col">
 
             {/* Demo-Hinweis erscheint als Popup-Overlay nach 3 Sekunden — siehe globaler Overlay-Bereich */}
             {/* ── 1. Infos & Neuigkeiten ── */}
@@ -10544,6 +10615,8 @@ Regeln:
               );
             })()}
 
+            </div>
+            <div className="dash-col">
             {/* ── 2. Meine Fahrzeuge ── */}
             <div style={{marginBottom:32}}>
               <div style={{marginBottom:16}}>
@@ -10780,6 +10853,7 @@ Regeln:
             </div>
                 );
               })()}
+            </div>
           </div>
         )}
 
@@ -13359,41 +13433,7 @@ Regeln:
         </div>
       )}
 
-      {/* Tab Bar */}
-      <div className="tab-bar">
-        {/* Scan button — only for members */}
-        {!isGuest&&(
-          <button className="tab-btn" onClick={openScanner} style={{color:C.red}}>
-            <span className="ico">📷</span>
-            <span className="lbl">Scan</span>
-          </button>
-        )}
-        {(isGuest
-          ? [["messages","💬","Chats"]]
-          : [["dashboard","🏠","Start"],["events","🏁","Events"],["community","❤️","Community"],["messages","💬","Chats"],["profile","👤","Profil"]]
-        ).map(([id,icon,label])=>(
-          <button key={id} className={`tab-btn ${tab===id?"on":""}`} onClick={()=>setTab(id)}>
-            {id==="messages"&&unreadCount>0&&<div className="badge">{unreadCount}</div>}
-            {id==="dashboard"&&unreadNews>0&&<div className="badge">{unreadNews}</div>}
-            <span className="ico">{icon}</span>
-            <span className="lbl">{label}</span>
-          </button>
-        ))}
-        {/* Guest: back to public vehicle page */}
-        {isGuest&&publicV&&(
-          <button className="tab-btn" onClick={()=>setScreen("public")}>
-            <span className="ico">🚗</span>
-            <span className="lbl">Fahrzeugakte</span>
-          </button>
-        )}
-        {/* Guest: upgrade prompt */}
-        {isGuest&&(
-          <button className="tab-btn" onClick={()=>{setScreen("splash");setLoginForm(p=>({...p,mode:"register"}));}}>
-            <span className="ico">🔓</span>
-            <span className="lbl">Mitglied</span>
-          </button>
-        )}
-      </div>
+      {renderTabBar()}
     </div>
   );
 }
