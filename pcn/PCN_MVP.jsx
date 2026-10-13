@@ -122,6 +122,7 @@ const C = {
   red:"#D5001C",   // Authentic Porsche Guards Red
   gold:"#c8a96e", white:"#eceef0", muted:"#8b8d90",
   green:"#1c9a4a", amber:"#bb6f02",
+  blue:"#178BFF",  // "Aktiv"-Farbe im System (geöffnete Reiter usw.) — PDS Info-Blau, dunkles Theme
   surface:"#eeeff2", // Porsche --pds-theme-light-background-surface
 };
 
@@ -8215,9 +8216,10 @@ Regeln:
               const isEmergency = sec.id==="emergency";
               return (
               <div key={sec.id} id={`sec-${v.id}-${sec.id}`} style={{scrollMarginTop:70,background:C.card,
-                border:isEmergency?`1.5px solid ${C.red}77`:`1px solid ${C.border}`,
+                border:isOpen(v.id,sec.id)?`2px solid ${C.blue}`:isEmergency?`1.5px solid ${C.red}77`:`1px solid ${C.border}`,
                 borderRadius:12,marginBottom:10,overflow:"hidden",
-                boxShadow:isEmergency?`0 0 0 1px ${C.red}22`:"none"}}>
+                boxShadow:isOpen(v.id,sec.id)?`0 0 0 3px ${C.blue}26`:isEmergency?`0 0 0 1px ${C.red}22`:"none",
+                transition:"border-color .15s, box-shadow .15s"}}>
                 {/* Accordion header */}
                 <button onClick={()=>toggleSection(v.id, sec.id)}
                   style={{width:"100%",background:"none",border:"none",padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontFamily:"'Inter',sans-serif"}}>
@@ -10901,7 +10903,7 @@ Regeln:
               {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(()=>{
                 const unlockedCount = LOCKED_FEATURES.filter(f=>unlockedFeatures.has(f.id)).length;
                 return (
-            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:8}}>
+            <div style={{background:C.card,border:showPlatformFeatures?`2px solid ${C.blue}`:`1px solid ${C.border}`,boxShadow:showPlatformFeatures?`0 0 0 3px ${C.blue}26`:"none",borderRadius:12,marginBottom:8,transition:"border-color .15s, box-shadow .15s"}}>
               <button onClick={()=>setShowPlatformFeatures(s=>!s)}
                 style={{width:"100%",background:"none",border:"none",padding:"12px 14px",
                   display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
