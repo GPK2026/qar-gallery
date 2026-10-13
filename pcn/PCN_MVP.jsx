@@ -5145,8 +5145,8 @@ Regeln:
     setFindingBusy(false); setFindingEdit(null); refreshAttention();
     toast_(isDemo ? "Demo: nur lokal gespeichert" : alsoLogbook&&finding.status==="behoben" ? `Gespeichert ✓ und ins Logbuch übernommen (+${POINTS.logbook} Pkt)` : "Gespeichert ✓");
   };
-  const deleteFinding = async (vehicleId, id) => {
-    if(!window.confirm("Eintrag löschen?")) return;
+  const deleteFinding = async (vehicleId, id, title) => {
+    if(!window.confirm(`${title?`„${title}“`:"Diesen Eintrag"} endgültig löschen?\n\nFotos und Videos dazu werden ebenfalls entfernt. Bereits gesendete Reparatur-Briefings behalten ihre Kopie, bis du den Link zurückziehst.`)) return;
     if(!isDemo && id && !String(id).startsWith("demo_")){
       const {error} = await window.PCN_DB.findings.remove(id).catch(e=>({error:e?.message}));
       if(error){ toast_(error,"err"); return; }
@@ -5379,6 +5379,12 @@ Regeln:
                 );
               })()}
   </>);
+  const TrashBtn = ({onClick,title="Löschen"}) => (
+    <button type="button" title={title} aria-label={title} className="hov"
+      onClick={e=>{e.stopPropagation(); onClick();}}
+      style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,width:34,height:34,flexShrink:0,
+        display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,cursor:"pointer",color:C.muted}}>🗑</button>
+  );
   const RedDot = ({title}) => <span title={title} aria-label={title} style={{width:9,height:9,borderRadius:"50%",background:C.red,flexShrink:0,display:"inline-block",boxShadow:`0 0 0 2px ${C.red}33`}}/>;
   const handleVoiceCommand = (said) => {
     const cmd = parseVoiceCommand(said, myVehicles);
@@ -5442,7 +5448,8 @@ Regeln:
     setShowDocArchive(null);
     toast_("Dokument abgelegt ✓ — Auswertung kann jederzeit nachgeholt werden");
   };
-  const deleteArchivedDocument = async (vehicleId, docId) => {
+  const deleteArchivedDocument = async (vehicleId, docId, label) => {
+    if(!window.confirm(`Dokument ${label?`„${label}“ `:""}endgültig löschen?`)) return;
     const DB = window.PCN_DB;
     if(!isDemo){
       const {error} = await DB.vehicleDocuments.delete(docId, me.id).catch(e=>({error:e?.message}));
@@ -8315,8 +8322,7 @@ Regeln:
                             KI auslesen
                           </button>
                         )}
-                        <button onClick={()=>deleteArchivedDocument(v.id,doc.id)}
-                          style={{background:"none",border:"none",color:"#666",fontSize:16,cursor:"pointer",flexShrink:0,padding:"0 2px"}}>✕</button>
+                        {isOwn&&<TrashBtn title="Dokument löschen" onClick={()=>deleteArchivedDocument(v.id,doc.id,doc.label||CATEGORY_LABELS[doc.category])}/>}
                       </div>
                     ))}
                     {/* ── Unfallakte — nur Verweis auf die gesperrt gespeicherten Fälle
@@ -8390,6 +8396,7 @@ Regeln:
                           <div style={{fontSize:12,color:C.muted}}>{[cat.label,x.position,x.foundAt&&new Date(x.foundAt).toLocaleDateString("de-DE"),x.km&&Number(x.km).toLocaleString("de-DE")+" km",(x.videos||[]).length&&`🎥 ${x.videos.length}`].filter(Boolean).join(" · ")}</div>
                         </div>
                         <span style={{fontSize:11,fontWeight:700,color:st.color,border:`1px solid ${st.color}88`,borderRadius:99,padding:"2px 8px",flexShrink:0}}>{st.label}</span>
+                        <TrashBtn title="Eintrag löschen" onClick={()=>deleteFinding(v.id,x.id,x.title)}/>
                       </div>
                     );
                   };
@@ -9461,7 +9468,7 @@ Regeln:
                   </>
                 )}
                 <div style={{position:"sticky",bottom:0,background:C.dark,margin:"8px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
-                  {f.id&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} disabled={findingBusy} onClick={()=>deleteFinding(v.id,f.id)}>Löschen</button>}
+                  {f.id&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} disabled={findingBusy} onClick={()=>deleteFinding(v.id,f.id,f.title)}>Löschen</button>}
                   <button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} disabled={findingBusy||!!videoUpload||!f.title.trim()}
                     onClick={()=>saveFinding(!!f.toLogbook)}>
                     {findingBusy?"Speichert …":"Speichern"}
