@@ -5164,16 +5164,29 @@ Regeln:
     },0);
   };
   const legalDraftFor = vid => !!legalDraft && (legalDraft.affectedVehicleId===vid || legalDraft.vehicleId===vid);
+  const openVehicleSection = (v, sec) => {
+    setViewV(v); setScreen("vehicle");
+    if(sec) setOpenSections(p=>({...p,[v.id+"_"+sec]:true}));
+    if(sec==="findings"){ loadFindings(v.id); loadBriefings(v.id); }
+    if(sec) setTimeout(()=>document.getElementById(`sec-${v.id}-${sec}`)?.scrollIntoView({behavior:"smooth",block:"start"}), 350);
+  };
+  // Offene Punkte in den eigenen Fahrzeugakten (Werkzeug-Symbol im Kopf)
+  const akteItems = myVehicles.flatMap(v=>{
+    const out=[], nf=openFindingsOf(v.id), nb=briefingActionsOf(v.id);
+    if(nf) out.push({id:v.id+"_f", v, sec:"findings", icon:"🔍", label:nf===1?"1 offener Mangel":`${nf} offene Mängel`});
+    if(nb) out.push({id:v.id+"_b", v, sec:"findings", icon:"🔧", label:nb===1?"1 Werkstatt-Punkt wartet auf dich":`${nb} Werkstatt-Punkte warten auf dich`});
+    if(legalDraftFor(v.id)) out.push({id:v.id+"_l", v, sec:"emergency", icon:"🆘", label:"Angefangene Unfallmeldung"});
+    else if((legalCases[v.id]||[]).some(c=>c.status==="error")) out.push({id:v.id+"_e", v, sec:"emergency", icon:"🆘", label:"Unfallmeldung noch nicht gesendet"});
+    if(pendingWorkshopVehicleIds.has(v.id)) out.push({id:v.id+"_w", v, sec:null, icon:"🛠️", label:"Werkstatt-Zugriff wartet auf deine Bestätigung"});
+    if(pendingTransferVehicleIds.has(v.id)) out.push({id:v.id+"_t", v, sec:"dashboard", icon:"🔑", label:"Übertragungsantrag wartet auf deine Bestätigung"});
+    return out;
+  });
   const RedDot = ({title}) => <span title={title} aria-label={title} style={{width:9,height:9,borderRadius:"50%",background:C.red,flexShrink:0,display:"inline-block",boxShadow:`0 0 0 2px ${C.red}33`}}/>;
   const handleVoiceCommand = (said) => {
     const cmd = parseVoiceCommand(said, myVehicles);
     const own = v => v && myVehicles.some(x=>x.id===v.id);
     const pickVehicle = () => cmd.vehicle || (screen==="vehicle" && own(viewV) ? viewV : myVehicles.length===1 ? myVehicles[0] : null);
-    const openSection = (v, sec) => {
-      setViewV(v); setScreen("vehicle");
-      setOpenSections(p=>({...p,[v.id+"_"+sec]:true}));
-      setTimeout(()=>document.getElementById(`sec-${v.id}-${sec}`)?.scrollIntoView({behavior:"smooth",block:"start"}), 350);
-    };
+    const openSection = openVehicleSection;
     const needVehicle = what => toast_(myVehicles.length ? `Für welches Fahrzeug? Sag z. B. „${what} mit dem ${myVehicles[0].modell||myVehicles[0].hersteller||"…"}“` : "Lege zuerst ein Fahrzeug an","err");
     switch(cmd.type){
       case "help": return "help";
@@ -10480,6 +10493,16 @@ Regeln:
                 <span style={{position:"absolute",top:-1,right:-1,width:12,height:12,borderRadius:"50%",background:C.red,boxShadow:"0 0 0 2px #fff"}}/>}
             </button>
           )}
+          {!isGuest&&myVehicles.length>0&&(
+            <button onClick={()=>setShowInfoModal("akten")}
+              style={{background:"none",border:"none",cursor:"pointer",padding:2,position:"relative",flexShrink:0,lineHeight:1}}
+              title={akteItems.length?`${akteItems.length} offene Punkte in deinen Fahrzeugakten`:"Fahrzeugakten: nichts offen"}
+              aria-label="Offene Punkte in den Fahrzeugakten">
+              <span style={{fontSize:26}}>🔧</span>
+              {akteItems.length>0&&
+                <span style={{position:"absolute",top:-1,right:-1,width:12,height:12,borderRadius:"50%",background:C.red,boxShadow:"0 0 0 2px #fff"}}/>}
+            </button>
+          )}
         </div>
       </div>
 
@@ -13006,6 +13029,45 @@ Regeln:
                 </div>
                 <span style={{fontSize:18,color:C.muted,flexShrink:0}}>›</span>
               </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showInfoModal==="akten"&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}
+          onClick={()=>setShowInfoModal(false)}>
+          <div style={{background:C.dark,border:`1px solid ${C.border}`,borderRadius:20,padding:"24px 20px",maxWidth:400,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"fadeIn .2s"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:26,fontWeight:900,color:C.white}}>
+                🔧 Offen in deinen Akten
+              </div>
+              <button onClick={()=>setShowInfoModal(false)}
+                style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>✕</button>
+            </div>
+            {akteItems.length===0?(
+              <div style={{textAlign:"center",padding:"30px 0",color:C.muted}}>
+                <div style={{fontSize:36,marginBottom:10}}>✓</div>
+                <div style={{fontSize:15}}>In deinen Fahrzeugakten ist nichts offen.</div>
+              </div>
+            ):myVehicles.filter(v=>akteItems.some(i=>i.v.id===v.id)).map(v=>(
+              <div key={v.id} style={{marginBottom:14}}>
+                <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2,marginBottom:6}}>
+                  {[v.hersteller,v.modell].filter(Boolean).join(" ")}{v.kennzeichen?` · ${fmtKz(v.kennzeichen,v.baujahr)}`:""}
+                </div>
+                {akteItems.filter(i=>i.v.id===v.id).map(item=>(
+                  <button key={item.id} onClick={()=>{setShowInfoModal(false); if(item.sec==="dashboard"){ setScreen("app"); setTab("dashboard"); } else openVehicleSection(item.v,item.sec);}}
+                    style={{width:"100%",display:"flex",gap:12,alignItems:"center",background:C.card,
+                      border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:8,
+                      cursor:"pointer",textAlign:"left"}}>
+                    <span style={{fontSize:22,flexShrink:0}}>{item.icon}</span>
+                    <div style={{flex:1,minWidth:0,fontSize:15,fontWeight:700,color:C.white}}>{item.label}</div>
+                    <RedDot title={item.label}/>
+                    <span style={{fontSize:18,color:C.muted,flexShrink:0}}>›</span>
+                  </button>
+                ))}
+              </div>
             ))}
           </div>
         </div>
