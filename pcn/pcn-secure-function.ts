@@ -27,6 +27,10 @@
 //   emergencySave    { st, vehicleId, profile }                → { id }
 //   emergencyDelete  { st, profileId }                         → { ok }
 //   emergencyByCode  { vehicleId, code }                       → { profiles }
+//   findingsList     { st, vehicleId }                         → { findings }
+//   findingSave      { st, vehicleId, finding }                → { id }
+//   findingDelete    { st, findingId }                         → { ok }
+//   (Mängel & Feststellungen am eigenen Fahrzeug — nur Eigentümer)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -35,6 +39,8 @@ const ALLOWED_ORIGINS = ["https://qar.gallery", "https://www.qar.gallery", "http
 const CLUB_CODE = Deno.env.get("PCN_CLUB_CODE") || "PCN2026";
 const PBKDF2_ITERATIONS = 100000; // identisch mit pcn_storage.js
 const SESSION_DAYS = 30;
+const FINDING_CATEGORIES = ["lack", "delle", "felge", "reifen", "glas", "innenraum", "technik", "sonstiges"];
+const FINDING_PHOTOS = 4;
 
 // Spalten, die an die App zurückgehen (nie Hashes/Codes)
 const USER_COLS = "id,name,email,role,member_nr,avatar,city,bio,phone,beitrag_bezahlt,beitrag_datum,geburtstag,is_admin,bg_theme,welcome_seen,adac_member_nr,avd_member_nr,created_at,workshop_name,workshop_address";
@@ -53,6 +59,7 @@ function limited(key: string, limit: number): boolean {
 const LIMITS: Record<string, number> = {
   login: 30, register: 10, registerWorkshop: 5, changePassword: 10,
   emergencyList: 120, emergencySave: 60, emergencyDelete: 30, emergencyByCode: 15,
+  findingsList: 240, findingSave: 120, findingDelete: 60,
 };
 
 function cors(origin: string | null) {
@@ -316,6 +323,59 @@ Deno.serve(async (req: Request) => {
         if (error) throw new Error(error.message);
       }
       return json({ id: profileId });
+    }
+
+    // ── Mängel & Feststellungen ─────────────────────────────────────────
+    if (action === "findingsList" || action === "findingSave") {
+      const vehicleId = str(b.vehicleId, 100);
+      if (!vehicleId) return json({ error: "Fahrzeug fehlt" }, 400);
+      if ((await vehicleOwner(vehicleId)) !== userId) return json({ error: "Nur der Eigentümer kann Mängel verwalten" }, 403);
+      if (action === "findingsList") {
+        const { data, error } = await db.from("vehicle_findings").select("*").eq("vehicle_id", vehicleId).order("created_at", { ascending: false });
+        if (error) throw new Error(error.message);
+        return json({ findings: (data || []).map((f: any) => ({
+          id: f.id, category: f.category, title: f.title, position: f.position, description: f.description,
+          foundAt: f.found_at, km: f.km, status: f.status, fixedAt: f.fixed_at, fixNote: f.fix_note,
+          cost: f.cost, photos: f.photos || [], createdAt: f.created_at,
+        })) });
+      }
+      const f = b.finding || {};
+      const title = str(f.title, 160);
+      if (!title) return json({ error: "Bitte kurz beschreiben, was festgestellt wurde" }, 400);
+      const date = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+      const photos = (Array.isArray(f.photos) ? f.photos : []).slice(0, FINDING_PHOTOS)
+        .filter((p: unknown) => typeof p === "string" && /^data:image\/jpeg;base64,/.test(p) && p.length < 400_000);
+      const km = Number.isFinite(Number(f.km)) && f.km !== "" && f.km !== null ? Math.max(0, Math.min(9_999_999, Math.round(Number(f.km)))) : null;
+      const cost = Number.isFinite(Number(f.cost)) && f.cost !== "" && f.cost !== null ? Math.max(0, Math.min(9_999_999, Number(f.cost))) : null;
+      const row = {
+        vehicle_id: vehicleId, created_by_user_id: userId,
+        category: FINDING_CATEGORIES.includes(f.category) ? f.category : "sonstiges",
+        title, position: str(f.position, 60), description: str(f.description, 4000),
+        found_at: date(f.foundAt), km, status: ["offen", "beobachten", "behoben"].includes(f.status) ? f.status : "offen",
+        fixed_at: date(f.fixedAt), fix_note: str(f.fixNote, 1000), cost, photos,
+        updated_at: new Date().toISOString(),
+      };
+      if (typeof f.id === "string" && f.id) {
+        const { data, error } = await db.from("vehicle_findings").update(row).eq("id", f.id).eq("vehicle_id", vehicleId).select("id");
+        if (error) throw new Error(error.message);
+        if (!data?.length) return json({ error: "Eintrag nicht gefunden" }, 404);
+        return json({ id: f.id });
+      }
+      const { data, error } = await db.from("vehicle_findings").insert(row).select("id").single();
+      if (error) throw new Error(error.message);
+      return json({ id: data.id });
+    }
+
+    if (action === "findingDelete") {
+      const findingId = str(b.findingId, 100);
+      if (!findingId) return json({ error: "Eintrag fehlt" }, 400);
+      const { data: fd, error: fe } = await db.from("vehicle_findings").select("vehicle_id").eq("id", findingId).maybeSingle();
+      if (fe) throw new Error(fe.message);
+      if (!fd) return json({ error: "Eintrag nicht gefunden" }, 404);
+      if ((await vehicleOwner(fd.vehicle_id)) !== userId) return json({ error: "Nur der Eigentümer kann Mängel löschen" }, 403);
+      const { error } = await db.from("vehicle_findings").delete().eq("id", findingId);
+      if (error) throw new Error(error.message);
+      return json({ ok: true });
     }
 
     if (action === "emergencyDelete") {

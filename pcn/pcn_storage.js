@@ -1126,6 +1126,23 @@ const PCN_STORAGE = (() => {
       if(res.error) return { error: res.error };
       return { data: true };
     },
+    // ── Mängel & Feststellungen (Kratzer, Bordstein, Reifen …) ──
+    // Nur der Eigentümer; Tabelle für den öffentlichen Schlüssel gesperrt.
+    async listFindings(vehicleId) {
+      const res = await secureApi("findingsList", { st: sessionToken(), vehicleId });
+      if(res.error) return { error: res.error };
+      return { data: res.data.findings||[] };
+    },
+    async saveFinding(vehicleId, finding) {
+      const res = await secureApi("findingSave", { st: sessionToken(), vehicleId, finding });
+      if(res.error) return { error: res.error };
+      return { data: { id: res.data.id } };
+    },
+    async deleteFinding(findingId) {
+      const res = await secureApi("findingDelete", { st: sessionToken(), findingId });
+      if(res.error) return { error: res.error };
+      return { data: true };
+    },
     async getEmergencyProfilesByCode(vehicleId, accessCode) {
       // KEIN Login nötig — das ist der Weg für Rettungskräfte. Der Code
       // ist die Zugangsschranke; der Server begrenzt Fehlversuche.
@@ -1849,6 +1866,11 @@ function guard(label, fn){
       record: guard("pointEvents.record", (uid,type,refId,points) => db.recordPointEvent(uid,type,refId,points)),
       list: (uid) => db.getPointEvents(uid),
       syncTotal: guard("pointEvents.syncTotal", (uid,total) => db.syncTotalPoints(uid,total)),
+    },
+    findings: {
+      list: (vid) => db.listFindings ? db.listFindings(vid) : Promise.resolve({data:[]}),
+      save: guard("findings.save", (vid,finding) => db.saveFinding(vid,finding)),
+      remove: guard("findings.remove", (fid) => db.deleteFinding(fid)),
     },
     emergencyProfiles: {
       list: guard("emergencyProfiles.list", (vid,ownerUid) => db.listEmergencyProfiles(vid,ownerUid)),

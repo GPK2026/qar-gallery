@@ -826,6 +826,35 @@ const legalStatusText = c =>
 
 const legalCasePdfName = c => `Unfallmappe_${((c.vehicleData||{}).Kennzeichen||"Fahrzeug").replace(/[^A-Za-z0-9]+/g,"-")}_${c.accidentDate||""}.pdf`;
 
+// ── Mängel & Feststellungen am eigenen Fahrzeug ──
+// Gespeichert über pcn-secure (Tabelle vehicle_findings, nur Eigentümer).
+const FINDING_CATS = [
+  {id:"lack",      icon:"🎨", label:"Lack / Kratzer",   hint:"z.B. Kratzer Heckklappe"},
+  {id:"delle",     icon:"🔨", label:"Delle / Beule",    hint:"z.B. Parkdelle Tür rechts"},
+  {id:"felge",     icon:"⭕", label:"Felge / Bordstein",hint:"z.B. Bordsteinschramme Felge vorne links"},
+  {id:"reifen",    icon:"🛞", label:"Reifen",           hint:"z.B. Profil vorne 3 mm, Reifenwechsel fällig"},
+  {id:"glas",      icon:"🪟", label:"Glas / Scheibe",   hint:"z.B. Steinschlag Frontscheibe"},
+  {id:"innenraum", icon:"💺", label:"Innenraum",        hint:"z.B. Riss Fahrersitz Wange"},
+  {id:"technik",   icon:"⚙️", label:"Technik",          hint:"z.B. Ölverlust, Geräusch beim Bremsen"},
+  {id:"sonstiges", icon:"📝", label:"Sonstiges",        hint:"Was ist dir aufgefallen?"},
+];
+const FINDING_CAT = Object.fromEntries(FINDING_CATS.map(c=>[c.id,c]));
+const FINDING_POSITIONS = ["vorne links","vorne","vorne rechts","links","rechts","hinten links","hinten","hinten rechts","Dach","Innenraum","Motorraum","Unterboden"];
+const FINDING_STATUS = {
+  offen:      {label:"Offen",      color:"#e5484d"},
+  beobachten: {label:"Beobachten", color:"#f5a524"},
+  behoben:    {label:"Behoben",    color:"#30a46c"},
+};
+const findingEmpty = () => ({category:"lack",title:"",position:"",description:"",foundAt:new Date().toISOString().slice(0,10),km:"",status:"offen",fixedAt:"",fixNote:"",cost:"",photos:[]});
+// Fotos klein halten (max. 4 je Eintrag, ca. 100–200 KB)
+const compressFindingPhoto = file => compressAccidentPhoto(file).then(p=>new Promise((res,rej)=>{
+  const img=new Image(); img.onerror=rej;
+  img.onload=()=>{ const sc=Math.min(1,1000/img.width,1000/img.height), cv=document.createElement("canvas");
+    cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
+    cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height); res(cv.toDataURL("image/jpeg",0.72)); };
+  img.src=p.dataUrl;
+}));
+
 // Zeilenhoehen-Skala, orientiert an Porsche Design System Typografie-
 // Verhaeltnissen (durchgehend 1.3–1.5, nicht die knappe 1.0–1.15, die
 // zuvor bei vielen Ueberschriften genutzt wurde).
@@ -1294,7 +1323,50 @@ const POINTS = {
   // ── Geschenke des Clubs ──
   birthday:         200,   // Geburtstag
   birthday_round:   911,   // runder Geburtstag (18, 25, 30, 40, 50…) 🏁
+
+  // ── Einführung nach der Registrierung ──
+  onboarding_step:   50,   // je bestätigter Erklär-Schritt ("Verstanden")
+  onboarding_done:  150,   // Bonus für die komplette Einführung
 };
+
+// Geführte Einführung (wie der Unfall-Ablauf): jeder Schritt muss mit
+// "Verstanden" bestätigt werden, jede Bestätigung bringt Punkte
+// (point_events, event_type "onboarding", ref_id = Schritt-ID).
+const ONBOARDING_STEPS = [
+  {id:"willkommen", icon:"🏁", title:"Willkommen im Club", points:[
+    "QAR.Gallery ist die digitale Heimat für deinen Porsche und den Club.",
+    "Hier liegen Fahrzeugakte, Logbuch, Events und die Club-Community an einem Ort.",
+    "Für vieles, was du hier tust, bekommst du Punkte — die ersten gleich jetzt."]},
+  {id:"akte", icon:"🚗", title:"Deine Fahrzeugakte & QAR-ID", points:[
+    "Lege dein Fahrzeug an — am schnellsten, indem du den Fahrzeugschein scannst.",
+    "Jedes Fahrzeug bekommt eine QAR-ID, die wie die FIN ein Leben lang am Auto bleibt.",
+    "Über den QR-Code können andere deine Akte ansehen — du bestimmst, was sichtbar ist. Die FIN wird nie geteilt."]},
+  {id:"logbuch", icon:"📋", title:"Logbuch & Dokumente", points:[
+    "Trage Service, Reparaturen und Umbauten ins Logbuch ein.",
+    "Rechnungen einfach fotografieren — die KI liest Datum, Werkstatt und Betrag aus.",
+    "Eine lückenlose Historie macht dein Fahrzeug wertvoller. Ab 3 Einträgen gibt es eine KI-Marktwert-Einschätzung."]},
+  {id:"maengel", icon:"🔍", title:"Mängel & Feststellungen", points:[
+    "Kratzer, Bordsteinschrammen, Reifen oder Steinschläge mit Foto und Datum festhalten.",
+    "Status: offen, beobachten oder behoben — Behobenes kommt auf Wunsch ins Logbuch.",
+    "Diese Liste siehst nur du."]},
+  {id:"notfall", icon:"🆘", title:"Notfall-, Pannen- & Unfallhilfe", points:[
+    "Pannenhilfe von ADAC und AvD mit einem Tipp erreichbar.",
+    "Notfallprofil für Ersthelfer: nur mit deinem 4-stelligen Code abrufbar.",
+    "Nach einem Unfall führt dich die App Schritt für Schritt: Kennzeichen, Fotos, Unfallbericht, Zeugen — auf Wunsch mit rechtlicher Ersteinschätzung durch unseren Partner."]},
+  {id:"community", icon:"🤝", title:"Events & Community", points:[
+    "Melde dich zu Club-Events an und schreib anderen Mitgliedern.",
+    "Triffst du jemanden, scannt einen QR-Code — das bringt die meisten Punkte.",
+    "Club-News lesen lohnt sich auch."]},
+  {id:"punkte", icon:"🏆", title:"Punkte & Stufen", points:[
+    "Mit Punkten steigst du auf: Bronze ab 1.000, Silber 5.000, Gold 12.000, Platin 25.000, Legend 50.000.",
+    "Tipp: Legst du dein erstes Fahrzeug heute an, gibt es doppelte Punkte.",
+    "Deinen Stand siehst du jederzeit im Profil."]},
+  {id:"daten", icon:"🔒", title:"Deine Daten", points:[
+    "Du entscheidest, was andere von deinem Fahrzeug sehen.",
+    "Sensible Daten — Notfallprofil, Unfälle, Mängel — sind gesperrt gespeichert und nur für dich sichtbar.",
+    "Fragen? Schreib dem Vorstand direkt über Nachrichten."]},
+];
+const ONBOARDING_TOTAL = ONBOARDING_STEPS.length*POINTS.onboarding_step + POINTS.onboarding_done;
 
 // Tier-Schwellen — an neue Punktehöhe angepasst
 const TIERS = [
@@ -2802,7 +2874,10 @@ function PCNInner() {
   const [showEditVehicle, setShowEditVehicle] = useState(null); // vehicleId
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [openSections, setOpenSections] = useState({}); // {vehicleId_section: bool}
-  const toggleSection = (vid, section) => setOpenSections(p=>({...p,[vid+"_"+section]:!p[vid+"_"+section]}));
+  const toggleSection = (vid, section) => {
+    setOpenSections(p=>({...p,[vid+"_"+section]:!p[vid+"_"+section]}));
+    if(section==="findings") loadFindings(vid);
+  };
   const isOpen = (vid, section) => !!openSections[vid+"_"+section];
   const [profileImgUploading, setProfileImgUploading] = useState(false);
   const [newsState, setNewsState] = useState(()=>{
@@ -2938,6 +3013,27 @@ function PCNInner() {
   // Punkte-Berechnung: Basis-Aktivitäten + Events
   // ── View/Scan points — serverseitig in point_events, ersetzt localStorage ──
   const [dbPointEvents, setDbPointEvents] = useState([]);
+  // ── Geführte Einführung ──
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingIdx, setOnboardingIdx] = useState(0);
+  const [onboardingBusy, setOnboardingBusy] = useState(false);
+  const onboardingConfirmed = new Set(dbPointEvents.filter(e=>e.eventType==="onboarding").map(e=>String(e.refId)));
+  const onboardingDone = onboardingConfirmed.has("done");
+  const confirmOnboarding = async (refId, pts) => {
+    if(onboardingConfirmed.has(refId)) return true;
+    if(me?.id && !isDemo){
+      const res = await window.PCN_DB?.pointEvents.record(me.id, "onboarding", refId, pts).catch(e=>({error:e?.message}));
+      if(res?.error && !res?.alreadyRecorded){ toast_("Konnte nicht gespeichert werden — bitte erneut versuchen","err"); return false; }
+    }
+    setDbPointEvents(prev=>[...prev, {eventType:"onboarding", refId, points:pts}]);
+    toast_(`✓ Verstanden · +${pts} Punkte 🏆`);
+    return true;
+  };
+  const openOnboarding = () => {
+    const first = ONBOARDING_STEPS.findIndex(st=>!onboardingConfirmed.has(st.id));
+    setOnboardingIdx(first<0 ? ONBOARDING_STEPS.length : first);
+    setShowOnboarding(true);
+  };
   const getViewedVehicles = () => dbPointEvents.filter(e=>e.eventType==="view_akte").map(e=>e.refId);
   const getScanConfirmed  = () => dbPointEvents.filter(e=>e.eventType==="qr_scan").map(e=>e.refId);
   const loadPointEvents = async () => {
@@ -3091,6 +3187,9 @@ function PCNInner() {
       pts += Math.max(0, years) * V.member_year;
     }
     if(me?.beitrag_bezahlt) pts += V.beitrag_paid;
+
+    // ── Einführung (je Schritt + Abschluss-Bonus) ──
+    pts += dbPointEvents.filter(e=>e.eventType==="onboarding").reduce((sum,e)=>sum+(e.points||0), 0);
 
     // ── Bonus: Geburtstag (einmal pro Jahr, automatisch, jetzt serverseitig) ──
     pts += dbPointEvents.filter(e=>e.eventType==="birthday"||e.eventType==="birthday_round")
@@ -4665,6 +4764,54 @@ Regeln:
     toast_(`${CATEGORY_LABELS[docScanCategory]}-Beleg zum Logbuch hinzugefügt ✓ (+${POINTS.logbook} Pkt)`);
   };
 
+  // ── Mängel & Feststellungen ──
+  const [findings, setFindings] = useState({});        // vehicleId -> Liste
+  const [findingEdit, setFindingEdit] = useState(null); // {vehicleId, ...Eintrag}
+  const [findingBusy, setFindingBusy] = useState(false);
+  const [showFixedFindings, setShowFixedFindings] = useState(false);
+  const loadFindings = async (vehicleId) => {
+    const DB = window.PCN_DB; if(!DB || isDemo || findings[vehicleId]) return;
+    const {data, error} = await DB.findings.list(vehicleId).catch(e=>({error:e?.message}));
+    if(error){ toast_("Mängelliste konnte nicht geladen werden: "+error,"err"); return; }
+    setFindings(prev=>({...prev, [vehicleId]: data||[]}));
+  };
+  const saveFinding = async (alsoLogbook) => {
+    const f = findingEdit; if(!f) return;
+    if(!f.title.trim()){ toast_("Bitte kurz beschreiben, was festgestellt wurde","err"); return; }
+    const {vehicleId, toLogbook:_t, ...finding} = f;
+    setFindingBusy(true);
+    let id = finding.id;
+    if(!isDemo){
+      const {data, error} = await window.PCN_DB.findings.save(vehicleId, finding).catch(e=>({error:e?.message}));
+      if(error){ setFindingBusy(false); toast_(error,"err"); return; }
+      id = data?.id || id;
+    } else id = id || "demo_"+Date.now();
+    const saved = {...finding, id, createdAt: finding.createdAt || new Date().toISOString()};
+    setFindings(prev=>({...prev, [vehicleId]: [saved, ...(prev[vehicleId]||[]).filter(x=>x.id!==id)]}));
+    // Behobener Mangel → auf Wunsch als Reparatur ins Logbuch (zählt für Historie & Punkte)
+    if(alsoLogbook && finding.status==="behoben"){
+      const entry = { date: finding.fixedAt || new Date().toISOString().slice(0,10), type:"Reparatur",
+        km: finding.km ? String(finding.km) : "", notes: [finding.title, finding.fixNote].filter(Boolean).join(" — "),
+        workshop:"", amount: finding.cost!==""&&finding.cost!=null ? Number(finding.cost) : null, source:"finding" };
+      if(!isDemo){
+        const {data:le, error} = await window.PCN_DB.logbook.add(vehicleId, entry).catch(e=>({error:e?.message}));
+        if(error) toast_("Logbuch-Eintrag fehlgeschlagen: "+error,"err");
+        else setLogbook(prev=>({...prev, [vehicleId]:[...(prev[vehicleId]||[]), le||entry]}));
+      } else setLogbook(prev=>({...prev, [vehicleId]:[...(prev[vehicleId]||[]), {...entry,id:"demo_"+Date.now()}]}));
+    }
+    setFindingBusy(false); setFindingEdit(null);
+    toast_(isDemo ? "Demo: nur lokal gespeichert" : alsoLogbook&&finding.status==="behoben" ? `Gespeichert ✓ und ins Logbuch übernommen (+${POINTS.logbook} Pkt)` : "Gespeichert ✓");
+  };
+  const deleteFinding = async (vehicleId, id) => {
+    if(!window.confirm("Eintrag löschen?")) return;
+    if(!isDemo && id && !String(id).startsWith("demo_")){
+      const {error} = await window.PCN_DB.findings.remove(id).catch(e=>({error:e?.message}));
+      if(error){ toast_(error,"err"); return; }
+    }
+    setFindings(prev=>({...prev, [vehicleId]: (prev[vehicleId]||[]).filter(x=>x.id!==id)}));
+    setFindingEdit(null); toast_("Eintrag gelöscht");
+  };
+
   // ── Dokumentenablage: laden, hochladen, löschen, nachträglich auswerten ──
   const loadVehicleDocuments = async (vehicleId) => {
     const DB = window.PCN_DB; if(!DB || isDemo) return;
@@ -6000,6 +6147,7 @@ Regeln:
                   setMe(u); setAllUsers(p=>({...p,[u.id]:u}));
                   setJustRegistered(true);
                   setScreen("app");
+                  setOnboardingIdx(0); setShowOnboarding(true);
                   toast_("Willkommen, "+u.name+"! 🏁");
                 } catch(e) {
                   clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
@@ -7445,6 +7593,48 @@ Regeln:
                   </div>
                 )
               },
+              ...(isOwn?[{
+                id:"findings", icon:"🔍", label:"Mängel & Feststellungen",
+                count:(findings[v.id]||[]).filter(x=>x.status!=="behoben").length,
+                content:(()=>{
+                  const list=findings[v.id];
+                  const open=(list||[]).filter(x=>x.status!=="behoben");
+                  const fixed=(list||[]).filter(x=>x.status==="behoben");
+                  const Item=({x})=>{
+                    const cat=FINDING_CAT[x.category]||FINDING_CAT.sonstiges, st=FINDING_STATUS[x.status]||FINDING_STATUS.offen;
+                    return (
+                      <div onClick={()=>setFindingEdit({vehicleId:v.id,...findingEmpty(),...x,km:x.km??"",cost:x.cost??"",fixedAt:x.fixedAt||"",fixNote:x.fixNote||"",position:x.position||"",description:x.description||""})}
+                        style={{background:C.black,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:6,cursor:"pointer",display:"flex",gap:10,alignItems:"center"}}>
+                        {x.photos?.[0]
+                          ?<img src={x.photos[0]} alt="" style={{width:44,height:44,borderRadius:8,objectFit:"cover",flexShrink:0}}/>
+                          :<div style={{width:44,height:44,borderRadius:8,background:C.card,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{cat.icon}</div>}
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:14,fontWeight:700,color:C.white,overflowWrap:"anywhere"}}>{x.title}</div>
+                          <div style={{fontSize:12,color:C.muted}}>{[cat.label,x.position,x.foundAt&&new Date(x.foundAt).toLocaleDateString("de-DE"),x.km&&Number(x.km).toLocaleString("de-DE")+" km"].filter(Boolean).join(" · ")}</div>
+                        </div>
+                        <span style={{fontSize:11,fontWeight:700,color:st.color,border:`1px solid ${st.color}88`,borderRadius:99,padding:"2px 8px",flexShrink:0}}>{st.label}</span>
+                      </div>
+                    );
+                  };
+                  return (
+                    <div>
+                      <div style={{fontSize:13,color:C.muted,lineHeight:1.5,margin:"12px 0 10px"}}>Kratzer, Bordsteinschrammen, Reifen, Steinschläge … festhalten, mit Foto und Datum. Behobenes wandert auf Wunsch ins Logbuch. Nur für dich sichtbar.</div>
+                      <button className="btn" style={{width:"100%",padding:"10px",fontSize:14,marginBottom:10}} onClick={()=>setFindingEdit({vehicleId:v.id,...findingEmpty(),km:v.kilometerstand||""})}>+ Mangel / Feststellung erfassen</button>
+                      {!list&&<div style={{fontSize:13,color:C.muted}}>{isDemo?"Im Demo-Modus noch keine Einträge.":"Wird geladen …"}</div>}
+                      {list&&open.length===0&&<div style={{fontSize:13,color:C.muted,marginBottom:6}}>Keine offenen Punkte 👍</div>}
+                      {open.map(x=><Item key={x.id} x={x}/>)}
+                      {fixed.length>0&&(
+                        <>
+                          <button onClick={()=>setShowFixedFindings(p=>!p)} style={{background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",padding:"6px 0",textDecoration:"underline"}}>
+                            {showFixedFindings?"Behobene ausblenden":`Behobene anzeigen (${fixed.length})`}
+                          </button>
+                          {showFixedFindings&&fixed.map(x=><Item key={x.id} x={x}/>)}
+                        </>
+                      )}
+                    </div>
+                  );
+                })()
+              }]:[]),
               {
                 id:"events", icon:"🏁", label:"Veranstaltungshistorie", count:vParts.length+vHist.length,
                 content:(
@@ -8176,6 +8366,94 @@ Regeln:
               </div>
             </div>
           )}
+
+          {/* ── Mangel / Feststellung erfassen oder bearbeiten ── */}
+          {findingEdit&&findingEdit.vehicleId===v.id&&(()=>{
+            const f=findingEdit, set=patch=>setFindingEdit(p=>({...p,...patch}));
+            const lbl={fontSize:12,fontWeight:700,color:C.muted,marginBottom:4,display:"block"};
+            const inpS={padding:"9px 12px",fontSize:15,borderRadius:8,minWidth:0,maxWidth:"100%",display:"block",width:"100%",marginBottom:10};
+            const dateS={...inpS,WebkitAppearance:"none",appearance:"none",minHeight:40};
+            const chip=on=>({padding:"7px 10px",borderRadius:99,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",
+              background:on?`${C.red}22`:C.card,color:on?C.white:C.muted,border:`1.5px solid ${on?C.red:C.border}`});
+            const cat=FINDING_CAT[f.category]||FINDING_CAT.sonstiges;
+            const addPhotos=async files=>{
+              const room=4-(f.photos||[]).length; const list=Array.from(files||[]).slice(0,Math.max(0,room));
+              if(!list.length){ toast_("Maximal 4 Fotos","err"); return; }
+              try{ const urls=await Promise.all(list.map(compressFindingPhoto)); setFindingEdit(p=>p&&({...p,photos:[...(p.photos||[]),...urls]})); }
+              catch{ toast_("Foto konnte nicht gelesen werden","err"); }
+            };
+            return (
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget&&!findingBusy)setFindingEdit(null);}}>
+              <div className="sheet legal-wizard" style={{paddingBottom:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>{f.id?"Eintrag bearbeiten":"🔍 Mangel / Feststellung"}</div>
+                  <button aria-label="Schließen" onClick={()=>setFindingEdit(null)} style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",lineHeight:1}}>✕</button>
+                </div>
+                <label style={lbl}>Was für ein Punkt?</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
+                  {FINDING_CATS.map(c=><button key={c.id} type="button" style={chip(f.category===c.id)} onClick={()=>set({category:c.id})}>{c.icon} {c.label}</button>)}
+                </div>
+                <label style={lbl}>Kurzbeschreibung *</label>
+                <input className="inp" style={inpS} maxLength={160} placeholder={cat.hint} value={f.title} onChange={e=>set({title:e.target.value})}/>
+                <label style={lbl}>Wo am Fahrzeug?</label>
+                <select className="inp" style={inpS} value={f.position} onChange={e=>set({position:e.target.value})}>
+                  <option value="">– bitte wählen –</option>
+                  {FINDING_POSITIONS.map(p=><option key={p} value={p}>{p}</option>)}
+                </select>
+                <label style={lbl}>Fotos (max. 4)</label>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
+                  {(f.photos||[]).map((ph,i)=>(
+                    <div key={i} style={{position:"relative",width:72,height:72}}>
+                      <img src={ph} alt="" style={{width:72,height:72,objectFit:"cover",borderRadius:8,display:"block"}}/>
+                      <button aria-label="Foto entfernen" onClick={()=>set({photos:f.photos.filter((_,j)=>j!==i)})}
+                        style={{position:"absolute",top:-6,right:-6,width:22,height:22,borderRadius:11,border:"none",background:C.red,color:"#fff",fontSize:13,lineHeight:"22px",cursor:"pointer",padding:0}}>×</button>
+                    </div>
+                  ))}
+                  {(f.photos||[]).length<4&&(
+                    <label style={{width:72,height:72,borderRadius:8,border:`1.5px dashed ${C.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.muted,fontSize:11}}>
+                      <span style={{fontSize:22}}>📷</span>Foto
+                      <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{addPhotos(e.target.files); e.target.value="";}}/>
+                    </label>
+                  )}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8}}>
+                  <div style={{minWidth:0}}><label style={lbl}>Festgestellt am</label><input className="inp" type="date" style={dateS} value={f.foundAt||""} onChange={e=>set({foundAt:e.target.value})}/></div>
+                  <div style={{minWidth:0}}><label style={lbl}>Kilometerstand</label><input className="inp" inputMode="numeric" style={inpS} value={f.km} onChange={e=>set({km:e.target.value.replace(/[^0-9]/g,"")})}/></div>
+                </div>
+                <label style={lbl}>Details (optional)</label>
+                <textarea className="inp" rows={2} maxLength={4000} style={inpS} value={f.description} onChange={e=>set({description:e.target.value})}/>
+                <label style={lbl}>Status</label>
+                <div style={{display:"flex",gap:6,marginBottom:12}}>
+                  {Object.entries(FINDING_STATUS).map(([id,st])=>(
+                    <button key={id} type="button" onClick={()=>set({status:id,...(id==="behoben"&&!f.fixedAt?{fixedAt:new Date().toISOString().slice(0,10)}:{})})}
+                      style={{flex:1,padding:"9px 6px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",
+                        background:f.status===id?st.color+"33":C.card,color:f.status===id?C.white:C.muted,border:`1.5px solid ${f.status===id?st.color:C.border}`}}>{st.label}</button>
+                  ))}
+                </div>
+                {f.status==="behoben"&&(
+                  <>
+                    <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8}}>
+                      <div style={{minWidth:0}}><label style={lbl}>Behoben am</label><input className="inp" type="date" style={dateS} value={f.fixedAt||""} onChange={e=>set({fixedAt:e.target.value})}/></div>
+                      <div style={{minWidth:0}}><label style={lbl}>Kosten (€)</label><input className="inp" inputMode="decimal" style={inpS} value={f.cost} onChange={e=>set({cost:e.target.value.replace(",",".").replace(/[^0-9.]/g,"")})}/></div>
+                    </div>
+                    <label style={lbl}>Was wurde gemacht? Wer?</label>
+                    <input className="inp" style={inpS} maxLength={1000} placeholder="z.B. Smart Repair, Felge aufbereitet bei …" value={f.fixNote} onChange={e=>set({fixNote:e.target.value})}/>
+                    <label style={{display:"flex",alignItems:"center",gap:8,fontSize:14,color:C.white,marginBottom:10}}>
+                      <input type="checkbox" checked={!!f.toLogbook} onChange={e=>set({toLogbook:e.target.checked})}/> Als Reparatur ins Logbuch übernehmen
+                    </label>
+                  </>
+                )}
+                <div style={{position:"sticky",bottom:0,background:C.dark,margin:"8px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
+                  {f.id&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} disabled={findingBusy} onClick={()=>deleteFinding(v.id,f.id)}>Löschen</button>}
+                  <button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} disabled={findingBusy||!f.title.trim()}
+                    onClick={()=>saveFinding(!!f.toLogbook)}>
+                    {findingBusy?"Speichert …":"Speichern"}
+                  </button>
+                </div>
+              </div>
+            </div>
+            );
+          })()}
 
           {/* ── Rechtliche Ersteinschätzung (Unfall) – geführter Ablauf, Drittservice debug Rechtsanwälte ── */}
           {legalCaseEdit&&legalCaseEdit.vehicleId===v.id&&(()=>{
@@ -9309,6 +9587,77 @@ Regeln:
   return (
     <div className="vh-screen" style={{background:"transparent",paddingBottom:62}}>
       <style>{CSS}</style>
+      {/* ── Geführte Einführung: jeder Schritt mit "Verstanden" bestätigen ── */}
+      {showOnboarding&&(()=>{
+        const n=ONBOARDING_STEPS.length, idx=Math.min(onboardingIdx,n), finished=idx>=n;
+        const st=ONBOARDING_STEPS[idx];
+        const confirmed=st&&onboardingConfirmed.has(st.id);
+        const allConfirmed=ONBOARDING_STEPS.every(x=>onboardingConfirmed.has(x.id));
+        const go=i=>{ setOnboardingIdx(i); document.querySelector(".onboarding-sheet")?.scrollTo?.(0,0); };
+        // Vorwärts nur bis zum ersten unbestätigten Schritt
+        const reachable=i=>ONBOARDING_STEPS.slice(0,i).every(x=>onboardingConfirmed.has(x.id));
+        return (
+          <div className="overlay">
+            <div className="sheet legal-wizard onboarding-sheet" style={{paddingBottom:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div style={{fontSize:12,fontWeight:700,color:C.muted}}>🎓 Einführung · {finished?"Geschafft":`Schritt ${idx+1} von ${n}`}</div>
+                <button onClick={()=>setShowOnboarding(false)} style={{background:"none",border:"none",color:C.muted,fontSize:12,textDecoration:"underline",cursor:"pointer",padding:0}}>Später weitermachen</button>
+              </div>
+              <div style={{display:"flex",gap:3,marginBottom:14}}>
+                {ONBOARDING_STEPS.map((x,i)=>(
+                  <button key={x.id} aria-label={x.title} disabled={!reachable(i)} onClick={()=>go(i)}
+                    style={{flex:1,height:4,borderRadius:2,border:"none",padding:0,cursor:reachable(i)?"pointer":"default",background:onboardingConfirmed.has(x.id)?C.gold:i===idx?C.red:C.border}}/>
+                ))}
+              </div>
+              {!finished?(
+                <>
+                  <div style={{fontSize:44,lineHeight:1,marginBottom:10}}>{st.icon}</div>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white,marginBottom:12}}>{st.title}</div>
+                  <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+                    {st.points.map((t,i)=>(
+                      <div key={i} style={{display:"flex",gap:10,fontSize:15,color:C.white,lineHeight:1.5,padding:"5px 0"}}>
+                        <span style={{color:C.gold,fontWeight:800,flexShrink:0}}>›</span><span>{t}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {confirmed&&<div style={{fontSize:13,color:C.green,marginBottom:6}}>✓ Bestätigt · +{POINTS.onboarding_step} Punkte erhalten</div>}
+                </>
+              ):(
+                <div style={{textAlign:"center",padding:"10px 0 4px"}}>
+                  <div style={{fontSize:54,lineHeight:1,marginBottom:10}}>🏆</div>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:C.white,marginBottom:6}}>Einführung geschafft!</div>
+                  <div style={{fontSize:15,color:C.muted,lineHeight:1.5,marginBottom:14}}>
+                    {onboardingDone?`Du hast ${ONBOARDING_TOTAL.toLocaleString("de-DE")} Punkte gesammelt.`:`Hol dir jetzt den Abschluss-Bonus von ${POINTS.onboarding_done} Punkten.`}
+                  </div>
+                  {onboardingDone&&myVehicles.length===0&&(
+                    <div style={{background:`${C.gold}14`,border:`1px solid ${C.gold}55`,borderRadius:12,padding:"12px 14px",fontSize:14,color:C.white,lineHeight:1.5,marginBottom:12,textAlign:"left"}}>
+                      Nächster Schritt: Lege dein erstes Fahrzeug an{justRegistered?<> — heute gibt es dafür <b>doppelte Punkte ({(POINTS.vehicle_added*POINTS.vehicle_added_registration_bonus_mult).toLocaleString("de-DE")})</b></>:<> (+{POINTS.vehicle_added} Punkte)</>}.
+                    </div>
+                  )}
+                </div>
+              )}
+              <div style={{position:"sticky",bottom:0,background:C.dark,margin:"14px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
+                {idx>0&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} onClick={()=>go(idx-1)}>← Zurück</button>}
+                {!finished&&(
+                  <button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} disabled={onboardingBusy}
+                    onClick={async()=>{ setOnboardingBusy(true); const ok=await confirmOnboarding(st.id,POINTS.onboarding_step); setOnboardingBusy(false); if(ok) go(idx+1); }}>
+                    {confirmed?"Weiter →":`✓ Verstanden (+${POINTS.onboarding_step})`}
+                  </button>
+                )}
+                {finished&&!onboardingDone&&(
+                  <button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} disabled={onboardingBusy||!allConfirmed}
+                    onClick={async()=>{ setOnboardingBusy(true); await confirmOnboarding("done",POINTS.onboarding_done); setOnboardingBusy(false); }}>
+                    {`🏆 Bonus abholen (+${POINTS.onboarding_done})`}
+                  </button>
+                )}
+                {finished&&onboardingDone&&(myVehicles.length===0
+                  ? <button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} onClick={()=>{setShowOnboarding(false);setShowAddV(true);}}>🚗 Fahrzeug anlegen</button>
+                  : <button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} onClick={()=>setShowOnboarding(false)}>Los geht's 🏁</button>)}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
       {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
       {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,background:C.red,color:"#fff",textAlign:"center",padding:"6px 12px",fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>📡 Keine Verbindung — Änderungen werden gespeichert, sobald du wieder online bist</div>}
@@ -9598,6 +9947,7 @@ Regeln:
               const hasBday = !!me?.geburtstag;
               const hasEvent = myParticipations.length>0;
               const steps = [
+                {done:onboardingDone, icon:"🎓", label:"Einführung durchgehen", hint:`${ONBOARDING_STEPS.length} kurze Schritte – jeder bringt Punkte`, pts:ONBOARDING_TOTAL-[...onboardingConfirmed].length*POINTS.onboarding_step, go:openOnboarding},
                 {done:hasVehicle,  icon:"🚗", label:"Fahrzeug anlegen",       hint: justRegistered ? "Heute angelegt = doppelte Punkte!" : "Schaltet QR-Code, Logbuch und Events frei", pts: justRegistered ? POINTS.vehicle_added*POINTS.vehicle_added_registration_bonus_mult : POINTS.vehicle_added, go:()=>setShowAddV(true)},
                 {done:hasBday,     icon:"🎂", label:"Geburtstag hinterlegen", hint:"Nur für den Vorstand sichtbar", pts:POINTS.birthday, go:()=>openEditProfile()},
                 {done:hasEvent,    icon:"🏁", label:"Für ein Event anmelden", hint:"Beim nächsten Termin dabei sein", pts:POINTS.event_confirmed, go:()=>setTab("events")},
