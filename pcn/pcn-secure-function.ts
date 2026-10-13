@@ -31,6 +31,13 @@
 //   findingSave      { st, vehicleId, finding }                → { id }
 //   findingDelete    { st, findingId }                         → { ok }
 //   (Mängel & Feststellungen am eigenen Fahrzeug — nur Eigentümer)
+//   findingVideoUploadUrl { st, vehicleId, contentType, size } → { path, signedUrl }
+//   briefingCreate   { st, vehicleId, token, findingIds, message, contact,
+//                      includeFin, recipientLabel }            → { id, expiresAt }
+//   briefingList     { st, vehicleId }                         → { briefings }
+//   briefingRevoke   { st, briefingId }                        → { ok }
+//   briefingGet      { id, token }   (Werkstatt, ohne Login)   → { briefing }
+//   (Reparatur-Briefing: Link mit Zufalls-Token, Server kennt nur den Hash)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -41,6 +48,11 @@ const PBKDF2_ITERATIONS = 100000; // identisch mit pcn_storage.js
 const SESSION_DAYS = 30;
 const FINDING_CATEGORIES = ["lack", "delle", "felge", "reifen", "glas", "innenraum", "technik", "sonstiges"];
 const FINDING_PHOTOS = 4;
+const FINDING_VIDEOS = 2;
+const MEDIA_BUCKET = "finding-media";
+const VIDEO_TYPES: Record<string, string> = { "video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm" };
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+const BRIEFING_DAYS = 30;
 
 // Spalten, die an die App zurückgehen (nie Hashes/Codes)
 const USER_COLS = "id,name,email,role,member_nr,avatar,city,bio,phone,beitrag_bezahlt,beitrag_datum,geburtstag,is_admin,bg_theme,welcome_seen,adac_member_nr,avd_member_nr,created_at,workshop_name,workshop_address";
@@ -59,7 +71,8 @@ function limited(key: string, limit: number): boolean {
 const LIMITS: Record<string, number> = {
   login: 30, register: 10, registerWorkshop: 5, changePassword: 10,
   emergencyList: 120, emergencySave: 60, emergencyDelete: 30, emergencyByCode: 15,
-  findingsList: 240, findingSave: 120, findingDelete: 60,
+  findingsList: 240, findingSave: 120, findingDelete: 60, findingVideoUploadUrl: 40,
+  briefingCreate: 30, briefingList: 120, briefingRevoke: 30, briefingGet: 120,
 };
 
 function cors(origin: string | null) {
@@ -122,6 +135,12 @@ async function verifyToken(st: unknown): Promise<string | null> {
     return typeof u === "string" && typeof e === "number" && e > Date.now() ? u : null;
   } catch { return null; }
 }
+
+async function sha256Hex(s: string) {
+  return hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
+}
+const validToken = (v: unknown) => typeof v === "string" && /^[A-Za-z0-9_-]{32,128}$/.test(v);
+const isUuid = (v: unknown) => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 
 // ── Eingaben ──────────────────────────────────────────────────────────────
 const str = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
@@ -190,7 +209,43 @@ Deno.serve(async (req: Request) => {
     }));
   };
 
+  // Videos eines Eintrags: nur Pfade im Ordner des Fahrzeugs
+  const cleanVideos = (vehicleId: string, list: unknown) =>
+    (Array.isArray(list) ? list : []).slice(0, FINDING_VIDEOS)
+      .filter((v: any) => v && typeof v.path === "string" && v.path.startsWith(vehicleId + "/") &&
+        /^[^/]+\/[0-9a-f-]{36}\.(mp4|mov|webm)$/i.test(v.path))
+      .map((v: any) => ({ path: v.path, name: str(v.name, 120), size: Number(v.size) || null, type: str(v.type, 40) }));
+  const withVideoUrls = async (videos: any[], seconds: number) => {
+    const out = [];
+    for (const v of videos || []) {
+      const { data } = await db.storage.from(MEDIA_BUCKET).createSignedUrl(v.path, seconds);
+      out.push({ ...v, url: data?.signedUrl || null });
+    }
+    return out;
+  };
+  const removeVideos = async (paths: string[]) => {
+    if (paths.length) await db.storage.from(MEDIA_BUCKET).remove(paths);
+  };
+
   try {
+    // ── Reparatur-Briefing abrufen (Werkstatt, ohne Login, nur mit Link-Token) ──
+    if (action === "briefingGet") {
+      if (!isUuid(b.id) || !validToken(b.token)) return json({ error: "Link ungültig" }, 404);
+      const { data: row, error } = await db.from("repair_briefings").select("*").eq("id", b.id).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row || !safeEqual(row.access_token_hash, await sha256Hex(b.token))) return json({ error: "Link ungültig" }, 404);
+      if (row.revoked_at) return json({ error: "Dieser Link wurde vom Eigentümer zurückgezogen" }, 410);
+      if (new Date(row.expires_at).getTime() < Date.now()) return json({ error: "Dieser Link ist abgelaufen" }, 410);
+      const nowIso = new Date().toISOString();
+      await db.from("repair_briefings").update({
+        first_viewed_at: row.first_viewed_at || nowIso, last_viewed_at: nowIso, view_count: (row.view_count || 0) + 1,
+      }).eq("id", row.id);
+      const snap = row.snapshot || {};
+      const findings = [];
+      for (const f of snap.findings || []) findings.push({ ...f, videos: await withVideoUrls(f.videos || [], 7200) });
+      return json({ briefing: { ...snap, findings, createdAt: row.created_at, expiresAt: row.expires_at } });
+    }
+
     // ── Login ────────────────────────────────────────────────────────────
     if (action === "login") {
       const mail = email(b.email);
@@ -333,11 +388,13 @@ Deno.serve(async (req: Request) => {
       if (action === "findingsList") {
         const { data, error } = await db.from("vehicle_findings").select("*").eq("vehicle_id", vehicleId).order("created_at", { ascending: false });
         if (error) throw new Error(error.message);
-        return json({ findings: (data || []).map((f: any) => ({
+        const findings = [];
+        for (const f of data || []) findings.push({
           id: f.id, category: f.category, title: f.title, position: f.position, description: f.description,
           foundAt: f.found_at, km: f.km, status: f.status, fixedAt: f.fixed_at, fixNote: f.fix_note,
-          cost: f.cost, photos: f.photos || [], createdAt: f.created_at,
-        })) });
+          cost: f.cost, photos: f.photos || [], videos: await withVideoUrls(f.videos || [], 3600), createdAt: f.created_at,
+        });
+        return json({ findings });
       }
       const f = b.finding || {};
       const title = str(f.title, 160);
@@ -353,12 +410,22 @@ Deno.serve(async (req: Request) => {
         title, position: str(f.position, 60), description: str(f.description, 4000),
         found_at: date(f.foundAt), km, status: ["offen", "beobachten", "behoben"].includes(f.status) ? f.status : "offen",
         fixed_at: date(f.fixedAt), fix_note: str(f.fixNote, 1000), cost, photos,
+        videos: cleanVideos(vehicleId, f.videos),
         updated_at: new Date().toISOString(),
       };
       if (typeof f.id === "string" && f.id) {
+        const { data: old } = await db.from("vehicle_findings").select("videos").eq("id", f.id).eq("vehicle_id", vehicleId).maybeSingle();
         const { data, error } = await db.from("vehicle_findings").update(row).eq("id", f.id).eq("vehicle_id", vehicleId).select("id");
         if (error) throw new Error(error.message);
         if (!data?.length) return json({ error: "Eintrag nicht gefunden" }, 404);
+        // entfernte Videos auch aus dem Speicher löschen (nicht, wenn sie in einem Briefing stecken)
+        const keep = new Set(row.videos.map((v: any) => v.path));
+        const dropped = ((old?.videos as any[]) || []).map((v: any) => v.path).filter((p: string) => !keep.has(p));
+        if (dropped.length) {
+          const { data: briefs } = await db.from("repair_briefings").select("snapshot").eq("vehicle_id", vehicleId).is("revoked_at", null);
+          const used = new Set((briefs || []).flatMap((x: any) => (x.snapshot?.findings || []).flatMap((ff: any) => (ff.videos || []).map((v: any) => v.path))));
+          await removeVideos(dropped.filter((p: string) => !used.has(p)));
+        }
         return json({ id: f.id });
       }
       const { data, error } = await db.from("vehicle_findings").insert(row).select("id").single();
@@ -369,11 +436,85 @@ Deno.serve(async (req: Request) => {
     if (action === "findingDelete") {
       const findingId = str(b.findingId, 100);
       if (!findingId) return json({ error: "Eintrag fehlt" }, 400);
-      const { data: fd, error: fe } = await db.from("vehicle_findings").select("vehicle_id").eq("id", findingId).maybeSingle();
+      const { data: fd, error: fe } = await db.from("vehicle_findings").select("vehicle_id,videos").eq("id", findingId).maybeSingle();
       if (fe) throw new Error(fe.message);
       if (!fd) return json({ error: "Eintrag nicht gefunden" }, 404);
       if ((await vehicleOwner(fd.vehicle_id)) !== userId) return json({ error: "Nur der Eigentümer kann Mängel löschen" }, 403);
       const { error } = await db.from("vehicle_findings").delete().eq("id", findingId);
+      if (error) throw new Error(error.message);
+      const { data: briefs } = await db.from("repair_briefings").select("snapshot").eq("vehicle_id", fd.vehicle_id).is("revoked_at", null);
+      const used = new Set((briefs || []).flatMap((x: any) => (x.snapshot?.findings || []).flatMap((ff: any) => (ff.videos || []).map((v: any) => v.path))));
+      await removeVideos(((fd.videos as any[]) || []).map((v: any) => v.path).filter((p: string) => !used.has(p)));
+      return json({ ok: true });
+    }
+
+    // ── Video-Upload: signierte Upload-URL in den Fahrzeug-Ordner ──────────
+    if (action === "findingVideoUploadUrl") {
+      const vehicleId = str(b.vehicleId, 100);
+      if (!vehicleId) return json({ error: "Fahrzeug fehlt" }, 400);
+      if ((await vehicleOwner(vehicleId)) !== userId) return json({ error: "Nur der Eigentümer kann Videos hochladen" }, 403);
+      const ext = VIDEO_TYPES[String(b.contentType || "")];
+      if (!ext) return json({ error: "Videoformat nicht unterstützt (MP4, MOV, WebM)" }, 400);
+      if (!(Number(b.size) > 0) || Number(b.size) > MAX_VIDEO_BYTES) return json({ error: "Video zu groß — maximal 50 MB (ca. 30 Sekunden)" }, 400);
+      const path = `${vehicleId}/${crypto.randomUUID()}.${ext}`;
+      const { data, error } = await db.storage.from(MEDIA_BUCKET).createSignedUploadUrl(path);
+      if (error) throw new Error(error.message);
+      return json({ path, signedUrl: data.signedUrl });
+    }
+
+    // ── Reparatur-Briefing (Eigentümer) ───────────────────────────────────
+    if (action === "briefingCreate" || action === "briefingList") {
+      const vehicleId = str(b.vehicleId, 100);
+      if (!vehicleId) return json({ error: "Fahrzeug fehlt" }, 400);
+      if ((await vehicleOwner(vehicleId)) !== userId) return json({ error: "Nur der Eigentümer kann Briefings verwalten" }, 403);
+      if (action === "briefingList") {
+        const { data, error } = await db.from("repair_briefings")
+          .select("id,recipient_label,created_at,expires_at,first_viewed_at,last_viewed_at,view_count,revoked_at,snapshot")
+          .eq("vehicle_id", vehicleId).order("created_at", { ascending: false }).limit(50);
+        if (error) throw new Error(error.message);
+        return json({ briefings: (data || []).map((r: any) => ({
+          id: r.id, recipientLabel: r.recipient_label, createdAt: r.created_at, expiresAt: r.expires_at,
+          firstViewedAt: r.first_viewed_at, lastViewedAt: r.last_viewed_at, viewCount: r.view_count, revokedAt: r.revoked_at,
+          findingTitles: (r.snapshot?.findings || []).map((f: any) => f.title),
+        })) });
+      }
+      if (!validToken(b.token)) return json({ error: "Ungültiges Token" }, 400);
+      const ids = (Array.isArray(b.findingIds) ? b.findingIds : []).filter(isUuid).slice(0, 20);
+      if (!ids.length) return json({ error: "Bitte mindestens einen Punkt auswählen" }, 400);
+      const { data: fs, error: fErr } = await db.from("vehicle_findings").select("*").eq("vehicle_id", vehicleId).in("id", ids);
+      if (fErr) throw new Error(fErr.message);
+      if (!fs?.length) return json({ error: "Keine Einträge gefunden" }, 404);
+      const { data: v } = await db.from("vehicles").select("hersteller,modell,baujahr,kennzeichen,fin,kilometerstand").eq("id", vehicleId).maybeSingle();
+      const { data: owner } = await db.from("users").select("name").eq("id", userId).maybeSingle();
+      const c = b.contact || {};
+      const order = new Map(ids.map((id: string, i: number) => [id, i]));
+      const snapshot = {
+        vehicle: {
+          make: [v?.hersteller, v?.modell].filter(Boolean).join(" ") || null, year: v?.baujahr || null,
+          plate: v?.kennzeichen || null, km: v?.kilometerstand || null, fin: b.includeFin === true ? (v?.fin || null) : null,
+        },
+        owner: { name: owner?.name || null, phone: str(c.phone, 50), email: str(c.email, 200), preferred: str(c.preferred, 300) },
+        message: str(b.message, 4000),
+        findings: [...fs].sort((x: any, y: any) => (order.get(x.id) ?? 0) - (order.get(y.id) ?? 0)).map((f: any) => ({
+          id: f.id, category: f.category, title: f.title, position: f.position, description: f.description,
+          foundAt: f.found_at, km: f.km, status: f.status, photos: f.photos || [], videos: f.videos || [],
+        })),
+      };
+      const expiresAt = new Date(Date.now() + BRIEFING_DAYS * 864e5).toISOString();
+      const { data: ins, error } = await db.from("repair_briefings").insert({
+        vehicle_id: vehicleId, owner_user_id: userId, access_token_hash: await sha256Hex(b.token),
+        snapshot, recipient_label: str(b.recipientLabel, 120), expires_at: expiresAt,
+      }).select("id").single();
+      if (error) throw new Error(error.message);
+      return json({ id: ins.id, expiresAt });
+    }
+
+    if (action === "briefingRevoke") {
+      if (!isUuid(b.briefingId)) return json({ error: "Briefing fehlt" }, 400);
+      const { data: r } = await db.from("repair_briefings").select("vehicle_id").eq("id", b.briefingId).maybeSingle();
+      if (!r) return json({ error: "Briefing nicht gefunden" }, 404);
+      if ((await vehicleOwner(r.vehicle_id)) !== userId) return json({ error: "Nur der Eigentümer kann den Link zurückziehen" }, 403);
+      const { error } = await db.from("repair_briefings").update({ revoked_at: new Date().toISOString() }).eq("id", b.briefingId);
       if (error) throw new Error(error.message);
       return json({ ok: true });
     }

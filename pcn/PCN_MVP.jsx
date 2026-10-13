@@ -845,7 +845,7 @@ const FINDING_STATUS = {
   beobachten: {label:"Beobachten", color:"#f5a524"},
   behoben:    {label:"Behoben",    color:"#30a46c"},
 };
-const findingEmpty = () => ({category:"lack",title:"",position:"",description:"",foundAt:new Date().toISOString().slice(0,10),km:"",status:"offen",fixedAt:"",fixNote:"",cost:"",photos:[]});
+const findingEmpty = () => ({category:"lack",title:"",position:"",description:"",foundAt:new Date().toISOString().slice(0,10),km:"",status:"offen",fixedAt:"",fixNote:"",cost:"",photos:[],videos:[]});
 // Fotos klein halten (max. 4 je Eintrag, ca. 100–200 KB)
 const compressFindingPhoto = file => compressAccidentPhoto(file).then(p=>new Promise((res,rej)=>{
   const img=new Image(); img.onerror=rej;
@@ -854,6 +854,26 @@ const compressFindingPhoto = file => compressAccidentPhoto(file).then(p=>new Pro
     cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height); res(cv.toDataURL("image/jpeg",0.72)); };
   img.src=p.dataUrl;
 }));
+
+// Video direkt in den gesperrten Speicher hochladen (signierte Upload-URL
+// von pcn-secure) — mit Fortschritt, gleiches Format wie supabase-js.
+const uploadFindingVideo = (signedUrl, file, onProgress) => new Promise((resolve,reject)=>{
+  const key=(window.PCN_CONFIG||{}).supabaseKey;
+  const fd=new FormData(); fd.append("cacheControl","3600"); fd.append("",file);
+  const xhr=new XMLHttpRequest();
+  xhr.open("PUT", signedUrl);
+  if(key){ xhr.setRequestHeader("apikey",key); xhr.setRequestHeader("Authorization","Bearer "+key); }
+  xhr.setRequestHeader("x-upsert","false");
+  xhr.upload.onprogress=e=>{ if(e.lengthComputable) onProgress?.(Math.round(e.loaded/e.total*100)); };
+  xhr.onload=()=> xhr.status>=200&&xhr.status<300 ? resolve() : reject(new Error("Upload fehlgeschlagen ("+xhr.status+")"));
+  xhr.onerror=()=>reject(new Error("Upload fehlgeschlagen — Verbindung prüfen"));
+  xhr.send(fd);
+});
+const FINDING_MAX_VIDEOS = 2, FINDING_MAX_VIDEO_MB = 50;
+// Reparatur-Briefing: Link-Token liegt nur auf diesem Gerät (Server kennt den Hash)
+const BRIEFING_TOKENS_KEY = "pcn_briefing_tokens_v1";
+const briefingTokens = () => { try { return JSON.parse(store.getItem(BRIEFING_TOKENS_KEY)||"{}"); } catch { return {}; } };
+const briefingLink = (id, token) => `${location.origin}/pcn/briefing.html#b=${id}.${token}`;
 
 // Zeilenhoehen-Skala, orientiert an Porsche Design System Typografie-
 // Verhaeltnissen (durchgehend 1.3–1.5, nicht die knappe 1.0–1.15, die
@@ -2876,7 +2896,7 @@ function PCNInner() {
   const [openSections, setOpenSections] = useState({}); // {vehicleId_section: bool}
   const toggleSection = (vid, section) => {
     setOpenSections(p=>({...p,[vid+"_"+section]:!p[vid+"_"+section]}));
-    if(section==="findings") loadFindings(vid);
+    if(section==="findings"){ loadFindings(vid); loadBriefings(vid); }
   };
   const isOpen = (vid, section) => !!openSections[vid+"_"+section];
   const [profileImgUploading, setProfileImgUploading] = useState(false);
@@ -4769,6 +4789,62 @@ Regeln:
   const [findingEdit, setFindingEdit] = useState(null); // {vehicleId, ...Eintrag}
   const [findingBusy, setFindingBusy] = useState(false);
   const [showFixedFindings, setShowFixedFindings] = useState(false);
+  const [videoUpload, setVideoUpload] = useState(null);   // {name, pct}
+  const [briefings, setBriefings] = useState({});         // vehicleId -> Liste
+  const [briefingEdit, setBriefingEdit] = useState(null); // Formular
+  const [briefingBusy, setBriefingBusy] = useState(false);
+  const [briefingResult, setBriefingResult] = useState(null); // {vehicleId, link, label}
+  const loadBriefings = async (vehicleId) => {
+    const DB = window.PCN_DB; if(!DB || isDemo) return;
+    const {data} = await DB.briefings.list(vehicleId).catch(()=>({data:[]}));
+    setBriefings(prev=>({...prev, [vehicleId]: data||[]}));
+  };
+  const addFindingVideo = async (file) => {
+    const f = findingEdit; if(!f || !file) return;
+    if((f.videos||[]).length>=FINDING_MAX_VIDEOS){ toast_(`Maximal ${FINDING_MAX_VIDEOS} Videos je Eintrag`,"err"); return; }
+    if(file.size > FINDING_MAX_VIDEO_MB*1024*1024){ toast_(`Video zu groß (${Math.round(file.size/1048576)} MB) — maximal ${FINDING_MAX_VIDEO_MB} MB, also etwa 30 Sekunden`,"err"); return; }
+    const type = file.type || (/\.mov$/i.test(file.name)?"video/quicktime":"video/mp4");
+    if(isDemo){ toast_("Im Demo-Modus werden keine Videos hochgeladen"); return; }
+    setVideoUpload({name:file.name, pct:0});
+    try {
+      const {data, error} = await window.PCN_DB.findings.videoUploadUrl(f.vehicleId, type, file.size);
+      if(error) throw new Error(error);
+      await uploadFindingVideo(data.signedUrl, file, pct=>setVideoUpload({name:file.name, pct}));
+      const video = {path:data.path, name:file.name, size:file.size, type, url:URL.createObjectURL(file)};
+      setFindingEdit(p=>p&&({...p, videos:[...(p.videos||[]), video]}));
+      toast_("Video hochgeladen ✓ — Speichern nicht vergessen");
+    } catch(e){ toast_(e.message||"Video konnte nicht hochgeladen werden","err"); }
+    finally { setVideoUpload(null); }
+  };
+  const sendBriefing = async () => {
+    const b = briefingEdit; if(!b) return;
+    if(!b.selected.length){ toast_("Bitte mindestens einen Punkt auswählen","err"); return; }
+    if(!b.phone.trim() && !b.email.trim()){ toast_("Bitte Telefon oder E-Mail für Rückfragen angeben","err"); return; }
+    if(isDemo){ toast_("Demo: Briefing wird nicht versendet"); setBriefingEdit(null); return; }
+    setBriefingBusy(true);
+    const token = newCaseToken();
+    const {data, error} = await window.PCN_DB.briefings.create(b.vehicleId, {
+      token, findingIds:b.selected, message:b.message, includeFin:b.includeFin, recipientLabel:b.recipientLabel,
+      contact:{phone:b.phone, email:b.email, preferred:b.preferred},
+    }).catch(e=>({error:e?.message}));
+    setBriefingBusy(false);
+    if(error){ toast_(error,"err"); return; }
+    try { store.setItem(BRIEFING_TOKENS_KEY, JSON.stringify({...briefingTokens(), [data.id]:token})); } catch {}
+    setBriefingEdit(null);
+    setBriefingResult({vehicleId:b.vehicleId, link:briefingLink(data.id, token), label:b.recipientLabel});
+    loadBriefings(b.vehicleId);
+  };
+  const shareBriefingLink = async (link, label) => {
+    const text = `Reparatur-Briefing${label?" für "+label:""} — Fotos, Videos und Beschreibung: `;
+    if(navigator.share){ try { await navigator.share({title:"Reparatur-Briefing", text, url:link}); return; } catch(e){ if(e?.name==="AbortError") return; } }
+    try { await navigator.clipboard.writeText(link); toast_("Link kopiert ✓"); } catch { window.prompt("Link kopieren:", link); }
+  };
+  const revokeBriefing = async (vehicleId, id) => {
+    if(!window.confirm("Link zurückziehen? Die Werkstatt kann das Briefing dann nicht mehr öffnen.")) return;
+    const {error} = await window.PCN_DB.briefings.revoke(id).catch(e=>({error:e?.message}));
+    if(error){ toast_(error,"err"); return; }
+    loadBriefings(vehicleId); toast_("Link zurückgezogen");
+  };
   const loadFindings = async (vehicleId) => {
     const DB = window.PCN_DB; if(!DB || isDemo || findings[vehicleId]) return;
     const {data, error} = await DB.findings.list(vehicleId).catch(e=>({error:e?.message}));
@@ -4778,7 +4854,8 @@ Regeln:
   const saveFinding = async (alsoLogbook) => {
     const f = findingEdit; if(!f) return;
     if(!f.title.trim()){ toast_("Bitte kurz beschreiben, was festgestellt wurde","err"); return; }
-    const {vehicleId, toLogbook:_t, ...finding} = f;
+    const {vehicleId, toLogbook:_t, ...rest} = f;
+    const finding = {...rest, videos:(rest.videos||[]).map(({url,...v})=>v)};
     setFindingBusy(true);
     let id = finding.id;
     if(!isDemo){
@@ -4786,7 +4863,7 @@ Regeln:
       if(error){ setFindingBusy(false); toast_(error,"err"); return; }
       id = data?.id || id;
     } else id = id || "demo_"+Date.now();
-    const saved = {...finding, id, createdAt: finding.createdAt || new Date().toISOString()};
+    const saved = {...finding, videos: rest.videos||[], id, createdAt: finding.createdAt || new Date().toISOString()};
     setFindings(prev=>({...prev, [vehicleId]: [saved, ...(prev[vehicleId]||[]).filter(x=>x.id!==id)]}));
     // Behobener Mangel → auf Wunsch als Reparatur ins Logbuch (zählt für Historie & Punkte)
     if(alsoLogbook && finding.status==="behoben"){
@@ -7610,7 +7687,7 @@ Regeln:
                           :<div style={{width:44,height:44,borderRadius:8,background:C.card,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{cat.icon}</div>}
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:14,fontWeight:700,color:C.white,overflowWrap:"anywhere"}}>{x.title}</div>
-                          <div style={{fontSize:12,color:C.muted}}>{[cat.label,x.position,x.foundAt&&new Date(x.foundAt).toLocaleDateString("de-DE"),x.km&&Number(x.km).toLocaleString("de-DE")+" km"].filter(Boolean).join(" · ")}</div>
+                          <div style={{fontSize:12,color:C.muted}}>{[cat.label,x.position,x.foundAt&&new Date(x.foundAt).toLocaleDateString("de-DE"),x.km&&Number(x.km).toLocaleString("de-DE")+" km",(x.videos||[]).length&&`🎥 ${x.videos.length}`].filter(Boolean).join(" · ")}</div>
                         </div>
                         <span style={{fontSize:11,fontWeight:700,color:st.color,border:`1px solid ${st.color}88`,borderRadius:99,padding:"2px 8px",flexShrink:0}}>{st.label}</span>
                       </div>
@@ -7623,6 +7700,36 @@ Regeln:
                       {!list&&<div style={{fontSize:13,color:C.muted}}>{isDemo?"Im Demo-Modus noch keine Einträge.":"Wird geladen …"}</div>}
                       {list&&open.length===0&&<div style={{fontSize:13,color:C.muted,marginBottom:6}}>Keine offenen Punkte 👍</div>}
                       {open.map(x=><Item key={x.id} x={x}/>)}
+                      {open.length>0&&(
+                        <button className="btn ghost" style={{width:"100%",padding:"10px",fontSize:14,margin:"6px 0 4px"}}
+                          onClick={()=>setBriefingEdit({vehicleId:v.id,selected:open.map(x=>x.id),recipientLabel:"",message:"",phone:me?.phone||"",email:me?.email||"",preferred:"",includeFin:false})}>
+                          🔧 Reparatur-Briefing an Werkstatt senden
+                        </button>
+                      )}
+                      {(briefings[v.id]||[]).length>0&&(
+                        <div style={{marginTop:10}}>
+                          <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:6}}>Gesendete Briefings</div>
+                          {briefings[v.id].map(bf=>{
+                            const tok=briefingTokens()[bf.id];
+                            const expired=new Date(bf.expiresAt)<new Date();
+                            return (
+                              <div key={bf.id} style={{background:C.black,border:`1px solid ${C.border}`,borderRadius:10,padding:"9px 12px",marginBottom:6,opacity:bf.revokedAt||expired?.55:1}}>
+                                <div style={{fontSize:14,fontWeight:700,color:C.white}}>{bf.recipientLabel||"Werkstatt"} · {new Date(bf.createdAt).toLocaleDateString("de-DE")}</div>
+                                <div style={{fontSize:12,color:C.muted,overflowWrap:"anywhere"}}>{bf.findingTitles.join(", ")}</div>
+                                <div style={{fontSize:12,marginTop:2,color:bf.revokedAt||expired?C.muted:bf.firstViewedAt?C.green:C.amber}}>
+                                  {bf.revokedAt?"Link zurückgezogen":expired?"Link abgelaufen":bf.firstViewedAt?`✓ Geöffnet${bf.viewCount>1?` (${bf.viewCount}×)`:""}, zuletzt ${new Date(bf.lastViewedAt).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}`:"Noch nicht geöffnet"}
+                                </div>
+                                {!bf.revokedAt&&!expired&&(
+                                  <div style={{display:"flex",gap:10,marginTop:4}}>
+                                    {tok&&<button onClick={()=>shareBriefingLink(briefingLink(bf.id,tok),bf.recipientLabel)} style={{background:"none",border:"none",color:C.gold,fontSize:12,fontWeight:700,cursor:"pointer",padding:0}}>Link erneut teilen</button>}
+                                    <button onClick={()=>revokeBriefing(v.id,bf.id)} style={{background:"none",border:"none",color:C.muted,fontSize:12,textDecoration:"underline",cursor:"pointer",padding:0}}>Zurückziehen</button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                       {fixed.length>0&&(
                         <>
                           <button onClick={()=>setShowFixedFindings(p=>!p)} style={{background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",padding:"6px 0",textDecoration:"underline"}}>
@@ -8367,6 +8474,77 @@ Regeln:
             </div>
           )}
 
+          {/* ── Reparatur-Briefing zusammenstellen ── */}
+          {briefingEdit&&briefingEdit.vehicleId===v.id&&(()=>{
+            const b=briefingEdit, set=patch=>setBriefingEdit(p=>({...p,...patch}));
+            const list=(findings[v.id]||[]).filter(x=>x.status!=="behoben");
+            const lbl={fontSize:12,fontWeight:700,color:C.muted,marginBottom:4,display:"block"};
+            const inpS={padding:"9px 12px",fontSize:15,borderRadius:8,minWidth:0,maxWidth:"100%",display:"block",width:"100%",marginBottom:10};
+            const grants=(workshopGrants[v.id]||[]);
+            return (
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget&&!briefingBusy)setBriefingEdit(null);}}>
+              <div className="sheet legal-wizard" style={{paddingBottom:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white}}>🔧 Reparatur-Briefing</div>
+                  <button aria-label="Schließen" onClick={()=>setBriefingEdit(null)} style={{background:"none",border:"none",color:"#666",fontSize:20,cursor:"pointer",lineHeight:1}}>✕</button>
+                </div>
+                <div style={{fontSize:13,color:C.muted,lineHeight:1.5,marginBottom:12}}>Die Werkstatt bekommt einen Link mit Fotos, Videos und deiner Beschreibung — ohne Anmeldung, 30 Tage gültig, jederzeit zurückziehbar. Du siehst, wann sie ihn geöffnet hat.</div>
+                <label style={lbl}>Welche Punkte?</label>
+                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"2px 12px",marginBottom:12}}>
+                  {list.map((x,i)=>{
+                    const on=b.selected.includes(x.id);
+                    return (
+                      <label key={x.id} style={{display:"flex",gap:10,alignItems:"center",padding:"9px 0",borderBottom:i<list.length-1?`1px solid ${C.border}`:"none",cursor:"pointer"}}>
+                        <input type="checkbox" checked={on} onChange={()=>set({selected:on?b.selected.filter(id=>id!==x.id):[...b.selected,x.id]})}/>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:14,color:C.white,fontWeight:600}}>{x.title}</div>
+                          <div style={{fontSize:12,color:C.muted}}>{[x.position,(x.photos||[]).length&&`📷 ${x.photos.length}`,(x.videos||[]).length&&`🎥 ${x.videos.length}`].filter(Boolean).join(" · ")||"ohne Fotos"}</div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+                <label style={lbl}>Werkstatt (nur für deine Übersicht)</label>
+                <input className="inp" style={inpS} list={"ws-"+v.id} placeholder="z.B. Porsche Zentrum Koblenz" value={b.recipientLabel} onChange={e=>set({recipientLabel:e.target.value})}/>
+                {grants.length>0&&<datalist id={"ws-"+v.id}>{grants.map(g=><option key={g.id} value={g.workshopName}/>)}</datalist>}
+                <label style={lbl}>Deine Nachricht an die Werkstatt</label>
+                <textarea className="inp" rows={3} maxLength={4000} style={inpS} placeholder="z.B. Bitte um Kostenvoranschlag. Das Geräusch tritt nur bei kaltem Motor auf." value={b.message} onChange={e=>set({message:e.target.value})}/>
+                <label style={lbl}>Rückfragen an</label>
+                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8}}>
+                  <input className="inp" type="tel" style={inpS} placeholder="Telefon" value={b.phone} onChange={e=>set({phone:e.target.value})}/>
+                  <input className="inp" type="email" style={inpS} placeholder="E-Mail" value={b.email} onChange={e=>set({email:e.target.value})}/>
+                </div>
+                <input className="inp" style={inpS} placeholder="Wunschtermin / Erreichbarkeit (optional)" value={b.preferred} onChange={e=>set({preferred:e.target.value})}/>
+                <label style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:14,color:C.white,marginBottom:6,lineHeight:1.45}}>
+                  <input type="checkbox" style={{marginTop:3}} checked={b.includeFin} onChange={e=>set({includeFin:e.target.checked})}/>
+                  <span>FIN mitsenden <span style={{color:C.muted,fontSize:12}}>(hilft bei der Teilebestellung)</span></span>
+                </label>
+                <div style={{position:"sticky",bottom:0,background:C.dark,margin:"8px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`}}>
+                  <button type="button" className="btn" style={{width:"100%",padding:"12px",fontSize:15}} disabled={briefingBusy||!b.selected.length} onClick={sendBriefing}>
+                    {briefingBusy?"Wird erstellt …":`Link erstellen (${b.selected.length} Punkt${b.selected.length===1?"":"e"})`}
+                  </button>
+                </div>
+              </div>
+            </div>
+            );
+          })()}
+          {briefingResult&&briefingResult.vehicleId===v.id&&(
+            <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setBriefingResult(null);}}>
+              <div className="sheet" style={{textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:6}}>🔧</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:6}}>Briefing ist bereit</div>
+                <div style={{fontSize:13,color:C.muted,lineHeight:1.5,marginBottom:12}}>Schick den Link per WhatsApp, E-Mail oder SMS an {briefingResult.label||"die Werkstatt"}. Wer den Link hat, kann das Briefing 30 Tage lang öffnen.</div>
+                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",fontSize:11,color:C.muted,overflowWrap:"anywhere",marginBottom:12,textAlign:"left"}}>{briefingResult.link}</div>
+                <button className="btn" style={{width:"100%",padding:"12px",fontSize:15,marginBottom:8}} onClick={()=>shareBriefingLink(briefingResult.link,briefingResult.label)}>📤 Link teilen</button>
+                <div style={{display:"flex",gap:8}}>
+                  <a className="btn ghost" style={{flex:1,padding:"10px",fontSize:13,textDecoration:"none"}} href={`https://wa.me/?text=${encodeURIComponent("Reparatur-Briefing (Fotos, Videos, Beschreibung): "+briefingResult.link)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                  <a className="btn ghost" style={{flex:1,padding:"10px",fontSize:13,textDecoration:"none"}} href={`mailto:?subject=${encodeURIComponent("Reparatur-Briefing")}&body=${encodeURIComponent("Guten Tag,\n\nhier mein Reparatur-Briefing mit Fotos, Videos und Beschreibung:\n"+briefingResult.link+"\n\nViele Grüße\n"+(me?.name||""))}`}>E-Mail</a>
+                </div>
+                <button onClick={()=>setBriefingResult(null)} style={{background:"none",border:"none",color:C.muted,fontSize:13,textDecoration:"underline",cursor:"pointer",marginTop:12}}>Fertig</button>
+              </div>
+            </div>
+          )}
+
           {/* ── Mangel / Feststellung erfassen oder bearbeiten ── */}
           {findingEdit&&findingEdit.vehicleId===v.id&&(()=>{
             const f=findingEdit, set=patch=>setFindingEdit(p=>({...p,...patch}));
@@ -8416,6 +8594,29 @@ Regeln:
                     </label>
                   )}
                 </div>
+                <label style={lbl}>Videos (max. {FINDING_MAX_VIDEOS}, je bis {FINDING_MAX_VIDEO_MB} MB ≈ 30 Sek.)</label>
+                <div style={{fontSize:12,color:C.muted,marginBottom:6,lineHeight:1.45}}>Ideal für Geräusche, Vibrationen oder Warnleuchten — sprich dabei ruhig dazu, was auffällt.</div>
+                {(f.videos||[]).map((vd,i)=>(
+                  <div key={vd.path} style={{position:"relative",marginBottom:8}}>
+                    {vd.url
+                      ?<video src={vd.url} controls playsInline preload="metadata" style={{width:"100%",maxHeight:220,borderRadius:8,background:"#000",display:"block"}}/>
+                      :<div style={{padding:"12px",borderRadius:8,background:C.card,color:C.muted,fontSize:13}}>🎥 {vd.name||"Video"}</div>}
+                    <button aria-label="Video entfernen" onClick={()=>set({videos:f.videos.filter((_,j)=>j!==i)})}
+                      style={{position:"absolute",top:6,right:6,width:26,height:26,borderRadius:13,border:"none",background:C.red,color:"#fff",fontSize:15,cursor:"pointer",padding:0}}>×</button>
+                  </div>
+                ))}
+                {videoUpload&&(
+                  <div style={{marginBottom:8}}>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:4}}>Lade „{videoUpload.name}“ hoch … {videoUpload.pct}%</div>
+                    <div style={{height:4,background:C.border,borderRadius:2}}><div style={{height:4,width:videoUpload.pct+"%",background:C.red,borderRadius:2}}/></div>
+                  </div>
+                )}
+                {(f.videos||[]).length<FINDING_MAX_VIDEOS&&!videoUpload&&(
+                  <label style={{display:"block",textAlign:"center",padding:"10px",borderRadius:8,border:`1.5px dashed ${C.border}`,color:C.muted,fontSize:13,cursor:"pointer",marginBottom:12}}>
+                    🎥 Video aufnehmen oder auswählen
+                    <input type="file" accept="video/*" style={{display:"none"}} onChange={e=>{const fl=e.target.files?.[0]; e.target.value=""; addFindingVideo(fl);}}/>
+                  </label>
+                )}
                 <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:8}}>
                   <div style={{minWidth:0}}><label style={lbl}>Festgestellt am</label><input className="inp" type="date" style={dateS} value={f.foundAt||""} onChange={e=>set({foundAt:e.target.value})}/></div>
                   <div style={{minWidth:0}}><label style={lbl}>Kilometerstand</label><input className="inp" inputMode="numeric" style={inpS} value={f.km} onChange={e=>set({km:e.target.value.replace(/[^0-9]/g,"")})}/></div>
@@ -8445,7 +8646,7 @@ Regeln:
                 )}
                 <div style={{position:"sticky",bottom:0,background:C.dark,margin:"8px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
                   {f.id&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} disabled={findingBusy} onClick={()=>deleteFinding(v.id,f.id)}>Löschen</button>}
-                  <button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} disabled={findingBusy||!f.title.trim()}
+                  <button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} disabled={findingBusy||!!videoUpload||!f.title.trim()}
                     onClick={()=>saveFinding(!!f.toLogbook)}>
                     {findingBusy?"Speichert …":"Speichern"}
                   </button>

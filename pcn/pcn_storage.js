@@ -1143,6 +1143,27 @@ const PCN_STORAGE = (() => {
       if(res.error) return { error: res.error };
       return { data: true };
     },
+    async findingVideoUploadUrl(vehicleId, contentType, size) {
+      const res = await secureApi("findingVideoUploadUrl", { st: sessionToken(), vehicleId, contentType, size });
+      if(res.error) return { error: res.error };
+      return { data: res.data };
+    },
+    // ── Reparatur-Briefing (Link für die Werkstatt) ──
+    async createBriefing(vehicleId, payload) {
+      const res = await secureApi("briefingCreate", { st: sessionToken(), vehicleId, ...payload });
+      if(res.error) return { error: res.error };
+      return { data: res.data };
+    },
+    async listBriefings(vehicleId) {
+      const res = await secureApi("briefingList", { st: sessionToken(), vehicleId });
+      if(res.error) return { error: res.error };
+      return { data: res.data.briefings||[] };
+    },
+    async revokeBriefing(briefingId) {
+      const res = await secureApi("briefingRevoke", { st: sessionToken(), briefingId });
+      if(res.error) return { error: res.error };
+      return { data: true };
+    },
     async getEmergencyProfilesByCode(vehicleId, accessCode) {
       // KEIN Login nötig — das ist der Weg für Rettungskräfte. Der Code
       // ist die Zugangsschranke; der Server begrenzt Fehlversuche.
@@ -1871,6 +1892,12 @@ function guard(label, fn){
       list: (vid) => db.listFindings ? db.listFindings(vid) : Promise.resolve({data:[]}),
       save: guard("findings.save", (vid,finding) => db.saveFinding(vid,finding)),
       remove: guard("findings.remove", (fid) => db.deleteFinding(fid)),
+      videoUploadUrl: guard("findings.videoUploadUrl", (vid,type,size) => db.findingVideoUploadUrl(vid,type,size)),
+    },
+    briefings: {
+      create: guard("briefings.create", (vid,payload) => db.createBriefing(vid,payload)),
+      list: (vid) => db.listBriefings ? db.listBriefings(vid) : Promise.resolve({data:[]}),
+      revoke: guard("briefings.revoke", (bid) => db.revokeBriefing(bid)),
     },
     emergencyProfiles: {
       list: guard("emergencyProfiles.list", (vid,ownerUid) => db.listEmergencyProfiles(vid,ownerUid)),
