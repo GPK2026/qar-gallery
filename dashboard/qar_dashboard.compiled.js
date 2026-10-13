@@ -145,6 +145,30 @@
     dd_status: {},
     goals_done: {},
     journal: [{
+      id: "J_20261013C",
+      date: "13. Oktober 2026 · 14:45 Uhr",
+      type: "milestone",
+      title: "Reparatur-Briefing: Werkstatt dokumentiert, Rückfragen, Freigabe mit Kostenrahmen",
+      text: "ABLAUF (Mängelliste → Werkstatt → Logbuch):\n✅ Eigentümer wählt Mängel (Fotos, bis 2 Videos je Punkt, Beschreibung) und erzeugt einen Link — 30 Tage gültig, jederzeit zurückziehbar, neue Freigabe = neuer Link; er sieht, ob/wann die Werkstatt geöffnet hat\n✅ Werkstatt öffnet ohne Login (qar.gallery/pcn/briefing.html), dokumentiert je Punkt: erledigt / nicht erledigt (Begründung Pflicht) / Rückfrage, Teile, Kosten, Nachher-Fotos, Name des Bearbeiters\n✅ Rückfrage-Dialog pro Punkt (protokolliert, nur Klärung)\n✅ Zusätzliche Leistung: Werkstatt fragt Freigabe an (Leistung + Schätzung) → Eigentümer gibt in der App „kostenpflichtig frei bis max. X €“ oder lehnt ab; Text wird beim Freigeben eingefroren; Widerruf bis die Werkstatt den Empfang bestätigt\n✅ Zusätzlich festgestellte Mängel = Hinweis, kein Auftrag; Eigentümer kann sie in seine Mängelliste übernehmen\n✅ Abschluss erst ohne offene Punkte/Rückfragen/Freigabe-Anfragen, danach gesperrt\n✅ Übernahme ins Logbuch als „Reparatur (Werkstatt dokumentiert)“ inkl. Freigaben und Dialog; erledigte Mängel → behoben\n\nTECHNIK:\nEigene Edge Function repair-briefing (getrennt vom Login in pcn-secure), Tabelle repair_briefings (für anon gesperrt), Link-Token nur als SHA-256-Hash gespeichert, Videos im gesperrten Bucket finding-media über signierte Upload-URLs.\n\nOFFEN:\n• Benachrichtigung bei neuer Rückfrage/Freigabe-Anfrage (hängt am Mailversand)\n• Rechtliche Freigabe der Texte durch debug (Freigabe-Text, Werkstatt-Hinweis, Nutzungsbedingungen: QAR.Gallery nur Übermittler)\n• Live-Test mit echter Werkstatt, Video-Upload auf echtem Gerät"
+    }, {
+      id: "J_20261013B",
+      date: "13. Oktober 2026 · 12:30 Uhr",
+      type: "decision",
+      title: "Rechtliche Leitplanken: keine digitale Abnahme, Beauftragung nur per Freigabe",
+      text: "ENTSCHEIDUNGEN (Peter, 13.10.):\n1. Keine digitale Abnahme. Die Abnahme (§ 640 BGB) erfolgt vor Ort nach Sichtprüfung. In der App heißt es nur „Dokumentation abschließen“ (Werkstatt) und „ins Logbuch übernehmen“ (Eigentümer), jeweils mit Hinweis „keine Abnahme“; optional Datum der Prüfung vor Ort.\n2. Zusätzlich festgestellte Mängel der Werkstatt sind Hinweise, keine Auftragsvergabe.\n3. Beauftragung ist möglich — wie in der Praxis per Telefon, aber besser belegt: nur durch ausdrückliche Freigabe des angemeldeten Eigentümers mit Kostenrahmen, nie über den Werkstatt-Link. Nachrichten im Dialog sind reine Klärung.\n4. Der Vertrag kommt zwischen Eigentümer und Werkstatt zustande; QAR.Gallery übermittelt und dokumentiert nur.\n\nTODO: debug Rechtsanwälte prüfen Freigabe-Text, Hinweise und einen Passus in den Nutzungsbedingungen."
+    }, {
+      id: "J_20261013A",
+      date: "13. Oktober 2026 · 10:00 Uhr",
+      type: "milestone",
+      title: "Mängelliste, Einführung mit Punkten, Sprachsteuerung, Desktop-Ansicht",
+      text: "NEU IN DER CLUB-APP:\n✅ Mängel & Feststellungen je Fahrzeug: Kategorie (Lack, Delle, Felge/Bordstein, Reifen, Glas, Innenraum, Technik), Position, Fotos, Videos, km, Status offen/beobachten/behoben; Behobenes optional als Reparatur ins Logbuch (nur Eigentümer, Tabelle vehicle_findings gesperrt)\n✅ Geführte Einführung nach der Registrierung: 8 Erklär-Schritte, jeder mit „Verstanden“ bestätigt (+50 Punkte, Abschluss +150 = 550), später fortsetzbar; Eintrag in der Willkommens-Checkliste\n✅ Sprachsteuerung Stufe 1 (Browser-Spracherkennung, keine KI): Navigation („Öffne den 964“, „Unfall melden“, „Mangel erfassen“ …) und Diktat ins aktive Feld inkl. Satzzeichen und Kennzeichen; Datenschutzhinweis beim ersten Benutzen; Speichern/Senden bleiben ein Tipp\n✅ Desktop-Ansicht ab 1024 px: Seitenleiste statt Tab-Leiste, Startseite und Fahrzeugakte zweispaltig; Handy unverändert\n✅ Blau (#178BFF) als systemweite Aktiv-Farbe: Auswahl, Fokus, aktive Navigation, geöffnete Reiter, Hover-Rahmen auf allen anklickbaren Karten\n\nSTUFE 2 SPRACHE (offen): KI füllt ganze Formulare aus einem Satz (Fahrzeug anlegen, Logbuch, Unfall)."
+    }, {
+      id: "J_20261012",
+      date: "12. Oktober 2026 · 18:00 Uhr",
+      type: "milestone",
+      title: "Unfall-Ablauf: Europäischer Unfallbericht digital, Entwürfe, Fälle am Konto",
+      text: "✅ Geführter Unfall-Ablauf (Slideshow) nach Vorgabe debug: Sicherheit → Kennzeichen des Gegners → Fotos (Gegner mit Kennzeichen zuerst) → Polizei/Unfallbericht → Schuldanerkenntnis (optional, digital unterschrieben, Text eingefroren) → Zeugen → Hergang → Prüfen & Absenden\n✅ Europäischer Unfallbericht digital (Ziff. 1–15, eigene Umsetzung — Original-Formular © Insurance Europe nicht reproduziert): A aus Akte vorbelegt, B aus Kennzeichen-Schritt, Umstände 1–17, Anstoßstelle, Skizze, Unterschriften beider Fahrer; Änderungen nach Unterschrift machen sie ungültig; PDF-Exemplar für den Unfallgegner; vorher Abfrage digital / Papier / überspringen\n✅ Entwurf wird laufend auf dem Gerät gesichert (IndexedDB) — nach Absturz/Neuladen „Fortsetzen“\n✅ Fälle am Mitgliedskonto (geprüftes Sitzungs-Token), auf jedem Gerät abrufbar; Unfallakte zusätzlich in „Service & Dokumente“ (nur Verweis, keine Kopie in die offene Dokumentenablage)"
+    }, {
       id: "J_20261005C",
       date: "5. Oktober 2026 · 23:30 Uhr",
       type: "risk",
@@ -634,6 +658,18 @@
     sev: "medium",
     finding: "Ziel: Versicherer als Käufer. Konflikt: debug vertritt Geschädigte gegen Versicherer. Lösung: Unfallmeldung als neutraler, mitgliedseigener Datensatz mit wählbaren Empfängern; Wert für Versicherer = schnelle strukturierte Schadenmeldung + belegte Fahrzeughistorie. Vergütung der Kanzlei pro Fall wegen § 49b BRAO vermutlich unzulässig.",
     status: "noted"
+  }, {
+    id: "B13",
+    cat: "Werkstätten",
+    sev: "positive",
+    finding: "Reparatur-Briefing macht Werkstätten zu Nutzern ohne eigenes Konto: Link → Dokumentation → Freigabe mit Kostenrahmen. Ergebnis ist eine von der Werkstatt dokumentierte Fahrzeughistorie mit Vorher/Nachher-Fotos — Wertargument für Wiederverkauf und für Versicherer (B12). Ansatz für späteres B2B-Angebot an Werkstätten.",
+    status: "noted"
+  }, {
+    id: "B14",
+    cat: "Recht",
+    sev: "high",
+    finding: "Vor Echtbetrieb von debug prüfen lassen: Einwilligungstext Unfallmeldung (Art. 9 DSGVO), Schuldanerkenntnis-Text, Hinweis Europäischer Unfallbericht, Freigabe-Text (Beauftragung mit Kostenrahmen), Hinweise „keine Abnahme“ / „kein Auftrag“, Passus Nutzungsbedingungen (QAR.Gallery nur Übermittler), Datenschutzerklärung (Sprachsteuerung, Werkstatt-Links).",
+    status: "open"
   }];
   const DD_TECH = [{
     id: "T1",
@@ -645,7 +681,7 @@
     id: "T2",
     cat: "RLS",
     sev: "critical",
-    finding: "BEWUSSTE SCHULD: Policies nutzen USING(true) — die DB vertraut der App-Schicht. Okt 2026 gesperrt: Passwort-Hashes (→ user_credentials), Notfallprofile/-kontakte (Gesundheitsdaten), workshop_signup_requests, Unfallmeldungen. Weiterhin offen les- und schreibbar: vehicles, logbook, messages/threads, events, vehicle_transfers (inkl. Übertragungscodes), users-Profile, dashboard_state. Admin- und Club-Code im öffentlichen Quelltext. Echte Absicherung erst mit Supabase Auth.",
+    finding: "BEWUSSTE SCHULD: Policies nutzen USING(true) — die DB vertraut der App-Schicht. Okt 2026 gesperrt: Passwort-Hashes (→ user_credentials), Notfallprofile/-kontakte (Gesundheitsdaten), workshop_signup_requests, Unfallmeldungen, Mängelliste (vehicle_findings), Reparatur-Briefings, Medien-Buckets. Weiterhin offen les- und schreibbar: vehicles, logbook, messages/threads, events, vehicle_transfers (inkl. Übertragungscodes), users-Profile, dashboard_state. Admin- und Club-Code im öffentlichen Quelltext. Echte Absicherung erst mit Supabase Auth.",
     status: "progress"
   }, {
     id: "T3",
@@ -705,7 +741,7 @@
     id: "T6",
     cat: "Architektur",
     sev: "medium",
-    finding: "Auf 11.600+ Zeilen JSX-Monolith gewachsen (817 KB, Stand Okt 2026) + 210 KB Admin-HTML. Funktioniert weiterhin, aber jede Änderung erfordert Vollkompilierung, Wachstum beschleunigt sich.",
+    finding: "Auf 13.500+ Zeilen JSX-Monolith gewachsen (945 KB, Stand 13.10.2026) + 210 KB Admin-HTML. Funktioniert weiterhin, aber jede Änderung erfordert Vollkompilierung, Wachstum beschleunigt sich.",
     status: "open"
   }, {
     id: "T7",
@@ -735,7 +771,7 @@
     id: "T17",
     cat: "Unfallmeldung",
     sev: "positive",
-    finding: "Unfallmeldung mit Fotos und PDF-Unfallmappe (Okt 2026). Daten liegen gesperrt in accident_reports / accident_report_dispatches / Bucket accident-reports, Zugriff nur über Edge Function accident-report mit Fall-Token. Neutraler Datensatz: Empfänger (Kanzlei, später Versicherer) als eigene Einträge. Mailversand an debug noch offen (Fälle stehen auf „vorgemerkt“).",
+    finding: "Unfallmeldung mit Fotos und PDF-Unfallmappe (Okt 2026). Daten liegen gesperrt in accident_reports / accident_report_dispatches / Bucket accident-reports, Zugriff nur über Edge Function accident-report mit Fall-Token. Neutraler Datensatz: Empfänger (Kanzlei, später Versicherer) als eigene Einträge. Mailversand an debug noch offen (Fälle stehen auf „vorgemerkt“). 12.10.: geführter Ablauf, digitaler Europäischer Unfallbericht, Entwürfe auf dem Gerät, Fälle am Mitgliedskonto (member_verified).",
     status: "progress"
   }, {
     id: "T18",
@@ -749,6 +785,30 @@
     sev: "resolved",
     finding: "Fuhrpark-Tab auf qar.gallery stürzte ab: Recharts-UMD braucht window.PropTypes, das nie geladen wurde. prop-types vor Recharts eingebunden (Okt 2026).",
     status: "resolved"
+  }, {
+    id: "T20",
+    cat: "Dokumentenablage",
+    sev: "high",
+    finding: "vehicle_documents (Belege der Fahrzeugakte) ist mit dem öffentlichen Schlüssel lesbar (Policy USING(true), Stand 13.10.: 3 Dokumente). Vorschlag: wie Notfallprofile hinter pcn-secure legen. Unfallmappen werden deshalb bewusst NICHT dort abgelegt.",
+    status: "open"
+  }, {
+    id: "T21",
+    cat: "Edge Functions",
+    sev: "positive",
+    finding: "Sensible Abläufe laufen über drei getrennte Server-Funktionen mit gleichem Sitzungs-Token: pcn-secure (Login, Passwörter, Notfall, Mängel, Video-Upload), accident-report (Unfallfälle, Fall-Token + Konto), repair-briefing (Werkstatt-Link, Freigaben). Trennung schützt den Login vor Änderungen an Nebenfunktionen.",
+    status: "resolved"
+  }, {
+    id: "T22",
+    cat: "Sprachsteuerung",
+    sev: "info",
+    finding: "Stufe 1 nutzt die Web Speech API des Browsers: Audio geht an Google (Chrome/Android) bzw. Apple (Safari); Firefox ohne Unterstützung (Button ausgeblendet); iOS-Homescreen-App unzuverlässig. Datenschutzhinweis beim ersten Benutzen, in die Datenschutzerklärung aufnehmen.",
+    status: "noted"
+  }, {
+    id: "T23",
+    cat: "Benachrichtigungen",
+    sev: "medium",
+    finding: "Kein Push/Mail: Rückfragen und Freigabe-Anfragen der Werkstatt, neue Unfallfälle (debug) und Werkstatt-Abschlüsse sieht man nur beim Öffnen der App. Mailversand (Anbieter, Absender-Domain SPF/DKIM) als nächster Infrastruktur-Schritt.",
+    status: "open"
   }];
   const WEEKS = [{
     w: 1,
