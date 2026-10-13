@@ -38,6 +38,11 @@
 //   briefingRevoke   { st, briefingId }                        → { ok }
 //   briefingGet      { id, token }   (Werkstatt, ohne Login)   → { briefing }
 //   (Reparatur-Briefing: Link mit Zufalls-Token, Server kennt nur den Hash)
+//   docList          { st, vehicleId }                         → { documents }
+//   docUpload        { st, vehicleId, category, image, label } → { id }
+//   docMarkAnalyzed  { st, documentId, logbookEntryId }        → { ok }
+//   docDelete        { st, documentId }                        → { ok }
+//   (Dokumentenablage der Fahrzeugakte — nur Eigentümer; Tabelle für anon gesperrt)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -73,6 +78,7 @@ const LIMITS: Record<string, number> = {
   emergencyList: 120, emergencySave: 60, emergencyDelete: 30, emergencyByCode: 15,
   findingsList: 240, findingSave: 120, findingDelete: 60, findingVideoUploadUrl: 40,
   briefingCreate: 30, briefingList: 120, briefingRevoke: 30, briefingGet: 120,
+  docList: 240, docUpload: 60, docMarkAnalyzed: 120, docDelete: 60,
 };
 
 function cors(origin: string | null) {
@@ -445,6 +451,44 @@ Deno.serve(async (req: Request) => {
       const { data: briefs } = await db.from("repair_briefings").select("snapshot").eq("vehicle_id", fd.vehicle_id).is("revoked_at", null);
       const used = new Set((briefs || []).flatMap((x: any) => (x.snapshot?.findings || []).flatMap((ff: any) => (ff.videos || []).map((v: any) => v.path))));
       await removeVideos(((fd.videos as any[]) || []).map((v: any) => v.path).filter((p: string) => !used.has(p)));
+      return json({ ok: true });
+    }
+
+    // ── Dokumentenablage (Belege der Fahrzeugakte) — nur der Eigentümer.
+    // Die Tabelle ist für den öffentlichen Schlüssel gesperrt; Zugriff nur hier.
+    if (action === "docList" || action === "docUpload") {
+      const vehicleId = str(b.vehicleId, 100);
+      if (!vehicleId) return json({ error: "Fahrzeug fehlt" }, 400);
+      if ((await vehicleOwner(vehicleId)) !== userId) return json({ error: "Nur der Eigentümer hat Zugriff auf die Dokumente" }, 403);
+      if (action === "docList") {
+        const { data, error } = await db.from("vehicle_documents").select("*").eq("vehicle_id", vehicleId).order("created_at", { ascending: false });
+        if (error) throw new Error(error.message);
+        return json({ documents: (data || []).map((r: any) => ({
+          id: r.id, vehicleId: r.vehicle_id, category: r.category, image: r.image, label: r.label,
+          analyzedAt: r.analyzed_at, logbookEntryId: r.logbook_entry_id, createdAt: r.created_at,
+        })) });
+      }
+      const image = typeof b.image === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(b.image) && b.image.length < 1_500_000 ? b.image : null;
+      if (!image) return json({ error: "Bild fehlt oder ist zu groß" }, 400);
+      const { data, error } = await db.from("vehicle_documents").insert({
+        vehicle_id: vehicleId, owner_user_id: userId, category: str(b.category, 40) || "sonstiges",
+        image, label: str(b.label, 160), created_at: new Date().toISOString(),
+      }).select("id").single();
+      if (error) throw new Error(error.message);
+      return json({ id: data.id });
+    }
+
+    if (action === "docMarkAnalyzed" || action === "docDelete") {
+      if (!isUuid(b.documentId)) return json({ error: "Dokument fehlt" }, 400);
+      const { data: doc, error: de } = await db.from("vehicle_documents").select("vehicle_id").eq("id", b.documentId).maybeSingle();
+      if (de) throw new Error(de.message);
+      if (!doc) return json({ error: "Dokument nicht gefunden" }, 404);
+      if ((await vehicleOwner(doc.vehicle_id)) !== userId) return json({ error: "Nur der Eigentümer kann Dokumente bearbeiten" }, 403);
+      const q = action === "docDelete"
+        ? db.from("vehicle_documents").delete().eq("id", b.documentId)
+        : db.from("vehicle_documents").update({ analyzed_at: new Date().toISOString(), logbook_entry_id: str(b.logbookEntryId, 100) }).eq("id", b.documentId);
+      const { error } = await q;
+      if (error) throw new Error(error.message);
       return json({ ok: true });
     }
 

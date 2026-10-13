@@ -979,34 +979,27 @@ const PCN_STORAGE = (() => {
     // ── Fahrzeug-Dokumentenablage — unabhaengig vom KI-Scan-Weg. Dokumente
     // koennen ohne sofortige Auswertung abgelegt werden, die KI-Analyse kann
     // spaeter nachtraeglich darauf laufen.
+    // Zugriff nur über pcn-secure (Sitzungs-Token, Eigentümer-Prüfung auf dem
+    // Server). Die Tabelle ist für den öffentlichen Schlüssel gesperrt.
     async uploadVehicleDocument(vehicleId, ownerUserId, category, image, label) {
-      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id");
-      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
-      if(vRes.data[0].user_id!==ownerUserId) return { error: "Nur der Eigentümer kann Dokumente hochladen" };
-      return await supabase._post("vehicle_documents", {
-        vehicle_id: vehicleId, owner_user_id: ownerUserId, category,
-        image, label: label||null, created_at: now(),
-      });
+      const res = await secureApi("docUpload", { st: sessionToken(), vehicleId, category, image, label: label||null });
+      if(res.error) return { error: res.error };
+      return { data: { id: res.data.id } };
     },
     async listVehicleDocuments(vehicleId) {
-      const res = await supabase._q("vehicle_documents","?vehicle_id=eq."+vehicleId+"&order=created_at.desc");
-      if(res.error) return res;
-      return { data: (res.data||[]).map(r => ({
-        id: r.id, vehicleId: r.vehicle_id, category: r.category, image: r.image,
-        label: r.label, analyzedAt: r.analyzed_at, logbookEntryId: r.logbook_entry_id,
-        createdAt: r.created_at,
-      })) };
+      const res = await secureApi("docList", { st: sessionToken(), vehicleId });
+      if(res.error) return { error: res.error };
+      return { data: res.data.documents||[] };
     },
     async markDocumentAnalyzed(documentId, logbookEntryId) {
-      return await supabase._patch("vehicle_documents","id=eq."+documentId,{
-        analyzed_at: now(), logbook_entry_id: logbookEntryId||null,
-      });
+      const res = await secureApi("docMarkAnalyzed", { st: sessionToken(), documentId, logbookEntryId: logbookEntryId||null });
+      if(res.error) return { error: res.error };
+      return { data: true };
     },
     async deleteVehicleDocument(documentId, ownerUserId) {
-      const dRes = await supabase._q("vehicle_documents","?id=eq."+documentId+"&select=owner_user_id");
-      if(dRes.error || !dRes.data?.length) return { error: "Dokument nicht gefunden" };
-      if(dRes.data[0].owner_user_id!==ownerUserId) return { error: "Nur der Eigentümer kann dies löschen" };
-      return await supabase._delete("vehicle_documents","id=eq."+documentId);
+      const res = await secureApi("docDelete", { st: sessionToken(), documentId });
+      if(res.error) return { error: res.error };
+      return { data: true };
     },
 
     // ── Werkstatt-Zugang — eigenständiger Antrags-/Bestätigungsprozess für

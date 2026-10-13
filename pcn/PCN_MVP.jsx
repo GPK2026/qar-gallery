@@ -8293,6 +8293,8 @@ Regeln:
                     }
                     {/* ── Dokumentenablage — unabhängig vom Scan-Ablauf, Dokumente
                          können ohne sofortige KI-Auswertung abgelegt werden. ── */}
+                    {/* Belege sind privat: nur der Eigentümer sieht die Ablage (Server prüft das ebenfalls). */}
+                    {isOwn&&<>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:18,marginBottom:6,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
                       <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:.2}}>Dokumente</div>
                       {isOwn&&<button onClick={()=>{loadVehicleDocuments(v.id);setShowDocArchive(v.id);}}
@@ -8325,6 +8327,7 @@ Regeln:
                         {isOwn&&<TrashBtn title="Dokument löschen" onClick={()=>deleteArchivedDocument(v.id,doc.id,doc.label||CATEGORY_LABELS[doc.category])}/>}
                       </div>
                     ))}
+                    </>}
                     {/* ── Unfallakte — nur Verweis auf die gesperrt gespeicherten Fälle
                          (accident-report). Bewusst NICHT in vehicle_documents ablegen:
                          die Tabelle ist mit dem öffentlichen Schlüssel lesbar, Unfallmappen
