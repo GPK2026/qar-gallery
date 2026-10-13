@@ -5181,6 +5181,137 @@ Regeln:
     if(pendingTransferVehicleIds.has(v.id)) out.push({id:v.id+"_t", v, sec:"dashboard", icon:"🔑", label:"Übertragungsantrag wartet auf deine Bestätigung"});
     return out;
   });
+  // Startseite: "Neueste Mitglieder-Fahrzeuge" + "Zuletzt angesehen". Auf dem Handy
+  // unter "Meine Fahrzeuge", am Desktop in der linken Spalte (gleicht die Spalten aus).
+  const renderDashDiscover = () => (<>
+            {/* ── Neueste Mitglieder-Fahrzeuge: max 3, Rest in Community ── */}
+            {displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).length>0&&(
+              <div style={{marginBottom:32}}>
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>
+                  🚗 Neueste Mitglieder-Fahrzeuge
+                </div>
+                <div style={{display:"flex",justifyContent:"flex-end"}}>
+                  <button onClick={()=>setTab("community")} style={{background:"none",border:"none",color:C.red,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",padding:"2px 0"}}>
+                    Alle ansehen →
+                  </button>
+                </div>
+              </div>
+                <Carousel
+                  items={displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).slice(0,8)}
+                  cardWidth={150}
+                  renderItem={(v)=>{
+                    const owner = Object.values(allUsers).find(u=>u.id===v.userId);
+                    return (
+                      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,
+                        overflow:"hidden",cursor:"pointer"}}
+                        onClick={()=>{
+                          const priv = typeof v.privacy==="string" ? JSON.parse(v.privacy||"{}") : (v.privacy||{});
+                          setPublicV({...v, privacy:{...DEF_PRIVACY,...priv}});
+                          setScreen("public");
+                        }}>
+                        <div style={{height:100,overflow:"hidden",background:"#111",position:"relative",
+                          display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {getCoverImage(v)
+                            ?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                            :<span style={{fontSize:30}}>🏎️</span>}
+                          {(listings[v.id]||[]).length>0&&
+                            <div style={{position:"absolute",bottom:5,left:5,background:C.gold,color:"#0a0a0a",
+                              borderRadius:4,padding:"1px 6px",fontSize:9,fontWeight:800}}>💰 Zum Verkauf</div>}
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
+                            style={{position:"absolute",top:5,right:5,background:"rgba(0,0,0,.6)",
+                              border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",
+                              fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",
+                              backdropFilter:"blur(4px)",WebkitTapHighlightColor:"transparent"}}>
+                            {isFavorite(v.id)?"❤️":"🤍"}
+                          </button>
+                        </div>
+                        <div style={{padding:"9px 10px"}}>
+                          <div style={{fontWeight:700,fontSize:15,color:C.white,
+                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                            {v.hersteller} {v.modell}
+                          </div>
+                          <div style={{fontSize:12,color:C.muted,marginTop:2,
+                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                            {v.baujahr}{owner?.name?` · ${owner.name.split(" ")[0]}`:v.ownerName?` · ${v.ownerName}`:""}
+                            {owner?.isAdmin&&<span style={{color:C.gold,fontWeight:700}}> 🏆</span>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }}/>
+              </div>
+            )}
+
+              {/* ── Zuletzt angesehen ── */}
+              {recentVehicles.length>0&&(
+                <div style={{marginBottom:18}}>
+                  <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🕐 Zuletzt angesehen</div>
+                  <div style={{display:"flex",gap:10,overflowX:"auto",scrollbarWidth:"none",paddingBottom:4,paddingTop:8,
+                    maskImage:recentVehicles.length>2?"linear-gradient(90deg,#000 88%,transparent)":"none",
+                    WebkitMaskImage:recentVehicles.length>2?"linear-gradient(90deg,#000 88%,transparent)":"none"}}>
+                    {recentVehicles.map(rv=>(
+                      <div key={rv.id} style={{flexShrink:0,width:130,position:"relative"}}>
+                        <div
+                          onClick={()=>{
+                            const full = vehicles[rv.id]||DEMO_VEHICLES[rv.id];
+                            if(full){ setPublicV({...full,privacy:{...DEF_PRIVACY,...(full.privacy||{})}}); setScreen("public"); }
+                            else if(rv.qarId){
+                              const DB=window.PCN_DB;
+                              if(DB) DB.vehicles.getPublic(rv.qarId).then(({data})=>{
+                                if(data) setPublicV({...data,privacy:{...DEF_PRIVACY,...(data.privacy||{})}});
+                              });
+                              setScreen("public");
+                            }
+                          }}
+                          style={{cursor:"pointer",borderRadius:10,overflow:"hidden",
+                            border:`1px solid ${C.border}`,background:C.card}}>
+                          <div style={{height:80,overflow:"hidden",background:"#111",position:"relative"}}>
+                            {getCoverImage(rv)
+                              ? <img src={getCoverImage(rv)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
+                              : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",fontSize:28}}>🚗</div>}
+                            {(listings[rv.id]||[]).length>0&&
+                              <div style={{position:"absolute",bottom:4,left:4,background:C.gold,color:"#0a0a0a",
+                                borderRadius:4,padding:"1px 5px",fontSize:9,fontWeight:800}}>💰 Zum Verkauf</div>}
+                            {/* ✕ sitzt sauber in der oberen rechten Ecke des Bildes */}
+                            <button
+                              onClick={e=>{
+                                e.stopPropagation();
+                                setRecentVehicles(prev=>{
+                                  const updated=prev.filter(v=>v.id!==rv.id);
+                                  store.setItem("pcn_recent_vehicles",JSON.stringify(updated));
+                                  return updated;
+                                });
+                              }}
+                              style={{position:"absolute",top:5,right:5,zIndex:10,
+                                width:22,height:22,borderRadius:"50%",
+                                background:"rgba(0,0,0,.6)",border:"none",backdropFilter:"blur(4px)",
+                                color:"#fff",fontSize:13,fontWeight:900,
+                                cursor:"pointer",display:"flex",alignItems:"center",
+                                justifyContent:"center",lineHeight:1,fontFamily:"sans-serif",
+                                WebkitTapHighlightColor:"transparent"}}>
+                              ✕
+                            </button>
+                          </div>
+                          <div style={{padding:"7px 8px"}}>
+                            <div style={{fontSize:13,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
+                            <div style={{fontSize:12,color:C.muted,marginTop:2}}>{rv.kennzeichen||rv.qarId}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={()=>{setRecentVehicles([]);store.removeItem("pcn_recent_vehicles");}}
+                      style={{flexShrink:0,width:44,background:"none",border:`1px dashed ${C.border}`,
+                        borderRadius:10,color:"#555",cursor:"pointer",fontSize:16,minHeight:119,
+                        display:"flex",alignItems:"center",justifyContent:"center"}}
+                      title="Alle entfernen">
+                      🗑
+                    </button>
+                  </div>
+                </div>
+              )}
+
+  </>);
   const RedDot = ({title}) => <span title={title} aria-label={title} style={{width:9,height:9,borderRadius:"50%",background:C.red,flexShrink:0,display:"inline-block",boxShadow:`0 0 0 2px ${C.red}33`}}/>;
   const handleVoiceCommand = (said) => {
     const cmd = parseVoiceCommand(said, myVehicles);
@@ -6257,6 +6388,8 @@ Regeln:
         transition:outline-color .15s}
     }
     .tab-brand{display:none}
+    .dash-desk{display:none}
+    @media(min-width:1024px){.dash-desk{display:block}}
     .tab-bar.desk-only{display:none}
     @media(min-width:1024px){
       .tab-bar{top:0;bottom:0;right:auto;width:220px;flex-direction:column;justify-content:flex-start;border-top:none;border-right:1px solid ${C.border};padding:18px 12px;gap:2px;z-index:150;overflow-y:auto}
@@ -6274,9 +6407,12 @@ Regeln:
       /* Größere Fotos */
       .veh-hero{height:clamp(380px,46vh,560px) !important}
       .veh-thumb{width:128px !important;height:84px !important}
-      .veh-card{flex-direction:column}
+      .veh-card{flex-direction:column;margin-bottom:0 !important}
       .veh-card-img{width:100% !important;height:240px !important}
+      .veh-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+      .veh-list:has(> .veh-card:nth-child(2)) .veh-card-img{height:180px !important}
       .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
+      .dash-mob{display:none}
       .dash-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:start}
       .veh-gallery{max-width:1180px;margin:0 auto;padding:20px 32px 0}
       .veh-gallery > div{border-radius:16px;overflow:hidden}
@@ -10802,6 +10938,7 @@ Regeln:
               );
             })()}
 
+            <div className="dash-desk">{renderDashDiscover()}</div>
             </div>
             <div className="dash-col">
             {/* ── 2. Meine Fahrzeuge ── */}
@@ -10819,7 +10956,7 @@ Regeln:
                   <div style={{fontSize:15,color:C.white,fontWeight:600,marginBottom:4}}>Erstes Fahrzeug hinzufügen</div>
                   <div style={{fontSize:13,color:C.muted}}>Schaltet QR-Code, Logbuch und Events frei · <span style={{color:C.gold,fontWeight:700}}>+{POINTS.vehicle_added} Pkt</span></div>
                 </div>
-              ):myVehicles.map(v=>(
+              ):<div className="veh-list">{myVehicles.map(v=>(
                 <div key={v.id} className="veh-card" style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:10,overflow:"hidden",display:"flex",alignItems:"stretch",cursor:"pointer"}}
                   onClick={()=>{setViewV(v);setScreen("vehicle");}}>
                   <div className="veh-card-img" style={{width:140,height:100,background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -10851,135 +10988,10 @@ Regeln:
                   <span style={{fontSize:20,color:C.muted,flexShrink:0}}>›</span>
                   </div>
                 </div>
-              ))}
+              ))}</div>}
             </div>
 
-            {/* ── Neueste Mitglieder-Fahrzeuge: max 3, Rest in Community ── */}
-            {displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).length>0&&(
-              <div style={{marginBottom:32}}>
-              <div style={{marginBottom:16}}>
-                <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:8,lineHeight:1.3}}>
-                  🚗 Neueste Mitglieder-Fahrzeuge
-                </div>
-                <div style={{display:"flex",justifyContent:"flex-end"}}>
-                  <button onClick={()=>setTab("community")} style={{background:"none",border:"none",color:C.red,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",padding:"2px 0"}}>
-                    Alle ansehen →
-                  </button>
-                </div>
-              </div>
-                <Carousel
-                  items={displayVehicles.filter(v=>!myVehicles.find(m=>m.id===v.id)).slice(0,8)}
-                  cardWidth={150}
-                  renderItem={(v)=>{
-                    const owner = Object.values(allUsers).find(u=>u.id===v.userId);
-                    return (
-                      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,
-                        overflow:"hidden",cursor:"pointer"}}
-                        onClick={()=>{
-                          const priv = typeof v.privacy==="string" ? JSON.parse(v.privacy||"{}") : (v.privacy||{});
-                          setPublicV({...v, privacy:{...DEF_PRIVACY,...priv}});
-                          setScreen("public");
-                        }}>
-                        <div style={{height:100,overflow:"hidden",background:"#111",position:"relative",
-                          display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {getCoverImage(v)
-                            ?<img src={getCoverImage(v)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
-                            :<span style={{fontSize:30}}>🏎️</span>}
-                          {(listings[v.id]||[]).length>0&&
-                            <div style={{position:"absolute",bottom:5,left:5,background:C.gold,color:"#0a0a0a",
-                              borderRadius:4,padding:"1px 6px",fontSize:9,fontWeight:800}}>💰 Zum Verkauf</div>}
-                          <button onClick={e=>{e.stopPropagation();toggleFavorite(v.id);}}
-                            style={{position:"absolute",top:5,right:5,background:"rgba(0,0,0,.6)",
-                              border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",
-                              fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",
-                              backdropFilter:"blur(4px)",WebkitTapHighlightColor:"transparent"}}>
-                            {isFavorite(v.id)?"❤️":"🤍"}
-                          </button>
-                        </div>
-                        <div style={{padding:"9px 10px"}}>
-                          <div style={{fontWeight:700,fontSize:15,color:C.white,
-                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                            {v.hersteller} {v.modell}
-                          </div>
-                          <div style={{fontSize:12,color:C.muted,marginTop:2,
-                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                            {v.baujahr}{owner?.name?` · ${owner.name.split(" ")[0]}`:v.ownerName?` · ${v.ownerName}`:""}
-                            {owner?.isAdmin&&<span style={{color:C.gold,fontWeight:700}}> 🏆</span>}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }}/>
-              </div>
-            )}
-
-              {/* ── Zuletzt angesehen ── */}
-              {recentVehicles.length>0&&(
-                <div style={{marginBottom:18}}>
-                  <div style={{fontSize:18,fontWeight:800,color:C.white,letterSpacing:.2,paddingBottom:8,borderBottom:`1px solid ${C.gold}66`,marginBottom:16,lineHeight:1.3,display:"block"}}>🕐 Zuletzt angesehen</div>
-                  <div style={{display:"flex",gap:10,overflowX:"auto",scrollbarWidth:"none",paddingBottom:4,paddingTop:8,
-                    maskImage:recentVehicles.length>2?"linear-gradient(90deg,#000 88%,transparent)":"none",
-                    WebkitMaskImage:recentVehicles.length>2?"linear-gradient(90deg,#000 88%,transparent)":"none"}}>
-                    {recentVehicles.map(rv=>(
-                      <div key={rv.id} style={{flexShrink:0,width:130,position:"relative"}}>
-                        <div
-                          onClick={()=>{
-                            const full = vehicles[rv.id]||DEMO_VEHICLES[rv.id];
-                            if(full){ setPublicV({...full,privacy:{...DEF_PRIVACY,...(full.privacy||{})}}); setScreen("public"); }
-                            else if(rv.qarId){
-                              const DB=window.PCN_DB;
-                              if(DB) DB.vehicles.getPublic(rv.qarId).then(({data})=>{
-                                if(data) setPublicV({...data,privacy:{...DEF_PRIVACY,...(data.privacy||{})}});
-                              });
-                              setScreen("public");
-                            }
-                          }}
-                          style={{cursor:"pointer",borderRadius:10,overflow:"hidden",
-                            border:`1px solid ${C.border}`,background:C.card}}>
-                          <div style={{height:80,overflow:"hidden",background:"#111",position:"relative"}}>
-                            {getCoverImage(rv)
-                              ? <img src={getCoverImage(rv)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.target.style.display="none"}/>
-                              : <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",fontSize:28}}>🚗</div>}
-                            {(listings[rv.id]||[]).length>0&&
-                              <div style={{position:"absolute",bottom:4,left:4,background:C.gold,color:"#0a0a0a",
-                                borderRadius:4,padding:"1px 5px",fontSize:9,fontWeight:800}}>💰 Zum Verkauf</div>}
-                            {/* ✕ sitzt sauber in der oberen rechten Ecke des Bildes */}
-                            <button
-                              onClick={e=>{
-                                e.stopPropagation();
-                                setRecentVehicles(prev=>{
-                                  const updated=prev.filter(v=>v.id!==rv.id);
-                                  store.setItem("pcn_recent_vehicles",JSON.stringify(updated));
-                                  return updated;
-                                });
-                              }}
-                              style={{position:"absolute",top:5,right:5,zIndex:10,
-                                width:22,height:22,borderRadius:"50%",
-                                background:"rgba(0,0,0,.6)",border:"none",backdropFilter:"blur(4px)",
-                                color:"#fff",fontSize:13,fontWeight:900,
-                                cursor:"pointer",display:"flex",alignItems:"center",
-                                justifyContent:"center",lineHeight:1,fontFamily:"sans-serif",
-                                WebkitTapHighlightColor:"transparent"}}>
-                              ✕
-                            </button>
-                          </div>
-                          <div style={{padding:"7px 8px"}}>
-                            <div style={{fontSize:13,fontWeight:700,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rv.hersteller} {rv.modell}</div>
-                            <div style={{fontSize:12,color:C.muted,marginTop:2}}>{rv.kennzeichen||rv.qarId}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    <button onClick={()=>{setRecentVehicles([]);store.removeItem("pcn_recent_vehicles");}}
-                      style={{flexShrink:0,width:44,background:"none",border:`1px dashed ${C.border}`,
-                        borderRadius:10,color:"#555",cursor:"pointer",fontSize:16,minHeight:119,
-                        display:"flex",alignItems:"center",justifyContent:"center"}}
-                      title="Alle entfernen">
-                      🗑
-                    </button>
-                  </div>
-                </div>
-              )}
+            <div className="dash-mob">{renderDashDiscover()}</div>
 
               {/* ── 3. Plattform-Funktionen — nur solange noch etwas gesperrt ist ── */}
               {LOCKED_FEATURES.some(f=>!unlockedFeatures.has(f.id))&&(()=>{
