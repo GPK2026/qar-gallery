@@ -43,6 +43,8 @@
 //     ownerMessage   { briefingId, ref, text }   → { ok }
 //     approvalDecide { briefingId, approvalId, decision:"freigeben"|"ablehnen", limit, note } → { ok }
 //     approvalRevoke { briefingId, approvalId }  → { ok }  (nur solange Werkstatt nicht bestätigt hat)
+//     summary  {}                               → { vehicles: { [vehicleId]: { openFindings, briefingActions } } }
+//              (nur Anzahlen für die roten Punkte in der App — ohne Fotos/Texte)
 //
 // BEAUFTRAGUNG
 //   Verbindlich ist nur die ausdrückliche Freigabe des angemeldeten Eigentümers
@@ -67,7 +69,7 @@ const LIMITS: Record<string, number> = {
   create: 30, list: 240, detail: 240, revoke: 30, extraDecide: 60, transfer: 20,
   get: 600, itemSave: 240, extraAdd: 60, extraDelete: 60, complete: 20,
   message: 120, approvalRequest: 60, approvalWithdraw: 60, approvalAck: 60,
-  ownerMessage: 120, approvalDecide: 60, approvalRevoke: 30,
+  ownerMessage: 120, approvalDecide: 60, approvalRevoke: 30, summary: 600,
 };
 const WINDOW_MS = 60 * 60 * 1000;
 const hits = new Map<string, number[]>();
@@ -350,6 +352,33 @@ Deno.serve(async (req: Request) => {
     // ════════════ Eigentümer (Sitzung) ════════════
     const userId = await verifySession(b.st);
     if (!userId) return json({ error: "Sitzung abgelaufen – bitte einmal ab- und wieder anmelden.", code: "session" }, 401);
+
+    if (action === "summary") {
+      const { data: vs, error: vErr } = await db.from("vehicles").select("id").eq("user_id", userId);
+      if (vErr) throw new Error(vErr.message);
+      const ids = (vs || []).map((v: any) => v.id);
+      const out: Record<string, { openFindings: number; briefingActions: number }> = {};
+      if (!ids.length) return json({ vehicles: out });
+      ids.forEach((id: string) => { out[id] = { openFindings: 0, briefingActions: 0 }; });
+      const { data: fs } = await db.from("vehicle_findings").select("vehicle_id,status").in("vehicle_id", ids);
+      for (const f of fs || []) if (f.status !== "behoben" && out[f.vehicle_id]) out[f.vehicle_id].openFindings++;
+      const { data: bs } = await db.from("repair_briefings")
+        .select("vehicle_id,work,completed_at,logbook_transferred_at,expires_at,revoked_at").in("vehicle_id", ids);
+      const now = Date.now();
+      for (const r of bs || []) {
+        if (r.revoked_at || !out[r.vehicle_id]) continue;
+        const w = r.work || {};
+        let n = 0;
+        if (new Date(r.expires_at).getTime() > now && !r.completed_at) {
+          n += (w.approvals || []).filter((a: any) => a.status === "angefragt").length;
+          n += Object.values(w.threads || {}).filter((t: any) => t.length && t[t.length - 1].from === "werkstatt").length;
+        }
+        n += (w.extras || []).filter((x: any) => !x.decision).length;
+        if (r.completed_at && !r.logbook_transferred_at) n += 1;
+        out[r.vehicle_id].briefingActions += n;
+      }
+      return json({ vehicles: out });
+    }
 
     if (action === "create" || action === "list") {
       const vehicleId = str(b.vehicleId, 100);

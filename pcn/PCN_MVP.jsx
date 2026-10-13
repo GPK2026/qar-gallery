@@ -4986,10 +4986,19 @@ Regeln:
   const [briefingEdit, setBriefingEdit] = useState(null); // Formular
   const [briefingBusy, setBriefingBusy] = useState(false);
   const [briefingResult, setBriefingResult] = useState(null); // {vehicleId, link, label}
+  // Offene Punkte je Fahrzeug (rote Punkte): Mängel offen/beobachten + Briefing-Aktionen
+  const [attention, setAttention] = useState({});
+  const refreshAttention = async () => {
+    const DB = window.PCN_DB; if(!DB || isDemo || !me?.id) return;
+    const {data} = await DB.briefings.summary().catch(()=>({data:null}));
+    if(data) setAttention(data);
+  };
+  useEffect(()=>{ refreshAttention(); }, [me?.id]);
   const loadBriefings = async (vehicleId) => {
     const DB = window.PCN_DB; if(!DB || isDemo) return;
     const {data} = await DB.briefings.list(vehicleId).catch(()=>({data:[]}));
     setBriefings(prev=>({...prev, [vehicleId]: data||[]}));
+    refreshAttention();
   };
   const addFindingVideo = async (file) => {
     const f = findingEdit; if(!f || !file) return;
@@ -5104,6 +5113,7 @@ Regeln:
     const {data, error} = await DB.findings.list(vehicleId).catch(e=>({error:e?.message}));
     if(error){ toast_("Mängelliste konnte nicht geladen werden: "+error,"err"); return; }
     setFindings(prev=>({...prev, [vehicleId]: data||[]}));
+    refreshAttention();
   };
   const saveFinding = async (alsoLogbook) => {
     const f = findingEdit; if(!f) return;
@@ -5130,7 +5140,7 @@ Regeln:
         else setLogbook(prev=>({...prev, [vehicleId]:[...(prev[vehicleId]||[]), le||entry]}));
       } else setLogbook(prev=>({...prev, [vehicleId]:[...(prev[vehicleId]||[]), {...entry,id:"demo_"+Date.now()}]}));
     }
-    setFindingBusy(false); setFindingEdit(null);
+    setFindingBusy(false); setFindingEdit(null); refreshAttention();
     toast_(isDemo ? "Demo: nur lokal gespeichert" : alsoLogbook&&finding.status==="behoben" ? `Gespeichert ✓ und ins Logbuch übernommen (+${POINTS.logbook} Pkt)` : "Gespeichert ✓");
   };
   const deleteFinding = async (vehicleId, id) => {
@@ -5140,10 +5150,21 @@ Regeln:
       if(error){ toast_(error,"err"); return; }
     }
     setFindings(prev=>({...prev, [vehicleId]: (prev[vehicleId]||[]).filter(x=>x.id!==id)}));
-    setFindingEdit(null); toast_("Eintrag gelöscht");
+    setFindingEdit(null); toast_("Eintrag gelöscht"); refreshAttention();
   };
 
   // ── Sprachsteuerung: erkannten Befehl ausführen (nur Navigation/Öffnen) ──
+  const openFindingsOf = vid => findings[vid] ? findings[vid].filter(x=>x.status!=="behoben").length : (attention[vid]?.openFindings||0);
+  const briefingActionsOf = vid => {
+    const list = briefings[vid];
+    if(!list) return attention[vid]?.briefingActions||0;
+    return list.filter(b=>!b.revokedAt).reduce((n,b)=>{
+      const p=b.progress||{}; const live=!b.completedAt && new Date(b.expiresAt)>new Date();
+      return n + (live?(p.approvalsOpen||0)+(p.unanswered||0):0) + (p.extrasOpen||0) + (b.completedAt&&!b.logbookTransferredAt?1:0);
+    },0);
+  };
+  const legalDraftFor = vid => !!legalDraft && (legalDraft.affectedVehicleId===vid || legalDraft.vehicleId===vid);
+  const RedDot = ({title}) => <span title={title} aria-label={title} style={{width:9,height:9,borderRadius:"50%",background:C.red,flexShrink:0,display:"inline-block",boxShadow:`0 0 0 2px ${C.red}33`}}/>;
   const handleVoiceCommand = (said) => {
     const cmd = parseVoiceCommand(said, myVehicles);
     const own = v => v && myVehicles.some(x=>x.id===v.id);
@@ -7785,6 +7806,8 @@ Regeln:
             const sections = [
               {
                 id:"emergency", icon:"🆘", label:"Notfall-, Pannen- & Unfallhilfe", count:emergencyProfiles.length,
+                alert: isOwn && (legalDraftFor(v.id) || (legalCases[v.id]||[]).some(c=>c.status==="error")),
+                alertTitle: legalDraftFor(v.id) ? "Angefangene Unfallmeldung" : "Unfallmeldung noch nicht gesendet",
                 content:(
                   <div>
                     {/* ── Pannenhilfe: schnell griffbereit im Ernstfall ── */}
@@ -8055,7 +8078,9 @@ Regeln:
               },
               ...(isOwn?[{
                 id:"findings", icon:"🔍", label:"Mängel & Feststellungen",
-                count:(findings[v.id]||[]).filter(x=>x.status!=="behoben").length,
+                count:openFindingsOf(v.id),
+                alert: isOwn && (openFindingsOf(v.id)>0 || briefingActionsOf(v.id)>0),
+                alertTitle: [openFindingsOf(v.id)&&`${openFindingsOf(v.id)} offen`, briefingActionsOf(v.id)&&(briefingActionsOf(v.id)===1?"1 Werkstatt-Punkt wartet auf dich":`${briefingActionsOf(v.id)} Werkstatt-Punkte warten auf dich`)].filter(Boolean).join(" · "),
                 content:(()=>{
                   const list=findings[v.id];
                   const open=(list||[]).filter(x=>x.status!=="behoben");
@@ -8244,7 +8269,7 @@ Regeln:
                   ):(
                     <span style={{fontSize:18,flexShrink:0}}>{sec.icon}</span>
                   )}
-                  <span style={{fontWeight:700,fontSize:15,color:C.white,flex:1,textAlign:"left"}}>{sec.label}</span>
+                  <span style={{fontWeight:700,fontSize:15,color:C.white,flex:1,textAlign:"left",display:"flex",alignItems:"center",gap:8}}>{sec.label}{sec.alert&&<RedDot title={sec.alertTitle||"Offene Punkte"}/>}</span>
                   {sec.count>0&&<span style={{background:C.black,borderRadius:99,padding:"2px 8px",fontSize:13,fontWeight:700,color:C.muted,flexShrink:0}}>{sec.count}</span>}
                   <span style={{fontSize:16,color:C.muted,flexShrink:0,transition:"transform .2s",
                     transform:isOpen(v.id,sec.id)?"rotate(180deg)":"rotate(0deg)"}}>▾</span>
@@ -10765,6 +10790,9 @@ Regeln:
                     <div style={{display:"flex",alignItems:"center",gap:5}}>
                       <div style={{fontWeight:700,fontSize:16,color:C.white,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.hersteller} {v.modell}</div>
                       {getVehicleSealStatus(v).earned&&<SealBadge size="sm"/>}
+                      {(()=>{ const nf=openFindingsOf(v.id), nb=briefingActionsOf(v.id), ld=legalDraftFor(v.id);
+                        const parts=[nf&&(nf===1?"1 offener Mangel":`${nf} offene Mängel`), nb&&(nb===1?"1 Werkstatt-Punkt wartet auf dich":`${nb} Werkstatt-Punkte warten auf dich`), ld&&"angefangene Unfallmeldung"].filter(Boolean);
+                        return parts.length ? <RedDot title={parts.join(" · ")}/> : null; })()}
                       {pendingTransferVehicleIds.has(v.id)&&
                         <span title="Übertragungsantrag wartet auf deine Bestätigung"
                           style={{width:9,height:9,borderRadius:"50%",background:C.red,flexShrink:0,boxShadow:`0 0 0 2px ${C.red}33`}}/>}
@@ -10775,6 +10803,7 @@ Regeln:
                     <div style={{display:"flex",gap:8,marginTop:3,alignItems:"center",flexWrap:"wrap"}}>
                       <span style={{fontSize:13,color:C.muted}}>{fmtKz(v.kennzeichen,v.baujahr)} · {v.baujahr}</span>
                       {(logbook[v.id]||[]).length>0&&<span style={{fontSize:12,color:C.green,fontWeight:700}}>📋 {(logbook[v.id]||[]).length}</span>}
+                      {openFindingsOf(v.id)>0&&<span style={{fontSize:12,color:C.red,fontWeight:700}}>🔍 {openFindingsOf(v.id)} offen</span>}
                       {(listings[v.id]||[]).length>0&&
                         <span style={{background:`${C.gold}22`,color:C.gold,borderRadius:4,padding:"1px 6px",fontSize:12,fontWeight:800}}>💰</span>}
                     </div>

@@ -1190,6 +1190,11 @@ const PCN_STORAGE = (() => {
       if(res.error) return { error: res.error };
       return { data: true };
     },
+    async attentionSummary() {
+      const res = await secureApi("summary", { st: sessionToken() }, "repair-briefing");
+      if(res.error) return { error: res.error };
+      return { data: res.data.vehicles||{} };
+    },
     async transferBriefing(briefingId, onSiteDate) {
       const res = await secureApi("transfer", { st: sessionToken(), briefingId, onSiteDate }, "repair-briefing");
       if(res.error) return { error: res.error };
@@ -1932,6 +1937,7 @@ function guard(label, fn){
       detail: (bid) => db.briefingDetail ? db.briefingDetail(bid) : Promise.resolve({data:null}),
       decideExtra: guard("briefings.decideExtra", (bid,xid,dec) => db.decideBriefingExtra(bid,xid,dec)),
       transfer: guard("briefings.transfer", (bid,date) => db.transferBriefing(bid,date)),
+      summary: () => db.attentionSummary ? db.attentionSummary() : Promise.resolve({data:{}}),
       ownerMessage: guard("briefings.ownerMessage", (bid,ref,text) => db.briefingOwnerMessage(bid,ref,text)),
       approvalDecide: guard("briefings.approvalDecide", (bid,aid,dec,limit,note) => db.briefingApprovalDecide(bid,aid,dec,limit,note)),
       approvalRevoke: guard("briefings.approvalRevoke", (bid,aid) => db.briefingApprovalRevoke(bid,aid)),
