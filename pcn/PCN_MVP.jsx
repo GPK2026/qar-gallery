@@ -6497,6 +6497,9 @@ Regeln:
       .veh-mob-only{display:none}
       .veh-col .veh-gallery{padding:0 !important;max-width:none !important;margin:0 0 16px !important;zoom:1 !important}
       .veh-col .veh-hero{height:340px !important}
+      /* Reiter-Spalte läuft beim Scrollen mit; ist sie länger als das Fenster
+         (Reiter aufgeklappt), scrollt sie in sich. */
+      .veh-side{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
       .toast{left:auto;right:32px;bottom:100px;width:420px}
       .voice-fab{bottom:28px !important;right:32px !important}
       .voice-panel{left:auto !important;right:32px !important;width:420px;bottom:96px !important}
@@ -6505,11 +6508,13 @@ Regeln:
        damit die Fläche genutzt wird statt schwarzer Ränder. */
     @media(min-width:1280px){
       .app-main,.veh-grid,.veh-gallery{zoom:1.14}
+      .veh-side{max-height:calc((100vh - 32px) / 1.14)}
       .app-main{max-width:1060px !important}
       .app-main.tab-dashboard,.veh-grid,.veh-gallery{max-width:1120px !important}
     }
     @media(min-width:1680px){
       .app-main,.veh-grid,.veh-gallery{zoom:1.28}
+      .veh-side{max-height:calc((100vh - 32px) / 1.28)}
       .app-main.tab-dashboard,.veh-grid,.veh-gallery{max-width:1160px !important}
     }
     .tog{width:44px;height:24px;border-radius:99px;border:none;cursor:pointer;transition:background .2s;flex-shrink:0;position:relative;background:${C.border}}
@@ -8094,7 +8099,7 @@ Regeln:
 
           <div className="veh-desk-only">{vTermine}{vKontakt}</div>
           </div>
-          <div className="veh-col">
+          <div className="veh-col veh-side">
           {/* ── Fahrzeugspezifische Termine & Erinnerungen ── */}
           <div className="veh-mob-only">{vTermine}</div>
 
