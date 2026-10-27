@@ -84,6 +84,13 @@ const INITIAL={
   dd_status:{},goals_done:{},
   journal:[
     {
+      id:"J_20261027",
+      date:"27. Oktober 2026",
+      type:"milestone",
+      title:"Regulierungsweg nach Unfall: neutrale Fakten statt Verzicht",
+      text:"ANLASS: Berichte über ein Pilotprojekt von Versicherer und Karosserieverband — Haftpflichtschäden bis 3.000 € ohne Gutachter/Anwalt, Werkstatt erhält Pauschale für den Kostenvoranschlag. Kritik: Wer sichert Beweise, wer klärt über Wertminderung und verdeckte Schäden auf?\nUMGESETZT:\n✅ Unfallmeldung: neuer Schritt „Wie soll reguliert werden?“ (nur wenn das Mitglied nicht Verursacher ist) — fünf neutrale Fakten (Gutachter, Wertminderung, verdeckte Schäden, Anwalt, schnelle Abwicklung), Wahl Gutachter / Kostenvoranschlag / Angebot der Versicherung / offen. Wahl wird mitgesendet (accident_reports.settlement_choice) und steht in der PDF-Unfallmappe.\n✅ Klassiker/hochwertig (≥30 Jahre, H-Kennzeichen oder Marktwert ≥50.000 €): Hinweis zur Wertminderung + Verweis auf Logbuch und Mängelliste als Nachweis des Vorzustands.\n✅ Reiter „Gutachten“: Info zu unabhängigen Sachverständigen + Suche in der Nähe.\n✅ Reparatur-Briefing: Werkstatt wird gebeten, verdeckte Schäden vor dem Weiterarbeiten mit Foto zu melden und Mehrkosten freigeben zu lassen.\nGRUNDSATZ: Keine Rechtsberatung (RDG) — Informationen, Entscheidung beim Mitglied. Texte zur Prüfung: B15.",
+    },
+    {
       id:"J_20261013C",
       date:"13. Oktober 2026 · 14:45 Uhr",
       type:"milestone",
@@ -345,6 +352,7 @@ const DD_BIZ=[
   {id:"B12",cat:"Versicherer",sev:"medium",finding:"Ziel: Versicherer als Käufer. Konflikt: debug vertritt Geschädigte gegen Versicherer. Lösung: Unfallmeldung als neutraler, mitgliedseigener Datensatz mit wählbaren Empfängern; Wert für Versicherer = schnelle strukturierte Schadenmeldung + belegte Fahrzeughistorie. Vergütung der Kanzlei pro Fall wegen § 49b BRAO vermutlich unzulässig.",status:"noted"},
   {id:"B13",cat:"Werkstätten",sev:"positive",finding:"Reparatur-Briefing macht Werkstätten zu Nutzern ohne eigenes Konto: Link → Dokumentation → Freigabe mit Kostenrahmen. Ergebnis ist eine von der Werkstatt dokumentierte Fahrzeughistorie mit Vorher/Nachher-Fotos — Wertargument für Wiederverkauf und für Versicherer (B12). Ansatz für späteres B2B-Angebot an Werkstätten.",status:"noted"},
   {id:"B14",cat:"Recht",sev:"high",finding:"Vor Echtbetrieb von debug prüfen lassen: Einwilligungstext Unfallmeldung (Art. 9 DSGVO), Schuldanerkenntnis-Text, Hinweis Europäischer Unfallbericht, Freigabe-Text (Beauftragung mit Kostenrahmen), Hinweise „keine Abnahme“ / „kein Auftrag“, Passus Nutzungsbedingungen (QAR.Gallery nur Übermittler), Datenschutzerklärung (Sprachsteuerung, Werkstatt-Links).",status:"open"},
+  {id:"B15",cat:"Recht",sev:"high",finding:"Von debug prüfen lassen: Texte zum Regulierungsweg in der Unfallmeldung (SETTLEMENT_FACTS/OPTIONS/DISCLAIMER in PCN_MVP.jsx), Info-Karte „Unabhängiger Kfz-Sachverständiger“ (Reiter Gutachten) und Werkstatt-Hinweis zu verdeckten Schäden (briefing.html). Insbesondere: Formulierungen „in der Regel“ zu Kostenübernahme Gutachter/Anwalt, Bagatellgrenze, Wertminderung — keine Rechtsberatung (RDG).",status:"open"},
 ];
 
 const DD_TECH=[

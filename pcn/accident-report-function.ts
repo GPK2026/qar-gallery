@@ -50,6 +50,7 @@ const MAX_BODY_BYTES = 20 * 1024 * 1024;  // 15 Fotos + Unterschrift + Text, bas
 const MAX_PHOTOS = 20; // 15 Unfallfotos + Unterschrift, Skizze, 2 Unterschriften Unfallbericht
 const MAX_PHOTO_BYTES = 3 * 1024 * 1024;
 const LAWYER_SLUG = "debug-anwaelte";
+const SETTLEMENT_CHOICES = ["gutachter", "kostenvoranschlag", "versicherer", "offen"];
 const ROLES = ["geschaedigter", "verursacher", "unklar"];
 // Foto-Kategorien aus dem geführten Ablauf (Reihenfolge = Reihenfolge in der Unfallmappe)
 const PHOTO_CATEGORIES = ["gegner", "unfallstelle", "unfallbericht", "schuldanerkenntnis", "unterschrift", "sonstiges",
@@ -272,6 +273,9 @@ Deno.serve(async (req: Request) => {
         european_report: r.europeanReport === true,
         european_report_data: euData,
         fault_admission: faultAdmission,
+        // Gewünschter Regulierungsweg (Entscheidung des Mitglieds nach neutralen Hinweisen)
+        settlement_choice: SETTLEMENT_CHOICES.includes(r.settlementChoice) ? r.settlementChoice : null,
+        settlement_info_seen_at: r.settlementInfoSeen === true ? new Date().toISOString() : null,
         consent_text: str(r.consentText, 4000),
         consent_given_at: consentAt,
       });

@@ -138,7 +138,7 @@ const LEGAL_OWN_ROLES = [
   { id:"verursacher",   label:"Ich bin Unfallverursacher/in" },
   { id:"unklar",        label:"Noch unklar" },
 ];
-const legalCaseEmpty = () => ({draftId:"D"+Date.now().toString(36),accidentDate:new Date().toISOString().slice(0,10),accidentLocation:"",ownRole:"geschaedigter",description:"",policeInvolved:false,policeReference:"",injuries:false,injuriesDescription:"",otherPartyName:"",otherPartyLicensePlate:"",otherPartyInsurance:"",photos:[],witnesses:[],europeanReport:false,faultAdmission:null,step:0,callbackPhone:"",callbackPreferredTime:"",notes:"",consentGiven:false});
+const legalCaseEmpty = () => ({draftId:"D"+Date.now().toString(36),accidentDate:new Date().toISOString().slice(0,10),accidentLocation:"",ownRole:"geschaedigter",description:"",policeInvolved:false,policeReference:"",injuries:false,injuriesDescription:"",otherPartyName:"",otherPartyLicensePlate:"",otherPartyInsurance:"",photos:[],witnesses:[],europeanReport:false,faultAdmission:null,step:0,callbackPhone:"",callbackPreferredTime:"",notes:"",consentGiven:false,settlementChoice:"offen",settlementInfoSeen:false});
 const LEGAL_MAX_PHOTOS = 15;
 
 // Geführter Ablauf nach einem Unfall (Reihenfolge nach Empfehlung von debug
@@ -152,9 +152,39 @@ const LEGAL_STEPS = [
   { id:"schuld",     title:"Schuldanerkenntnis (optional)" },
   { id:"zeugen",     title:"Zeugen" },
   { id:"hergang",    title:"Was ist passiert?" },
+  { id:"regulierung",title:"Wie soll reguliert werden?" },
   { id:"absenden",   title:"Prüfen und absenden" },
 ];
-const legalStepsFor = f => LEGAL_STEPS.filter(s => s.id!=="schuld" || f.ownRole!=="verursacher");
+// "schuld" und "regulierung" nur, wenn das Mitglied nicht selbst Verursacher ist
+// (dann geht es um Ansprüche gegen die Versicherung des Unfallgegners).
+const legalStepsFor = f => LEGAL_STEPS.filter(s => !["schuld","regulierung"].includes(s.id) || f.ownRole!=="verursacher");
+
+// ── Regulierungsweg: neutrale Hinweise, Entscheidung liegt beim Mitglied ──
+// Keine Rechtsberatung (RDG). TEXTE: rechtliche Prüfung durch debug
+// Rechtsanwälte ausstehend (Dashboard B15).
+const SETTLEMENT_OPTIONS = [
+  { id:"gutachter",         icon:"🔎", label:"Unabhängiger Kfz-Sachverständiger", sub:"Hält Schaden, verdeckte Schäden und Wertminderung unabhängig fest." },
+  { id:"kostenvoranschlag", icon:"🧾", label:"Kostenvoranschlag der Werkstatt", sub:"Schneller – erfasst in der Regel nur die Reparaturkosten." },
+  { id:"versicherer",       icon:"🏢", label:"Angebot der Versicherung", sub:"Z. B. schnelle Abwicklung ohne Gutachter oder Anwalt." },
+  { id:"offen",             icon:"💬", label:"Noch offen – Kanzlei soll mich beraten", sub:"debug Rechtsanwälte besprechen die Wege mit dir." },
+];
+const SETTLEMENT_LABEL = Object.fromEntries(SETTLEMENT_OPTIONS.map(o=>[o.id,o.label]));
+const SETTLEMENT_FACTS = [
+  ["Gutachter","Bei einem unverschuldeten Unfall trägt in der Regel die Haftpflichtversicherung des Unfallgegners die Kosten eines unabhängigen Sachverständigen. Bei kleineren Schäden (Bagatellschäden) kann ein Kostenvoranschlag ausreichen."],
+  ["Wertminderung","Ein Kostenvoranschlag erfasst in der Regel nur die Reparaturkosten. Ob dein Fahrzeug nach dem Unfall weniger wert ist (merkantile Wertminderung), wird dabei meist nicht ermittelt."],
+  ["Verdeckte Schäden","Manche Schäden zeigen sich erst beim Zerlegen. Ein Gutachten hält den Schadensumfang unabhängig fest – das hilft, wenn später Mehrkosten entstehen."],
+  ["Anwalt","Bei einem unverschuldeten Unfall trägt in der Regel auch die Anwaltskosten die Versicherung des Unfallgegners."],
+  ["Schnelle Abwicklung","Angebote der Versicherung zur schnellen Abwicklung können bequem sein. Prüfe vorher, ob dabei Ansprüche wie Wertminderung oder Nutzungsausfall unberücksichtigt bleiben."],
+];
+const SETTLEMENT_DISCLAIMER = "Allgemeine Informationen, keine Rechtsberatung. Die Entscheidung liegt bei dir – du kannst sie mit der Kanzlei besprechen.";
+// Klassiker / hochwertig: Wertminderung und Vorzustand besonders relevant
+const vehicleValueSensitive = v => {
+  if(!v) return false;
+  const y = parseInt(v.baujahr,10);
+  const plate = String(v.kennzeichen||"").replace(/\s|-/g,"");
+  const value = parseFloat(String(v.marktwert||"").replace(/\./g,"").replace(",","."));
+  return (y && new Date().getFullYear()-y>=30) || /\dH$/i.test(plate) || (Number.isFinite(value) && value>=50000);
+};
 const LEGAL_PHOTO_LABEL = {
   gegner:"Fahrzeug des Unfallgegners (mit Kennzeichen)", unfallstelle:"Unfallstelle",
   unfallbericht:"Europäischer Unfallbericht", schuldanerkenntnis:"Schuldanerkenntnis (Papier)",
@@ -708,6 +738,7 @@ const buildLegalCasePdf = async (c, member) => {
   if(!c.policeInvolved) row("Europ. Unfallbericht",c.europeanReportData?(euComplete(c)?"Digital ausgefüllt, von beiden unterschrieben (siehe Anhang)":"Digital erfasst, nicht vollständig unterschrieben (siehe Anhang)"):c.europeanReport?"Ausgefüllt (Foto anbei)":"Nein");
   row("Verletzungen",c.injuries?"Ja":"Nein"); if(c.injuries) row("Verletzungen (Beschr.)",c.injuriesDescription);
   row("Fotos",(c.photos||[]).filter(legalUserPhoto).length+" angehängt");
+  if(c.settlementChoice) row("Gewünschte Regulierung",SETTLEMENT_LABEL[c.settlementChoice]||c.settlementChoice);
   section("Unfallhergang"); para(c.description);
   if(c.otherPartyName||c.otherPartyLicensePlate||c.otherPartyInsurance){
     section("Unfallgegner");
@@ -813,7 +844,7 @@ const caseFromServer = (ref, d) => {
     otherPartyName:op.name||"", otherPartyLicensePlate:op.licensePlate||"", otherPartyInsurance:op.insurance||"",
     callbackPhone:r.callback_phone||"", callbackPreferredTime:r.callback_preferred_time||"", notes:r.notes||"",
     photos:(d.photos||[]).map((url,i)=>({url, category:(r.photo_categories||[])[i]||"sonstiges"})).filter(p=>p.url),
-    witnesses:r.witnesses||[], europeanReport:!!r.european_report, europeanReportData:r.european_report_data||null, faultAdmission:r.fault_admission||null,
+    witnesses:r.witnesses||[], settlementChoice:r.settlement_choice||null, europeanReport:!!r.european_report, europeanReportData:r.european_report_data||null, faultAdmission:r.fault_admission||null,
     consentGivenAt:r.consent_given_at, createdAt:r.created_at,
     status:"server", dispatchStatus:lawyer.status||"queued", dispatchSentAt:lawyer.sent_at||null,
   };
@@ -8552,6 +8583,20 @@ Regeln:
                         </div>
                       ))
                     }
+                    {/* Unabhängige Sachverständige — neutrale Info (Texte: rechtliche Prüfung B15) */}
+                    {isOwn&&(
+                      <div style={{background:C.black,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",marginTop:12}}>
+                        <div style={{fontSize:14,fontWeight:700,color:C.white,marginBottom:4}}>🔎 Unabhängiger Kfz-Sachverständiger</div>
+                        <div style={{fontSize:13,color:C.muted,lineHeight:1.55}}>
+                          Ein unabhängiges Gutachten hält Zustand und Wert deines Fahrzeugs fest – nach einem Unfall auch Schadensumfang, verdeckte Schäden und Wertminderung.
+                          Bei einem unverschuldeten Unfall trägt die Kosten in der Regel die Versicherung des Unfallgegners.
+                          {vehicleValueSensitive(v)&&<> Bei Klassikern und hochwertigen Fahrzeugen erleichtert ein aktuelles Wertgutachten den Nachweis des Vorzustands.</>}
+                        </div>
+                        <a href="https://www.google.com/maps/search/Kfz-Sachverst%C3%A4ndiger" target="_blank" rel="noopener noreferrer"
+                          className="btn ghost sm" style={{display:"inline-block",marginTop:10,textDecoration:"none"}}>Sachverständige in der Nähe finden ↗</a>
+                        <div style={{fontSize:11,color:C.muted,marginTop:8}}>{SETTLEMENT_DISCLAIMER}</div>
+                      </div>
+                    )}
                   </div>
                 )
               },
@@ -9597,6 +9642,7 @@ Regeln:
                 fa?.mode==="digital"&&photosOf("unterschrift").length?"digital unterschrieben":fa?.mode==="papier"&&photosOf("schuldanerkenntnis").length?"auf Papier (Foto)":"keins (optional)"]]:[]),
               ["zeugen","Zeugen",witnesses.some(w=>w.name),`${witnesses.filter(w=>w.name).length} notiert`],
               ["hergang","Unfallhergang",!!f.description.trim(),f.description.trim()?"beschrieben":"fehlt – Pflichtfeld"],
+              ...(steps.some(s=>s.id==="regulierung")?[["regulierung","Regulierungsweg",!!f.settlementInfoSeen,SETTLEMENT_LABEL[f.settlementChoice||"offen"]]]:[]),
             ];
 
             const body = {
@@ -9779,6 +9825,45 @@ Regeln:
                   {f.injuries&&<textarea className="inp" style={inpS} rows={2} placeholder="Wer wurde wie verletzt? (kurz)" value={f.injuriesDescription} onChange={e=>set({injuriesDescription:e.target.value})}/>}
                 </>
               ),
+              regulierung:(()=>{
+                const sensitive = vehicleValueSensitive(av);
+                const nLog = (logbook[av.id]||[]).length, nFind = (findings[av.id]||[]).length;
+                return (
+                <>
+                  <div style={hint}>Bei einem Haftpflichtschaden kannst du wählen, wie der Schaden festgestellt wird. Damit du frei entscheiden kannst, hier die wichtigsten Fakten:</div>
+                  <div style={{...box,padding:"6px 12px"}}>
+                    {SETTLEMENT_FACTS.map(([t,txt],i)=>(
+                      <div key={t} style={{padding:"8px 0",borderBottom:i<SETTLEMENT_FACTS.length-1?`1px solid ${C.border}`:"none"}}>
+                        <div style={{fontSize:13,fontWeight:700,color:C.white,marginBottom:2}}>{t}</div>
+                        <div style={{fontSize:13,color:C.muted,lineHeight:1.5}}>{txt}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {sensitive&&(
+                    <div style={{...box,borderColor:`${C.gold}66`,background:`${C.gold}12`}}>
+                      <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:4}}>🏁 Klassiker oder hochwertiges Fahrzeug</div>
+                      <div style={{fontSize:13,color:C.white,lineHeight:1.5}}>
+                        Hier kann die Wertminderung besonders ins Gewicht fallen. Ein unabhängiges Gutachten hält auch den Zustand vor dem Unfall fest.
+                        {(nLog>0||nFind>0)&&<> Deine Akte belegt den Vorzustand zusätzlich: {[nLog&&`${nLog} Logbuch-Einträge`,nFind&&`${nFind} dokumentierte Mängel/Feststellungen`].filter(Boolean).join(", ")}.</>}
+                      </div>
+                    </div>
+                  )}
+                  <label style={lbl}>Wie möchtest du vorgehen?</label>
+                  {SETTLEMENT_OPTIONS.map(o=>{ const on=(f.settlementChoice||"offen")===o.id && f.settlementInfoSeen; return (
+                    <button key={o.id} type="button" onClick={()=>set({settlementChoice:o.id,settlementInfoSeen:true})}
+                      style={{...choice(on),width:"100%",display:"flex",gap:10,alignItems:"center",textAlign:"left",padding:"10px 12px",marginBottom:6,flex:"none"}}>
+                      <span style={{fontSize:20}}>{o.icon}</span>
+                      <span style={{flex:1,minWidth:0}}>
+                        <span style={{display:"block",fontSize:14,color:C.white}}>{o.label}</span>
+                        <span style={{display:"block",fontSize:12,fontWeight:500,color:C.muted}}>{o.sub}</span>
+                      </span>
+                      {on&&<span style={{color:C.blue,fontSize:16}}>✓</span>}
+                    </button>
+                  );})}
+                  <div style={{fontSize:11,color:C.muted,lineHeight:1.45,marginTop:6}}>{SETTLEMENT_DISCLAIMER}</div>
+                </>
+                );
+              })(),
               absenden:(
                 <>
                   <div style={{...box,padding:"4px 12px"}}>

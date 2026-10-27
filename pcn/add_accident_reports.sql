@@ -84,3 +84,10 @@ alter table public.accident_reports
   add column if not exists member_verified boolean not null default false;
 create index if not exists accident_reports_member_idx
   on public.accident_reports (member_id) where member_verified;
+
+-- 27.10.2026: Gewünschter Regulierungsweg (Gutachter / Kostenvoranschlag /
+-- Angebot der Versicherung / offen) und Zeitpunkt, zu dem die neutralen
+-- Hinweise angezeigt wurden.
+alter table public.accident_reports
+  add column if not exists settlement_choice text,
+  add column if not exists settlement_info_seen_at timestamptz;

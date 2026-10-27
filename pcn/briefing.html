@@ -402,7 +402,8 @@
     function extrasCard(extras, locked){
       var card = el("div",{class:"card"},[
         el("h2",{text:"Zusätzlich festgestellt"}),
-        el("div",{class:"meta",text:"Hinweise an den Eigentümer — kein Auftrag. Ob und was gemacht wird, klären Sie bitte direkt mit dem Eigentümer."})
+        el("div",{class:"meta",text:"Hinweise an den Eigentümer — kein Auftrag. Ob und was gemacht wird, klären Sie bitte direkt mit dem Eigentümer."}),
+        el("div",{class:"meta",style:"margin-top:4px",text:"Verdeckte Schäden beim Zerlegen? Bitte vor dem Weiterarbeiten hier mit Foto festhalten und bei Mehrkosten die Freigabe des Eigentümers anfragen. So ist der Schadensumfang für alle Beteiligten nachvollziehbar dokumentiert."})
       ]);
       if(!extras.length) card.appendChild(el("div",{class:"meta",text:"Keine zusätzlichen Hinweise."}));
       extras.forEach(function(x){
