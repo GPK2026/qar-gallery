@@ -139,6 +139,7 @@
       <div class="nav-item" data-tab="members" onclick="showTab('members')">👥 Mitglieder <span class="nbadge hidden" id="sb-guests"></span></div>
       <div class="nav-item" data-tab="payments" onclick="showTab('payments')">💳 Zahlungen <span class="nbadge hidden" id="sb-pay"></span></div>
       <div class="nav-item" data-tab="points" onclick="showTab('points')">🏆 Punkte</div>
+      <div class="nav-item" data-tab="crm" onclick="showTab('crm')">🤝 CRM</div>
       <div class="nav-sec">Events & Inhalt</div>
       <div class="nav-item" data-tab="events" onclick="showTab('events')">🏁 Events <span class="nbadge hidden" id="sb-ev"></span></div>
       <div class="nav-item" data-tab="messages" onclick="showTab('messages')">💬 Nachrichten <span class="nbadge hidden" id="sb-msg"></span></div>
@@ -151,6 +152,7 @@
       <div id="tab-members" class="hidden"></div>
       <div id="tab-payments" class="hidden"></div>
       <div id="tab-points" class="hidden"></div>
+      <div id="tab-crm" class="hidden"></div>
       <div id="tab-events" class="hidden"></div>
       <div id="tab-messages" class="hidden"></div>
       <div id="tab-content" class="hidden"></div>
@@ -164,6 +166,7 @@
     <button class="tbt" data-tab="payments" onclick="showTab('payments')"><span>💳</span><span>Beiträge</span><span class="tbt-badge hidden" id="tb-pay"></span></button>
     <button class="tbt" data-tab="events" onclick="showTab('events')"><span>🏁</span><span>Events</span><span class="tbt-badge hidden" id="tb-ev"></span></button>
     <button class="tbt" data-tab="points" onclick="showTab('points')"><span>🏆</span><span>Punkte</span></button>
+    <button class="tbt" data-tab="crm" onclick="showTab('crm')"><span>🤝</span><span>CRM</span></button>
     <button class="tbt" data-tab="content" onclick="showTab('content')"><span>📰</span><span>Content</span><span class="tbt-badge hidden" id="tb-leads"></span></button>
     <button class="tbt" data-tab="settings" onclick="showTab('settings')"><span>⚙️</span><span>System</span></button>
   </div>
@@ -379,7 +382,7 @@ function showTab(id){
 function renderTab(id){
   const el=document.getElementById("tab-"+id);
   if(!el||el.classList.contains("hidden")) return;
-  ({dashboard:rDashboard,members:rMembers,payments:rPayments,points:rPoints,events:rEvents,messages:rMessages,content:rContent,settings:rSettings}[id]||function(){})(el);
+  ({dashboard:rDashboard,members:rMembers,payments:rPayments,points:rPoints,events:rEvents,messages:rMessages,content:rContent,settings:rSettings,crm:el=>window.CRM&&window.CRM.render(el)}[id]||function(){})(el);
 }
 
 const fmt=d=>d?new Date(d).toLocaleDateString("de-DE",{day:"2-digit",month:"short",year:"2-digit"}):"—";
@@ -2424,7 +2427,7 @@ async function runFullDiagnostics(){
     // Logbuch
     // Logbuch & Dokumente laufen nur über pcn-secure — mit dem öffentlichen
     // Schlüssel müssen sie gesperrt sein.
-    for(const [tbl,label] of [["logbook","Logbuch"],["vehicle_documents","Dokumentenablage"]]){
+    for(const [tbl,label] of [["logbook","Logbuch"],["vehicle_documents","Dokumentenablage"],["crm_notes","CRM-Notizen"]]){
       const r = await api(`${tbl}?select=id&limit=1`);
       check(r?.error?{}:{error:"mit dem öffentlichen Schlüssel lesbar"}, `${label} gesperrt (nur über pcn-secure)`);
     }
@@ -3174,5 +3177,6 @@ if(sessionStorage.getItem("pcn_adm")==="1"){
   startBackgroundPolling();
 }
 </script>
+<script src="admin_crm.js?v=1793225166"></script>
 </body>
 </html>

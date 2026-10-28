@@ -145,6 +145,12 @@
     dd_status: {},
     goals_done: {},
     journal: [{
+      id: "J_20261028",
+      date: "28. Oktober 2026",
+      type: "milestone",
+      title: "Club-CRM für den Vorstand (Admin-Konsole)",
+      text: "NEU: Reiter „CRM“ in der Admin-Konsole.\n✅ Personen (Mitglieder, Gäste, Werkstätten) mit Phase Kontakt → Gast → Probe-Event → Mitglied → Inaktiv (automatisch aus dem Konto, manuell überschreibbar), Schlagworten, Notizen, Wiedervorlagen und Kontaktverlauf (Registrierung, Fahrzeuge, Event-Anmeldungen, Beitrag, Einwilligungen, letzte Aktivität).\n✅ Wiedervorlagen-Liste (überfällig / heute / demnächst), Partnerliste (Werkstatt, Versicherung, Kanzlei, Gutachter, Sponsor, Händler) mit eigenen Notizen und Wiedervorlagen.\nSICHERHEIT: Eigener Admin-Login (App-Konto mit is_admin), Daten nur über die Edge Function club-crm, Tabellen für den öffentlichen Schlüssel gesperrt. Dabei gefunden und geschlossen: is_admin war mit dem öffentlichen Schlüssel setzbar (T25). Löschen eines Kontos löscht seine CRM-Daten mit."
+    }, {
       id: "J_20261027",
       date: "27. Oktober 2026",
       type: "milestone",
@@ -682,6 +688,12 @@
     sev: "high",
     finding: "Von debug prüfen lassen: Texte zum Regulierungsweg in der Unfallmeldung (SETTLEMENT_FACTS/OPTIONS/DISCLAIMER in PCN_MVP.jsx), Info-Karte „Unabhängiger Kfz-Sachverständiger“ (Reiter Gutachten) und Werkstatt-Hinweis zu verdeckten Schäden (briefing.html). Insbesondere: Formulierungen „in der Regel“ zu Kostenübernahme Gutachter/Anwalt, Bagatellgrenze, Wertminderung — keine Rechtsberatung (RDG).",
     status: "open"
+  }, {
+    id: "B16",
+    cat: "Recht",
+    sev: "high",
+    finding: "Datenschutzerklärung um das Club-CRM ergänzen (Zweck: Mitgliederbetreuung/Vereinsverwaltung, Art. 6 Abs. 1 b/f DSGVO; Kategorien: Notizen, Schlagworte, Wiedervorlagen; Zugriff nur Vorstand; Löschung mit dem Konto) und interne Regel für Notizen festlegen (sachlich, keine Gesundheitsdaten, Auskunftsrecht).",
+    status: "open"
   }];
   const DD_TECH = [{
     id: "T1",
@@ -809,6 +821,18 @@
     sev: "resolved",
     finding: "logbook war mit dem öffentlichen Schlüssel les-, änder- und löschbar (Grundlage für Siegel und Marktwert). Seit 13.10.2026 nur noch über pcn-secure (logList/logAdd): Eigentümer sieht alles, Werkstatt nur eigene Einträge und schreibt nur mit aktivem Zugang. Healthcheck und Admin-Konsole prüfen jetzt, dass die Tabelle gesperrt ist.",
     status: "resolved"
+  }, {
+    id: "T25",
+    cat: "Admin-Rechte",
+    sev: "resolved",
+    finding: "users.is_admin war mit dem öffentlichen Schlüssel änderbar — jeder hätte sich selbst zum Admin machen können. Seit 28.10.2026 setzt der Trigger users_protect_is_admin Änderungen über anon/authenticated zurück; nur Server bzw. Datenbankverwaltung können Admins ernennen.",
+    status: "resolved"
+  }, {
+    id: "T26",
+    cat: "Admin-Konsole",
+    sev: "medium",
+    finding: "Die Admin-Konsole (außer CRM) ist weiterhin nur mit einem im Quelltext stehenden Code geschützt und liest/schreibt mit dem öffentlichen Schlüssel (z. B. Mitgliederliste mit E-Mails, Beiträge). Vorschlag: den Admin-Login des CRM für die ganze Konsole verwenden und die Admin-Aktionen schrittweise über eine Server-Funktion führen.",
+    status: "open"
   }, {
     id: "T21",
     cat: "Edge Functions",

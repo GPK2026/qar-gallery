@@ -84,6 +84,13 @@ const INITIAL={
   dd_status:{},goals_done:{},
   journal:[
     {
+      id:"J_20261028",
+      date:"28. Oktober 2026",
+      type:"milestone",
+      title:"Club-CRM für den Vorstand (Admin-Konsole)",
+      text:"NEU: Reiter „CRM“ in der Admin-Konsole.\n✅ Personen (Mitglieder, Gäste, Werkstätten) mit Phase Kontakt → Gast → Probe-Event → Mitglied → Inaktiv (automatisch aus dem Konto, manuell überschreibbar), Schlagworten, Notizen, Wiedervorlagen und Kontaktverlauf (Registrierung, Fahrzeuge, Event-Anmeldungen, Beitrag, Einwilligungen, letzte Aktivität).\n✅ Wiedervorlagen-Liste (überfällig / heute / demnächst), Partnerliste (Werkstatt, Versicherung, Kanzlei, Gutachter, Sponsor, Händler) mit eigenen Notizen und Wiedervorlagen.\nSICHERHEIT: Eigener Admin-Login (App-Konto mit is_admin), Daten nur über die Edge Function club-crm, Tabellen für den öffentlichen Schlüssel gesperrt. Dabei gefunden und geschlossen: is_admin war mit dem öffentlichen Schlüssel setzbar (T25). Löschen eines Kontos löscht seine CRM-Daten mit.",
+    },
+    {
       id:"J_20261027",
       date:"27. Oktober 2026",
       type:"milestone",
@@ -353,6 +360,7 @@ const DD_BIZ=[
   {id:"B13",cat:"Werkstätten",sev:"positive",finding:"Reparatur-Briefing macht Werkstätten zu Nutzern ohne eigenes Konto: Link → Dokumentation → Freigabe mit Kostenrahmen. Ergebnis ist eine von der Werkstatt dokumentierte Fahrzeughistorie mit Vorher/Nachher-Fotos — Wertargument für Wiederverkauf und für Versicherer (B12). Ansatz für späteres B2B-Angebot an Werkstätten.",status:"noted"},
   {id:"B14",cat:"Recht",sev:"high",finding:"Vor Echtbetrieb von debug prüfen lassen: Einwilligungstext Unfallmeldung (Art. 9 DSGVO), Schuldanerkenntnis-Text, Hinweis Europäischer Unfallbericht, Freigabe-Text (Beauftragung mit Kostenrahmen), Hinweise „keine Abnahme“ / „kein Auftrag“, Passus Nutzungsbedingungen (QAR.Gallery nur Übermittler), Datenschutzerklärung (Sprachsteuerung, Werkstatt-Links).",status:"open"},
   {id:"B15",cat:"Recht",sev:"high",finding:"Von debug prüfen lassen: Texte zum Regulierungsweg in der Unfallmeldung (SETTLEMENT_FACTS/OPTIONS/DISCLAIMER in PCN_MVP.jsx), Info-Karte „Unabhängiger Kfz-Sachverständiger“ (Reiter Gutachten) und Werkstatt-Hinweis zu verdeckten Schäden (briefing.html). Insbesondere: Formulierungen „in der Regel“ zu Kostenübernahme Gutachter/Anwalt, Bagatellgrenze, Wertminderung — keine Rechtsberatung (RDG).",status:"open"},
+  {id:"B16",cat:"Recht",sev:"high",finding:"Datenschutzerklärung um das Club-CRM ergänzen (Zweck: Mitgliederbetreuung/Vereinsverwaltung, Art. 6 Abs. 1 b/f DSGVO; Kategorien: Notizen, Schlagworte, Wiedervorlagen; Zugriff nur Vorstand; Löschung mit dem Konto) und interne Regel für Notizen festlegen (sachlich, keine Gesundheitsdaten, Auskunftsrecht).",status:"open"},
 ];
 
 const DD_TECH=[
@@ -377,6 +385,8 @@ const DD_TECH=[
   {id:"T19",cat:"Abhängigkeiten",sev:"resolved",finding:"Fuhrpark-Tab auf qar.gallery stürzte ab: Recharts-UMD braucht window.PropTypes, das nie geladen wurde. prop-types vor Recharts eingebunden (Okt 2026).",status:"resolved"},
   {id:"T20",cat:"Dokumentenablage",sev:"resolved",finding:"vehicle_documents (Belege der Fahrzeugakte) war mit dem öffentlichen Schlüssel les- und löschbar. Seit 13.10.2026 nur noch über pcn-secure (docList/docUpload/docMarkAnalyzed/docDelete) mit Sitzungs-Token und Eigentümer-Prüfung; anon/authenticated haben keine Rechte mehr.",status:"resolved"},
   {id:"T24",cat:"Service-Logbuch",sev:"resolved",finding:"logbook war mit dem öffentlichen Schlüssel les-, änder- und löschbar (Grundlage für Siegel und Marktwert). Seit 13.10.2026 nur noch über pcn-secure (logList/logAdd): Eigentümer sieht alles, Werkstatt nur eigene Einträge und schreibt nur mit aktivem Zugang. Healthcheck und Admin-Konsole prüfen jetzt, dass die Tabelle gesperrt ist.",status:"resolved"},
+  {id:"T25",cat:"Admin-Rechte",sev:"resolved",finding:"users.is_admin war mit dem öffentlichen Schlüssel änderbar — jeder hätte sich selbst zum Admin machen können. Seit 28.10.2026 setzt der Trigger users_protect_is_admin Änderungen über anon/authenticated zurück; nur Server bzw. Datenbankverwaltung können Admins ernennen.",status:"resolved"},
+  {id:"T26",cat:"Admin-Konsole",sev:"medium",finding:"Die Admin-Konsole (außer CRM) ist weiterhin nur mit einem im Quelltext stehenden Code geschützt und liest/schreibt mit dem öffentlichen Schlüssel (z. B. Mitgliederliste mit E-Mails, Beiträge). Vorschlag: den Admin-Login des CRM für die ganze Konsole verwenden und die Admin-Aktionen schrittweise über eine Server-Funktion führen.",status:"open"},
   {id:"T21",cat:"Edge Functions",sev:"positive",finding:"Sensible Abläufe laufen über drei getrennte Server-Funktionen mit gleichem Sitzungs-Token: pcn-secure (Login, Passwörter, Notfall, Mängel, Video-Upload), accident-report (Unfallfälle, Fall-Token + Konto), repair-briefing (Werkstatt-Link, Freigaben). Trennung schützt den Login vor Änderungen an Nebenfunktionen.",status:"resolved"},
   {id:"T22",cat:"Sprachsteuerung",sev:"info",finding:"Stufe 1 nutzt die Web Speech API des Browsers: Audio geht an Google (Chrome/Android) bzw. Apple (Safari); Firefox ohne Unterstützung (Button ausgeblendet); iOS-Homescreen-App unzuverlässig. Datenschutzhinweis beim ersten Benutzen, in die Datenschutzerklärung aufnehmen.",status:"noted"},
   {id:"T23",cat:"Benachrichtigungen",sev:"medium",finding:"Kein Push/Mail: Rückfragen und Freigabe-Anfragen der Werkstatt, neue Unfallfälle (debug) und Werkstatt-Abschlüsse sieht man nur beim Öffnen der App. Mailversand (Anbieter, Absender-Domain SPF/DKIM) als nächster Infrastruktur-Schritt.",status:"open"},

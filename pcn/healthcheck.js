@@ -172,7 +172,7 @@ async function cleanupOldTestData() {
 
   // Geschützte Tabellen: dürfen mit dem öffentlichen Schlüssel NICHT lesbar
   // sein (Zugriff nur über die Edge Function pcn-secure).
-  for (const t of ["logbook", "vehicle_documents", "user_credentials", "emergency_profiles"]) {
+  for (const t of ["logbook", "vehicle_documents", "user_credentials", "emergency_profiles", "crm_people", "crm_notes", "crm_followups", "crm_partners"]) {
     const r = await q(`${t}?select=*&limit=1`);
     r.error ? ok(`Gesperrt: ${t}`) : bad(`Gesperrt: ${t}`, "mit dem öffentlichen Schlüssel lesbar");
   }
