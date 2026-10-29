@@ -9,11 +9,27 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://www.porsche-club-nuerburgring.de/PorscheClubs/pc_nuerburgring/pc_main.nsf/webclubprofile/ClubProfile/$file/clublogo_og.jpg",
-      "sizes": "600x315",
-      "type": "image/jpeg"
+      "src": "pcn-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "pcn-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "pcn-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["sports", "lifestyle"],
+  "categories": [
+    "sports",
+    "lifestyle"
+  ],
   "lang": "de"
 }
