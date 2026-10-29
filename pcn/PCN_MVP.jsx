@@ -519,7 +519,7 @@ function EuReportEditor({ f, set, setEdit, onClose, onSkip, onPdf, pdfBusy }) {
         </div>
         {body}
         <div style={{position:"sticky",bottom:0,background:C.dark,margin:"14px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
-          {page>0&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} onClick={()=>{setPage(page-1);document.querySelector(".legal-wizard")?.scrollTo?.(0,0);}}>← Zurück</button>}
+          {page>0&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} onClick={()=>{setPage(page-1);document.querySelector(".legal-wizard")?.scrollTo?.(0,0);}}>‹ Zurück</button>}
           {!last&&<button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} onClick={()=>{setPage(page+1);document.querySelector(".legal-wizard")?.scrollTo?.(0,0);}}>Weiter →</button>}
           {last&&<button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} onClick={onClose}>{euComplete(f)?"Fertig ✓":"Speichern & zurück"}</button>}
         </div>
@@ -1710,6 +1710,30 @@ function Carousel({items, renderItem, cardWidth=150, gap=10, emptyState=null}) {
   );
 }
 
+// ── Einheitlicher Zurück-Button ───────────────────────────────────────────
+// Regel: Jede Unterseite hat genau einen Zurück-Button, immer oben links, als
+// Pill "‹ Ziel" (Ziel = Seite, zu der er führt). In Kopfleisten inline;
+// auf Seiten ohne Kopfleiste schwebend (floating), damit er beim Scrollen
+// erreichbar bleibt. Schritt-Zurück in Assistenten bleibt unten.
+function BackButton({onClick, label="Zurück", tone="dark", compact=false, floating=false, shell=false}){
+  const light = tone==="light", glass = floating || tone==="glass";
+  const btn = (
+    <button type="button" onClick={onClick} aria-label={label&&label!=="Zurück"?`Zurück zu ${label}`:"Zurück"}
+      className="hov back-btn"
+      style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:4,height:40,minWidth:40,
+        padding:compact?0:"0 14px 0 10px",borderRadius:20,flexShrink:0,cursor:"pointer",
+        fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:700,whiteSpace:"nowrap",
+        background:light?"#f1f1f3":glass?"rgba(10,10,12,.62)":C.card,
+        backdropFilter:glass?"blur(8px)":undefined,WebkitBackdropFilter:glass?"blur(8px)":undefined,
+        border:`1px solid ${light?"#dcdce0":glass?"rgba(255,255,255,.22)":C.border}`,
+        color:light?"#111":"#fff",boxShadow:floating?"0 4px 14px rgba(0,0,0,.35)":"none"}}>
+      <span aria-hidden="true" style={{fontSize:24,lineHeight:1,marginTop:-3}}>‹</span>
+      {!compact&&<span>{label}</span>}
+    </button>
+  );
+  return floating ? <div className={`back-float${shell?" back-float-shell":""}`}>{btn}</div> : btn;
+}
+
 function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin, onCancel, onViewVehicle, toast_}) {
   const [showCalMenu, setShowCalMenu] = useState(false);
   const [selV, setSelV] = useState(myVehicles[0]?.id||"");
@@ -1735,8 +1759,8 @@ function EventDetail({ev, me, myVehicles, vehicles, participants, onBack, onJoin
   return (
     <div className="vh-screen" style={{background:"transparent",paddingBottom:40,animation:"fadeIn .2s"}}>
       {/* Header */}
-      <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"14px 16px"}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:15,padding:0,marginBottom:10}}>← Events</button>
+      <BackButton floating label="Events" onClick={onBack}/>
+      <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"64px 16px 14px"}}>
         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:6}}>
           <span style={{background:`${C.red}22`,color:C.red,borderRadius:6,padding:"2px 8px",fontSize:12,fontWeight:700}}>{ev.category||"Event"}</span>
           <span style={{background:isPast?"#33333322":days<=7?`${C.amber}22`:`${C.border}22`,
@@ -2058,7 +2082,7 @@ function ChatScreen({thread, me, allUsers, vehicles, onBack, onSend, onMarkRead,
       {/* ── Chat Header ── */}
       <div style={{background:C.dark,borderBottom:`1px solid ${C.border}`,padding:"12px 16px",flexShrink:0}}>
         <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:isClubChannel?6:0}}>
-          <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:22,padding:0,lineHeight:1,flexShrink:0}}>←</button>
+          <BackButton compact label="Chats" onClick={onBack}/>
           {/* Avatar */}
           <div style={{width:44,height:44,borderRadius:isClubChannel?"12px":"50%",
             background:isAdminThread?`${C.gold}22`:isClubChannel?C.red:thread.anonymous?"#1a1a2e":`${C.red}22`,
@@ -6493,6 +6517,8 @@ Regeln:
         transition:outline-color .15s}
     }
     .tab-brand{display:none}
+    .back-float{position:fixed;top:calc(env(safe-area-inset-top, 0px) + 12px);left:12px;z-index:160}
+    @media(min-width:1024px){.back-float{left:24px}.back-float.back-float-shell{left:244px}.veh-grid{margin-top:52px !important}}
     .veh-desk-only{display:none}
     .dash-desk{display:none}
     @media(min-width:1024px){.dash-desk{display:block}}
@@ -6618,11 +6644,7 @@ Regeln:
       {/* ── Back to chat — for guests navigating to splash ── */}
       {me?.role==="guest"&&(
         <div style={{background:C.dark,padding:"10px 16px",display:"flex",alignItems:"center",borderBottom:`1px solid ${C.border}`}}>
-          <button onClick={()=>setScreen("app")}
-            style={{background:"none",border:"none",color:C.red,cursor:"pointer",
-              fontSize:14,fontWeight:700,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:6}}>
-            ← Zurück zum Chat
-          </button>
+          <BackButton label="Chat" onClick={()=>setScreen("app")}/>
         </div>
       )}
 
@@ -6911,13 +6933,7 @@ Regeln:
         </button>
 
         {/* Back to chat — shown when guest navigates to splash from upgrade prompt */}
-        {me?.role==="guest"&&(
-          <button onClick={()=>setScreen("app")}
-            style={{background:"none",border:"none",color:C.muted,cursor:"pointer",
-              fontSize:15,fontFamily:"'Inter',sans-serif",width:"100%",marginTop:8,padding:"8px"}}>
-            ← Zurück zum Chat
-          </button>
-        )}
+        {/* Zurück zum Chat: einheitlich oben links (siehe Kopfleiste) */}
 
         {/* ── Sponsor ── */}
         {SPONSOR&&(
@@ -6971,6 +6987,7 @@ Regeln:
           display:"flex",alignItems:"center",justifyContent:"space-between",
           position:"sticky",top:0,zIndex:50}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {me&&<BackButton tone="light" compact label={viewV?"Akte":"Start"} onClick={()=>setScreen(viewV?"vehicle":"app")}/>}
             <img src={LOGO_SMALL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:34,objectFit:"contain",background:"transparent"}}/>
             <span style={{fontSize:13,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
           </div>
@@ -7293,7 +7310,7 @@ Regeln:
             <div style={{fontSize:9,color:"#333",letterSpacing:.8,marginBottom:4}}>VERIFIZIERT DURCH QAR.GALLERY</div>
             <div style={{fontFamily:"monospace",fontSize:13,color:"#444"}}>{v.qarId}</div>
           </div>
-          {me&&<button className="btn sm ghost" style={{width:"100%",marginTop:10}} onClick={()=>setScreen(viewV?"vehicle":"app")}>← Zurück</button>}
+          {/* Zurück: einheitlich oben links in der Kopfleiste */}
         </div>
 
         {/* ── CONTACT AUTH SHEET — Login/Register/Guest before sending message ── */}
@@ -7601,8 +7618,7 @@ Regeln:
   if(viewNews) return (
     <div style={{position:"fixed",inset:0,background:C.dark,zIndex:300,overflowY:"auto",animation:"slideUp .25s ease"}}>
       <div style={{background:"#fff",borderBottom:`3px solid ${C.red}`,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,position:"sticky",top:0,zIndex:10}}>
-        <button onClick={()=>setViewNews(null)}
-          style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:"#111",padding:"0 4px"}}>←</button>
+        <BackButton tone="light" compact label="Start" onClick={()=>setViewNews(null)}/>
         <div style={{flex:1}}>
           <div style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:900,color:"#111",letterSpacing:.4}}>PCN NÜRBURGRING</div>
           <div style={{fontSize:12,color:"#888"}}>Mitglieder-Information</div>
@@ -7774,13 +7790,7 @@ Regeln:
               </div>
             );
           })()}
-          {/* Overlay buttons on hero */}
-          <div style={{position:"absolute",top:16,left:14,zIndex:5}}>
-            <button onClick={()=>setScreen("app")}
-              style={{background:"rgba(0,0,0,.6)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.2)",borderRadius:10,padding:"9px 14px",color:"#fff",cursor:"pointer",fontSize:15,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
-              ← Zurück
-            </button>
-          </div>
+          {/* Zurück-Button: einheitlich schwebend oben links (siehe BackButton im Akte-Bildschirm) */}
           {!isOwn&&(
             <div style={{position:"absolute",top:16,right:14,zIndex:5}}>
               <button onClick={()=>{setPublicV({...v,privacy:priv});setScreen("public");loadStatusFor(v.id);}}
@@ -7875,6 +7885,7 @@ Regeln:
       <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:"calc(96px + env(safe-area-inset-bottom, 0px))"}}>
         <style>{CSS}</style>
         {!isGuest&&renderTabBar("desk-only")}
+        <BackButton floating shell={!isGuest} label={({dashboard:"Start",events:"Events",community:"Community",messages:"Chats",profile:"Profil"})[tab]||"Zurück"} onClick={()=>setScreen("app")}/>
         {VOICE_ENABLED&&!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
         {bgTheme!=="none"&&BACKGROUND_THEMES[bgTheme]&&<div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:-1,pointerEvents:"none",opacity:BACKGROUND_THEMES[bgTheme].opacity??.65,background:BACKGROUND_THEMES[bgTheme].css,backgroundSize:"cover",backgroundPosition:"center",backgroundRepeat:"no-repeat"}}/>}
         {toast&&<div className={`toast ${toast.type}`}>{toast.msg}</div>}
@@ -9918,7 +9929,7 @@ Regeln:
                 <div style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:C.white,marginBottom:10}}>{step.title}</div>
                 {body}
                 <div style={{position:"sticky",bottom:0,background:C.dark,margin:"14px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
-                  {idx>0&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} onClick={()=>go(idx-1)}>← Zurück</button>}
+                  {idx>0&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} onClick={()=>go(idx-1)}>‹ Zurück</button>}
                   {!last&&<button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} onClick={()=>go(idx+1)}>Weiter →</button>}
                   {last&&<button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} disabled={legalSubmitBusy||!f.description.trim()||!f.consentGiven} onClick={save}>
                     {legalSubmitBusy?"Wird gesendet…":"Ersteinschätzung anfragen"}
@@ -10532,8 +10543,7 @@ Regeln:
       <div className="vh-screen" style={{background:"transparent",paddingBottom:40}}>
         <div style={{position:"sticky",top:0,zIndex:10,background:C.black,borderBottom:`1px solid ${C.border}`,
           padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
-          <button onClick={()=>{setScreen("vehicle");setPhotoManagerVehicle(null);}}
-            style={{background:"none",border:"none",color:C.white,fontSize:20,cursor:"pointer",padding:0}}>←</button>
+          <BackButton label="Akte" onClick={()=>{setScreen("vehicle");setPhotoManagerVehicle(null);}}/>
           <div>
             <div style={{fontFamily:"'Inter',sans-serif",fontSize:21,fontWeight:800,color:C.white}}>Fotos verwalten</div>
             <div style={{fontSize:13,color:C.muted}}>{v.hersteller} {v.modell}</div>
@@ -10755,7 +10765,7 @@ Regeln:
                 </div>
               )}
               <div style={{position:"sticky",bottom:0,background:C.dark,margin:"14px -16px 0",padding:"12px 16px 16px",borderTop:`1px solid ${C.border}`,display:"flex",gap:8}}>
-                {idx>0&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} onClick={()=>go(idx-1)}>← Zurück</button>}
+                {idx>0&&<button type="button" className="btn ghost" style={{flex:1,padding:"12px",fontSize:15}} onClick={()=>go(idx-1)}>‹ Zurück</button>}
                 {!finished&&(
                   <button type="button" className="btn" style={{flex:2,padding:"12px",fontSize:15}} disabled={onboardingBusy}
                     onClick={async()=>{ setOnboardingBusy(true); const ok=await confirmOnboarding(st.id,POINTS.onboarding_step); setOnboardingBusy(false); if(ok) go(idx+1); }}>
