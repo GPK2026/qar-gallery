@@ -837,7 +837,7 @@
     id: "T26",
     cat: "Admin-Konsole",
     sev: "medium",
-    finding: "Die Admin-Konsole (außer CRM) ist weiterhin nur mit einem im Quelltext stehenden Code geschützt und liest/schreibt mit dem öffentlichen Schlüssel (z. B. Mitgliederliste mit E-Mails, Beiträge). Vorschlag: den Admin-Login des CRM für die ganze Konsole verwenden und die Admin-Aktionen schrittweise über eine Server-Funktion führen.",
+    finding: "Teilweise erledigt (29.10.2026): Der Code im Quelltext ist entfernt, die Konsole meldet sich jetzt mit dem App-Konto an und lässt nur Konten mit is_admin herein (gleiche Sitzung wie das CRM). Offen: Die übrigen Admin-Aktionen (Mitgliederliste mit E-Mails, Beiträge, Events, Nachrichten) lesen/schreiben weiterhin mit dem öffentlichen Schlüssel — schrittweise über eine Server-Funktion führen.",
     status: "open"
   }, {
     id: "T21",

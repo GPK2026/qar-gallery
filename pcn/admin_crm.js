@@ -34,11 +34,13 @@
     if(!r.ok) throw new Error(r.data.error || "Fehler");
     return r.data;
   }
+  // Eine Sitzung für Konsole und CRM: Abmelden bzw. abgelaufenes Token
+  // führt zurück zur Anmeldung der Konsole.
   function logout(msg){
     S.st=null; S.name=null; S.data=null; S.detail=null;
-    try{ sessionStorage.removeItem(ST_KEY); sessionStorage.removeItem(NAME_KEY); }catch{}
     if(msg) toast(msg,"err");
-    render();
+    if(typeof doLogout==="function") setTimeout(doLogout, msg?1500:0);
+    else { try{ sessionStorage.removeItem(ST_KEY); sessionStorage.removeItem(NAME_KEY); }catch{} render(); }
   }
   const el = () => document.getElementById("tab-crm");
   function render(){ const t=el(); if(t && !t.classList.contains("hidden")) rCrm(t); }
