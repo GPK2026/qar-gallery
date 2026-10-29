@@ -7872,7 +7872,7 @@ Regeln:
             </div>
           ));
     return (
-      <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:80}}>
+      <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:"calc(96px + env(safe-area-inset-bottom, 0px))"}}>
         <style>{CSS}</style>
         {!isGuest&&renderTabBar("desk-only")}
         {VOICE_ENABLED&&!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
@@ -10702,7 +10702,7 @@ Regeln:
   // MAIN APP TABS
   // ══════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:62}}>
+    <div className="vh-screen app-shell" style={{background:"transparent",paddingBottom:"calc(84px + env(safe-area-inset-bottom, 0px))"}}>
       <style>{CSS}</style>
       {VOICE_ENABLED&&!isGuest&&<VoiceControl onCommand={handleVoiceCommand} bottom={84} toast={toast_}/>}
       {/* ── Geführte Einführung: jeder Schritt mit "Verstanden" bestätigen ── */}
