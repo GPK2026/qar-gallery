@@ -1006,95 +1006,41 @@ const PCN_STORAGE = (() => {
     // Service-Einträge, analog zur Fahrzeugübertragung, aber der Eigentümer
     // (nicht die Werkstatt) legt bei der Bestätigung fest, ob der Zugang nur
     // für den einen Eintrag oder dauerhaft gilt.
-    async requestWorkshopAccess(vehicleId, workshopUserId) {
-      const vRes = await supabase._q("vehicles","?id=eq."+vehicleId+"&select=user_id");
-      if(vRes.error || !vRes.data?.length) return { error: "Fahrzeug nicht gefunden" };
-      const ownerUserId = vRes.data[0].user_id;
-      if(ownerUserId===workshopUserId) return { error: "Dies ist dein eigenes Fahrzeug" };
-      // Verhindert doppelte, gleichzeitig offene Anfragen derselben Werkstatt
-      // fuer dasselbe Fahrzeug.
-      const existing = await supabase._q("workshop_access",
-        "?vehicle_id=eq."+vehicleId+"&workshop_user_id=eq."+workshopUserId+"&status=in.(pending,active)");
-      if(!existing.error && existing.data?.length){
-        const e = existing.data[0];
-        if(e.status==="active") return { error: "Du hast bereits Zugang zu diesem Fahrzeug" };
-        return { error: "Es liegt bereits eine offene Anfrage vor" };
-      }
-      const res = await supabase._post("workshop_access", {
-        vehicle_id: vehicleId, owner_user_id: ownerUserId, workshop_user_id: workshopUserId,
-        status: "pending", requested_at: now(),
-      });
-      if(res.error) return res;
-      return { data: { id: res.data?.id, ownerUserId } };
+    // Zugriff nur über die Edge Function workshop-access (Sitzungs-Token,
+    // Rollenprüfung auf dem Server). Die Tabelle ist für anon gesperrt —
+    // eine Werkstatt kann sich so nicht mehr selbst freischalten. Die
+    // Nutzer-IDs in den Parametern bleiben nur aus Kompatibilität stehen.
+    async requestWorkshopAccess(vehicleId) {
+      const res = await secureApi("request", { st: sessionToken(), vehicleId }, "workshop-access");
+      if(res.error) return { error: res.error };
+      return { data: { id: res.data.id, ownerUserId: res.data.ownerUserId } };
     },
-    async getPendingWorkshopRequestsForOwner(ownerUserId) {
-      // Fuer den roten Punkt am betroffenen Fahrzeug, analog zu
-      // getPendingTransfersForOwner.
-      const res = await supabase._q("workshop_access",
-        "?owner_user_id=eq."+ownerUserId+"&status=eq.pending");
-      if(res.error) return { data: [] };
-      return { data: (res.data||[]).map(r => ({
-        id:r.id, vehicleId:r.vehicle_id, workshopUserId:r.workshop_user_id, requestedAt:r.requested_at,
-      })) };
+    async getPendingWorkshopRequestsForOwner() {
+      const res = await secureApi("pendingForOwner", { st: sessionToken() }, "workshop-access");
+      return { data: res.error ? [] : (res.data.requests||[]) };
     },
     async getActiveWorkshopGrantsForVehicle(vehicleId) {
-      // Zeigt dem Eigentuemer, welche Werkstaetten aktuell Zugang haben —
-      // Grundlage fuer die Widerruf-Uebersicht in der Fahrzeugakte. Laedt
-      // die Werkstatt-Namen direkt mit, da die allgemeine allUsers-Liste
-      // explizit role=member filtert und Werkstattkonten nie enthaelt.
-      const res = await supabase._q("workshop_access",
-        "?vehicle_id=eq."+vehicleId+"&status=eq.active");
-      if(res.error) return { data: [] };
-      const grants = res.data||[];
-      if(!grants.length) return { data: [] };
-      const workshopIds = [...new Set(grants.map(g=>g.workshop_user_id))];
-      const usersRes = await supabase._q("users",
-        "?id=in.("+workshopIds.join(",")+")&select=id,name,workshop_name");
-      const nameById = {};
-      (usersRes.data||[]).forEach(u => { nameById[u.id] = u.workshop_name || u.name; });
-      return { data: grants.map(r => ({
-        id:r.id, workshopUserId:r.workshop_user_id, workshopName:nameById[r.workshop_user_id]||"Werkstatt",
-        scope:r.scope, decidedAt:r.decided_at, usedAt:r.used_at,
-      })) };
+      const res = await secureApi("activeForVehicle", { st: sessionToken(), vehicleId }, "workshop-access");
+      return { data: res.error ? [] : (res.data.grants||[]) };
     },
-    async getMyWorkshopGrants(workshopUserId) {
-      // Fuer die Werkstatt: eigene aktive Zugaenge + offene Anfragen, um zu
-      // wissen, bei welchen Fahrzeugen sie bereits einen Eintrag erstellen
-      // darf, ohne erneut anfragen zu muessen.
-      const res = await supabase._q("workshop_access",
-        "?workshop_user_id=eq."+workshopUserId+"&status=in.(pending,active)");
-      if(res.error) return { data: [] };
-      return { data: (res.data||[]).map(r => ({
-        id:r.id, vehicleId:r.vehicle_id, ownerUserId:r.owner_user_id, status:r.status, scope:r.scope, usedAt:r.used_at,
-      })) };
+    async getMyWorkshopGrants() {
+      const res = await secureApi("mine", { st: sessionToken() }, "workshop-access");
+      return { data: res.error ? [] : (res.data.grants||[]) };
     },
     async decideWorkshopAccess(requestId, ownerUserId, accept, scope) {
-      // Der EIGENTÜMER entscheidet bei der Bestätigung selbst, ob der Zugang
-      // "once" (nur dieser eine Eintrag) oder "ongoing" (dauerhaft, bis
-      // widerrufen) gelten soll — genau wie vom Nutzer vorgegeben.
-      const res = await supabase._q("workshop_access","?id=eq."+requestId);
-      if(res.error || !res.data?.length) return { error: "Anfrage nicht gefunden" };
-      const r = res.data[0];
-      if(r.owner_user_id!==ownerUserId) return { error: "Nur der Fahrzeugeigentümer kann entscheiden" };
-      if(r.status!=="pending") return { error: "Diese Anfrage ist nicht mehr offen" };
-      if(!accept){
-        await supabase._patch("workshop_access","id=eq."+requestId,{status:"declined",decided_at:now()});
-        return { data: { declined:true } };
-      }
-      if(!["once","ongoing"].includes(scope)) return { error: "Bitte Zugangsdauer wählen" };
-      await supabase._patch("workshop_access","id=eq."+requestId,{status:"active",scope,decided_at:now()});
-      return { data: { vehicleId:r.vehicle_id, workshopUserId:r.workshop_user_id, scope } };
+      const res = await secureApi("decide", { st: sessionToken(), requestId, accept: !!accept, scope }, "workshop-access");
+      if(res.error) return { error: res.error };
+      return { data: res.data };
     },
-    async revokeWorkshopAccess(grantId, ownerUserId) {
-      const res = await supabase._q("workshop_access","?id=eq."+grantId+"&select=owner_user_id,status");
-      if(res.error || !res.data?.length) return { error: "Zugang nicht gefunden" };
-      if(res.data[0].owner_user_id!==ownerUserId) return { error: "Nur der Fahrzeugeigentümer kann widerrufen" };
-      return await supabase._patch("workshop_access","id=eq."+grantId,{status:"revoked",revoked_at:now()});
+    async revokeWorkshopAccess(grantId) {
+      const res = await secureApi("revoke", { st: sessionToken(), grantId }, "workshop-access");
+      if(res.error) return { error: res.error };
+      return { data: true };
     },
     async markWorkshopAccessUsed(grantId) {
-      // Bei scope='once' wird der Zugang nach dem einen erstellten
-      // Service-Eintrag automatisch verbraucht.
-      return await supabase._patch("workshop_access","id=eq."+grantId,{status:"revoked",used_at:now()});
+      const res = await secureApi("markUsed", { st: sessionToken(), grantId }, "workshop-access");
+      if(res.error) return { error: res.error };
+      return { data: true };
     },
 
     // ── Notfallprofile (ICE) ──

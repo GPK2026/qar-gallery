@@ -828,6 +828,12 @@
     finding: "users.is_admin war mit dem öffentlichen Schlüssel änderbar — jeder hätte sich selbst zum Admin machen können. Seit 28.10.2026 setzt der Trigger users_protect_is_admin Änderungen über anon/authenticated zurück; nur Server bzw. Datenbankverwaltung können Admins ernennen.",
     status: "resolved"
   }, {
+    id: "T27",
+    cat: "Werkstatt-Zugang",
+    sev: "resolved",
+    finding: "workshop_access war mit dem öffentlichen Schlüssel beschreibbar — eine Werkstatt hätte sich ohne Zustimmung des Eigentümers freischalten und ins Logbuch schreiben können. Seit 29.10.2026 nur noch über die Edge Function workshop-access (Antrag nur als Werkstatt, Entscheidung/Widerruf nur durch den Eigentümer); Tabelle für anon gesperrt.",
+    status: "resolved"
+  }, {
     id: "T26",
     cat: "Admin-Konsole",
     sev: "medium",
