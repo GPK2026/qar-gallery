@@ -2827,6 +2827,14 @@ async function geocodeAddress(query){
 function PCNInner() {
   // ── Core state ──────────────────────────────────────────────────────────────
   const [screen, setScreen]       = useState(()=>window.__PCN_PRELOAD_SESSION__ ? "app" : "splash");
+  // Öffentliche Akte: merken, von wo sie geöffnet wurde (Community, Start, eigene Akte …),
+  // damit "Zurück" genau dorthin führt — nicht in eine zuletzt geöffnete eigene Akte.
+  const [publicReturn, setPublicReturn] = useState("app");
+  const prevScreenRef = useRef(screen);
+  useEffect(()=>{
+    if(screen==="public" && prevScreenRef.current!=="public") setPublicReturn(prevScreenRef.current==="vehicle"?"vehicle":"app");
+    prevScreenRef.current = screen;
+  },[screen]);
   const [tab, setTab]             = useState("dashboard");
   const [favorites, setFavorites] = useState(()=>{
     try{ return JSON.parse(store.getItem("pcn_favorites")||"[]"); }catch(e){ return []; }
@@ -6987,7 +6995,8 @@ Regeln:
           display:"flex",alignItems:"center",justifyContent:"space-between",
           position:"sticky",top:0,zIndex:50}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            {me&&<BackButton tone="light" compact label={viewV?"Akte":"Start"} onClick={()=>setScreen(viewV?"vehicle":"app")}/>}
+            {me&&<BackButton tone="light" compact label={publicReturn==="vehicle"&&viewV?"Akte":(({dashboard:"Start",events:"Events",community:"Community",messages:"Chats",profile:"Profil"})[tab]||"Zurück")}
+              onClick={()=>setScreen(publicReturn==="vehicle"&&viewV?"vehicle":"app")}/>}
             <img src={LOGO_SMALL} alt="PCN" onError={e=>e.target.style.display="none"} style={{height:34,objectFit:"contain",background:"transparent"}}/>
             <span style={{fontSize:13,color:"#888",fontWeight:600}}>Digitale Fahrzeugakte</span>
           </div>
