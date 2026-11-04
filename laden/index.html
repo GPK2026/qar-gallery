@@ -9,8 +9,8 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="apple-mobile-web-app-title" content="Lade-Support">
-<title>Ladesäulen-Support</title>
+<meta name="apple-mobile-web-app-title" content="HAPPY CHARGING">
+<title>HAPPY CHARGING Support</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -31,7 +31,9 @@ button{font:inherit;cursor:pointer;touch-action:manipulation}
 header.top{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:560px;width:100%;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
 footer.bottom{flex:none;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
-.logo .bolt{width:34px;height:34px;border-radius:10px;background:var(--brand);display:grid;place-items:center}
+.logo .bolt{width:26px;height:32px;flex:none}
+.logo span{letter-spacing:.01em}
+.logo span b{font-weight:800;letter-spacing:.02em}
 .station{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
 .station .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .station .id{font-weight:700;font-size:18px;margin:2px 0 4px}
@@ -130,8 +132,8 @@ nav.tabs button{position:relative}
 <div class="app">
   <header class="top">
     <div class="logo">
-      <div class="bolt"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></div>
-      <span id="brandName">Lade-Support</span>
+      <svg class="bolt" viewBox="190 90 800 1000" aria-hidden="true"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>
+      <span id="brandName"><b>HAPPY CHARGING</b> Support</span>
     </div>
     <button class="small-btn" id="langBtn" aria-label="Sprache">EN</button>
   </header>
@@ -262,7 +264,7 @@ const TILE_ORDER=["nostart","abort","card","dispCharger","credit","dispTerminal"
 
 /* ============ TEXTE (DE/EN) ============ */
 const T = {
-  de:{brand:"Lade-Support",station:"Ladestation",tHelp:"Störung",tChat:"Chat",tCall:"Hotline",cp:"Ladepunkt",cpShort:"LP",
+  de:{brand:"<b>HAPPY CHARGING</b> Support",station:"Ladestation",tHelp:"Störung",tChat:"Chat",tCall:"Hotline",cp:"Ladepunkt",cpShort:"LP",
     what:"Was funktioniert nicht?",whatSub:"Tippen Sie auf Ihr Problem – wir lösen es Schritt für Schritt.",
     privacy:"Damit wir helfen können, werden Ihre Auswahl, Chatnachrichten und freiwilligen Angaben zu dieser Ladesäule gespeichert und an unser Service-Team übermittelt.",privacyLink:"Datenschutz",
     back:"‹ Zurück",stepOf:"Schritt {a} von {b}",ok:"✓ Hat geklappt",no:"Hat nicht geholfen",
@@ -280,7 +282,7 @@ const T = {
     chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
     hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
     callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln"},
-  en:{brand:"Charging Support",station:"Charging station",tHelp:"Issue",tChat:"Chat",tCall:"Hotline",cp:"Connector",cpShort:"C",
+  en:{brand:"<b>HAPPY CHARGING</b> Support",station:"Charging station",tHelp:"Issue",tChat:"Chat",tCall:"Hotline",cp:"Connector",cpShort:"C",
     what:"What isn't working?",whatSub:"Tap your issue – we'll solve it step by step.",
     privacy:"To help you, your selections, chat messages and any details you provide about this charger are stored and passed on to our service team.",privacyLink:"Privacy",
     back:"‹ Back",stepOf:"Step {a} of {b}",ok:"✓ That worked",no:"Didn't help",
@@ -594,7 +596,7 @@ function setTab(t, silent){
 document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 function applyLang(){
   document.documentElement.lang=lang;
-  $("#brandName").textContent=tr("brand");
+  $("#brandName").innerHTML=tr("brand");
   $("#langBtn").textContent=lang==="de"?"EN":"DE";
   document.querySelectorAll("[data-i]").forEach(e=>e.textContent=tr(e.dataset.i));
   $("#chatIn").placeholder=tr("chatPh");
