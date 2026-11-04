@@ -129,6 +129,13 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 .rates{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
 .rates input{max-width:110px}
 .rec2{display:flex;gap:8px;align-items:center;padding:8px 0;border-top:1px solid #eef1ef;font-size:14px}.rec2 .sp{flex:1}
+.isum{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:14px}
+.isum-t{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+.isum-t .k{color:var(--muted);font-size:12.5px;font-weight:600}
+.isum-t .v{font-size:24px;font-weight:800;letter-spacing:-.3px;margin-top:3px;font-variant-numeric:tabular-nums}
+.isum-t .s{color:var(--muted);font-size:12px;margin-top:2px}
+.isum-t.open{border-color:#f3c2bc;background:#fff7f6}.isum-t.open .v{color:#b42318}
+.badge.live b{font-variant-numeric:tabular-nums;font-weight:800}
 .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:14px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .kpi .k{color:var(--muted);font-size:12.5px;font-weight:600}
@@ -508,8 +515,27 @@ async function renderAkte(id,box){
 }
 
 /* ---------- Dauer & Zeitstrahl einer Störung ---------- */
+/* Laufzeit-Uhr: „offen seit“ zählt sekündlich hoch */
+const liveFmt=ms=>{ const t=Math.max(0,Math.floor(ms/1000)), d=Math.floor(t/86400), h=Math.floor(t/3600)%24, m=Math.floor(t/60)%60, sec=t%60, p=n=>String(n).padStart(2,"0");
+  return (d?d+" T. ":"")+p(h)+":"+p(m)+":"+p(sec)+(d?"":" h"); };
+setInterval(()=>document.querySelectorAll("[data-since]").forEach(e=>{ e.textContent=liveFmt(Date.now()-+e.dataset.since); }),1000);
 function durBadge(i){ const a=+new Date(i.created_at), b=i.resolved_at?+new Date(i.resolved_at):Date.now(), d=fmtDur(b-a);
-  return i.resolved_at?`<span class="badge" title="von Meldung bis erledigt">✓ ${d}</span>`:`<span class="badge warn" title="seit erster Meldung offen">⏱ ${d}</span>`; }
+  return i.resolved_at?`<span class="badge" title="von Meldung bis erledigt">✓ ${d}</span>`:`<span class="badge warn live" title="seit erster Meldung offen">⏱ offen seit <b data-since="${a}">${liveFmt(b-a)}</b></span>`; }
+function incSummary(list){
+  const now=Date.now(), done=list.filter(i=>i.resolved_at), open=list.filter(i=>!i.resolved_at);
+  const dur=i=>(i.resolved_at?+new Date(i.resolved_at):now)-+new Date(i.created_at);
+  const sum=a=>a.reduce((x,i)=>x+dur(i),0), dd=done.map(dur).sort((a,b)=>a-b);
+  const med=dd.length?(dd.length%2?dd[dd.length>>1]:(dd[dd.length/2-1]+dd[dd.length/2])/2):0;
+  const oldest=open.reduce((m,i)=>Math.min(m,+new Date(i.created_at)),now);
+  const tile=(k,v,s,cls="")=>`<div class="isum-t ${cls}"><div class="k">${k}</div><div class="v">${v}</div>${s?`<div class="s">${s}</div>`:""}</div>`;
+  let h="";
+  if(done.length) h+=tile("✅ Gesamtzeit erledigt (kumuliert)",fmtDur(sum(done)),`${done.length} Störung${done.length>1?"en":""} · Meldung → erledigt`)
+    +tile("Ø je Störung",fmtDur(sum(done)/done.length),`Median ${fmtDur(med)}`)+tile("Längste",fmtDur(dd[dd.length-1]),`kürzeste ${fmtDur(dd[0])}`);
+  if(open.length) h+=tile("⏱ Offen seit (kumuliert)",`<span data-sum-open='${JSON.stringify(open.map(i=>+new Date(i.created_at)))}'>${liveFmt(sum(open))}</span>`,`${open.length} offene Störung${open.length>1?"en":""} zusammen`,"open")
+    +tile("Älteste offen",`<span data-since="${oldest}">${liveFmt(now-oldest)}</span>`,"läuft seit erster Meldung","open");
+  return h?`<div class="isum">${h}</div>`:"";
+}
+setInterval(()=>document.querySelectorAll("[data-sum-open]").forEach(e=>{ const a=JSON.parse(e.dataset.sumOpen), n=Date.now(); e.textContent=liveFmt(a.reduce((x,t)=>x+(n-t),0)); }),1000);
 function incTimeline(i,reports,visits){
   const A=+new Date(i.created_at), done=!!i.resolved_at, B=done?+new Date(i.resolved_at):Date.now(), span=Math.max(60e3,B-A);
   const notes=(i.notes||[]).map(n=>({...n,t:+new Date(n.at)})).sort((x,y)=>x.t-y.t);
@@ -524,7 +550,7 @@ function incTimeline(i,reports,visits){
   const onSite=V.reduce((x,v)=>x+(+v.work_minutes||0),0), vCost=V.reduce((x,v)=>x+(+v.total_cost||0),0);
   ev.sort((x,y)=>x.t-y.t);
   const pos=t=>Math.max(0,Math.min(100,(t-A)/span*100));
-  return `<div class="itl"><div class="tl-head"><div class="tl-big ${done?"ok":"open"}">${done?"✅ Behoben nach":"⏱ Offen seit"} <b>${fmtDur(B-A)}</b></div>
+  return `<div class="itl"><div class="tl-head"><div class="tl-big ${done?"ok":"open"}">${done?`✅ Behoben nach <b>${fmtDur(B-A)}</b>`:`⏱ Offen seit <b data-since="${A}">${liveFmt(B-A)}</b>`}</div>
       ${V.length?`<div class="tl-sub" style="color:#1f5fae">🚐 Reaktionszeit bis vor Ort: <b>${fmtDur(V[0].a-A)}</b> · ⏱ Arbeitszeit vor Ort: <b>${hmin(onSite)}</b> in ${V.length} Einsatz${V.length>1?"en":""} · 💶 ${eur(vCost)}</div>`:(visits?`<div class="tl-sub">Noch kein Einsatz vor Ort dokumentiert</div>`:"")}
       <div class="tl-sub">${work?`Bis „in Bearbeitung“: <b>${fmtDur(tW-A)}</b>${done?` · Bearbeitung bis erledigt: <b>${fmtDur(B-tW)}</b>`:""}`:"Noch nicht auf „in Bearbeitung“ gesetzt"} · ${i.reports}× gemeldet</div></div>
     <div class="tl-bar">
@@ -551,6 +577,7 @@ async function incidentsView(){
     ${datesHTML(IF,"if")}
     <div class="seg" id="imode">${[["open","Offen"],["erledigt","Erledigt"],["all","Alle"]].map(([k,l])=>`<button data-m="${k}" class="${IF.filter===k?"on":""}">${l}</button>`).join("")}</div>
   </div></div>
+  <div id="isumBox"></div>
   <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Vorgang</th><th>Projekt / Standort</th><th>Ladepunkt</th><th>Problem</th><th>Seit</th><th>Dauer</th><th>Meldungen</th><th>Status</th></tr></thead><tbody id="ib"><tr><td colspan="9" class="muted">Lade …</td></tr></tbody></table></div>`;
   wireDates(IF,"if",loadIncidents);
   $("#iSt").onchange=()=>{ IF.station=$("#iSt").value; loadIncidents(); };
@@ -562,6 +589,7 @@ async function loadIncidents(){
   try{
     const r=await api("incidents",{filter:IF.q?"all":IF.filter,q:IF.q,from:IF.from,to:IF.to}), tb=$("#ib"); if(!tb) return;
     if(IF.station&&!IF.q) r.incidents=r.incidents.filter(i=>i.station_id===IF.station);
+    const sb=$("#isumBox"); if(sb) sb.innerHTML=incSummary(r.incidents);
     tb.innerHTML=r.incidents.length?r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
       return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b>${st&&st.address?`<br><small class="muted">${esc(st.address)}</small>`:""}</td>
         <td>${esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td><td>${durBadge(i)}</td>
