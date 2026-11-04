@@ -107,6 +107,28 @@ dt{color:var(--muted)}dd{margin:0}
 .dates input[type=date]{width:auto;padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:13px}
 .dates .chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:5px 10px;font-size:12.5px;font-weight:600;color:var(--muted)}
 .dates .chip.on{border-color:var(--brand);background:var(--brand-soft);color:#08603d}
+.howto-m summary{cursor:pointer;list-style:none;font-size:14.5px}
+.howto-m summary::-webkit-details-marker{display:none}
+.how-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px 18px;margin-top:12px;font-size:13.5px;line-height:1.5;color:#3c4a44}
+.how-grid b{display:block;color:var(--ink);margin-bottom:2px}
+.grid2c{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px}
+.cbars{display:flex;flex-direction:column;gap:8px}
+.cb-row{display:grid;grid-template-columns:130px 1fr 120px;gap:10px;align-items:center;font-size:13px}
+.cb-l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.cb-track{display:flex;height:16px;background:#f2f5f3;border-radius:4px;overflow:hidden}
+.cb-track i{display:block;height:100%}
+.cb-track i+i{border-left:2px solid #fff}
+.cb-v{text-align:right;line-height:1.2}.cb-v small{display:block;color:var(--muted);font-size:11.5px}
+.wbars{display:flex;align-items:flex-end;gap:6px;height:150px;border-bottom:1px solid var(--line);margin-top:22px}
+.wb{flex:1;max-width:46px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+.wb i{display:block;background:#2a78d6;border-radius:3px 3px 0 0;min-height:1px}
+.wb i.t{background:#eb6834;border-radius:3px 3px 0 0;margin-bottom:2px}
+.wb em{position:absolute;top:-16px;left:0;right:0;text-align:center;font-style:normal;font-size:11px;color:var(--muted)}
+.wb span{position:absolute;bottom:-20px;left:-6px;right:-6px;text-align:center;font-size:10.5px;color:var(--muted)}
+table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
+.rates{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.rates input{max-width:110px}
+.rec2{display:flex;gap:8px;align-items:center;padding:8px 0;border-top:1px solid #eef1ef;font-size:14px}.rec2 .sp{flex:1}
 .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:14px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .kpi .k{color:var(--muted);font-size:12.5px;font-weight:600}
@@ -121,8 +143,8 @@ dt{color:var(--muted)}dd{margin:0}
 .tl-sub{color:var(--muted);font-size:13px}
 .tl-bar{position:relative;height:14px;background:#eef2f0;border-radius:7px;margin:10px 8px 4px}
 .tl-bar .seg{position:absolute;top:0;bottom:0;border-radius:7px}
-.tl-bar .seg.neu{background:#f3b4ae}.tl-bar .seg.work{background:#f7d58a}
-.tl-bar .dot{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff;border:3px solid;box-sizing:border-box;cursor:pointer}
+.tl-bar .seg.neu{background:#f3b4ae}.tl-bar .seg.work{background:#f7d58a}.tl-bar .seg.site{background:#2a78d6;top:3px;bottom:3px;z-index:2;border-radius:4px}
+.tl-bar .dot{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff;border:3px solid;box-sizing:border-box;cursor:pointer;z-index:3}
 .tl-bar .now{position:absolute;right:-6px;top:-18px;font-size:11px;color:var(--muted)}
 .tl-ax{display:flex;justify-content:space-between;color:var(--muted);font-size:11.5px;margin:4px 8px 6px}
 .tl-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:8px}
@@ -193,7 +215,7 @@ dt{color:var(--muted)}dd{margin:0}
 <body>
 <header><div class="in">
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="field">Field-Service</button><button data-v="customers">Kunden</button><button data-v="tickets">Besuche</button><button data-v="settings">Einstellungen</button></nav>
+  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="field">Maintenance</button><button data-v="customers">Kunden</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="settings">Einstellungen</button></nav>
   <div class="sp"></div>
   <form id="gsF" class="hidden" autocomplete="off"><input id="gs" type="search" placeholder="🔎 Alles durchsuchen …" title="Volltextsuche: Vorgangsnummer, E-Mail, Telefon, Ladekarte, EVSE-ID, Chat, Beschreibung, Notizen …"></form>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
@@ -259,7 +281,7 @@ function projTiles(openBy,only){ return STATIONS.map((s,i)=>{ if(only&&s.id!==on
     <div class="row"><div class="pid">${esc(s.project_id||s.id)}</div><div class="sp"></div>${o?`<span class="badge warn">⚠ ${o} gestört</span> `:""}${s.active?`<span class="badge">aktiv</span>`:`<span class="badge off">inaktiv</span>`}</div>
     <div style="font-weight:600;margin-top:2px">${esc(s.name||"")}</div><div class="muted">${esc(s.address||"")}</div>
     <div class="row" style="margin-top:10px;gap:6px"><span class="badge amber">${(s.chargers||[]).length} Charger</span><span class="badge amber">${lpCount(s)} Ladepunkte</span>${evseMissing(s)?`<span class="badge warn">${evseMissing(s)} ohne EVSE-ID</span>`:""}</div>
-    <div class="stats"><div><b>${s.stats.visits}</b>Besuche 30 T.</div><div><b>${s.stats.tickets}</b>Meldungen</div><div><b>${s.stats.danger}</b>Gefahr</div></div>
+    <div class="stats"><div><b>${s.stats.visits}</b>QR-Aufrufe 30 T.</div><div><b>${s.stats.tickets}</b>Meldungen</div><div><b>${s.stats.danger}</b>Gefahr</div></div>
   </div>`; }).join("")+(only?`<button class="card pcard newtile" id="allTiles" style="min-height:120px"><span>⟲</span>Alle Projekte anzeigen</button>`:"")+`<button class="card pcard newtile" id="newTile"><span>＋</span>Neues Projekt anlegen</button>`; }
 function wireTiles(root){ root.querySelectorAll(".pcard[data-i]").forEach(c=>c.onclick=()=>{ document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x.dataset.v==="projects")); editView(STATIONS[+c.dataset.i]); });
   const at=root.querySelector("#allTiles"); if(at) at.onclick=()=>{ OF.station=""; const sel=$("#oSt"); if(sel) sel.value=""; loadOverview(); };
@@ -302,7 +324,7 @@ function renderEditor(){
 
   ${!isNew?`<div class="card"><h2>QR-Schild</h2><p class="sub">Ein Schild für den ganzen Standort – der Kunde wählt Charger und Ladepunkt (per EVSE-ID) in der App. Druckfertig als PNG.</p><div class="qr-row" id="qrs"></div></div>`:""}
 
-  ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon Besuche, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
+  ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon QR-Code-Aufrufe, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
   $("#back").onclick=projectsView;
   $("#save").onclick=save;
   $("#addCh").onclick=()=>{ collect(); const n=E.chargers.length+1; E.chargers.push({label:"LS#"+n,model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}); renderEditor(); };
@@ -370,7 +392,7 @@ async function save(){
 async function del(){
   const b=$("#del");
   if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="Wirklich? Nochmal klicken zum Bestätigen"; return; }
-  try{ const r=await api("delete",{id:E.original_id}); toast(r.deactivated?"Projekt deaktiviert (hat Besuche)":"Projekt gelöscht"); projectsView(); }catch(e){ toast(e.message,true); }
+  try{ const r=await api("delete",{id:E.original_id}); toast(r.deactivated?"Projekt deaktiviert (hat QR-Code-Aufrufe)":"Projekt gelöscht"); projectsView(); }catch(e){ toast(e.message,true); }
 }
 // Druckfertiges QR-Schild: Überschrift, Hinweis, QR-Code, Standort-Nummer (ohne URL)
 function renderQRs(){
@@ -405,7 +427,7 @@ const stOf=id=>STATIONS.find(x=>x.id===id);
 let TF={q:"",mode:"all"};
 async function ticketsView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Besuche</h1><p class="sub" style="margin:0">Jeder Besuch über den QR-Code als Protokoll – zum Aufklappen.</p></div></div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>QR-Code-Aufrufe</h1><p class="sub" style="margin:0">Jeder Aufruf der Kunden-Hilfe über den QR-Code am Charger als Protokoll – zum Aufklappen.</p></div></div>
   <div class="card" style="padding:12px 14px"><div class="row">
     <input id="tq" type="search" placeholder="🔎 Vorgangsnummer (ST-…), E-Mail, Telefon, EVSE-ID oder Projekt" style="flex:1;min-width:260px;font-size:15px" value="${esc(TF.q)}">
     ${datesHTML(TF,"tf")}
@@ -460,7 +482,7 @@ async function renderAkte(id,box){
     const ua=s.user_agent||"", dev=/iPhone|iPad/.test(ua)?"iPhone/iPad":/Android/.test(ua)?"Android":/Mac/.test(ua)?"Mac":/Windows/.test(ua)?"Windows":"unbekannt";
     const facts=[["Projekt",esc(st?(st.project_id||st.id):s.station_id)+(st&&st.address?" · "+esc(st.address):"")],["Ladepunkt",esc(cpLabel(st,s.connector))+(evseOf(st,s.connector)?` · <code>${esc(evseOf(st,s.connector))}</code>`:"")],
       ["Beginn",new Date(s.started_at).toLocaleString("de-DE")],["Dauer",dur+" Min. · "+s.event_count+" Schritte"],["Ergebnis",(OUT[s.outcome||"open"]||OUT.open)[0]],
-      ["Vorgänge",(r.tickets||[]).length?r.tickets.map(n=>`<a href="#" class="to-inc" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join(" · "):"–"],["Kontakt",esc(s.contact||"–")],["Sprache / Gerät",(s.lang||"de").toUpperCase()+" · "+dev],["Telegram",s.tg_thread_id?"eigenes Thema #"+s.tg_thread_id:(s.tg_started_at?"gemeldet":"–")],["Besuchs-ID",`<code style="font-size:11px">${esc(s.id)}</code>`]];
+      ["Vorgänge",(r.tickets||[]).length?r.tickets.map(n=>`<a href="#" class="to-inc" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join(" · "):"–"],["Kontakt",esc(s.contact||"–")],["Sprache / Gerät",(s.lang||"de").toUpperCase()+" · "+dev],["Telegram",s.tg_thread_id?"eigenes Thema #"+s.tg_thread_id:(s.tg_started_at?"gemeldet":"–")],["Aufruf-ID",`<code style="font-size:11px">${esc(s.id)}</code>`]];
     box.innerHTML=`<div class="akte-grid">
       <div><h3>Akte</h3><dl>${facts.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
         ${custBox(r.customer, r.events.filter(e=>e.data&&e.data.card).map(e=>e.data.card))}
@@ -488,7 +510,7 @@ async function renderAkte(id,box){
 /* ---------- Dauer & Zeitstrahl einer Störung ---------- */
 function durBadge(i){ const a=+new Date(i.created_at), b=i.resolved_at?+new Date(i.resolved_at):Date.now(), d=fmtDur(b-a);
   return i.resolved_at?`<span class="badge" title="von Meldung bis erledigt">✓ ${d}</span>`:`<span class="badge warn" title="seit erster Meldung offen">⏱ ${d}</span>`; }
-function incTimeline(i,reports){
+function incTimeline(i,reports,visits){
   const A=+new Date(i.created_at), done=!!i.resolved_at, B=done?+new Date(i.resolved_at):Date.now(), span=Math.max(60e3,B-A);
   const notes=(i.notes||[]).map(n=>({...n,t:+new Date(n.at)})).sort((x,y)=>x.t-y.t);
   const work=notes.find(n=>n.status==="in_arbeit"), tW=work?Math.max(A,Math.min(B,work.t)):null;
@@ -496,18 +518,24 @@ function incTimeline(i,reports){
   (reports||[]).slice(1).forEach(e=>ev.push({t:+new Date(e.at),ic:e.type==="incident_plus"?"➕":"🧾",l:e.type==="incident_plus"?"Weiterer Kunde betroffen":"Weitere Meldung",c:"#eb6834"}));
   notes.forEach(n=>ev.push({t:n.t,ic:n.status==="erledigt"?"✅":n.status==="in_arbeit"?"🔧":n.status==="neu"?"↩":"📝",l:(n.status?"Status: "+TST[n.status][0]:"Notiz")+(n.text?" – "+n.text:""),c:n.status==="erledigt"?"#0ca30c":n.status==="in_arbeit"?"#eda100":"#5d6b65"}));
   if(done && !notes.some(n=>n.status==="erledigt")) ev.push({t:B,ic:"✅",l:"Erledigt",c:"#0ca30c"});
+  const V=(visits||[]).filter(v=>v.work_started_at).map(v=>({...v,a:+new Date(v.work_started_at),b:+new Date(v.finished_at)})).sort((x,y)=>x.a-y.a);
+  V.forEach(v=>{ ev.push({t:v.a,ic:"🚐",l:`Vor Ort: ${v.staff_name||""}${v.company?" ("+v.company+")":""} – Arbeitsbeginn`,c:"#2a78d6"});
+    ev.push({t:v.b,ic:"🔧",l:`Einsatz beendet · ${hmin(v.work_minutes)} Arbeitszeit${v.travel_minutes?" · "+hmin(v.travel_minutes)+" Anfahrt":""} · ${eur(v.total_cost)} · ${v.report_no}${v.resolved_ticket?" · erledigt":""}`,c:"#2a78d6"}); });
+  const onSite=V.reduce((x,v)=>x+(+v.work_minutes||0),0), vCost=V.reduce((x,v)=>x+(+v.total_cost||0),0);
   ev.sort((x,y)=>x.t-y.t);
   const pos=t=>Math.max(0,Math.min(100,(t-A)/span*100));
   return `<div class="itl"><div class="tl-head"><div class="tl-big ${done?"ok":"open"}">${done?"✅ Behoben nach":"⏱ Offen seit"} <b>${fmtDur(B-A)}</b></div>
+      ${V.length?`<div class="tl-sub" style="color:#1f5fae">🚐 Reaktionszeit bis vor Ort: <b>${fmtDur(V[0].a-A)}</b> · ⏱ Arbeitszeit vor Ort: <b>${hmin(onSite)}</b> in ${V.length} Einsatz${V.length>1?"en":""} · 💶 ${eur(vCost)}</div>`:(visits?`<div class="tl-sub">Noch kein Einsatz vor Ort dokumentiert</div>`:"")}
       <div class="tl-sub">${work?`Bis „in Bearbeitung“: <b>${fmtDur(tW-A)}</b>${done?` · Bearbeitung bis erledigt: <b>${fmtDur(B-tW)}</b>`:""}`:"Noch nicht auf „in Bearbeitung“ gesetzt"} · ${i.reports}× gemeldet</div></div>
     <div class="tl-bar">
       <i class="seg neu" style="left:0;width:${pos(tW||B)}%" data-tip="Gemeldet, noch nicht in Bearbeitung · ${fmtDur((tW||B)-A)}"></i>
+      ${V.map(v=>`<i class="seg site" style="left:${pos(v.a)}%;width:${Math.max(.6,pos(v.b)-pos(v.a))}%" data-tip="<b>Vor Ort: ${esc(v.staff_name||"")}</b><br>${fmtDT(v.a)} – ${fmtDT(v.b)}<br>Arbeitszeit ${hmin(v.work_minutes)}"></i>`).join("")}
       ${tW?`<i class="seg work" style="left:${pos(tW)}%;width:${pos(B)-pos(tW)}%" data-tip="In Bearbeitung · ${fmtDur(B-tW)}"></i>`:""}
       ${ev.map(e=>`<span class="dot" style="left:${pos(e.t)}%;border-color:${e.c}" data-tip="<b>${esc(e.l)}</b><br>${fmtDT(e.t)}"></span>`).join("")}
       ${done?"":`<span class="now" data-tip="Jetzt">jetzt</span>`}
     </div>
     <div class="tl-ax"><span>${fmtDT(A)}</span><span>${done?fmtDT(B):"jetzt"}</span></div>
-    <div class="tl-legend"><span><b style="background:#f3b4ae"></b>gemeldet, offen</span><span><b style="background:#f7d58a"></b>in Bearbeitung</span><span>Punkte = Ereignisse (Maus drüber)</span></div>
+    <div class="tl-legend"><span><b style="background:#f3b4ae"></b>gemeldet, offen</span><span><b style="background:#f7d58a"></b>in Bearbeitung</span><span><b style="background:#2a78d6"></b>Einsatz vor Ort</span><span>Punkte = Ereignisse (Maus drüber)</span></div>
     <ol class="tl-list">${ev.map(e=>`<li><span class="tl-t">${fmtDT(e.t)}</span><span class="tl-i" style="color:${e.c}">●</span><span>${e.ic} ${esc(e.l)}</span><span class="tl-d">+${fmtDur(e.t-A)}</span></li>`).join("")}</ol>
   </div>`;
 }
@@ -556,12 +584,12 @@ async function renderInc(no,box){
       ["Ladepunkt",esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")+(evseOf(st,i.connector)?` · <code>${esc(evseOf(st,i.connector))}</code>`:"")],["Problem",esc(i.title||"–")],
       ["Erste Meldung",new Date(i.created_at).toLocaleString("de-DE")],["Letzte Meldung",new Date(i.last_report_at).toLocaleString("de-DE")],["Meldungen",i.reports+"×"],
       ["Info-Mail an",(i.subscribers||[]).length?(i.subscribers.map(x=>esc(x.email)).join(", ")):"–"],...(i.resolved_at?[["Erledigt",new Date(i.resolved_at).toLocaleString("de-DE")]]:[])];
-    box.innerHTML=`${incTimeline(i,r.reports)}<div class="akte-grid">
+    box.innerHTML=`<div class="i-tl">${incTimeline(i,r.reports)}</div><div class="akte-grid">
       <div><h3>Störung</h3><dl>${facts.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
         <h3 style="margin-top:16px">Bearbeitung</h3>
         <div class="row"><select class="i-status" style="width:auto">${Object.entries(TST).map(([k,v])=>`<option value="${k}" ${k===i.status?"selected":""}>${v[0]}</option>`).join("")}</select></div>
         <textarea class="i-note" rows="2" placeholder="Interne Notiz (z. B. Techniker beauftragt, Kunde zurückgerufen …)" style="margin-top:8px"></textarea>
-        <div class="row" style="margin-top:8px"><button class="btn sm i-save">Speichern</button><button class="btn ghost sm i-copy">Kopieren</button><button class="btn ghost sm i-sess">Besuche ansehen</button></div>
+        <div class="row" style="margin-top:8px"><button class="btn sm i-save">Speichern</button><button class="btn ghost sm i-copy">Kopieren</button><button class="btn ghost sm i-sess">QR-Aufrufe ansehen</button></div>
         <h3 style="margin-top:16px">Field-Service</h3><div class="i-vis-sum" style="margin-bottom:6px"></div><div class="i-assign"></div><button class="btn ghost sm i-asave" style="margin-top:8px">Sichtbarkeit speichern</button>
         <div class="hint">„Erledigt“: Ladepunkt ist in der App sofort wieder frei${(i.subscribers||[]).length?`, ${i.subscribers.length} Kunde(n) bekommen eine Info-Mail`:""}.</div>
         <div class="notes">${(i.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)}</span>${n.status?` <span class="badge ${TST[n.status][1]==="ok"?"":TST[n.status][1]}">${TST[n.status][0]}</span>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div>
@@ -573,6 +601,7 @@ async function renderInc(no,box){
       if(s2==="erledigt"&&i.status!=="erledigt"&&!confirm(`${i.ticket_no} auf „erledigt“ setzen? Der Ladepunkt wird in der App wieder freigegeben${(i.subscribers||[]).length?" und "+i.subscribers.length+" Kunde(n) per Mail informiert":""}.`)) return;
       const res=await api("update_incident",{ticket_no:no,status:s2,note}); toast(res.informed?`Gespeichert ✓ · ${res.informed} Kunde(n) informiert`:"Gespeichert ✓"); loadIncidents(); }catch(e){ toast(e.message,true); } };
     wireCust(box);
+    (async()=>{ try{ const v=(await fapi("report_list",{q:i.ticket_no})).reports.filter(x=>x.ticket_no===i.ticket_no); const t=box.querySelector(".i-tl"); if(t) t.innerHTML=incTimeline(i,r.reports,v); }catch(e){} })();
     (async()=>{ await ensureStaff(); if(!FVIS||!FVIS.incidents){ try{ FVIS=await fapi("settings_get"); }catch(e){} }
       const ia=box.querySelector(".i-assign"); if(!ia) return; ia.innerHTML=assignHTML(i); wireAssign(ia); box.querySelector(".i-vis-sum").innerHTML=visSummary(i,FVIS&&FVIS.incidents);
       box.querySelector(".i-asave").onclick=async()=>{ try{ const a=readAssign(ia); await fapi("incident_assign",{ticket_no:i.ticket_no,...a}); Object.assign(i,a); box.querySelector(".i-vis-sum").innerHTML=visSummary(i,FVIS&&FVIS.incidents); toast("Sichtbarkeit gespeichert ✓"); }catch(e){ toast(e.message,true); } }; })();
@@ -607,7 +636,7 @@ async function customersView(){
     <button class="btn ghost" id="cTpl">Vorlage (CSV)</button><button class="btn ghost" id="cExp">Export (CSV)</button><button class="btn ghost" id="cImp">CSV importieren</button><button class="btn" id="cNew">+ Kunde</button><input type="file" id="cFile" accept=".csv,text/csv" class="hidden"></div>
   <div id="impBox"></div>
   <div class="card" style="padding:12px 14px"><input id="cq" type="search" style="width:100%;font-size:15px" placeholder="🔎 Name, Firma, E-Mail, Telefon oder Kartennummer" value="${esc(CF.q)}"></div>
-  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Name</th><th>E-Mail / Telefon</th><th>Ladekarten</th><th>Besuche</th><th>Vorgänge</th><th>Letzter Kontakt</th><th>Quelle</th></tr></thead><tbody id="cb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Name</th><th>E-Mail / Telefon</th><th>Ladekarten</th><th>QR-Aufrufe</th><th>Vorgänge</th><th>Letzter Kontakt</th><th>Quelle</th></tr></thead><tbody id="cb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
   let h; $("#cq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ CF.q=$("#cq").value.trim(); loadCustomers(); },300); };
   $("#cNew").onclick=()=>{ const tb=$("#cb"); const tr=document.createElement("tr"); tr.className="akte"; tr.innerHTML=`<td colspan="8"><div class="akte-in"></div></td>`; tb.prepend(tr); renderCust({cards:[],visits:[]},tr.querySelector(".akte-in"),true); };
   $("#cImp").onclick=()=>$("#cFile").click();
@@ -655,7 +684,7 @@ function renderCust(c,box,isNew){
     </div>
     <div><h3>Verlauf</h3><div class="log">${(c.visits||[]).map(v=>{ const st=stOf(v.station_id), o=OUT[v.outcome||"open"]||OUT.open;
       return `<div class="log-i"><span class="lt">${fmtDT(v.started_at)}</span><span class="le"><span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span></span><span class="ld">${esc(st?(st.project_id||st.id):v.station_id)} · ${esc(cpLabel(st,v.connector))}
-        ${v.tickets.map(n=>` · <a href="#" class="to-inc2" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join("")}${v.cards.length?`<br>${v.cards.map(k=>cardCheck(c,k)).join("<br>")}`:""}<br><a href="#" class="to-ses" data-id="${esc(v.id)}">Protokoll öffnen ›</a></span></div>`; }).join("")||'<span class="muted">Noch keine Besuche verknüpft.</span>'}</div></div>
+        ${v.tickets.map(n=>` · <a href="#" class="to-inc2" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join("")}${v.cards.length?`<br>${v.cards.map(k=>cardCheck(c,k)).join("<br>")}`:""}<br><a href="#" class="to-ses" data-id="${esc(v.id)}">Protokoll öffnen ›</a></span></div>`; }).join("")||'<span class="muted">Noch keine QR-Code-Aufrufe verknüpft.</span>'}</div></div>
   </div>`;
   const ed=box.querySelector(".cards-ed");
   const wireRows=()=>ed.querySelectorAll(".k-del").forEach(b=>b.onclick=()=>b.closest(".crow").remove());
@@ -664,7 +693,7 @@ function renderCust(c,box,isNew){
     const cust={id:c.id||null,name:box.querySelector(".f-name").value,company:box.querySelector(".f-company").value,email:box.querySelector(".f-email").value,phone:box.querySelector(".f-phone").value,notes:box.querySelector(".f-notes").value,
       cards:[...ed.querySelectorAll(".crow")].map(r=>({card_no:r.querySelector(".k-no").value,emsp:r.querySelector(".k-emsp").value,status:r.querySelector(".k-st").value})).filter(k=>k.card_no.trim())};
     const r=await api("save_customer",{customer:cust}); toast("Kunde gespeichert ✓"); CF.open=r.customer.id; loadCustomers(); }catch(e){ toast(e.message,true); } };
-  if(box.querySelector(".c-del")) box.querySelector(".c-del").onclick=async()=>{ if(!confirm("Kunde und seine Ladekarten löschen? Besuche bleiben erhalten.")) return; try{ await api("delete_customer",{id:c.id}); toast("Kunde gelöscht"); loadCustomers(); }catch(e){ toast(e.message,true); } };
+  if(box.querySelector(".c-del")) box.querySelector(".c-del").onclick=async()=>{ if(!confirm("Kunde und seine Ladekarten löschen? QR-Code-Aufrufe bleiben erhalten.")) return; try{ await api("delete_customer",{id:c.id}); toast("Kunde gelöscht"); loadCustomers(); }catch(e){ toast(e.message,true); } };
   box.querySelectorAll(".to-inc2").forEach(a=>a.onclick=e=>{ e.preventDefault(); IF.q=a.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
   box.querySelectorAll(".to-ses").forEach(a=>a.onclick=e=>{ e.preventDefault(); TF.q=a.dataset.id; TF.mode="all"; setPreset(TF,"all"); go("tickets"); });
 }
@@ -699,19 +728,19 @@ function importPreview(text,fname){
 const FROLES={technik:"Techniker",fremdfirma:"Servicefirma",reinigung:"Reinigung / Hausmeister",elektro:"Elektrofachkraft",dienstleister:"Dienstleister"};
 const FSCOPE={site:"ganzer Standort",charger:"je Charger",connector:"je Ladepunkt"};
 const FTYPES={check:"OK / Mangel",text:"Text",number:"Zahl / Messwert",photo:"Foto",choice:"Auswahl"};
-let FF={tab:"reports",station:"",checklist:"",result:"",q:"",preset:"",from:"",to:""};
+let FF={tab:"dash",station:"",checklist:"",result:"",q:"",preset:"",from:"",to:""};
 let FCL=[], FSTAFF=[];
 async function fieldView(){
   if(!FF.preset&&!FF.from) setPreset(FF,"30");
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Field-Service</h1><p class="sub" style="margin:0">Techniker, Servicefirmen, Reinigung und Dienstleister melden sich am QR-Code über „Service-Zugang“ mit ihrer PIN an und arbeiten Checklisten ab.</p></div></div>
-  <div class="seg" id="ftab" style="margin-bottom:14px">${[["reports","Protokolle"],["defects","Mängel"],["staff","Mitarbeiter & PINs"],["lists","Checklisten"],["vis","Sichtbarkeit"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Maintenance</h1><p class="sub" style="margin:0">Techniker, Servicefirmen, Reinigung und Dienstleister melden sich am QR-Code über „Service-Zugang“ mit ihrer PIN an, arbeiten Checklisten ab – Arbeitszeit vor Ort, Anfahrt und Material werden je Einsatz erfasst.</p></div></div>
+  <div class="seg" id="ftab" style="margin-bottom:14px">${[["dash","📊 Dashboard"],["reports","Protokolle"],["defects","Mängel"],["staff","Mitarbeiter & PINs"],["lists","Checklisten"],["rates","Sätze & Kosten"],["vis","Sichtbarkeit"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
   <div id="fbody"><div class="muted">Lade …</div></div>`;
   document.querySelectorAll("#ftab button").forEach(b=>b.onclick=()=>{ FF.tab=b.dataset.t; document.querySelectorAll("#ftab button").forEach(x=>x.classList.toggle("on",x===b)); fieldTab(); });
   fieldTab();
 }
 async function fieldTab(){ try{ if(!FCL.length||FF.tab==="lists") FCL=(await fapi("checklist_list")).checklists; }catch(e){ return toast(e.message,true); }
-  ({reports:fReports,defects:fDefects,staff:fStaff,lists:fLists,vis:fVis})[FF.tab](); }
+  ({dash:fDash,reports:fReports,defects:fDefects,staff:fStaff,lists:fLists,rates:fRates,vis:fVis})[FF.tab](); }
 /* Sichtbarkeit: wer im Field-Service eine Störung / einen Mangel sieht */
 async function ensureStaff(){ if(!FSTAFF||!FSTAFF.length){ try{ FSTAFF=(await fapi("staff_list")).staff||[]; }catch(e){ FSTAFF=[]; } } return FSTAFF; }
 function visSummary(o,def){ if(o.field_hidden) return '<span class="badge off">🚫 ausgeblendet</span>';
@@ -772,7 +801,7 @@ async function fReports(){
     <select id="fCl" style="width:auto"><option value="">Alle Checklisten</option>${FCL.map(c=>`<option value="${esc(c.id)}" ${FF.checklist===c.id?"selected":""}>${esc(c.title)}</option>`).join("")}</select>
     <div class="seg" id="fRes">${[["","Alle"],["ok","ohne Mängel"],["maengel","mit Mängeln"]].map(([k,l])=>`<button data-r="${k}" class="${FF.result===k?"on":""}">${l}</button>`).join("")}</div>
     ${datesHTML(FF,"ff")}</div></div>
-  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Zeit</th><th>Protokoll</th><th>Projekt</th><th>Bereich</th><th>Checkliste</th><th>Durchgeführt von</th><th>Ergebnis</th></tr></thead><tbody id="frb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Zeit</th><th>Protokoll</th><th>Projekt</th><th>Bereich</th><th>Checkliste</th><th>Durchgeführt von</th><th>Arbeitszeit</th><th>Kosten</th><th>Ergebnis</th></tr></thead><tbody id="frb"><tr><td colspan="10" class="muted">Lade …</td></tr></tbody></table></div>`;
   let h; $("#fq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ FF.q=$("#fq").value.trim(); loadFR(); },300); };
   $("#fSt").onchange=()=>{ FF.station=$("#fSt").value; loadFR(); }; $("#fCl").onchange=()=>{ FF.checklist=$("#fCl").value; loadFR(); };
   document.querySelectorAll("#fRes button").forEach(b=>b.onclick=()=>{ FF.result=b.dataset.r; document.querySelectorAll("#fRes button").forEach(x=>x.classList.toggle("on",x===b)); loadFR(); });
@@ -782,8 +811,9 @@ async function loadFR(){
   try{ const r=await fapi("report_list",{station:FF.station,checklist:FF.checklist,result:FF.result,q:FF.q,from:FF.from,to:FF.to}), tb=$("#frb"); if(!tb) return;
     tb.innerHTML=r.reports.length?r.reports.map(x=>`<tr class="click" data-id="${esc(x.id)}"><td class="chev">▸</td><td>${fmtDT(x.finished_at)}</td><td><code>${esc(x.report_no)}</code>${x.ticket_no?`<br><small class="muted">${esc(x.ticket_no)}${x.resolved_ticket?" ✓ erledigt":""}</small>`:""}</td>
       <td><b>${esc(stLabel(x.station_id))}</b></td><td>${esc(fWhere(x))}</td><td>${esc(x.checklist_title||"")}</td><td>${esc(x.staff_name||"")}<br><small class="muted">${esc(x.company||"")} · ${esc(FROLES[x.role]||x.role||"")}</small></td>
+      <td>${x.work_minutes!=null?`<b>${hmin(x.work_minutes)}</b>${x.time_corrected?' <span class="badge amber">korr.</span>':""}`:"–"}</td><td>${x.total_cost!=null?eur(x.total_cost):"–"}</td>
       <td><span class="badge ${x.result==="ok"?"":"warn"}">${x.result==="ok"?"✓ ohne Mängel":"⚠ Mängel"}</span></td></tr>
-      <tr class="akte hidden" data-for="${esc(x.id)}"><td colspan="8"><div class="akte-in">Lade …</div></td></tr>`).join(""):`<tr><td colspan="8" class="muted">Keine Protokolle im gewählten Zeitraum.</td></tr>`;
+      <tr class="akte hidden" data-for="${esc(x.id)}"><td colspan="10"><div class="akte-in">Lade …</div></td></tr>`).join(""):`<tr><td colspan="10" class="muted">Keine Protokolle im gewählten Zeitraum.</td></tr>`;
     tb.querySelectorAll("tr.click").forEach(row=>row.onclick=async()=>{ const id=row.dataset.id, ak=tb.querySelector(`tr.akte[data-for="${id}"]`), open=ak.classList.toggle("hidden")===false;
       row.querySelector(".chev").textContent=open?"▾":"▸"; row.classList.toggle("open",open); if(open) renderFR(id,ak.querySelector(".akte-in")); });
   }catch(e){ toast(e.message,true); }
@@ -791,12 +821,18 @@ async function loadFR(){
 async function renderFR(id,box){
   try{ const r=(await fapi("report_get",{id})).report, st=stOf(r.station_id);
     const val=a=>a.type==="check"?(a.na?'<span class="muted">n. a.</span>':a.ok===true?'<span class="chk-ok">✓ in Ordnung</span>':a.ok===false?'<span class="chk-bad">✗ Mangel</span>':"–"):a.type==="photo"?(a.photo_url?"":"–"):esc(a.value??"–");
-    const dur=r.started_at?fmtDur(new Date(r.finished_at)-new Date(r.started_at)):"–";
+    const tm=d=>new Date(d).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
     box.innerHTML=`<div class="akte-grid"><div><h3>Protokoll</h3><dl>
       <dt>Nummer</dt><dd><code>${esc(r.report_no)}</code></dd><dt>Projekt</dt><dd>${esc(stLabel(r.station_id))}${st&&st.address?" · "+esc(st.address):""}</dd><dt>Bereich</dt><dd>${esc(fWhere(r))}</dd>
       <dt>Checkliste</dt><dd>${esc(r.checklist_title)}</dd><dt>Durchgeführt</dt><dd>${esc(r.staff_name)}${r.company?" · "+esc(r.company):""}<br><small class="muted">${esc(FROLES[r.role]||"")}</small></dd>
-      <dt>Abgeschlossen</dt><dd>${new Date(r.finished_at).toLocaleString("de-DE")}</dd><dt>Dauer</dt><dd>${dur}</dd>
+      <dt>Abgeschlossen</dt><dd>${new Date(r.finished_at).toLocaleString("de-DE")}</dd>
       ${r.ticket_no?`<dt>Störung</dt><dd><a href="#" class="to-inc3" data-no="${esc(r.ticket_no)}"><code>${esc(r.ticket_no)}</code></a>${r.resolved_ticket?" – vor Ort erledigt":""}</dd>`:""}</dl>
+      <h3 style="margin-top:14px">⏱ Zeit &amp; Kosten</h3><dl>
+        <dt>Vor Ort</dt><dd>${r.work_started_at?new Date(r.work_started_at).toLocaleDateString("de-DE")+" · "+tm(r.work_started_at)+" – "+tm(r.finished_at):"–"}</dd>
+        <dt>Arbeitszeit</dt><dd><b>${hmin(r.work_minutes)}</b>${r.pause_minutes?` <span class="muted">(${r.pause_minutes} Min. Pause abgezogen)</span>`:""}${r.time_corrected?`<br><span class="badge amber">korrigiert</span> gemessen ${hmin(r.measured_minutes)} – ${esc(r.time_note||"")}`:""}</dd>
+        <dt>Anfahrt</dt><dd>${r.travel_minutes?hmin(r.travel_minutes):"–"}${r.km?" · "+(+r.km).toLocaleString("de-DE")+" km":""}</dd>
+        ${r.material_text||r.material_cost?`<dt>Material</dt><dd>${esc(r.material_text||"")}${r.material_cost?" · "+eur(r.material_cost):""}</dd>`:""}
+        <dt>Kosten</dt><dd><b>${eur(r.total_cost)}</b><br><small class="muted">Arbeit ${eur(r.labor_cost)} · Anfahrt ${eur(r.travel_cost)}${r.material_cost?" · Material "+eur(r.material_cost):""} · Satz ${eur(r.hourly_rate)}/h${r.km_rate?" · "+eur(r.km_rate)+"/km":""}</small></dd></dl>
       ${r.notes?`<h3 style="margin-top:14px">Bemerkung</h3><div>${esc(r.notes)}</div>`:""}
       <div class="row" style="margin-top:12px"><button class="btn ghost sm fr-copy">Kopieren</button></div></div>
       <div><h3>Prüfpunkte</h3><div class="log">${r.answers.map(a=>`<div class="log-i" style="grid-template-columns:1fr auto"><span>${esc(a.text)}${a.note?`<br><span class="chk-bad" style="font-weight:500">${esc(a.note)}</span>`:""}${a.photo_url?`<br><a href="${esc(a.photo_url)}" target="_blank" rel="noopener"><img src="${esc(a.photo_url)}" style="width:140px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--line);margin-top:6px"></a>`:""}</span><span style="white-space:nowrap">${val(a)}</span></div>`).join("")}</div></div></div>`;
@@ -806,12 +842,125 @@ async function renderFR(id,box){
       try{ await navigator.clipboard.writeText(t); e.target.textContent="Kopiert ✓"; }catch(err){ toast("Kopieren nicht möglich",true); } };
   }catch(e){ box.innerHTML=`<span class="muted">${esc(e.message)}</span>`; }
 }
+/* ---------- Maintenance-Dashboard: Zeiten & Wirtschaftlichkeit ---------- */
+const eur=n=>(+n||0).toLocaleString("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:(+n||0)>=1000?0:2});
+const hmin=m=>{ m=Math.round(+m||0); return m<60?m+" Min.":Math.floor(m/60)+":"+String(m%60).padStart(2,"0")+" h"; };
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const median=a=>{ if(!a.length) return null; const s=[...a].sort((x,y)=>x-y), m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+let MD_HOW=(()=>{ try{ return localStorage.getItem("hc_md_how")!=="0"; }catch(e){ return true; } })();
+async function fDash(){
+  $("#fbody").innerHTML=`<div class="card" style="padding:12px 14px"><div class="row">
+    <select id="mdSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${FF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select>
+    ${datesHTML(FF,"md")}<div class="sp"></div><button class="btn ghost sm" id="mdRates">€ Stundensätze</button><button class="btn ghost sm" id="mdCsv">⬇ Einsätze CSV</button></div></div>
+  <details class="card howto-m" id="mdHow" ${MD_HOW?"open":""}><summary><b>ⓘ So wird gemessen</b> <span class="muted">– Definitionen aller Kennzahlen</span></summary>
+    <div class="how-grid">
+      <div><b>⏱ Arbeitszeit vor Ort</b>Startet automatisch, wenn die Person am Charger die Checkliste in der Service-App öffnet, und endet mit „Protokoll abschließen“. Pausen (⏸ in der App) werden abgezogen. Korrigiert jemand die Zeit, ist eine Begründung Pflicht – die gemessene Zeit bleibt gespeichert und der Einsatz ist mit <span class="badge amber">korrigiert</span> markiert.</div>
+      <div><b>🚐 Reaktionszeit</b>Erste Kundenmeldung einer Störung → Arbeitsbeginn des ersten Einsatzes vor Ort zu diesem Ticket.</div>
+      <div><b>🎫 Ticket-Bearbeitungszeit</b>Erste Kundenmeldung → Status „erledigt“ (egal ob vor Ort oder im Dashboard erledigt). Enthält Wartezeit, Anfahrt und Arbeit.</div>
+      <div><b>💶 Kosten je Einsatz</b>Arbeitszeit × Stundensatz + Anfahrtszeit × Stundensatz + km × km-Satz + Material. Stundensatz: individuell je Person, sonst Satz der Rolle (Reiter „Sätze & Kosten“). Der Satz wird beim Abschluss eingefroren.</div>
+      <div><b>🎯 First-Time-Fix</b>Anteil der vor Ort erledigten Störungen, die mit genau einem Einsatz behoben wurden.</div>
+      <div><b>⚠ Mängelquote · Fällige Prüfungen</b>Anteil der Protokolle mit mindestens einem Mangel · Checklisten mit Intervall, die am Standort überfällig oder noch nie gemacht sind.</div>
+    </div></details>
+  <div id="mdBody"><div class="muted">Lade …</div></div>`;
+  $("#mdHow").addEventListener("toggle",()=>{ MD_HOW=$("#mdHow").open; try{ localStorage.setItem("hc_md_how",MD_HOW?"1":"0"); }catch(e){} });
+  $("#mdSt").onchange=()=>{ FF.station=$("#mdSt").value; loadDash(); };
+  $("#mdRates").onclick=()=>{ FF.tab="rates"; document.querySelectorAll("#ftab button").forEach(x=>x.classList.toggle("on",x.dataset.t==="rates")); fieldTab(); };
+  wireDates(FF,"md",loadDash); loadDash();
+}
+let MD=null, MD_REQ=0;
+async function loadDash(){
+  const req=++MD_REQ, box=$("#mdBody"); if(!box) return;
+  try{ const d=await fapi("economics",{station:FF.station,from:FF.from,to:FF.to}); if(req!==MD_REQ) return; MD=d; renderDash(d); }
+  catch(e){ if(box) box.innerHTML=`<div class="card muted">${esc(e.message)}</div>`; }
+}
+function renderDash(d){
+  const box=$("#mdBody"); if(!box) return;
+  const R=d.reports, I=d.incidents;
+  const sum=(a,k)=>a.reduce((x,r)=>x+(+r[k]||0),0);
+  const work=sum(R,"work_minutes"), travel=sum(R,"travel_minutes"), km=sum(R,"km");
+  const labor=sum(R,"labor_cost"), trav=sum(R,"travel_cost"), mat=sum(R,"material_cost"), total=sum(R,"total_cost");
+  const corrected=R.filter(r=>r.time_corrected).length, defects=R.filter(r=>r.result==="maengel").length;
+  const days=Math.max(1,Math.round(((d.to?Date.parse(d.to):Date.now())-Date.parse(d.from))/864e5)), months=days/30.44;
+  const cps=d.stations.reduce((x,s)=>x+(s.connectors||0),0);
+  // Störungen: Reaktion / Ticketzeit / First-Time-Fix
+  const byT={}; for(const v of d.ticket_reports) (byT[v.ticket_no]=byT[v.ticket_no]||[]).push(v);
+  const react=[], tix=[]; let fixField=0, ftf=0;
+  for(const i of I){ const vs=(byT[i.ticket_no]||[]).filter(v=>v.work_started_at).sort((a,b)=>Date.parse(a.work_started_at)-Date.parse(b.work_started_at));
+    if(vs.length) react.push(Date.parse(vs[0].work_started_at)-Date.parse(i.created_at));
+    if(i.resolved_at) tix.push(Date.parse(i.resolved_at)-Date.parse(i.created_at));
+    if(vs.some(v=>v.resolved_ticket)){ fixField++; if(vs.length===1) ftf++; } }
+  const openInc=I.filter(i=>i.status!=="erledigt").length;
+  const k=(lbl,val,sub,cls="",tip="")=>`<div class="kpi ${cls}" ${tip?`data-tip="${esc(tip)}"`:""}><div class="k">${lbl}</div><div class="v">${val}</div><div class="s">${sub}</div></div>`;
+  const ms=x=>x==null?"–":fmtDur(x);
+  // Gruppierungen
+  const grp=(keyFn)=>{ const m={}; for(const r of R){ const key=keyFn(r); const g=m[key]=m[key]||{key,n:0,work:0,labor:0,travel:0,mat:0,total:0}; g.n++; g.work+=+r.work_minutes||0; g.labor+=+r.labor_cost||0; g.travel+=+r.travel_cost||0; g.mat+=+r.material_cost||0; g.total+=+r.total_cost||0; } return Object.values(m).sort((a,b)=>b.total-a.total); };
+  const byProj=grp(r=>stLabel(r.station_id)), byWho=grp(r=>(r.company||FROLES[r.role]||r.role||"–")), byCl=grp(r=>r.checklist_title||"–");
+  const stack=(rows,showN)=>{ const max=Math.max(1,...rows.map(g=>g.total)); return rows.length?`<div class="cbars">${rows.slice(0,12).map(g=>`<div class="cb-row"><span class="cb-l" title="${esc(g.key)}">${esc(g.key)}</span>
+      <span class="cb-track">${[["labor","#2a78d6","Arbeit"],["travel","#eb6834","Anfahrt"],["mat","#1baf7a","Material"]].map(([f,c,l])=>g[f]>0?`<i style="width:${g[f]/max*100}%;background:${c}" data-tip="<b>${esc(g.key)}</b><br>${l}: ${eur(g[f])}"></i>`:"").join("")}</span>
+      <span class="cb-v"><b>${eur(g.total)}</b><small>${g.n} Eins. · ${hmin(g.work)}</small></span></div>`).join("")}</div>
+    <div class="tl-legend" style="margin-top:8px"><span><b style="background:#2a78d6"></b>Arbeit</span><span><b style="background:#eb6834"></b>Anfahrt</span><span><b style="background:#1baf7a"></b>Material</span></div>`:`<div class="muted">Keine Einsätze im Zeitraum.</div>`; };
+  // Arbeitsstunden je Woche
+  const wk={}; const wkKey=t=>{ const x=new Date(t); const day=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return isoD(x); };
+  for(const r of R){ const kk=wkKey(r.work_started_at||r.finished_at); const g=wk[kk]=wk[kk]||{work:0,travel:0,n:0}; g.work+=+r.work_minutes||0; g.travel+=+r.travel_minutes||0; g.n++; }
+  const wks=Object.keys(wk).sort(), wmax=Math.max(1,...wks.map(x=>wk[x].work+wk[x].travel));
+  box.innerHTML=`<div class="kpis">
+      ${k("Einsätze vor Ort",R.length,`${defects} mit Mängeln · ${corrected} Zeit korrigiert`,"","Abgeschlossene Protokolle im Zeitraum")}
+      ${k("Arbeitszeit vor Ort",hmin(work),`Ø ${R.length?hmin(work/R.length):"–"} je Einsatz`,"","Summe gemessener (bzw. begründet korrigierter) Arbeitszeit, ohne Pausen")}
+      ${k("Anfahrt",hmin(travel),`${Math.round(km).toLocaleString("de-DE")} km`)}
+      ${k("Kosten gesamt",eur(total),`Arbeit ${eur(labor)} · Anfahrt ${eur(trav)} · Material ${eur(mat)}`)}
+      ${k("Kosten je Ladepunkt / Monat",cps?eur(total/cps/months):"–",`${cps} Ladepunkte · ${days} Tage`,"","Gesamtkosten ÷ Ladepunkte ÷ Monate im Zeitraum")}
+      ${k("Ø Reaktionszeit",ms(avg(react)),`Median ${ms(median(react))} · ${react.length} Störungen mit Einsatz`,"","Meldung → Arbeitsbeginn vor Ort")}
+      ${k("Ø Ticket-Bearbeitung",ms(avg(tix)),`Median ${ms(median(tix))} · ${tix.length} erledigt · ${openInc} offen`,"","Meldung → erledigt")}
+      ${k("First-Time-Fix",fixField?Math.round(ftf/fixField*100)+" %":"–",`${ftf} von ${fixField} vor Ort erledigt`,fixField&&ftf/fixField<.7?"bad":"")}
+      ${k("Mängelquote",R.length?Math.round(defects/R.length*100)+" %":"–",`${defects} von ${R.length} Protokollen`)}
+      ${k("Fällige Prüfungen",d.overdue.length,d.overdue.length?"überfällig oder nie gemacht":"alles im Intervall",d.overdue.length?"bad":"")}
+    </div>
+    <div class="grid2c">
+      <div class="card"><h2>Kosten je Projekt</h2>${stack(byProj)}</div>
+      <div class="card"><h2>Kosten je Firma / Rolle</h2>${stack(byWho)}</div>
+    </div>
+    <div class="grid2c">
+      <div class="card"><h2>Arbeits- & Anfahrtszeit je Woche</h2>${wks.length?`<div class="wbars">${wks.map(x=>{ const g=wk[x]; return `<div class="wb" data-tip="<b>Woche ab ${new Date(x).toLocaleDateString("de-DE")}</b><br>${g.n} Einsätze<br>Arbeit ${hmin(g.work)} · Anfahrt ${hmin(g.travel)}"><em>${Math.round((g.work+g.travel)/6)/10}</em><i class="t" style="height:${g.travel/wmax*100}%"></i><i style="height:${g.work/wmax*100}%"></i><span>${new Date(x).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</span></div>`; }).join("")}</div>
+        <div class="tl-legend" style="margin-top:26px"><span><b style="background:#2a78d6"></b>Arbeit vor Ort (Std.)</span><span><b style="background:#eb6834"></b>Anfahrt</span></div>`:`<div class="muted">Keine Einsätze im Zeitraum.</div>`}</div>
+      <div class="card"><h2>Zeit je Checkliste</h2>${byCl.length?`<table class="mini"><thead><tr><th>Checkliste</th><th>Einsätze</th><th>Ø Zeit</th><th>Σ Zeit</th><th>Ø Kosten</th></tr></thead><tbody>${byCl.map(g=>`<tr><td>${esc(g.key)}</td><td>${g.n}</td><td><b>${hmin(g.work/g.n)}</b></td><td>${hmin(g.work)}</td><td>${eur(g.total/g.n)}</td></tr>`).join("")}</tbody></table>`:`<div class="muted">–</div>`}</div>
+    </div>
+    ${d.overdue.length?`<div class="card"><h2>⚠ Fällige Prüfungen (${d.overdue.length})</h2><table class="mini"><thead><tr><th>Projekt</th><th>Checkliste</th><th>Intervall</th><th>Zuletzt</th></tr></thead><tbody>${d.overdue.slice(0,50).map(o=>`<tr><td><b>${esc(o.project_id||o.station_id)}</b></td><td>${esc(o.checklist_title)}</td><td>${o.interval_days} Tage</td><td>${o.last?fmtDT(o.last)+` <span class="badge warn">${Math.floor((Date.now()-Date.parse(o.last))/864e5)} T.</span>`:'<span class="badge warn">noch nie</span>'}</td></tr>`).join("")}</tbody></table></div>`:""}
+    <div class="card" style="padding:0;overflow:auto"><div style="padding:14px 16px 4px"><h2 style="margin:0">Einsätze im Zeitraum (${R.length})</h2><p class="sub" style="margin:4px 0 0">Klick öffnet das Protokoll. Beginn/Ende = Zeitstempel aus der Service-App.</p></div>
+      <table><thead><tr><th>Datum</th><th>Projekt</th><th>Checkliste / Ticket</th><th>Person</th><th>Beginn – Ende</th><th>Pause</th><th>Arbeitszeit</th><th>Anfahrt</th><th>Kosten</th></tr></thead><tbody id="mdRows">
+      ${R.slice(0,300).map(r=>`<tr class="click" data-id="${esc(r.id)}"><td>${new Date(r.finished_at).toLocaleDateString("de-DE")}</td><td><b>${esc(stLabel(r.station_id))}</b></td><td>${esc(r.checklist_title||"")}${r.ticket_no?`<br><small class="muted">${esc(r.ticket_no)}${r.resolved_ticket?" ✓":""}</small>`:""}</td>
+        <td>${esc(r.staff_name||"")}<br><small class="muted">${esc(r.company||FROLES[r.role]||"")}</small></td>
+        <td style="white-space:nowrap">${r.work_started_at?new Date(r.work_started_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"–"} – ${new Date(r.finished_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</td>
+        <td>${r.pause_minutes?r.pause_minutes+" Min.":"–"}</td>
+        <td><b>${hmin(r.work_minutes)}</b>${r.time_corrected?`<br><span class="badge amber" data-tip="Gemessen ${hmin(r.measured_minutes)}<br>${esc(r.time_note||"")}">korrigiert</span>`:""}</td>
+        <td>${r.travel_minutes?hmin(r.travel_minutes):"–"}${r.km?`<br><small class="muted">${(+r.km).toLocaleString("de-DE")} km</small>`:""}</td>
+        <td><b>${eur(r.total_cost)}</b>${r.material_cost?`<br><small class="muted">inkl. Mat. ${eur(r.material_cost)}</small>`:""}</td></tr>
+        <tr class="akte hidden" data-for="${esc(r.id)}"><td colspan="9"><div class="akte-in">Lade …</div></td></tr>`).join("")||`<tr><td colspan="9" class="muted">Keine Einsätze im Zeitraum.</td></tr>`}
+      </tbody></table></div>`;
+  box.querySelectorAll("#mdRows tr.click").forEach(row=>row.onclick=()=>{ const ak=box.querySelector(`tr.akte[data-for="${row.dataset.id}"]`), open=ak.classList.toggle("hidden")===false; if(open) renderFR(row.dataset.id,ak.querySelector(".akte-in")); });
+  $("#mdCsv").onclick=()=>{ const head=["Datum","Protokoll","Projekt","Checkliste","Ticket","Person","Firma","Rolle","Beginn","Ende","Pause Min","Arbeitszeit Min","gemessen Min","korrigiert","Begründung","Anfahrt Min","km","Material","Material EUR","Stundensatz","Arbeit EUR","Anfahrt EUR","Gesamt EUR"];
+    const q=v=>{ v=v==null?"":String(v); return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }, n=v=>v==null?"":String(v).replace(".",",");
+    const rows=d.reports.map(r=>[new Date(r.finished_at).toLocaleDateString("de-DE"),r.report_no,stLabel(r.station_id),r.checklist_title,r.ticket_no,r.staff_name,r.company,FROLES[r.role]||r.role,r.work_started_at?new Date(r.work_started_at).toLocaleString("de-DE"):"",new Date(r.finished_at).toLocaleString("de-DE"),r.pause_minutes,r.work_minutes,r.measured_minutes,r.time_corrected?"ja":"",r.time_note,r.travel_minutes,n(r.km),r.material_text,n(r.material_cost),n(r.hourly_rate),n(r.labor_cost),n(r.travel_cost),n(r.total_cost)].map((v,i)=>i>=10?(v??""):q(v)).join(";"));
+    const blob=new Blob(["﻿"+[head.join(";"),...rows].join("\n")],{type:"text/csv;charset=utf-8"}), a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`einsaetze_${FF.from||"alle"}_${FF.to||""}.csv`; a.click(); };
+}
+/* Sätze & Kosten */
+async function fRates(){
+  let s; try{ s=await fapi("settings_get"); FVIS=s; await ensureStaff(); }catch(e){ return toast(e.message,true); }
+  const r=s.rates||{};
+  $("#fbody").innerHTML=`<div class="card"><h2 style="margin-bottom:4px">Stundensätze je Rolle</h2><p class="sub">Gilt für Arbeits- und Anfahrtszeit, wenn bei der Person kein eigener Satz hinterlegt ist (Reiter „Mitarbeiter & PINs“). Änderungen gelten nur für neue Einsätze – abgeschlossene behalten ihren Satz.</p>
+    <div class="rates">${Object.entries(FROLES).map(([k,l])=>`<label>${esc(l)}<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="rt" data-k="${k}" inputmode="decimal" value="${esc(String(r[k]??"").replace(".",","))}"><span class="muted">€/h</span></div></label>`).join("")}
+      <label>Kilometer<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="rt" data-k="km" inputmode="decimal" value="${esc(String(r.km??"").replace(".",","))}"><span class="muted">€/km</span></div></label></div>
+    <button class="btn" id="rtSave" style="margin-top:14px">Sätze speichern</button></div>
+  <div class="card"><h2 style="margin-bottom:4px">Individuelle Sätze</h2><p class="sub">Personen mit eigenem Satz (z. B. Servicefirma mit Rahmenvertrag):</p>
+    ${FSTAFF.filter(x=>x.hourly_rate!=null).map(x=>`<div class="rec2"><b>${esc(x.name)}</b> <span class="muted">${esc(x.company||"")} · ${esc(FROLES[x.role])}</span><span class="sp"></span><b>${eur(x.hourly_rate)}/h</b></div>`).join("")||'<span class="muted">Keine – alle rechnen mit dem Satz ihrer Rolle.</span>'}</div>`;
+  $("#rtSave").onclick=async()=>{ const rates={}; document.querySelectorAll(".rt").forEach(i=>rates[i.dataset.k]=i.value.replace(",","."));
+    try{ await fapi("settings_save",{incidents:s.incidents,defects:s.defects,rates}); toast("Sätze gespeichert ✓"); }catch(e){ toast(e.message,true); } };
+}
 /* Mitarbeiter */
 async function fStaff(){
   try{ FSTAFF=(await fapi("staff_list")).staff; }catch(e){ return toast(e.message,true); }
   $("#fbody").innerHTML=`<div class="row" style="margin-bottom:10px"><p class="sub" style="margin:0;flex:1">Jede Person meldet sich mit ihrer eigenen PIN an. Ohne Standort-Auswahl gilt der Zugang für alle Standorte. Wer Protokolle hat, wird beim Löschen nur gesperrt.</p><button class="btn" id="fNew">+ Mitarbeiter</button></div>
   <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Name</th><th>Rolle</th><th>PIN</th><th>Standorte</th><th>Protokolle</th><th>Zuletzt angemeldet</th><th>Status</th></tr></thead><tbody id="fsb">
-  ${FSTAFF.map(x=>`<tr class="click" data-id="${esc(x.id)}"><td class="chev">▸</td><td><b>${esc(x.name)}</b>${x.company?`<br><small class="muted">${esc(x.company)}</small>`:""}</td><td>${esc(FROLES[x.role]||x.role)}</td><td><code>${esc(x.pin_hint||"–")}</code></td>
+  ${FSTAFF.map(x=>`<tr class="click" data-id="${esc(x.id)}"><td class="chev">▸</td><td><b>${esc(x.name)}</b>${x.company?`<br><small class="muted">${esc(x.company)}</small>`:""}</td><td>${esc(FROLES[x.role]||x.role)}${x.hourly_rate!=null?`<br><small class="muted">${eur(x.hourly_rate)}/h</small>`:""}</td><td><code>${esc(x.pin_hint||"–")}</code></td>
     <td>${x.stations.length?x.stations.map(id=>`<span class="chip-c">${esc(stLabel(id))}</span>`).join(""):'<span class="muted">alle</span>'}</td><td>${x.reports}</td><td>${x.last_login_at?fmtDT(x.last_login_at):"–"}</td><td>${x.active?'<span class="badge">aktiv</span>':'<span class="badge off">gesperrt</span>'}</td></tr>
     <tr class="akte hidden" data-for="${esc(x.id)}"><td colspan="8"><div class="akte-in"></div></td></tr>`).join("")||`<tr><td colspan="8" class="muted">Noch keine Mitarbeiter.</td></tr>`}</tbody></table></div>`;
   $("#fNew").onclick=()=>{ const tb=$("#fsb"); const tr=document.createElement("tr"); tr.className="akte"; tr.innerHTML=`<td colspan="8"><div class="akte-in"></div></td>`; tb.prepend(tr); staffEd({stations:[],role:"technik",active:true},tr.querySelector(".akte-in"),true); };
@@ -824,7 +973,8 @@ function staffEd(x,box,isNew){
       <div><label>Name</label><input class="s-name" value="${esc(x.name||"")}"></div><div><label>Firma</label><input class="s-company" value="${esc(x.company||"")}"></div>
       <div><label>Telefon</label><input class="s-phone" value="${esc(x.phone||"")}"></div><div><label>E-Mail</label><input class="s-email" value="${esc(x.email||"")}"></div>
       <div><label>Rolle</label><select class="s-role">${Object.entries(FROLES).map(([k,l])=>`<option value="${k}" ${x.role===k?"selected":""}>${l}</option>`).join("")}</select></div>
-      <div><label>${isNew?"PIN (4–8 Ziffern)":"Neue PIN (leer = unverändert)"}</label><div class="row" style="flex-wrap:nowrap"><input class="s-pin" inputmode="numeric" maxlength="8" placeholder="${isNew?"z. B. 4711":esc(x.pin_hint||"")}"><button class="btn ghost sm s-gen" type="button">Zufall</button></div></div></div>
+      <div><label>${isNew?"PIN (4–8 Ziffern)":"Neue PIN (leer = unverändert)"}</label><div class="row" style="flex-wrap:nowrap"><input class="s-pin" inputmode="numeric" maxlength="8" placeholder="${isNew?"z. B. 4711":esc(x.pin_hint||"")}"><button class="btn ghost sm s-gen" type="button">Zufall</button></div></div>
+      <div><label>Eigener Stundensatz € (leer = Satz der Rolle)</label><input class="s-rate" inputmode="decimal" value="${x.hourly_rate!=null?esc(String(x.hourly_rate).replace(".",",")):""}" placeholder="Rolle: ${esc(String(((FVIS&&FVIS.rates)||{})[x.role]??"–"))} €"></div></div>
     <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--ink)"><input type="checkbox" class="s-active" style="width:auto" ${x.active!==false?"checked":""}> Zugang aktiv</label>
     <div class="row" style="margin-top:12px"><button class="btn sm s-save">Speichern</button>${isNew?"":`<button class="btn warn sm s-del">Löschen / sperren</button>`}</div>
     <div class="hint">Die PIN wird nur verschlüsselt gespeichert – bitte nach dem Speichern direkt an die Person weitergeben.</div></div>
@@ -833,7 +983,7 @@ function staffEd(x,box,isNew){
   box.querySelector(".s-gen").onclick=()=>{ box.querySelector(".s-pin").value=String(Math.floor(100000+Math.random()*900000)); };
   box.querySelector(".s-save").onclick=async()=>{ const pin=box.querySelector(".s-pin").value.trim();
     try{ await fapi("staff_save",{staff:{id:x.id||null,name:box.querySelector(".s-name").value,company:box.querySelector(".s-company").value,phone:box.querySelector(".s-phone").value,email:box.querySelector(".s-email").value,
-      role:box.querySelector(".s-role").value,pin,active:box.querySelector(".s-active").checked,stations:[...box.querySelectorAll(".s-st:checked")].map(c=>c.value)}});
+      role:box.querySelector(".s-role").value,pin,hourly_rate:box.querySelector(".s-rate").value.replace(",","."),active:box.querySelector(".s-active").checked,stations:[...box.querySelectorAll(".s-st:checked")].map(c=>c.value)}});
       toast(pin?`Gespeichert ✓ – PIN ${pin} bitte jetzt weitergeben`:"Gespeichert ✓"); if(pin) alert(`PIN für ${box.querySelector(".s-name").value}: ${pin}\n\nBitte notieren und weitergeben – sie wird nicht wieder angezeigt.`); fStaff(); }catch(e){ toast(e.message,true); } };
   if(box.querySelector(".s-del")) box.querySelector(".s-del").onclick=async()=>{ if(!confirm(`${x.name} löschen? Hat die Person Protokolle, wird der Zugang nur gesperrt.`)) return; try{ const r=await fapi("staff_delete",{id:x.id}); toast(r.deactivated?"Zugang gesperrt (Protokolle bleiben)":"Gelöscht"); fStaff(); }catch(e){ toast(e.message,true); } };
 }
@@ -885,7 +1035,7 @@ function listEd(c,isNew){
 
 /* ---------- Zeitraum-Auswahl (wiederverwendbar) ---------- */
 const isoD=d=>{ const x=new Date(d); return new Date(x.getTime()-x.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
-const PRESETS=[["7","7 Tage"],["30","30 Tage"],["90","90 Tage"],["all","Alle"]];
+const PRESETS=[["1","Heute"],["7","7 Tage"],["30","30 Tage"],["90","90 Tage"],["all","Alle"]];
 function datesHTML(F,k){ return `<div class="dates" id="${k}D">${PRESETS.map(([d,l])=>`<button type="button" class="chip ${F.preset===d?"on":""}" data-p="${d}">${l}</button>`).join("")}
   <input type="date" data-k="from" value="${F.from||""}" title="von"> – <input type="date" data-k="to" value="${F.to||""}" title="bis"></div>`; }
 function setPreset(F,p){ F.preset=p; if(p==="all"){ F.from=""; F.to=""; } else { F.from=isoD(Date.now()-(+p-1)*864e5); F.to=isoD(Date.now()); } }
@@ -906,7 +1056,7 @@ const hl=(t,q)=>{ const s=esc(t||""); if(!q) return s; const i=s.toLowerCase().i
 async function searchView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
   document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("on"));
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Suche</h1><p class="sub" style="margin:0">Durchsucht Vorgänge, Kunden, Ladekarten, Besuche (Chat, Beschreibung, E-Mail, Telefon, Ladekarte), Notizen und Projekte (Adresse, EVSE-IDs). Treffer anklicken → Akte öffnet sich.</p></div></div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Suche</h1><p class="sub" style="margin:0">Durchsucht Vorgänge, Kunden, Ladekarten, QR-Code-Aufrufe (Chat, Beschreibung, E-Mail, Telefon, Ladekarte), Notizen und Projekte (Adresse, EVSE-IDs). Treffer anklicken → Akte öffnet sich.</p></div></div>
   <div class="card" style="padding:12px 14px"><div class="row"><input id="sq" type="search" style="flex:1;min-width:240px;font-size:15px" value="${esc(SQ.q)}" placeholder="Suchbegriff …">${datesHTML(SQ,"sq")}</div></div>
   <div id="sres"><div class="muted">Suche …</div></div>`;
   wireDates(SQ,"sq",runSearch);
@@ -925,7 +1075,7 @@ async function runSearch(){
     ${r.incidents.length?`<div class="res-g"><h3>Störungen (${r.incidents.length})</h3>${r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
       return `<button class="res" data-inc="${esc(i.ticket_no)}"><b><code>${hl(i.ticket_no,q)}</code></b> · ${esc(st?(st.project_id||st.id):i.station_id)} · ${esc(cpLabel(st,i.connector))} <span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span>
         <div class="m">${fmtDT(i.created_at)} · ${esc(i.title||"")} · ${i.reports}× gemeldet · ${hl(i.hit,q)}</div></button>`; }).join("")}</div>`:""}
-    ${r.sessions.length?`<div class="res-g"><h3>Besuche (${r.sessions.length})</h3>${r.sessions.map(s=>{ const st=stOf(s.station_id), o=OUT[s.outcome||"open"]||OUT.open;
+    ${r.sessions.length?`<div class="res-g"><h3>QR-Code-Aufrufe (${r.sessions.length})</h3>${r.sessions.map(s=>{ const st=stOf(s.station_id), o=OUT[s.outcome||"open"]||OUT.open;
       return `<button class="res" data-ses="${esc(s.id)}"><b>${fmtDT(s.started_at)}</b> · ${esc(st?(st.project_id||st.id):s.station_id)} · ${esc(cpLabel(st,s.connector))} <span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span>
         <div class="m">${esc(EV[s.hit_type]||(s.hit_type==="contact"?"Kontakt":s.hit_type))}: ${hl(s.hit,q)}</div></button>`; }).join("")}</div>`:""}
     ${r.stations.length?`<div class="res-g"><h3>Projekte (${r.stations.length})</h3>${r.stations.map(s=>`<button class="res" data-st="${esc(s.id)}"><b>${hl(s.project_id||s.id,q)}</b> · ${hl(s.name,q)}<div class="m">${hl(s.address,q)}</div></button>`).join("")}</div>`:""}`;
@@ -946,12 +1096,12 @@ function drawHeat(){
   else OV_HEAT.daily.forEach(x=>{ if(x.h==null) return; g[wd(x.d+"T12:00:00")][x.h]+=x.n; });
   const hours=Array(24).fill(0); g.forEach(r=>r.forEach((v,h)=>hours[h]+=v));
   const max=Math.max(1,...g.flat()), hmax=Math.max(1,...hours), tot=hours.reduce((a,b)=>a+b,0);
-  const DN=["Mo","Di","Mi","Do","Fr","Sa","So"], unit=HEAT_MODE==="inc"?"Störung(en)":"Besuch(e)";
+  const DN=["Mo","Di","Mi","Do","Fr","Sa","So"], unit=HEAT_MODE==="inc"?"Störung(en)":"Aufruf(e)";
   let pk=[0,0,-1]; g.forEach((r,w)=>r.forEach((v,h)=>{ if(v>pk[2]) pk=[w,h,v]; }));
   const ph=hours.indexOf(Math.max(...hours));
   const col=v=>v?`rgba(42,120,214,${(0.15+0.85*v/max).toFixed(2)})`:"#f0f3f1";
   box.innerHTML=`<div class="row" style="margin-bottom:6px"><h2 style="margin:0">Wann passiert es? – Tageszeit & Wochentag</h2><div class="sp"></div>
-    <div class="seg" id="heatSeg"><button data-m="inc" class="${HEAT_MODE==="inc"?"on":""}">Störungsmeldungen</button><button data-m="vis" class="${HEAT_MODE==="vis"?"on":""}">Alle Besuche</button></div></div>
+    <div class="seg" id="heatSeg"><button data-m="inc" class="${HEAT_MODE==="inc"?"on":""}">Störungsmeldungen</button><button data-m="vis" class="${HEAT_MODE==="vis"?"on":""}">Alle QR-Aufrufe</button></div></div>
     <p class="sub" style="margin:0 0 12px">${tot?`${tot} ${unit} im Zeitraum · am häufigsten <b>${DN[pk[0]]} ${pk[1]}–${pk[1]+1} Uhr</b> (${pk[2]}) · stärkste Tageszeit insgesamt <b>${ph}–${ph+1} Uhr</b>`:"Keine Daten im Zeitraum."}</p>
     <div class="heat parts"><span></span>${[["Nacht",0,6],["Morgen",6,12],["Nachmittag",12,18],["Abend",18,24]].map(([l,a,b])=>`<span class="hp" style="grid-column:${a+2} / ${b+2}">${l} ${a}–${b} Uhr</span>`).join("")}</div>
     <div class="heat"><span></span>${Array.from({length:24},(_,h)=>`<span class="hx ${h===ph&&tot?"pk":""}">${String(h).padStart(2,"0")}</span>`).join("")}
@@ -965,7 +1115,7 @@ let OF={preset:"30",station:""}; const OV_OPEN={}; let OV_REQ=0; let AV_OPEN=tru
 const OUTC=[["solved","Selbst gelöst","#2a78d6"],["ticket","Störung gemeldet","#eb6834"],["hotline","Hotline","#1baf7a"],["chat","Chat","#eda100"],["open","Ohne Ergebnis","#b9beba"]];
 async function overviewView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Übersicht</h1><p class="sub" style="margin:0">Verfügbarkeit, Störungen und Besuche auf einen Blick.</p></div><div class="sp"></div><button class="btn" id="newP">+ Neues Projekt</button></div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Übersicht</h1><p class="sub" style="margin:0">Verfügbarkeit, Störungen und QR-Code-Aufrufe auf einen Blick.</p></div><div class="sp"></div><button class="btn" id="newP">+ Neues Projekt</button></div>
   <div class="card" style="padding:12px 14px"><div class="row"><b style="font-size:13px">Projekt</b><select id="oSt" style="width:auto;min-width:220px"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${OF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select>
     <span style="width:12px"></span><b style="font-size:13px">Zeitraum</b>${datesHTML(OF,"of")}</div></div>
   <div class="grid" id="ovTiles" style="margin-bottom:14px">${projTiles(null,OF.station)}</div>
@@ -1009,7 +1159,7 @@ async function loadOverview(){
       <div class="kpi link ${openNow?"bad":""}" data-go="open"><div class="k">Offene Störungen ›</div><div class="v">${openNow}</div><div class="s">${openNow?"⚠ in der App als gestört markiert":"✓ alles frei"}</div></div>
       <div class="kpi link" data-go="new"><div class="k">Neue Störungen ›</div><div class="v">${inWin.length}</div><div class="s">${inWin.reduce((a,i)=>a+i.reports,0)} Meldungen von Kunden</div></div>
       <div class="kpi link" data-go="done"><div class="k">Ø Zeit bis erledigt ›</div><div class="v">${mttr?fmtDur(mttr):"–"}</div><div class="s">${solvedInc.length} erledigt im Zeitraum</div></div>
-      <div class="kpi link" data-go="visits"><div class="k">Besuche ›</div><div class="v">${tot}</div><div class="s">${tot?Math.round(100*self/tot)+" % selbst gelöst":"–"}</div></div>
+      <div class="kpi link" data-go="visits"><div class="k">QR-Code-Aufrufe ›</div><div class="v">${tot}</div><div class="s">${tot?Math.round(100*self/tot)+" % selbst gelöst":"–"}</div></div>
     </div>
     <div class="card ${AV_OPEN?"":"av-closed"}" id="availCard"><div class="row" style="margin-bottom:8px"><button type="button" class="av-h" id="avT"><span class="chev">${AV_OPEN?"▾":"▸"}</span> Verfügbarkeit je Ladepunkt</button>
       <span class="muted" style="font-size:13px">Ø ${pctTxt(avail)} · ${cpN} Ladepunkte</span><div class="sp"></div><button class="btn ghost sm av-body" id="avAll" type="button">Alle auf / zu</button></div>
@@ -1028,10 +1178,10 @@ async function loadOverview(){
     </div>
     <div class="card" id="heatCard"></div>
     <div class="two">
-      <div class="card"><h2>Besuche pro Tag</h2>
+      <div class="card"><h2>QR-Code-Aufrufe pro Tag</h2>
         <div class="legend">${OUTC.map(o=>`<span><b style="background:${o[2]}"></b>${o[1]}</span>`).join("")}</div>
         <div class="bars">${days.map(d=>{ const v=by[d]||{}, n=OUTC.reduce((a,o)=>a+(v[o[0]]||0),0);
-          return `<div class="col" data-tip="<b>${new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</b> · ${n} Besuche${OUTC.filter(o=>v[o[0]]).map(o=>`<br>${o[1]}: ${v[o[0]]}`).join("")}">${OUTC.filter(o=>v[o[0]]).map(o=>`<i style="height:calc(${v[o[0]]/max*100}% - 2px);background:${o[2]}"></i>`).join("")}</div>`; }).join("")}</div>
+          return `<div class="col" data-tip="<b>${new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</b> · ${n} Aufrufe${OUTC.filter(o=>v[o[0]]).map(o=>`<br>${o[1]}: ${v[o[0]]}`).join("")}">${OUTC.filter(o=>v[o[0]]).map(o=>`<i style="height:calc(${v[o[0]]/max*100}% - 2px);background:${o[2]}"></i>`).join("")}</div>`; }).join("")}</div>
         <div class="bars-x"><span>${new Date(days[0]+"T12:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</span><span>max. ${max} / Tag</span><span>${new Date(days[days.length-1]+"T12:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</span></div>
       </div>
       <div class="card"><h2>Häufigste Störungen</h2>
