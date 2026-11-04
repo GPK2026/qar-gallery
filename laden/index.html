@@ -52,6 +52,7 @@ p.sub{margin:-4px 2px 14px;color:var(--muted);font-size:15px}
 .tile .ic{font-size:24px;line-height:1}
 .tile b{font-size:15px;font-weight:600;line-height:1.25}
 .tile.danger{border-color:#f3c1bc;background:var(--warn-soft)}
+.tile.wide{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;gap:12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:12px}
 .progress{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:4px 0 16px}
 .progress i{display:block;height:100%;background:var(--brand);transition:width .25s}
@@ -169,49 +170,132 @@ const CONFIG = {
   }
 };
 
-/* ============ STÖRUNGSBÄUME ============ */
+/* ============ STÖRUNGSBÄUME (DE/EN) ============ */
+// Titel werden immer auf Deutsch ans Team protokolliert, angezeigt in der gewählten Sprache.
 const FLOWS = {
-  nostart: { ic:"⛔", t:"Ladevorgang startet nicht", steps:[
-    { t:"Stecker vollständig einstecken", h:"Ziehen Sie den Stecker einmal ab und stecken Sie ihn kräftig bis zum Anschlag ein – am Fahrzeug und (bei Typ 2) an der Säule." },
-    { t:"Fahrzeug entriegeln", h:"Viele Fahrzeuge laden nur, wenn sie entriegelt sind. Prüfen Sie auch, ob im Fahrzeug ein Ladelimit oder Ladetimer eingestellt ist." },
-    { t:"Autorisierung erneut starten", h:"Halten Sie Ihre Ladekarte erneut vor das Lesefeld oder starten Sie den Vorgang in der App neu." }
+  nostart: { ic:"⛔", t:{de:"Ladevorgang startet nicht",en:"Charging won't start"}, steps:[
+    { t:{de:"Stecker vollständig einstecken",en:"Plug in fully"},
+      h:{de:"Ziehen Sie den Stecker einmal ab und stecken Sie ihn kräftig bis zum Anschlag ein – am Fahrzeug und (bei Typ 2) an der Säule.",
+         en:"Unplug once and push the connector in firmly until it clicks – at the car and (for Type 2) at the charger."} },
+    { t:{de:"Fahrzeug entriegeln",en:"Unlock the car"},
+      h:{de:"Viele Fahrzeuge laden nur, wenn sie entriegelt sind. Prüfen Sie auch, ob im Fahrzeug ein Ladelimit oder Ladetimer eingestellt ist.",
+         en:"Many cars only charge when unlocked. Also check whether a charge limit or charging timer is set in the car."} },
+    { t:{de:"Ladevorgang neu starten",en:"Start charging again"},
+      h:{de:"Starten Sie erneut – mit Ladekarte bzw. App an der Ladesäule oder mit Kreditkarte am Terminal.",
+         en:"Start again – with your charging card or app at the charger, or with a credit card at the payment terminal."} }
   ]},
-  abort: { ic:"⏹️", t:"Ladevorgang bricht ab", steps:[
-    { t:"Fahrzeugeinstellungen prüfen", h:"Ist ein Ziel-Ladestand (z. B. 80 %) erreicht oder ein Ladetimer aktiv?" },
-    { t:"Kabel und Stecker prüfen", h:"Liegt das Kabel unter Zug oder wurde es bewegt? Stecker neu einstecken und erneut starten." }
+  abort: { ic:"⏹️", t:{de:"Ladevorgang bricht ab",en:"Charging stops"}, steps:[
+    { t:{de:"Fahrzeugeinstellungen prüfen",en:"Check the car settings"},
+      h:{de:"Ist ein Ziel-Ladestand (z. B. 80 %) erreicht oder ein Ladetimer aktiv?",
+         en:"Has a target charge level (e.g. 80 %) been reached, or is a charging timer active?"} },
+    { t:{de:"Kabel und Stecker prüfen",en:"Check cable and connector"},
+      h:{de:"Liegt das Kabel unter Zug oder wurde es bewegt? Stecker neu einstecken und erneut starten.",
+         en:"Is the cable under strain or was it moved? Plug in again and restart charging."} }
   ]},
-  auth: { ic:"💳", t:"Karte / App wird nicht erkannt", steps:[
-    { t:"Karte richtig vorhalten", h:"Halten Sie die Karte flach und ruhig 2–3 Sekunden direkt auf das RFID-Symbol. Nicht in der Geldbörse mit anderen Karten." },
-    { t:"Ladevertrag prüfen", h:"Ist Ihre Karte/App bei unserem Netz freigeschaltet (Roaming)? In der App Ihres Anbieters sehen Sie die verfügbaren Stationen." }
+  card: { ic:"💳", t:{de:"Ladekarte / App wird nicht erkannt",en:"Charging card / app not recognised"}, steps:[
+    { t:{de:"Ladekarte richtig vorhalten",en:"Hold your charging card correctly"},
+      h:{de:"Halten Sie die Ladekarte 2–3 Sekunden flach und ruhig direkt auf das Kartensymbol an der Ladesäule – nicht in der Geldbörse mit anderen Karten.",
+         en:"Hold your charging card flat and still on the card symbol at the charger for 2–3 seconds – not inside a wallet with other cards."} },
+    { t:{de:"Vertrag / App prüfen",en:"Check your contract / app"},
+      h:{de:"Ist Ihre Ladekarte bzw. App für diese Station freigeschaltet (Roaming)? In der App Ihres Anbieters sehen Sie, ob die Station verfügbar ist.",
+         en:"Is your charging card or app enabled for this station (roaming)? Your provider's app shows whether the station is available."} },
+    { t:{de:"Andere Startmethode probieren",en:"Try another way to start"},
+      h:{de:"Starten Sie per App statt Karte (oder umgekehrt). Alternativ können Sie direkt am Kreditkarten-Terminal bezahlen.",
+         en:"Start via the app instead of the card (or vice versa). Alternatively, pay directly at the credit card terminal."} }
   ]},
-  payment: { ic:"💶", t:"Bezahlung / Ad-hoc", steps:[
-    { t:"Zahlungsseite neu laden", h:"Scannen Sie den Ad-hoc-QR-Code an der Säule erneut und schließen Sie andere Browser-Tabs." },
-    { t:"Andere Zahlungsart versuchen", h:"Falls Kreditkarte abgelehnt wird: Apple Pay / Google Pay oder eine andere Karte versuchen." }
+  credit: { ic:"🏧", t:{de:"Kreditkarte (Ad-hoc) am Terminal",en:"Credit card (ad hoc) at the terminal"}, steps:[
+    { t:{de:"Zuerst Ladepunkt am Terminal wählen",en:"Select the connector on the terminal first"},
+      h:{de:"Wählen Sie am Kreditkarten-Terminal zuerst die Nummer Ihres Ladepunkts und bestätigen Sie. Erst dann zur Zahlung auffordern lassen.",
+         en:"On the credit card terminal, first select the number of your connector and confirm. Only then will it ask for payment."} },
+    { t:{de:"Karte vorhalten oder einstecken",en:"Tap or insert your card"},
+      h:{de:"Halten Sie die Karte ruhig an das Kontaktlos-Symbol, bis es piept. Wird sie abgelehnt, Karte einstecken und PIN eingeben. Hinweis: Es wird zunächst ein Betrag reserviert und nach dem Laden korrekt abgerechnet.",
+         en:"Hold the card still on the contactless symbol until it beeps. If declined, insert the card and enter your PIN. Note: an amount is reserved first and settled correctly after charging."} },
+    { t:{de:"Andere Karte oder Smartphone versuchen",en:"Try another card or your phone"},
+      h:{de:"Versuchen Sie eine andere Kredit- oder Debitkarte oder Apple Pay / Google Pay.",
+         en:"Try another credit or debit card, or Apple Pay / Google Pay."} }
   ]},
-  stuck: { ic:"🔒", t:"Stecker lässt sich nicht lösen", steps:[
-    { t:"Ladevorgang beenden & Fahrzeug entriegeln", h:"Beenden Sie die Ladung in Fahrzeug oder App, dann das Fahrzeug per Schlüssel entriegeln und 10 Sekunden warten." },
-    { t:"Stecker leicht hineindrücken", h:"Drücken Sie den Stecker kurz in die Buchse und ziehen Sie dann. Das entlastet die Verriegelung." }
+  stuck: { ic:"🔒", t:{de:"Stecker lässt sich nicht lösen",en:"Connector won't release"}, steps:[
+    { t:{de:"Ladevorgang beenden & Fahrzeug entriegeln",en:"End charging & unlock the car"},
+      h:{de:"Beenden Sie die Ladung in Fahrzeug, App oder am Terminal, entriegeln Sie dann das Fahrzeug per Schlüssel und warten Sie 10 Sekunden.",
+         en:"End charging in the car, the app or at the terminal, then unlock the car with the key and wait 10 seconds."} },
+    { t:{de:"Stecker leicht hineindrücken",en:"Push the connector in slightly"},
+      h:{de:"Drücken Sie den Stecker kurz in die Buchse und ziehen Sie dann. Das entlastet die Verriegelung.",
+         en:"Briefly push the connector into the socket, then pull. This takes pressure off the lock."} }
   ]},
-  dark: { ic:"🌑", t:"Display aus / Säule ohne Funktion", steps:[
-    { t:"Display aufwecken", h:"Manche Säulen schalten das Display im Ruhemodus ab. Tippen Sie auf das Display oder halten Sie Ihre Ladekarte an das Lesefeld." },
-    { t:"Anderen Ladepunkt nutzen", h:"Falls ein zweiter Ladepunkt frei ist, können Sie diesen nutzen. Melden Sie uns die Störung trotzdem – unser Team kümmert sich darum." }
+  dispCharger: { ic:"🖥️", t:{de:"Display der Ladesäule aus / Fehlermeldung",en:"Charger display off / error"}, steps:[
+    { t:{de:"Display aufwecken",en:"Wake the display"},
+      h:{de:"Das Display der Ladesäule schaltet in den Ruhemodus. Tippen Sie darauf oder halten Sie Ihre Ladekarte an das Lesefeld.",
+         en:"The charger's display goes into sleep mode. Tap it or hold your charging card to the reader."} },
+    { t:{de:"Fehlermeldung notieren",en:"Note the error message"},
+      h:{de:"Zeigt das Display eine Fehlermeldung oder einen Code? Machen Sie ein Foto – das hilft unserem Team sehr.",
+         en:"Does the display show an error message or code? Take a photo – it helps our team a lot."} },
+    { t:{de:"Anderen Ladepunkt nutzen",en:"Use another connector"},
+      h:{de:"Falls ein anderer Ladepunkt frei ist, nutzen Sie diesen. Melden Sie die Störung trotzdem – unser Team kümmert sich darum.",
+         en:"If another connector is free, please use it. Report the issue anyway – our team will take care of it."} }
   ]},
-  danger: { ic:"⚠️", t:"Beschädigung / Gefahr", danger:true },
-  other: { ic:"❓", t:"Etwas anderes", steps:[] }
+  dispTerminal: { ic:"📟", t:{de:"Kreditkarten-Terminal aus / reagiert nicht",en:"Card terminal off / not responding"}, steps:[
+    { t:{de:"Terminal aufwecken",en:"Wake the terminal"},
+      h:{de:"Tippen Sie auf das Display des Kreditkarten-Terminals – es geht nach einiger Zeit in den Ruhemodus.",
+         en:"Tap the credit card terminal's display – it goes into sleep mode after a while."} },
+    { t:{de:"Kurz warten",en:"Wait a moment"},
+      h:{de:"Nach einem Ladevorgang startet das Terminal manchmal neu. Warten Sie etwa eine Minute und versuchen Sie es erneut.",
+         en:"After a charging session the terminal sometimes restarts. Wait about one minute and try again."} },
+    { t:{de:"Mit Ladekarte oder App starten",en:"Start with a charging card or app"},
+      h:{de:"Alternativ starten Sie die Ladung mit Ladekarte oder App direkt an der Ladesäule.",
+         en:"Alternatively, start charging with a charging card or app directly at the charger."} }
+  ]},
+  danger: { ic:"⚠️", t:{de:"Beschädigung / Gefahr",en:"Damage / danger"}, danger:true },
+  other: { ic:"❓", t:{de:"Etwas anderes",en:"Something else"}, steps:[], wide:true }
 };
 
-
-/* ============ I18N (kurz) ============ */
-const I18N = {
-  de:{station:"Ladestation",tHelp:"Störung",tChat:"Chat",tCall:"Hotline",what:"Was funktioniert nicht?",whatSub:"Tippen Sie auf Ihr Problem – wir lösen es Schritt für Schritt.",cp:"Ladepunkt"},
-  en:{station:"Charging station",tHelp:"Issue",tChat:"Chat",tCall:"Hotline",what:"What isn't working?",whatSub:"Tap your issue – we'll fix it step by step.",cp:"Connector"}
+/* ============ TEXTE (DE/EN) ============ */
+const T = {
+  de:{brand:"Lade-Support",station:"Ladestation",tHelp:"Störung",tChat:"Chat",tCall:"Hotline",cp:"Ladepunkt",cpShort:"LP",
+    what:"Was funktioniert nicht?",whatSub:"Tippen Sie auf Ihr Problem – wir lösen es Schritt für Schritt.",
+    privacy:"Damit wir helfen können, werden Ihre Auswahl, Chatnachrichten und freiwilligen Angaben zu dieser Ladesäule gespeichert und an unser Service-Team übermittelt.",privacyLink:"Datenschutz",
+    back:"‹ Zurück",stepOf:"Schritt {a} von {b}",ok:"✓ Hat geklappt",no:"Hat nicht geholfen",
+    solvedT:"Super, es lädt!",solvedH:"Gute Fahrt. War die Hilfe nützlich?",yes:"👍 Ja",nope:"👎 Nein",thanks:"Danke für Ihr Feedback!",home:"Zur Startseite",
+    dangerT:"Bitte Abstand halten",dangerNote:"<b>Berühren Sie die Säule nicht</b>, wenn Kabel beschädigt sind, es Funken, Rauch oder Brandgeruch gibt. Bei Feuer oder Verletzten: <b>Notruf 112</b>.",
+    dangerH:"Unser Service-Team ist bereits informiert. Bitte rufen Sie uns an oder melden Sie den Schaden mit Foto.",callNow:"📞 Hotline sofort anrufen",reportDamage:"Schaden melden (mit Foto)",
+    ticketT:"Wir kümmern uns darum",ticketH:"Melden Sie die Störung hier – unser Service-Team prüft den Ladepunkt. Die Daten sind schon ausgefüllt.",
+    sStation:"Station",sCp:"Ladepunkt",sProblem:"Problem",sTried:"Versucht",sTriedN:"{n} Schritt(e)",sTime:"Zeit",
+    fDesc:"Was ist passiert? (optional)",fDescPh:"z. B. Fehlermeldung im Display…",fPhoto:"Foto (optional)",fContact:"Telefon oder E-Mail für Rückmeldung (optional)",fContactPh:"+49 … oder name@mail.de",
+    send:"Störung melden",sending:"Wird gesendet…",toChat:"Lieber im Chat klären",
+    ticketNo:"Ihre Vorgangsnummer",ticketOk:"Unser Service-Team hat Ihre Meldung erhalten. Nennen Sie diese Nummer, falls Sie die Hotline anrufen.",
+    ticketFail:"Meldung konnte nicht gesendet werden",ticketFailH:"Bitte rufen Sie unsere Hotline an und nennen Sie die Stations-ID <b>{id}</b>, Ladepunkt {cp}.",callHotline:"📞 Hotline anrufen",
+    chatHello:"Hallo! Wir helfen Ihnen an Station {id}, Ladepunkt {cp}. Was ist das Problem?",chatBadge:"Assistent · unser Team liest live mit",chatHuman:"👩‍🔧 Ein Mitarbeiter ist im Chat",
+    chips:["Ladung startet nicht","Ladekarte wird nicht erkannt","Kreditkarte geht nicht","Stecker steckt fest","Ich möchte einen Mitarbeiter sprechen"],
+    chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
+    hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
+    callHint:"Bitte halten Sie die Stations-ID bereit – dann finden wir den Ladepunkt sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln"},
+  en:{brand:"Charging Support",station:"Charging station",tHelp:"Issue",tChat:"Chat",tCall:"Hotline",cp:"Connector",cpShort:"C",
+    what:"What isn't working?",whatSub:"Tap your issue – we'll solve it step by step.",
+    privacy:"To help you, your selections, chat messages and any details you provide about this charger are stored and passed on to our service team.",privacyLink:"Privacy",
+    back:"‹ Back",stepOf:"Step {a} of {b}",ok:"✓ That worked",no:"Didn't help",
+    solvedT:"Great, it's charging!",solvedH:"Have a good trip. Was this helpful?",yes:"👍 Yes",nope:"👎 No",thanks:"Thanks for your feedback!",home:"Back to start",
+    dangerT:"Please keep your distance",dangerNote:"<b>Do not touch the charger</b> if cables are damaged or there are sparks, smoke or a burning smell. In case of fire or injuries: <b>call 112</b>.",
+    dangerH:"Our service team has already been notified. Please call us or report the damage with a photo.",callNow:"📞 Call the hotline now",reportDamage:"Report damage (with photo)",
+    ticketT:"We'll take care of it",ticketH:"Report the issue here – our service team will check the connector. Your details are already filled in.",
+    sStation:"Station",sCp:"Connector",sProblem:"Issue",sTried:"Tried",sTriedN:"{n} step(s)",sTime:"Time",
+    fDesc:"What happened? (optional)",fDescPh:"e.g. error message on the display…",fPhoto:"Photo (optional)",fContact:"Phone or email for a reply (optional)",fContactPh:"+44 … or name@mail.com",
+    send:"Report issue",sending:"Sending…",toChat:"I'd rather use the chat",
+    ticketNo:"Your reference number",ticketOk:"Our service team has received your report. Please quote this number if you call the hotline.",
+    ticketFail:"The report could not be sent",ticketFailH:"Please call our hotline and give the station ID <b>{id}</b>, connector {cp}.",callHotline:"📞 Call the hotline",
+    chatHello:"Hello! We're here to help at station {id}, connector {cp}. What's the problem?",chatBadge:"Assistant · our team reads along live",chatHuman:"👩‍🔧 A team member is in the chat",
+    chips:["Charging won't start","Charging card not recognised","Credit card not working","Connector is stuck","I'd like to speak to someone"],
+    chatPh:"Type a message…",chatToTeam:"Your message has reached our service team. We'll reply here shortly.",
+    hours:"Available 24/7",callBtn:"Call now",stationId:"Station ID",copy:"Copy",copied:"Copied ✓",caseNo:"Reference number",
+    callHint:"Please have the station ID ready – then we can find the connector in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector"}
 };
-let lang="de";
-const tr=k=>(I18N[lang]&&I18N[lang][k])||I18N.de[k]||k;
+let lang=(navigator.language||"de").toLowerCase().startsWith("de")?"de":"en";
+const tr=(k,v={})=>{ let s=(T[lang]&&T[lang][k]!=null?T[lang][k]:T.de[k]); if(s==null) return k; if(typeof s==="string") s=s.replace(/\{(\w+)\}/g,(_,x)=>v[x]!=null?v[x]:""); return s; };
+const L=o=>o?(o[lang]||o.de):"";       // Anzeige
+const DE=o=>o?(o.de||""):"";           // Protokoll fürs Team (immer deutsch)
+const locale=()=>lang==="de"?"de-DE":"en-GB";
 
 /* ============ STATE ============ */
 const uuid=()=>(crypto.randomUUID?crypto.randomUUID():"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16)));
-const S = { sid:uuid(), station:null, stationData:null, cp:1, flow:null, step:0, tab:"help", tried:[], chat:[], lastTeamId:0, human:false, online:true, pollT:null, unread:0 };
+const S = { sid:uuid(), station:null, stationData:null, cp:1, flow:null, step:0, tab:"help", tried:[], chat:[], lastTeamId:0, human:false, online:true, pollT:null, unread:0, render:null };
 const $=s=>document.querySelector(s);
 const view=$("#view");
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -248,56 +332,58 @@ function renderStation(){
   $("#cps").querySelectorAll(".cp").forEach(b=>b.onclick=()=>{ $("#stationCard").classList.remove("open"); if(S.cp===+b.dataset.cp) return; S.cp=+b.dataset.cp; renderStation(); track("connector_select",{cp:S.cp}); });
   const cur=st.cps.find(c=>c.n===S.cp);
   $("#stPill").textContent=`${tr("cp")} ${S.cp}${cur&&cur.t?" · "+cur.t.split(" · ")[0]:""} ▾`;
+  $("#stPill").setAttribute("aria-label",tr("switchCp"));
 }
 // Station kompakt (eine Zeile) überall außer auf der Startseite – Tippen klappt sie auf
 function compact(on){ const c=$("#stationCard"); c.classList.toggle("compact",on); c.classList.remove("open"); }
 $("#stPill").onclick=()=>$("#stationCard").classList.toggle("open");
 const scroller=()=>$("#scroll");
 function toTop(){ scroller().scrollTop=0; }
+function show(fn){ S.render=fn; fn(); }   // merkt sich die aktuelle Ansicht (für Sprachwechsel)
 
 /* ============ VIEWS ============ */
 function home(){
-  S.flow=null;S.step=0;S.tried=[]; compact(false);
+  S.flow=null;S.step=0;S.tried=[]; compact(false); S.render=home;
   view.innerHTML=`<h2>${tr("what")}</h2><p class="sub">${tr("whatSub")}</p>
-  <div class="grid">${Object.entries(FLOWS).map(([k,f])=>`<button class="tile ${f.danger?"danger":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${f.t}</b></button>`).join("")}</div>
-  <p class="privacy">Damit wir helfen können, werden Ihre Auswahl, Chatnachrichten und freiwilligen Angaben zu dieser Ladesäule gespeichert und an unser Service-Team übermittelt.${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">Datenschutz</a>`:""}</p>`;
+  <div class="grid">${Object.entries(FLOWS).map(([k,f])=>`<button class="tile ${f.danger?"danger":""} ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
+  <p class="privacy">${tr("privacy")}${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">${tr("privacyLink")}</a>`:""}</p>`;
   view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f));
 }
 
 function startFlow(k){
   S.flow=k;S.step=0;S.tried=[];
   const f=FLOWS[k];
-  track(f.danger?"danger_open":"flow_start",{flow:k,title:f.t});
-  if(f.danger) return dangerView();
-  if(!f.steps.length) return ticketView();
-  stepView();
+  track(f.danger?"danger_open":"flow_start",{flow:k,title:DE(f.t)});
+  if(f.danger) return show(dangerView);
+  if(!f.steps.length) return openTicket();
+  show(stepView);
 }
 
 function stepView(){
   const f=FLOWS[S.flow], s=f.steps[S.step], n=f.steps.length; compact(true); toTop();
-  view.innerHTML=`<button class="back" id="bk">‹ Zurück</button>
+  view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
   <div class="card">
-    <div class="step-n">${f.ic} ${f.t} · Schritt ${S.step+1} von ${n}</div>
+    <div class="step-n">${f.ic} ${L(f.t)} · ${tr("stepOf",{a:S.step+1,b:n})}</div>
     <div class="progress"><i style="width:${(S.step+1)/n*100}%"></i></div>
-    <div class="step-t">${s.t}</div>
-    <p class="step-h">${s.h}</p>
-    <button class="btn primary" id="ok">✓ Hat geklappt</button>
-    <button class="btn ghost" id="no">Hat nicht geholfen</button>
+    <div class="step-t">${L(s.t)}</div>
+    <p class="step-h">${L(s.h)}</p>
+    <button class="btn primary" id="ok">${tr("ok")}</button>
+    <button class="btn ghost" id="no">${tr("no")}</button>
   </div>`;
-  $("#bk").onclick=()=>{ track("step_back",{step:s.t}); S.step?(S.step--,stepView()):home(); };
-  $("#ok").onclick=()=>{ track("step_ok",{flow_title:f.t,n:S.step+1,step:s.t}); solved(); };
-  $("#no").onclick=()=>{ track("step_fail",{flow_title:f.t,n:S.step+1,step:s.t}); S.tried.push(s.t); next(); };
+  $("#bk").onclick=()=>{ track("step_back",{step:DE(s.t)}); S.step?(S.step--,show(stepView)):home(); };
+  $("#ok").onclick=()=>{ track("step_ok",{flow_title:DE(f.t),n:S.step+1,step:DE(s.t)}); solved(); };
+  $("#no").onclick=()=>{ track("step_fail",{flow_title:DE(f.t),n:S.step+1,step:DE(s.t)}); S.tried.push(DE(s.t)); next(); };
 }
-function next(){ const f=FLOWS[S.flow]; if(S.step<f.steps.length-1){S.step++;stepView();} else ticketView(); }
+function next(){ const f=FLOWS[S.flow]; if(S.step<f.steps.length-1){S.step++;show(stepView);} else openTicket(); }
 
-function solved(){
+function solved(){ track("solved",{flow:S.flow,title:S.flow?DE(FLOWS[S.flow].t):""}); show(solvedView); }
+function solvedView(){
   compact(true); toTop();
-  track("solved",{flow:S.flow,title:S.flow?FLOWS[S.flow].t:""});
-  view.innerHTML=`<div class="card center"><div class="big-ic">⚡</div><div class="step-t">Super, es lädt!</div>
-  <p class="step-h">Gute Fahrt. War die Hilfe nützlich?</p>
-  <div style="display:flex;gap:10px"><button class="btn ghost" data-r="1">👍 Ja</button><button class="btn ghost" data-r="0">👎 Nein</button></div>
-  <button class="btn primary" id="hm">Zur Startseite</button></div>`;
-  view.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{ track("feedback",{value:+b.dataset.r}); b.parentElement.outerHTML=`<div class="note green">Danke für Ihr Feedback!</div>`;});
+  view.innerHTML=`<div class="card center"><div class="big-ic">⚡</div><div class="step-t">${tr("solvedT")}</div>
+  <p class="step-h">${tr("solvedH")}</p>
+  <div style="display:flex;gap:10px"><button class="btn ghost" data-r="1">${tr("yes")}</button><button class="btn ghost" data-r="0">${tr("nope")}</button></div>
+  <button class="btn primary" id="hm">${tr("home")}</button></div>`;
+  view.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{ track("feedback",{value:+b.dataset.r}); b.parentElement.outerHTML=`<div class="note green">${tr("thanks")}</div>`;});
   $("#hm").onclick=home;
 }
 
@@ -307,14 +393,14 @@ function wireCall(){ view.querySelectorAll(".js-call").forEach(a=>a.addEventList
 
 function dangerView(){
   compact(true); toTop();
-  view.innerHTML=`<button class="back" id="bk">‹ Zurück</button>
-  <div class="card"><div class="big-ic">⚠️</div><div class="step-t center">Bitte Abstand halten</div>
-  <div class="note red"><b>Berühren Sie die Säule nicht</b>, wenn Kabel beschädigt sind, es Funken, Rauch oder Brandgeruch gibt. Bei Feuer oder Verletzten: <b>Notruf 112</b>.</div>
-  <p class="step-h">Unser Service-Team ist bereits informiert. Bitte rufen Sie uns an oder melden Sie den Schaden mit Foto.</p>
-  ${hotlineLink("warn","📞 Hotline sofort anrufen")}
+  view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
+  <div class="card"><div class="big-ic">⚠️</div><div class="step-t center">${tr("dangerT")}</div>
+  <div class="note red">${tr("dangerNote")}</div>
+  <p class="step-h">${tr("dangerH")}</p>
+  ${hotlineLink("warn",tr("callNow"))}
   <div class="phone" style="font-size:20px">${CONFIG.hotline}</div>
-  <button class="btn ghost" id="tk">Schaden melden (mit Foto)</button></div>`;
-  $("#bk").onclick=home; $("#tk").onclick=()=>ticketView(); wireCall();
+  <button class="btn ghost" id="tk">${tr("reportDamage")}</button></div>`;
+  $("#bk").onclick=home; $("#tk").onclick=()=>openTicket(); wireCall();
 }
 
 // Foto verkleinern (max. 1600 px, JPEG) bevor es hochgeladen wird
@@ -324,59 +410,78 @@ function shrink(file){ return new Promise((res)=>{ if(!file) return res(null);
     c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg",0.8)); };
   img.onerror=()=>res(null); img.src=url; }); }
 
+function openTicket(){ track("ticket_open",{flow:S.flow,title:DE(FLOWS[S.flow].t)}); show(ticketView); }
 function ticketView(){
   const f=FLOWS[S.flow]; compact(true); toTop();
-  track("ticket_open",{flow:S.flow,title:f.t});
-  view.innerHTML=`<button class="back" id="bk">‹ Zurück</button>
-  <div class="card"><div class="step-t">Wir kümmern uns darum</div>
-  <p class="step-h">Melden Sie die Störung hier – unser Service-Team prüft den Ladepunkt. Die Daten sind schon ausgefüllt.</p>
-  <div class="summary"><b>Station</b>${esc(S.station)}<br><b>Ladepunkt</b>${S.cp}<br><b>Problem</b>${f.t}<br>${S.tried.length?`<b>Versucht</b>${S.tried.length} Schritt(e)<br>`:""}<b>Zeit</b>${new Date().toLocaleString("de-DE")}</div>
-  <label class="f">Was ist passiert? (optional)</label><textarea class="f" id="desc" placeholder="z. B. Fehlermeldung im Display…"></textarea>
-  <label class="f">Foto (optional)</label><input class="f" type="file" accept="image/*" id="pic">
-  <label class="f">Telefon oder E-Mail für Rückmeldung (optional)</label><input class="f" id="contact" placeholder="+49 … oder name@mail.de">
-  <button class="btn primary" id="send">Störung melden</button>
-  <button class="btn ghost" id="toChat">Lieber im Chat klären</button></div>`;
-  $("#bk").onclick=()=>FLOWS[S.flow].steps&&FLOWS[S.flow].steps.length?stepView():home();
+  const keep={desc:$("#desc")?.value||"",contact:$("#contact")?.value||""};
+  view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
+  <div class="card"><div class="step-t">${tr("ticketT")}</div>
+  <p class="step-h">${tr("ticketH")}</p>
+  <div class="summary"><b>${tr("sStation")}</b>${esc(S.station)}<br><b>${tr("sCp")}</b>${S.cp}<br><b>${tr("sProblem")}</b>${L(f.t)}<br>${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
+  <label class="f">${tr("fDesc")}</label><textarea class="f" id="desc" placeholder="${tr("fDescPh")}">${esc(keep.desc)}</textarea>
+  <label class="f">${tr("fPhoto")}</label><input class="f" type="file" accept="image/*" id="pic">
+  <label class="f">${tr("fContact")}</label><input class="f" id="contact" placeholder="${tr("fContactPh")}" value="${esc(keep.contact)}">
+  <button class="btn primary" id="send">${tr("send")}</button>
+  <button class="btn ghost" id="toChat">${tr("toChat")}</button></div>`;
+  $("#bk").onclick=()=>FLOWS[S.flow].steps&&FLOWS[S.flow].steps.length?show(stepView):home();
   $("#toChat").onclick=()=>setTab("chat");
   $("#send").onclick=async e=>{
-    e.target.disabled=true; e.target.textContent="Wird gesendet…";
+    e.target.disabled=true; e.target.textContent=tr("sending");
     const photo=await shrink($("#pic").files[0]);
-    const r=await track("ticket_submit",{flow:S.flow,title:f.t,tried:S.tried,desc:$("#desc").value.trim(),contact:$("#contact").value.trim(),photo});
-    const id=r&&r.ticketNo;
-    S.lastTicket=id||null;
-    view.innerHTML=`<div class="card"><div class="big-ic">🧾</div>
-    ${id?`<div class="step-t center">Ihre Vorgangsnummer</div><div class="ticket">${id}</div>
-      <p class="step-h">Unser Service-Team hat Ihre Meldung erhalten. Nennen Sie diese Nummer, falls Sie die Hotline anrufen.</p>`
-     :`<div class="step-t center">Meldung konnte nicht gesendet werden</div>
-      <div class="note amber">Bitte rufen Sie unsere Hotline an und nennen Sie die Stations-ID <b>${esc(S.station)}</b>, Ladepunkt ${S.cp}.</div>`}
-    ${hotlineLink("ghost","📞 Hotline anrufen")}<button class="btn primary" id="hm">Zur Startseite</button></div>`;
-    $("#hm").onclick=home; wireCall();
+    const r=await track("ticket_submit",{flow:S.flow,title:DE(f.t),tried:S.tried,desc:$("#desc").value.trim(),contact:$("#contact").value.trim(),photo});
+    S.lastTicket=(r&&r.ticketNo)||null; S.ticketFailed=!S.lastTicket;
+    show(ticketDoneView);
   };
+}
+function ticketDoneView(){
+  const id=S.lastTicket;
+  view.innerHTML=`<div class="card"><div class="big-ic">🧾</div>
+  ${id?`<div class="step-t center">${tr("ticketNo")}</div><div class="ticket">${id}</div><p class="step-h">${tr("ticketOk")}</p>`
+     :`<div class="step-t center">${tr("ticketFail")}</div><div class="note amber">${tr("ticketFailH",{id:esc(S.station),cp:S.cp})}</div>`}
+  ${hotlineLink("ghost",tr("callHotline"))}<button class="btn primary" id="hm">${tr("home")}</button></div>`;
+  $("#hm").onclick=home; wireCall();
 }
 
 /* ============ CHAT (KI + Live-Team über Telegram) ============ */
 function fallbackBot(t){
-  t=t.toLowerCase();
-  if(/rauch|funk|brand|feuer|kaputt|beschädig|kabel.*(ab|offen)|wasser/.test(t)) return `⚠️ Bitte die Säule nicht berühren und Abstand halten. Bei Gefahr Notruf 112. Rufen Sie sofort unsere Hotline an: ${CONFIG.hotline}.`;
-  if(/stecker.*(fest|lös|raus|steck)|entriegel/.test(t)) return "Beenden Sie die Ladung im Auto oder in der App und entriegeln Sie das Fahrzeug. Drücken Sie den Stecker kurz hinein und ziehen Sie dann. Klappt das nicht, rufen Sie bitte die Hotline an: "+CONFIG.hotline;
-  if(/karte|rfid|app|erkannt|autoris/.test(t)) return "Halten Sie die Karte 2–3 Sekunden flach auf das RFID-Symbol, nicht im Portemonnaie. Prüfen Sie in der App Ihres Anbieters, ob diese Station freigeschaltet ist. Hilft das nicht, melden Sie die Störung bitte im Tab „Störung“.";
-  if(/zahl|bezahl|kredit|paypal|preis|kost/.test(t)) return "Laden Sie die Zahlungsseite neu (QR-Code erneut scannen) oder versuchen Sie eine andere Zahlungsart. Zu Preisen hilft Ihnen die Hotline: "+CONFIG.hotline;
-  if(/bricht|abbruch|stopp|hört auf/.test(t)) return "Prüfen Sie bitte, ob im Auto ein Ladelimit (z. B. 80 %) oder ein Timer aktiv ist. Stecken Sie den Stecker neu ein. Hilft das nicht, melden Sie die Störung bitte im Tab „Störung“.";
-  if(/start|lädt nicht|geht nicht|funktioniert nicht/.test(t)) return "Stecken Sie den Stecker bitte kräftig bis zum Anschlag ein und entriegeln Sie das Fahrzeug. Dann die Karte erneut vorhalten oder in der App neu starten. Hat das geholfen?";
-  if(/display|dunkel|aus|tot/.test(t)) return "Tippen Sie bitte auf das Display oder halten Sie die Ladekarte ans Lesefeld – oft ist es nur im Ruhemodus. Sonst nutzen Sie bitte einen anderen Ladepunkt und melden die Störung im Tab „Störung“.";
-  if(/mensch|mitarbeiter|anruf|telefon|hotline/.test(t)) return `Unsere Hotline ist ${CONFIG.hotlineHours} erreichbar: ${CONFIG.hotline}. Bitte nennen Sie die Stations-ID ${S.station}.`;
-  if(/^(ja|danke|hat geklappt|super|lädt)/.test(t)) return "Freut mich! Gute Fahrt ⚡";
-  return "Können Sie kurz beschreiben, was passiert? Zum Beispiel: Ladung startet nicht, Karte wird nicht erkannt oder Stecker steckt fest.";
+  t=t.toLowerCase(); const en=lang==="en", H=CONFIG.hotline;
+  if(/rauch|funk|brand|feuer|kaputt|beschädig|wasser|smoke|spark|fire|burn|damag|broken|water/.test(t))
+    return en?`⚠️ Please don't touch the charger and keep your distance. In danger call 112. Call our hotline right away: ${H}.`:`⚠️ Bitte die Säule nicht berühren und Abstand halten. Bei Gefahr Notruf 112. Rufen Sie sofort unsere Hotline an: ${H}.`;
+  if(/stecker.*(fest|lös|raus|steck)|entriegel|stuck|release|unlock/.test(t))
+    return en?"End charging in the car, app or at the terminal and unlock the car. Push the connector in briefly, then pull. If that doesn't work, please call the hotline: "+H
+             :"Beenden Sie die Ladung im Auto, in der App oder am Terminal und entriegeln Sie das Fahrzeug. Drücken Sie den Stecker kurz hinein und ziehen Sie dann. Klappt das nicht, rufen Sie bitte die Hotline an: "+H;
+  if(/kredit|terminal|ad.?hoc|apple pay|google pay|debit|credit|pin/.test(t))
+    return en?"At the credit card terminal, first select your connector number, then tap your card until it beeps – or insert it and enter your PIN. If it's declined, try another card or Apple Pay / Google Pay."
+             :"Wählen Sie am Kreditkarten-Terminal zuerst die Nummer Ihres Ladepunkts, dann die Karte ans Kontaktlos-Symbol halten, bis es piept – oder einstecken und PIN eingeben. Bei Ablehnung eine andere Karte oder Apple Pay / Google Pay versuchen.";
+  if(/ladekarte|karte|rfid|app|erkannt|autoris|card|recogni|authori/.test(t))
+    return en?"Hold your charging card flat on the card symbol at the charger for 2–3 seconds, not in your wallet. Check in your provider's app whether this station is enabled. Otherwise try starting via the app or pay at the credit card terminal."
+             :"Halten Sie die Ladekarte 2–3 Sekunden flach auf das Kartensymbol an der Ladesäule, nicht im Portemonnaie. Prüfen Sie in der App Ihres Anbieters, ob die Station freigeschaltet ist. Sonst per App starten oder am Kreditkarten-Terminal bezahlen.";
+  if(/preis|kost|tarif|price|cost|tariff/.test(t))
+    return en?"For prices and tariffs, our hotline will help: "+H:"Zu Preisen und Tarifen hilft Ihnen unsere Hotline: "+H;
+  if(/bricht|abbruch|stopp|hört auf|stops|stopped|interrupt/.test(t))
+    return en?"Please check whether a charge limit (e.g. 80 %) or a timer is active in the car. Plug in again. If that doesn't help, please report the issue in the “Issue” tab."
+             :"Prüfen Sie bitte, ob im Auto ein Ladelimit (z. B. 80 %) oder ein Timer aktiv ist. Stecken Sie den Stecker neu ein. Hilft das nicht, melden Sie die Störung bitte im Tab „Störung“.";
+  if(/display|dunkel|bildschirm|screen|dark|blank/.test(t))
+    return en?"Is it the charger's display or the credit card terminal? Tap the screen – both go into sleep mode. If an error is shown, please take a photo and report it in the “Issue” tab."
+             :"Geht es um das Display der Ladesäule oder um das Kreditkarten-Terminal? Tippen Sie auf den Bildschirm – beide gehen in den Ruhemodus. Zeigt er einen Fehler, machen Sie bitte ein Foto und melden Sie ihn im Tab „Störung“.";
+  if(/start|lädt nicht|geht nicht|funktioniert nicht|won.?t|not charg|doesn.?t work|not work/.test(t))
+    return en?"Please push the connector in firmly until it clicks and unlock the car. Then start again with your card/app or at the credit card terminal. Did that help?"
+             :"Stecken Sie den Stecker bitte kräftig bis zum Anschlag ein und entriegeln Sie das Fahrzeug. Dann erneut mit Ladekarte/App oder am Kreditkarten-Terminal starten. Hat das geholfen?";
+  if(/mensch|mitarbeiter|anruf|telefon|hotline|someone|person|human|call|phone/.test(t))
+    return en?`Our hotline is available 24/7: ${H}. Please give the station ID ${S.station}.`:`Unsere Hotline ist ${CONFIG.hotlineHours} erreichbar: ${H}. Bitte nennen Sie die Stations-ID ${S.station}.`;
+  if(/^(ja|danke|hat geklappt|super|lädt|yes|thanks|thank you|works|great)/.test(t)) return en?"Glad to hear it! Have a good trip ⚡":"Freut mich! Gute Fahrt ⚡";
+  return en?"Could you briefly describe what's happening? For example: charging won't start, charging card not recognised, credit card not working or connector is stuck."
+           :"Können Sie kurz beschreiben, was passiert? Zum Beispiel: Ladung startet nicht, Ladekarte wird nicht erkannt, Kreditkarte geht nicht oder Stecker steckt fest.";
 }
 
 function chatView(){
-  compact(true);
-  if(!S.chat.length) S.chat.push({role:"assistant",content:`Hallo! Wir helfen Ihnen an Station ${S.station}, Ladepunkt ${S.cp}. Was ist das Problem?`});
-  view.innerHTML=`<div class="ai-badge">${S.human?"👩‍🔧 Ein Mitarbeiter ist im Chat":"Assistent · unser Team liest live mit"}</div>
+  compact(true); S.render=chatView;
+  if(!S.chat.length) S.chat.push({role:"assistant",content:tr("chatHello",{id:S.station,cp:S.cp})});
+  view.innerHTML=`<div class="ai-badge">${S.human?tr("chatHuman"):tr("chatBadge")}</div>
   <div class="chat" id="log">${S.chat.map(m=>m.role==="sys"?`<div class="sys">${esc(m.content)}</div>`:`<div class="msg ${m.role==="user"?"me":m.role==="team"?"team":"bot"}">${m.from?`<span class="who">${esc(m.from)}</span>`:""}${esc(m.content)}</div>`).join("")}</div>
-  ${S.chat.length<2?`<div class="chips">${["Ladung startet nicht","Karte wird nicht erkannt","Stecker steckt fest","Ich möchte einen Mitarbeiter sprechen"].map(c=>`<button class="chip">${c}</button>`).join("")}</div>`:""}
-  `;
+  ${S.chat.length<2?`<div class="chips">${tr("chips").map(c=>`<button class="chip">${c}</button>`).join("")}</div>`:""}`;
   view.querySelectorAll(".chip").forEach(c=>c.onclick=()=>send(c.textContent));
+  $("#chatIn").placeholder=tr("chatPh");
   scrollEnd();
 }
 function scrollEnd(){ setTimeout(()=>{ const s=scroller(); s.scrollTop=s.scrollHeight; },30); }
@@ -387,9 +492,9 @@ async function send(text){
   const log=$("#log"); const el=document.createElement("div"); el.className="msg bot"; el.textContent="…"; log.appendChild(el); scrollEnd();
   try{
     const msgs=S.chat.filter(m=>m.role==="user"||m.role==="assistant"||m.role==="team").map(m=>({role:m.role==="user"?"user":"assistant",content:m.content}));
-    const r=await api("chat",{messages:msgs,context:{flow:S.flow?FLOWS[S.flow].t:null,tried:S.tried}});
+    const r=await api("chat",{messages:msgs,context:{flow:S.flow?DE(FLOWS[S.flow].t):null,tried:S.tried}});
     if(r.text) S.chat.push({role:"assistant",content:r.text});
-    else if(r.human && !toldTeam){ toldTeam=true; S.chat.push({role:"sys",content:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich."}); }
+    else if(r.human && !toldTeam){ toldTeam=true; S.chat.push({role:"sys",content:tr("chatToTeam")}); }
     S.online=true;
   }catch(e){ S.online=false; S.chat.push({role:"assistant",content:fallbackBot(text)}); }
   busy=false; chatView();
@@ -422,15 +527,15 @@ $("#chatIn").addEventListener("focus",()=>setTimeout(scrollEnd,250));
 
 /* ============ HOTLINE ============ */
 function callView(){
-  compact(true);
+  compact(true); S.render=callView;
   view.innerHTML=`<div class="card"><div class="big-ic">📞</div>
-  <div class="phone">${CONFIG.hotline}</div><div class="hours">${CONFIG.hotlineHours}</div>
-  ${hotlineLink("primary","Jetzt anrufen")}
-  <div class="idbox"><span>Stations-ID<br><code>${esc(S.station)}</code> · LP ${S.cp}</span><button class="small-btn" id="cp">Kopieren</button></div>
-  ${S.lastTicket?`<div class="idbox"><span>Vorgangsnummer<br><code>${S.lastTicket}</code></span></div>`:""}
-  <p class="step-h" style="margin-top:14px">Bitte halten Sie die Stations-ID bereit – dann finden wir den Ladepunkt sofort im System.</p>
-  <div class="note red">Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b></div></div>`;
-  $("#cp").onclick=async e=>{ track("hotline_copy"); try{await navigator.clipboard.writeText(S.station+" / LP "+S.cp);e.target.textContent="Kopiert ✓";}catch{e.target.textContent=S.station;}};
+  <div class="phone">${CONFIG.hotline}</div><div class="hours">${tr("hours")}</div>
+  ${hotlineLink("primary",tr("callBtn"))}
+  <div class="idbox"><span>${tr("stationId")}<br><code>${esc(S.station)}</code> · ${tr("cpShort")} ${S.cp}</span><button class="small-btn" id="cp">${tr("copy")}</button></div>
+  ${S.lastTicket?`<div class="idbox"><span>${tr("caseNo")}<br><code>${S.lastTicket}</code></span></div>`:""}
+  <p class="step-h" style="margin-top:14px">${tr("callHint")}</p>
+  <div class="note red">${tr("emergency")}</div></div>`;
+  $("#cp").onclick=async e=>{ track("hotline_copy"); try{await navigator.clipboard.writeText(S.station+" / "+tr("cpShort")+" "+S.cp);e.target.textContent=tr("copied");}catch{e.target.textContent=S.station;}};
   wireCall();
 }
 
@@ -466,21 +571,29 @@ function setTab(t, silent){
   if(t==="chat"){ S.unread=0; badge(); }
   document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   $("#composer").classList.toggle("hidden",t!=="chat");
-  if(t==="help") S.flow&&FLOWS[S.flow].danger?dangerView():home();
+  if(t==="help") S.flow&&FLOWS[S.flow].danger?show(dangerView):home();
   if(t==="chat") chatView();
   if(t==="call") callView();
   if(t!=="chat") toTop();
 }
 document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
-$("#langBtn").onclick=()=>{lang=lang==="de"?"en":"de";$("#langBtn").textContent=lang==="de"?"EN":"DE";document.querySelectorAll("[data-i]").forEach(e=>e.textContent=tr(e.dataset.i));renderStation();track("lang",{lang});if(S.tab==="help"&&!S.flow)home();};
+function applyLang(){
+  document.documentElement.lang=lang;
+  $("#brandName").textContent=tr("brand");
+  $("#langBtn").textContent=lang==="de"?"EN":"DE";
+  document.querySelectorAll("[data-i]").forEach(e=>e.textContent=tr(e.dataset.i));
+  $("#chatIn").placeholder=tr("chatPh");
+  renderStation();
+}
+$("#langBtn").onclick=()=>{ lang=lang==="de"?"en":"de"; applyLang(); track("lang",{lang}); if(S.render) S.render(); };
 
 async function boot(){
-  $("#brandName").textContent=CONFIG.brand;
   $("#stationCard").classList.remove("hidden"); document.querySelector("nav.tabs").classList.remove("hidden");
+  applyLang();
   const mode=await loadStation();
   if(mode==="betreiber"){ $("#composer").classList.add("hidden"); return operatorView(); }
-  S.sid=uuid(); S.chat=[]; S.lastTeamId=0; S.human=false; S.chatOpened=false; toldTeam=false; if(S.pollT){clearTimeout(S.pollT);S.pollT=null;}
-  track("page_open",{ref:document.referrer?"link":"qr"});
+  S.sid=uuid(); S.chat=[]; S.lastTeamId=0; S.human=false; S.chatOpened=false; S.lastTicket=null; toldTeam=false; if(S.pollT){clearTimeout(S.pollT);S.pollT=null;}
+  track("page_open",{ref:document.referrer?"link":"qr",lang});
   setTab("help",true);
 }
 window.addEventListener("hashchange",boot);
