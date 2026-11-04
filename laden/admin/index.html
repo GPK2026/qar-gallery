@@ -629,7 +629,7 @@ async function loadIncidents(){
     if(IF.station&&!IF.q) r.incidents=r.incidents.filter(i=>i.station_id===IF.station);
     const sb=$("#isumBox"); if(sb) sb.innerHTML=incSummary(r.incidents);
     tb.innerHTML=r.incidents.length?r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
-      return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b>${st&&st.address?`<br><small class="muted">${esc(st.address)}</small>`:""}</td>
+      return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.flow==="field"?' <span class="badge amber" title="vom Field-Service gemeldet">🔧 Field-Service</span>':""}${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b>${st&&st.address?`<br><small class="muted">${esc(st.address)}</small>`:""}</td>
         <td>${esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td><td>${durBadge(i)}</td>
         <td>${i.reports}×${i.subscribers?` · 📧 ${i.subscribers}`:""}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span></td></tr>
         <tr class="akte hidden" data-for="${esc(i.ticket_no)}"><td colspan="9"><div class="akte-in">Lade …</div></td></tr>`; }).join("")
@@ -647,7 +647,7 @@ async function renderInc(no,box){
   try{
     const r=await api("incident",{ticket_no:no}), i=r.incident, st=stOf(i.station_id);
     const facts=[["Vorgang",`<code>${esc(i.ticket_no)}</code>`],["Projekt",esc(st?(st.project_id||st.id):i.station_id)+(st&&st.address?" · "+esc(st.address):"")],
-      ["Ladepunkt",esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")+(evseOf(st,i.connector)?` · <code>${esc(evseOf(st,i.connector))}</code>`:"")],["Problem",esc(i.title||"–")],
+      ["Ladepunkt",esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")+(evseOf(st,i.connector)?` · <code>${esc(evseOf(st,i.connector))}</code>`:"")],["Problem",esc(i.title||"–")],...(i.reported_by?[["Gemeldet von",`🔧 ${esc(i.reported_by.name)}${i.reported_by.company?" · "+esc(i.reported_by.company):""} <span class="muted">(${esc(FROLES[i.reported_by.role]||"Field-Service")})</span>`],["Beschreibung",esc(i.reported_by.desc||"–")+'<div class="i-fphoto"></div>']]:[]),
       ["Erste Meldung",new Date(i.created_at).toLocaleString("de-DE")],["Letzte Meldung",new Date(i.last_report_at).toLocaleString("de-DE")],["Meldungen",i.reports+"×"],
       ["Info-Mail an",(i.subscribers||[]).length?(i.subscribers.map(x=>esc(x.email)).join(", ")):"–"],...(i.resolved_at?[["Erledigt",new Date(i.resolved_at).toLocaleString("de-DE")]]:[])];
     box.innerHTML=`<div class="i-tl">${incTimeline(i,r.reports)}</div><div class="akte-grid">
@@ -667,6 +667,7 @@ async function renderInc(no,box){
       if(s2==="erledigt"&&i.status!=="erledigt"&&!confirm(`${i.ticket_no} auf „erledigt“ setzen? Der Ladepunkt wird in der App wieder freigegeben${(i.subscribers||[]).length?" und "+i.subscribers.length+" Kunde(n) per Mail informiert":""}.`)) return;
       const res=await api("update_incident",{ticket_no:no,status:s2,note}); toast(res.informed?`Gespeichert ✓ · ${res.informed} Kunde(n) informiert`:"Gespeichert ✓"); loadIncidents(); }catch(e){ toast(e.message,true); } };
     wireCust(box);
+    if(i.reported_by&&i.reported_by.photo) (async()=>{ try{ const rb=(await fapi("incident_field_info",{ticket_no:i.ticket_no})).reported_by; const el=box.querySelector(".i-fphoto"); if(el&&rb&&rb.photo_url) el.innerHTML=`<a href="${esc(rb.photo_url)}" target="_blank" rel="noopener"><img src="${esc(rb.photo_url)}" style="width:160px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line);margin-top:6px"></a>`; }catch(e){} })();
     (async()=>{ try{ const v=(await fapi("report_list",{q:i.ticket_no})).reports.filter(x=>x.ticket_no===i.ticket_no); const t=box.querySelector(".i-tl"); if(t) t.innerHTML=incTimeline(i,r.reports,v); }catch(e){} })();
     (async()=>{ await ensureStaff(); if(!FVIS||!FVIS.incidents){ try{ FVIS=await fapi("settings_get"); }catch(e){} }
       const ia=box.querySelector(".i-assign"); if(!ia) return; ia.innerHTML=assignHTML(i); wireAssign(ia); box.querySelector(".i-vis-sum").innerHTML=visSummary(i,FVIS&&FVIS.incidents);
