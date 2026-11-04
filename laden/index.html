@@ -82,6 +82,11 @@ p.sub{margin:-4px 2px 14px;color:var(--muted);font-size:15px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #plate{text-transform:uppercase}
 .svc-link{text-align:center;margin:6px 0 18px;font-size:13px}.svc-link a{color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;display:inline-block;background:#fff}
+/* Startseite: Ladepunkt-Auswahl erst nach der Kachel */
+.station:not(.compact) #cps,.station:not(.compact) #stEvse{display:none}
+.st-hint{font-size:13px;color:#b42318;font-weight:600;margin-top:6px}
+.st-hint:empty{display:none}
+.station.compact .st-hint{display:none}
 .site-h{font-size:15px;margin:22px 2px 10px;color:var(--ink)}
 .tile.site{background:#fbfcfb}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:left;min-height:96px;display:flex;flex-direction:column;gap:8px;color:var(--ink);transition:transform .08s}
@@ -205,6 +210,7 @@ nav.tabs button{position:relative}
     <div class="addr" id="stAddr">–</div>
     <div id="cps"></div>
     <div class="evse" id="stEvse"></div>
+    <div class="st-hint" id="stHint"></div>
   </section>
 
   <main id="view"></main>
@@ -368,7 +374,7 @@ const T = {
     chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
     hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
     tCopy:"📋 Nummer kopieren",tShare:"📤 Speichern / teilen",tCopied:"✓ Kopiert",tSaved:"Die Nummer bleibt nur auf Ihrem Handy für 12 Stunden gespeichert (Startseite und „Hotline“) – andere Kunden sehen sie nicht.",hide:"Ausblenden",
-    svc:"Service-Zugang für Techniker & Dienstleister",siteH:"Rund um den Standort",whatCare:"Wir kümmern uns darum!",sChoice:"Auswahl",multiH:"Mehrfachauswahl möglich.",next:"Weiter",
+    svc:"Service-Zugang für Techniker & Dienstleister",stInc:"An {n} Ladepunkt(en) ist bereits eine Störung bekannt",knownOther:"Anderes Problem an diesem Ladepunkt melden",siteH:"Rund um den Standort",whatCare:"Wir kümmern uns darum!",sChoice:"Auswahl",multiH:"Mehrfachauswahl möglich.",next:"Weiter",
     parkT:"Parken & Tarife an diesem Standort",parkNone:"Für diesen Standort sind keine besonderen Parkregeln hinterlegt. Bitte beachten Sie die Beschilderung vor Ort.",parkQ:"Gibt es ein Problem?",parkOk:"Danke, alles klar",blkT:"Blockierten Ladeplatz melden",blkH:"Ist ein anderer Ladeplatz frei, nutzen Sie bitte diesen. Ein Foto und das Kennzeichen helfen uns, vor Ort zu reagieren – wir können das Fahrzeug nicht selbst entfernen.",
     blkPhoto:"Foto vom Fahrzeug (optional)",blkPlate:"Kennzeichen (optional)",blkPlatePh:"z. B. B-AB 1234",blkWhere:"Welcher Ladeplatz ist blockiert? (optional)",blkWherePh:"z. B. Charger 2 · Ladepunkt 1",blkDescPh:"z. B. seit wann, Fahrzeugtyp, Farbe …",myTicket:"Ihre Störungsmeldung",myTickets:"Ihre Störungsmeldungen",
     known:"Störung bekannt",knownT:"An diesem Ladepunkt ist bereits eine Störung gemeldet",knownH:"Seit {t} · {n}× gemeldet. Unser Team arbeitet daran.",
@@ -397,7 +403,7 @@ const T = {
     chatPh:"Type a message…",chatToTeam:"Your message has reached our service team. We'll reply here shortly.",
     hours:"Available 24/7",callBtn:"Call now",stationId:"Station ID",copy:"Copy",copied:"Copied ✓",caseNo:"Reference number",
     tCopy:"📋 Copy number",tShare:"📤 Save / share",tCopied:"✓ Copied",tSaved:"The number is kept only on your phone for 12 hours (start screen and “Hotline”) – other customers can't see it.",hide:"Hide",
-    svc:"Service access for technicians & contractors",siteH:"Around the site",whatCare:"We'll take care of it!",sChoice:"Selection",multiH:"You can select several.",next:"Next",
+    svc:"Service access for technicians & contractors",stInc:"A fault is already known at {n} connector(s)",knownOther:"Report a different problem at this connector",siteH:"Around the site",whatCare:"We'll take care of it!",sChoice:"Selection",multiH:"You can select several.",next:"Next",
     parkT:"Parking & fees at this site",parkNone:"No special parking rules are stored for this site. Please follow the signs on site.",parkQ:"Is there a problem?",parkOk:"Thanks, all clear",blkT:"Report a blocked charging bay",blkH:"If another bay is free, please use it. A photo and the licence plate help us act on site – we can't remove the vehicle ourselves.",
     blkPhoto:"Photo of the vehicle (optional)",blkPlate:"Licence plate (optional)",blkPlatePh:"e.g. B-AB 1234",blkWhere:"Which bay is blocked? (optional)",blkWherePh:"e.g. Charger 2 · Connector 1",blkDescPh:"e.g. since when, vehicle type, colour …",myTicket:"Your issue report",myTickets:"Your issue reports",
     known:"Known fault",knownT:"A fault has already been reported at this connector",knownH:"Since {t} · reported {n}×. Our team is on it.",
@@ -468,7 +474,8 @@ const localNo=c=>{ const ch=chargers().find(x=>x.n===(c.charger||1)); return ch?
 function cpLabel(c){ if(!c) return ""; return `${multi()?tr("charger")+" "+(c.charger||1)+" · ":""}${tr("cp")} ${localNo(c)}`; }
 function initSelection(){
   const chs=chargers();
-  if(chs.length===1){ S.charger=chs[0].n; S.cp=S.cp||chs[0].cps[0]?.n||null; return; }
+  // Ladepunkt nur vorwählen, wenn es eindeutig ist – sonst wird erst nach Auswahl der Kachel gefragt
+  if(chs.length===1){ S.charger=chs[0].n; if(chs[0].cps.length===1) S.cp=chs[0].cps[0].n; return; }
   if(S.prefCharger && chs.some(c=>c.n===S.prefCharger)) S.charger=S.prefCharger;
   const ch=curCharger(); if(ch && ch.cps.length===1) S.cp=ch.cps[0].n;
 }
@@ -508,6 +515,8 @@ function renderStation(){
   if(im.dataset.src!==src){ im.dataset.src=src; im.hidden=true; im.onload=()=>{ im.hidden=false; }; im.onerror=()=>{ im.hidden=true; }; im.src=src; }
   $("#stAddr").textContent=st.addr||"";
   $("#cps").outerHTML=`<div id="cps">${selectorHTML()}</div>`;
+  const nInc=((st.incidents)||[]).length;
+  $("#stHint").innerHTML=nInc?`⚠ ${tr("stInc",{n:nInc})}`:"";
   wireSelector($("#cps"),()=>{ if(S.render===home) home(); });
   const c=curCp();
   $("#stEvse").innerHTML=c&&c.evse?`<b>EVSE-ID</b> ${esc(c.evse)}`:"";
@@ -516,16 +525,37 @@ function renderStation(){
   $("#stPill").setAttribute("aria-label",tr("switchCp"));
 }
 // Vor einer Störung: erst Charger/Ladepunkt wählen lassen, dann weiter
-function needPick(next){
-  if(curCp()) return false;
-  show(()=>pickView(next)); return true;
+function needPick(next,k){
+  // jedes Mal fragen, außer der Ladepunkt ist eindeutig oder wurde in diesem Besuch schon gewählt
+  if(curCp()&&(S.pickedOnce||chargers().reduce((a,c)=>a+c.cps.length,0)===1)) return false;
+  show(()=>pickView(()=>{ S.pickedOnce=true; next(); },k)); return true;
 }
-function pickView(next){
-  compact(true); toTop(); markSub(); S.render=()=>pickView(next);
+function pickView(next,k){
+  compact(true); toTop(); markSub(); S.render=()=>pickView(next,k);
+  const f=k&&FLOWS[k];
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
-  <div class="card"><div class="step-t">${tr("pickT")}</div><p class="step-h">${tr("pickH")}</p><div id="pickSel">${selectorHTML()}</div></div>`;
+  <div class="card">${f?`<div class="step-n">${f.ic} ${L(f.t)}</div>`:""}<div class="step-t">${tr("pickT")}</div><p class="step-h">${tr("pickH")}</p><div id="pickSel">${selectorHTML()}</div></div>`;
   $("#bk").onclick=home;
-  wireSelector($("#pickSel"),done=>{ if(done&&curCp()) next(); else pickView(next); });
+  wireSelector($("#pickSel"),done=>{ if(done&&curCp()){ incOf(S.cp)?show(()=>knownView(next,k)):next(); } else pickView(next,k); });
+}
+// Gewählter Ladepunkt hat schon eine bekannte Störung → Hinweis, freie Alternativen, „Betrifft mich auch“
+function knownView(next,k){
+  compact(true); toTop(); markSub(); S.render=()=>knownView(next,k);
+  const c=curCp(), inc=c&&incOf(c.n); if(!inc) return next();
+  const alts=((chargers().find(x=>x.n===(c.charger||1))||{cps:[]}).cps.filter(x=>x.n!==c.n&&!incOf(x.n)));
+  if(!S.knownLogged||!S.knownLogged[inc.cp]){ (S.knownLogged||={})[inc.cp]=1; track("known_shown",{cp:inc.cp}); }
+  view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
+  <div class="card known"><div class="step-t">⚠️ ${tr("knownT")}</div><p class="step-h">${esc(cpLabel(c))} · ${tr("knownH",{t:new Date(inc.since).toLocaleTimeString(locale(),{hour:"2-digit",minute:"2-digit"}),n:inc.reports})}</p>
+    ${alts.length?`<div class="sub" style="margin:0">${tr("knownAlt")}</div><div class="alt">${alts.map(x=>`<button data-alt="${x.n}">${esc(cpLabel(x))}${x.t?" · "+esc(x.t):""}</button>`).join("")}</div>`:`<div class="note amber">${tr("knownNoAlt")}</div>`}
+    <div id="plusBox">${S.plused&&S.plused[inc.cp]?`<div class="note green">${tr("plusOk")}</div>`:`<button class="btn primary" id="plus">➕ ${tr("plusBtn")}</button>`}</div>
+    <button class="btn ghost" id="other">${tr("knownOther")}</button></div>`;
+  $("#bk").onclick=()=>show(()=>pickView(next,k));
+  $("#other").onclick=next;
+  view.querySelectorAll("[data-alt]").forEach(b=>b.onclick=()=>{ pickCp(+b.dataset.alt); renderStation(); next(); });
+  if($("#plus")) $("#plus").onclick=()=>{ $("#plusBox").innerHTML=`<label class="f">${tr("plusMail")}</label><input class="f" id="plusMail" type="email" inputmode="email" autocomplete="email" placeholder="${tr("fEmailPh")}"><button class="btn primary" id="plusGo">${tr("plusSend")}</button>`;
+    $("#plusGo").onclick=async e=>{ e.target.disabled=true; const m=$("#plusMail").value.trim();
+      try{ const r=await api("plus_one",{email:m}); if(r.gone){ await refreshIncidents(); return next(); } (S.plused||={})[inc.cp]=1;
+        $("#plusBox").innerHTML=`<div class="note green">${tr("plusOk")}${m?" "+tr("plusOkMail",{m:esc(m)}):""}</div>`; }catch(err){ e.target.disabled=false; } }; };
 }
 // Station kompakt (eine Zeile) überall außer auf der Startseite – Tippen klappt sie auf
 const review=()=>((S.stationData&&S.stationData.review)||"");
@@ -598,7 +628,7 @@ function home(){
 }
 
 function startFlow(k){
-  const f0=FLOWS[k]; if(!f0.danger && !f0.site && needPick(()=>startFlow(k))) return;
+  const f0=FLOWS[k]; if(!f0.danger && !f0.site && needPick(()=>startFlow(k),k)) return;
   S.flow=k;S.step=0;S.tried=[];
   const f=FLOWS[k];
   track(f.danger?"danger_open":"flow_start",{flow:k,title:DE(f.t)});
@@ -900,7 +930,7 @@ async function boot(){
   applyLang();
   const mode=await loadStation();
   if(mode==="betreiber"){ $("#composer").classList.add("hidden"); return operatorView(); }
-  S.sid=uuid(); S.plused={}; S.knownLogged={}; S.lastEmail=S.lastPhone=S.lastCard=S.lastEmsp=S.lastName=""; S.attached=false; S.chat=[]; S.lastTeamId=0; S.human=false; S.chatOpened=false; S.lastTicket=(recentTicket()||{}).no||null; toldTeam=false; if(S.pollT){clearTimeout(S.pollT);S.pollT=null;}
+  S.sid=uuid(); S.pickedOnce=false; S.plused={}; S.knownLogged={}; S.lastEmail=S.lastPhone=S.lastCard=S.lastEmsp=S.lastName=""; S.attached=false; S.chat=[]; S.lastTeamId=0; S.human=false; S.chatOpened=false; S.lastTicket=(recentTicket()||{}).no||null; toldTeam=false; if(S.pollT){clearTimeout(S.pollT);S.pollT=null;}
   track("page_open",{ref:document.referrer?"link":"qr",lang});
   setTab("help",true);
 }

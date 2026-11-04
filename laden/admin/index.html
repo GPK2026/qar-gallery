@@ -550,6 +550,7 @@ async function renderInc(no,box){
         <div class="row"><select class="i-status" style="width:auto">${Object.entries(TST).map(([k,v])=>`<option value="${k}" ${k===i.status?"selected":""}>${v[0]}</option>`).join("")}</select></div>
         <textarea class="i-note" rows="2" placeholder="Interne Notiz (z. B. Techniker beauftragt, Kunde zurückgerufen …)" style="margin-top:8px"></textarea>
         <div class="row" style="margin-top:8px"><button class="btn sm i-save">Speichern</button><button class="btn ghost sm i-copy">Kopieren</button><button class="btn ghost sm i-sess">Besuche ansehen</button></div>
+        <h3 style="margin-top:16px">Field-Service</h3><div class="i-vis-sum" style="margin-bottom:6px"></div><div class="i-assign"></div><button class="btn ghost sm i-asave" style="margin-top:8px">Sichtbarkeit speichern</button>
         <div class="hint">„Erledigt“: Ladepunkt ist in der App sofort wieder frei${(i.subscribers||[]).length?`, ${i.subscribers.length} Kunde(n) bekommen eine Info-Mail`:""}.</div>
         <div class="notes">${(i.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)}</span>${n.status?` <span class="badge ${TST[n.status][1]==="ok"?"":TST[n.status][1]}">${TST[n.status][0]}</span>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div>
         ${r.photos.length?`<h3 style="margin-top:16px">Fotos</h3><div class="row">${r.photos.map(p=>`<a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join("")}</div>`:""}
@@ -560,6 +561,9 @@ async function renderInc(no,box){
       if(s2==="erledigt"&&i.status!=="erledigt"&&!confirm(`${i.ticket_no} auf „erledigt“ setzen? Der Ladepunkt wird in der App wieder freigegeben${(i.subscribers||[]).length?" und "+i.subscribers.length+" Kunde(n) per Mail informiert":""}.`)) return;
       const res=await api("update_incident",{ticket_no:no,status:s2,note}); toast(res.informed?`Gespeichert ✓ · ${res.informed} Kunde(n) informiert`:"Gespeichert ✓"); loadIncidents(); }catch(e){ toast(e.message,true); } };
     wireCust(box);
+    (async()=>{ await ensureStaff(); if(!FVIS||!FVIS.incidents){ try{ FVIS=await fapi("settings_get"); }catch(e){} }
+      const ia=box.querySelector(".i-assign"); if(!ia) return; ia.innerHTML=assignHTML(i); wireAssign(ia); box.querySelector(".i-vis-sum").innerHTML=visSummary(i,FVIS&&FVIS.incidents);
+      box.querySelector(".i-asave").onclick=async()=>{ try{ const a=readAssign(ia); await fapi("incident_assign",{ticket_no:i.ticket_no,...a}); Object.assign(i,a); box.querySelector(".i-vis-sum").innerHTML=visSummary(i,FVIS&&FVIS.incidents); toast("Sichtbarkeit gespeichert ✓"); }catch(e){ toast(e.message,true); } }; })();
     box.querySelector(".i-sess").onclick=()=>{ TF.q=no; TF.mode="all"; go("tickets"); };
     box.querySelector(".i-copy").onclick=async e=>{ const txt=[...facts.map(([k,v])=>`${k}: ${v.replace(/<[^>]+>/g,"")}`),"","Meldungen:",...r.reports.map(ev=>`${fmtDT(ev.at)}  ${EV[ev.type]||ev.type}  ${evDetail(ev,st).replace(/<br>/g," · ").replace(/<[^>]+>/g,"")}`),
         ...(i.notes||[]).length?["","Notizen:",...i.notes.map(n=>`${fmtDT(n.at)} ${n.status?"["+TST[n.status][0]+"] ":""}${n.text||""}`)]:[]].join("\n");
@@ -689,13 +693,63 @@ async function fieldView(){
   if(!FF.preset&&!FF.from) setPreset(FF,"30");
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
   main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Field-Service</h1><p class="sub" style="margin:0">Techniker, Servicefirmen, Reinigung und Dienstleister melden sich am QR-Code über „Service-Zugang“ mit ihrer PIN an und arbeiten Checklisten ab.</p></div></div>
-  <div class="seg" id="ftab" style="margin-bottom:14px">${[["reports","Protokolle"],["staff","Mitarbeiter & PINs"],["lists","Checklisten"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
+  <div class="seg" id="ftab" style="margin-bottom:14px">${[["reports","Protokolle"],["defects","Mängel"],["staff","Mitarbeiter & PINs"],["lists","Checklisten"],["vis","Sichtbarkeit"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
   <div id="fbody"><div class="muted">Lade …</div></div>`;
   document.querySelectorAll("#ftab button").forEach(b=>b.onclick=()=>{ FF.tab=b.dataset.t; document.querySelectorAll("#ftab button").forEach(x=>x.classList.toggle("on",x===b)); fieldTab(); });
   fieldTab();
 }
 async function fieldTab(){ try{ if(!FCL.length||FF.tab==="lists") FCL=(await fapi("checklist_list")).checklists; }catch(e){ return toast(e.message,true); }
-  ({reports:fReports,staff:fStaff,lists:fLists})[FF.tab](); }
+  ({reports:fReports,defects:fDefects,staff:fStaff,lists:fLists,vis:fVis})[FF.tab](); }
+/* Sichtbarkeit: wer im Field-Service eine Störung / einen Mangel sieht */
+async function ensureStaff(){ if(!FSTAFF||!FSTAFF.length){ try{ FSTAFF=(await fapi("staff_list")).staff||[]; }catch(e){ FSTAFF=[]; } } return FSTAFF; }
+function visSummary(o,def){ if(o.field_hidden) return '<span class="badge off">🚫 ausgeblendet</span>';
+  const r=(o.field_roles||[]).map(k=>FROLES[k]||k), p=(o.field_staff||[]).map(id=>(FSTAFF.find(x=>x.id===id)||{}).name||"Person");
+  return r.length||p.length?`<span class="badge amber">👁 ${esc([...r,...p].join(", "))}</span>`:`<span class="badge">👁 Standard${def&&def.length?": "+esc(def.map(k=>FROLES[k]).join(", ")):""}</span>`; }
+function assignHTML(o){ return `<div class="assign">
+  <label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink)"><input type="checkbox" class="a-hidden" style="width:auto" ${o.field_hidden?"checked":""}> Für Field-Service ausblenden (nur intern im Dashboard)</label>
+  <div class="a-body" style="${o.field_hidden?"opacity:.4;pointer-events:none":""}">
+    <div class="muted" style="font-size:12.5px;margin:8px 0 4px">Sichtbar für Rollen (nichts gewählt = Standard-Einstellung):</div>
+    <div class="row" style="gap:12px">${Object.entries(FROLES).map(([k,l])=>`<label style="display:flex;gap:6px;align-items:center;font-size:13.5px;color:var(--ink)"><input type="checkbox" class="a-role" value="${k}" style="width:auto" ${(o.field_roles||[]).includes(k)?"checked":""}> ${l}</label>`).join("")}</div>
+    <div class="muted" style="font-size:12.5px;margin:8px 0 4px">… oder gezielt einzelnen Personen zuweisen:</div>
+    <div style="max-height:130px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px">${FSTAFF.filter(x=>x.active).map(x=>`<label style="display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--ink);margin:3px 0"><input type="checkbox" class="a-staff" value="${esc(x.id)}" style="width:auto" ${(o.field_staff||[]).includes(x.id)?"checked":""}> ${esc(x.name)} <span class="muted">${esc(x.company||"")} · ${esc(FROLES[x.role])}</span></label>`).join("")||'<span class="muted">Noch keine Mitarbeiter angelegt.</span>'}</div></div></div>`; }
+function readAssign(box){ return { field_hidden:box.querySelector(".a-hidden").checked, field_roles:[...box.querySelectorAll(".a-role:checked")].map(x=>x.value), field_staff:[...box.querySelectorAll(".a-staff:checked")].map(x=>x.value) }; }
+function wireAssign(box){ const h=box.querySelector(".a-hidden"); h.onchange=()=>{ const b=box.querySelector(".a-body"); b.style.opacity=h.checked?.4:1; b.style.pointerEvents=h.checked?"none":""; }; }
+let FVIS=null;
+async function fVis(){
+  try{ FVIS=await fapi("settings_get"); }catch(e){ return toast(e.message,true); }
+  const row=(key,title,sub)=>`<div class="card"><h2 style="margin-bottom:4px">${title}</h2><p class="sub">${sub}</p><div class="row" style="gap:14px">${Object.entries(FROLES).map(([k,l])=>`<label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="checkbox" class="v-${key}" value="${k}" style="width:auto" ${FVIS[key].includes(k)?"checked":""}> ${l}</label>`).join("")}</div></div>`;
+  $("#fbody").innerHTML=row("incidents","Kundenstörungen – Standard-Sichtbarkeit","Wer im Service-Zugang offene Störungen aus Kundenmeldungen sieht, solange einer Störung nichts Eigenes zugewiesen ist. Pro Störung lässt sich das in der Störungsakte ändern oder ganz ausblenden.")
+    +row("defects","Mängel aus Protokollen – Standard-Sichtbarkeit","Wer offene Mängel aus Checklisten sieht und als behoben melden kann. Pro Mangel im Reiter „Mängel“ änderbar.")
+    +`<button class="btn" id="vSave">Speichern</button>`;
+  $("#vSave").onclick=async()=>{ try{ await fapi("settings_save",{incidents:[...document.querySelectorAll(".v-incidents:checked")].map(x=>x.value),defects:[...document.querySelectorAll(".v-defects:checked")].map(x=>x.value)}); toast("Gespeichert ✓"); }catch(e){ toast(e.message,true); } };
+}
+/* Mängel */
+let FD={status:"open",station:""};
+async function fDefects(){
+  await ensureStaff(); if(!FVIS||!FVIS.incidents){ try{ FVIS=await fapi("settings_get"); }catch(e){} }
+  $("#fbody").innerHTML=`<div class="card" style="padding:12px 14px"><div class="row"><div class="seg" id="dSt">${[["open","Offen"],["behoben","Behoben"],["all","Alle"]].map(([k,l])=>`<button data-s="${k}" class="${FD.status===k?"on":""}">${l}</button>`).join("")}</div>
+    <select id="dPr" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${FD.station===s.id?"selected":""}>${esc(s.project_id||s.id)}</option>`).join("")}</select>
+    <span class="muted" style="font-size:13px">Mängel entstehen automatisch aus „✗ Mangel“ in Checklisten. Hier legst du fest, wer sie im Service-Zugang sieht.</span></div></div>
+  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Seit</th><th>Projekt</th><th>Bereich</th><th>Mangel</th><th>Gemeldet von</th><th>Sichtbar für</th><th>Status</th></tr></thead><tbody id="dtb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  document.querySelectorAll("#dSt button").forEach(b=>b.onclick=()=>{ FD.status=b.dataset.s; fDefects(); });
+  $("#dPr").onchange=()=>{ FD.station=$("#dPr").value; fDefects(); };
+  try{ const r=await fapi("defect_list",{status:FD.status==="all"?"":FD.status,station:FD.station}), tb=$("#dtb"); const DS={offen:["offen","warn"],in_arbeit:["in Arbeit","amber"],behoben:["behoben","ok"]};
+    tb.innerHTML=r.defects.length?r.defects.map(d=>{ const x=DS[d.status]||DS.offen; return `<tr class="click" data-id="${esc(d.id)}"><td class="chev">▸</td><td>${fmtDT(d.created_at)}</td><td><b>${esc(stLabel(d.station_id))}</b></td><td>${esc(fWhere(d))}</td>
+      <td><b>${esc(d.item_text)}</b>${d.note?`<br><small class="muted">${esc(d.note)}</small>`:""}</td><td>${esc(d.created_by||"")}<br><small class="muted">${esc(d.report_no||"")}</small></td><td>${visSummary(d,FVIS&&FVIS.defects)}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span></td></tr>
+      <tr class="akte hidden" data-for="${esc(d.id)}"><td colspan="8"><div class="akte-in"></div></td></tr>`; }).join(""):`<tr><td colspan="8" class="muted">Keine Mängel ${FD.status==="open"?"offen 🎉":""}</td></tr>`;
+    tb.querySelectorAll("tr.click").forEach(row=>row.onclick=()=>{ const d=r.defects.find(x=>x.id===row.dataset.id), ak=tb.querySelector(`tr.akte[data-for="${d.id}"]`), open=ak.classList.toggle("hidden")===false;
+      row.querySelector(".chev").textContent=open?"▾":"▸"; if(!open) return; const box=ak.querySelector(".akte-in");
+      box.innerHTML=`<div class="akte-grid"><div><h3>Mangel</h3><dl><dt>Prüfpunkt</dt><dd>${esc(d.item_text)}</dd><dt>Beschreibung</dt><dd>${esc(d.note||"–")}</dd><dt>Aus Protokoll</dt><dd><code>${esc(d.report_no||"")}</code> · ${esc(d.checklist_title||"")}</dd><dt>Gemeldet</dt><dd>${fmtDT(d.created_at)} · ${esc(d.created_by||"")}</dd>
+        ${d.resolved_at?`<dt>Behoben</dt><dd>${fmtDT(d.resolved_at)} · ${esc(d.resolved_by||"")}${d.resolve_note?"<br>"+esc(d.resolve_note):""}</dd>`:""}</dl>
+        ${d.photo_url?`<a href="${esc(d.photo_url)}" target="_blank" rel="noopener"><img src="${esc(d.photo_url)}" style="width:160px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line);margin-top:8px"></a>`:""}
+        <h3 style="margin-top:14px">Status</h3><select class="d-st" style="width:auto">${Object.entries(DS).map(([k,v])=>`<option value="${k}" ${d.status===k?"selected":""}>${v[0]}</option>`).join("")}</select>
+        <textarea class="d-note" rows="2" placeholder="Notiz (optional)" style="margin-top:8px"></textarea>
+        <div class="notes">${(d.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)} · ${esc(n.by||"")}</span>${n.status?` <b>${esc((DS[n.status]||[n.status])[0])}</b>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div></div>
+        <div><h3>Sichtbar im Service-Zugang für</h3>${assignHTML(d)}<button class="btn sm d-save" style="margin-top:12px">Speichern</button></div></div>`;
+      wireAssign(box);
+      box.querySelector(".d-save").onclick=async()=>{ try{ await fapi("defect_update",{id:d.id,status:box.querySelector(".d-st").value,note:box.querySelector(".d-note").value,...readAssign(box)}); toast("Gespeichert ✓"); fDefects(); }catch(e){ toast(e.message,true); } }; });
+  }catch(e){ toast(e.message,true); }
+}
 const stLabel=id=>{ const s=stOf(id); return s?(s.project_id||s.id):id; };
 function fWhere(r){ const st=stOf(r.station_id); if(r.connector) return cpLabel(st,r.connector); if(r.charger){ const c=(st?.chargers||[]).find(x=>x.n===r.charger); return c?c.label:"Charger "+r.charger; } return "ganzer Standort"; }
 /* Protokolle */

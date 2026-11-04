@@ -151,6 +151,9 @@ async function homeView(){
     <div class="small muted" style="margin-top:6px">${(st.chargers||[]).length} Charger · ${(st.connectors||[]).length} Ladepunkte</div></div>
   ${h.incidents.length?`<h2>⚠️ Offene Störungen (${h.incidents.length})</h2>${h.incidents.map(i=>`<div class="card inc"><div class="row"><div><b>${esc(i.connector?cpName(st,i.connector):"Standort allgemein")}</b><br><span class="small">${esc(i.title||"")}</span><br><span class="small muted">${esc(i.ticket_no)} · seit ${fmt(i.created_at)} · ${i.reports}× gemeldet</span></div><span class="chip ${i.status==="in_arbeit"?"amber":"warn"}">${i.status==="in_arbeit"?"in Arbeit":"neu"}</span></div>
       ${stoer?`<button class="btn mt" data-inc="${esc(i.ticket_no)}" data-cp="${i.connector||""}">🔧 Einsatz dokumentieren</button>`:""}</div>`).join("")}`:""}
+  ${(h.defects||[]).length?`<h2>🛠 Offene Mängel (${h.defects.length})</h2>${h.defects.map(d=>`<div class="card inc" id="d-${esc(d.id)}"><div class="row"><div><b>${esc(d.item_text)}</b><br><span class="small">${esc(d.connector?cpName(st,d.connector):d.charger?((st.chargers||[]).find(c=>c.n===d.charger)||{}).label||"Charger "+d.charger:"Standort")}${d.note?" · "+esc(d.note):""}</span><br><span class="small muted">${esc(d.checklist_title||"")} · ${fmt(d.created_at)} · ${esc(d.created_by||"")}</span></div><span class="chip ${d.status==="in_arbeit"?"amber":"warn"}">${d.status==="in_arbeit"?"in Arbeit":"offen"}</span></div>
+      <textarea class="f" data-dn="${esc(d.id)}" placeholder="Was wurde gemacht? (optional)"></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button class="btn ghost" data-dw="${esc(d.id)}">In Arbeit</button><button class="btn" data-dok="${esc(d.id)}">✓ Behoben</button></div></div>`).join("")}`:""}
   <h2>Checklisten</h2>
   ${h.checklists.length?`<div class="tiles">${h.checklists.map(l=>{ const d=due(l); return `<button class="tile" data-cl="${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.description||"")}</small>
       <small>${l.last?`zuletzt ${fmt(l.last.finished_at).split(",")[0]} · ${esc(l.last.staff_name)}`:"noch nie durchgeführt"}</small>${d?`<span class="chip ${d==="fällig"?"warn":"amber"}" style="align-self:flex-start">${d}</span>`:""}</button>`; }).join("")}</div>`:`<div class="card muted">Für Ihre Rolle sind keine Checklisten freigeschaltet.</div>`}
@@ -158,6 +161,9 @@ async function homeView(){
   <div class="card">${h.recent.length?h.recent.map(r=>`<div class="rec"><span><b>${esc(r.checklist_title)}</b><br><span class="small muted">${fmt(r.finished_at)} · ${esc(r.staff_name)}${r.connector?" · "+esc(cpName(st,r.connector)):""}</span></span><span class="chip ${r.result==="ok"?"":"warn"}">${r.result==="ok"?"✓ ok":"⚠ Mängel"}</span></div>`).join(""):`<span class="muted small">Noch keine Protokolle.</span>`}</div>`;
   const im=$("#stImg"); im.onload=()=>im.hidden=false; im.src=IMG+encodeURIComponent(st.id)+".jpg?v="+Math.floor(Date.now()/3e5);
   view.querySelectorAll("[data-cl]").forEach(b=>b.onclick=()=>startRun(b.dataset.cl));
+  const defAct=async(id,status,btn)=>{ btn.disabled=true; try{ await api("defect_resolve",{id,status,note:(view.querySelector(`[data-dn="${id}"]`)||{}).value||""}); homeView(); }catch(e){ btn.disabled=false; alert(e.message); } };
+  view.querySelectorAll("[data-dok]").forEach(b=>b.onclick=()=>defAct(b.dataset.dok,"behoben",b));
+  view.querySelectorAll("[data-dw]").forEach(b=>b.onclick=()=>defAct(b.dataset.dw,"in_arbeit",b));
   view.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>startRun("stoerung",{ticket:b.dataset.inc,connector:+b.dataset.cp||null}));
 }
 
