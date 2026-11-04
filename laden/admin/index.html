@@ -407,7 +407,7 @@ function evDetail(e,st){ const d=e.data||{};
     case "step_back": return d.step||"";
     case "feedback": return d.value===1?"👍 hilfreich":"👎 nicht hilfreich";
     case "incident_plus": return `<b>${esc(d.ticketNo||"")}</b>${d.email?" · Info an "+esc(d.email):""}`;
-    case "ticket_submit": return [`<b>${esc(d.ticketNo||"")}</b>${d.attached?" (an bestehende Störung angehängt)":""}`, (d.card||d.emsp)?"Ladekarte: "+esc([d.emsp,d.card].filter(Boolean).join(" · ")):"", d.title&&esc(d.title), d.tried&&d.tried.length?"versucht: "+esc(d.tried.join(", ")):"", d.desc?`„${esc(d.desc)}“`:"", d.contact?"Kontakt: "+esc(d.contact):"", d.photo?"📷 Foto":""].filter(Boolean).join("<br>");
+    case "ticket_submit": return [`<b>${esc(d.ticketNo||"")}</b>${d.attached?" (an bestehende Störung angehängt)":""}`, d.spot?"Gewählter Platz: "+esc(d.spot):"", d.name?"Name: "+esc(d.name):"", (d.card||d.emsp)?"Ladekarte: "+esc([d.emsp,d.card].filter(Boolean).join(" · ")):"", d.title&&esc(d.title), d.tried&&d.tried.length?"versucht: "+esc(d.tried.join(", ")):"", d.desc?`„${esc(d.desc)}“`:"", d.contact?"Kontakt: "+esc(d.contact):"", d.photo?"📷 Foto":""].filter(Boolean).join("<br>");
     case "chat_user": case "chat_bot": return esc(d.text||"");
     case "chat_team": return `<b>${esc(d.from||"Team")}:</b> ${esc(d.text||"")}`;
     case "hotline_click": return d.from?"aus Bereich „"+({help:"Störung",chat:"Chat",call:"Hotline"}[d.from]||d.from)+"“":"";
@@ -471,7 +471,7 @@ async function loadIncidents(){
     if(IF.station&&!IF.q) r.incidents=r.incidents.filter(i=>i.station_id===IF.station);
     tb.innerHTML=r.incidents.length?r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
       return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b>${st&&st.address?`<br><small class="muted">${esc(st.address)}</small>`:""}</td>
-        <td>${esc(i.connector?cpLabel(st,i.connector):"–")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td>
+        <td>${esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td>
         <td>${i.reports}×${i.subscribers?` · 📧 ${i.subscribers}`:""}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span></td></tr>
         <tr class="akte hidden" data-for="${esc(i.ticket_no)}"><td colspan="8"><div class="akte-in">Lade …</div></td></tr>`; }).join("")
       :`<tr><td colspan="8" class="muted">${IF.q?"Nichts gefunden.":IF.filter==="open"?"Keine offenen Störungen 🎉":"Keine Einträge."}</td></tr>`;
@@ -488,7 +488,7 @@ async function renderInc(no,box){
   try{
     const r=await api("incident",{ticket_no:no}), i=r.incident, st=stOf(i.station_id);
     const facts=[["Vorgang",`<code>${esc(i.ticket_no)}</code>`],["Projekt",esc(st?(st.project_id||st.id):i.station_id)+(st&&st.address?" · "+esc(st.address):"")],
-      ["Ladepunkt",esc(i.connector?cpLabel(st,i.connector):"–")+(evseOf(st,i.connector)?` · <code>${esc(evseOf(st,i.connector))}</code>`:"")],["Problem",esc(i.title||"–")],
+      ["Ladepunkt",esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")+(evseOf(st,i.connector)?` · <code>${esc(evseOf(st,i.connector))}</code>`:"")],["Problem",esc(i.title||"–")],
       ["Erste Meldung",new Date(i.created_at).toLocaleString("de-DE")],["Letzte Meldung",new Date(i.last_report_at).toLocaleString("de-DE")],["Meldungen",i.reports+"×"],
       ["Info-Mail an",(i.subscribers||[]).length?(i.subscribers.map(x=>esc(x.email)).join(", ")):"–"],...(i.resolved_at?[["Erledigt",new Date(i.resolved_at).toLocaleString("de-DE")]]:[])];
     box.innerHTML=`<div class="akte-grid">
