@@ -129,6 +129,9 @@ dt{color:var(--muted)}dd{margin:0}
 .up-row .pct{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:13px}
 .up-axis{display:grid;grid-template-columns:150px 1fr 64px;gap:10px;color:var(--muted);font-size:11px;margin-top:4px}
 .up-axis div{display:flex;justify-content:space-between}
+.av-h{background:none;border:0;padding:0;font-size:16px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
+.av-h .chev{color:var(--muted);font-size:13px}
+.av-closed .av-body{display:none!important}
 .proj-block{border-top:1px solid var(--line);padding:2px 0}
 .proj-block:first-of-type{border-top:0}
 .proj-h{display:grid;grid-template-columns:16px auto auto 1fr auto 200px 64px;align-items:center;gap:8px;width:100%;background:none;border:0;padding:10px 0;font-size:13.5px;text-align:left;color:var(--ink)}
@@ -217,13 +220,14 @@ async function projectsView(){
   wireTiles($("#plist"));
 }
 // Projekt-Kacheln (Projekte-Seite und Übersicht) + Kachel „Neues Projekt“
-function projTiles(openBy){ return STATIONS.map((s,i)=>{ const o=openBy?openBy[s.id]||0:0; return `<div class="card pcard" data-i="${i}">
+function projTiles(openBy,only){ return STATIONS.map((s,i)=>{ if(only&&s.id!==only) return ""; const o=openBy?openBy[s.id]||0:0; return `<div class="card pcard" data-i="${i}">
     <div class="row"><div class="pid">${esc(s.project_id||s.id)}</div><div class="sp"></div>${o?`<span class="badge warn">⚠ ${o} gestört</span> `:""}${s.active?`<span class="badge">aktiv</span>`:`<span class="badge off">inaktiv</span>`}</div>
     <div style="font-weight:600;margin-top:2px">${esc(s.name||"")}</div><div class="muted">${esc(s.address||"")}</div>
     <div class="row" style="margin-top:10px;gap:6px"><span class="badge amber">${(s.chargers||[]).length} Charger</span><span class="badge amber">${lpCount(s)} Ladepunkte</span>${evseMissing(s)?`<span class="badge warn">${evseMissing(s)} ohne EVSE-ID</span>`:""}</div>
     <div class="stats"><div><b>${s.stats.visits}</b>Besuche 30 T.</div><div><b>${s.stats.tickets}</b>Meldungen</div><div><b>${s.stats.danger}</b>Gefahr</div></div>
-  </div>`; }).join("")+`<button class="card pcard newtile" id="newTile"><span>＋</span>Neues Projekt anlegen</button>`; }
+  </div>`; }).join("")+(only?`<button class="card pcard newtile" id="allTiles" style="min-height:120px"><span>⟲</span>Alle Projekte anzeigen</button>`:"")+`<button class="card pcard newtile" id="newTile"><span>＋</span>Neues Projekt anlegen</button>`; }
 function wireTiles(root){ root.querySelectorAll(".pcard[data-i]").forEach(c=>c.onclick=()=>{ document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x.dataset.v==="projects")); editView(STATIONS[+c.dataset.i]); });
+  const at=root.querySelector("#allTiles"); if(at) at.onclick=()=>{ OF.station=""; const sel=$("#oSt"); if(sel) sel.value=""; loadOverview(); };
   root.querySelector("#newTile").onclick=()=>{ document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x.dataset.v==="projects")); editView(null); }; }
 
 /* ---------- Editor ---------- */
@@ -676,14 +680,14 @@ async function runSearch(){
 }
 
 /* ---------- Übersicht (Kennzahlen, Verfügbarkeit, Verlauf) ---------- */
-let OF={preset:"30",station:""}; const OV_OPEN={}; setPreset(OF,"30");
+let OF={preset:"30",station:""}; const OV_OPEN={}; let OV_REQ=0; let AV_OPEN=true; try{ AV_OPEN=localStorage.getItem("hc_av")!=="0"; }catch(e){} setPreset(OF,"30");
 const OUTC=[["solved","Selbst gelöst","#2a78d6"],["ticket","Störung gemeldet","#eb6834"],["hotline","Hotline","#1baf7a"],["chat","Chat","#eda100"],["open","Ohne Ergebnis","#b9beba"]];
 async function overviewView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Übersicht</h1><p class="sub" style="margin:0">Verfügbarkeit, Störungen und Besuche auf einen Blick.</p></div><div class="sp"></div><button class="btn" id="newP">+ Neues Projekt</button>
-    <select id="oSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${OF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select></div>
-  <div class="grid" id="ovTiles" style="margin-bottom:14px">${projTiles()}</div>
-  <div class="card" style="padding:12px 14px">${datesHTML(OF,"of")}</div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Übersicht</h1><p class="sub" style="margin:0">Verfügbarkeit, Störungen und Besuche auf einen Blick.</p></div><div class="sp"></div><button class="btn" id="newP">+ Neues Projekt</button></div>
+  <div class="card" style="padding:12px 14px"><div class="row"><b style="font-size:13px">Projekt</b><select id="oSt" style="width:auto;min-width:220px"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${OF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select>
+    <span style="width:12px"></span><b style="font-size:13px">Zeitraum</b>${datesHTML(OF,"of")}</div></div>
+  <div class="grid" id="ovTiles" style="margin-bottom:14px">${projTiles(null,OF.station)}</div>
   <div id="ov"><div class="muted">Lade …</div></div>`;
   wireTiles($("#ovTiles")); $("#newP").onclick=()=>$("#newTile").click();
   $("#oSt").onchange=()=>{ OF.station=$("#oSt").value; loadOverview(); };
@@ -694,7 +698,7 @@ const fmtDur=ms=>{ const h=ms/36e5; return h<1?Math.round(h*60)+" Min.":h<48?(Ma
 async function loadOverview(){
   const box=$("#ov"); if(!box) return;
   try{
-    const r=await api("overview",{from:OF.from||isoD(Date.now()-364*864e5),to:OF.to,station:OF.station});
+    const my=++OV_REQ; const r=await api("overview",{from:OF.from||isoD(Date.now()-364*864e5),to:OF.to,station:OF.station}); if(my!==OV_REQ) return;
     const F=+new Date(r.from), T=Math.min(+new Date(r.to),+new Date(r.now)), span=Math.max(1,T-F);
     // Verfügbarkeit je Ladepunkt (aus gemeldeten Störungen)
     const rows=[]; let downAll=0, cpN=0;
@@ -706,7 +710,7 @@ async function loadOverview(){
     const avail=cpN?100*(1-downAll/(span*cpN)):100;
     const openNow=r.incidents.filter(i=>i.status!=="erledigt").length;
     const openBy={}; r.incidents.filter(i=>i.status!=="erledigt").forEach(i=>openBy[i.station_id]=(openBy[i.station_id]||0)+1);
-    if($("#ovTiles")){ $("#ovTiles").innerHTML=projTiles(openBy); wireTiles($("#ovTiles")); }
+    if($("#ovTiles")){ $("#ovTiles").innerHTML=projTiles(openBy,OF.station); wireTiles($("#ovTiles")); }
     const inWin=r.incidents.filter(i=>+new Date(i.created_at)>=F);
     const solvedInc=r.incidents.filter(i=>i.resolved_at&&+new Date(i.resolved_at)>=F);
     const mttr=solvedInc.length?solvedInc.reduce((a,i)=>a+(+new Date(i.resolved_at)-new Date(i.created_at)),0)/solvedInc.length:null;
@@ -726,7 +730,9 @@ async function loadOverview(){
       <div class="kpi link" data-go="done"><div class="k">Ø Zeit bis erledigt ›</div><div class="v">${mttr?fmtDur(mttr):"–"}</div><div class="s">${solvedInc.length} erledigt im Zeitraum</div></div>
       <div class="kpi link" data-go="visits"><div class="k">Besuche ›</div><div class="v">${tot}</div><div class="s">${tot?Math.round(100*self/tot)+" % selbst gelöst":"–"}</div></div>
     </div>
-    <div class="card" id="availCard"><h2>Verfügbarkeit je Ladepunkt</h2>
+    <div class="card ${AV_OPEN?"":"av-closed"}" id="availCard"><div class="row" style="margin-bottom:8px"><button type="button" class="av-h" id="avT"><span class="chev">${AV_OPEN?"▾":"▸"}</span> Verfügbarkeit je Ladepunkt</button>
+      <span class="muted" style="font-size:13px">Ø ${pctTxt(avail)} · ${cpN} Ladepunkte</span><div class="sp"></div><button class="btn ghost sm av-body" id="avAll" type="button">Alle auf / zu</button></div>
+      <div class="av-body">
       <div class="legend"><span><b style="background:#d5eed5;border:1px solid #0ca30c"></b>✓ verfügbar</span><span><b style="background:#d03b3b"></b>⚠ Störung gemeldet (bis „erledigt“)</span><span>Quelle: Kundenmeldungen, keine Live-Daten der Säule</span></div>
       ${rows.map(({st,list})=>{ const pd=list.reduce((a,x)=>a+x.down,0), pp=list.length?100*(1-pd/(span*list.length)):100, bad=list.filter(x=>x.segs.length).length, open=OV_OPEN[st.id]!==undefined?OV_OPEN[st.id]:(bad>0||rows.length===1);
         return `<div class="proj-block ${open?"open":""}" data-st="${esc(st.id)}"><button class="proj-h" type="button"><span class="chev">${open?"▾":"▸"}</span><b>${esc(st.project_id||st.id)}</b>${st.name?` <span class="muted" style="font-weight:500">· ${esc(st.name)}</span>`:""}
@@ -737,7 +743,7 @@ async function loadOverview(){
         ${list.map(({c,segs,pct,down})=>`<div class="up-row"><div class="lbl" title="${esc(c.evse||"")}">${esc(cpLabel(st,c.n))} <small>${esc(c.t||"")}</small></div>
           <div class="up-bar" data-tip="${esc(cpLabel(st,c.n))}<br>${c.evse?esc(c.evse)+"<br>":""}${segs.length?"gestört: "+fmtDur(down):"keine Störung gemeldet"}">${segs.map(s=>`<i style="left:${(s.a-F)/span*100}%;width:${(s.b-s.a)/span*100}%" data-tip="<b>${esc(s.i.ticket_no)}</b> · ${esc(s.i.title||"")}<br>${fmtDT(s.i.created_at)} – ${s.i.resolved_at?fmtDT(s.i.resolved_at):"offen"}<br>Dauer ${fmtDur(s.b-s.a)} · ${s.i.reports}× gemeldet" data-no="${esc(s.i.ticket_no)}"></i>`).join("")}</div>
           <div class="pct" style="color:${pct<98?"#b42318":"var(--ink)"}">${pctTxt(pct)}</div></div>`).join("")}</div></div>`; }).join("")||'<div class="muted">Keine Projekte.</div>'}
-      <div class="up-axis"><span></span><div><span>${fmtDT(F).split(",")[0]}</span><span>${fmtDT(F+span/2).split(",")[0]}</span><span>${+new Date(r.to)>+new Date(r.now)?"jetzt":fmtDT(T).split(",")[0]}</span></div><span></span></div>
+      </div><div class="up-axis av-body"><span></span><div><span>${fmtDT(F).split(",")[0]}</span><span>${fmtDT(F+span/2).split(",")[0]}</span><span>${+new Date(r.to)>+new Date(r.now)?"jetzt":fmtDT(T).split(",")[0]}</span></div><span></span></div>
     </div>
     <div class="two">
       <div class="card"><h2>Besuche pro Tag</h2>
@@ -754,6 +760,8 @@ async function loadOverview(){
       if(g==="avail") return $("#availCard").scrollIntoView({behavior:"smooth"});
       if(g==="visits"){ Object.assign(TF,{q:"",mode:"all",preset:OF.preset,from:OF.from,to:OF.to}); return go("tickets"); }
       Object.assign(IF,{q:"",station:OF.station,filter:g==="open"?"open":g==="done"?"erledigt":"all",preset:g==="open"?"all":OF.preset,from:g==="open"?"":OF.from,to:g==="open"?"":OF.to}); go("incidents"); });
+    $("#avT").onclick=()=>{ AV_OPEN=!AV_OPEN; try{ localStorage.setItem("hc_av",AV_OPEN?"1":"0"); }catch(e){} $("#availCard").classList.toggle("av-closed",!AV_OPEN); $("#avT .chev").textContent=AV_OPEN?"▾":"▸"; };
+    $("#avAll").onclick=()=>{ const bl=[...box.querySelectorAll(".proj-block")], o=!bl.every(b=>b.classList.contains("open")); bl.forEach(b=>{ b.classList.toggle("open",o); b.querySelector(".chev").textContent=o?"▾":"▸"; OV_OPEN[b.dataset.st]=o; }); };
     box.querySelectorAll(".proj-block .proj-h").forEach(h=>h.onclick=()=>{ const b=h.parentElement, o=!b.classList.contains("open"); b.classList.toggle("open",o); h.querySelector(".chev").textContent=o?"▾":"▸"; OV_OPEN[b.dataset.st]=o; });
     box.querySelectorAll(".up-bar i[data-no]").forEach(s=>s.onclick=()=>{ IF.q=s.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
   }catch(e){ box.innerHTML=`<div class="card muted">${esc(e.message)}</div>`; }
