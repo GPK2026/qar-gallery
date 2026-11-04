@@ -67,7 +67,7 @@ td{padding:9px 8px;border-bottom:1px solid #eef1ef;vertical-align:top}
 tr.click{cursor:pointer}
 tr.click:hover td{background:#f8faf9}
 .qr-row{display:flex;gap:14px;flex-wrap:wrap}
-.qr{border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;background:#fff;width:170px}
+.qr{border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;background:#fff;width:200px}
 .qr .q{display:flex;justify-content:center;margin-bottom:8px}
 .qr code{font-size:12px}
 .modal{position:fixed;inset:0;background:rgba(20,32,27,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:10;overflow:auto}
@@ -152,8 +152,8 @@ function renderEditor(){
     <button class="btn" id="save">Speichern</button></div>
 
   <div class="card"><h2>Standort</h2><div class="form">
-    <div class="c3"><label>Projekt-ID</label><input id="f_project_id" value="${esc(E.project_id)}" placeholder="z. B. 1295"><div class="hint">Kurz-URL: …/laden/#ID</div></div>
-    <div class="c3"><label>Stations-ID (intern)</label><input id="f_id" value="${esc(E.id)}" ${isNew?"":"readonly"} placeholder="z. B. DE-CPW-1295"><div class="hint">${isNew?"Leer = Projekt-ID":"Fest – bestehende QR-Codes zeigen darauf"}</div></div>
+    <div class="c3"><label>Projekt-ID</label><input id="f_project_id" value="${esc(E.project_id)}" placeholder="z. B. 1295"><div class="hint">QR-Code / Link: …/laden/#ID</div></div>
+    <div class="c3"></div>
     <div class="c6"><label>Name (nur intern, z. B. Betreiber)</label><input id="f_name" value="${esc(E.name)}"></div>
     <div class="c6"><label>Adresse (sichtbar für Kunden)</label><input id="f_address" value="${esc(E.address)}"></div>
     <div class="c3"><label>Breitengrad</label><input id="f_lat" value="${E.lat??""}" inputmode="decimal"></div>
@@ -166,7 +166,7 @@ function renderEditor(){
   <div class="card"><div class="row" style="margin-bottom:10px"><h2 style="margin:0">Charger & Ladepunkte</h2><span class="muted">${E.chargers.length} Charger · ${E.chargers.reduce((a,c)=>a+c.connectors.length,0)} Ladepunkte</span><div class="sp"></div><button class="btn ghost sm" id="addCh">+ Charger</button></div>
     <div id="chs">${E.chargers.map((c,i)=>chargerHTML(c,i)).join("")}</div></div>
 
-  ${!isNew?`<div class="card"><h2>QR-Codes</h2><p class="sub">Ein Code pro Standort reicht – der Kunde wählt Charger und Ladepunkt in der App. Optional pro Charger (Charger ist dann vorausgewählt).</p><div class="qr-row" id="qrs"></div></div>`:""}
+  ${!isNew?`<div class="card"><h2>QR-Code</h2><p class="sub">Ein Code für den ganzen Standort – der Kunde wählt Charger und Ladepunkt (per EVSE-ID) in der App.</p><div class="qr-row" id="qrs"></div></div>`:""}
 
   ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon Kundenkontakte, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
   $("#back").onclick=projectsView;
@@ -208,7 +208,7 @@ function wireChargers(){
 }
 function collect(){
   const v=id=>$("#"+id)?$("#"+id).value.trim():"";
-  Object.assign(E,{project_id:v("f_project_id"),id:v("f_id"),name:v("f_name"),address:v("f_address"),lat:v("f_lat"),lng:v("f_lng"),review_url:v("f_review_url"),notify_email:v("f_notify_email"),active:$("#f_active")?$("#f_active").checked:true});
+  Object.assign(E,{project_id:v("f_project_id"),name:v("f_name"),address:v("f_address"),lat:v("f_lat"),lng:v("f_lng"),review_url:v("f_review_url"),notify_email:v("f_notify_email"),active:$("#f_active")?$("#f_active").checked:true});
   document.querySelectorAll(".charger").forEach(el=>{ const c=E.chargers[+el.dataset.ci]; if(!c) return;
     c.label=el.querySelector(".c_label").value.trim(); c.model=el.querySelector(".c_model").value.trim();
     el.querySelectorAll(".lp").forEach(r=>{ const x=c.connectors[+r.dataset.lj]; x.t=r.querySelector(".l_t").value; x.kw=r.querySelector(".l_kw").value.trim()||null; x.evse=r.querySelector(".l_evse").value.trim(); });
@@ -216,8 +216,8 @@ function collect(){
 }
 async function save(){
   collect();
-  if(!E.id) E.id=E.project_id;
-  if(!E.id) return toast("Projekt-ID oder Stations-ID eingeben",true);
+  if(!E.project_id) return toast("Projekt-ID eingeben",true);
+  if(!E.original_id) E.id=E.project_id;   // interne ID = Projekt-ID (nicht sichtbar)
   const b=$("#save"); b.disabled=true; b.textContent="Speichere …";
   try{ const r=await api("save",{station:E}); toast("Gespeichert – in der App sichtbar ✓"); E={...r.station,original_id:r.station.id}; renderEditor(); }
   catch(e){ toast(e.message,true); b.disabled=false; b.textContent="Speichern"; }
@@ -229,10 +229,10 @@ async function del(){
 }
 function renderQRs(){
   const code=E.project_id||E.id, box=$("#qrs");
-  const items=[{t:"Standort "+code,u:APP+"#"+encodeURIComponent(code),f:"qr-"+code}].concat(E.chargers.map((c,i)=>({t:c.label||("Charger "+(i+1)),u:APP+"#"+encodeURIComponent(code)+"."+(i+1),f:"qr-"+code+"-"+(c.label||i+1)})));
+  const items=[{t:"Standort "+code,u:APP+"#"+encodeURIComponent(code),f:"qr-"+code}];
   box.innerHTML="";
   items.forEach((it,k)=>{ const d=document.createElement("div"); d.className="qr"; d.innerHTML=`<div class="q"></div><b>${esc(it.t)}</b><br><code>${esc(it.u.replace("https://",""))}</code><br><button class="btn ghost sm" style="margin-top:8px">PNG laden</button>`; box.appendChild(d);
-    if(window.QRCode) new QRCode(d.querySelector(".q"),{text:it.u,width:k?110:140,height:k?110:140,correctLevel:QRCode.CorrectLevel.M});
+    if(window.QRCode) new QRCode(d.querySelector(".q"),{text:it.u,width:160,height:160,correctLevel:QRCode.CorrectLevel.M});
     d.querySelector("button").onclick=()=>{ const c=d.querySelector("canvas"), img=d.querySelector("img"); const src=c?c.toDataURL("image/png"):(img&&img.src); if(!src) return; const a=document.createElement("a"); a.href=src; a.download=it.f.replace(/[^A-Za-z0-9#._-]/g,"_")+".png"; a.click(); };
   });
 }
