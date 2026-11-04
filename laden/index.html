@@ -353,7 +353,7 @@ async function loadStation(){
   S.station = h || CONFIG.defaultStation;
   S.stationData = CONFIG.stations[S.station] || null;
   renderStation();
-  try{ const r=await api("station"); if(r.station){ S.stationData={review:r.station.review_url||(CONFIG.stations[S.station]||{}).review||"",addr:r.station.address||r.station.name||"",cps:(r.station.connectors||[]).length?r.station.connectors:[{n:1,t:""},{n:2,t:""}]}; renderStation(); } }catch(e){}
+  try{ const r=await api("station"); if(r.station){ if(r.station.id&&r.station.id!==S.station){ S.station=r.station.id; } S.stationData={review:r.station.review_url||(CONFIG.stations[S.station]||{}).review||"",addr:r.station.address||r.station.name||"",cps:(r.station.connectors||[]).length?r.station.connectors:[{n:1,t:""},{n:2,t:""}]}; renderStation(); } }catch(e){}
   return "station";
 }
 function renderStation(){
