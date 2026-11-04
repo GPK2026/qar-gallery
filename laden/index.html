@@ -85,6 +85,12 @@ input.f,textarea.f{width:100%;border:1.5px solid var(--line);border-radius:12px;
 textarea.f{min-height:80px;resize:vertical}
 .summary{font-size:14px;line-height:1.7;background:var(--bg);border-radius:12px;padding:12px 14px}
 .summary b{display:inline-block;min-width:110px;color:var(--muted);font-weight:500}
+.tk-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tk-actions .btn{margin-top:0;padding:12px 8px;font-size:15px}
+.tk-banner{border-color:#c9e7d8;background:#f6fbf8}
+.tk-head{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:15px}
+.tk-head small{font-weight:400;color:var(--muted);font-size:13px}
+.tk-banner .ticket{margin:10px 0}
 .ticket{font-family:ui-monospace,monospace;font-size:22px;font-weight:700;letter-spacing:.04em;text-align:center;background:var(--brand-soft);color:#08603d;border-radius:12px;padding:14px;margin:12px 0}
 /* bottom nav */
 nav.tabs{display:flex;justify-content:center;padding:4px 8px 2px}
@@ -274,7 +280,7 @@ const T = {
     dangerH:"Unser Service-Team ist bereits informiert. Bitte rufen Sie uns an oder melden Sie den Schaden mit Foto.",callNow:"📞 Hotline sofort anrufen",reportDamage:"Schaden melden (mit Foto)",
     ticketT:"Wir kümmern uns darum",ticketH:"Melden Sie die Störung hier – unser Service-Team prüft den Ladepunkt. Die Daten sind schon ausgefüllt.",
     sStation:"Station",sCp:"Ladepunkt",sProblem:"Problem",sTried:"Versucht",sTriedN:"{n} Schritt(e)",sTime:"Zeit",
-    fDesc:"Was ist passiert? (optional)",fDescPh:"z. B. Fehlermeldung im Display…",fPhoto:"Foto (optional)",fContact:"Telefon oder E-Mail für Rückmeldung (optional)",fContactPh:"+49 … oder name@mail.de",
+    fDesc:"Was ist passiert? (optional)",fDescPh:"z. B. Fehlermeldung im Display…",fPhoto:"Foto (optional)",fEmail:"E-Mail für Ihre Bestätigung (optional)",fEmailPh:"name@mail.de",fPhone:"Telefon für Rückruf (optional)",fPhonePh:"+49 …",mailSent:"✉️ Eine Bestätigung mit Ihrer Vorgangsnummer wurde an <b>{m}</b> gesendet.",mailFail:"Die Bestätigungs-Mail konnte gerade nicht gesendet werden – bitte speichern Sie die Nummer.",
     send:"Störung melden",sending:"Wird gesendet…",toChat:"Lieber im Chat klären",
     ticketNo:"Ihre Vorgangsnummer",ticketOk:"Unser Service-Team hat Ihre Meldung erhalten. Nennen Sie diese Nummer, falls Sie die Hotline anrufen.",
     ticketFail:"Meldung konnte nicht gesendet werden",ticketFailH:"Bitte rufen Sie unsere Hotline an und nennen Sie die Stations-ID <b>{id}</b>, Ladepunkt {cp}.",callHotline:"📞 Hotline anrufen",
@@ -282,6 +288,9 @@ const T = {
     chips:["Ladung startet nicht","Ladekarte wird nicht erkannt","Kreditkarte geht nicht","Stecker steckt fest","Ich möchte einen Mitarbeiter sprechen"],
     chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
     hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
+    tCopy:"📋 Nummer kopieren",tShare:"📤 Speichern / teilen",tCopied:"✓ Kopiert",tSaved:"Die Nummer bleibt auf diesem Handy gespeichert und erscheint auch auf der Startseite und unter „Hotline“.",
+    myTicket:"Ihre Störungsmeldung",ticketAgo:"gemeldet {t}",shareTitle:"Störungsmeldung {no}",
+    shareText:"Meine Störungsmeldung an der Ladesäule\nVorgangsnummer: {no}\nStation: {st}{evse}\nProblem: {pr}\nZeit: {time}\nHotline: {hl}",
     callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln"},
   en:{brand:"<b>HAPPY CHARGING</b> Support",station:"Charging station",tHelp:"Issue",tChat:"Chat",tCall:"Hotline",cp:"Connector",cpShort:"C",
     what:"What isn't working?",whatSub:"Tap your issue – we'll solve it step by step.",
@@ -292,7 +301,7 @@ const T = {
     dangerH:"Our service team has already been notified. Please call us or report the damage with a photo.",callNow:"📞 Call the hotline now",reportDamage:"Report damage (with photo)",
     ticketT:"We'll take care of it",ticketH:"Report the issue here – our service team will check the connector. Your details are already filled in.",
     sStation:"Station",sCp:"Connector",sProblem:"Issue",sTried:"Tried",sTriedN:"{n} step(s)",sTime:"Time",
-    fDesc:"What happened? (optional)",fDescPh:"e.g. error message on the display…",fPhoto:"Photo (optional)",fContact:"Phone or email for a reply (optional)",fContactPh:"+44 … or name@mail.com",
+    fDesc:"What happened? (optional)",fDescPh:"e.g. error message on the display…",fPhoto:"Photo (optional)",fEmail:"Email for your confirmation (optional)",fEmailPh:"name@mail.com",fPhone:"Phone for a call back (optional)",fPhonePh:"+44 …",mailSent:"✉️ A confirmation with your reference number has been sent to <b>{m}</b>.",mailFail:"The confirmation email could not be sent right now – please save the number.",
     send:"Report issue",sending:"Sending…",toChat:"I'd rather use the chat",
     ticketNo:"Your reference number",ticketOk:"Our service team has received your report. Please quote this number if you call the hotline.",
     ticketFail:"The report could not be sent",ticketFailH:"Please call our hotline and give the station ID <b>{id}</b>, connector {cp}.",callHotline:"📞 Call the hotline",
@@ -300,6 +309,9 @@ const T = {
     chips:["Charging won't start","Charging card not recognised","Credit card not working","Connector is stuck","I'd like to speak to someone"],
     chatPh:"Type a message…",chatToTeam:"Your message has reached our service team. We'll reply here shortly.",
     hours:"Available 24/7",callBtn:"Call now",stationId:"Station ID",copy:"Copy",copied:"Copied ✓",caseNo:"Reference number",
+    tCopy:"📋 Copy number",tShare:"📤 Save / share",tCopied:"✓ Copied",tSaved:"The number stays saved on this phone and also appears on the start screen and under “Hotline”.",
+    myTicket:"Your issue report",ticketAgo:"reported {t}",shareTitle:"Issue report {no}",
+    shareText:"My issue report at the charging station\nReference number: {no}\nStation: {st}{evse}\nIssue: {pr}\nTime: {time}\nHotline: {hl}",
     callHint:"Please have the EVSE ID ready – it is also on the sticker at the connector. Then we can find it in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector"}
 };
 let lang=(navigator.language||"de").toLowerCase().startsWith("de")?"de":"en";
@@ -359,13 +371,42 @@ const scroller=()=>$("#scroll");
 function toTop(){ scroller().scrollTop=0; }
 function show(fn){ S.render=fn; fn(); }   // merkt sich die aktuelle Ansicht (für Sprachwechsel)
 
+/* ============ STÖRUNGSNUMMER MERKEN ============ */
+// Auf dem Gerät gespeichert (localStorage), damit die Nummer nach Zurück/Neuladen noch da ist
+const TKEY="hc_tickets";
+function loadTickets(){ try{ return JSON.parse(localStorage.getItem(TKEY)||"[]"); }catch(e){ return []; } }
+function saveTicket(t){ try{ const a=loadTickets().filter(x=>x.no!==t.no); a.unshift(t); localStorage.setItem(TKEY,JSON.stringify(a.slice(0,5))); }catch(e){} }
+function recentTicket(){ const lim=Date.now()-3*86400000; return loadTickets().find(t=>t.station===S.station && t.ts>lim) || null; }
+function ago(ts){ const m=Math.round((Date.now()-ts)/60000), en=lang==="en";
+  if(m<1) return en?"just now":"gerade eben"; if(m<60) return en?`${m} min ago`:`vor ${m} Min.`;
+  const h=Math.round(m/60); if(h<24) return en?`${h} h ago`:`vor ${h} Std.`;
+  return new Date(ts).toLocaleString(locale(),{dateStyle:"short",timeStyle:"short"}); }
+function ticketText(t){ return tr("shareText",{no:t.no,st:t.station+(t.cp?" · "+tr("cp")+" "+t.cp:""),evse:t.evse?"\nEVSE-ID: "+t.evse:"",pr:FLOWS[t.flow]?L(FLOWS[t.flow].t):"",time:new Date(t.ts).toLocaleString(locale()),hl:CONFIG.hotline}); }
+async function copyText(txt,btn){ try{ await navigator.clipboard.writeText(txt); if(btn) btn.textContent=tr("tCopied"); }catch(e){ if(btn) btn.textContent=txt; } }
+async function shareTicket(t,btn){
+  const text=ticketText(t);
+  if(navigator.share){ try{ await navigator.share({title:tr("shareTitle",{no:t.no}),text}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+  copyText(text,btn);
+}
+function ticketActions(t){ return `<div class="tk-actions"><button class="btn ghost" data-act="copy">${tr("tCopy")}</button><button class="btn ghost" data-act="share">${tr("tShare")}</button></div>`; }
+function wireTicketActions(root,t){ root.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>b.dataset.act==="copy"?copyText(t.no,b):shareTicket(t,b)); }
+
+/* Zurück-Taste des Browsers: innerhalb der App zur Startseite statt die Seite zu verlassen */
+let inSub=false;
+function markSub(){ if(!inSub){ try{ history.pushState({hc:1},"",location.href); }catch(e){} inSub=true; } }
+window.addEventListener("popstate",()=>{ if(inSub){ inSub=false; $("#composer").classList.add("hidden"); document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab==="help")); S.tab="help"; home(); } });
+
 /* ============ VIEWS ============ */
 function home(){
   S.flow=null;S.step=0;S.tried=[]; compact(false); S.render=home;
-  view.innerHTML=`<h2>${tr("what")}</h2><p class="sub">${tr("whatSub")}</p>
+  const rt=recentTicket();
+  view.innerHTML=`${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr("myTicket")}</span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small></div>
+    <div class="ticket">${esc(rt.no)}</div>${ticketActions(rt)}</div>`:""}
+  <h2>${tr("what")}</h2><p class="sub">${tr("whatSub")}</p>
   <div class="grid">${TILE_ORDER.map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile ${f.danger?"danger":""} ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
   <p class="privacy">${tr("privacy")}${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">${tr("privacyLink")}</a>`:""}</p>`;
   view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f));
+  if(rt) wireTicketActions(view.querySelector(".tk-banner"),rt);
 }
 
 function startFlow(k){
@@ -378,7 +419,7 @@ function startFlow(k){
 }
 
 function stepView(){
-  const f=FLOWS[S.flow], s=f.steps[S.step], n=f.steps.length; compact(true); toTop();
+  const f=FLOWS[S.flow], s=f.steps[S.step], n=f.steps.length; compact(true); toTop(); markSub();
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
   <div class="card">
     <div class="step-n">${f.ic} ${L(f.t)} · ${tr("stepOf",{a:S.step+1,b:n})}</div>
@@ -396,7 +437,7 @@ function next(){ const f=FLOWS[S.flow]; if(S.step<f.steps.length-1){S.step++;sho
 
 function solved(){ track("solved",{flow:S.flow,title:S.flow?DE(FLOWS[S.flow].t):""}); show(solvedView); }
 function solvedView(){
-  compact(true); toTop();
+  compact(true); toTop(); markSub();
   view.innerHTML=`<div class="card center"><div class="big-ic">⚡</div><div class="step-t">${tr("solvedT")}</div>
   <p class="step-h">${tr("solvedH")}</p>
   <div style="display:flex;gap:10px"><button class="btn ghost" data-r="1">${tr("yes")}</button><button class="btn ghost" data-r="0">${tr("nope")}</button></div>
@@ -410,7 +451,7 @@ function hotlineLink(cls,label){ return `<a class="btn ${cls} js-call" href="${t
 function wireCall(){ view.querySelectorAll(".js-call").forEach(a=>a.addEventListener("click",()=>track("hotline_click",{from:S.tab},true))); }
 
 function dangerView(){
-  compact(true); toTop();
+  compact(true); toTop(); markSub();
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
   <div class="card"><div class="big-ic">⚠️</div><div class="step-t center">${tr("dangerT")}</div>
   <div class="note red">${tr("dangerNote")}</div>
@@ -430,15 +471,16 @@ function shrink(file){ return new Promise((res)=>{ if(!file) return res(null);
 
 function openTicket(){ track("ticket_open",{flow:S.flow,title:DE(FLOWS[S.flow].t)}); show(ticketView); }
 function ticketView(){
-  const f=FLOWS[S.flow]; compact(true); toTop();
-  const keep={desc:$("#desc")?.value||"",contact:$("#contact")?.value||""};
+  const f=FLOWS[S.flow]; compact(true); toTop(); markSub();
+  const keep={desc:$("#desc")?.value||"",email:$("#email")?.value||"",phone:$("#phone")?.value||""};
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
   <div class="card"><div class="step-t">${tr("ticketT")}</div>
   <p class="step-h">${tr("ticketH")}</p>
   <div class="summary"><b>${tr("sStation")}</b>${esc(S.station)}<br><b>${tr("sCp")}</b>${S.cp}<br>${evse()?`<b>EVSE-ID</b>${esc(evse())}<br>`:""}<b>${tr("sProblem")}</b>${L(f.t)}<br>${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
   <label class="f">${tr("fDesc")}</label><textarea class="f" id="desc" placeholder="${tr("fDescPh")}">${esc(keep.desc)}</textarea>
   <label class="f">${tr("fPhoto")}</label><input class="f" type="file" accept="image/*" id="pic">
-  <label class="f">${tr("fContact")}</label><input class="f" id="contact" placeholder="${tr("fContactPh")}" value="${esc(keep.contact)}">
+  <label class="f">${tr("fEmail")}</label><input class="f" id="email" type="email" inputmode="email" autocomplete="email" placeholder="${tr("fEmailPh")}" value="${esc(keep.email)}">
+  <label class="f">${tr("fPhone")}</label><input class="f" id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="${tr("fPhonePh")}" value="${esc(keep.phone)}">
   <button class="btn primary" id="send">${tr("send")}</button>
   <button class="btn ghost" id="toChat">${tr("toChat")}</button></div>`;
   $("#bk").onclick=()=>FLOWS[S.flow].steps&&FLOWS[S.flow].steps.length?show(stepView):home();
@@ -446,18 +488,22 @@ function ticketView(){
   $("#send").onclick=async e=>{
     e.target.disabled=true; e.target.textContent=tr("sending");
     const photo=await shrink($("#pic").files[0]);
-    const r=await track("ticket_submit",{flow:S.flow,title:DE(f.t),tried:S.tried,desc:$("#desc").value.trim(),contact:$("#contact").value.trim(),photo});
+    const email=$("#email").value.trim(), phone=$("#phone").value.trim();
+    const r=await track("ticket_submit",{flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),email,phone,contact:[email,phone].filter(Boolean).join(" · "),photo});
+    S.ticketMail=r&&r.customerMail?{status:r.customerMail,to:email}:null;
     S.lastTicket=(r&&r.ticketNo)||null; S.ticketFailed=!S.lastTicket;
+    if(S.lastTicket) saveTicket({no:S.lastTicket,station:S.station,cp:S.cp,evse:evse(),flow:S.flow,ts:Date.now()});
     show(ticketDoneView);
   };
 }
 function ticketDoneView(){
   const id=S.lastTicket;
   view.innerHTML=`<div class="card"><div class="big-ic">🧾</div>
-  ${id?`<div class="step-t center">${tr("ticketNo")}</div><div class="ticket">${id}</div><p class="step-h">${tr("ticketOk")}</p>`
+  ${id?`<div class="step-t center">${tr("ticketNo")}</div><div class="ticket">${id}</div>${ticketActions()}<p class="step-h" style="margin-top:12px">${tr("ticketOk")}</p>${S.ticketMail&&S.ticketMail.status==="sent"?`<div class="note green">${tr("mailSent",{m:esc(S.ticketMail.to)})}</div>`:S.ticketMail?`<div class="note amber">${tr("mailFail")}</div>`:""}<div class="note green">${tr("tSaved")}</div>`
      :`<div class="step-t center">${tr("ticketFail")}</div><div class="note amber">${tr("ticketFailH",{id:esc(evse()||S.station),cp:S.cp})}</div>`}
   ${hotlineLink("ghost",tr("callHotline"))}<button class="btn primary" id="hm">${tr("home")}</button></div>`;
   $("#hm").onclick=home; wireCall();
+  if(id){ const t=recentTicket()||{no:id,station:S.station,cp:S.cp,evse:evse(),flow:S.flow,ts:Date.now()}; wireTicketActions(view,t); }
 }
 
 /* ============ CHAT (KI + Live-Team über Telegram) ============ */
@@ -558,9 +604,10 @@ function callView(){
   <div class="phone">${CONFIG.hotline}</div><div class="hours">${tr("hours")}</div>
   ${hotlineLink("primary",tr("callBtn"))}
   <div class="idbox"><span>${evse()?"EVSE-ID":tr("stationId")}<br><code>${esc(evse()||S.station+" · "+tr("cpShort")+" "+S.cp)}</code></span><button class="small-btn" id="cp">${tr("copy")}</button></div>
-  ${S.lastTicket?`<div class="idbox"><span>${tr("caseNo")}<br><code>${S.lastTicket}</code></span></div>`:""}
+  ${S.lastTicket?`<div class="idbox"><span>${tr("caseNo")}<br><code>${esc(S.lastTicket)}</code></span><button class="small-btn" id="cpT">${tr("copy")}</button></div>`:""}
   <p class="step-h" style="margin-top:14px">${tr("callHint")}</p>
   <div class="note red">${tr("emergency")}</div></div>`;
+  if($("#cpT")) $("#cpT").onclick=e=>copyText(S.lastTicket,e.target);
   $("#cp").onclick=async e=>{ track("hotline_copy"); try{await navigator.clipboard.writeText(evse()||(S.station+" / "+tr("cpShort")+" "+S.cp));e.target.textContent=tr("copied");}catch{e.target.textContent=S.station;}};
   wireCall();
 }
@@ -618,7 +665,7 @@ async function boot(){
   applyLang();
   const mode=await loadStation();
   if(mode==="betreiber"){ $("#composer").classList.add("hidden"); return operatorView(); }
-  S.sid=uuid(); S.chat=[]; S.lastTeamId=0; S.human=false; S.chatOpened=false; S.lastTicket=null; toldTeam=false; if(S.pollT){clearTimeout(S.pollT);S.pollT=null;}
+  S.sid=uuid(); S.chat=[]; S.lastTeamId=0; S.human=false; S.chatOpened=false; S.lastTicket=(recentTicket()||{}).no||null; toldTeam=false; if(S.pollT){clearTimeout(S.pollT);S.pollT=null;}
   track("page_open",{ref:document.referrer?"link":"qr",lang});
   setTab("help",true);
 }
