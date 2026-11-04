@@ -85,6 +85,9 @@ input.f,textarea.f{width:100%;border:1.5px solid var(--line);border-radius:12px;
 textarea.f{min-height:80px;resize:vertical}
 .summary{font-size:14px;line-height:1.7;background:var(--bg);border-radius:12px;padding:12px 14px}
 .summary b{display:inline-block;min-width:110px;color:var(--muted);font-weight:500}
+.review{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.review p{margin:0 0 8px;font-size:14px;color:var(--muted);line-height:1.45}
+.btn.google{background:#fff;border:1.5px solid #dadce0;color:#1a73e8}
 .tk-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tk-actions .btn{margin-top:0;padding:12px 8px;font-size:15px}
 .tk-banner{border-color:#c9e7d8;background:#f6fbf8}
@@ -184,7 +187,8 @@ const CONFIG = {
   defaultStation: "DE-GR7-E0001",
   // Fallback-Stammdaten, falls der Server nicht erreichbar ist (eigentliche Daten: Tabelle charge_stations)
   stations: {
-    "DE-GR7-E0001": { addr: "Spandauer Damm 10, 14059 Berlin", cps: [{n:1,t:"CCS",evse:"DE*CPW*E1234673064*1"},{n:2,t:"CCS",evse:"DE*CPW*E1234673064*2"},{n:3,t:"CHAdeMO",evse:"DE*CPW*E1234673064*3"}] }
+    "DE-GR7-E0001": { addr: "Spandauer Damm 10, 14059 Berlin", cps: [{n:1,t:"CCS",evse:"DE*CPW*E1234673064*1"},{n:2,t:"CCS",evse:"DE*CPW*E1234673064*2"},{n:3,t:"CHAdeMO",evse:"DE*CPW*E1234673064*3"}],
+      review: "https://search.google.com/local/writereview?placeid=ChIJA7jglC5RqEcRd14VfDgAZJ0" }
   }
 };
 
@@ -275,7 +279,7 @@ const T = {
     what:"Was funktioniert nicht?",whatSub:"Tippen Sie auf Ihr Problem – wir lösen es Schritt für Schritt.",
     privacy:"Damit wir helfen können, werden Ihre Auswahl, Chatnachrichten und freiwilligen Angaben zu dieser Ladesäule gespeichert und an unser Service-Team übermittelt.",privacyLink:"Datenschutz",
     back:"‹ Zurück",stepOf:"Schritt {a} von {b}",ok:"✓ Hat geklappt",no:"Hat nicht geholfen",
-    solvedT:"Super, es lädt!",solvedH:"Gute Fahrt. War die Hilfe nützlich?",yes:"👍 Ja",nope:"👎 Nein",thanks:"Danke für Ihr Feedback!",home:"Zur Startseite",
+    solvedT:"Super, es lädt!",solvedH:"Gute Fahrt. War die Hilfe nützlich?",yes:"👍 Ja",nope:"👎 Nein",thanks:"Danke für Ihr Feedback!",reviewT:"Hat alles geklappt? Bewerten Sie diesen Ladestandort bei Google – das hilft anderen Fahrern.",reviewBtn:"⭐ Bei Google bewerten",home:"Zur Startseite",
     dangerT:"Bitte Abstand halten",dangerNote:"<b>Berühren Sie die Säule nicht</b>, wenn Kabel beschädigt sind, es Funken, Rauch oder Brandgeruch gibt. Bei Feuer oder Verletzten: <b>Notruf 112</b>.",
     dangerH:"Unser Service-Team ist bereits informiert. Bitte rufen Sie uns an oder melden Sie den Schaden mit Foto.",callNow:"📞 Hotline sofort anrufen",reportDamage:"Schaden melden (mit Foto)",
     ticketT:"Wir kümmern uns darum",ticketH:"Melden Sie die Störung hier – unser Service-Team prüft den Ladepunkt. Die Daten sind schon ausgefüllt.",
@@ -296,7 +300,7 @@ const T = {
     what:"What isn't working?",whatSub:"Tap your issue – we'll solve it step by step.",
     privacy:"To help you, your selections, chat messages and any details you provide about this charger are stored and passed on to our service team.",privacyLink:"Privacy",
     back:"‹ Back",stepOf:"Step {a} of {b}",ok:"✓ That worked",no:"Didn't help",
-    solvedT:"Great, it's charging!",solvedH:"Have a good trip. Was this helpful?",yes:"👍 Yes",nope:"👎 No",thanks:"Thanks for your feedback!",home:"Back to start",
+    solvedT:"Great, it's charging!",solvedH:"Have a good trip. Was this helpful?",yes:"👍 Yes",nope:"👎 No",thanks:"Thanks for your feedback!",reviewT:"Did everything work? Rate this charging location on Google – it helps other drivers.",reviewBtn:"⭐ Rate on Google",home:"Back to start",
     dangerT:"Please keep your distance",dangerNote:"<b>Do not touch the charger</b> if cables are damaged or there are sparks, smoke or a burning smell. In case of fire or injuries: <b>call 112</b>.",
     dangerH:"Our service team has already been notified. Please call us or report the damage with a photo.",callNow:"📞 Call the hotline now",reportDamage:"Report damage (with photo)",
     ticketT:"We'll take care of it",ticketH:"Report the issue here – our service team will check the connector. Your details are already filled in.",
@@ -349,7 +353,7 @@ async function loadStation(){
   S.station = h || CONFIG.defaultStation;
   S.stationData = CONFIG.stations[S.station] || null;
   renderStation();
-  try{ const r=await api("station"); if(r.station){ S.stationData={addr:r.station.address||r.station.name||"",cps:(r.station.connectors||[]).length?r.station.connectors:[{n:1,t:""},{n:2,t:""}]}; renderStation(); } }catch(e){}
+  try{ const r=await api("station"); if(r.station){ S.stationData={review:r.station.review_url||(CONFIG.stations[S.station]||{}).review||"",addr:r.station.address||r.station.name||"",cps:(r.station.connectors||[]).length?r.station.connectors:[{n:1,t:""},{n:2,t:""}]}; renderStation(); } }catch(e){}
   return "station";
 }
 function renderStation(){
@@ -364,6 +368,7 @@ function renderStation(){
   $("#stPill").setAttribute("aria-label",tr("switchCp"));
 }
 // Station kompakt (eine Zeile) überall außer auf der Startseite – Tippen klappt sie auf
+const review=()=>((S.stationData&&S.stationData.review)||"");
 const evse=()=>{ const st=S.stationData; const c=st&&st.cps.find(x=>x.n===S.cp); return (c&&c.evse)||""; };
 function compact(on){ const c=$("#stationCard"); c.classList.toggle("compact",on); c.classList.remove("open"); }
 $("#stPill").onclick=()=>$("#stationCard").classList.toggle("open");
@@ -441,7 +446,9 @@ function solvedView(){
   view.innerHTML=`<div class="card center"><div class="big-ic">⚡</div><div class="step-t">${tr("solvedT")}</div>
   <p class="step-h">${tr("solvedH")}</p>
   <div style="display:flex;gap:10px"><button class="btn ghost" data-r="1">${tr("yes")}</button><button class="btn ghost" data-r="0">${tr("nope")}</button></div>
+  ${review()?`<div class="review"><p>${tr("reviewT")}</p><a class="btn google" id="gRev" href="${esc(review())}" target="_blank" rel="noopener">${tr("reviewBtn")}</a></div>`:""}
   <button class="btn primary" id="hm">${tr("home")}</button></div>`;
+  if($("#gRev")) $("#gRev").addEventListener("click",()=>track("tab",{tab:"google_review"},true));
   view.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{ track("feedback",{value:+b.dataset.r}); b.parentElement.outerHTML=`<div class="note green">${tr("thanks")}</div>`;});
   $("#hm").onclick=home;
 }
