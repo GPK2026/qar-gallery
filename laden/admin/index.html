@@ -148,11 +148,16 @@ dt{color:var(--muted)}dd{margin:0}
 .av-h .chev{color:var(--muted);font-size:13px}
 .av-closed .av-body{display:none!important}
 .heat{display:grid;grid-template-columns:28px repeat(24,1fr);gap:2px;align-items:center}
-.heat i{display:block;height:22px;border-radius:3px;cursor:default}
+.heat i{display:flex;align-items:center;justify-content:center;height:24px;border-radius:3px;cursor:default;font-style:normal;font-size:11px;font-weight:700}
+.heat i.pk{outline:2px solid #14201b;outline-offset:-2px}
+.heat.parts{margin-bottom:2px}
+.heat .hp{font-size:11px;font-weight:700;color:var(--muted);text-align:center;background:#f3f6f4;border-radius:4px;padding:2px 0}
+.heat .hx.pk{color:#2a78d6;font-weight:800}
 .heat .hl,.hbars .hl{font-size:12px;color:var(--muted);font-weight:600}
-.heat .hx{font-size:10.5px;color:var(--muted);text-align:left}
-.hbars{display:grid;grid-template-columns:28px repeat(24,1fr);gap:2px;align-items:end;height:60px;margin-top:6px;border-bottom:1px solid var(--line)}
-.hbars div{height:100%;display:flex;align-items:flex-end}
+.heat .hx{font-size:10.5px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.hbars{display:grid;grid-template-columns:28px repeat(24,1fr);gap:2px;align-items:end;height:60px;margin-top:20px;border-bottom:1px solid var(--line)}
+.hbars div{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+.hbars em{position:absolute;top:-14px;font-style:normal;font-size:10px;color:var(--muted)}
 .hbars i{display:block;width:100%;background:#2a78d6;border-radius:3px 3px 0 0;min-height:1px}
 .proj-block{border-top:1px solid var(--line);padding:2px 0}
 .proj-block:first-of-type{border-top:0}
@@ -948,9 +953,11 @@ function drawHeat(){
   box.innerHTML=`<div class="row" style="margin-bottom:6px"><h2 style="margin:0">Wann passiert es? – Tageszeit & Wochentag</h2><div class="sp"></div>
     <div class="seg" id="heatSeg"><button data-m="inc" class="${HEAT_MODE==="inc"?"on":""}">Störungsmeldungen</button><button data-m="vis" class="${HEAT_MODE==="vis"?"on":""}">Alle Besuche</button></div></div>
     <p class="sub" style="margin:0 0 12px">${tot?`${tot} ${unit} im Zeitraum · am häufigsten <b>${DN[pk[0]]} ${pk[1]}–${pk[1]+1} Uhr</b> (${pk[2]}) · stärkste Tageszeit insgesamt <b>${ph}–${ph+1} Uhr</b>`:"Keine Daten im Zeitraum."}</p>
-    <div class="heat">${g.map((r,w)=>`<span class="hl">${DN[w]}</span>${r.map((v,h)=>`<i style="background:${col(v)}" data-tip="<b>${DN[w]} ${h}–${h+1} Uhr</b><br>${v} ${unit}"></i>`).join("")}`).join("")}
-      <span></span>${Array.from({length:24},(_,h)=>`<span class="hx">${h%3===0?h:""}</span>`).join("")}</div>
-    <div class="hbars"><span class="hl"></span>${hours.map((v,h)=>`<div data-tip="<b>${h}–${h+1} Uhr</b><br>${v} ${unit} (alle Wochentage)"><i style="height:${v/hmax*100}%"></i></div>`).join("")}</div>
+    <div class="heat parts"><span></span>${[["Nacht",0,6],["Morgen",6,12],["Nachmittag",12,18],["Abend",18,24]].map(([l,a,b])=>`<span class="hp" style="grid-column:${a+2} / ${b+2}">${l} ${a}–${b} Uhr</span>`).join("")}</div>
+    <div class="heat"><span></span>${Array.from({length:24},(_,h)=>`<span class="hx ${h===ph&&tot?"pk":""}">${String(h).padStart(2,"0")}</span>`).join("")}
+      ${g.map((r,w)=>`<span class="hl">${DN[w]}</span>${r.map((v,h)=>`<i class="${w===pk[0]&&h===pk[1]&&tot?"pk":""}" style="background:${col(v)};color:${v/max>.55?"#fff":"#14201b"}" data-tip="<b>${DN[w]} ${h}–${h+1} Uhr</b><br>${v} ${unit}">${v||""}</i>`).join("")}`).join("")}</div>
+    <div class="hbars"><span class="hl" style="align-self:center">Σ</span>${hours.map((v,h)=>`<div data-tip="<b>${h}–${h+1} Uhr</b><br>${v} ${unit} (alle Wochentage)"><i style="height:${v/hmax*100}%"></i><em>${v||""}</em></div>`).join("")}</div>
+    <div class="heat"><span></span>${Array.from({length:24},(_,h)=>`<span class="hx">${h} Uhr</span>`).join("").replace(/<span class="hx">(\d+) Uhr<\/span>/g,(m,h)=>`<span class="hx">${+h%2===0?h+"h":""}</span>`)}</div>
     <div class="legend" style="margin-top:8px"><span>weniger</span>${[0,.25,.5,.75,1].map(t=>`<b style="background:${t?`rgba(42,120,214,${(0.15+0.85*t).toFixed(2)})`:"#f0f3f1"};width:18px"></b>`).join("")}<span>mehr</span><span style="margin-left:12px">Balken unten = Summe je Stunde</span></div>`;
   box.querySelectorAll("#heatSeg button").forEach(b=>b.onclick=()=>{ HEAT_MODE=b.dataset.m; drawHeat(); });
 }
@@ -1019,6 +1026,7 @@ async function loadOverview(){
           <div class="pct" style="color:${pct<98?"#b42318":"var(--ink)"}">${pctTxt(pct)}</div></div>`).join("")}</div></div>`; }).join("")||'<div class="muted">Keine Projekte.</div>'}
       </div><div class="up-axis av-body"><span></span><div><span>${fmtDT(F).split(",")[0]}</span><span>${fmtDT(F+span/2).split(",")[0]}</span><span>${+new Date(r.to)>+new Date(r.now)?"jetzt":fmtDT(T).split(",")[0]}</span></div><span></span></div>
     </div>
+    <div class="card" id="heatCard"></div>
     <div class="two">
       <div class="card"><h2>Besuche pro Tag</h2>
         <div class="legend">${OUTC.map(o=>`<span><b style="background:${o[2]}"></b>${o[1]}</span>`).join("")}</div>
@@ -1029,8 +1037,7 @@ async function loadOverview(){
       <div class="card"><h2>Häufigste Störungen</h2>
         ${top.length?top.map(([t,n])=>`<div class="hb" data-tip="${esc(t)}: ${n} Störung(en)"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t)}</span><div><div class="t" style="width:${n/topMax*100}%"></div></div><b>${n}</b></div>`).join(""):'<div class="muted">Keine Störungen im Zeitraum 🎉</div>'}
       </div>
-    </div>
-    <div class="card" id="heatCard"></div>`;
+    </div>`;
     OV_HEAT={inc:r.incidents.filter(i=>+new Date(i.created_at)>=F&&+new Date(i.created_at)<=T),daily:r.daily}; drawHeat();
     box.querySelectorAll(".kpi[data-go]").forEach(k=>k.onclick=()=>{ const g=k.dataset.go;
       if(g==="avail") return $("#availCard").scrollIntoView({behavior:"smooth"});
