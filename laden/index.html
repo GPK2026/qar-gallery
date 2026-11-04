@@ -42,6 +42,14 @@ footer.bottom{flex:none;background:#fff;border-top:1px solid var(--line);padding
 .cp{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 8px;font-size:14px;font-weight:600;color:var(--ink)}
 .cp small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .cp.on{border-color:var(--brand);background:var(--brand-soft)}
+.sel-lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 6px}
+.chg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.chg{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px 4px;font-size:15px;font-weight:700;color:var(--ink)}
+.chg.on{border-color:var(--brand);background:var(--brand-soft)}
+.sel-hint{margin-top:10px;font-size:13px;color:var(--amber);background:var(--amber-soft);border-radius:10px;padding:8px 10px}
+.cps{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px}
+.cp{padding:10px 6px}
+.st-pill.need{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
 .st-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .st-pill{display:none;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap}
 .station.compact{padding:10px 14px;margin-bottom:10px}
@@ -51,8 +59,8 @@ footer.bottom{flex:none;background:#fff;border-top:1px solid var(--line);padding
 .station.compact.open .evse{display:block}
 .station.compact .id{font-size:16px;margin:0}
 .station.compact .st-pill{display:inline-block}
-.station.compact.open .addr,.station.compact.open .cps{display:block}
-.station.compact.open .cps{display:flex}
+.station.compact #cps{display:none}
+.station.compact.open #cps,.station.compact.open .addr{display:block}
 .station.compact.open .addr{margin-top:6px}
 h2{font-size:20px;margin:18px 2px 10px}
 p.sub{margin:-4px 2px 14px;color:var(--muted);font-size:15px}
@@ -153,7 +161,7 @@ nav.tabs button{position:relative}
     <div class="lbl" data-i="station">Ladestation</div>
     <div class="st-head"><div class="id" id="stId">–</div><button class="st-pill" id="stPill" aria-label="Ladepunkt wechseln"></button></div>
     <div class="addr" id="stAddr">–</div>
-    <div class="cps" id="cps"></div>
+    <div id="cps"></div>
     <div class="evse" id="stEvse"></div>
   </section>
 
@@ -187,7 +195,7 @@ const CONFIG = {
   defaultStation: "DE-GR7-E0001",
   // Fallback-Stammdaten, falls der Server nicht erreichbar ist (eigentliche Daten: Tabelle charge_stations)
   stations: {
-    "DE-GR7-E0001": { addr: "Spandauer Damm 10, 14059 Berlin", cps: [{n:1,t:"CCS",evse:"DE*CPW*E1234673064*1"},{n:2,t:"CCS",evse:"DE*CPW*E1234673064*2"},{n:3,t:"CHAdeMO",evse:"DE*CPW*E1234673064*3"}],
+    "DE-GR7-E0001": { addr: "Spandauer Damm 10, 14059 Berlin", cps: [{n:1,t:"CCS",evse:"DE*CPW*E1234673064*1",charger:1},{n:2,t:"CCS",evse:"DE*CPW*E1234673064*2",charger:1},{n:3,t:"CHAdeMO",evse:"DE*CPW*E1234673064*3",charger:1}], chargers:[{n:1,label:"LS#1"}],
       review: "https://search.google.com/local/writereview?placeid=ChIJA7jglC5RqEcRd14VfDgAZJ0" }
   }
 };
@@ -288,14 +296,14 @@ const T = {
     send:"Störung melden",sending:"Wird gesendet…",toChat:"Lieber im Chat klären",
     ticketNo:"Ihre Vorgangsnummer",ticketOk:"Unser Service-Team hat Ihre Meldung erhalten. Nennen Sie diese Nummer, falls Sie die Hotline anrufen.",
     ticketFail:"Meldung konnte nicht gesendet werden",ticketFailH:"Bitte rufen Sie unsere Hotline an und nennen Sie die Stations-ID <b>{id}</b>, Ladepunkt {cp}.",callHotline:"📞 Hotline anrufen",
-    chatHello:"Hallo! Wir helfen Ihnen an Station {id}, Ladepunkt {cp}. Was ist das Problem?",chatBadge:"Assistent · unser Team liest live mit",chatHuman:"👩‍🔧 Ein Mitarbeiter ist im Chat",
+    chatHello:"Hallo! Wir helfen Ihnen an Station {id}{cp}. Was ist das Problem?",chatBadge:"Assistent · unser Team liest live mit",chatHuman:"👩‍🔧 Ein Mitarbeiter ist im Chat",
     chips:["Ladung startet nicht","Ladekarte wird nicht erkannt","Kreditkarte geht nicht","Stecker steckt fest","Ich möchte einen Mitarbeiter sprechen"],
     chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
     hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
     tCopy:"📋 Nummer kopieren",tShare:"📤 Speichern / teilen",tCopied:"✓ Kopiert",tSaved:"Die Nummer bleibt auf diesem Handy gespeichert und erscheint auch auf der Startseite und unter „Hotline“.",
     myTicket:"Ihre Störungsmeldung",ticketAgo:"gemeldet {t}",shareTitle:"Störungsmeldung {no}",
     shareText:"Meine Störungsmeldung an der Ladesäule\nVorgangsnummer: {no}\nStation: {st}{evse}\nProblem: {pr}\nZeit: {time}\nHotline: {hl}",
-    callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln"},
+    callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln",chooseCharger:"Charger wählen",chooseCp:"Ladepunkt wählen",chargerHint:"Bitte wählen Sie Ihren Charger – die Nummer (z. B. LS#3) steht groß am Gerät.",pickT:"An welchem Ladepunkt stehen Sie?",pickH:"Die Charger-Nummer steht groß am Gerät, der Ladepunkt am Kabel bzw. an der Steckdose."},
   en:{brand:"<b>HAPPY CHARGING</b> Support",station:"Charging station",tHelp:"Issue",tChat:"Chat",tCall:"Hotline",cp:"Connector",cpShort:"C",
     what:"What isn't working?",whatSub:"Tap your issue – we'll solve it step by step.",
     privacy:"To help you, your selections, chat messages and any details you provide about this charger are stored and passed on to our service team.",privacyLink:"Privacy",
@@ -309,14 +317,14 @@ const T = {
     send:"Report issue",sending:"Sending…",toChat:"I'd rather use the chat",
     ticketNo:"Your reference number",ticketOk:"Our service team has received your report. Please quote this number if you call the hotline.",
     ticketFail:"The report could not be sent",ticketFailH:"Please call our hotline and give the station ID <b>{id}</b>, connector {cp}.",callHotline:"📞 Call the hotline",
-    chatHello:"Hello! We're here to help at station {id}, connector {cp}. What's the problem?",chatBadge:"Assistant · our team reads along live",chatHuman:"👩‍🔧 A team member is in the chat",
+    chatHello:"Hello! We're here to help at station {id}{cp}. What's the problem?",chatBadge:"Assistant · our team reads along live",chatHuman:"👩‍🔧 A team member is in the chat",
     chips:["Charging won't start","Charging card not recognised","Credit card not working","Connector is stuck","I'd like to speak to someone"],
     chatPh:"Type a message…",chatToTeam:"Your message has reached our service team. We'll reply here shortly.",
     hours:"Available 24/7",callBtn:"Call now",stationId:"Station ID",copy:"Copy",copied:"Copied ✓",caseNo:"Reference number",
     tCopy:"📋 Copy number",tShare:"📤 Save / share",tCopied:"✓ Copied",tSaved:"The number stays saved on this phone and also appears on the start screen and under “Hotline”.",
     myTicket:"Your issue report",ticketAgo:"reported {t}",shareTitle:"Issue report {no}",
     shareText:"My issue report at the charging station\nReference number: {no}\nStation: {st}{evse}\nIssue: {pr}\nTime: {time}\nHotline: {hl}",
-    callHint:"Please have the EVSE ID ready – it is also on the sticker at the connector. Then we can find it in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector"}
+    callHint:"Please have the EVSE ID ready – it is also on the sticker at the connector. Then we can find it in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector",chooseCharger:"Choose charger",chooseCp:"Choose connector",chargerHint:"Please choose your charger – the number (e.g. LS#3) is shown in large print on the unit.",pickT:"Which connector are you at?",pickH:"The charger number is shown in large print on the unit, the connector number on the cable or socket."}
 };
 let lang=(navigator.language||"de").toLowerCase().startsWith("de")?"de":"en";
 const tr=(k,v={})=>{ let s=(T[lang]&&T[lang][k]!=null?T[lang][k]:T.de[k]); if(s==null) return k; if(typeof s==="string") s=s.replace(/\{(\w+)\}/g,(_,x)=>v[x]!=null?v[x]:""); return s; };
@@ -343,6 +351,7 @@ async function api(action, payload={}, opts={}){
 // Protokoll: jeder Schritt geht an den Server (Fehler werden ignoriert, Seite funktioniert weiter)
 function track(type,data={},keepalive=false){
   if(evse()&&data.evse==null) data={...data,evse:evse()};
+  if(curCp()&&data.cp_label==null) data={...data,cp_label:cpLabel(curCp())};
   return api("event",{type,data},{keepalive}).then(r=>{S.online=true;return r;}).catch(e=>{S.online=false;return null;});
 }
 
@@ -350,26 +359,75 @@ function track(type,data={},keepalive=false){
 async function loadStation(){
   const h=decodeURIComponent((location.hash||"").slice(1));
   if(h==="betreiber") return "betreiber";
-  S.station = h || CONFIG.defaultStation;
-  S.stationData = CONFIG.stations[S.station] || null;
+  // "#1295" = Projekt, "#1295.3" = Projekt + Charger 3 vorgewählt
+  const m=(h||"").match(/^(.+)\.(\d{1,2})$/);
+  S.station = (m?m[1]:h) || CONFIG.defaultStation; S.prefCharger = m?+m[2]:null;
+  S.stationData = CONFIG.stations[S.station] || null; S.cp=null; S.charger=null; S.label=S.station;
   renderStation();
-  try{ const r=await api("station"); if(r.station){ if(r.station.id&&r.station.id!==S.station){ S.station=r.station.id; } S.stationData={review:r.station.review_url||(CONFIG.stations[S.station]||{}).review||"",addr:r.station.address||r.station.name||"",cps:(r.station.connectors||[]).length?r.station.connectors:[{n:1,t:""},{n:2,t:""}]}; renderStation(); } }catch(e){}
+  try{ const r=await api("station"); if(r.station){ if(r.station.id&&r.station.id!==S.station){ S.station=r.station.id; } S.label=r.station.project_id||S.station; S.stationData={review:r.station.review_url||(CONFIG.stations[S.station]||{}).review||"",addr:r.station.address||r.station.name||"",chargers:r.station.chargers||null,cps:(r.station.connectors||[]).length?r.station.connectors:[{n:1,t:""},{n:2,t:""}]}; } }catch(e){}
+  initSelection(); renderStation();
   return "station";
 }
+/* Projekt → Charger → Ladepunkt */
+function chargers(){ // [{n,label,cps:[...]}] aus den Stammdaten
+  const st=S.stationData||{cps:[]}; const map=new Map();
+  (st.cps||[]).forEach(c=>{ const k=c.charger||1; if(!map.has(k)) map.set(k,{n:k,label:"",cps:[]}); map.get(k).cps.push(c); });
+  (st.chargers||[]).forEach(c=>{ if(map.has(c.n)) map.get(c.n).label=c.label||""; });
+  return [...map.values()].sort((a,b)=>a.n-b.n).map(c=>({...c,label:c.label||(map.size>1?"Charger "+c.n:"")}));
+}
+const multi=()=>chargers().length>1;
+const curCharger=()=>chargers().find(c=>c.n===S.charger)||null;
+const curCp=()=>{ const st=S.stationData; return st&&st.cps.find(x=>x.n===S.cp)||null; };
+const localNo=c=>{ const ch=chargers().find(x=>x.n===(c.charger||1)); return ch?ch.cps.indexOf(c)+1:c.n; };
+function cpLabel(c){ if(!c) return ""; const ch=chargers().find(x=>x.n===(c.charger||1)); return `${multi()&&ch?ch.label+" · ":""}${tr("cp")} ${localNo(c)}`; }
+function initSelection(){
+  const chs=chargers();
+  if(chs.length===1){ S.charger=chs[0].n; S.cp=S.cp||chs[0].cps[0]?.n||null; return; }
+  if(S.prefCharger && chs.some(c=>c.n===S.prefCharger)) S.charger=S.prefCharger;
+  const ch=curCharger(); if(ch && ch.cps.length===1) S.cp=ch.cps[0].n;
+}
+function pickCharger(n){ S.charger=n; S.cp=null; const ch=curCharger(); if(ch&&ch.cps.length===1) S.cp=ch.cps[0].n; track("connector_select",{charger:n,charger_label:ch&&ch.label,cp:S.cp}); }
+function pickCp(n){ S.cp=n; const c=curCp(); track("connector_select",{cp:n,charger:c&&c.charger,label:cpLabel(c)}); }
+// Auswahl-Block (Station-Karte und Zwischenschritt vor einer Störung)
+function selectorHTML(){
+  const chs=chargers(), ch=curCharger();
+  let h="";
+  if(chs.length>1) h+=`<div class="sel-lbl">${tr("chooseCharger")}</div><div class="chg-grid">${chs.map(c=>`<button class="chg ${c.n===S.charger?"on":""}" data-ch="${c.n}">${esc(c.label)}</button>`).join("")}</div>`;
+  if(ch) h+=`${chs.length>1?`<div class="sel-lbl">${tr("chooseCp")}</div>`:""}<div class="cps">${ch.cps.map(c=>`<button class="cp ${c.n===S.cp?"on":""}" data-cp="${c.n}">${tr("cp")} ${localNo(c)}${c.t?`<small>${esc(c.t)}${c.kw?" · "+c.kw+" kW":""}</small>`:""}</button>`).join("")}</div>`;
+  else if(chs.length>1) h+=`<div class="sel-hint">${tr("chargerHint")}</div>`;
+  return h;
+}
+function wireSelector(root,after){
+  root.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{ pickCharger(+b.dataset.ch); renderStation(); after&&after(false); });
+  root.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>{ pickCp(+b.dataset.cp); $("#stationCard").classList.remove("open"); renderStation(); after&&after(true); });
+}
 function renderStation(){
-  const st=S.stationData||{addr:"",cps:[{n:1,t:""},{n:2,t:""}]};
-  $("#stId").textContent=S.station;
+  const st=S.stationData||{addr:"",cps:[]};
+  $("#stId").textContent=S.label||S.station;
   $("#stAddr").textContent=st.addr||"";
-  $("#cps").innerHTML=st.cps.map(c=>`<button class="cp ${c.n===S.cp?"on":""}" data-cp="${c.n}">${tr("cp")} ${c.n}${c.t?`<small>${esc(c.t)}</small>`:""}</button>`).join("");
-  $("#cps").querySelectorAll(".cp").forEach(b=>b.onclick=()=>{ $("#stationCard").classList.remove("open"); if(S.cp===+b.dataset.cp) return; S.cp=+b.dataset.cp; renderStation(); track("connector_select",{cp:S.cp}); });
-  const cur=st.cps.find(c=>c.n===S.cp);
-  $("#stEvse").innerHTML=cur&&cur.evse?`<b>EVSE-ID</b> ${esc(cur.evse)}`:"";
-  $("#stPill").textContent=`${tr("cp")} ${S.cp}${cur&&cur.t?" · "+cur.t.split(" · ")[0]:""} ▾`;
+  $("#cps").outerHTML=`<div id="cps">${selectorHTML()}</div>`;
+  wireSelector($("#cps"));
+  const c=curCp();
+  $("#stEvse").innerHTML=c&&c.evse?`<b>EVSE-ID</b> ${esc(c.evse)}`:"";
+  $("#stPill").textContent=c?`${cpLabel(c)}${c.t?" · "+c.t:""} ▾`:`${multi()&&!S.charger?tr("chooseCharger"):tr("chooseCp")} ▾`;
+  $("#stPill").classList.toggle("need",!c);
   $("#stPill").setAttribute("aria-label",tr("switchCp"));
+}
+// Vor einer Störung: erst Charger/Ladepunkt wählen lassen, dann weiter
+function needPick(next){
+  if(curCp()) return false;
+  show(()=>pickView(next)); return true;
+}
+function pickView(next){
+  compact(true); toTop(); markSub(); S.render=()=>pickView(next);
+  view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
+  <div class="card"><div class="step-t">${tr("pickT")}</div><p class="step-h">${tr("pickH")}</p><div id="pickSel">${selectorHTML()}</div></div>`;
+  $("#bk").onclick=home;
+  wireSelector($("#pickSel"),done=>{ if(done&&curCp()) next(); else pickView(next); });
 }
 // Station kompakt (eine Zeile) überall außer auf der Startseite – Tippen klappt sie auf
 const review=()=>((S.stationData&&S.stationData.review)||"");
-const evse=()=>{ const st=S.stationData; const c=st&&st.cps.find(x=>x.n===S.cp); return (c&&c.evse)||""; };
+const evse=()=>{ const c=curCp(); return (c&&c.evse)||""; };
 function compact(on){ const c=$("#stationCard"); c.classList.toggle("compact",on); c.classList.remove("open"); }
 $("#stPill").onclick=()=>$("#stationCard").classList.toggle("open");
 const scroller=()=>$("#scroll");
@@ -386,7 +444,7 @@ function ago(ts){ const m=Math.round((Date.now()-ts)/60000), en=lang==="en";
   if(m<1) return en?"just now":"gerade eben"; if(m<60) return en?`${m} min ago`:`vor ${m} Min.`;
   const h=Math.round(m/60); if(h<24) return en?`${h} h ago`:`vor ${h} Std.`;
   return new Date(ts).toLocaleString(locale(),{dateStyle:"short",timeStyle:"short"}); }
-function ticketText(t){ return tr("shareText",{no:t.no,st:t.station+(t.cp?" · "+tr("cp")+" "+t.cp:""),evse:t.evse?"\nEVSE-ID: "+t.evse:"",pr:FLOWS[t.flow]?L(FLOWS[t.flow].t):"",time:new Date(t.ts).toLocaleString(locale()),hl:CONFIG.hotline}); }
+function ticketText(t){ return tr("shareText",{no:t.no,st:t.station+(t.cpl?" · "+t.cpl:(t.cp?" · "+tr("cp")+" "+t.cp:"")),evse:t.evse?"\nEVSE-ID: "+t.evse:"",pr:FLOWS[t.flow]?L(FLOWS[t.flow].t):"",time:new Date(t.ts).toLocaleString(locale()),hl:CONFIG.hotline}); }
 async function copyText(txt,btn){ try{ await navigator.clipboard.writeText(txt); if(btn) btn.textContent=tr("tCopied"); }catch(e){ if(btn) btn.textContent=txt; } }
 async function shareTicket(t,btn){
   const text=ticketText(t);
@@ -415,6 +473,7 @@ function home(){
 }
 
 function startFlow(k){
+  const f0=FLOWS[k]; if(!f0.danger && needPick(()=>startFlow(k))) return;
   S.flow=k;S.step=0;S.tried=[];
   const f=FLOWS[k];
   track(f.danger?"danger_open":"flow_start",{flow:k,title:DE(f.t)});
@@ -483,7 +542,7 @@ function ticketView(){
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
   <div class="card"><div class="step-t">${tr("ticketT")}</div>
   <p class="step-h">${tr("ticketH")}</p>
-  <div class="summary"><b>${tr("sStation")}</b>${esc(S.station)}<br><b>${tr("sCp")}</b>${S.cp}<br>${evse()?`<b>EVSE-ID</b>${esc(evse())}<br>`:""}<b>${tr("sProblem")}</b>${L(f.t)}<br>${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
+  <div class="summary"><b>${tr("sStation")}</b>${esc(S.label||S.station)}<br><b>${tr("sCp")}</b>${esc(cpLabel(curCp())||"–")}<br>${evse()?`<b>EVSE-ID</b>${esc(evse())}<br>`:""}<b>${tr("sProblem")}</b>${L(f.t)}<br>${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
   <label class="f">${tr("fDesc")}</label><textarea class="f" id="desc" placeholder="${tr("fDescPh")}">${esc(keep.desc)}</textarea>
   <label class="f">${tr("fPhoto")}</label><input class="f" type="file" accept="image/*" id="pic">
   <label class="f">${tr("fEmail")}</label><input class="f" id="email" type="email" inputmode="email" autocomplete="email" placeholder="${tr("fEmailPh")}" value="${esc(keep.email)}">
@@ -499,7 +558,7 @@ function ticketView(){
     const r=await track("ticket_submit",{flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),email,phone,contact:[email,phone].filter(Boolean).join(" · "),photo});
     S.ticketMail=r&&r.customerMail?{status:r.customerMail,to:email}:null;
     S.lastTicket=(r&&r.ticketNo)||null; S.ticketFailed=!S.lastTicket;
-    if(S.lastTicket) saveTicket({no:S.lastTicket,station:S.station,cp:S.cp,evse:evse(),flow:S.flow,ts:Date.now()});
+    if(S.lastTicket) saveTicket({no:S.lastTicket,station:S.station,cp:S.cp,cpl:cpLabel(curCp()),evse:evse(),flow:S.flow,ts:Date.now()});
     show(ticketDoneView);
   };
 }
@@ -507,7 +566,7 @@ function ticketDoneView(){
   const id=S.lastTicket;
   view.innerHTML=`<div class="card"><div class="big-ic">🧾</div>
   ${id?`<div class="step-t center">${tr("ticketNo")}</div><div class="ticket">${id}</div>${ticketActions()}<p class="step-h" style="margin-top:12px">${tr("ticketOk")}</p>${S.ticketMail&&S.ticketMail.status==="sent"?`<div class="note green">${tr("mailSent",{m:esc(S.ticketMail.to)})}</div>`:S.ticketMail?`<div class="note amber">${tr("mailFail")}</div>`:""}<div class="note green">${tr("tSaved")}</div>`
-     :`<div class="step-t center">${tr("ticketFail")}</div><div class="note amber">${tr("ticketFailH",{id:esc(evse()||S.station),cp:S.cp})}</div>`}
+     :`<div class="step-t center">${tr("ticketFail")}</div><div class="note amber">${tr("ticketFailH",{id:esc(evse()||S.station),cp:esc(cpLabel(curCp())||"–")})}</div>`}
   ${hotlineLink("ghost",tr("callHotline"))}<button class="btn primary" id="hm">${tr("home")}</button></div>`;
   $("#hm").onclick=home; wireCall();
   if(id){ const t=recentTicket()||{no:id,station:S.station,cp:S.cp,evse:evse(),flow:S.flow,ts:Date.now()}; wireTicketActions(view,t); }
@@ -547,7 +606,7 @@ function fallbackBot(t){
 
 function chatView(){
   compact(true); S.render=chatView;
-  if(!S.chat.length) S.chat.push({role:"assistant",content:tr("chatHello",{id:S.station,cp:S.cp})});
+  if(!S.chat.length) S.chat.push({role:"assistant",content:tr("chatHello",{id:S.label||S.station,cp:curCp()?", "+cpLabel(curCp()):""})});
   view.innerHTML=`<div class="ai-badge">${S.human?tr("chatHuman"):tr("chatBadge")}</div>
   <div class="chat" id="log">${S.chat.map(m=>m.role==="sys"?`<div class="sys">${esc(m.content)}</div>`:`<div class="msg ${m.role==="user"?"me":m.role==="team"?"team":"bot"}">${m.from?`<span class="who">${esc(m.from)}</span>`:""}${esc(m.content)}</div>`).join("")}</div>
   ${S.chat.length<2?`<div class="chips">${TILE_ORDER.map(k=>`<button class="chip ${FLOWS[k].danger?"danger":""}" data-f="${k}">${FLOWS[k].ic} ${L(FLOWS[k].t)}</button>`).join("")}</div>`:""}`;
@@ -610,12 +669,12 @@ function callView(){
   view.innerHTML=`<div class="card"><div class="big-ic">📞</div>
   <div class="phone">${CONFIG.hotline}</div><div class="hours">${tr("hours")}</div>
   ${hotlineLink("primary",tr("callBtn"))}
-  <div class="idbox"><span>${evse()?"EVSE-ID":tr("stationId")}<br><code>${esc(evse()||S.station+" · "+tr("cpShort")+" "+S.cp)}</code></span><button class="small-btn" id="cp">${tr("copy")}</button></div>
+  <div class="idbox"><span>${evse()?"EVSE-ID":tr("stationId")}<br><code>${esc(evse()||(S.label||S.station)+(curCp()?" · "+cpLabel(curCp()):""))}</code></span><button class="small-btn" id="cp">${tr("copy")}</button></div>
   ${S.lastTicket?`<div class="idbox"><span>${tr("caseNo")}<br><code>${esc(S.lastTicket)}</code></span><button class="small-btn" id="cpT">${tr("copy")}</button></div>`:""}
   <p class="step-h" style="margin-top:14px">${tr("callHint")}</p>
   <div class="note red">${tr("emergency")}</div></div>`;
   if($("#cpT")) $("#cpT").onclick=e=>copyText(S.lastTicket,e.target);
-  $("#cp").onclick=async e=>{ track("hotline_copy"); try{await navigator.clipboard.writeText(evse()||(S.station+" / "+tr("cpShort")+" "+S.cp));e.target.textContent=tr("copied");}catch{e.target.textContent=S.station;}};
+  $("#cp").onclick=async e=>{ track("hotline_copy"); try{await navigator.clipboard.writeText(evse()||(S.station+(curCp()?" / "+cpLabel(curCp()):"")));e.target.textContent=tr("copied");}catch{e.target.textContent=S.station;}};
   wireCall();
 }
 

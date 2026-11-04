@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>HAPPY CHARGING Support · Betreiber</title>
+<link rel="icon" href="../favicon.ico" sizes="48x48">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#f4f6f5;--card:#fff;--ink:#14201b;--muted:#5d6b65;--line:#e1e6e3;--brand:#0a8f5a;--brand-soft:#e3f4ec;--warn:#b42318;--warn-soft:#fdecea;--amber:#9a6700;--amber-soft:#fff6db;--orange:#F08C00}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header .in{max-width:1180px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px}
+.logo svg{width:22px;height:28px}
+.logo small{font-weight:500;color:var(--muted);margin-left:6px}
+nav{display:flex;gap:4px;margin-left:24px}
+nav button{background:none;border:0;padding:8px 12px;border-radius:8px;color:var(--muted);font-weight:600}
+nav button.on{background:var(--brand-soft);color:#08603d}
+.sp{flex:1}
+.wrap{max-width:1180px;margin:0 auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+h1{font-size:20px;margin:0 0 4px}
+h2{font-size:16px;margin:0 0 12px}
+.sub{color:var(--muted);margin:0 0 16px}
+.btn{border:0;border-radius:10px;padding:9px 14px;font-weight:600;background:var(--brand);color:#fff}
+.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+.btn.warn{background:#fff;border:1.5px solid #f3c1bc;color:var(--warn)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.pcard{cursor:pointer;transition:box-shadow .15s}
+.pcard:hover{box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.pid{font-size:22px;font-weight:800}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--brand-soft);color:#08603d}
+.badge.off{background:#eee;color:#777}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.amber{background:var(--amber-soft);color:var(--amber)}
+.stats{display:flex;gap:16px;margin-top:12px;color:var(--muted);font-size:13px}
+.stats b{color:var(--ink);font-size:16px;display:block}
+.muted{color:var(--muted)}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 5px}
+input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;color:var(--ink)}
+input:focus,select:focus{outline:none;border-color:var(--brand)}
+input[readonly]{background:#f6f7f6;color:var(--muted)}
+.form{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c6{grid-column:span 6}.c8{grid-column:span 8}.c12{grid-column:span 12}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.charger{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;background:#fbfcfb}
+.ch-head{display:grid;grid-template-columns:110px 1fr auto;gap:10px;align-items:end}
+.lp{display:grid;grid-template-columns:70px 150px 90px 1fr 36px;gap:8px;align-items:center;margin-top:8px}
+.lp .no{font-weight:700;color:var(--muted)}
+.icon-btn{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#14201b;color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;opacity:0;transition:opacity .2s}
+.toast.on{opacity:1}
+.toast.err{background:var(--warn)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line)}
+td{padding:9px 8px;border-bottom:1px solid #eef1ef;vertical-align:top}
+tr.click{cursor:pointer}
+tr.click:hover td{background:#f8faf9}
+.qr-row{display:flex;gap:14px;flex-wrap:wrap}
+.qr{border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;background:#fff;width:170px}
+.qr .q{display:flex;justify-content:center;margin-bottom:8px}
+.qr code{font-size:12px}
+.modal{position:fixed;inset:0;background:rgba(20,32,27,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:10;overflow:auto}
+.modal .card{max-width:760px;width:100%}
+.tl{font-size:13px}
+.tl div{padding:6px 0;border-bottom:1px solid #eef1ef;display:grid;grid-template-columns:70px 200px 1fr;gap:10px}
+.login{max-width:380px;margin:80px auto}
+.hidden{display:none!important}
+@media (max-width:760px){.c3,.c4,.c6,.c8{grid-column:span 12}.lp{grid-template-columns:50px 1fr 70px 36px}.lp .evse{grid-column:2 / span 3}nav{margin-left:0}header .in{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<header><div class="in">
+  <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
+  <nav id="nav" class="hidden"><button data-v="projects" class="on">Projekte</button><button data-v="tickets">Meldungen</button><button data-v="settings">Einstellungen</button></nav>
+  <div class="sp"></div>
+  <button class="btn ghost sm hidden" id="logout">Abmelden</button>
+</div></header>
+<div class="wrap" id="main"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-admin";
+const APP="https://qar.gallery/laden/";
+const TYPES=["CCS","CHAdeMO","Typ 2","Typ 2 (Kabel)","Schuko","Tesla"];
+const $=s=>document.querySelector(s), main=$("#main");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let token=null; try{ token=sessionStorage.getItem("hc_admin"); }catch(e){}
+let STATIONS=[];
+
+function toast(msg,err){ const t=$("#toast"); t.textContent=msg; t.classList.toggle("err",!!err); t.classList.add("on"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("on"),2800); }
+async function api(action,payload={}){
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,...payload})});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401 && action!=="login" && action!=="set_password"){ logout(); throw new Error("Bitte neu anmelden"); }
+  if(!r.ok) throw new Error(j.error||("Fehler "+r.status));
+  return j;
+}
+function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#logout").classList.add("hidden"); loginView(); }
+$("#logout").onclick=logout;
+document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>go(b.dataset.v));
+function go(v){ document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({projects:projectsView,tickets:ticketsView,settings:settingsView})[v](); }
+
+/* ---------- Login ---------- */
+function loginView(){
+  main.innerHTML=`<div class="card login"><h1>Anmelden</h1><p class="sub">Betreiber-Dashboard für Projekte, Charger und Ladepunkte.</p>
+  <form id="lf"><label>Passwort</label><input type="password" id="pw" autocomplete="current-password" autofocus>
+  <button class="btn" style="width:100%;margin-top:12px">Anmelden</button></form></div>`;
+  $("#lf").onsubmit=async e=>{ e.preventDefault();
+    try{ const r=await api("login",{password:$("#pw").value}); token=r.token; try{ sessionStorage.setItem("hc_admin",token); }catch(e){} start(); }
+    catch(err){ toast(err.message,true); } };
+}
+function start(){ $("#nav").classList.remove("hidden"); $("#logout").classList.remove("hidden"); go("projects"); }
+
+/* ---------- Projekte ---------- */
+const lpCount=s=>(s.chargers||[]).reduce((a,c)=>a+(c.connectors||[]).length,0);
+const evseMissing=s=>(s.chargers||[]).reduce((a,c)=>a+(c.connectors||[]).filter(x=>!x.evse).length,0);
+async function projectsView(){
+  main.innerHTML=`<div class="row" style="margin-bottom:14px"><div><h1>Projekte / Standorte</h1><p class="sub" style="margin:0">Änderungen sind sofort in der Kunden-App sichtbar.</p></div><div class="sp"></div><button class="btn" id="new">+ Neues Projekt</button></div><div class="grid" id="plist"><div class="muted">Lade …</div></div>`;
+  $("#new").onclick=()=>editView(null);
+  try{ STATIONS=(await api("list")).stations; }catch(e){ return toast(e.message,true); }
+  $("#plist").innerHTML=STATIONS.length?STATIONS.map((s,i)=>`<div class="card pcard" data-i="${i}">
+    <div class="row"><div class="pid">${esc(s.project_id||s.id)}</div><div class="sp"></div>${s.active?`<span class="badge">aktiv</span>`:`<span class="badge off">inaktiv</span>`}</div>
+    <div style="font-weight:600;margin-top:2px">${esc(s.name||"")}</div><div class="muted">${esc(s.address||"")}</div>
+    <div class="row" style="margin-top:10px;gap:6px"><span class="badge amber">${(s.chargers||[]).length} Charger</span><span class="badge amber">${lpCount(s)} Ladepunkte</span>${evseMissing(s)?`<span class="badge warn">${evseMissing(s)} ohne EVSE-ID</span>`:""}</div>
+    <div class="stats"><div><b>${s.stats.visits}</b>Besuche 30 T.</div><div><b>${s.stats.tickets}</b>Meldungen</div><div><b>${s.stats.danger}</b>Gefahr</div></div>
+  </div>`).join(""):`<div class="muted">Noch keine Projekte.</div>`;
+  document.querySelectorAll(".pcard").forEach(c=>c.onclick=()=>editView(STATIONS[+c.dataset.i]));
+}
+
+/* ---------- Editor ---------- */
+let E=null; // Arbeitskopie
+function blankStation(){ return {id:"",project_id:"",name:"",address:"",review_url:"",notify_email:"",lat:null,lng:null,active:true,chargers:[{label:"LS#1",model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}]}; }
+function editView(s){
+  E=s?JSON.parse(JSON.stringify(s)):blankStation(); E.original_id=s?s.id:null;
+  renderEditor();
+}
+function renderEditor(){
+  const isNew=!E.original_id, code=E.project_id||E.id;
+  main.innerHTML=`<div class="row" style="margin-bottom:14px"><button class="btn ghost sm" id="back">‹ Projekte</button><h1 style="margin:0">${isNew?"Neues Projekt":"Projekt "+esc(code)}</h1><div class="sp"></div>
+    ${!isNew?`<a class="btn ghost sm" href="${APP}#${encodeURIComponent(code)}" target="_blank" rel="noopener">In App öffnen ↗</a>`:""}
+    <button class="btn" id="save">Speichern</button></div>
+
+  <div class="card"><h2>Standort</h2><div class="form">
+    <div class="c3"><label>Projekt-ID</label><input id="f_project_id" value="${esc(E.project_id)}" placeholder="z. B. 1295"><div class="hint">Kurz-URL: …/laden/#ID</div></div>
+    <div class="c3"><label>Stations-ID (intern)</label><input id="f_id" value="${esc(E.id)}" ${isNew?"":"readonly"} placeholder="z. B. DE-CPW-1295"><div class="hint">${isNew?"Leer = Projekt-ID":"Fest – bestehende QR-Codes zeigen darauf"}</div></div>
+    <div class="c6"><label>Name (nur intern, z. B. Betreiber)</label><input id="f_name" value="${esc(E.name)}"></div>
+    <div class="c6"><label>Adresse (sichtbar für Kunden)</label><input id="f_address" value="${esc(E.address)}"></div>
+    <div class="c3"><label>Breitengrad</label><input id="f_lat" value="${E.lat??""}" inputmode="decimal"></div>
+    <div class="c3"><label>Längengrad</label><input id="f_lng" value="${E.lng??""}" inputmode="decimal"></div>
+    <div class="c8"><label>Google-Bewertungslink</label><input id="f_review_url" value="${esc(E.review_url)}" placeholder="https://search.google.com/local/writereview?placeid=…"><div class="hint">Erscheint nach erfolgreicher Hilfe. Place-ID finden: <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener">Place ID Finder</a></div></div>
+    <div class="c4"><label>Abweichende Benachrichtigungs-Mail</label><input id="f_notify_email" value="${esc(E.notify_email)}" placeholder="leer = Standard-Empfänger"></div>
+    <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_active" style="width:auto" ${E.active!==false?"checked":""}> Aktiv (in der Kunden-App erreichbar)</label></div>
+  </div></div>
+
+  <div class="card"><div class="row" style="margin-bottom:10px"><h2 style="margin:0">Charger & Ladepunkte</h2><span class="muted">${E.chargers.length} Charger · ${E.chargers.reduce((a,c)=>a+c.connectors.length,0)} Ladepunkte</span><div class="sp"></div><button class="btn ghost sm" id="addCh">+ Charger</button></div>
+    <div id="chs">${E.chargers.map((c,i)=>chargerHTML(c,i)).join("")}</div></div>
+
+  ${!isNew?`<div class="card"><h2>QR-Codes</h2><p class="sub">Ein Code pro Standort reicht – der Kunde wählt Charger und Ladepunkt in der App. Optional pro Charger (Charger ist dann vorausgewählt).</p><div class="qr-row" id="qrs"></div></div>`:""}
+
+  ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon Kundenkontakte, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
+  $("#back").onclick=projectsView;
+  $("#save").onclick=save;
+  $("#addCh").onclick=()=>{ collect(); const n=E.chargers.length+1; E.chargers.push({label:"LS#"+n,model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}); renderEditor(); };
+  wireChargers();
+  if(!isNew){ renderQRs(); $("#del").onclick=del; }
+}
+function chargerHTML(c,i){
+  return `<div class="charger" data-ci="${i}">
+    <div class="ch-head">
+      <div><label>Bezeichnung</label><input class="c_label" value="${esc(c.label)}"></div>
+      <div><label>Modell / Seriennummer (intern)</label><input class="c_model" value="${esc(c.model)}"></div>
+      <div class="row" style="gap:6px"><button class="icon-btn" data-act="up" title="nach oben">↑</button><button class="icon-btn" data-act="down" title="nach unten">↓</button><button class="icon-btn" data-act="rm" title="Charger entfernen">✕</button></div>
+    </div>
+    ${c.connectors.map((x,j)=>`<div class="lp" data-lj="${j}">
+      <div class="no">LP ${j+1}</div>
+      <select class="l_t">${TYPES.map(t=>`<option ${t===x.t?"selected":""}>${t}</option>`).join("")}</select>
+      <input class="l_kw" value="${x.kw??""}" placeholder="kW" inputmode="numeric">
+      <input class="l_evse evse" value="${esc(x.evse)}" placeholder="EVSE-ID, z. B. DE*CPW*E1234673064*${j+1}">
+      <button class="icon-btn" data-act="rmlp" title="Ladepunkt entfernen">✕</button>
+    </div>`).join("")}
+    <div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="addlp">+ Ladepunkt</button>
+      <span class="muted" style="margin-left:8px">EVSE-Basis:</span><input class="c_base" style="width:240px" placeholder="DE*CPW*E1234673064"><button class="btn ghost sm" data-act="fill">leere EVSE-IDs ausfüllen</button></div>
+  </div>`;
+}
+function wireChargers(){
+  document.querySelectorAll(".charger").forEach(el=>{
+    const i=+el.dataset.ci;
+    el.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{ collect(); const c=E.chargers[i], a=b.dataset.act;
+      if(a==="rm"){ if(E.chargers.length<2) return toast("Mindestens ein Charger",true); E.chargers.splice(i,1); }
+      if(a==="up"&&i>0) [E.chargers[i-1],E.chargers[i]]=[E.chargers[i],E.chargers[i-1]];
+      if(a==="down"&&i<E.chargers.length-1) [E.chargers[i+1],E.chargers[i]]=[E.chargers[i],E.chargers[i+1]];
+      if(a==="addlp") c.connectors.push({t:"CCS",kw:null,evse:""});
+      if(a==="rmlp"){ const j=+b.closest(".lp").dataset.lj; if(c.connectors.length<2) return toast("Mindestens ein Ladepunkt",true); c.connectors.splice(j,1); }
+      if(a==="fill"){ const base=el.querySelector(".c_base").value.trim().replace(/\*+$/,""); if(!base) return toast("EVSE-Basis eingeben",true); c.connectors.forEach((x,j)=>{ if(!x.evse) x.evse=base+"*"+(j+1); }); }
+      renderEditor(); });
+  });
+}
+function collect(){
+  const v=id=>$("#"+id)?$("#"+id).value.trim():"";
+  Object.assign(E,{project_id:v("f_project_id"),id:v("f_id"),name:v("f_name"),address:v("f_address"),lat:v("f_lat"),lng:v("f_lng"),review_url:v("f_review_url"),notify_email:v("f_notify_email"),active:$("#f_active")?$("#f_active").checked:true});
+  document.querySelectorAll(".charger").forEach(el=>{ const c=E.chargers[+el.dataset.ci]; if(!c) return;
+    c.label=el.querySelector(".c_label").value.trim(); c.model=el.querySelector(".c_model").value.trim();
+    el.querySelectorAll(".lp").forEach(r=>{ const x=c.connectors[+r.dataset.lj]; x.t=r.querySelector(".l_t").value; x.kw=r.querySelector(".l_kw").value.trim()||null; x.evse=r.querySelector(".l_evse").value.trim(); });
+  });
+}
+async function save(){
+  collect();
+  if(!E.id) E.id=E.project_id;
+  if(!E.id) return toast("Projekt-ID oder Stations-ID eingeben",true);
+  const b=$("#save"); b.disabled=true; b.textContent="Speichere …";
+  try{ const r=await api("save",{station:E}); toast("Gespeichert – in der App sichtbar ✓"); E={...r.station,original_id:r.station.id}; renderEditor(); }
+  catch(e){ toast(e.message,true); b.disabled=false; b.textContent="Speichern"; }
+}
+async function del(){
+  const b=$("#del");
+  if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="Wirklich? Nochmal klicken zum Bestätigen"; return; }
+  try{ const r=await api("delete",{id:E.original_id}); toast(r.deactivated?"Projekt deaktiviert (hat Kundenkontakte)":"Projekt gelöscht"); projectsView(); }catch(e){ toast(e.message,true); }
+}
+function renderQRs(){
+  const code=E.project_id||E.id, box=$("#qrs");
+  const items=[{t:"Standort "+code,u:APP+"#"+encodeURIComponent(code),f:"qr-"+code}].concat(E.chargers.map((c,i)=>({t:c.label||("Charger "+(i+1)),u:APP+"#"+encodeURIComponent(code)+"."+(i+1),f:"qr-"+code+"-"+(c.label||i+1)})));
+  box.innerHTML="";
+  items.forEach((it,k)=>{ const d=document.createElement("div"); d.className="qr"; d.innerHTML=`<div class="q"></div><b>${esc(it.t)}</b><br><code>${esc(it.u.replace("https://",""))}</code><br><button class="btn ghost sm" style="margin-top:8px">PNG laden</button>`; box.appendChild(d);
+    if(window.QRCode) new QRCode(d.querySelector(".q"),{text:it.u,width:k?110:140,height:k?110:140,correctLevel:QRCode.CorrectLevel.M});
+    d.querySelector("button").onclick=()=>{ const c=d.querySelector("canvas"), img=d.querySelector("img"); const src=c?c.toDataURL("image/png"):(img&&img.src); if(!src) return; const a=document.createElement("a"); a.href=src; a.download=it.f.replace(/[^A-Za-z0-9#._-]/g,"_")+".png"; a.click(); };
+  });
+}
+
+/* ---------- Meldungen ---------- */
+const OUT={open:["offen",""],chat:["Chat",""],solved:["gelöst","ok"],hotline:["Hotline","amber"],ticket:["Störung","amber"],danger:["Gefahr","warn"]};
+function cpLabel(st,n){ if(!st||n==null) return n??"–"; const c=(st.connectors||[]).find(x=>x.n===n); if(!c) return "LP "+n; const ch=(st.chargers||[]).find(x=>x.n===c.charger); const loc=(st.connectors||[]).filter(x=>x.charger===c.charger).findIndex(x=>x.n===n)+1; return (ch?ch.label+" · ":"")+"LP "+loc; }
+async function ticketsView(){
+  if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
+  main.innerHTML=`<div class="row" style="margin-bottom:14px"><div><h1>Kundenkontakte & Meldungen</h1><p class="sub" style="margin:0">Die letzten 100 Besuche über die QR-Codes.</p></div><div class="sp"></div>
+    <label style="display:flex;gap:6px;align-items:center;margin:0;color:var(--ink)"><input type="checkbox" id="onlyT" style="width:auto"> nur Störungsmeldungen</label></div>
+    <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>Zeit</th><th>Projekt</th><th>Ladepunkt</th><th>Ergebnis</th><th>Vorgang</th><th>Kontakt</th><th>Schritte</th></tr></thead><tbody id="tb"><tr><td colspan="7" class="muted">Lade …</td></tr></tbody></table></div>`;
+  const load=async()=>{
+    try{ const r=await api("sessions",{limit:100,only_tickets:$("#onlyT").checked});
+      $("#tb").innerHTML=r.sessions.length?r.sessions.map(s=>{ const st=STATIONS.find(x=>x.id===s.station_id); const o=OUT[s.outcome||"open"]||OUT.open;
+        return `<tr class="click" data-id="${s.id}"><td>${new Date(s.started_at).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}</td><td><b>${esc(st?(st.project_id||st.id):s.station_id)}</b></td><td>${esc(cpLabel(st,s.connector))}</td><td><span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span></td><td>${esc(s.ticket_no||"")}</td><td>${esc(s.contact||"")}</td><td>${s.event_count}</td></tr>`; }).join(""):`<tr><td colspan="7" class="muted">Keine Einträge.</td></tr>`;
+      document.querySelectorAll("tr.click").forEach(r=>r.onclick=()=>sessionModal(r.dataset.id));
+    }catch(e){ toast(e.message,true); }
+  };
+  $("#onlyT").onchange=load; load();
+}
+const EV={page_open:"QR gescannt",connector_select:"Ladepunkt gewählt",tab:"Bereich",flow_start:"Störung angeklickt",step_ok:"Schritt geholfen",step_fail:"Schritt nicht geholfen",step_back:"Zurück",solved:"✅ gelöst",feedback:"Bewertung",ticket_open:"Formular geöffnet",ticket_submit:"🧾 Störung gemeldet",danger_open:"⚠️ Gefahr",hotline_click:"📞 Hotline",hotline_copy:"ID kopiert",chat_open:"Chat geöffnet",chat_user:"💬 Kunde",chat_bot:"🤖 Assistent",chat_team:"👩‍🔧 Team",lang:"Sprache"};
+function evText(e){ const d=e.data||{}; return d.text||d.label||d.title||d.step||d.desc||d.ticketNo||d.tab||(d.value!=null?(d.value===1?"👍":"👎"):"")||""; }
+async function sessionModal(id){
+  try{ const r=await api("session",{id}); const s=r.session, st=STATIONS.find(x=>x.id===s.station_id);
+    const m=document.createElement("div"); m.className="modal"; m.innerHTML=`<div class="card"><div class="row"><h2 style="margin:0">Besuch ${esc(st?(st.project_id||st.id):s.station_id)} · ${esc(cpLabel(st,s.connector))}</h2><div class="sp"></div><button class="btn ghost sm" id="cls">Schließen</button></div>
+      <p class="muted">${new Date(s.started_at).toLocaleString("de-DE")} · ${esc(s.ticket_no||"keine Meldung")} ${s.contact?"· "+esc(s.contact):""}</p>
+      <div class="tl">${r.events.map(e=>`<div><span class="muted">${new Date(e.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</span><b>${esc(EV[e.type]||e.type)}</b><span>${esc(evText(e))}</span></div>`).join("")}</div></div>`;
+    document.body.appendChild(m); m.onclick=e=>{ if(e.target===m) m.remove(); }; m.querySelector("#cls").onclick=()=>m.remove();
+  }catch(e){ toast(e.message,true); }
+}
+
+/* ---------- Einstellungen ---------- */
+function settingsView(){
+  main.innerHTML=`<div class="card" style="max-width:460px"><h2>Passwort ändern</h2>
+    <label>Aktuelles Passwort</label><input type="password" id="o" autocomplete="current-password">
+    <label style="margin-top:10px">Neues Passwort (mind. 10 Zeichen)</label><input type="password" id="n" autocomplete="new-password">
+    <button class="btn" style="margin-top:12px" id="sp">Speichern</button></div>`;
+  $("#sp").onclick=async()=>{ try{ await api("set_password",{old:$("#o").value,new:$("#n").value}); toast("Passwort geändert ✓"); $("#o").value=$("#n").value=""; }catch(e){ toast(e.message,true); } };
+}
+
+if(token) start(); else loginView();
+</script>
+</body>
+</html>
