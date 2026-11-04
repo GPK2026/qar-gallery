@@ -444,17 +444,19 @@ async function renderAkte(id,box){
 }
 
 /* ---------- Störungen (je Ladepunkt eine offene) ---------- */
-let IF={q:"",filter:"open"};
+let IF={q:"",filter:"open",station:""};
 async function incidentsView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
   main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Störungen</h1><p class="sub" style="margin:0">Je Ladepunkt höchstens eine offene Störung – weitere Meldungen werden angehängt. Offene Störungen sehen Kunden in der App. „Erledigt“ gibt den Ladepunkt frei und informiert eingetragene Kunden per Mail.</p></div></div>
   <div class="card" style="padding:12px 14px"><div class="row">
     <input id="iq" type="search" placeholder="🔎 Vorgangsnummer (ST-…)" style="flex:1;min-width:220px;font-size:15px" value="${esc(IF.q)}">
+    <select id="iSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${IF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select>
     ${datesHTML(IF,"if")}
     <div class="seg" id="imode">${[["open","Offen"],["erledigt","Erledigt"],["all","Alle"]].map(([k,l])=>`<button data-m="${k}" class="${IF.filter===k?"on":""}">${l}</button>`).join("")}</div>
   </div></div>
-  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Vorgang</th><th>Projekt</th><th>Ladepunkt</th><th>Problem</th><th>Seit</th><th>Meldungen</th><th>Status</th></tr></thead><tbody id="ib"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Vorgang</th><th>Projekt / Standort</th><th>Ladepunkt</th><th>Problem</th><th>Seit</th><th>Meldungen</th><th>Status</th></tr></thead><tbody id="ib"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
   wireDates(IF,"if",loadIncidents);
+  $("#iSt").onchange=()=>{ IF.station=$("#iSt").value; loadIncidents(); };
   let h; $("#iq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ IF.q=$("#iq").value.trim(); loadIncidents(); },300); };
   document.querySelectorAll("#imode button").forEach(b=>b.onclick=()=>{ IF.filter=b.dataset.m; document.querySelectorAll("#imode button").forEach(x=>x.classList.toggle("on",x===b)); loadIncidents(); });
   loadIncidents();
@@ -462,8 +464,9 @@ async function incidentsView(){
 async function loadIncidents(){
   try{
     const r=await api("incidents",{filter:IF.q?"all":IF.filter,q:IF.q,from:IF.from,to:IF.to}), tb=$("#ib"); if(!tb) return;
+    if(IF.station&&!IF.q) r.incidents=r.incidents.filter(i=>i.station_id===IF.station);
     tb.innerHTML=r.incidents.length?r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
-      return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b></td>
+      return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b>${st&&st.address?`<br><small class="muted">${esc(st.address)}</small>`:""}</td>
         <td>${esc(i.connector?cpLabel(st,i.connector):"–")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td>
         <td>${i.reports}×${i.subscribers?` · 📧 ${i.subscribers}`:""}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span></td></tr>
         <tr class="akte hidden" data-for="${esc(i.ticket_no)}"><td colspan="8"><div class="akte-in">Lade …</div></td></tr>`; }).join("")
@@ -750,7 +753,7 @@ async function loadOverview(){
     box.querySelectorAll(".kpi[data-go]").forEach(k=>k.onclick=()=>{ const g=k.dataset.go;
       if(g==="avail") return $("#availCard").scrollIntoView({behavior:"smooth"});
       if(g==="visits"){ Object.assign(TF,{q:"",mode:"all",preset:OF.preset,from:OF.from,to:OF.to}); return go("tickets"); }
-      Object.assign(IF,{q:"",filter:g==="open"?"open":g==="done"?"erledigt":"all",preset:g==="open"?"all":OF.preset,from:g==="open"?"":OF.from,to:g==="open"?"":OF.to}); go("incidents"); });
+      Object.assign(IF,{q:"",station:OF.station,filter:g==="open"?"open":g==="done"?"erledigt":"all",preset:g==="open"?"all":OF.preset,from:g==="open"?"":OF.from,to:g==="open"?"":OF.to}); go("incidents"); });
     box.querySelectorAll(".proj-block .proj-h").forEach(h=>h.onclick=()=>{ const b=h.parentElement, o=!b.classList.contains("open"); b.classList.toggle("open",o); h.querySelector(".chev").textContent=o?"▾":"▸"; OV_OPEN[b.dataset.st]=o; });
     box.querySelectorAll(".up-bar i[data-no]").forEach(s=>s.onclick=()=>{ IF.q=s.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
   }catch(e){ box.innerHTML=`<div class="card muted">${esc(e.message)}</div>`; }
