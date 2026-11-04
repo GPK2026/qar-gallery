@@ -338,7 +338,7 @@ const T = {
     knownAlt:"Diese Ladepunkte sind frei von Störungsmeldungen:",knownNoAlt:"Leider sind alle Ladepunkte dieses Chargers gestört gemeldet.",
     plusBtn:"Betrifft mich auch",plusMail:"E-Mail, wenn's wieder geht (optional)",plusSend:"Bestätigen",plusOk:"Danke – wir haben Ihre Meldung gezählt.",plusOkMail:"Wir schreiben Ihnen an {m}, sobald der Ladepunkt wieder funktioniert.",
     otherIssue:"Anderes Problem? Wählen Sie unten aus.",chgDown:"gestört",
-    fCard:"Nummer Ihrer Ladekarte (optional)",fCardPh:"z. B. DE-CPW-004140-4",fEmsp:"Anbieter der Ladekarte / App (optional)",fEmspPh:"z. B. EnBW mobility+",
+    fName:"Ihr Name (optional)",fNamePh:"Vor- und Nachname",fCard:"Nummer Ihrer Ladekarte (optional)",fCardPh:"z. B. DE-CPW-004140-4",fEmsp:"Anbieter der Ladekarte / App (optional)",fEmspPh:"z. B. EnBW mobility+",
     attached:"Diese Störung war bereits gemeldet – Ihre Meldung wurde ergänzt. Gleiche Vorgangsnummer für alle Betroffenen.",ticketAgo:"gemeldet {t}",shareTitle:"Störungsmeldung {no}",
     shareText:"Meine Störungsmeldung an der Ladesäule\nVorgangsnummer: {no}\nStation: {st}{evse}\nProblem: {pr}\nZeit: {time}\nHotline: {hl}",
     callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln",charger:"Charger",chooseCharger:"Charger wählen",chooseCp:"Ladepunkt wählen",chargerHint:"Wählen Sie einen Charger oder geben Sie oben ein paar Ziffern der EVSE-ID ein.",evseFind:"EVSE-ID vom Aufkleber",evsePh:"z. B. letzte Ziffern eingeben",evseNote:"· EVSE-ID mit dem Aufkleber vergleichen",evseNone:"Keine passende EVSE-ID gefunden – bitte Charger wählen.",pickT:"An welchem Ladepunkt stehen Sie?",pickH:"Jeder Ladepunkt hat einen Aufkleber mit seiner EVSE-ID – damit finden Sie ihn hier am schnellsten."},
@@ -365,7 +365,7 @@ const T = {
     knownAlt:"These connectors have no fault reports:",knownNoAlt:"Unfortunately all connectors of this charger are reported as faulty.",
     plusBtn:"Affects me too",plusMail:"Email when it works again (optional)",plusSend:"Confirm",plusOk:"Thanks – your report has been counted.",plusOkMail:"We'll write to {m} as soon as the connector works again.",
     otherIssue:"Different problem? Choose below.",chgDown:"faulty",
-    fCard:"Your charging card number (optional)",fCardPh:"e.g. DE-CPW-004140-4",fEmsp:"Card / app provider (optional)",fEmspPh:"e.g. Shell Recharge",
+    fName:"Your name (optional)",fNamePh:"First and last name",fCard:"Your charging card number (optional)",fCardPh:"e.g. DE-CPW-004140-4",fEmsp:"Card / app provider (optional)",fEmspPh:"e.g. Shell Recharge",
     attached:"This fault had already been reported – your report has been added. Same reference number for everyone affected.",ticketAgo:"reported {t}",shareTitle:"Issue report {no}",
     shareText:"My issue report at the charging station\nReference number: {no}\nStation: {st}{evse}\nIssue: {pr}\nTime: {time}\nHotline: {hl}",
     callHint:"Please have the EVSE ID ready – it is also on the sticker at the connector. Then we can find it in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector",charger:"Charger",chooseCharger:"Choose charger",chooseCp:"Choose connector",chargerHint:"Choose a charger or enter a few digits of the EVSE ID above.",evseFind:"EVSE ID from the sticker",evsePh:"e.g. enter the last digits",evseNote:"· compare the EVSE ID with the sticker",evseNone:"No matching EVSE ID – please choose a charger.",pickT:"Which connector are you at?",pickH:"Every connector has a sticker with its EVSE ID – that's the quickest way to find it here."}
@@ -621,7 +621,7 @@ function shrink(file){ return new Promise((res)=>{ if(!file) return res(null);
 function openTicket(){ track("ticket_open",{flow:S.flow,title:DE(FLOWS[S.flow].t)}); show(ticketView); }
 function ticketView(){
   const f=FLOWS[S.flow]; compact(true); toTop(); markSub();
-  const keep={desc:$("#desc")?.value||"",email:$("#email")?.value||S.lastEmail||"",phone:$("#phone")?.value||S.lastPhone||"",card:$("#card")?.value||S.lastCard||"",emsp:$("#emsp")?.value||S.lastEmsp||""};
+  const keep={desc:$("#desc")?.value||"",email:$("#email")?.value||S.lastEmail||"",phone:$("#phone")?.value||S.lastPhone||"",card:$("#card")?.value||S.lastCard||"",name:$("#cname")?.value||S.lastName||"",emsp:$("#emsp")?.value||S.lastEmsp||""};
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
   <div class="card"><div class="step-t">${tr("ticketT")}</div>
   <p class="step-h">${tr("ticketH")}</p>
@@ -631,6 +631,7 @@ function ticketView(){
   ${["credit","dispTerminal","danger"].includes(S.flow)?"":`<label class="f">${tr("fCard")}</label><input class="f" id="card" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="${tr("fCardPh")}" value="${esc(keep.card)}">
   <label class="f">${tr("fEmsp")}</label><input class="f" id="emsp" list="emspList" autocomplete="off" placeholder="${tr("fEmspPh")}" value="${esc(keep.emsp)}">
   <datalist id="emspList">${EMSP.map(x=>`<option value="${esc(x)}">`).join("")}</datalist>`}
+  <label class="f">${tr("fName")}</label><input class="f" id="cname" autocomplete="name" placeholder="${tr("fNamePh")}" value="${esc(keep.name)}">
   <label class="f">${tr("fEmail")}</label><input class="f" id="email" type="email" inputmode="email" autocomplete="email" placeholder="${tr("fEmailPh")}" value="${esc(keep.email)}">
   <label class="f">${tr("fPhone")}</label><input class="f" id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="${tr("fPhonePh")}" value="${esc(keep.phone)}">
   <button class="btn primary" id="send">${tr("send")}</button>
@@ -641,8 +642,8 @@ function ticketView(){
     e.target.disabled=true; e.target.textContent=tr("sending");
     const photo=await shrink($("#pic").files[0]);
     const email=$("#email").value.trim(), phone=$("#phone").value.trim(), card=($("#card")?.value||"").trim(), emsp=($("#emsp")?.value||"").trim();
-    S.lastEmail=email; S.lastPhone=phone; S.lastCard=card; S.lastEmsp=emsp;   // nur für diesen Besuch vorbelegen
-    const r=await track("ticket_submit",{flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),email,phone,card,emsp,contact:[email,phone].filter(Boolean).join(" · "),photo});
+    const cname=($("#cname")?.value||"").trim(); S.lastEmail=email; S.lastPhone=phone; S.lastCard=card; S.lastEmsp=emsp; S.lastName=cname;   // nur für diesen Besuch vorbelegen
+    const r=await track("ticket_submit",{flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),name:cname,email,phone,card,emsp,contact:[email,phone].filter(Boolean).join(" · "),photo});
     S.attached=!!(r&&r.existing);
     S.ticketMail=r&&r.customerMail?{status:r.customerMail,to:email}:null;
     S.lastTicket=(r&&r.ticketNo)||null; S.ticketFailed=!S.lastTicket;
@@ -819,7 +820,7 @@ async function boot(){
   applyLang();
   const mode=await loadStation();
   if(mode==="betreiber"){ $("#composer").classList.add("hidden"); return operatorView(); }
-  S.sid=uuid(); S.plused={}; S.knownLogged={}; S.lastEmail=S.lastPhone=S.lastCard=S.lastEmsp=""; S.attached=false; S.chat=[]; S.lastTeamId=0; S.human=false; S.chatOpened=false; S.lastTicket=(recentTicket()||{}).no||null; toldTeam=false; if(S.pollT){clearTimeout(S.pollT);S.pollT=null;}
+  S.sid=uuid(); S.plused={}; S.knownLogged={}; S.lastEmail=S.lastPhone=S.lastCard=S.lastEmsp=S.lastName=""; S.attached=false; S.chat=[]; S.lastTeamId=0; S.human=false; S.chatOpened=false; S.lastTicket=(recentTicket()||{}).no||null; toldTeam=false; if(S.pollT){clearTimeout(S.pollT);S.pollT=null;}
   track("page_open",{ref:document.referrer?"link":"qr",lang});
   setTab("help",true);
 }

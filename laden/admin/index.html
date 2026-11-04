@@ -113,6 +113,14 @@ dt{color:var(--muted)}dd{margin:0}
 .kpi .v{font-size:28px;font-weight:800;letter-spacing:-.5px;margin-top:4px}
 .kpi .s{color:var(--muted);font-size:12px;margin-top:2px}
 .kpi.bad .v{color:#b42318}
+.kpi.link{cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.kpi.link:hover{border-color:var(--brand);box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.cust-box{background:#f3f8ff;border:1px solid #cfe0f7;border-radius:10px;padding:10px 12px;margin:10px 0}
+.cust-box a{font-weight:700}
+.chk-ok{color:#08603d;font-weight:600}.chk-bad{color:#b42318;font-weight:600}.chk-q{color:#9a6700;font-weight:600}
+.cards-ed .crow{display:grid;grid-template-columns:1.6fr 1fr 125px 36px;gap:8px;margin-bottom:6px}
+.chip-c{display:inline-block;font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin:1px 2px 1px 0;font-family:ui-monospace,Menlo,monospace}
+.chip-c.gesperrt{border-color:#f3c1bc;color:#b42318}.chip-c.unbekannt{border-color:#f0d9a0;color:#9a6700}
 .up-row{display:grid;grid-template-columns:150px 1fr 64px;align-items:center;gap:10px;padding:4px 0}
 .up-row .lbl{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .up-row .lbl small{color:var(--muted)}
@@ -155,7 +163,7 @@ dt{color:var(--muted)}dd{margin:0}
 <body>
 <header><div class="in">
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="tickets">Kundenkontakte</button><button data-v="settings">Einstellungen</button></nav>
+  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="customers">Kunden</button><button data-v="tickets">Besuche</button><button data-v="settings">Einstellungen</button></nav>
   <div class="sp"></div>
   <form id="gsF" class="hidden" autocomplete="off"><input id="gs" type="search" placeholder="🔎 Alles durchsuchen …" title="Volltextsuche: Vorgangsnummer, E-Mail, Telefon, Ladekarte, EVSE-ID, Chat, Beschreibung, Notizen …"></form>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
@@ -184,7 +192,7 @@ async function api(action,payload={}){
 function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#logout").classList.add("hidden"); loginView(); }
 $("#logout").onclick=logout;
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>go(b.dataset.v));
-function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,tickets:ticketsView,settings:settingsView})[v](); }
+function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,tickets:ticketsView,settings:settingsView})[v](); }
 
 /* ---------- Login ---------- */
 function loginView(){
@@ -253,7 +261,7 @@ function renderEditor(){
 
   ${!isNew?`<div class="card"><h2>QR-Schild</h2><p class="sub">Ein Schild für den ganzen Standort – der Kunde wählt Charger und Ladepunkt (per EVSE-ID) in der App. Druckfertig als PNG.</p><div class="qr-row" id="qrs"></div></div>`:""}
 
-  ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon Kundenkontakte, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
+  ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon Besuche, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
   $("#back").onclick=projectsView;
   $("#save").onclick=save;
   $("#addCh").onclick=()=>{ collect(); const n=E.chargers.length+1; E.chargers.push({label:"LS#"+n,model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}); renderEditor(); };
@@ -320,7 +328,7 @@ async function save(){
 async function del(){
   const b=$("#del");
   if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="Wirklich? Nochmal klicken zum Bestätigen"; return; }
-  try{ const r=await api("delete",{id:E.original_id}); toast(r.deactivated?"Projekt deaktiviert (hat Kundenkontakte)":"Projekt gelöscht"); projectsView(); }catch(e){ toast(e.message,true); }
+  try{ const r=await api("delete",{id:E.original_id}); toast(r.deactivated?"Projekt deaktiviert (hat Besuche)":"Projekt gelöscht"); projectsView(); }catch(e){ toast(e.message,true); }
 }
 // Druckfertiges QR-Schild: Überschrift, Hinweis, QR-Code, Standort-Nummer (ohne URL)
 function renderQRs(){
@@ -355,7 +363,7 @@ const stOf=id=>STATIONS.find(x=>x.id===id);
 let TF={q:"",mode:"all"};
 async function ticketsView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Kundenkontakte</h1><p class="sub" style="margin:0">Jeder Besuch über den QR-Code als Akte – zum Aufklappen.</p></div></div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Besuche</h1><p class="sub" style="margin:0">Jeder Besuch über den QR-Code als Protokoll – zum Aufklappen.</p></div></div>
   <div class="card" style="padding:12px 14px"><div class="row">
     <input id="tq" type="search" placeholder="🔎 Vorgangsnummer (ST-…), E-Mail, Telefon, EVSE-ID oder Projekt" style="flex:1;min-width:260px;font-size:15px" value="${esc(TF.q)}">
     ${datesHTML(TF,"tf")}
@@ -413,6 +421,7 @@ async function renderAkte(id,box){
       ["Vorgänge",(r.tickets||[]).length?r.tickets.map(n=>`<a href="#" class="to-inc" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join(" · "):"–"],["Kontakt",esc(s.contact||"–")],["Sprache / Gerät",(s.lang||"de").toUpperCase()+" · "+dev],["Telegram",s.tg_thread_id?"eigenes Thema #"+s.tg_thread_id:(s.tg_started_at?"gemeldet":"–")],["Besuchs-ID",`<code style="font-size:11px">${esc(s.id)}</code>`]];
     box.innerHTML=`<div class="akte-grid">
       <div><h3>Akte</h3><dl>${facts.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+        ${custBox(r.customer, r.events.filter(e=>e.data&&e.data.card).map(e=>e.data.card))}
         <div class="row" style="margin-top:12px"><button class="btn ghost sm t-copy">Akte kopieren</button></div>
         ${(r.tickets||[]).length?`<div class="hint" style="margin-top:6px">Status und Notizen pflegt ihr je Störung unter „Störungen“ (Vorgangsnummer anklicken).</div>`:""}
         <div class="notes">${(s.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)}</span>${n.status?` <span class="badge ${TST[n.status][1]==="ok"?"":TST[n.status][1]}">${TST[n.status][0]}</span>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div>
@@ -421,6 +430,7 @@ async function renderAkte(id,box){
       </div>
       <div><h3>Protokoll</h3><div class="log">${r.events.map(e=>`<div class="log-i t-${e.type}"><span class="lt">${fmtT(e.at)}</span><span class="le">${EV[e.type]||e.type}</span><span class="ld">${evDetail(e,st)}</span></div>`).join("")}</div></div>
     </div>`;
+    wireCust(box);
     box.querySelectorAll(".to-inc").forEach(a=>a.onclick=e=>{ e.preventDefault(); IF.q=a.dataset.no; IF.filter="all"; go("incidents"); });
     const save=box.querySelector(".t-save");
     if(save) save.onclick=async()=>{ try{ const st2=box.querySelector(".t-status").value, note=box.querySelector(".t-note").value.trim();
@@ -479,21 +489,134 @@ async function renderInc(no,box){
         <h3 style="margin-top:16px">Bearbeitung</h3>
         <div class="row"><select class="i-status" style="width:auto">${Object.entries(TST).map(([k,v])=>`<option value="${k}" ${k===i.status?"selected":""}>${v[0]}</option>`).join("")}</select></div>
         <textarea class="i-note" rows="2" placeholder="Interne Notiz (z. B. Techniker beauftragt, Kunde zurückgerufen …)" style="margin-top:8px"></textarea>
-        <div class="row" style="margin-top:8px"><button class="btn sm i-save">Speichern</button><button class="btn ghost sm i-copy">Kopieren</button><button class="btn ghost sm i-sess">Kundenkontakte ansehen</button></div>
+        <div class="row" style="margin-top:8px"><button class="btn sm i-save">Speichern</button><button class="btn ghost sm i-copy">Kopieren</button><button class="btn ghost sm i-sess">Besuche ansehen</button></div>
         <div class="hint">„Erledigt“: Ladepunkt ist in der App sofort wieder frei${(i.subscribers||[]).length?`, ${i.subscribers.length} Kunde(n) bekommen eine Info-Mail`:""}.</div>
         <div class="notes">${(i.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)}</span>${n.status?` <span class="badge ${TST[n.status][1]==="ok"?"":TST[n.status][1]}">${TST[n.status][0]}</span>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div>
         ${r.photos.length?`<h3 style="margin-top:16px">Fotos</h3><div class="row">${r.photos.map(p=>`<a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join("")}</div>`:""}
       </div>
-      <div><h3>Meldungen von Kunden</h3><div class="log">${r.reports.map(e=>`<div class="log-i t-${e.type}"><span class="lt">${fmtDT(e.at)}</span><span class="le">${EV[e.type]||e.type}</span><span class="ld">${evDetail(e,st)}</span></div>`).join("")||'<span class="muted">–</span>'}</div></div>
+      <div><h3>Meldungen von Kunden</h3><div class="log">${r.reports.map(e=>`<div class="log-i t-${e.type}"><span class="lt">${fmtDT(e.at)}</span><span class="le">${EV[e.type]||e.type}</span><span class="ld">${evDetail(e,st)}${custLine((r.customers||{})[e.session_id],e.data&&e.data.card)}</span></div>`).join("")||'<span class="muted">–</span>'}</div></div>
     </div>`;
     box.querySelector(".i-save").onclick=async()=>{ try{ const s2=box.querySelector(".i-status").value, note=box.querySelector(".i-note").value.trim();
       if(s2==="erledigt"&&i.status!=="erledigt"&&!confirm(`${i.ticket_no} auf „erledigt“ setzen? Der Ladepunkt wird in der App wieder freigegeben${(i.subscribers||[]).length?" und "+i.subscribers.length+" Kunde(n) per Mail informiert":""}.`)) return;
       const res=await api("update_incident",{ticket_no:no,status:s2,note}); toast(res.informed?`Gespeichert ✓ · ${res.informed} Kunde(n) informiert`:"Gespeichert ✓"); loadIncidents(); }catch(e){ toast(e.message,true); } };
+    wireCust(box);
     box.querySelector(".i-sess").onclick=()=>{ TF.q=no; TF.mode="all"; go("tickets"); };
     box.querySelector(".i-copy").onclick=async e=>{ const txt=[...facts.map(([k,v])=>`${k}: ${v.replace(/<[^>]+>/g,"")}`),"","Meldungen:",...r.reports.map(ev=>`${fmtDT(ev.at)}  ${EV[ev.type]||ev.type}  ${evDetail(ev,st).replace(/<br>/g," · ").replace(/<[^>]+>/g,"")}`),
         ...(i.notes||[]).length?["","Notizen:",...i.notes.map(n=>`${fmtDT(n.at)} ${n.status?"["+TST[n.status][0]+"] ":""}${n.text||""}`)]:[]].join("\n");
       try{ await navigator.clipboard.writeText(txt); e.target.textContent="Kopiert ✓"; }catch(err){ toast("Kopieren nicht möglich",true); } };
   }catch(e){ box.innerHTML=`<span class="muted">${esc(e.message)}</span>`; }
+}
+
+/* ---------- Kunden (CRM) ---------- */
+const normC=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+const CST={aktiv:"aktiv",gesperrt:"gesperrt",unbekannt:"nicht verifiziert"};
+const SRC={manual:"manuell",csv:"CSV-Import",auto:"aus Meldung"};
+// Prüfung: gehört die gemeldete Karte zu diesem Kunden?
+function cardCheck(c,card){ if(!card) return ""; const k=(c&&c.cards||[]).find(x=>normC(x.card_no)===normC(card));
+  if(!k) return `<span class="chk-q">⚠ Karte ${esc(card)} nicht im Kundenstamm</span>`;
+  if(k.status==="gesperrt") return `<span class="chk-bad">⛔ Karte ${esc(k.card_no)} ist gesperrt</span>`;
+  if(k.status==="unbekannt") return `<span class="chk-q">? Karte ${esc(k.card_no)}${k.emsp?" ("+esc(k.emsp)+")":""} – nur aus Meldung, nicht verifiziert</span>`;
+  return `<span class="chk-ok">✓ Karte ${esc(k.card_no)}${k.emsp?" ("+esc(k.emsp)+")":""} gehört zum Kunden · aktiv</span>`; }
+function custLine(c,card){ if(!c) return card?`<br><span class="chk-q">⚠ Karte ${esc(card)} – kein Kunde zugeordnet</span>`:"";
+  return `<br>👤 <a href="#" class="to-cus" data-id="${esc(c.id)}">${esc(c.name||c.email||"Kunde")}</a>${c.company?" · "+esc(c.company):""}${c.source==="auto"?' <span class="badge off">neu</span>':""}${card?"<br>"+cardCheck(c,card):""}`; }
+function custBox(c,cards){ if(!c) return cards.length?`<div class="cust-box">${cardCheck(null,cards[0])} – kein Kunde zugeordnet</div>`:"";
+  return `<div class="cust-box">👤 <a href="#" class="to-cus" data-id="${esc(c.id)}">${esc(c.name||c.email||"Kunde")}</a>${c.company?" · "+esc(c.company):""} <span class="badge off">${SRC[c.source]||c.source}</span>
+    <div class="muted" style="font-size:12.5px;margin-top:2px">${[c.email,c.phone].filter(Boolean).map(esc).join(" · ")}</div>
+    ${[...new Set(cards)].map(k=>`<div style="margin-top:4px">${cardCheck(c,k)}</div>`).join("")}</div>`; }
+function wireCust(root){ root.querySelectorAll(".to-cus").forEach(a=>a.onclick=e=>{ e.preventDefault(); CF.q=""; CF.open=a.dataset.id; go("customers"); }); }
+let CF={q:"",open:null};
+async function customersView(){
+  if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Kunden</h1><p class="sub" style="margin:0">Kundenstamm mit Ladekarten. Meldungen werden automatisch zugeordnet – über Kartennummer, E-Mail oder Telefon.</p></div><div class="sp"></div>
+    <button class="btn ghost" id="cTpl">Vorlage (CSV)</button><button class="btn ghost" id="cExp">Export (CSV)</button><button class="btn ghost" id="cImp">CSV importieren</button><button class="btn" id="cNew">+ Kunde</button><input type="file" id="cFile" accept=".csv,text/csv" class="hidden"></div>
+  <div id="impBox"></div>
+  <div class="card" style="padding:12px 14px"><input id="cq" type="search" style="width:100%;font-size:15px" placeholder="🔎 Name, Firma, E-Mail, Telefon oder Kartennummer" value="${esc(CF.q)}"></div>
+  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Name</th><th>E-Mail / Telefon</th><th>Ladekarten</th><th>Besuche</th><th>Vorgänge</th><th>Letzter Kontakt</th><th>Quelle</th></tr></thead><tbody id="cb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  let h; $("#cq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ CF.q=$("#cq").value.trim(); loadCustomers(); },300); };
+  $("#cNew").onclick=()=>{ const tb=$("#cb"); const tr=document.createElement("tr"); tr.className="akte"; tr.innerHTML=`<td colspan="8"><div class="akte-in"></div></td>`; tb.prepend(tr); renderCust({cards:[],visits:[]},tr.querySelector(".akte-in"),true); };
+  $("#cImp").onclick=()=>$("#cFile").click();
+  $("#cFile").onchange=()=>{ const f=$("#cFile").files[0]; if(f) f.text().then(t=>importPreview(t,f.name)); $("#cFile").value=""; };
+  $("#cTpl").onclick=()=>dlCSV("kunden-vorlage.csv",[["Name","Firma","E-Mail","Telefon","Kartennummer","Anbieter","Status","Notiz"],["Max Mustermann","Demo GmbH","max@example.com","+49 30 1234567","DE-CPW-004140-4","EnBW mobility+","aktiv",""]]);
+  $("#cExp").onclick=async()=>{ try{ const r=await api("customers",{q:""}); const rows=[["Name","Firma","E-Mail","Telefon","Kartennummer","Anbieter","Status","Notiz"]];
+    r.customers.forEach(c=>(c.cards.length?c.cards:[{}]).forEach(k=>rows.push([c.name||"",c.company||"",c.email||"",c.phone||"",k.card_no||"",k.emsp||"",k.status||"",c.notes||""]))); dlCSV("kunden-export.csv",rows); }catch(e){ toast(e.message,true); } };
+  loadCustomers();
+}
+function dlCSV(name,rows){ const csv="﻿"+rows.map(r=>r.map(v=>/[;"\n]/.test(String(v))?`"${String(v).replace(/"/g,'""')}"`:v).join(";")).join("\r\n");
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})); a.download=name; a.click(); }
+async function loadCustomers(){
+  try{
+    const r=await api("customers",{q:CF.q}), tb=$("#cb"); if(!tb) return;
+    tb.innerHTML=r.customers.length?r.customers.map(c=>`<tr class="click" data-id="${esc(c.id)}"><td class="chev">▸</td><td><b>${esc(c.name||"–")}</b>${c.company?`<br><small class="muted">${esc(c.company)}</small>`:""}</td>
+      <td>${esc(c.email||"")}${c.phone?`<br><small class="muted">${esc(c.phone)}</small>`:""}</td><td>${c.cards.map(k=>`<span class="chip-c ${k.status}" title="${esc(k.emsp||"")} · ${CST[k.status]}">${esc(k.card_no)}</span>`).join("")}</td>
+      <td>${c.visits}</td><td>${c.tickets}</td><td>${c.last_at?fmtDT(c.last_at):"–"}</td><td><span class="badge off">${SRC[c.source]||c.source}</span></td></tr>
+      <tr class="akte hidden" data-for="${esc(c.id)}"><td colspan="8"><div class="akte-in">Lade …</div></td></tr>`).join("")
+      :`<tr><td colspan="8" class="muted">${CF.q?"Kein Kunde gefunden.":"Noch keine Kunden – „+ Kunde“ oder „CSV importieren“."}</td></tr>`;
+    tb.querySelectorAll("tr.click").forEach(row=>row.onclick=()=>toggleCust(row.dataset.id));
+    const want=CF.open||(r.customers.length===1&&CF.q?r.customers[0].id:null); CF.open=null;
+    if(want){ if(!tb.querySelector(`tr.click[data-id="${want}"]`)){ const c=(await api("customer",{id:want})).customer; tb.insertAdjacentHTML("afterbegin",`<tr class="click" data-id="${esc(c.id)}"><td class="chev">▸</td><td colspan="7"><b>${esc(c.name||c.email||"Kunde")}</b></td></tr><tr class="akte hidden" data-for="${esc(c.id)}"><td colspan="8"><div class="akte-in"></div></td></tr>`); tb.querySelector(`tr.click[data-id="${want}"]`).onclick=()=>toggleCust(want); }
+      toggleCust(want); tb.querySelector(`tr.click[data-id="${want}"]`).scrollIntoView({block:"center"}); }
+  }catch(e){ toast(e.message,true); }
+}
+async function toggleCust(id){
+  const row=document.querySelector(`#cb tr.akte[data-for="${id}"]`), head=document.querySelector(`#cb tr.click[data-id="${id}"]`);
+  const open=row.classList.toggle("hidden")===false; head.querySelector(".chev").textContent=open?"▾":"▸"; head.classList.toggle("open",open);
+  if(open){ try{ const c=(await api("customer",{id})).customer; renderCust(c,row.querySelector(".akte-in")); }catch(e){ toast(e.message,true); } }
+}
+function renderCust(c,box,isNew){
+  const cardRow=k=>`<div class="crow"><input class="k-no" placeholder="Kartennummer, z. B. DE-CPW-004140-4" value="${esc(k.card_no||"")}"><input class="k-emsp" list="emspL" placeholder="Anbieter" value="${esc(k.emsp||"")}">
+    <select class="k-st">${Object.entries(CST).map(([v,l])=>`<option value="${v}" ${v===(k.status||"aktiv")?"selected":""}>${l}</option>`).join("")}</select><button class="btn ghost sm k-del" title="Karte entfernen">✕</button></div>`;
+  box.innerHTML=`<div class="akte-grid" style="grid-template-columns:minmax(440px,1.3fr) 1fr">
+    <div><h3>${isNew?"Neuer Kunde":"Kunde"}</h3>
+      <div class="grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label>Name</label><input class="f-name" value="${esc(c.name||"")}"></div><div><label>Firma</label><input class="f-company" value="${esc(c.company||"")}"></div>
+        <div><label>E-Mail</label><input class="f-email" type="email" value="${esc(c.email||"")}"></div><div><label>Telefon</label><input class="f-phone" value="${esc(c.phone||"")}"></div></div>
+      <label style="margin-top:8px">Notiz</label><textarea class="f-notes" rows="2">${esc(c.notes||"")}</textarea>
+      <h3 style="margin-top:14px">Ladekarten</h3><div class="cards-ed">${(c.cards||[]).map(cardRow).join("")}</div>
+      <datalist id="emspL">${["ADAC e-Charge","Aral pulse","BMW Charging","Chargemap","E.ON Drive","EnBW mobility+","EWE Go","Electroverse (Octopus)","Elli (VW)","IONITY","Maingau EinfachStromLaden","Mercedes me Charge","Plugsurfing","Shell Recharge","Tesla","Vattenfall InCharge"].map(x=>`<option value="${x}">`).join("")}</datalist>
+      <button class="btn ghost sm k-add">+ Karte</button>
+      <div class="row" style="margin-top:12px"><button class="btn sm c-save">Speichern</button>${isNew?"":`<button class="btn warn sm c-del">Kunde löschen</button>`}</div>
+      ${!isNew&&c.source==="auto"?`<div class="hint">Automatisch aus einer Störungsmeldung angelegt – bitte prüfen und ergänzen.</div>`:""}
+    </div>
+    <div><h3>Verlauf</h3><div class="log">${(c.visits||[]).map(v=>{ const st=stOf(v.station_id), o=OUT[v.outcome||"open"]||OUT.open;
+      return `<div class="log-i"><span class="lt">${fmtDT(v.started_at)}</span><span class="le"><span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span></span><span class="ld">${esc(st?(st.project_id||st.id):v.station_id)} · ${esc(cpLabel(st,v.connector))}
+        ${v.tickets.map(n=>` · <a href="#" class="to-inc2" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join("")}${v.cards.length?`<br>${v.cards.map(k=>cardCheck(c,k)).join("<br>")}`:""}<br><a href="#" class="to-ses" data-id="${esc(v.id)}">Protokoll öffnen ›</a></span></div>`; }).join("")||'<span class="muted">Noch keine Besuche verknüpft.</span>'}</div></div>
+  </div>`;
+  const ed=box.querySelector(".cards-ed");
+  const wireRows=()=>ed.querySelectorAll(".k-del").forEach(b=>b.onclick=()=>b.closest(".crow").remove());
+  wireRows(); box.querySelector(".k-add").onclick=()=>{ ed.insertAdjacentHTML("beforeend",cardRow({})); wireRows(); };
+  box.querySelector(".c-save").onclick=async()=>{ try{
+    const cust={id:c.id||null,name:box.querySelector(".f-name").value,company:box.querySelector(".f-company").value,email:box.querySelector(".f-email").value,phone:box.querySelector(".f-phone").value,notes:box.querySelector(".f-notes").value,
+      cards:[...ed.querySelectorAll(".crow")].map(r=>({card_no:r.querySelector(".k-no").value,emsp:r.querySelector(".k-emsp").value,status:r.querySelector(".k-st").value})).filter(k=>k.card_no.trim())};
+    const r=await api("save_customer",{customer:cust}); toast("Kunde gespeichert ✓"); CF.open=r.customer.id; loadCustomers(); }catch(e){ toast(e.message,true); } };
+  if(box.querySelector(".c-del")) box.querySelector(".c-del").onclick=async()=>{ if(!confirm("Kunde und seine Ladekarten löschen? Besuche bleiben erhalten.")) return; try{ await api("delete_customer",{id:c.id}); toast("Kunde gelöscht"); loadCustomers(); }catch(e){ toast(e.message,true); } };
+  box.querySelectorAll(".to-inc2").forEach(a=>a.onclick=e=>{ e.preventDefault(); IF.q=a.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
+  box.querySelectorAll(".to-ses").forEach(a=>a.onclick=e=>{ e.preventDefault(); TF.q=a.dataset.id; TF.mode="all"; setPreset(TF,"all"); go("tickets"); });
+}
+// CSV-Import: Trennzeichen und Spalten automatisch erkennen
+function parseCSV(text){ text=text.replace(/^﻿/,""); const first=text.split(/\r?\n/)[0]||""; const d=(first.match(/;/g)||[]).length>=(first.match(/,/g)||[]).length?";":(first.includes("\t")?"\t":",");
+  const rows=[]; let row=[], f="", q=false;
+  for(let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){ f+='"'; i++; } else q=false; } else f+=ch; }
+    else if(ch==='"') q=true; else if(ch===d){ row.push(f); f=""; } else if(ch==="\n"||ch==="\r"){ if(ch==="\r"&&text[i+1]==="\n") i++; row.push(f); f=""; if(row.some(x=>x.trim())) rows.push(row); row=[]; } else f+=ch; }
+  row.push(f); if(row.some(x=>x.trim())) rows.push(row); return rows; }
+const COLS={name:/^(name|kunde|kundenname|vor.?und.?nachname|ansprechpartner)$/i,company:/^(firma|company|unternehmen|organisation)$/i,email:/^(e-?mail|mail|email.?adresse)$/i,phone:/^(telefon|tel|phone|mobil|handy|telefonnummer)$/i,
+  card_no:/^(karte|kartennummer|ladekarte|card|card.?no|card.?number|emaid|vertrags.?id|contract.?id|rfid|token)$/i,emsp:/^(anbieter|emsp|provider|mobilitätsanbieter|kartenanbieter)$/i,status:/^(status|kartenstatus)$/i,notes:/^(notiz|notizen|bemerkung|notes|kommentar)$/i};
+function importPreview(text,fname){
+  const rows=parseCSV(text); if(rows.length<2) return toast("CSV leer oder ohne Kopfzeile",true);
+  const head=rows[0].map(h=>h.trim()), map={}; head.forEach((h,i)=>{ for(const [k,re] of Object.entries(COLS)) if(re.test(h)&&map[k]===undefined) map[k]=i; });
+  if(map.name===undefined&&map.email===undefined&&map.card_no===undefined) return toast("Keine passenden Spalten gefunden (Name, E-Mail oder Kartennummer)",true);
+  const data=rows.slice(1).map(r=>Object.fromEntries(Object.entries(map).map(([k,i])=>[k,(r[i]||"").trim()])));
+  const st=v=>({active:"aktiv",aktiv:"aktiv",blocked:"gesperrt",gesperrt:"gesperrt",inactive:"gesperrt",inaktiv:"gesperrt"})[String(v||"").toLowerCase()]||"aktiv";
+  data.forEach(r=>{ r.status=st(r.status); });
+  $("#impBox").innerHTML=`<div class="card" style="border-color:#b9d9c8"><h2>CSV-Import: ${esc(fname)}</h2>
+    <p class="sub">${data.length} Zeilen erkannt · Spalten: ${Object.keys(map).map(k=>({name:"Name",company:"Firma",email:"E-Mail",phone:"Telefon",card_no:"Kartennummer",emsp:"Anbieter",status:"Status",notes:"Notiz"})[k]+" ← „"+esc(head[map[k]])+"“").join(", ")}.
+    Vorhandene Kunden werden über Kartennummer oder E-Mail erkannt und ergänzt – nichts wird doppelt angelegt.</p>
+    <div style="overflow:auto"><table><thead><tr>${Object.keys(map).map(k=>`<th>${esc(head[map[k]])}</th>`).join("")}</tr></thead><tbody>${data.slice(0,5).map(r=>`<tr>${Object.keys(map).map(k=>`<td>${esc(r[k])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    ${data.length>5?`<p class="muted">… und ${data.length-5} weitere</p>`:""}
+    <div class="row" style="margin-top:10px"><button class="btn" id="impGo">${data.length} Zeilen importieren</button><button class="btn ghost" id="impX">Abbrechen</button></div></div>`;
+  $("#impX").onclick=()=>$("#impBox").innerHTML="";
+  $("#impGo").onclick=async e=>{ e.target.disabled=true; try{ const r=await api("import_customers",{rows:data});
+    $("#impBox").innerHTML=`<div class="card"><b>Import fertig ✓</b> ${r.created} neu, ${r.updated} ergänzt, ${r.cards} Ladekarten${r.skipped?`, ${r.skipped} leere Zeilen übersprungen`:""}.</div>`; loadCustomers(); }catch(err){ e.target.disabled=false; toast(err.message,true); } };
 }
 
 /* ---------- Zeitraum-Auswahl (wiederverwendbar) ---------- */
@@ -519,7 +642,7 @@ const hl=(t,q)=>{ const s=esc(t||""); if(!q) return s; const i=s.toLowerCase().i
 async function searchView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
   document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("on"));
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Suche</h1><p class="sub" style="margin:0">Durchsucht Vorgänge, Kundenkontakte (Chat, Beschreibung, E-Mail, Telefon, Ladekarte), Notizen und Projekte (Adresse, EVSE-IDs). Treffer anklicken → Akte öffnet sich.</p></div></div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Suche</h1><p class="sub" style="margin:0">Durchsucht Vorgänge, Kunden, Ladekarten, Besuche (Chat, Beschreibung, E-Mail, Telefon, Ladekarte), Notizen und Projekte (Adresse, EVSE-IDs). Treffer anklicken → Akte öffnet sich.</p></div></div>
   <div class="card" style="padding:12px 14px"><div class="row"><input id="sq" type="search" style="flex:1;min-width:240px;font-size:15px" value="${esc(SQ.q)}" placeholder="Suchbegriff …">${datesHTML(SQ,"sq")}</div></div>
   <div id="sres"><div class="muted">Suche …</div></div>`;
   wireDates(SQ,"sq",runSearch);
@@ -531,15 +654,18 @@ async function runSearch(){
   if(SQ.q.length<2){ box.innerHTML='<div class="muted">Mindestens 2 Zeichen eingeben.</div>'; return; }
   try{
     const r=await api("search",{q:SQ.q,from:SQ.from,to:SQ.to}), q=SQ.q;
-    const n=r.incidents.length+r.sessions.length+r.stations.length;
+    r.customers=r.customers||[]; const n=r.incidents.length+r.sessions.length+r.stations.length+r.customers.length;
     box.innerHTML=!n?`<div class="card muted">Keine Treffer für „${esc(q)}“${SQ.from||SQ.to?" im gewählten Zeitraum":""}.</div>`:`
+    ${r.customers.length?`<div class="res-g"><h3>Kunden (${r.customers.length})</h3>${r.customers.map(c=>`<button class="res" data-cus="${esc(c.id)}"><b>${hl(c.name||c.email||"Unbekannt",q)}</b>${c.company?" · "+hl(c.company,q):""}
+      <div class="m">${[c.email&&hl(c.email,q),c.phone&&hl(c.phone,q),c.cards&&"💳 "+hl(c.cards,q)].filter(Boolean).join(" · ")}</div></button>`).join("")}</div>`:""}
     ${r.incidents.length?`<div class="res-g"><h3>Störungen (${r.incidents.length})</h3>${r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
       return `<button class="res" data-inc="${esc(i.ticket_no)}"><b><code>${hl(i.ticket_no,q)}</code></b> · ${esc(st?(st.project_id||st.id):i.station_id)} · ${esc(cpLabel(st,i.connector))} <span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span>
         <div class="m">${fmtDT(i.created_at)} · ${esc(i.title||"")} · ${i.reports}× gemeldet · ${hl(i.hit,q)}</div></button>`; }).join("")}</div>`:""}
-    ${r.sessions.length?`<div class="res-g"><h3>Kundenkontakte (${r.sessions.length})</h3>${r.sessions.map(s=>{ const st=stOf(s.station_id), o=OUT[s.outcome||"open"]||OUT.open;
+    ${r.sessions.length?`<div class="res-g"><h3>Besuche (${r.sessions.length})</h3>${r.sessions.map(s=>{ const st=stOf(s.station_id), o=OUT[s.outcome||"open"]||OUT.open;
       return `<button class="res" data-ses="${esc(s.id)}"><b>${fmtDT(s.started_at)}</b> · ${esc(st?(st.project_id||st.id):s.station_id)} · ${esc(cpLabel(st,s.connector))} <span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span>
         <div class="m">${esc(EV[s.hit_type]||(s.hit_type==="contact"?"Kontakt":s.hit_type))}: ${hl(s.hit,q)}</div></button>`; }).join("")}</div>`:""}
     ${r.stations.length?`<div class="res-g"><h3>Projekte (${r.stations.length})</h3>${r.stations.map(s=>`<button class="res" data-st="${esc(s.id)}"><b>${hl(s.project_id||s.id,q)}</b> · ${hl(s.name,q)}<div class="m">${hl(s.address,q)}</div></button>`).join("")}</div>`:""}`;
+    box.querySelectorAll("[data-cus]").forEach(b=>b.onclick=()=>{ CF.q=""; CF.open=b.dataset.cus; go("customers"); });
     box.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>{ IF.q=b.dataset.inc; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
     box.querySelectorAll("[data-ses]").forEach(b=>b.onclick=()=>{ TF.q=b.dataset.ses; TF.mode="all"; setPreset(TF,"all"); go("tickets"); });
     box.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{ const s=STATIONS.find(x=>x.id===b.dataset.st); if(s){ document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x.dataset.v==="projects")); editView(s); } });
@@ -551,7 +677,7 @@ let OF={preset:"30",station:""}; const OV_OPEN={}; setPreset(OF,"30");
 const OUTC=[["solved","Selbst gelöst","#2a78d6"],["ticket","Störung gemeldet","#eb6834"],["hotline","Hotline","#1baf7a"],["chat","Chat","#eda100"],["open","Ohne Ergebnis","#b9beba"]];
 async function overviewView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Übersicht</h1><p class="sub" style="margin:0">Verfügbarkeit, Störungen und Kundenkontakte auf einen Blick.</p></div><div class="sp"></div><button class="btn" id="newP">+ Neues Projekt</button>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Übersicht</h1><p class="sub" style="margin:0">Verfügbarkeit, Störungen und Besuche auf einen Blick.</p></div><div class="sp"></div><button class="btn" id="newP">+ Neues Projekt</button>
     <select id="oSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${OF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select></div>
   <div class="grid" id="ovTiles" style="margin-bottom:14px">${projTiles()}</div>
   <div class="card" style="padding:12px 14px">${datesHTML(OF,"of")}</div>
@@ -591,13 +717,13 @@ async function loadOverview(){
     const top=Object.entries(topP).sort((a,b)=>b[1]-a[1]).slice(0,6), topMax=Math.max(1,...top.map(x=>x[1]));
     const pctTxt=p=>(Math.floor(p*10)/10).toLocaleString("de-DE",{minimumFractionDigits:1})+" %";
     box.innerHTML=`<div class="kpis">
-      <div class="kpi ${avail<98?"bad":""}"><div class="k">Verfügbarkeit Ø</div><div class="v">${pctTxt(avail)}</div><div class="s">aus Störungsmeldungen · ${cpN} Ladepunkte</div></div>
-      <div class="kpi ${openNow?"bad":""}"><div class="k">Offene Störungen</div><div class="v">${openNow}</div><div class="s">${openNow?"⚠ in der App als gestört markiert":"✓ alles frei"}</div></div>
-      <div class="kpi"><div class="k">Neue Störungen</div><div class="v">${inWin.length}</div><div class="s">${inWin.reduce((a,i)=>a+i.reports,0)} Meldungen von Kunden</div></div>
-      <div class="kpi"><div class="k">Ø Zeit bis erledigt</div><div class="v">${mttr?fmtDur(mttr):"–"}</div><div class="s">${solvedInc.length} erledigt im Zeitraum</div></div>
-      <div class="kpi"><div class="k">Kundenkontakte</div><div class="v">${tot}</div><div class="s">${tot?Math.round(100*self/tot)+" % selbst gelöst":"–"}</div></div>
+      <div class="kpi link ${avail<98?"bad":""}" data-go="avail"><div class="k">Verfügbarkeit Ø ›</div><div class="v">${pctTxt(avail)}</div><div class="s">aus Störungsmeldungen · ${cpN} Ladepunkte</div></div>
+      <div class="kpi link ${openNow?"bad":""}" data-go="open"><div class="k">Offene Störungen ›</div><div class="v">${openNow}</div><div class="s">${openNow?"⚠ in der App als gestört markiert":"✓ alles frei"}</div></div>
+      <div class="kpi link" data-go="new"><div class="k">Neue Störungen ›</div><div class="v">${inWin.length}</div><div class="s">${inWin.reduce((a,i)=>a+i.reports,0)} Meldungen von Kunden</div></div>
+      <div class="kpi link" data-go="done"><div class="k">Ø Zeit bis erledigt ›</div><div class="v">${mttr?fmtDur(mttr):"–"}</div><div class="s">${solvedInc.length} erledigt im Zeitraum</div></div>
+      <div class="kpi link" data-go="visits"><div class="k">Besuche ›</div><div class="v">${tot}</div><div class="s">${tot?Math.round(100*self/tot)+" % selbst gelöst":"–"}</div></div>
     </div>
-    <div class="card"><h2>Verfügbarkeit je Ladepunkt</h2>
+    <div class="card" id="availCard"><h2>Verfügbarkeit je Ladepunkt</h2>
       <div class="legend"><span><b style="background:#d5eed5;border:1px solid #0ca30c"></b>✓ verfügbar</span><span><b style="background:#d03b3b"></b>⚠ Störung gemeldet (bis „erledigt“)</span><span>Quelle: Kundenmeldungen, keine Live-Daten der Säule</span></div>
       ${rows.map(({st,list})=>{ const pd=list.reduce((a,x)=>a+x.down,0), pp=list.length?100*(1-pd/(span*list.length)):100, bad=list.filter(x=>x.segs.length).length, open=OV_OPEN[st.id]!==undefined?OV_OPEN[st.id]:(bad>0||rows.length===1);
         return `<div class="proj-block ${open?"open":""}" data-st="${esc(st.id)}"><button class="proj-h" type="button"><span class="chev">${open?"▾":"▸"}</span><b>${esc(st.project_id||st.id)}</b>${st.name?` <span class="muted" style="font-weight:500">· ${esc(st.name)}</span>`:""}
@@ -611,16 +737,20 @@ async function loadOverview(){
       <div class="up-axis"><span></span><div><span>${fmtDT(F).split(",")[0]}</span><span>${fmtDT(F+span/2).split(",")[0]}</span><span>${+new Date(r.to)>+new Date(r.now)?"jetzt":fmtDT(T).split(",")[0]}</span></div><span></span></div>
     </div>
     <div class="two">
-      <div class="card"><h2>Kundenkontakte pro Tag</h2>
+      <div class="card"><h2>Besuche pro Tag</h2>
         <div class="legend">${OUTC.map(o=>`<span><b style="background:${o[2]}"></b>${o[1]}</span>`).join("")}</div>
         <div class="bars">${days.map(d=>{ const v=by[d]||{}, n=OUTC.reduce((a,o)=>a+(v[o[0]]||0),0);
-          return `<div class="col" data-tip="<b>${new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</b> · ${n} Kontakte${OUTC.filter(o=>v[o[0]]).map(o=>`<br>${o[1]}: ${v[o[0]]}`).join("")}">${OUTC.filter(o=>v[o[0]]).map(o=>`<i style="height:calc(${v[o[0]]/max*100}% - 2px);background:${o[2]}"></i>`).join("")}</div>`; }).join("")}</div>
+          return `<div class="col" data-tip="<b>${new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</b> · ${n} Besuche${OUTC.filter(o=>v[o[0]]).map(o=>`<br>${o[1]}: ${v[o[0]]}`).join("")}">${OUTC.filter(o=>v[o[0]]).map(o=>`<i style="height:calc(${v[o[0]]/max*100}% - 2px);background:${o[2]}"></i>`).join("")}</div>`; }).join("")}</div>
         <div class="bars-x"><span>${new Date(days[0]+"T12:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</span><span>max. ${max} / Tag</span><span>${new Date(days[days.length-1]+"T12:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</span></div>
       </div>
       <div class="card"><h2>Häufigste Störungen</h2>
         ${top.length?top.map(([t,n])=>`<div class="hb" data-tip="${esc(t)}: ${n} Störung(en)"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t)}</span><div><div class="t" style="width:${n/topMax*100}%"></div></div><b>${n}</b></div>`).join(""):'<div class="muted">Keine Störungen im Zeitraum 🎉</div>'}
       </div>
     </div>`;
+    box.querySelectorAll(".kpi[data-go]").forEach(k=>k.onclick=()=>{ const g=k.dataset.go;
+      if(g==="avail") return $("#availCard").scrollIntoView({behavior:"smooth"});
+      if(g==="visits"){ Object.assign(TF,{q:"",mode:"all",preset:OF.preset,from:OF.from,to:OF.to}); return go("tickets"); }
+      Object.assign(IF,{q:"",filter:g==="open"?"open":g==="done"?"erledigt":"all",preset:g==="open"?"all":OF.preset,from:g==="open"?"":OF.from,to:g==="open"?"":OF.to}); go("incidents"); });
     box.querySelectorAll(".proj-block .proj-h").forEach(h=>h.onclick=()=>{ const b=h.parentElement, o=!b.classList.contains("open"); b.classList.toggle("open",o); h.querySelector(".chev").textContent=o?"▾":"▸"; OV_OPEN[b.dataset.st]=o; });
     box.querySelectorAll(".up-bar i[data-no]").forEach(s=>s.onclick=()=>{ IF.q=s.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
   }catch(e){ box.innerHTML=`<div class="card muted">${esc(e.message)}</div>`; }
