@@ -62,6 +62,7 @@ footer.bottom{flex:none;background:#fff;border-top:1px solid var(--line);padding
 .st-pill.need{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
 .st-img{display:block;width:calc(100% + 32px);margin:-14px -16px 12px;height:150px;object-fit:cover;border-radius:var(--r) var(--r) 0 0}
 .station.compact .st-img{display:none}
+.st-img[hidden]{display:none}
 .tk-x{border:0;background:none;color:var(--muted);font-size:18px;line-height:1;padding:0 2px;margin-left:8px}
 .st-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .st-pill{display:none;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap}
@@ -112,6 +113,20 @@ textarea.f{min-height:80px;resize:vertical}
 .btn.google{background:#fff;border:1.5px solid #dadce0;color:#1a73e8}
 .tk-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tk-actions .btn{margin-top:0;padding:12px 8px;font-size:15px}
+.inc-b{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;color:#b42318;background:#fde8e6;border-radius:6px;padding:1px 6px;vertical-align:1px}
+.cp-row.bad{border-color:#f3c2bc}
+.chg.bad{border-color:#f3c2bc;color:#b42318}
+.chg.bad::after{content:" ⚠";font-size:12px}
+.known{border-color:#f3c2bc;background:#fff7f6}
+.known .alt{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+.known .alt button{border:1.5px solid #c9e7d8;background:#fff;border-radius:10px;padding:8px 10px;font-weight:700;color:var(--ink);font-size:14px}
+.tk-list{margin:8px 0}
+.tk-li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid #e3efe8}
+.tk-li:first-child{border-top:0}
+.tk-li code{font-size:16px;font-weight:700;color:#08603d}
+.tk-li small{color:var(--muted)}
+.home-h{font-size:24px;line-height:1.2;margin:4px 2px 12px;letter-spacing:-.3px}
+.tiles-hint{margin:16px 2px 10px;font-weight:600;color:var(--ink)}
 .tk-banner{border-color:#c9e7d8;background:#f6fbf8}
 .tk-head{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:15px}
 .tk-head small{font-weight:400;color:var(--muted);font-size:13px}
@@ -171,6 +186,7 @@ nav.tabs button{position:relative}
   </header>
 
   <div class="scroll" id="scroll"><div class="wrap">
+  <h1 class="home-h" id="homeH"></h1>
   <section class="station" id="stationCard">
     <img class="st-img" id="stImg" alt="" hidden>
     <div class="lbl" data-i="station">Ladestation</div>
@@ -317,7 +333,13 @@ const T = {
     chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
     hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
     tCopy:"📋 Nummer kopieren",tShare:"📤 Speichern / teilen",tCopied:"✓ Kopiert",tSaved:"Die Nummer bleibt nur auf Ihrem Handy für 12 Stunden gespeichert (Startseite und „Hotline“) – andere Kunden sehen sie nicht.",hide:"Ausblenden",
-    myTicket:"Ihre Störungsmeldung",ticketAgo:"gemeldet {t}",shareTitle:"Störungsmeldung {no}",
+    myTicket:"Ihre Störungsmeldung",myTickets:"Ihre Störungsmeldungen",
+    known:"Störung bekannt",knownT:"An diesem Ladepunkt ist bereits eine Störung gemeldet",knownH:"Seit {t} · {n}× gemeldet. Unser Team arbeitet daran.",
+    knownAlt:"Diese Ladepunkte sind frei von Störungsmeldungen:",knownNoAlt:"Leider sind alle Ladepunkte dieses Chargers gestört gemeldet.",
+    plusBtn:"Betrifft mich auch",plusMail:"E-Mail, wenn's wieder geht (optional)",plusSend:"Bestätigen",plusOk:"Danke – wir haben Ihre Meldung gezählt.",plusOkMail:"Wir schreiben Ihnen an {m}, sobald der Ladepunkt wieder funktioniert.",
+    otherIssue:"Anderes Problem? Wählen Sie unten aus.",chgDown:"gestört",
+    fCard:"Nummer Ihrer Ladekarte (optional)",fCardPh:"z. B. DE-CPW-004140-4",fEmsp:"Anbieter der Ladekarte / App (optional)",fEmspPh:"z. B. EnBW mobility+",
+    attached:"Diese Störung war bereits gemeldet – Ihre Meldung wurde ergänzt. Gleiche Vorgangsnummer für alle Betroffenen.",ticketAgo:"gemeldet {t}",shareTitle:"Störungsmeldung {no}",
     shareText:"Meine Störungsmeldung an der Ladesäule\nVorgangsnummer: {no}\nStation: {st}{evse}\nProblem: {pr}\nZeit: {time}\nHotline: {hl}",
     callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln",charger:"Charger",chooseCharger:"Charger wählen",chooseCp:"Ladepunkt wählen",chargerHint:"Wählen Sie einen Charger oder geben Sie oben ein paar Ziffern der EVSE-ID ein.",evseFind:"EVSE-ID vom Aufkleber",evsePh:"z. B. letzte Ziffern eingeben",evseNote:"· EVSE-ID mit dem Aufkleber vergleichen",evseNone:"Keine passende EVSE-ID gefunden – bitte Charger wählen.",pickT:"An welchem Ladepunkt stehen Sie?",pickH:"Jeder Ladepunkt hat einen Aufkleber mit seiner EVSE-ID – damit finden Sie ihn hier am schnellsten."},
   en:{brand:"<b>HAPPY CHARGING</b> Support",station:"Charging station",tHelp:"Issue",tChat:"Chat",tCall:"Hotline",cp:"Connector",cpShort:"C",
@@ -338,7 +360,13 @@ const T = {
     chatPh:"Type a message…",chatToTeam:"Your message has reached our service team. We'll reply here shortly.",
     hours:"Available 24/7",callBtn:"Call now",stationId:"Station ID",copy:"Copy",copied:"Copied ✓",caseNo:"Reference number",
     tCopy:"📋 Copy number",tShare:"📤 Save / share",tCopied:"✓ Copied",tSaved:"The number is kept only on your phone for 12 hours (start screen and “Hotline”) – other customers can't see it.",hide:"Hide",
-    myTicket:"Your issue report",ticketAgo:"reported {t}",shareTitle:"Issue report {no}",
+    myTicket:"Your issue report",myTickets:"Your issue reports",
+    known:"Known fault",knownT:"A fault has already been reported at this connector",knownH:"Since {t} · reported {n}×. Our team is on it.",
+    knownAlt:"These connectors have no fault reports:",knownNoAlt:"Unfortunately all connectors of this charger are reported as faulty.",
+    plusBtn:"Affects me too",plusMail:"Email when it works again (optional)",plusSend:"Confirm",plusOk:"Thanks – your report has been counted.",plusOkMail:"We'll write to {m} as soon as the connector works again.",
+    otherIssue:"Different problem? Choose below.",chgDown:"faulty",
+    fCard:"Your charging card number (optional)",fCardPh:"e.g. DE-CPW-004140-4",fEmsp:"Card / app provider (optional)",fEmspPh:"e.g. Shell Recharge",
+    attached:"This fault had already been reported – your report has been added. Same reference number for everyone affected.",ticketAgo:"reported {t}",shareTitle:"Issue report {no}",
     shareText:"My issue report at the charging station\nReference number: {no}\nStation: {st}{evse}\nIssue: {pr}\nTime: {time}\nHotline: {hl}",
     callHint:"Please have the EVSE ID ready – it is also on the sticker at the connector. Then we can find it in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector",charger:"Charger",chooseCharger:"Choose charger",chooseCp:"Choose connector",chargerHint:"Choose a charger or enter a few digits of the EVSE ID above.",evseFind:"EVSE ID from the sticker",evsePh:"e.g. enter the last digits",evseNote:"· compare the EVSE ID with the sticker",evseNone:"No matching EVSE ID – please choose a charger.",pickT:"Which connector are you at?",pickH:"Every connector has a sticker with its EVSE ID – that's the quickest way to find it here."}
 };
@@ -380,10 +408,13 @@ async function loadStation(){
   S.station = (m?m[1]:h) || CONFIG.defaultStation; S.prefCharger = m?+m[2]:null;
   S.stationData = CONFIG.stations[S.station] || null; S.cp=null; S.charger=null; S.label=S.station;
   renderStation();
-  try{ const r=await api("station"); if(r.station){ if(r.station.id&&r.station.id!==S.station){ S.station=r.station.id; } S.label=r.station.project_id||S.station; S.stationData={review:r.station.review_url||(CONFIG.stations[S.station]||{}).review||"",addr:r.station.address||r.station.name||"",chargers:r.station.chargers||null,cps:(r.station.connectors||[]).length?r.station.connectors:[{n:1,t:""},{n:2,t:""}]}; } }catch(e){}
+  try{ const r=await api("station"); if(r.station){ if(r.station.id&&r.station.id!==S.station){ S.station=r.station.id; } S.label=r.station.project_id||S.station; S.stationData={review:r.station.review_url||(CONFIG.stations[S.station]||{}).review||"",addr:r.station.address||r.station.name||"",chargers:r.station.chargers||null,cps:(r.station.connectors||[]).length?r.station.connectors:[{n:1,t:""},{n:2,t:""}],incidents:r.station.incidents||[]}; } }catch(e){}
   initSelection(); renderStation();
   return "station";
 }
+/* Bekannte Störungen (offen, aus dem Dashboard) */
+const incOf=n=>((S.stationData&&S.stationData.incidents)||[]).find(i=>i.cp===n)||null;
+async function refreshIncidents(){ try{ const r=await api("station"); if(r.station&&S.stationData){ S.stationData.incidents=r.station.incidents||[]; renderStation(); } }catch(e){} }
 /* Projekt → Charger → Ladepunkt */
 function chargers(){ // [{n,label,cps:[...]}] aus den Stammdaten
   const st=S.stationData||{cps:[]}; const map=new Map();
@@ -406,15 +437,15 @@ function pickCharger(n){ S.charger=n; S.cp=null; const ch=curCharger(); if(ch&&c
 function pickCp(n){ S.cp=n; const c=curCp(); if(c&&c.charger) S.charger=c.charger; track("connector_select",{cp:n,charger:c&&c.charger,label:cpLabel(c)}); }
 // Auswahl-Block (Station-Karte und Zwischenschritt vor einer Störung)
 const normE=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-function cpRow(c,withCh){ return `<button class="cp-row ${c.n===S.cp?"on":""}" data-cp="${c.n}" data-chg="${c.charger||1}">
-  <span class="cp-l"><b>${withCh?tr("charger")+" "+(c.charger||1)+" · ":""}${tr("cp")} ${localNo(c)}</b><small>${esc(c.t||"")}${c.kw?" · "+c.kw+" kW":""}</small></span>
+function cpRow(c,withCh){ return `<button class="cp-row ${c.n===S.cp?"on":""} ${incOf(c.n)?"bad":""}" data-cp="${c.n}" data-chg="${c.charger||1}">
+  <span class="cp-l"><b>${withCh?tr("charger")+" "+(c.charger||1)+" · ":""}${tr("cp")} ${localNo(c)}</b>${incOf(c.n)?`<span class="inc-b">⚠ ${tr("known")}</span>`:""}<small>${esc(c.t||"")}${c.kw?" · "+c.kw+" kW":""}</small></span>
   ${c.evse?`<code class="cp-evse">${esc(c.evse)}</code>`:`<span class="cp-evse none">–</span>`}</button>`; }
 function selectorHTML(){
   const chs=chargers(), ch=curCharger(), hasEvse=(S.stationData?.cps||[]).some(c=>c.evse);
   let h="";
   if(chs.length>1){
     if(hasEvse) h+=`<div class="sel-lbl">${tr("evseFind")}</div><input class="f evse-q" type="search" inputmode="search" autocomplete="off" placeholder="${tr("evsePh")}"><div class="evse-res"></div>`;
-    h+=`<div class="sel-lbl">${tr("chooseCharger")}</div><div class="chg-grid">${chs.map(c=>`<button class="chg ${c.n===S.charger?"on":""}" data-ch="${c.n}">${c.n}</button>`).join("")}</div>`;
+    h+=`<div class="sel-lbl">${tr("chooseCharger")}</div><div class="chg-grid">${chs.map(c=>`<button class="chg ${c.n===S.charger?"on":""} ${c.cps.length&&c.cps.every(x=>incOf(x.n))?"bad":""}" data-ch="${c.n}">${c.n}</button>`).join("")}</div>`;
   }
   if(ch) h+=`<div class="sel-lbl">${tr("chooseCp")}${hasEvse?` <span class="lbl-note">${tr("evseNote")}</span>`:""}</div><div class="cp-list">${ch.cps.map(c=>cpRow(c,false)).join("")}</div>`;
   else if(chs.length>1) h+=`<div class="sel-hint">${tr("chargerHint")}</div>`;
@@ -438,7 +469,7 @@ function renderStation(){
   if(im.dataset.src!==src){ im.dataset.src=src; im.hidden=true; im.onload=()=>{ im.hidden=false; }; im.onerror=()=>{ im.hidden=true; }; im.src=src; }
   $("#stAddr").textContent=st.addr||"";
   $("#cps").outerHTML=`<div id="cps">${selectorHTML()}</div>`;
-  wireSelector($("#cps"));
+  wireSelector($("#cps"),()=>{ if(S.render===home) home(); });
   const c=curCp();
   $("#stEvse").innerHTML=c&&c.evse?`<b>EVSE-ID</b> ${esc(c.evse)}`:"";
   $("#stPill").textContent=c?`${cpLabel(c)}${c.t?" · "+c.t:""} ▾`:`${multi()&&!S.charger?tr("chooseCharger"):tr("chooseCp")} ▾`;
@@ -460,11 +491,14 @@ function pickView(next){
 // Station kompakt (eine Zeile) überall außer auf der Startseite – Tippen klappt sie auf
 const review=()=>((S.stationData&&S.stationData.review)||"");
 const evse=()=>{ const c=curCp(); return (c&&c.evse)||""; };
-function compact(on){ const c=$("#stationCard"); c.classList.toggle("compact",on); c.classList.remove("open"); }
+function compact(on){ const c=$("#stationCard"); c.classList.toggle("compact",on); c.classList.remove("open"); $("#homeH").hidden=on; $("#homeH").textContent=tr("what"); }
 $("#stPill").onclick=()=>$("#stationCard").classList.toggle("open");
 const scroller=()=>$("#scroll");
 function toTop(){ scroller().scrollTop=0; }
 function show(fn){ S.render=fn; fn(); }   // merkt sich die aktuelle Ansicht (für Sprachwechsel)
+
+// Gängige Ladekarten-/App-Anbieter (EMSP) als Vorschläge – freie Eingabe bleibt möglich
+const EMSP=["ADAC e-Charge","Aral pulse","BMW Charging","Chargemap","E.ON Drive","EnBW mobility+","EWE Go","Electroverse (Octopus)","Elli (VW)","IONITY","Lidl Plus","Maingau EinfachStromLaden","Mercedes me Charge","Mobility House","Plugsurfing","Shell Recharge","Stadtwerke-Karte","Tesla","Vattenfall InCharge","Zapmap"];
 
 /* ============ STÖRUNGSNUMMER MERKEN ============ */
 // Auf dem Gerät gespeichert (localStorage), damit die Nummer nach Zurück/Neuladen noch da ist
@@ -472,7 +506,8 @@ const TKEY="hc_tickets";
 function loadTickets(){ try{ return JSON.parse(localStorage.getItem(TKEY)||"[]"); }catch(e){ return []; } }
 function saveTicket(t){ try{ const a=loadTickets().filter(x=>x.no!==t.no); a.unshift(t); localStorage.setItem(TKEY,JSON.stringify(a.slice(0,5))); }catch(e){} }
 // Nur auf DIESEM Handy gespeichert; nach 12 h oder per ✕ nicht mehr angezeigt
-function recentTicket(){ const lim=Date.now()-12*3600000; return loadTickets().find(t=>t.station===S.station && t.ts>lim && !t.hidden) || null; }
+function recentTickets(){ const lim=Date.now()-12*3600000; return loadTickets().filter(t=>t.station===S.station && t.ts>lim && !t.hidden); }
+function recentTicket(){ return recentTickets()[0]||null; }
 function hideTicket(no){ try{ const a=loadTickets().map(x=>x.no===no?{...x,hidden:true}:x); localStorage.setItem(TKEY,JSON.stringify(a)); }catch(e){} }
 function ago(ts){ const m=Math.round((Date.now()-ts)/60000), en=lang==="en";
   if(m<1) return en?"just now":"gerade eben"; if(m<60) return en?`${m} min ago`:`vor ${m} Min.`;
@@ -496,14 +531,28 @@ window.addEventListener("popstate",()=>{ if(inSub){ inSub=false; $("#composer").
 /* ============ VIEWS ============ */
 function home(){
   S.flow=null;S.step=0;S.tried=[]; compact(false); S.render=home;
-  const rt=recentTicket();
-  view.innerHTML=`${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr("myTicket")}</span><span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small><button class="tk-x" id="tkX" aria-label="${tr("hide")}">✕</button></span></div>
-    <div class="ticket">${esc(rt.no)}</div>${ticketActions(rt)}</div>`:""}
-  <h2>${tr("what")}</h2><p class="sub">${tr("whatSub")}</p>
+  const rts=recentTickets(), rt=rts[0], c=curCp(), inc=c&&incOf(c.n);
+  const alts=c?((chargers().find(x=>x.n===(c.charger||1))||{cps:[]}).cps.filter(x=>x.n!==c.n&&!incOf(x.n))):[];
+  view.innerHTML=`${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr(rts.length>1?"myTickets":"myTicket")}</span><span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small><button class="tk-x" id="tkX" aria-label="${tr("hide")}">✕</button></span></div>
+    ${rts.length>1?`<div class="tk-list">${rts.map(t=>`<div class="tk-li"><span><code>${esc(t.no)}</code><br><small>${esc(t.cpl||"")} · ${ago(t.ts)}</small></span><button class="small-btn" data-copy="${esc(t.no)}">${tr("copy")}</button></div>`).join("")}</div>`
+      :`<div class="ticket">${esc(rt.no)}</div>`}${rts.length>1?`<div class="tk-actions"><button class="btn ghost" id="shAll">${tr("tShare")}</button></div>`:ticketActions(rt)}</div>`:""}
+  ${inc?`<div class="card known"><div class="step-t">⚠️ ${tr("knownT")}</div><p class="step-h">${esc(cpLabel(c))} · ${tr("knownH",{t:new Date(inc.since).toLocaleTimeString(locale(),{hour:"2-digit",minute:"2-digit"})+(Date.now()-new Date(inc.since)>20*3600e3?" ("+new Date(inc.since).toLocaleDateString(locale())+")":""),n:inc.reports})}</p>
+    ${alts.length?`<div class="sub" style="margin:0">${tr("knownAlt")}</div><div class="alt">${alts.map(x=>`<button data-alt="${x.n}">${esc(cpLabel(x))}${x.t?" · "+esc(x.t):""}</button>`).join("")}</div>`:`<div class="note amber">${tr("knownNoAlt")}</div>`}
+    <div id="plusBox">${S.plused&&S.plused[inc.cp]?`<div class="note green">${tr("plusOk")}</div>`:`<button class="btn ghost" id="plus">➕ ${tr("plusBtn")}</button>`}</div>
+    <p class="sub" style="margin:10px 0 0">${tr("otherIssue")}</p></div>`:""}
+  <p class="sub tiles-hint">${tr("whatSub")}</p>
   <div class="grid">${TILE_ORDER.map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile ${f.danger?"danger":""} ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
   <p class="privacy">${tr("privacy")}${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">${tr("privacyLink")}</a>`:""}</p>`;
   view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f));
-  if(rt){ wireTicketActions(view.querySelector(".tk-banner"),rt); $("#tkX").onclick=()=>{ hideTicket(rt.no); S.lastTicket=null; home(); }; }
+  if(rt){ wireTicketActions(view.querySelector(".tk-banner"),rt);
+    if($("#shAll")) $("#shAll").onclick=async e=>{ const text=rts.map(ticketText).join("\n\n"); if(navigator.share){ try{ await navigator.share({title:tr("myTickets"),text}); return; }catch(err){ if(err&&err.name==="AbortError") return; } } copyText(text,e.target); }; view.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>copyText(b.dataset.copy,b));
+    $("#tkX").onclick=()=>{ rts.forEach(t=>hideTicket(t.no)); S.lastTicket=null; home(); }; }
+  if(inc){ if(!S.knownLogged||!S.knownLogged[inc.cp]){ (S.knownLogged||={})[inc.cp]=1; track("known_shown",{cp:inc.cp}); }
+    view.querySelectorAll("[data-alt]").forEach(b=>b.onclick=()=>{ pickCp(+b.dataset.alt); renderStation(); home(); });
+    if($("#plus")) $("#plus").onclick=()=>{ $("#plusBox").innerHTML=`<label class="f">${tr("plusMail")}</label><input class="f" id="plusMail" type="email" inputmode="email" autocomplete="email" placeholder="${tr("fEmailPh")}"><button class="btn primary" id="plusGo">${tr("plusSend")}</button>`;
+      $("#plusGo").onclick=async e=>{ e.target.disabled=true; const m=$("#plusMail").value.trim();
+        try{ const r=await api("plus_one",{email:m}); if(r.gone){ await refreshIncidents(); return home(); } (S.plused||={})[inc.cp]=1; if(r.reports) inc.reports=r.reports;
+          $("#plusBox").innerHTML=`<div class="note green">${tr("plusOk")}${m?" "+tr("plusOkMail",{m:esc(m)}):""}</div>`; }catch(err){ e.target.disabled=false; } }; }; }
 }
 
 function startFlow(k){
@@ -572,13 +621,16 @@ function shrink(file){ return new Promise((res)=>{ if(!file) return res(null);
 function openTicket(){ track("ticket_open",{flow:S.flow,title:DE(FLOWS[S.flow].t)}); show(ticketView); }
 function ticketView(){
   const f=FLOWS[S.flow]; compact(true); toTop(); markSub();
-  const keep={desc:$("#desc")?.value||"",email:$("#email")?.value||"",phone:$("#phone")?.value||""};
+  const keep={desc:$("#desc")?.value||"",email:$("#email")?.value||S.lastEmail||"",phone:$("#phone")?.value||S.lastPhone||"",card:$("#card")?.value||S.lastCard||"",emsp:$("#emsp")?.value||S.lastEmsp||""};
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
   <div class="card"><div class="step-t">${tr("ticketT")}</div>
   <p class="step-h">${tr("ticketH")}</p>
   <div class="summary"><b>${tr("sStation")}</b>${esc(S.label||S.station)}<br><b>${tr("sCp")}</b>${esc(cpLabel(curCp())||"–")}<br>${evse()?`<b>EVSE-ID</b>${esc(evse())}<br>`:""}<b>${tr("sProblem")}</b>${L(f.t)}<br>${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
   <label class="f">${tr("fDesc")}</label><textarea class="f" id="desc" placeholder="${tr("fDescPh")}">${esc(keep.desc)}</textarea>
   <label class="f">${tr("fPhoto")}</label><input class="f" type="file" accept="image/*" id="pic">
+  ${["credit","dispTerminal","danger"].includes(S.flow)?"":`<label class="f">${tr("fCard")}</label><input class="f" id="card" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="${tr("fCardPh")}" value="${esc(keep.card)}">
+  <label class="f">${tr("fEmsp")}</label><input class="f" id="emsp" list="emspList" autocomplete="off" placeholder="${tr("fEmspPh")}" value="${esc(keep.emsp)}">
+  <datalist id="emspList">${EMSP.map(x=>`<option value="${esc(x)}">`).join("")}</datalist>`}
   <label class="f">${tr("fEmail")}</label><input class="f" id="email" type="email" inputmode="email" autocomplete="email" placeholder="${tr("fEmailPh")}" value="${esc(keep.email)}">
   <label class="f">${tr("fPhone")}</label><input class="f" id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="${tr("fPhonePh")}" value="${esc(keep.phone)}">
   <button class="btn primary" id="send">${tr("send")}</button>
@@ -588,22 +640,24 @@ function ticketView(){
   $("#send").onclick=async e=>{
     e.target.disabled=true; e.target.textContent=tr("sending");
     const photo=await shrink($("#pic").files[0]);
-    const email=$("#email").value.trim(), phone=$("#phone").value.trim();
-    const r=await track("ticket_submit",{flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),email,phone,contact:[email,phone].filter(Boolean).join(" · "),photo});
+    const email=$("#email").value.trim(), phone=$("#phone").value.trim(), card=($("#card")?.value||"").trim(), emsp=($("#emsp")?.value||"").trim();
+    S.lastEmail=email; S.lastPhone=phone; S.lastCard=card; S.lastEmsp=emsp;   // nur für diesen Besuch vorbelegen
+    const r=await track("ticket_submit",{flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),email,phone,card,emsp,contact:[email,phone].filter(Boolean).join(" · "),photo});
+    S.attached=!!(r&&r.existing);
     S.ticketMail=r&&r.customerMail?{status:r.customerMail,to:email}:null;
     S.lastTicket=(r&&r.ticketNo)||null; S.ticketFailed=!S.lastTicket;
     if(S.lastTicket) saveTicket({no:S.lastTicket,station:S.station,cp:S.cp,cpl:cpLabel(curCp()),evse:evse(),flow:S.flow,ts:Date.now()});
-    show(ticketDoneView);
+    show(ticketDoneView); refreshIncidents();
   };
 }
 function ticketDoneView(){
   const id=S.lastTicket;
   view.innerHTML=`<div class="card"><div class="big-ic">🧾</div>
-  ${id?`<div class="step-t center">${tr("ticketNo")}</div><div class="ticket">${id}</div>${ticketActions()}<p class="step-h" style="margin-top:12px">${tr("ticketOk")}</p>${S.ticketMail&&S.ticketMail.status==="sent"?`<div class="note green">${tr("mailSent",{m:esc(S.ticketMail.to)})}</div>`:S.ticketMail?`<div class="note amber">${tr("mailFail")}</div>`:""}<div class="note green">${tr("tSaved")}</div>`
+  ${id?`<div class="step-t center">${tr("ticketNo")}</div><div class="ticket">${id}</div>${ticketActions()}<p class="step-h" style="margin-top:12px">${tr("ticketOk")}</p>${S.attached?`<div class="note amber">${tr("attached")}</div>`:""}${S.ticketMail&&S.ticketMail.status==="sent"?`<div class="note green">${tr("mailSent",{m:esc(S.ticketMail.to)})}</div>`:S.ticketMail?`<div class="note amber">${tr("mailFail")}</div>`:""}<div class="note green">${tr("tSaved")}</div>`
      :`<div class="step-t center">${tr("ticketFail")}</div><div class="note amber">${tr("ticketFailH",{id:esc(evse()||S.station),cp:esc(cpLabel(curCp())||"–")})}</div>`}
   ${hotlineLink("ghost",tr("callHotline"))}<button class="btn primary" id="hm">${tr("home")}</button></div>`;
   $("#hm").onclick=home; wireCall();
-  if(id){ const t=recentTicket()||{no:id,station:S.station,cp:S.cp,evse:evse(),flow:S.flow,ts:Date.now()}; wireTicketActions(view,t); }
+  if(id){ const t=loadTickets().find(x=>x.no===id)||{no:id,station:S.station,cp:S.cp,evse:evse(),flow:S.flow,ts:Date.now()}; wireTicketActions(view,t); }
 }
 
 /* ============ CHAT (KI + Live-Team über Telegram) ============ */
@@ -765,7 +819,7 @@ async function boot(){
   applyLang();
   const mode=await loadStation();
   if(mode==="betreiber"){ $("#composer").classList.add("hidden"); return operatorView(); }
-  S.sid=uuid(); S.chat=[]; S.lastTeamId=0; S.human=false; S.chatOpened=false; S.lastTicket=(recentTicket()||{}).no||null; toldTeam=false; if(S.pollT){clearTimeout(S.pollT);S.pollT=null;}
+  S.sid=uuid(); S.plused={}; S.knownLogged={}; S.lastEmail=S.lastPhone=S.lastCard=S.lastEmsp=""; S.attached=false; S.chat=[]; S.lastTeamId=0; S.human=false; S.chatOpened=false; S.lastTicket=(recentTicket()||{}).no||null; toldTeam=false; if(S.pollT){clearTimeout(S.pollT);S.pollT=null;}
   track("page_open",{ref:document.referrer?"link":"qr",lang});
   setTab("help",true);
 }

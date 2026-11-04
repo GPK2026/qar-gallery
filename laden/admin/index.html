@@ -104,7 +104,7 @@ dt{color:var(--muted)}dd{margin:0}
 <body>
 <header><div class="in">
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="projects" class="on">Projekte</button><button data-v="tickets">Meldungen</button><button data-v="settings">Einstellungen</button></nav>
+  <nav id="nav" class="hidden"><button data-v="projects" class="on">Projekte</button><button data-v="incidents">Störungen</button><button data-v="tickets">Kundenkontakte</button><button data-v="settings">Einstellungen</button></nav>
   <div class="sp"></div>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
 </div></header>
@@ -132,7 +132,7 @@ async function api(action,payload={}){
 function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#logout").classList.add("hidden"); loginView(); }
 $("#logout").onclick=logout;
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>go(b.dataset.v));
-function go(v){ document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({projects:projectsView,tickets:ticketsView,settings:settingsView})[v](); }
+function go(v){ document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({projects:projectsView,incidents:incidentsView,tickets:ticketsView,settings:settingsView})[v](); }
 
 /* ---------- Login ---------- */
 function loginView(){
@@ -298,7 +298,7 @@ const stOf=id=>STATIONS.find(x=>x.id===id);
 let TF={q:"",mode:"all"};
 async function ticketsView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Kundenkontakte & Meldungen</h1><p class="sub" style="margin:0">Jeder Besuch über den QR-Code als Akte – zum Aufklappen.</p></div></div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Kundenkontakte</h1><p class="sub" style="margin:0">Jeder Besuch über den QR-Code als Akte – zum Aufklappen.</p></div></div>
   <div class="card" style="padding:12px 14px"><div class="row">
     <input id="tq" type="search" placeholder="🔎 Vorgangsnummer (ST-…), E-Mail, Telefon, EVSE-ID oder Projekt" style="flex:1;min-width:260px;font-size:15px" value="${esc(TF.q)}">
     <div class="seg" id="tmode">${[["all","Alle Kontakte"],["tickets","Nur Meldungen"],["neu","Neu"],["in_arbeit","In Bearbeitung"],["erledigt","Erledigt"]].map(([k,l])=>`<button data-m="${k}" class="${TF.mode===k?"on":""}">${l}</button>`).join("")}</div>
@@ -314,7 +314,7 @@ async function loadSessions(){
     const r=await api("sessions",p), tb=$("#tb"); if(!tb) return;
     tb.innerHTML=r.sessions.length?r.sessions.map(s=>{ const st=stOf(s.station_id), o=OUT[s.outcome||"open"]||OUT.open, ts=s.ticket_no?TST[s.ticket_status||"neu"]:null;
       return `<tr class="click" data-id="${s.id}"><td class="chev">▸</td><td>${fmtDT(s.started_at)}</td><td><b>${esc(st?(st.project_id||st.id):s.station_id)}</b></td><td>${esc(cpLabel(st,s.connector))}</td>
-        <td><span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span></td><td><code>${esc(s.ticket_no||"")}</code></td><td>${ts?`<span class="badge ${ts[1]==="ok"?"":ts[1]}">${ts[0]}</span>`:""}</td><td>${esc(s.contact||"")}</td></tr>
+        <td><span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span></td><td>${(s.tickets||[]).map(t=>`<code>${esc(t.no)}</code>`).join("<br>")}</td><td>${(s.tickets||[]).map(t=>{ const x=TST[t.status]||TST.neu; return `<span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span>`; }).join("<br>")}</td><td>${esc(s.contact||"")}</td></tr>
         <tr class="akte hidden" data-for="${s.id}"><td colspan="8"><div class="akte-in">Lade Akte …</div></td></tr>`; }).join(""):`<tr><td colspan="8" class="muted">${TF.q?"Nichts gefunden für „"+esc(TF.q)+"“.":"Keine Einträge."}</td></tr>`;
     tb.querySelectorAll("tr.click").forEach(r=>r.onclick=()=>toggleAkte(r.dataset.id));
     if(TF.q && r.sessions.length===1) toggleAkte(r.sessions[0].id);
@@ -325,7 +325,7 @@ async function toggleAkte(id){
   const open=row.classList.toggle("hidden")===false; head.querySelector(".chev").textContent=open?"▾":"▸"; head.classList.toggle("open",open);
   if(open) await renderAkte(id,row.querySelector(".akte-in"));
 }
-const EV={page_open:"QR-Code gescannt",connector_select:"Ladepunkt gewählt",tab:"Bereich gewechselt",flow_start:"Störung angeklickt",step_ok:"✓ Schritt hat geholfen",step_fail:"✗ Schritt hat nicht geholfen",step_back:"Zurück",solved:"✅ Problem gelöst",feedback:"Bewertung",ticket_open:"Störungsformular geöffnet",ticket_submit:"🧾 Störung gemeldet",danger_open:"⚠️ Beschädigung / Gefahr",hotline_click:"📞 Hotline angerufen",hotline_copy:"ID kopiert",chat_open:"Chat geöffnet",chat_user:"💬 Kunde",chat_bot:"🤖 Assistent",chat_team:"👩‍🔧 Team (Telegram)",lang:"Sprache gewechselt"};
+const EV={page_open:"QR-Code gescannt",connector_select:"Ladepunkt gewählt",tab:"Bereich gewechselt",flow_start:"Störung angeklickt",step_ok:"✓ Schritt hat geholfen",step_fail:"✗ Schritt hat nicht geholfen",step_back:"Zurück",solved:"✅ Problem gelöst",feedback:"Bewertung",ticket_open:"Störungsformular geöffnet",ticket_submit:"🧾 Störung gemeldet",danger_open:"⚠️ Beschädigung / Gefahr",hotline_click:"📞 Hotline angerufen",hotline_copy:"ID kopiert",chat_open:"Chat geöffnet",chat_user:"💬 Kunde",chat_bot:"🤖 Assistent",chat_team:"👩‍🔧 Team (Telegram)",lang:"Sprache gewechselt",known_shown:"Hinweis „Störung bekannt“ gesehen",incident_plus:"➕ Bekannte Störung bestätigt"};
 function evDetail(e,st){ const d=e.data||{};
   switch(e.type){
     case "page_open": return `über ${d.ref==="qr"?"QR-Code":"Link"}${d.lang?" · Sprache "+d.lang.toUpperCase():""}`;
@@ -335,7 +335,8 @@ function evDetail(e,st){ const d=e.data||{};
     case "step_ok": case "step_fail": return `${d.flow_title?d.flow_title+" · ":""}Schritt ${d.n}: ${d.step||""}`;
     case "step_back": return d.step||"";
     case "feedback": return d.value===1?"👍 hilfreich":"👎 nicht hilfreich";
-    case "ticket_submit": return [`<b>${esc(d.ticketNo||"")}</b>`, d.title&&esc(d.title), d.tried&&d.tried.length?"versucht: "+esc(d.tried.join(", ")):"", d.desc?`„${esc(d.desc)}“`:"", d.contact?"Kontakt: "+esc(d.contact):"", d.photo?"📷 Foto":""].filter(Boolean).join("<br>");
+    case "incident_plus": return `<b>${esc(d.ticketNo||"")}</b>${d.email?" · Info an "+esc(d.email):""}`;
+    case "ticket_submit": return [`<b>${esc(d.ticketNo||"")}</b>${d.attached?" (an bestehende Störung angehängt)":""}`, (d.card||d.emsp)?"Ladekarte: "+esc([d.emsp,d.card].filter(Boolean).join(" · ")):"", d.title&&esc(d.title), d.tried&&d.tried.length?"versucht: "+esc(d.tried.join(", ")):"", d.desc?`„${esc(d.desc)}“`:"", d.contact?"Kontakt: "+esc(d.contact):"", d.photo?"📷 Foto":""].filter(Boolean).join("<br>");
     case "chat_user": case "chat_bot": return esc(d.text||"");
     case "chat_team": return `<b>${esc(d.from||"Team")}:</b> ${esc(d.text||"")}`;
     case "hotline_click": return d.from?"aus Bereich „"+({help:"Störung",chat:"Chat",call:"Hotline"}[d.from]||d.from)+"“":"";
@@ -346,23 +347,22 @@ function evDetail(e,st){ const d=e.data||{};
 const MK={urgent:"Sofort-Mail Team",summary:"Zusammenfassung Team",customer:"Bestätigung Kunde"};
 async function renderAkte(id,box){
   try{
-    const r=await api("session",{id}), s=r.session, st=stOf(s.station_id), dur=Math.max(0,Math.round((new Date(s.last_event_at)-new Date(s.started_at))/60000));
+    const r=await api("session",{id}), s=r.session; r.tickets=[...new Set(r.events.filter(e=>e.data&&e.data.ticketNo).map(e=>e.data.ticketNo))]; const st=stOf(s.station_id), dur=Math.max(0,Math.round((new Date(s.last_event_at)-new Date(s.started_at))/60000));
     const ua=s.user_agent||"", dev=/iPhone|iPad/.test(ua)?"iPhone/iPad":/Android/.test(ua)?"Android":/Mac/.test(ua)?"Mac":/Windows/.test(ua)?"Windows":"unbekannt";
     const facts=[["Projekt",esc(st?(st.project_id||st.id):s.station_id)+(st&&st.address?" · "+esc(st.address):"")],["Ladepunkt",esc(cpLabel(st,s.connector))+(evseOf(st,s.connector)?` · <code>${esc(evseOf(st,s.connector))}</code>`:"")],
       ["Beginn",new Date(s.started_at).toLocaleString("de-DE")],["Dauer",dur+" Min. · "+s.event_count+" Schritte"],["Ergebnis",(OUT[s.outcome||"open"]||OUT.open)[0]],
-      ["Vorgang",s.ticket_no?`<code>${esc(s.ticket_no)}</code>`:"–"],["Kontakt",esc(s.contact||"–")],["Sprache / Gerät",(s.lang||"de").toUpperCase()+" · "+dev],["Telegram",s.tg_thread_id?"eigenes Thema #"+s.tg_thread_id:(s.tg_started_at?"gemeldet":"–")],["Besuchs-ID",`<code style="font-size:11px">${esc(s.id)}</code>`]];
+      ["Vorgänge",(r.tickets||[]).length?r.tickets.map(n=>`<a href="#" class="to-inc" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join(" · "):"–"],["Kontakt",esc(s.contact||"–")],["Sprache / Gerät",(s.lang||"de").toUpperCase()+" · "+dev],["Telegram",s.tg_thread_id?"eigenes Thema #"+s.tg_thread_id:(s.tg_started_at?"gemeldet":"–")],["Besuchs-ID",`<code style="font-size:11px">${esc(s.id)}</code>`]];
     box.innerHTML=`<div class="akte-grid">
       <div><h3>Akte</h3><dl>${facts.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
-        ${s.ticket_no?`<h3 style="margin-top:16px">Bearbeitung</h3>
-          <div class="row"><select class="t-status" style="width:auto">${Object.entries(TST).map(([k,v])=>`<option value="${k}" ${k===(s.ticket_status||"neu")?"selected":""}>${v[0]}</option>`).join("")}</select></div>
-          <textarea class="t-note" rows="2" placeholder="Interne Notiz (z. B. Techniker beauftragt, Kunde zurückgerufen …)" style="margin-top:8px"></textarea>
-          <div class="row" style="margin-top:8px"><button class="btn sm t-save">Speichern</button><button class="btn ghost sm t-copy">Akte kopieren</button></div>`:`<div class="row" style="margin-top:12px"><button class="btn ghost sm t-copy">Akte kopieren</button></div>`}
+        <div class="row" style="margin-top:12px"><button class="btn ghost sm t-copy">Akte kopieren</button></div>
+        ${(r.tickets||[]).length?`<div class="hint" style="margin-top:6px">Status und Notizen pflegt ihr je Störung unter „Störungen“ (Vorgangsnummer anklicken).</div>`:""}
         <div class="notes">${(s.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)}</span>${n.status?` <span class="badge ${TST[n.status][1]==="ok"?"":TST[n.status][1]}">${TST[n.status][0]}</span>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div>
         ${r.photos.length?`<h3 style="margin-top:16px">Fotos</h3><div class="row">${r.photos.map(p=>`<a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join("")}</div>`:""}
         ${r.mails.length?`<h3 style="margin-top:16px">Mails</h3>${r.mails.map(m=>`<div class="mail-i"><span class="badge ${m.status==="sent"?"":m.status==="failed"?"warn":"off"}">${m.status==="sent"?"gesendet":m.status==="failed"?"fehlgeschlagen":"übersprungen"}</span> <b>${MK[m.kind]||m.kind}</b> an ${esc(m.recipient||"–")} · ${fmtT(m.created_at)}${m.error?`<div class="muted" style="font-size:12px">${esc(m.error.slice(0,140))}</div>`:""}</div>`).join("")}`:""}
       </div>
       <div><h3>Protokoll</h3><div class="log">${r.events.map(e=>`<div class="log-i t-${e.type}"><span class="lt">${fmtT(e.at)}</span><span class="le">${EV[e.type]||e.type}</span><span class="ld">${evDetail(e,st)}</span></div>`).join("")}</div></div>
     </div>`;
+    box.querySelectorAll(".to-inc").forEach(a=>a.onclick=e=>{ e.preventDefault(); IF.q=a.dataset.no; IF.filter="all"; go("incidents"); });
     const save=box.querySelector(".t-save");
     if(save) save.onclick=async()=>{ try{ const st2=box.querySelector(".t-status").value, note=box.querySelector(".t-note").value.trim();
       await api("update_ticket",{id,status:st2===(s.ticket_status||"neu")&&!note?null:st2,note}); toast("Gespeichert ✓"); await renderAkte(id,box);
@@ -370,6 +370,67 @@ async function renderAkte(id,box){
     box.querySelector(".t-copy").onclick=async e=>{
       const txt=[`Akte ${s.ticket_no||s.id}`,...facts.map(([k,v])=>`${k}: ${v.replace(/<[^>]+>/g,"")}`),"","Protokoll:",...r.events.map(ev=>`${fmtT(ev.at)}  ${EV[ev.type]||ev.type}  ${evDetail(ev,st).replace(/<br>/g," · ").replace(/<[^>]+>/g,"")}`),
         ...(s.notes||[]).length?["","Notizen:",...s.notes.map(n=>`${fmtDT(n.at)} ${n.status?"["+TST[n.status][0]+"] ":""}${n.text||""}`)]:[]].join("\n");
+      try{ await navigator.clipboard.writeText(txt); e.target.textContent="Kopiert ✓"; }catch(err){ toast("Kopieren nicht möglich",true); } };
+  }catch(e){ box.innerHTML=`<span class="muted">${esc(e.message)}</span>`; }
+}
+
+/* ---------- Störungen (je Ladepunkt eine offene) ---------- */
+let IF={q:"",filter:"open"};
+async function incidentsView(){
+  if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Störungen</h1><p class="sub" style="margin:0">Je Ladepunkt höchstens eine offene Störung – weitere Meldungen werden angehängt. Offene Störungen sehen Kunden in der App. „Erledigt“ gibt den Ladepunkt frei und informiert eingetragene Kunden per Mail.</p></div></div>
+  <div class="card" style="padding:12px 14px"><div class="row">
+    <input id="iq" type="search" placeholder="🔎 Vorgangsnummer (ST-…)" style="flex:1;min-width:220px;font-size:15px" value="${esc(IF.q)}">
+    <div class="seg" id="imode">${[["open","Offen"],["erledigt","Erledigt"],["all","Alle"]].map(([k,l])=>`<button data-m="${k}" class="${IF.filter===k?"on":""}">${l}</button>`).join("")}</div>
+  </div></div>
+  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Vorgang</th><th>Projekt</th><th>Ladepunkt</th><th>Problem</th><th>Seit</th><th>Meldungen</th><th>Status</th></tr></thead><tbody id="ib"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  let h; $("#iq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ IF.q=$("#iq").value.trim(); loadIncidents(); },300); };
+  document.querySelectorAll("#imode button").forEach(b=>b.onclick=()=>{ IF.filter=b.dataset.m; document.querySelectorAll("#imode button").forEach(x=>x.classList.toggle("on",x===b)); loadIncidents(); });
+  loadIncidents();
+}
+async function loadIncidents(){
+  try{
+    const r=await api("incidents",{filter:IF.q?"all":IF.filter,q:IF.q}), tb=$("#ib"); if(!tb) return;
+    tb.innerHTML=r.incidents.length?r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
+      return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b></td>
+        <td>${esc(i.connector?cpLabel(st,i.connector):"–")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td>
+        <td>${i.reports}×${i.subscribers?` · 📧 ${i.subscribers}`:""}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span></td></tr>
+        <tr class="akte hidden" data-for="${esc(i.ticket_no)}"><td colspan="8"><div class="akte-in">Lade …</div></td></tr>`; }).join("")
+      :`<tr><td colspan="8" class="muted">${IF.q?"Nichts gefunden.":IF.filter==="open"?"Keine offenen Störungen 🎉":"Keine Einträge."}</td></tr>`;
+    tb.querySelectorAll("tr.click").forEach(row=>row.onclick=()=>toggleInc(row.dataset.no));
+    if(r.incidents.length===1) toggleInc(r.incidents[0].ticket_no);
+  }catch(e){ toast(e.message,true); }
+}
+async function toggleInc(no){
+  const row=document.querySelector(`tr.akte[data-for="${no}"]`), head=document.querySelector(`tr.click[data-no="${no}"]`);
+  const open=row.classList.toggle("hidden")===false; head.querySelector(".chev").textContent=open?"▾":"▸"; head.classList.toggle("open",open);
+  if(open) await renderInc(no,row.querySelector(".akte-in"));
+}
+async function renderInc(no,box){
+  try{
+    const r=await api("incident",{ticket_no:no}), i=r.incident, st=stOf(i.station_id);
+    const facts=[["Vorgang",`<code>${esc(i.ticket_no)}</code>`],["Projekt",esc(st?(st.project_id||st.id):i.station_id)+(st&&st.address?" · "+esc(st.address):"")],
+      ["Ladepunkt",esc(i.connector?cpLabel(st,i.connector):"–")+(evseOf(st,i.connector)?` · <code>${esc(evseOf(st,i.connector))}</code>`:"")],["Problem",esc(i.title||"–")],
+      ["Erste Meldung",new Date(i.created_at).toLocaleString("de-DE")],["Letzte Meldung",new Date(i.last_report_at).toLocaleString("de-DE")],["Meldungen",i.reports+"×"],
+      ["Info-Mail an",(i.subscribers||[]).length?(i.subscribers.map(x=>esc(x.email)).join(", ")):"–"],...(i.resolved_at?[["Erledigt",new Date(i.resolved_at).toLocaleString("de-DE")]]:[])];
+    box.innerHTML=`<div class="akte-grid">
+      <div><h3>Störung</h3><dl>${facts.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+        <h3 style="margin-top:16px">Bearbeitung</h3>
+        <div class="row"><select class="i-status" style="width:auto">${Object.entries(TST).map(([k,v])=>`<option value="${k}" ${k===i.status?"selected":""}>${v[0]}</option>`).join("")}</select></div>
+        <textarea class="i-note" rows="2" placeholder="Interne Notiz (z. B. Techniker beauftragt, Kunde zurückgerufen …)" style="margin-top:8px"></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn sm i-save">Speichern</button><button class="btn ghost sm i-copy">Kopieren</button><button class="btn ghost sm i-sess">Kundenkontakte ansehen</button></div>
+        <div class="hint">„Erledigt“: Ladepunkt ist in der App sofort wieder frei${(i.subscribers||[]).length?`, ${i.subscribers.length} Kunde(n) bekommen eine Info-Mail`:""}.</div>
+        <div class="notes">${(i.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)}</span>${n.status?` <span class="badge ${TST[n.status][1]==="ok"?"":TST[n.status][1]}">${TST[n.status][0]}</span>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div>
+        ${r.photos.length?`<h3 style="margin-top:16px">Fotos</h3><div class="row">${r.photos.map(p=>`<a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join("")}</div>`:""}
+      </div>
+      <div><h3>Meldungen von Kunden</h3><div class="log">${r.reports.map(e=>`<div class="log-i t-${e.type}"><span class="lt">${fmtDT(e.at)}</span><span class="le">${EV[e.type]||e.type}</span><span class="ld">${evDetail(e,st)}</span></div>`).join("")||'<span class="muted">–</span>'}</div></div>
+    </div>`;
+    box.querySelector(".i-save").onclick=async()=>{ try{ const s2=box.querySelector(".i-status").value, note=box.querySelector(".i-note").value.trim();
+      if(s2==="erledigt"&&i.status!=="erledigt"&&!confirm(`${i.ticket_no} auf „erledigt“ setzen? Der Ladepunkt wird in der App wieder freigegeben${(i.subscribers||[]).length?" und "+i.subscribers.length+" Kunde(n) per Mail informiert":""}.`)) return;
+      const res=await api("update_incident",{ticket_no:no,status:s2,note}); toast(res.informed?`Gespeichert ✓ · ${res.informed} Kunde(n) informiert`:"Gespeichert ✓"); loadIncidents(); }catch(e){ toast(e.message,true); } };
+    box.querySelector(".i-sess").onclick=()=>{ TF.q=no; TF.mode="all"; go("tickets"); };
+    box.querySelector(".i-copy").onclick=async e=>{ const txt=[...facts.map(([k,v])=>`${k}: ${v.replace(/<[^>]+>/g,"")}`),"","Meldungen:",...r.reports.map(ev=>`${fmtDT(ev.at)}  ${EV[ev.type]||ev.type}  ${evDetail(ev,st).replace(/<br>/g," · ").replace(/<[^>]+>/g,"")}`),
+        ...(i.notes||[]).length?["","Notizen:",...i.notes.map(n=>`${fmtDT(n.at)} ${n.status?"["+TST[n.status][0]+"] ":""}${n.text||""}`)]:[]].join("\n");
       try{ await navigator.clipboard.writeText(txt); e.target.textContent="Kopiert ✓"; }catch(err){ toast("Kopieren nicht möglich",true); } };
   }catch(e){ box.innerHTML=`<span class="muted">${esc(e.message)}</span>`; }
 }
