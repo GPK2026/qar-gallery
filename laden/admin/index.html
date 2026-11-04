@@ -55,6 +55,11 @@ input[readonly]{background:#f6f7f6;color:var(--muted)}
 .form{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
 .c3{grid-column:span 3}.c4{grid-column:span 4}.c6{grid-column:span 6}.c8{grid-column:span 8}.c12{grid-column:span 12}
 .hint{font-size:12px;color:var(--muted);margin-top:4px}
+.ch-closed #chs,.ch-closed .ch-only{display:none}.ch-closed .ch-top{margin-bottom:0!important}
+.fold-btn{border:0;background:none;font-size:16px;color:var(--muted);padding:0 2px;cursor:pointer;width:20px}
+.ch-sum{display:flex;align-items:center;gap:10px;cursor:pointer;margin:-4px 0 10px;font-size:14px;user-select:none}
+.ch-sum .fold-i{color:var(--muted);width:14px}
+.charger.fold{padding:10px 14px}.charger.fold .ch-sum{margin:0}.charger.fold .ch-body{display:none}
 .charger{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;background:#fbfcfb}
 .ch-head{display:grid;grid-template-columns:110px 1fr auto;gap:10px;align-items:end}
 .lp{display:grid;grid-template-columns:70px 150px 90px 1fr 36px;gap:8px;align-items:center;margin-top:8px}
@@ -330,7 +335,8 @@ function renderEditor(){
     <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_active" style="width:auto" ${E.active!==false?"checked":""}> Aktiv (in der Kunden-App erreichbar)</label></div>
   </div></div>
 
-  <div class="card"><div class="row" style="margin-bottom:10px"><h2 style="margin:0">Charger & Ladepunkte</h2><span class="muted">${E.chargers.length} Charger · ${E.chargers.reduce((a,c)=>a+c.connectors.length,0)} Ladepunkte</span><div class="sp"></div><button class="btn ghost sm" id="addCh">+ Charger</button></div>
+  <div class="card ${CH_OPEN?"":"ch-closed"}" id="chCard"><div class="row ch-top" style="margin-bottom:10px"><button class="fold-btn" id="chFold" title="ein-/ausklappen">${CH_OPEN?"▾":"▸"}</button><h2 style="margin:0;cursor:pointer" id="chFold2">Charger & Ladepunkte</h2><span class="muted">${E.chargers.length} Charger · ${E.chargers.reduce((a,c)=>a+c.connectors.length,0)} Ladepunkte</span><div class="sp"></div>
+      <button class="btn ghost sm ch-only" id="chAll">${E.chargers.every(chFolded)?"Alle aufklappen":"Alle zuklappen"}</button><button class="btn ghost sm" id="addCh">+ Charger</button></div>
     <div id="chs">${E.chargers.map((c,i)=>chargerHTML(c,i)).join("")}</div></div>
 
   <div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">Checklisten (Maintenance)</h2><div class="sp"></div><a href="#" id="toLists" class="muted" style="font-size:13px">Checklisten bearbeiten ›</a></div>
@@ -341,7 +347,10 @@ function renderEditor(){
   ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon QR-Code-Aufrufe, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
   $("#back").onclick=projectsView;
   $("#save").onclick=save;
-  $("#addCh").onclick=()=>{ collect(); const n=E.chargers.length+1; E.chargers.push({label:"LS#"+n,model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}); renderEditor(); };
+  const tgl=()=>{ CH_OPEN=!CH_OPEN; try{ localStorage.setItem("hc_ch",CH_OPEN?"1":"0"); }catch(e){} $("#chCard").classList.toggle("ch-closed",!CH_OPEN); $("#chFold").textContent=CH_OPEN?"▾":"▸"; };
+  $("#chFold").onclick=tgl; $("#chFold2").onclick=tgl;
+  $("#chAll").onclick=()=>{ collect(); const v=!E.chargers.every(chFolded); E.chargers.forEach(c=>setFold(c,v)); renderEditor(); };
+  $("#addCh").onclick=()=>{ collect(); E.chargers.forEach(c=>setFold(c,true)); CH_OPEN=true; const n=E.chargers.length+1; E.chargers.push({label:"LS#"+n,model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}); setFold(E.chargers[E.chargers.length-1],false); renderEditor(); };
   wireChargers(); fillClAssign(isNew);
   $("#toLists").onclick=e=>{ e.preventDefault(); FF.tab="lists"; go("field"); };
   if(!isNew){ renderQRs(); $("#del").onclick=del; wireImage(); }
@@ -356,8 +365,15 @@ function wireImage(){
     try{ const r=await api("upload_image",{id:E.original_id,data}); const im=$("#stImg"); im.style.display=""; $("#noImg").style.display="none"; im.src=r.url; toast("Bild gespeichert – in der App sichtbar ✓"); }catch(e){ toast(e.message,true); } };
   $("#imgDel").onclick=async()=>{ try{ await api("delete_image",{id:E.original_id}); $("#stImg").style.display="none"; $("#noImg").style.display="flex"; toast("Bild entfernt"); }catch(e){ toast(e.message,true); } };
 }
+/* Klappbar: ganze Karte (gemerkt) und jeder Charger einzeln (Zustand nicht gespeichert) */
+let CH_OPEN=(()=>{ try{ return localStorage.getItem("hc_ch")!=="0"; }catch(e){ return true; } })();
+const chFolded=c=>c.__fold===undefined?(E&&E.chargers&&E.chargers.length>3):c.__fold;
+const setFold=(c,v)=>Object.defineProperty(c,"__fold",{value:v,writable:true,configurable:true,enumerable:false});
 function chargerHTML(c,i){
-  return `<div class="charger" data-ci="${i}">
+  const f=chFolded(c), kinds=[...new Set(c.connectors.map(x=>x.t+(x.kw?" "+x.kw+" kW":"")))].join(" · "), ev=c.connectors.filter(x=>x.evse).length;
+  return `<div class="charger ${f?"fold":""}" data-ci="${i}">
+    <div class="ch-sum" data-act="fold"><span class="fold-i">${f?"▸":"▾"}</span><b>${esc(c.label||"Charger "+(i+1))}</b><span class="muted">${c.connectors.length} Ladepunkt${c.connectors.length>1?"e":""}${kinds?" · "+esc(kinds):""}${c.model?" · "+esc(c.model):""}</span><span class="sp"></span>${ev<c.connectors.length?`<span class="badge amber">${c.connectors.length-ev} ohne EVSE-ID</span>`:`<span class="badge">EVSE ✓</span>`}</div>
+    <div class="ch-body">
     <div class="ch-head">
       <div><label>Bezeichnung</label><input class="c_label" value="${esc(c.label)}"></div>
       <div><label>Modell / Seriennummer (intern)</label><input class="c_model" value="${esc(c.model)}"></div>
@@ -372,12 +388,13 @@ function chargerHTML(c,i){
     </div>`).join("")}
     <div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="addlp">+ Ladepunkt</button>
       <span class="muted" style="margin-left:8px">EVSE-Basis:</span><input class="c_base" style="width:240px" placeholder="DE*CPW*E1234673064"><button class="btn ghost sm" data-act="fill">leere EVSE-IDs ausfüllen</button></div>
-  </div>`;
+  </div></div>`;
 }
 function wireChargers(){
   document.querySelectorAll(".charger").forEach(el=>{
     const i=+el.dataset.ci;
     el.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{ collect(); const c=E.chargers[i], a=b.dataset.act;
+      if(a==="fold"){ setFold(c,!chFolded(c)); el.classList.toggle("fold",chFolded(c)); el.querySelector(".fold-i").textContent=chFolded(c)?"▸":"▾"; const all=$("#chAll"); if(all) all.textContent=E.chargers.every(chFolded)?"Alle aufklappen":"Alle zuklappen"; return; }
       if(a==="rm"){ if(E.chargers.length<2) return toast("Mindestens ein Charger",true); E.chargers.splice(i,1); }
       if(a==="up"&&i>0) [E.chargers[i-1],E.chargers[i]]=[E.chargers[i],E.chargers[i-1]];
       if(a==="down"&&i<E.chargers.length-1) [E.chargers[i+1],E.chargers[i]]=[E.chargers[i],E.chargers[i+1]];
