@@ -17,10 +17,10 @@ button,input,select,textarea{font:inherit}
 button{cursor:pointer}
 header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
 header .in{max-width:1180px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;white-space:nowrap}
 .logo svg{width:22px;height:28px}
 .logo small{font-weight:500;color:var(--muted);margin-left:6px}
-nav{display:flex;gap:4px;margin-left:24px}
+nav{display:flex;gap:2px;margin-left:12px}
 nav button{background:none;border:0;padding:8px 12px;border-radius:8px;color:var(--muted);font-weight:600}
 nav button.on{background:var(--brand-soft);color:#08603d}
 .sp{flex:1}
@@ -98,14 +98,56 @@ dt{color:var(--muted)}dd{margin:0}
 .mail-i{font-size:13px;padding:5px 0}
 @media (max-width:900px){.akte-grid{grid-template-columns:1fr}.log-i{grid-template-columns:56px 1fr}.log-i .ld{grid-column:1 / -1}}
 .hidden{display:none!important}
+#gs{width:220px;border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;background:#f8faf9}
+#gs:focus{outline:2px solid var(--brand-soft);border-color:var(--brand);background:#fff}
+.dates{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dates input[type=date]{width:auto;padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:13px}
+.dates .chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:5px 10px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.dates .chip.on{border-color:var(--brand);background:var(--brand-soft);color:#08603d}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.kpi .k{color:var(--muted);font-size:12.5px;font-weight:600}
+.kpi .v{font-size:28px;font-weight:800;letter-spacing:-.5px;margin-top:4px}
+.kpi .s{color:var(--muted);font-size:12px;margin-top:2px}
+.kpi.bad .v{color:#b42318}
+.up-row{display:grid;grid-template-columns:150px 1fr 64px;align-items:center;gap:10px;padding:4px 0}
+.up-row .lbl{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.up-row .lbl small{color:var(--muted)}
+.up-bar{position:relative;height:16px;border-radius:4px;background:#d5eed5;overflow:hidden}
+.up-bar i{position:absolute;top:0;bottom:0;background:#d03b3b;border-left:2px solid #fff;min-width:3px;cursor:pointer}
+.up-row .pct{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:13px}
+.up-axis{display:grid;grid-template-columns:150px 1fr 64px;gap:10px;color:var(--muted);font-size:11px;margin-top:4px}
+.up-axis div{display:flex;justify-content:space-between}
+.proj-h{font-weight:700;margin:14px 0 4px;font-size:13.5px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-bottom:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend b{width:10px;height:10px;border-radius:3px;display:inline-block}
+.bars{display:flex;align-items:flex-end;gap:2px;height:180px;border-bottom:1px solid var(--line);position:relative}
+.bars .col{flex:1;display:flex;flex-direction:column-reverse;gap:2px;min-width:3px;height:100%;justify-content:flex-start;cursor:default}
+.bars .col i{display:block;border-radius:0}
+.bars .col i:last-child{border-radius:4px 4px 0 0}
+.bars .col:hover i{filter:brightness(.92)}
+.bars-x{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:4px}
+.hb{display:grid;grid-template-columns:minmax(120px,240px) 1fr 40px;gap:10px;align-items:center;padding:3px 0;font-size:13px}
+.hb .t{height:12px;background:#2a78d6;border-radius:0 4px 4px 0}
+.tip{position:fixed;z-index:50;background:#14201b;color:#fff;font-size:12.5px;line-height:1.45;padding:8px 10px;border-radius:8px;pointer-events:none;max-width:280px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.res-g h3{margin:18px 0 8px}
+.res{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:8px;color:var(--ink)}
+.res:hover{border-color:var(--brand);box-shadow:0 3px 10px rgba(0,0,0,.05)}
+.res .m{color:var(--muted);font-size:12.5px;margin-top:2px}
+.res mark{background:#fff1b8;border-radius:3px;padding:0 2px}
+.two{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+@media (max-width:1240px){.logo small{display:none}}
+@media (max-width:900px){.two{grid-template-columns:1fr}#gs{width:100%}#gsF{order:9;width:100%}}
 @media (max-width:760px){.c3,.c4,.c6,.c8{grid-column:span 12}.lp{grid-template-columns:50px 1fr 70px 36px}.lp .evse{grid-column:2 / span 3}nav{margin-left:0}header .in{flex-wrap:wrap}}
 </style>
 </head>
 <body>
 <header><div class="in">
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="projects" class="on">Projekte</button><button data-v="incidents">Störungen</button><button data-v="tickets">Kundenkontakte</button><button data-v="settings">Einstellungen</button></nav>
+  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="incidents">Störungen</button><button data-v="tickets">Kundenkontakte</button><button data-v="projects">Projekte</button><button data-v="settings">Einstellungen</button></nav>
   <div class="sp"></div>
+  <form id="gsF" class="hidden" autocomplete="off"><input id="gs" type="search" placeholder="🔎 Alles durchsuchen …" title="Volltextsuche: Vorgangsnummer, E-Mail, Telefon, Ladekarte, EVSE-ID, Chat, Beschreibung, Notizen …"></form>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
 </div></header>
 <div class="wrap" id="main"></div>
@@ -132,7 +174,7 @@ async function api(action,payload={}){
 function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#logout").classList.add("hidden"); loginView(); }
 $("#logout").onclick=logout;
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>go(b.dataset.v));
-function go(v){ document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({projects:projectsView,incidents:incidentsView,tickets:ticketsView,settings:settingsView})[v](); }
+function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,tickets:ticketsView,settings:settingsView})[v](); }
 
 /* ---------- Login ---------- */
 function loginView(){
@@ -143,7 +185,8 @@ function loginView(){
     try{ const r=await api("login",{password:$("#pw").value}); token=r.token; try{ sessionStorage.setItem("hc_admin",token); }catch(e){} start(); }
     catch(err){ toast(err.message,true); } };
 }
-function start(){ $("#nav").classList.remove("hidden"); $("#logout").classList.remove("hidden"); go("projects"); }
+function start(){ $("#nav").classList.remove("hidden"); $("#gsF").classList.remove("hidden"); $("#logout").classList.remove("hidden"); go("overview"); }
+$("#gsF").onsubmit=e=>{ e.preventDefault(); SQ.q=$("#gs").value.trim(); if(SQ.q.length>=2) go("search"); };
 
 /* ---------- Projekte ---------- */
 const lpCount=s=>(s.chargers||[]).reduce((a,c)=>a+(c.connectors||[]).length,0);
@@ -301,15 +344,17 @@ async function ticketsView(){
   main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Kundenkontakte</h1><p class="sub" style="margin:0">Jeder Besuch über den QR-Code als Akte – zum Aufklappen.</p></div></div>
   <div class="card" style="padding:12px 14px"><div class="row">
     <input id="tq" type="search" placeholder="🔎 Vorgangsnummer (ST-…), E-Mail, Telefon, EVSE-ID oder Projekt" style="flex:1;min-width:260px;font-size:15px" value="${esc(TF.q)}">
+    ${datesHTML(TF,"tf")}
     <div class="seg" id="tmode">${[["all","Alle Kontakte"],["tickets","Nur Meldungen"],["neu","Neu"],["in_arbeit","In Bearbeitung"],["erledigt","Erledigt"]].map(([k,l])=>`<button data-m="${k}" class="${TF.mode===k?"on":""}">${l}</button>`).join("")}</div>
   </div></div>
   <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Zeit</th><th>Projekt</th><th>Ladepunkt</th><th>Ergebnis</th><th>Vorgang</th><th>Status</th><th>Kontakt</th></tr></thead><tbody id="tb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  wireDates(TF,"tf",loadSessions);
   let h; $("#tq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ TF.q=$("#tq").value.trim(); loadSessions(); },300); };
   document.querySelectorAll("#tmode button").forEach(b=>b.onclick=()=>{ TF.mode=b.dataset.m; document.querySelectorAll("#tmode button").forEach(x=>x.classList.toggle("on",x===b)); loadSessions(); });
   loadSessions();
 }
 async function loadSessions(){
-  const p={limit:150,q:TF.q}; if(TF.mode==="tickets") p.only_tickets=true; if(["neu","in_arbeit","erledigt"].includes(TF.mode)) p.status=TF.mode;
+  const p={limit:150,q:TF.q,from:TF.from,to:TF.to}; if(TF.mode==="tickets") p.only_tickets=true; if(["neu","in_arbeit","erledigt"].includes(TF.mode)) p.status=TF.mode;
   try{
     const r=await api("sessions",p), tb=$("#tb"); if(!tb) return;
     tb.innerHTML=r.sessions.length?r.sessions.map(s=>{ const st=stOf(s.station_id), o=OUT[s.outcome||"open"]||OUT.open, ts=s.ticket_no?TST[s.ticket_status||"neu"]:null;
@@ -381,16 +426,18 @@ async function incidentsView(){
   main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Störungen</h1><p class="sub" style="margin:0">Je Ladepunkt höchstens eine offene Störung – weitere Meldungen werden angehängt. Offene Störungen sehen Kunden in der App. „Erledigt“ gibt den Ladepunkt frei und informiert eingetragene Kunden per Mail.</p></div></div>
   <div class="card" style="padding:12px 14px"><div class="row">
     <input id="iq" type="search" placeholder="🔎 Vorgangsnummer (ST-…)" style="flex:1;min-width:220px;font-size:15px" value="${esc(IF.q)}">
+    ${datesHTML(IF,"if")}
     <div class="seg" id="imode">${[["open","Offen"],["erledigt","Erledigt"],["all","Alle"]].map(([k,l])=>`<button data-m="${k}" class="${IF.filter===k?"on":""}">${l}</button>`).join("")}</div>
   </div></div>
   <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Vorgang</th><th>Projekt</th><th>Ladepunkt</th><th>Problem</th><th>Seit</th><th>Meldungen</th><th>Status</th></tr></thead><tbody id="ib"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  wireDates(IF,"if",loadIncidents);
   let h; $("#iq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ IF.q=$("#iq").value.trim(); loadIncidents(); },300); };
   document.querySelectorAll("#imode button").forEach(b=>b.onclick=()=>{ IF.filter=b.dataset.m; document.querySelectorAll("#imode button").forEach(x=>x.classList.toggle("on",x===b)); loadIncidents(); });
   loadIncidents();
 }
 async function loadIncidents(){
   try{
-    const r=await api("incidents",{filter:IF.q?"all":IF.filter,q:IF.q}), tb=$("#ib"); if(!tb) return;
+    const r=await api("incidents",{filter:IF.q?"all":IF.filter,q:IF.q,from:IF.from,to:IF.to}), tb=$("#ib"); if(!tb) return;
     tb.innerHTML=r.incidents.length?r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
       return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b></td>
         <td>${esc(i.connector?cpLabel(st,i.connector):"–")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td>
@@ -433,6 +480,126 @@ async function renderInc(no,box){
         ...(i.notes||[]).length?["","Notizen:",...i.notes.map(n=>`${fmtDT(n.at)} ${n.status?"["+TST[n.status][0]+"] ":""}${n.text||""}`)]:[]].join("\n");
       try{ await navigator.clipboard.writeText(txt); e.target.textContent="Kopiert ✓"; }catch(err){ toast("Kopieren nicht möglich",true); } };
   }catch(e){ box.innerHTML=`<span class="muted">${esc(e.message)}</span>`; }
+}
+
+/* ---------- Zeitraum-Auswahl (wiederverwendbar) ---------- */
+const isoD=d=>{ const x=new Date(d); return new Date(x.getTime()-x.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+const PRESETS=[["7","7 Tage"],["30","30 Tage"],["90","90 Tage"],["all","Alle"]];
+function datesHTML(F,k){ return `<div class="dates" id="${k}D">${PRESETS.map(([d,l])=>`<button type="button" class="chip ${F.preset===d?"on":""}" data-p="${d}">${l}</button>`).join("")}
+  <input type="date" data-k="from" value="${F.from||""}" title="von"> – <input type="date" data-k="to" value="${F.to||""}" title="bis"></div>`; }
+function setPreset(F,p){ F.preset=p; if(p==="all"){ F.from=""; F.to=""; } else { F.from=isoD(Date.now()-(+p-1)*864e5); F.to=isoD(Date.now()); } }
+function wireDates(F,k,reload){ const box=$("#"+k+"D");
+  box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ setPreset(F,b.dataset.p); box.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b)); box.querySelector('[data-k=from]').value=F.from; box.querySelector('[data-k=to]').value=F.to; reload(); });
+  box.querySelectorAll("input").forEach(i=>i.onchange=()=>{ F[i.dataset.k]=i.value; F.preset=""; box.querySelectorAll(".chip").forEach(x=>x.classList.remove("on")); reload(); }); }
+Object.assign(IF,{preset:"all",from:"",to:""}); Object.assign(TF,{preset:"all",from:"",to:""});
+
+/* Tooltip für Diagramme */
+const tipEl=document.createElement("div"); tipEl.className="tip hidden"; document.body.appendChild(tipEl);
+document.addEventListener("mousemove",e=>{ const t=e.target.closest&&e.target.closest("[data-tip]");
+  if(!t){ tipEl.classList.add("hidden"); return; } tipEl.innerHTML=t.dataset.tip; tipEl.classList.remove("hidden");
+  const w=tipEl.offsetWidth, h=tipEl.offsetHeight; tipEl.style.left=Math.min(innerWidth-w-8,e.clientX+14)+"px"; tipEl.style.top=Math.max(8,e.clientY-h-12)+"px"; });
+
+/* ---------- Volltextsuche ---------- */
+let SQ={q:"",preset:"all",from:"",to:""};
+const hl=(t,q)=>{ const s=esc(t||""); if(!q) return s; const i=s.toLowerCase().indexOf(esc(q).toLowerCase()); return i<0?s:s.slice(0,i)+"<mark>"+s.slice(i,i+esc(q).length)+"</mark>"+s.slice(i+esc(q).length); };
+async function searchView(){
+  if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("on"));
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Suche</h1><p class="sub" style="margin:0">Durchsucht Vorgänge, Kundenkontakte (Chat, Beschreibung, E-Mail, Telefon, Ladekarte), Notizen und Projekte (Adresse, EVSE-IDs). Treffer anklicken → Akte öffnet sich.</p></div></div>
+  <div class="card" style="padding:12px 14px"><div class="row"><input id="sq" type="search" style="flex:1;min-width:240px;font-size:15px" value="${esc(SQ.q)}" placeholder="Suchbegriff …">${datesHTML(SQ,"sq")}</div></div>
+  <div id="sres"><div class="muted">Suche …</div></div>`;
+  wireDates(SQ,"sq",runSearch);
+  let h; $("#sq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ SQ.q=$("#sq").value.trim(); $("#gs").value=SQ.q; runSearch(); },300); };
+  runSearch();
+}
+async function runSearch(){
+  const box=$("#sres"); if(!box) return;
+  if(SQ.q.length<2){ box.innerHTML='<div class="muted">Mindestens 2 Zeichen eingeben.</div>'; return; }
+  try{
+    const r=await api("search",{q:SQ.q,from:SQ.from,to:SQ.to}), q=SQ.q;
+    const n=r.incidents.length+r.sessions.length+r.stations.length;
+    box.innerHTML=!n?`<div class="card muted">Keine Treffer für „${esc(q)}“${SQ.from||SQ.to?" im gewählten Zeitraum":""}.</div>`:`
+    ${r.incidents.length?`<div class="res-g"><h3>Störungen (${r.incidents.length})</h3>${r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
+      return `<button class="res" data-inc="${esc(i.ticket_no)}"><b><code>${hl(i.ticket_no,q)}</code></b> · ${esc(st?(st.project_id||st.id):i.station_id)} · ${esc(cpLabel(st,i.connector))} <span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span>
+        <div class="m">${fmtDT(i.created_at)} · ${esc(i.title||"")} · ${i.reports}× gemeldet · ${hl(i.hit,q)}</div></button>`; }).join("")}</div>`:""}
+    ${r.sessions.length?`<div class="res-g"><h3>Kundenkontakte (${r.sessions.length})</h3>${r.sessions.map(s=>{ const st=stOf(s.station_id), o=OUT[s.outcome||"open"]||OUT.open;
+      return `<button class="res" data-ses="${esc(s.id)}"><b>${fmtDT(s.started_at)}</b> · ${esc(st?(st.project_id||st.id):s.station_id)} · ${esc(cpLabel(st,s.connector))} <span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span>
+        <div class="m">${esc(EV[s.hit_type]||(s.hit_type==="contact"?"Kontakt":s.hit_type))}: ${hl(s.hit,q)}</div></button>`; }).join("")}</div>`:""}
+    ${r.stations.length?`<div class="res-g"><h3>Projekte (${r.stations.length})</h3>${r.stations.map(s=>`<button class="res" data-st="${esc(s.id)}"><b>${hl(s.project_id||s.id,q)}</b> · ${hl(s.name,q)}<div class="m">${hl(s.address,q)}</div></button>`).join("")}</div>`:""}`;
+    box.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>{ IF.q=b.dataset.inc; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
+    box.querySelectorAll("[data-ses]").forEach(b=>b.onclick=()=>{ TF.q=b.dataset.ses; TF.mode="all"; setPreset(TF,"all"); go("tickets"); });
+    box.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{ const s=STATIONS.find(x=>x.id===b.dataset.st); if(s){ document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x.dataset.v==="projects")); editView(s); } });
+  }catch(e){ box.innerHTML=`<div class="card muted">${esc(e.message)}</div>`; }
+}
+
+/* ---------- Übersicht (Kennzahlen, Verfügbarkeit, Verlauf) ---------- */
+let OF={preset:"30",station:""}; setPreset(OF,"30");
+const OUTC=[["solved","Selbst gelöst","#2a78d6"],["ticket","Störung gemeldet","#eb6834"],["hotline","Hotline","#1baf7a"],["chat","Chat","#eda100"],["open","Ohne Ergebnis","#b9beba"]];
+async function overviewView(){
+  if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Übersicht</h1><p class="sub" style="margin:0">Verfügbarkeit, Störungen und Kundenkontakte auf einen Blick.</p></div><div class="sp"></div>
+    <select id="oSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${OF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select></div>
+  <div class="card" style="padding:12px 14px">${datesHTML(OF,"of")}</div>
+  <div id="ov"><div class="muted">Lade …</div></div>`;
+  $("#oSt").onchange=()=>{ OF.station=$("#oSt").value; loadOverview(); };
+  wireDates(OF,"of",loadOverview);
+  loadOverview();
+}
+const fmtDur=ms=>{ const h=ms/36e5; return h<1?Math.round(h*60)+" Min.":h<48?(Math.round(h*10)/10).toLocaleString("de-DE")+" Std.":(Math.round(h/24*10)/10).toLocaleString("de-DE")+" Tage"; };
+async function loadOverview(){
+  const box=$("#ov"); if(!box) return;
+  try{
+    const r=await api("overview",{from:OF.from||isoD(Date.now()-364*864e5),to:OF.to,station:OF.station});
+    const F=+new Date(r.from), T=Math.min(+new Date(r.to),+new Date(r.now)), span=Math.max(1,T-F);
+    // Verfügbarkeit je Ladepunkt (aus gemeldeten Störungen)
+    const rows=[]; let downAll=0, cpN=0;
+    for(const st of r.stations){ const cps=st.connectors||[];
+      const list=cps.map(c=>{ const segs=r.incidents.filter(i=>i.station_id===st.id&&i.connector===c.n).map(i=>({i,a:Math.max(F,+new Date(i.created_at)),b:Math.min(T,i.resolved_at?+new Date(i.resolved_at):T)})).filter(x=>x.b>x.a).sort((x,y)=>x.a-y.a);
+        let down=0,end=F; for(const s of segs){ const a=Math.max(s.a,end); if(s.b>a){ down+=s.b-a; end=s.b; } }
+        downAll+=down; cpN++; return {c,segs,down,pct:100*(1-down/span)}; });
+      rows.push({st,list}); }
+    const avail=cpN?100*(1-downAll/(span*cpN)):100;
+    const openNow=r.incidents.filter(i=>i.status!=="erledigt").length;
+    const inWin=r.incidents.filter(i=>+new Date(i.created_at)>=F);
+    const solvedInc=r.incidents.filter(i=>i.resolved_at&&+new Date(i.resolved_at)>=F);
+    const mttr=solvedInc.length?solvedInc.reduce((a,i)=>a+(+new Date(i.resolved_at)-new Date(i.created_at)),0)/solvedInc.length:null;
+    // Tagesverlauf
+    const days=[]; for(let d=new Date(isoD(F)+"T12:00:00"); isoD(d)<=isoD(T); d=new Date(+d+864e5)) days.push(isoD(d));
+    const by={}; r.daily.forEach(x=>{ const k=OUTC.some(o=>o[0]===x.outcome)?x.outcome:(x.outcome==="danger"?"ticket":"open"); (by[x.d]||={})[k]=((by[x.d]||{})[k]||0)+x.n; });
+    const tot=days.reduce((a,d)=>a+OUTC.reduce((b,o)=>b+((by[d]||{})[o[0]]||0),0),0);
+    const self=days.reduce((a,d)=>a+((by[d]||{}).solved||0),0);
+    const max=Math.max(1,...days.map(d=>OUTC.reduce((b,o)=>b+((by[d]||{})[o[0]]||0),0)));
+    const topP={}; inWin.forEach(i=>{ const k=i.title||"Sonstiges"; topP[k]=(topP[k]||0)+1; });
+    const top=Object.entries(topP).sort((a,b)=>b[1]-a[1]).slice(0,6), topMax=Math.max(1,...top.map(x=>x[1]));
+    const pctTxt=p=>(Math.floor(p*10)/10).toLocaleString("de-DE",{minimumFractionDigits:1})+" %";
+    box.innerHTML=`<div class="kpis">
+      <div class="kpi ${avail<98?"bad":""}"><div class="k">Verfügbarkeit Ø</div><div class="v">${pctTxt(avail)}</div><div class="s">aus Störungsmeldungen · ${cpN} Ladepunkte</div></div>
+      <div class="kpi ${openNow?"bad":""}"><div class="k">Offene Störungen</div><div class="v">${openNow}</div><div class="s">${openNow?"⚠ in der App als gestört markiert":"✓ alles frei"}</div></div>
+      <div class="kpi"><div class="k">Neue Störungen</div><div class="v">${inWin.length}</div><div class="s">${inWin.reduce((a,i)=>a+i.reports,0)} Meldungen von Kunden</div></div>
+      <div class="kpi"><div class="k">Ø Zeit bis erledigt</div><div class="v">${mttr?fmtDur(mttr):"–"}</div><div class="s">${solvedInc.length} erledigt im Zeitraum</div></div>
+      <div class="kpi"><div class="k">Kundenkontakte</div><div class="v">${tot}</div><div class="s">${tot?Math.round(100*self/tot)+" % selbst gelöst":"–"}</div></div>
+    </div>
+    <div class="card"><h2>Verfügbarkeit je Ladepunkt</h2>
+      <div class="legend"><span><b style="background:#d5eed5;border:1px solid #0ca30c"></b>✓ verfügbar</span><span><b style="background:#d03b3b"></b>⚠ Störung gemeldet (bis „erledigt“)</span><span>Quelle: Kundenmeldungen, keine Live-Daten der Säule</span></div>
+      ${rows.map(({st,list})=>`<div class="proj-h">${esc(st.project_id||st.id)}${st.name?` <span class="muted" style="font-weight:500">· ${esc(st.name)}</span>`:""}</div>
+        ${list.map(({c,segs,pct,down})=>`<div class="up-row"><div class="lbl" title="${esc(c.evse||"")}">${esc(cpLabel(st,c.n))} <small>${esc(c.t||"")}</small></div>
+          <div class="up-bar" data-tip="${esc(cpLabel(st,c.n))}<br>${c.evse?esc(c.evse)+"<br>":""}${segs.length?"gestört: "+fmtDur(down):"keine Störung gemeldet"}">${segs.map(s=>`<i style="left:${(s.a-F)/span*100}%;width:${(s.b-s.a)/span*100}%" data-tip="<b>${esc(s.i.ticket_no)}</b> · ${esc(s.i.title||"")}<br>${fmtDT(s.i.created_at)} – ${s.i.resolved_at?fmtDT(s.i.resolved_at):"offen"}<br>Dauer ${fmtDur(s.b-s.a)} · ${s.i.reports}× gemeldet" data-no="${esc(s.i.ticket_no)}"></i>`).join("")}</div>
+          <div class="pct" style="color:${pct<98?"#b42318":"var(--ink)"}">${pctTxt(pct)}</div></div>`).join("")}`).join("")||'<div class="muted">Keine Projekte.</div>'}
+      <div class="up-axis"><span></span><div><span>${fmtDT(F).split(",")[0]}</span><span>${fmtDT(F+span/2).split(",")[0]}</span><span>${+new Date(r.to)>+new Date(r.now)?"jetzt":fmtDT(T).split(",")[0]}</span></div><span></span></div>
+    </div>
+    <div class="two">
+      <div class="card"><h2>Kundenkontakte pro Tag</h2>
+        <div class="legend">${OUTC.map(o=>`<span><b style="background:${o[2]}"></b>${o[1]}</span>`).join("")}</div>
+        <div class="bars">${days.map(d=>{ const v=by[d]||{}, n=OUTC.reduce((a,o)=>a+(v[o[0]]||0),0);
+          return `<div class="col" data-tip="<b>${new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</b> · ${n} Kontakte${OUTC.filter(o=>v[o[0]]).map(o=>`<br>${o[1]}: ${v[o[0]]}`).join("")}">${OUTC.filter(o=>v[o[0]]).map(o=>`<i style="height:calc(${v[o[0]]/max*100}% - 2px);background:${o[2]}"></i>`).join("")}</div>`; }).join("")}</div>
+        <div class="bars-x"><span>${new Date(days[0]+"T12:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</span><span>max. ${max} / Tag</span><span>${new Date(days[days.length-1]+"T12:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</span></div>
+      </div>
+      <div class="card"><h2>Häufigste Störungen</h2>
+        ${top.length?top.map(([t,n])=>`<div class="hb" data-tip="${esc(t)}: ${n} Störung(en)"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t)}</span><div><div class="t" style="width:${n/topMax*100}%"></div></div><b>${n}</b></div>`).join(""):'<div class="muted">Keine Störungen im Zeitraum 🎉</div>'}
+      </div>
+    </div>`;
+    box.querySelectorAll(".up-bar i[data-no]").forEach(s=>s.onclick=()=>{ IF.q=s.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
+  }catch(e){ box.innerHTML=`<div class="card muted">${esc(e.message)}</div>`; }
 }
 
 /* ---------- Einstellungen ---------- */
