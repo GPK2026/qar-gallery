@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#ffffff">
+<title>HAPPY CHARGING Service</title>
+<link rel="icon" href="../favicon.ico" sizes="48x48">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6f5;--card:#fff;--ink:#14201b;--muted:#5d6b65;--line:#e1e6e3;--brand:#0a8f5a;--brand-soft:#e3f4ec;--warn:#b42318;--warn-soft:#fdecea;--amber:#9a6700;--amber-soft:#fff6db;--r:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:16px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:12px 16px}
+header svg{width:20px;height:26px;flex:none}
+header .t{font-weight:800;font-size:16px;flex:1;white-space:nowrap}
+header .t span{font-weight:500;color:var(--muted)}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+h1{font-size:22px;margin:0 0 6px;letter-spacing:-.3px}
+h2{font-size:16px;margin:18px 2px 10px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:14px;font-weight:700;font-size:16px;background:var(--brand);color:#fff;text-align:center}
+.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+.btn.sm{display:inline-block;width:auto;padding:8px 12px;font-size:14px;border-radius:10px}
+.btn:disabled{opacity:.5}
+.mt{margin-top:10px}
+.back{background:none;border:0;color:var(--muted);padding:4px 0 10px;font-size:15px}
+.chip{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;background:var(--brand-soft);color:#08603d}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}.chip.amber{background:var(--amber-soft);color:var(--amber)}.chip.grey{background:#eef1ef;color:var(--muted)}
+/* PIN */
+.pin-dots{display:flex;justify-content:center;gap:12px;margin:18px 0 8px}
+.pin-dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);display:block}
+.pin-dots i.on{background:var(--brand);border-color:var(--brand)}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.keys button{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px 0;font-size:22px;font-weight:700}
+.keys button:active{background:var(--brand-soft)}
+.err{color:var(--warn);text-align:center;min-height:22px;font-weight:600;font-size:14px}
+/* Station */
+.st-img{display:block;width:calc(100% + 32px);margin:-16px -16px 12px;height:130px;object-fit:cover;border-radius:var(--r) var(--r) 0 0}
+.st-img[hidden]{display:none}
+.lbl{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.inc{border-color:#f3c2bc;background:#fff7f6}
+.inc .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.tile b{font-size:15px;line-height:1.25}
+.tile small{color:var(--muted);font-size:12px;line-height:1.3}
+.rec{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #eef1ef;font-size:14px}
+.rec:first-child{border-top:0}
+/* Checkliste */
+.sel{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
+.sel button{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;font-weight:700;font-size:15px}
+.sel button.on{border-color:var(--brand);background:var(--brand-soft)}
+.cpr{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left}
+.cpr code{font-size:12px;background:#f2f5f3;border-radius:6px;padding:3px 6px}
+.prog{height:6px;background:#e7ece9;border-radius:3px;overflow:hidden;margin:10px 0 2px}
+.prog i{display:block;height:100%;background:var(--brand);transition:width .2s}
+.item{border-top:1px solid #eef1ef;padding:14px 0}
+.item:first-of-type{border-top:0}
+.item .q{font-weight:700;line-height:1.35}
+.item .q .req{color:var(--warn)}
+.item .hint{font-size:13px;color:var(--amber);background:var(--amber-soft);border-radius:10px;padding:8px 10px;margin-top:8px;line-height:1.4}
+.tri{display:grid;grid-template-columns:1fr 1fr 70px;gap:8px;margin-top:10px}
+.tri button{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px 6px;font-weight:700;font-size:15px}
+.tri button.ok.on{background:#e3f4ec;border-color:#0a8f5a;color:#08603d}
+.tri button.bad.on{background:var(--warn-soft);border-color:#d03b3b;color:var(--warn)}
+.tri button.na.on{background:#eef1ef;border-color:#9aa5a0}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.opts button{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-weight:600;font-size:14px}
+.opts button.on{border-color:var(--brand);background:var(--brand-soft)}
+input.f,textarea.f{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px;font-size:16px;margin-top:10px;background:#fff}
+textarea.f{min-height:76px;resize:vertical}
+.photo{display:flex;align-items:center;gap:10px;margin-top:10px}
+.photo label{border:1.5px dashed #b9d9c8;background:#f7fbf9;border-radius:12px;padding:10px 12px;font-weight:600;font-size:14px;color:#08603d}
+.photo input{display:none}
+.photo img{width:64px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.miss{outline:2px solid #d03b3b;outline-offset:4px;border-radius:8px}
+.check{display:flex;gap:10px;align-items:flex-start;font-weight:600;margin-top:12px}
+.check input{width:22px;height:22px;margin-top:1px;accent-color:var(--brand)}
+.big{font-size:44px;text-align:center}
+.center{text-align:center}
+.no{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:800;background:var(--brand-soft);color:#08603d;border-radius:12px;padding:12px;text-align:center;margin:10px 0}
+</style>
+</head>
+<body>
+<header>
+  <svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>
+  <div class="t">HAPPY CHARGING <span>Service</span></div>
+  <button class="btn ghost sm hidden" id="out" style="display:none">Abmelden</button>
+</header>
+<div class="wrap" id="view"></div>
+
+<script>
+const API="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-field";
+const IMG="https://xsyuhfleesstrchcwspg.supabase.co/storage/v1/object/public/charge-public/stations/";
+const $=s=>document.querySelector(s), view=$("#view");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=d=>new Date(d).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"});
+const station=decodeURIComponent((location.hash||"").slice(1)).split(".")[0]||"";
+let S={auth:null,home:null,run:null};
+try{ const a=JSON.parse(sessionStorage.getItem("hc_field")||"null"); if(a&&a.exp>Date.now()) S.auth=a; }catch(e){}
+
+async function api(action,payload={}){
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,station,token:S.auth&&S.auth.token,...payload})});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401&&j.relogin){ logout(); throw new Error(j.error||"Bitte neu anmelden"); }
+  if(!r.ok) throw new Error(j.error||("Fehler "+r.status));
+  return j;
+}
+function logout(){ S.auth=null; try{ sessionStorage.removeItem("hc_field"); }catch(e){} $("#out").style.display="none"; loginView(); }
+$("#out").onclick=logout;
+
+/* ── Anmeldung mit PIN ── */
+function loginView(msg){
+  let pin="";
+  view.innerHTML=`<div class="card center" style="padding-top:22px">
+    <div class="lbl">Service-Zugang${station?" · Standort "+esc(station):""}</div>
+    <h1 style="margin-top:6px">Persönliche PIN eingeben</h1>
+    <p class="muted small">Für Techniker, Servicefirmen, Reinigung, Elektrofachkräfte und Dienstleister. Die PIN vergibt euer Betreiber im Dashboard.</p>
+    <div class="pin-dots" id="dots"></div><div class="err" id="err">${esc(msg||"")}</div>
+    <div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-k="${n}">${n}</button>`).join("")}<button data-k="del">⌫</button><button data-k="0">0</button><button data-k="ok" style="background:var(--brand);color:#fff;border-color:var(--brand)">OK</button></div>
+    ${station?"":`<p class="err">Kein Standort im Link – bitte den QR-Code am Charger scannen.</p>`}
+    <p class="small muted" style="margin-top:16px"><a href="../#${encodeURIComponent(station)}" style="color:var(--muted)">‹ zurück zur Kunden-Hilfe</a></p></div>`;
+  const draw=()=>{ $("#dots").innerHTML=Array.from({length:Math.max(4,pin.length)},(_,i)=>`<i class="${i<pin.length?"on":""}"></i>`).join(""); };
+  draw();
+  const go=async()=>{ if(pin.length<4) return; $("#err").textContent="Prüfe …";
+    try{ const r=await api("login",{pin}); S.auth={token:r.token,staff:r.staff,exp:Date.now()+11.5*3600e3}; try{ sessionStorage.setItem("hc_field",JSON.stringify(S.auth)); }catch(e){} homeView(); }
+    catch(e){ pin=""; draw(); $("#err").textContent=e.message; } };
+  view.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{ const k=b.dataset.k;
+    if(k==="del") pin=pin.slice(0,-1); else if(k==="ok") return go(); else if(pin.length<8) pin+=k;
+    $("#err").textContent=""; draw(); });
+}
+
+/* ── Standort-Übersicht ── */
+const cpName=(st,n)=>{ const c=(st.connectors||[]).find(x=>x.n===n); if(!c) return n?"LP "+n:""; const ch=(st.chargers||[]).find(x=>x.n===c.charger); const loc=(st.connectors||[]).filter(x=>x.charger===c.charger).findIndex(x=>x.n===n)+1; return (ch?ch.label+" · ":"")+"Ladepunkt "+loc; };
+function due(l){ if(!l.interval_days) return null; if(!l.last) return "fällig"; const days=(Date.now()-new Date(l.last.finished_at))/864e5; return days>=l.interval_days?"fällig":days>=l.interval_days*.85?"bald fällig":null; }
+async function homeView(){
+  $("#out").style.display="inline-block";
+  view.innerHTML=`<div class="muted">Lade Standort …</div>`;
+  try{ S.home=await api("home"); }catch(e){ view.innerHTML=`<div class="card"><b>${esc(e.message)}</b><button class="btn ghost mt" onclick="logout()">Mit anderer PIN anmelden</button></div>`; return; }
+  const h=S.home, st=h.station, stoer=h.checklists.find(l=>l.id==="stoerung");
+  view.innerHTML=`<div class="small muted" style="margin:0 2px 8px">Angemeldet: <b style="color:var(--ink)">${esc(h.me.name)}</b> · ${esc(h.me.role_label)}${h.me.company?" · "+esc(h.me.company):""}</div>
+  <div class="card"><img class="st-img" id="stImg" hidden alt=""><div class="lbl">Standort</div><h1>${esc(st.project_id||st.id)}</h1><div class="muted">${esc(st.name||"")}${st.address?"<br>"+esc(st.address):""}</div>
+    <div class="small muted" style="margin-top:6px">${(st.chargers||[]).length} Charger · ${(st.connectors||[]).length} Ladepunkte</div></div>
+  ${h.incidents.length?`<h2>⚠️ Offene Störungen (${h.incidents.length})</h2>${h.incidents.map(i=>`<div class="card inc"><div class="row"><div><b>${esc(i.connector?cpName(st,i.connector):"Standort allgemein")}</b><br><span class="small">${esc(i.title||"")}</span><br><span class="small muted">${esc(i.ticket_no)} · seit ${fmt(i.created_at)} · ${i.reports}× gemeldet</span></div><span class="chip ${i.status==="in_arbeit"?"amber":"warn"}">${i.status==="in_arbeit"?"in Arbeit":"neu"}</span></div>
+      ${stoer?`<button class="btn mt" data-inc="${esc(i.ticket_no)}" data-cp="${i.connector||""}">🔧 Einsatz dokumentieren</button>`:""}</div>`).join("")}`:""}
+  <h2>Checklisten</h2>
+  ${h.checklists.length?`<div class="tiles">${h.checklists.map(l=>{ const d=due(l); return `<button class="tile" data-cl="${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.description||"")}</small>
+      <small>${l.last?`zuletzt ${fmt(l.last.finished_at).split(",")[0]} · ${esc(l.last.staff_name)}`:"noch nie durchgeführt"}</small>${d?`<span class="chip ${d==="fällig"?"warn":"amber"}" style="align-self:flex-start">${d}</span>`:""}</button>`; }).join("")}</div>`:`<div class="card muted">Für Ihre Rolle sind keine Checklisten freigeschaltet.</div>`}
+  <h2>Letzte Protokolle an diesem Standort</h2>
+  <div class="card">${h.recent.length?h.recent.map(r=>`<div class="rec"><span><b>${esc(r.checklist_title)}</b><br><span class="small muted">${fmt(r.finished_at)} · ${esc(r.staff_name)}${r.connector?" · "+esc(cpName(st,r.connector)):""}</span></span><span class="chip ${r.result==="ok"?"":"warn"}">${r.result==="ok"?"✓ ok":"⚠ Mängel"}</span></div>`).join(""):`<span class="muted small">Noch keine Protokolle.</span>`}</div>`;
+  const im=$("#stImg"); im.onload=()=>im.hidden=false; im.src=IMG+encodeURIComponent(st.id)+".jpg?v="+Math.floor(Date.now()/3e5);
+  view.querySelectorAll("[data-cl]").forEach(b=>b.onclick=()=>startRun(b.dataset.cl));
+  view.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>startRun("stoerung",{ticket:b.dataset.inc,connector:+b.dataset.cp||null}));
+}
+
+/* ── Checkliste durchführen ── */
+function startRun(id,opt={}){
+  const cl=S.home.checklists.find(l=>l.id===id); if(!cl) return;
+  const c=opt.connector?(S.home.station.connectors||[]).find(x=>x.n===opt.connector):null;
+  S.run={cl,answers:{},charger:c?c.charger:null,connector:opt.connector||null,ticket:opt.ticket||null,started:new Date().toISOString(),notes:"",resolve:false};
+  runView(); scrollTo(0,0);
+}
+const answered=(it,a)=>!a?false:it.type==="check"?(a.ok!=null||a.na):it.type==="photo"?!!a.photo:(a.value!=null&&a.value!=="");
+function runView(){
+  const R=S.run, cl=R.cl, st=S.home.station, items=cl.items||[];
+  const done=items.filter(it=>answered(it,R.answers[it.id])).length;
+  const chargers=st.chargers||[], cps=(st.connectors||[]).filter(c=>!R.charger||c.charger===R.charger);
+  view.innerHTML=`<button class="back" id="bk">‹ Abbrechen</button>
+  <div class="card"><div class="lbl">${esc(st.project_id||st.id)}${R.ticket?" · Störung "+esc(R.ticket):""}</div><h1>${esc(cl.title)}</h1>${cl.description?`<div class="muted small">${esc(cl.description)}</div>`:""}
+    ${cl.scope!=="site"?`<div style="margin-top:14px"><b>Welcher Charger?</b><div class="sel" id="selCh">${chargers.map(c=>`<button data-ch="${c.n}" class="${R.charger===c.n?"on":""}">${esc(c.label||"Charger "+c.n)}</button>`).join("")}</div></div>`:""}
+    ${cl.scope==="connector"&&R.charger?`<div style="margin-top:10px"><b>Welcher Ladepunkt?</b><div class="sel" id="selCp">${cps.map(c=>`<button data-cp="${c.n}" class="cpr ${R.connector===c.n?"on":""}"><span>${esc(cpName(st,c.n).split(" · ").pop())} <span class="small muted">${esc(c.t||"")}</span></span>${c.evse?`<code>${esc(c.evse)}</code>`:""}</button>`).join("")}</div></div>`:""}
+    <div class="prog"><i style="width:${items.length?done/items.length*100:0}%"></i></div><div class="small muted">${done} von ${items.length} Punkten</div></div>
+  <div class="card" id="items">${items.map(it=>itemHTML(it,R.answers[it.id]||{})).join("")}</div>
+  <div class="card"><b>Bemerkung (optional)</b><textarea class="f" id="notes" placeholder="z. B. Auffälligkeiten, nächste Schritte, Material">${esc(R.notes)}</textarea>
+    ${R.ticket&&S.home.me.can_resolve?`<label class="check"><input type="checkbox" id="resolve" ${R.resolve?"checked":""}><span>Störung ${esc(R.ticket)} ist behoben – in der Kunden-App wieder freigeben</span></label>`:""}
+    <div class="err" id="err" style="margin-top:10px"></div>
+    <button class="btn" id="send">Protokoll abschließen</button></div>`;
+  $("#bk").onclick=()=>{ if(done&&!confirm("Checkliste abbrechen? Eingaben gehen verloren.")) return; homeView(); };
+  view.querySelectorAll("#selCh [data-ch]").forEach(b=>b.onclick=()=>{ R.charger=+b.dataset.ch; R.connector=null; keepNotes(); runView(); });
+  view.querySelectorAll("#selCp [data-cp]").forEach(b=>b.onclick=()=>{ R.connector=+b.dataset.cp; keepNotes(); runView(); });
+  wireItems(); $("#send").onclick=submit;
+}
+const keepNotes=()=>{ if($("#notes")) S.run.notes=$("#notes").value; if($("#resolve")) S.run.resolve=$("#resolve").checked; };
+function itemHTML(it,a){
+  const q=`<div class="q">${esc(it.text)}${it.required?' <span class="req">*</span>':""}</div>${it.hint?`<div class="hint">💡 ${esc(it.hint)}</div>`:""}`;
+  const photo=(label)=>`<div class="photo"><label>📷 ${label}<input type="file" accept="image/*" capture="environment" data-ph="${it.id}"></label>${a.photo?`<img src="${a.photo}" alt="">`:""}</div>`;
+  let body="";
+  if(it.type==="check") body=`<div class="tri"><button class="ok ${a.ok===true?"on":""}" data-ok="${it.id}">✓ In Ordnung</button><button class="bad ${a.ok===false?"on":""}" data-bad="${it.id}">✗ Mangel</button><button class="na ${a.na?"on":""}" data-na="${it.id}">n. a.</button></div>
+    ${a.ok===false?`<textarea class="f" data-note="${it.id}" placeholder="Was ist der Mangel?">${esc(a.note||"")}</textarea>${photo("Foto vom Mangel")}`:""}`;
+  else if(it.type==="text") body=`<textarea class="f" data-val="${it.id}">${esc(a.value||"")}</textarea>`;
+  else if(it.type==="number") body=`<input class="f" data-val="${it.id}" inputmode="decimal" value="${esc(a.value??"")}">`;
+  else if(it.type==="choice") body=`<div class="opts">${(it.options||[]).map(o=>`<button data-choice="${it.id}" data-v="${esc(o)}" class="${a.value===o?"on":""}">${esc(o)}</button>`).join("")}</div>`;
+  else if(it.type==="photo") body=photo(a.photo?"Neues Foto":"Foto aufnehmen");
+  return `<div class="item" id="it-${it.id}">${q}${body}</div>`;
+}
+function setA(id,patch){ S.run.answers[id]={...(S.run.answers[id]||{}),...patch}; }
+function wireItems(){
+  const re=id=>{ keepNotes(); const y=scrollY; runView(); scrollTo(0,y); };
+  view.querySelectorAll("[data-ok]").forEach(b=>b.onclick=()=>{ setA(b.dataset.ok,{ok:true,na:false}); re(); });
+  view.querySelectorAll("[data-bad]").forEach(b=>b.onclick=()=>{ setA(b.dataset.bad,{ok:false,na:false}); re(); });
+  view.querySelectorAll("[data-na]").forEach(b=>b.onclick=()=>{ setA(b.dataset.na,{ok:null,na:true}); re(); });
+  view.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{ setA(b.dataset.choice,{value:b.dataset.v}); re(); });
+  view.querySelectorAll("[data-val]").forEach(i=>i.oninput=()=>setA(i.dataset.val,{value:i.value}));
+  view.querySelectorAll("[data-val]").forEach(i=>i.onchange=()=>re());
+  view.querySelectorAll("[data-note]").forEach(i=>i.oninput=()=>setA(i.dataset.note,{note:i.value}));
+  view.querySelectorAll("[data-ph]").forEach(i=>i.onchange=async()=>{ const d=await shrink(i.files[0]); if(d){ setA(i.dataset.ph,{photo:d}); re(); } });
+}
+function shrink(file){ return new Promise(res=>{ if(!file) return res(null); const img=new Image(), u=URL.createObjectURL(file);
+  img.onload=()=>{ const k=Math.min(1,1600/Math.max(img.width,img.height)), c=document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u); res(c.toDataURL("image/jpeg",0.75)); };
+  img.onerror=()=>res(null); img.src=u; }); }
+async function submit(){
+  keepNotes(); const R=S.run, cl=R.cl;
+  view.querySelectorAll(".miss").forEach(e=>e.classList.remove("miss"));
+  if(cl.scope!=="site"&&!R.charger){ $("#err").textContent="Bitte den Charger auswählen."; $("#selCh").scrollIntoView({block:"center"}); return; }
+  if(cl.scope==="connector"&&!R.connector){ $("#err").textContent="Bitte den Ladepunkt auswählen."; $("#selCp").scrollIntoView({block:"center"}); return; }
+  const miss=(cl.items||[]).filter(it=>it.required&&!answered(it,R.answers[it.id]));
+  if(miss.length){ miss.forEach(it=>$("#it-"+it.id).classList.add("miss")); $("#err").textContent=`Bitte noch ${miss.length} Pflichtpunkt(e) ausfüllen.`; $("#it-"+miss[0].id).scrollIntoView({block:"center"}); return; }
+  const b=$("#send"); b.disabled=true; b.textContent="Wird gespeichert …";
+  try{
+    const r=await api("submit",{checklist_id:cl.id,charger:R.charger,connector:R.connector,ticket_no:R.ticket,resolve:R.resolve,notes:R.notes,started_at:R.started,
+      answers:Object.entries(R.answers).map(([id,a])=>({id,...a}))});
+    doneView(r);
+  }catch(e){ b.disabled=false; b.textContent="Protokoll abschließen"; $("#err").textContent=e.message; }
+}
+function doneView(r){
+  const cl=S.run.cl; scrollTo(0,0);
+  view.innerHTML=`<div class="card center"><div class="big">${r.result==="ok"?"✅":"⚠️"}</div><h1>Protokoll gespeichert</h1>
+    <div class="no">${esc(r.report_no)}</div>
+    <p class="muted">${esc(cl.title)} · ${r.result==="ok"?"ohne Mängel":r.defects+" Mangel/Mängel – das Team wurde informiert."}${r.resolved?"<br><b style=\"color:#08603d\">Störung erledigt – der Ladepunkt ist in der Kunden-App wieder frei.</b>":""}</p>
+    <button class="btn" id="home">Zurück zum Standort</button></div>`;
+  $("#home").onclick=homeView;
+}
+
+if(S.auth) homeView(); else loginView();
+</script>
+</body>
+</html>

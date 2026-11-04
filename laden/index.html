@@ -81,6 +81,7 @@ h2{font-size:20px;margin:18px 2px 10px}
 p.sub{margin:-4px 2px 14px;color:var(--muted);font-size:15px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #plate{text-transform:uppercase}
+.svc-link{text-align:center;margin:6px 0 18px;font-size:13px}.svc-link a{color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;display:inline-block;background:#fff}
 .site-h{font-size:15px;margin:22px 2px 10px;color:var(--ink)}
 .tile.site{background:#fbfcfb}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:left;min-height:96px;display:flex;flex-direction:column;gap:8px;color:var(--ink);transition:transform .08s}
@@ -367,7 +368,7 @@ const T = {
     chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
     hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
     tCopy:"📋 Nummer kopieren",tShare:"📤 Speichern / teilen",tCopied:"✓ Kopiert",tSaved:"Die Nummer bleibt nur auf Ihrem Handy für 12 Stunden gespeichert (Startseite und „Hotline“) – andere Kunden sehen sie nicht.",hide:"Ausblenden",
-    siteH:"Rund um den Standort",whatCare:"Wir kümmern uns darum!",sChoice:"Auswahl",multiH:"Mehrfachauswahl möglich.",next:"Weiter",
+    svc:"Service-Zugang für Techniker & Dienstleister",siteH:"Rund um den Standort",whatCare:"Wir kümmern uns darum!",sChoice:"Auswahl",multiH:"Mehrfachauswahl möglich.",next:"Weiter",
     parkT:"Parken & Tarife an diesem Standort",parkNone:"Für diesen Standort sind keine besonderen Parkregeln hinterlegt. Bitte beachten Sie die Beschilderung vor Ort.",parkQ:"Gibt es ein Problem?",parkOk:"Danke, alles klar",blkT:"Blockierten Ladeplatz melden",blkH:"Ist ein anderer Ladeplatz frei, nutzen Sie bitte diesen. Ein Foto und das Kennzeichen helfen uns, vor Ort zu reagieren – wir können das Fahrzeug nicht selbst entfernen.",
     blkPhoto:"Foto vom Fahrzeug (optional)",blkPlate:"Kennzeichen (optional)",blkPlatePh:"z. B. B-AB 1234",blkWhere:"Welcher Ladeplatz ist blockiert? (optional)",blkWherePh:"z. B. Charger 2 · Ladepunkt 1",blkDescPh:"z. B. seit wann, Fahrzeugtyp, Farbe …",myTicket:"Ihre Störungsmeldung",myTickets:"Ihre Störungsmeldungen",
     known:"Störung bekannt",knownT:"An diesem Ladepunkt ist bereits eine Störung gemeldet",knownH:"Seit {t} · {n}× gemeldet. Unser Team arbeitet daran.",
@@ -396,7 +397,7 @@ const T = {
     chatPh:"Type a message…",chatToTeam:"Your message has reached our service team. We'll reply here shortly.",
     hours:"Available 24/7",callBtn:"Call now",stationId:"Station ID",copy:"Copy",copied:"Copied ✓",caseNo:"Reference number",
     tCopy:"📋 Copy number",tShare:"📤 Save / share",tCopied:"✓ Copied",tSaved:"The number is kept only on your phone for 12 hours (start screen and “Hotline”) – other customers can't see it.",hide:"Hide",
-    siteH:"Around the site",whatCare:"We'll take care of it!",sChoice:"Selection",multiH:"You can select several.",next:"Next",
+    svc:"Service access for technicians & contractors",siteH:"Around the site",whatCare:"We'll take care of it!",sChoice:"Selection",multiH:"You can select several.",next:"Next",
     parkT:"Parking & fees at this site",parkNone:"No special parking rules are stored for this site. Please follow the signs on site.",parkQ:"Is there a problem?",parkOk:"Thanks, all clear",blkT:"Report a blocked charging bay",blkH:"If another bay is free, please use it. A photo and the licence plate help us act on site – we can't remove the vehicle ourselves.",
     blkPhoto:"Photo of the vehicle (optional)",blkPlate:"Licence plate (optional)",blkPlatePh:"e.g. B-AB 1234",blkWhere:"Which bay is blocked? (optional)",blkWherePh:"e.g. Charger 2 · Connector 1",blkDescPh:"e.g. since when, vehicle type, colour …",myTicket:"Your issue report",myTickets:"Your issue reports",
     known:"Known fault",knownT:"A fault has already been reported at this connector",knownH:"Since {t} · reported {n}×. Our team is on it.",
@@ -582,7 +583,8 @@ function home(){
   <div class="grid">${TILE_ORDER.map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile ${f.danger?"danger":""} ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
   <h3 class="site-h">${tr("siteH")}</h3>
   <div class="grid">${siteTiles().map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile site ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
-  <p class="privacy">${tr("privacy")}${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">${tr("privacyLink")}</a>`:""}</p>`;
+  <p class="privacy">${tr("privacy")}${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">${tr("privacyLink")}</a>`:""}</p>
+  <p class="svc-link"><a href="service/#${encodeURIComponent(S.label||S.station)}">🔧 ${tr("svc")}</a></p>`;
   view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f));
   if(rt){ wireTicketActions(view.querySelector(".tk-banner"),rt);
     if($("#shAll")) $("#shAll").onclick=async e=>{ const text=rts.map(ticketText).join("\n\n"); if(navigator.share){ try{ await navigator.share({title:tr("myTickets"),text}); return; }catch(err){ if(err&&err.name==="AbortError") return; } } copyText(text,e.target); }; view.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>copyText(b.dataset.copy,b));
