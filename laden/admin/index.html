@@ -115,6 +115,21 @@ dt{color:var(--muted)}dd{margin:0}
 .kpi.bad .v{color:#b42318}
 .kpi.link{cursor:pointer;transition:box-shadow .15s,border-color .15s}
 .kpi.link:hover{border-color:var(--brand);box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.itl{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.tl-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.tl-big{font-size:18px}.tl-big b{font-size:22px}.tl-big.ok b{color:#08603d}.tl-big.open b{color:#b42318}
+.tl-sub{color:var(--muted);font-size:13px}
+.tl-bar{position:relative;height:14px;background:#eef2f0;border-radius:7px;margin:10px 8px 4px}
+.tl-bar .seg{position:absolute;top:0;bottom:0;border-radius:7px}
+.tl-bar .seg.neu{background:#f3b4ae}.tl-bar .seg.work{background:#f7d58a}
+.tl-bar .dot{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff;border:3px solid;box-sizing:border-box;cursor:pointer}
+.tl-bar .now{position:absolute;right:-6px;top:-18px;font-size:11px;color:var(--muted)}
+.tl-ax{display:flex;justify-content:space-between;color:var(--muted);font-size:11.5px;margin:4px 8px 6px}
+.tl-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:8px}
+.tl-legend span{display:inline-flex;align-items:center;gap:6px}.tl-legend b{width:10px;height:10px;border-radius:3px;display:inline-block}
+.tl-list{list-style:none;margin:6px 0 0;padding:0;border-top:1px solid var(--line)}
+.tl-list li{display:grid;grid-template-columns:130px 16px 1fr auto;gap:8px;padding:5px 0;border-bottom:1px solid #f0f3f1;font-size:13px}
+.tl-t{color:var(--muted);font-variant-numeric:tabular-nums}.tl-d{color:var(--muted);font-size:12px}
 .cust-box{background:#f3f8ff;border:1px solid #cfe0f7;border-radius:10px;padding:10px 12px;margin:10px 0}
 .cust-box a{font-weight:700}
 .chk-ok{color:#08603d;font-weight:600}.chk-bad{color:#b42318;font-weight:600}.chk-q{color:#9a6700;font-weight:600}
@@ -447,6 +462,33 @@ async function renderAkte(id,box){
   }catch(e){ box.innerHTML=`<span class="muted">${esc(e.message)}</span>`; }
 }
 
+/* ---------- Dauer & Zeitstrahl einer Störung ---------- */
+function durBadge(i){ const a=+new Date(i.created_at), b=i.resolved_at?+new Date(i.resolved_at):Date.now(), d=fmtDur(b-a);
+  return i.resolved_at?`<span class="badge" title="von Meldung bis erledigt">✓ ${d}</span>`:`<span class="badge warn" title="seit erster Meldung offen">⏱ ${d}</span>`; }
+function incTimeline(i,reports){
+  const A=+new Date(i.created_at), done=!!i.resolved_at, B=done?+new Date(i.resolved_at):Date.now(), span=Math.max(60e3,B-A);
+  const notes=(i.notes||[]).map(n=>({...n,t:+new Date(n.at)})).sort((x,y)=>x.t-y.t);
+  const work=notes.find(n=>n.status==="in_arbeit"), tW=work?Math.max(A,Math.min(B,work.t)):null;
+  const ev=[{t:A,ic:"🧾",l:"Erste Meldung",c:"#d03b3b"}];
+  (reports||[]).slice(1).forEach(e=>ev.push({t:+new Date(e.at),ic:e.type==="incident_plus"?"➕":"🧾",l:e.type==="incident_plus"?"Weiterer Kunde betroffen":"Weitere Meldung",c:"#eb6834"}));
+  notes.forEach(n=>ev.push({t:n.t,ic:n.status==="erledigt"?"✅":n.status==="in_arbeit"?"🔧":n.status==="neu"?"↩":"📝",l:(n.status?"Status: "+TST[n.status][0]:"Notiz")+(n.text?" – "+n.text:""),c:n.status==="erledigt"?"#0ca30c":n.status==="in_arbeit"?"#eda100":"#5d6b65"}));
+  if(done && !notes.some(n=>n.status==="erledigt")) ev.push({t:B,ic:"✅",l:"Erledigt",c:"#0ca30c"});
+  ev.sort((x,y)=>x.t-y.t);
+  const pos=t=>Math.max(0,Math.min(100,(t-A)/span*100));
+  return `<div class="itl"><div class="tl-head"><div class="tl-big ${done?"ok":"open"}">${done?"✅ Behoben nach":"⏱ Offen seit"} <b>${fmtDur(B-A)}</b></div>
+      <div class="tl-sub">${work?`Bis „in Bearbeitung“: <b>${fmtDur(tW-A)}</b>${done?` · Bearbeitung bis erledigt: <b>${fmtDur(B-tW)}</b>`:""}`:"Noch nicht auf „in Bearbeitung“ gesetzt"} · ${i.reports}× gemeldet</div></div>
+    <div class="tl-bar">
+      <i class="seg neu" style="left:0;width:${pos(tW||B)}%" data-tip="Gemeldet, noch nicht in Bearbeitung · ${fmtDur((tW||B)-A)}"></i>
+      ${tW?`<i class="seg work" style="left:${pos(tW)}%;width:${pos(B)-pos(tW)}%" data-tip="In Bearbeitung · ${fmtDur(B-tW)}"></i>`:""}
+      ${ev.map(e=>`<span class="dot" style="left:${pos(e.t)}%;border-color:${e.c}" data-tip="<b>${esc(e.l)}</b><br>${fmtDT(e.t)}"></span>`).join("")}
+      ${done?"":`<span class="now" data-tip="Jetzt">jetzt</span>`}
+    </div>
+    <div class="tl-ax"><span>${fmtDT(A)}</span><span>${done?fmtDT(B):"jetzt"}</span></div>
+    <div class="tl-legend"><span><b style="background:#f3b4ae"></b>gemeldet, offen</span><span><b style="background:#f7d58a"></b>in Bearbeitung</span><span>Punkte = Ereignisse (Maus drüber)</span></div>
+    <ol class="tl-list">${ev.map(e=>`<li><span class="tl-t">${fmtDT(e.t)}</span><span class="tl-i" style="color:${e.c}">●</span><span>${e.ic} ${esc(e.l)}</span><span class="tl-d">+${fmtDur(e.t-A)}</span></li>`).join("")}</ol>
+  </div>`;
+}
+
 /* ---------- Störungen (je Ladepunkt eine offene) ---------- */
 let IF={q:"",filter:"open",station:""};
 async function incidentsView(){
@@ -458,7 +500,7 @@ async function incidentsView(){
     ${datesHTML(IF,"if")}
     <div class="seg" id="imode">${[["open","Offen"],["erledigt","Erledigt"],["all","Alle"]].map(([k,l])=>`<button data-m="${k}" class="${IF.filter===k?"on":""}">${l}</button>`).join("")}</div>
   </div></div>
-  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Vorgang</th><th>Projekt / Standort</th><th>Ladepunkt</th><th>Problem</th><th>Seit</th><th>Meldungen</th><th>Status</th></tr></thead><tbody id="ib"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Vorgang</th><th>Projekt / Standort</th><th>Ladepunkt</th><th>Problem</th><th>Seit</th><th>Dauer</th><th>Meldungen</th><th>Status</th></tr></thead><tbody id="ib"><tr><td colspan="9" class="muted">Lade …</td></tr></tbody></table></div>`;
   wireDates(IF,"if",loadIncidents);
   $("#iSt").onchange=()=>{ IF.station=$("#iSt").value; loadIncidents(); };
   let h; $("#iq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ IF.q=$("#iq").value.trim(); loadIncidents(); },300); };
@@ -471,10 +513,10 @@ async function loadIncidents(){
     if(IF.station&&!IF.q) r.incidents=r.incidents.filter(i=>i.station_id===IF.station);
     tb.innerHTML=r.incidents.length?r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
       return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b>${st&&st.address?`<br><small class="muted">${esc(st.address)}</small>`:""}</td>
-        <td>${esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td>
+        <td>${esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td><td>${durBadge(i)}</td>
         <td>${i.reports}×${i.subscribers?` · 📧 ${i.subscribers}`:""}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span></td></tr>
-        <tr class="akte hidden" data-for="${esc(i.ticket_no)}"><td colspan="8"><div class="akte-in">Lade …</div></td></tr>`; }).join("")
-      :`<tr><td colspan="8" class="muted">${IF.q?"Nichts gefunden.":IF.filter==="open"?"Keine offenen Störungen 🎉":"Keine Einträge."}</td></tr>`;
+        <tr class="akte hidden" data-for="${esc(i.ticket_no)}"><td colspan="9"><div class="akte-in">Lade …</div></td></tr>`; }).join("")
+      :`<tr><td colspan="9" class="muted">${IF.q?"Nichts gefunden.":IF.filter==="open"?"Keine offenen Störungen 🎉":"Keine Einträge."}</td></tr>`;
     tb.querySelectorAll("tr.click").forEach(row=>row.onclick=()=>toggleInc(row.dataset.no));
     if(r.incidents.length===1) toggleInc(r.incidents[0].ticket_no);
   }catch(e){ toast(e.message,true); }
@@ -491,7 +533,7 @@ async function renderInc(no,box){
       ["Ladepunkt",esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")+(evseOf(st,i.connector)?` · <code>${esc(evseOf(st,i.connector))}</code>`:"")],["Problem",esc(i.title||"–")],
       ["Erste Meldung",new Date(i.created_at).toLocaleString("de-DE")],["Letzte Meldung",new Date(i.last_report_at).toLocaleString("de-DE")],["Meldungen",i.reports+"×"],
       ["Info-Mail an",(i.subscribers||[]).length?(i.subscribers.map(x=>esc(x.email)).join(", ")):"–"],...(i.resolved_at?[["Erledigt",new Date(i.resolved_at).toLocaleString("de-DE")]]:[])];
-    box.innerHTML=`<div class="akte-grid">
+    box.innerHTML=`${incTimeline(i,r.reports)}<div class="akte-grid">
       <div><h3>Störung</h3><dl>${facts.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
         <h3 style="margin-top:16px">Bearbeitung</h3>
         <div class="row"><select class="i-status" style="width:auto">${Object.entries(TST).map(([k,v])=>`<option value="${k}" ${k===i.status?"selected":""}>${v[0]}</option>`).join("")}</select></div>

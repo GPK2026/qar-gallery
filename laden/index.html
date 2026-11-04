@@ -127,7 +127,7 @@ textarea.f{min-height:80px;resize:vertical}
 .tk-li:first-child{border-top:0}
 .tk-li code{font-size:16px;font-weight:700;color:#08603d}
 .tk-li small{color:var(--muted)}
-.home-h{font-size:24px;line-height:1.2;margin:4px 2px 12px;letter-spacing:-.3px}
+.home-h{font-size:23px;line-height:1.2;margin:2px 0 12px;letter-spacing:-.3px}
 .tiles-hint{margin:16px 2px 10px;font-weight:600;color:var(--ink)}
 .tk-banner{border-color:#c9e7d8;background:#f6fbf8}
 .tk-head{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:15px}
@@ -188,9 +188,9 @@ nav.tabs button{position:relative}
   </header>
 
   <div class="scroll" id="scroll"><div class="wrap">
-  <h1 class="home-h" id="homeH"></h1>
   <section class="station" id="stationCard">
     <img class="st-img" id="stImg" alt="" hidden>
+    <h1 class="home-h" id="homeH"></h1>
     <div class="lbl" data-i="station">Ladestation</div>
     <div class="st-head"><div class="id" id="stId">–</div><button class="st-pill" id="stPill" aria-label="Ladepunkt wechseln"></button></div>
     <div class="addr" id="stAddr">–</div>
@@ -336,7 +336,7 @@ const ALL_TILES=[...TILE_ORDER,...SITE_ORDER];
 /* ============ TEXTE (DE/EN) ============ */
 const T = {
   de:{brand:"<b>HAPPY CHARGING</b> Support",station:"Ladestation",tHelp:"Störung",tChat:"Chat",tCall:"Hotline",cp:"Ladepunkt",cpShort:"LP",
-    what:"Was funktioniert nicht?",whatSub:"Tippen Sie auf Ihr Problem – wir lösen es Schritt für Schritt.",
+    what:"Was funktioniert hier nicht?",whatSub:"Tippen Sie auf Ihr Problem – wir lösen es Schritt für Schritt.",
     privacy:"Damit wir helfen können, werden Ihre Auswahl, Chatnachrichten und freiwilligen Angaben zu dieser Ladesäule gespeichert und an unser Service-Team übermittelt.",privacyLink:"Datenschutz",
     back:"‹ Zurück",stepOf:"Schritt {a} von {b}",ok:"✓ Hat geklappt",no:"Hat nicht geholfen",
     solvedT:"Super, es lädt!",solvedH:"Gute Fahrt. War die Hilfe nützlich?",yes:"👍 Ja",nope:"👎 Nein",thanks:"Danke für Ihr Feedback!",reviewT:"Hat alles geklappt? Bewerten Sie diesen Ladestandort bei Google – das hilft anderen Fahrern.",reviewBtn:"⭐ Bei Google bewerten",home:"Zur Startseite",
@@ -363,7 +363,7 @@ const T = {
     shareText:"Meine Störungsmeldung an der Ladesäule\nVorgangsnummer: {no}\nStation: {st}{evse}\nProblem: {pr}\nZeit: {time}\nHotline: {hl}",
     callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln",charger:"Charger",chooseCharger:"Charger wählen",chooseCp:"Ladepunkt wählen",chargerHint:"Wählen Sie einen Charger oder geben Sie oben ein paar Ziffern der EVSE-ID ein.",evseFind:"EVSE-ID vom Aufkleber",evsePh:"z. B. letzte Ziffern eingeben",evseNote:"· EVSE-ID mit dem Aufkleber vergleichen",evseNone:"Keine passende EVSE-ID gefunden – bitte Charger wählen.",pickT:"An welchem Ladepunkt stehen Sie?",pickH:"Jeder Ladepunkt hat einen Aufkleber mit seiner EVSE-ID – damit finden Sie ihn hier am schnellsten."},
   en:{brand:"<b>HAPPY CHARGING</b> Support",station:"Charging station",tHelp:"Issue",tChat:"Chat",tCall:"Hotline",cp:"Connector",cpShort:"C",
-    what:"What isn't working?",whatSub:"Tap your issue – we'll solve it step by step.",
+    what:"What isn't working here?",whatSub:"Tap your issue – we'll solve it step by step.",
     privacy:"To help you, your selections, chat messages and any details you provide about this charger are stored and passed on to our service team.",privacyLink:"Privacy",
     back:"‹ Back",stepOf:"Step {a} of {b}",ok:"✓ That worked",no:"Didn't help",
     solvedT:"Great, it's charging!",solvedH:"Have a good trip. Was this helpful?",yes:"👍 Yes",nope:"👎 No",thanks:"Thanks for your feedback!",reviewT:"Did everything work? Rate this charging location on Google – it helps other drivers.",reviewBtn:"⭐ Rate on Google",home:"Back to start",
