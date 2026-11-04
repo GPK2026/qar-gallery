@@ -121,7 +121,14 @@ dt{color:var(--muted)}dd{margin:0}
 .up-row .pct{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:13px}
 .up-axis{display:grid;grid-template-columns:150px 1fr 64px;gap:10px;color:var(--muted);font-size:11px;margin-top:4px}
 .up-axis div{display:flex;justify-content:space-between}
-.proj-h{font-weight:700;margin:14px 0 4px;font-size:13.5px}
+.proj-block{border-top:1px solid var(--line);padding:2px 0}
+.proj-block:first-of-type{border-top:0}
+.proj-h{display:grid;grid-template-columns:16px auto auto 1fr auto 200px 64px;align-items:center;gap:8px;width:100%;background:none;border:0;padding:10px 0;font-size:13.5px;text-align:left;color:var(--ink)}
+.proj-h .chev{color:var(--muted)}
+.proj-h .pct{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.up-bar.mini{height:10px}
+.proj-rows{display:none;padding:0 0 10px 24px}
+.proj-block.open .proj-rows{display:block}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-bottom:10px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend b{width:10px;height:10px;border-radius:3px;display:inline-block}
@@ -540,7 +547,7 @@ async function runSearch(){
 }
 
 /* ---------- Übersicht (Kennzahlen, Verfügbarkeit, Verlauf) ---------- */
-let OF={preset:"30",station:""}; setPreset(OF,"30");
+let OF={preset:"30",station:""}; const OV_OPEN={}; setPreset(OF,"30");
 const OUTC=[["solved","Selbst gelöst","#2a78d6"],["ticket","Störung gemeldet","#eb6834"],["hotline","Hotline","#1baf7a"],["chat","Chat","#eda100"],["open","Ohne Ergebnis","#b9beba"]];
 async function overviewView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
@@ -592,10 +599,15 @@ async function loadOverview(){
     </div>
     <div class="card"><h2>Verfügbarkeit je Ladepunkt</h2>
       <div class="legend"><span><b style="background:#d5eed5;border:1px solid #0ca30c"></b>✓ verfügbar</span><span><b style="background:#d03b3b"></b>⚠ Störung gemeldet (bis „erledigt“)</span><span>Quelle: Kundenmeldungen, keine Live-Daten der Säule</span></div>
-      ${rows.map(({st,list})=>`<div class="proj-h">${esc(st.project_id||st.id)}${st.name?` <span class="muted" style="font-weight:500">· ${esc(st.name)}</span>`:""}</div>
+      ${rows.map(({st,list})=>{ const pd=list.reduce((a,x)=>a+x.down,0), pp=list.length?100*(1-pd/(span*list.length)):100, bad=list.filter(x=>x.segs.length).length, open=OV_OPEN[st.id]!==undefined?OV_OPEN[st.id]:(bad>0||rows.length===1);
+        return `<div class="proj-block ${open?"open":""}" data-st="${esc(st.id)}"><button class="proj-h" type="button"><span class="chev">${open?"▾":"▸"}</span><b>${esc(st.project_id||st.id)}</b>${st.name?` <span class="muted" style="font-weight:500">· ${esc(st.name)}</span>`:""}
+          <span class="sp"></span><span class="muted" style="font-weight:500">${list.length} Ladepunkte · ${bad?`<span style="color:#b42318">⚠ ${bad} mit Störung</span>`:"✓ keine Störung"}</span>
+          <div class="up-bar mini" data-tip="${esc(st.project_id||st.id)}: ${pctTxt(pp)} verfügbar">${list.flatMap(x=>x.segs).map(s=>`<i style="left:${(s.a-F)/span*100}%;width:${(s.b-s.a)/span*100}%;opacity:.55"></i>`).join("")}</div>
+          <span class="pct" style="color:${pp<98?"#b42318":"var(--ink)"}">${pctTxt(pp)}</span></button>
+        <div class="proj-rows">
         ${list.map(({c,segs,pct,down})=>`<div class="up-row"><div class="lbl" title="${esc(c.evse||"")}">${esc(cpLabel(st,c.n))} <small>${esc(c.t||"")}</small></div>
           <div class="up-bar" data-tip="${esc(cpLabel(st,c.n))}<br>${c.evse?esc(c.evse)+"<br>":""}${segs.length?"gestört: "+fmtDur(down):"keine Störung gemeldet"}">${segs.map(s=>`<i style="left:${(s.a-F)/span*100}%;width:${(s.b-s.a)/span*100}%" data-tip="<b>${esc(s.i.ticket_no)}</b> · ${esc(s.i.title||"")}<br>${fmtDT(s.i.created_at)} – ${s.i.resolved_at?fmtDT(s.i.resolved_at):"offen"}<br>Dauer ${fmtDur(s.b-s.a)} · ${s.i.reports}× gemeldet" data-no="${esc(s.i.ticket_no)}"></i>`).join("")}</div>
-          <div class="pct" style="color:${pct<98?"#b42318":"var(--ink)"}">${pctTxt(pct)}</div></div>`).join("")}`).join("")||'<div class="muted">Keine Projekte.</div>'}
+          <div class="pct" style="color:${pct<98?"#b42318":"var(--ink)"}">${pctTxt(pct)}</div></div>`).join("")}</div></div>`; }).join("")||'<div class="muted">Keine Projekte.</div>'}
       <div class="up-axis"><span></span><div><span>${fmtDT(F).split(",")[0]}</span><span>${fmtDT(F+span/2).split(",")[0]}</span><span>${+new Date(r.to)>+new Date(r.now)?"jetzt":fmtDT(T).split(",")[0]}</span></div><span></span></div>
     </div>
     <div class="two">
@@ -609,6 +621,7 @@ async function loadOverview(){
         ${top.length?top.map(([t,n])=>`<div class="hb" data-tip="${esc(t)}: ${n} Störung(en)"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t)}</span><div><div class="t" style="width:${n/topMax*100}%"></div></div><b>${n}</b></div>`).join(""):'<div class="muted">Keine Störungen im Zeitraum 🎉</div>'}
       </div>
     </div>`;
+    box.querySelectorAll(".proj-block .proj-h").forEach(h=>h.onclick=()=>{ const b=h.parentElement, o=!b.classList.contains("open"); b.classList.toggle("open",o); h.querySelector(".chev").textContent=o?"▾":"▸"; OV_OPEN[b.dataset.st]=o; });
     box.querySelectorAll(".up-bar i[data-no]").forEach(s=>s.onclick=()=>{ IF.q=s.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
   }catch(e){ box.innerHTML=`<div class="card muted">${esc(e.message)}</div>`; }
 }
