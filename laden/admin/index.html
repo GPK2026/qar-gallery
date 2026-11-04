@@ -166,7 +166,7 @@ function renderEditor(){
   <div class="card"><div class="row" style="margin-bottom:10px"><h2 style="margin:0">Charger & Ladepunkte</h2><span class="muted">${E.chargers.length} Charger · ${E.chargers.reduce((a,c)=>a+c.connectors.length,0)} Ladepunkte</span><div class="sp"></div><button class="btn ghost sm" id="addCh">+ Charger</button></div>
     <div id="chs">${E.chargers.map((c,i)=>chargerHTML(c,i)).join("")}</div></div>
 
-  ${!isNew?`<div class="card"><h2>QR-Code</h2><p class="sub">Ein Code für den ganzen Standort – der Kunde wählt Charger und Ladepunkt (per EVSE-ID) in der App.</p><div class="qr-row" id="qrs"></div></div>`:""}
+  ${!isNew?`<div class="card"><h2>QR-Schild</h2><p class="sub">Ein Schild für den ganzen Standort – der Kunde wählt Charger und Ladepunkt (per EVSE-ID) in der App. Druckfertig als PNG.</p><div class="qr-row" id="qrs"></div></div>`:""}
 
   ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon Kundenkontakte, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
   $("#back").onclick=projectsView;
@@ -227,14 +227,26 @@ async function del(){
   if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="Wirklich? Nochmal klicken zum Bestätigen"; return; }
   try{ const r=await api("delete",{id:E.original_id}); toast(r.deactivated?"Projekt deaktiviert (hat Kundenkontakte)":"Projekt gelöscht"); projectsView(); }catch(e){ toast(e.message,true); }
 }
+// Druckfertiges QR-Schild: Überschrift, Hinweis, QR-Code, Standort-Nummer (ohne URL)
 function renderQRs(){
-  const code=E.project_id||E.id, box=$("#qrs");
-  const items=[{t:"Standort "+code,u:APP+"#"+encodeURIComponent(code),f:"qr-"+code}];
-  box.innerHTML="";
-  items.forEach((it,k)=>{ const d=document.createElement("div"); d.className="qr"; d.innerHTML=`<div class="q"></div><b>${esc(it.t)}</b><br><code>${esc(it.u.replace("https://",""))}</code><br><button class="btn ghost sm" style="margin-top:8px">PNG laden</button>`; box.appendChild(d);
-    if(window.QRCode) new QRCode(d.querySelector(".q"),{text:it.u,width:160,height:160,correctLevel:QRCode.CorrectLevel.M});
-    d.querySelector("button").onclick=()=>{ const c=d.querySelector("canvas"), img=d.querySelector("img"); const src=c?c.toDataURL("image/png"):(img&&img.src); if(!src) return; const a=document.createElement("a"); a.href=src; a.download=it.f.replace(/[^A-Za-z0-9#._-]/g,"_")+".png"; a.click(); };
-  });
+  const code=E.project_id||E.id, url=APP+"#"+encodeURIComponent(code), box=$("#qrs");
+  box.innerHTML=`<div class="qr" style="width:auto"><img id="qrSign" alt="QR-Schild" style="width:260px;border:1px solid var(--line);border-radius:10px"><br><button class="btn ghost sm" id="qrDl" style="margin-top:10px">PNG laden</button></div>`;
+  const tmp=document.createElement("div"); tmp.style.display="none"; document.body.appendChild(tmp);
+  if(!window.QRCode){ box.innerHTML='<div class="muted">QR-Bibliothek nicht geladen.</div>'; return; }
+  new QRCode(tmp,{text:url,width:1000,height:1000,correctLevel:QRCode.CorrectLevel.M});
+  const draw=()=>{
+    const q=tmp.querySelector("canvas"); if(!q) return setTimeout(draw,50);
+    const W=1200, top=430, qs=900, H=top+qs+170, c=document.createElement("canvas"); c.width=W; c.height=H;
+    const g=c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,W,H); g.fillStyle="#000"; g.textAlign="center"; g.textBaseline="alphabetic";
+    g.font="800 104px Inter, Arial, sans-serif"; g.fillText("LÄUFT ALLES?",W/2,165);
+    g.font="800 104px Inter, Arial, sans-serif"; g.fillText("HAPPY CHARGING",W/2,290);
+    g.font="500 54px Inter, Arial, sans-serif"; g.fillText("Scannen und LIVE-Feedback starten.",W/2,385);
+    g.imageSmoothingEnabled=false; g.drawImage(q,(W-qs)/2,top,qs,qs);
+    g.font="700 64px Inter, Arial, sans-serif"; g.fillText("Standort "+code,W/2,top+qs+110);
+    const png=c.toDataURL("image/png"); $("#qrSign").src=png; tmp.remove();
+    $("#qrDl").onclick=()=>{ const a=document.createElement("a"); a.href=png; a.download="qr-standort-"+String(code).replace(/[^A-Za-z0-9_-]/g,"_")+".png"; a.click(); };
+  };
+  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(draw);
 }
 
 /* ---------- Meldungen ---------- */
