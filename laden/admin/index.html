@@ -75,6 +75,28 @@ tr.click:hover td{background:#f8faf9}
 .tl{font-size:13px}
 .tl div{padding:6px 0;border-bottom:1px solid #eef1ef;display:grid;grid-template-columns:70px 200px 1fr;gap:10px}
 .login{max-width:380px;margin:80px auto}
+.seg{display:flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:8px 12px;font-weight:600;color:var(--muted);border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}.seg button.on{background:var(--brand-soft);color:#08603d}
+.chev{color:var(--muted);width:20px}
+tr.click.open td{background:#f3f8f5}
+tr.akte td{background:#fafcfb;padding:0}
+.akte-in{padding:16px 18px;border-bottom:2px solid var(--line)}
+.akte-grid{display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:24px}
+.akte-grid h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 8px}
+dl{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;margin:0;font-size:13px}
+dt{color:var(--muted)}dd{margin:0}
+.log{font-size:13px;border-left:2px solid var(--line);padding-left:12px}
+.log-i{display:grid;grid-template-columns:62px 190px 1fr;gap:10px;padding:6px 0;border-bottom:1px solid #eef1ef}
+.lt{color:var(--muted);font-variant-numeric:tabular-nums}.le{font-weight:600}
+.log-i.t-chat_user .ld,.log-i.t-chat_bot .ld,.log-i.t-chat_team .ld{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 8px;white-space:pre-wrap}
+.log-i.t-chat_team .ld{background:#eef4ff;border-color:#c9dafc}
+.log-i.t-ticket_submit,.log-i.t-danger_open{background:var(--amber-soft)}
+.log-i.t-danger_open{background:var(--warn-soft)}
+.log-i.t-solved{background:var(--brand-soft)}
+.notes{margin-top:10px}.note-i{font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.mail-i{font-size:13px;padding:5px 0}
+@media (max-width:900px){.akte-grid{grid-template-columns:1fr}.log-i{grid-template-columns:56px 1fr}.log-i .ld{grid-column:1 / -1}}
 .hidden{display:none!important}
 @media (max-width:760px){.c3,.c4,.c6,.c8{grid-column:span 12}.lp{grid-template-columns:50px 1fr 70px 36px}.lp .evse{grid-column:2 / span 3}nav{margin-left:0}header .in{flex-wrap:wrap}}
 </style>
@@ -92,6 +114,7 @@ tr.click:hover td{background:#f8faf9}
 <script>
 const API="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-admin";
 const APP="https://qar.gallery/laden/";
+const IMG=id=>`https://xsyuhfleesstrchcwspg.supabase.co/storage/v1/object/public/charge-public/stations/${encodeURIComponent(id)}.jpg`;
 const TYPES=["CCS","CHAdeMO","Typ 2","Typ 2 (Kabel)","Schuko","Tesla"];
 const $=s=>document.querySelector(s), main=$("#main");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -160,6 +183,11 @@ function renderEditor(){
     <div class="c3"><label>Längengrad</label><input id="f_lng" value="${E.lng??""}" inputmode="decimal"></div>
     <div class="c8"><label>Google-Bewertungslink</label><input id="f_review_url" value="${esc(E.review_url)}" placeholder="https://search.google.com/local/writereview?placeid=…"><div class="hint">Erscheint nach erfolgreicher Hilfe. Place-ID finden: <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener">Place ID Finder</a></div></div>
     <div class="c4"><label>Abweichende Benachrichtigungs-Mail</label><input id="f_notify_email" value="${esc(E.notify_email)}" placeholder="leer = Standard-Empfänger"></div>
+    ${!isNew?`<div class="c12"><label>Standortbild (oben in der Kunden-App)</label><div class="row" style="align-items:flex-start">
+      <img id="stImg" src="${IMG(E.original_id)}?v=${Date.now()}" onerror="this.style.display='none';document.getElementById('noImg').style.display='flex'" style="width:240px;height:135px;object-fit:cover;border-radius:10px;border:1px solid var(--line)">
+      <div id="noImg" style="display:none;width:240px;height:135px;border:1.5px dashed var(--line);border-radius:10px;align-items:center;justify-content:center;color:var(--muted)">noch kein Bild</div>
+      <div><input type="file" accept="image/*" id="imgIn" class="hidden"><button class="btn ghost sm" id="imgUp">Foto hochladen</button> <button class="btn ghost sm" id="imgDel">Entfernen</button>
+      <div class="hint" style="max-width:360px">Eigenes Foto der Ladestation (Querformat). Bilder aus Google Maps dürfen nicht übernommen werden.</div></div></div></div>`:""}
     <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_active" style="width:auto" ${E.active!==false?"checked":""}> Aktiv (in der Kunden-App erreichbar)</label></div>
   </div></div>
 
@@ -173,7 +201,17 @@ function renderEditor(){
   $("#save").onclick=save;
   $("#addCh").onclick=()=>{ collect(); const n=E.chargers.length+1; E.chargers.push({label:"LS#"+n,model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}); renderEditor(); };
   wireChargers();
-  if(!isNew){ renderQRs(); $("#del").onclick=del; }
+  if(!isNew){ renderQRs(); $("#del").onclick=del; wireImage(); }
+}
+function shrinkImg(file){ return new Promise(res=>{ const img=new Image(), u=URL.createObjectURL(file);
+  img.onload=()=>{ const k=Math.min(1,1600/Math.max(img.width,img.height)), c=document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u); res(c.toDataURL("image/jpeg",0.82)); };
+  img.onerror=()=>res(null); img.src=u; }); }
+function wireImage(){
+  $("#imgUp").onclick=()=>$("#imgIn").click();
+  $("#imgIn").addEventListener("change",e=>e.stopPropagation()); $("#imgIn").addEventListener("input",e=>e.stopPropagation());
+  $("#imgIn").onchange=async()=>{ const f=$("#imgIn").files[0]; if(!f) return; const data=await shrinkImg(f); if(!data) return toast("Bild konnte nicht gelesen werden",true);
+    try{ const r=await api("upload_image",{id:E.original_id,data}); const im=$("#stImg"); im.style.display=""; $("#noImg").style.display="none"; im.src=r.url; toast("Bild gespeichert – in der App sichtbar ✓"); }catch(e){ toast(e.message,true); } };
+  $("#imgDel").onclick=async()=>{ try{ await api("delete_image",{id:E.original_id}); $("#stImg").style.display="none"; $("#noImg").style.display="flex"; toast("Bild entfernt"); }catch(e){ toast(e.message,true); } };
 }
 function chargerHTML(c,i){
   return `<div class="charger" data-ci="${i}">
@@ -249,32 +287,91 @@ function renderQRs(){
   (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(draw);
 }
 
-/* ---------- Meldungen ---------- */
-const OUT={open:["offen",""],chat:["Chat",""],solved:["gelöst","ok"],hotline:["Hotline","amber"],ticket:["Störung","amber"],danger:["Gefahr","warn"]};
+/* ---------- Meldungen / Akten ---------- */
+const OUT={open:["ohne Ergebnis",""],chat:["Chat",""],solved:["gelöst","ok"],hotline:["Hotline","amber"],ticket:["Störung","amber"],danger:["Gefahr","warn"]};
+const TST={neu:["neu","warn"],in_arbeit:["in Bearbeitung","amber"],erledigt:["erledigt","ok"]};
+const fmtDT=d=>new Date(d).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"});
+const fmtT=d=>new Date(d).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 function cpLabel(st,n){ if(!st||n==null) return n??"–"; const c=(st.connectors||[]).find(x=>x.n===n); if(!c) return "LP "+n; const ch=(st.chargers||[]).find(x=>x.n===c.charger); const loc=(st.connectors||[]).filter(x=>x.charger===c.charger).findIndex(x=>x.n===n)+1; return (ch?ch.label+" · ":"")+"LP "+loc; }
+const evseOf=(st,n)=>((st?.connectors||[]).find(x=>x.n===n)||{}).evse||"";
+const stOf=id=>STATIONS.find(x=>x.id===id);
+let TF={q:"",mode:"all"};
 async function ticketsView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:14px"><div><h1>Kundenkontakte & Meldungen</h1><p class="sub" style="margin:0">Die letzten 100 Besuche über die QR-Codes.</p></div><div class="sp"></div>
-    <label style="display:flex;gap:6px;align-items:center;margin:0;color:var(--ink)"><input type="checkbox" id="onlyT" style="width:auto"> nur Störungsmeldungen</label></div>
-    <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>Zeit</th><th>Projekt</th><th>Ladepunkt</th><th>Ergebnis</th><th>Vorgang</th><th>Kontakt</th><th>Schritte</th></tr></thead><tbody id="tb"><tr><td colspan="7" class="muted">Lade …</td></tr></tbody></table></div>`;
-  const load=async()=>{
-    try{ const r=await api("sessions",{limit:100,only_tickets:$("#onlyT").checked});
-      $("#tb").innerHTML=r.sessions.length?r.sessions.map(s=>{ const st=STATIONS.find(x=>x.id===s.station_id); const o=OUT[s.outcome||"open"]||OUT.open;
-        return `<tr class="click" data-id="${s.id}"><td>${new Date(s.started_at).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}</td><td><b>${esc(st?(st.project_id||st.id):s.station_id)}</b></td><td>${esc(cpLabel(st,s.connector))}</td><td><span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span></td><td>${esc(s.ticket_no||"")}</td><td>${esc(s.contact||"")}</td><td>${s.event_count}</td></tr>`; }).join(""):`<tr><td colspan="7" class="muted">Keine Einträge.</td></tr>`;
-      document.querySelectorAll("tr.click").forEach(r=>r.onclick=()=>sessionModal(r.dataset.id));
-    }catch(e){ toast(e.message,true); }
-  };
-  $("#onlyT").onchange=load; load();
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Kundenkontakte & Meldungen</h1><p class="sub" style="margin:0">Jeder Besuch über den QR-Code als Akte – zum Aufklappen.</p></div></div>
+  <div class="card" style="padding:12px 14px"><div class="row">
+    <input id="tq" type="search" placeholder="🔎 Vorgangsnummer (ST-…), E-Mail, Telefon, EVSE-ID oder Projekt" style="flex:1;min-width:260px;font-size:15px" value="${esc(TF.q)}">
+    <div class="seg" id="tmode">${[["all","Alle Kontakte"],["tickets","Nur Meldungen"],["neu","Neu"],["in_arbeit","In Bearbeitung"],["erledigt","Erledigt"]].map(([k,l])=>`<button data-m="${k}" class="${TF.mode===k?"on":""}">${l}</button>`).join("")}</div>
+  </div></div>
+  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Zeit</th><th>Projekt</th><th>Ladepunkt</th><th>Ergebnis</th><th>Vorgang</th><th>Status</th><th>Kontakt</th></tr></thead><tbody id="tb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  let h; $("#tq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ TF.q=$("#tq").value.trim(); loadSessions(); },300); };
+  document.querySelectorAll("#tmode button").forEach(b=>b.onclick=()=>{ TF.mode=b.dataset.m; document.querySelectorAll("#tmode button").forEach(x=>x.classList.toggle("on",x===b)); loadSessions(); });
+  loadSessions();
 }
-const EV={page_open:"QR gescannt",connector_select:"Ladepunkt gewählt",tab:"Bereich",flow_start:"Störung angeklickt",step_ok:"Schritt geholfen",step_fail:"Schritt nicht geholfen",step_back:"Zurück",solved:"✅ gelöst",feedback:"Bewertung",ticket_open:"Formular geöffnet",ticket_submit:"🧾 Störung gemeldet",danger_open:"⚠️ Gefahr",hotline_click:"📞 Hotline",hotline_copy:"ID kopiert",chat_open:"Chat geöffnet",chat_user:"💬 Kunde",chat_bot:"🤖 Assistent",chat_team:"👩‍🔧 Team",lang:"Sprache"};
-function evText(e){ const d=e.data||{}; return d.text||d.label||d.title||d.step||d.desc||d.ticketNo||d.tab||(d.value!=null?(d.value===1?"👍":"👎"):"")||""; }
-async function sessionModal(id){
-  try{ const r=await api("session",{id}); const s=r.session, st=STATIONS.find(x=>x.id===s.station_id);
-    const m=document.createElement("div"); m.className="modal"; m.innerHTML=`<div class="card"><div class="row"><h2 style="margin:0">Besuch ${esc(st?(st.project_id||st.id):s.station_id)} · ${esc(cpLabel(st,s.connector))}</h2><div class="sp"></div><button class="btn ghost sm" id="cls">Schließen</button></div>
-      <p class="muted">${new Date(s.started_at).toLocaleString("de-DE")} · ${esc(s.ticket_no||"keine Meldung")} ${s.contact?"· "+esc(s.contact):""}</p>
-      <div class="tl">${r.events.map(e=>`<div><span class="muted">${new Date(e.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</span><b>${esc(EV[e.type]||e.type)}</b><span>${esc(evText(e))}</span></div>`).join("")}</div></div>`;
-    document.body.appendChild(m); m.onclick=e=>{ if(e.target===m) m.remove(); }; m.querySelector("#cls").onclick=()=>m.remove();
+async function loadSessions(){
+  const p={limit:150,q:TF.q}; if(TF.mode==="tickets") p.only_tickets=true; if(["neu","in_arbeit","erledigt"].includes(TF.mode)) p.status=TF.mode;
+  try{
+    const r=await api("sessions",p), tb=$("#tb"); if(!tb) return;
+    tb.innerHTML=r.sessions.length?r.sessions.map(s=>{ const st=stOf(s.station_id), o=OUT[s.outcome||"open"]||OUT.open, ts=s.ticket_no?TST[s.ticket_status||"neu"]:null;
+      return `<tr class="click" data-id="${s.id}"><td class="chev">▸</td><td>${fmtDT(s.started_at)}</td><td><b>${esc(st?(st.project_id||st.id):s.station_id)}</b></td><td>${esc(cpLabel(st,s.connector))}</td>
+        <td><span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span></td><td><code>${esc(s.ticket_no||"")}</code></td><td>${ts?`<span class="badge ${ts[1]==="ok"?"":ts[1]}">${ts[0]}</span>`:""}</td><td>${esc(s.contact||"")}</td></tr>
+        <tr class="akte hidden" data-for="${s.id}"><td colspan="8"><div class="akte-in">Lade Akte …</div></td></tr>`; }).join(""):`<tr><td colspan="8" class="muted">${TF.q?"Nichts gefunden für „"+esc(TF.q)+"“.":"Keine Einträge."}</td></tr>`;
+    tb.querySelectorAll("tr.click").forEach(r=>r.onclick=()=>toggleAkte(r.dataset.id));
+    if(TF.q && r.sessions.length===1) toggleAkte(r.sessions[0].id);
   }catch(e){ toast(e.message,true); }
+}
+async function toggleAkte(id){
+  const row=document.querySelector(`tr.akte[data-for="${id}"]`), head=document.querySelector(`tr.click[data-id="${id}"]`);
+  const open=row.classList.toggle("hidden")===false; head.querySelector(".chev").textContent=open?"▾":"▸"; head.classList.toggle("open",open);
+  if(open) await renderAkte(id,row.querySelector(".akte-in"));
+}
+const EV={page_open:"QR-Code gescannt",connector_select:"Ladepunkt gewählt",tab:"Bereich gewechselt",flow_start:"Störung angeklickt",step_ok:"✓ Schritt hat geholfen",step_fail:"✗ Schritt hat nicht geholfen",step_back:"Zurück",solved:"✅ Problem gelöst",feedback:"Bewertung",ticket_open:"Störungsformular geöffnet",ticket_submit:"🧾 Störung gemeldet",danger_open:"⚠️ Beschädigung / Gefahr",hotline_click:"📞 Hotline angerufen",hotline_copy:"ID kopiert",chat_open:"Chat geöffnet",chat_user:"💬 Kunde",chat_bot:"🤖 Assistent",chat_team:"👩‍🔧 Team (Telegram)",lang:"Sprache gewechselt"};
+function evDetail(e,st){ const d=e.data||{};
+  switch(e.type){
+    case "page_open": return `über ${d.ref==="qr"?"QR-Code":"Link"}${d.lang?" · Sprache "+d.lang.toUpperCase():""}`;
+    case "connector_select": return d.label||(d.charger_label||"")||cpLabel(st,d.cp);
+    case "tab": return ({help:"Störung",chat:"Chat",call:"Hotline",google_review:"⭐ Google-Bewertung geöffnet"})[d.tab]||d.tab||"";
+    case "flow_start": case "ticket_open": case "solved": return (d.title||"")+(d.from==="chat"?" (aus dem Chat)":"");
+    case "step_ok": case "step_fail": return `${d.flow_title?d.flow_title+" · ":""}Schritt ${d.n}: ${d.step||""}`;
+    case "step_back": return d.step||"";
+    case "feedback": return d.value===1?"👍 hilfreich":"👎 nicht hilfreich";
+    case "ticket_submit": return [`<b>${esc(d.ticketNo||"")}</b>`, d.title&&esc(d.title), d.tried&&d.tried.length?"versucht: "+esc(d.tried.join(", ")):"", d.desc?`„${esc(d.desc)}“`:"", d.contact?"Kontakt: "+esc(d.contact):"", d.photo?"📷 Foto":""].filter(Boolean).join("<br>");
+    case "chat_user": case "chat_bot": return esc(d.text||"");
+    case "chat_team": return `<b>${esc(d.from||"Team")}:</b> ${esc(d.text||"")}`;
+    case "hotline_click": return d.from?"aus Bereich „"+({help:"Störung",chat:"Chat",call:"Hotline"}[d.from]||d.from)+"“":"";
+    case "lang": return (d.lang||"").toUpperCase();
+    default: return esc(d.title||d.step||"");
+  }
+}
+const MK={urgent:"Sofort-Mail Team",summary:"Zusammenfassung Team",customer:"Bestätigung Kunde"};
+async function renderAkte(id,box){
+  try{
+    const r=await api("session",{id}), s=r.session, st=stOf(s.station_id), dur=Math.max(0,Math.round((new Date(s.last_event_at)-new Date(s.started_at))/60000));
+    const ua=s.user_agent||"", dev=/iPhone|iPad/.test(ua)?"iPhone/iPad":/Android/.test(ua)?"Android":/Mac/.test(ua)?"Mac":/Windows/.test(ua)?"Windows":"unbekannt";
+    const facts=[["Projekt",esc(st?(st.project_id||st.id):s.station_id)+(st&&st.address?" · "+esc(st.address):"")],["Ladepunkt",esc(cpLabel(st,s.connector))+(evseOf(st,s.connector)?` · <code>${esc(evseOf(st,s.connector))}</code>`:"")],
+      ["Beginn",new Date(s.started_at).toLocaleString("de-DE")],["Dauer",dur+" Min. · "+s.event_count+" Schritte"],["Ergebnis",(OUT[s.outcome||"open"]||OUT.open)[0]],
+      ["Vorgang",s.ticket_no?`<code>${esc(s.ticket_no)}</code>`:"–"],["Kontakt",esc(s.contact||"–")],["Sprache / Gerät",(s.lang||"de").toUpperCase()+" · "+dev],["Telegram",s.tg_thread_id?"eigenes Thema #"+s.tg_thread_id:(s.tg_started_at?"gemeldet":"–")],["Besuchs-ID",`<code style="font-size:11px">${esc(s.id)}</code>`]];
+    box.innerHTML=`<div class="akte-grid">
+      <div><h3>Akte</h3><dl>${facts.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+        ${s.ticket_no?`<h3 style="margin-top:16px">Bearbeitung</h3>
+          <div class="row"><select class="t-status" style="width:auto">${Object.entries(TST).map(([k,v])=>`<option value="${k}" ${k===(s.ticket_status||"neu")?"selected":""}>${v[0]}</option>`).join("")}</select></div>
+          <textarea class="t-note" rows="2" placeholder="Interne Notiz (z. B. Techniker beauftragt, Kunde zurückgerufen …)" style="margin-top:8px"></textarea>
+          <div class="row" style="margin-top:8px"><button class="btn sm t-save">Speichern</button><button class="btn ghost sm t-copy">Akte kopieren</button></div>`:`<div class="row" style="margin-top:12px"><button class="btn ghost sm t-copy">Akte kopieren</button></div>`}
+        <div class="notes">${(s.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)}</span>${n.status?` <span class="badge ${TST[n.status][1]==="ok"?"":TST[n.status][1]}">${TST[n.status][0]}</span>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div>
+        ${r.photos.length?`<h3 style="margin-top:16px">Fotos</h3><div class="row">${r.photos.map(p=>`<a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join("")}</div>`:""}
+        ${r.mails.length?`<h3 style="margin-top:16px">Mails</h3>${r.mails.map(m=>`<div class="mail-i"><span class="badge ${m.status==="sent"?"":m.status==="failed"?"warn":"off"}">${m.status==="sent"?"gesendet":m.status==="failed"?"fehlgeschlagen":"übersprungen"}</span> <b>${MK[m.kind]||m.kind}</b> an ${esc(m.recipient||"–")} · ${fmtT(m.created_at)}${m.error?`<div class="muted" style="font-size:12px">${esc(m.error.slice(0,140))}</div>`:""}</div>`).join("")}`:""}
+      </div>
+      <div><h3>Protokoll</h3><div class="log">${r.events.map(e=>`<div class="log-i t-${e.type}"><span class="lt">${fmtT(e.at)}</span><span class="le">${EV[e.type]||e.type}</span><span class="ld">${evDetail(e,st)}</span></div>`).join("")}</div></div>
+    </div>`;
+    const save=box.querySelector(".t-save");
+    if(save) save.onclick=async()=>{ try{ const st2=box.querySelector(".t-status").value, note=box.querySelector(".t-note").value.trim();
+      await api("update_ticket",{id,status:st2===(s.ticket_status||"neu")&&!note?null:st2,note}); toast("Gespeichert ✓"); await renderAkte(id,box);
+      const b=document.querySelector(`tr.click[data-id="${id}"] td:nth-child(7)`); if(b) b.innerHTML=`<span class="badge ${TST[st2][1]==="ok"?"":TST[st2][1]}">${TST[st2][0]}</span>`; }catch(e){ toast(e.message,true); } };
+    box.querySelector(".t-copy").onclick=async e=>{
+      const txt=[`Akte ${s.ticket_no||s.id}`,...facts.map(([k,v])=>`${k}: ${v.replace(/<[^>]+>/g,"")}`),"","Protokoll:",...r.events.map(ev=>`${fmtT(ev.at)}  ${EV[ev.type]||ev.type}  ${evDetail(ev,st).replace(/<br>/g," · ").replace(/<[^>]+>/g,"")}`),
+        ...(s.notes||[]).length?["","Notizen:",...s.notes.map(n=>`${fmtDT(n.at)} ${n.status?"["+TST[n.status][0]+"] ":""}${n.text||""}`)]:[]].join("\n");
+      try{ await navigator.clipboard.writeText(txt); e.target.textContent="Kopiert ✓"; }catch(err){ toast("Kopieren nicht möglich",true); } };
+  }catch(e){ box.innerHTML=`<span class="muted">${esc(e.message)}</span>`; }
 }
 
 /* ---------- Einstellungen ---------- */

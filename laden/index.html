@@ -60,6 +60,9 @@ footer.bottom{flex:none;background:#fff;border-top:1px solid var(--line);padding
 .cps{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px}
 .cp{padding:10px 6px}
 .st-pill.need{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
+.st-img{display:block;width:calc(100% + 32px);margin:-14px -16px 12px;height:150px;object-fit:cover;border-radius:var(--r) var(--r) 0 0}
+.station.compact .st-img{display:none}
+.tk-x{border:0;background:none;color:var(--muted);font-size:18px;line-height:1;padding:0 2px;margin-left:8px}
 .st-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .st-pill{display:none;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap}
 .station.compact{padding:10px 14px;margin-bottom:10px}
@@ -169,6 +172,7 @@ nav.tabs button{position:relative}
 
   <div class="scroll" id="scroll"><div class="wrap">
   <section class="station" id="stationCard">
+    <img class="st-img" id="stImg" alt="" hidden>
     <div class="lbl" data-i="station">Ladestation</div>
     <div class="st-head"><div class="id" id="stId">–</div><button class="st-pill" id="stPill" aria-label="Ladepunkt wechseln"></button></div>
     <div class="addr" id="stAddr">–</div>
@@ -199,6 +203,7 @@ nav.tabs button{position:relative}
 const CONFIG = {
   brand: "Lade-Support",
   api: "https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-support",
+  imgBase: "https://xsyuhfleesstrchcwspg.supabase.co/storage/v1/object/public/charge-public/stations/",   // Standortbild aus dem Dashboard
   publicUrl: "https://qar.gallery/laden/",   // Adresse, auf die die QR-Codes zeigen
   privacyUrl: "",                             // Link zur Datenschutzerklärung (leer = kein Link)
   hotline: "+49 40 280 96 0",
@@ -311,7 +316,7 @@ const T = {
     chips:["Ladung startet nicht","Ladekarte wird nicht erkannt","Kreditkarte geht nicht","Stecker steckt fest","Ich möchte einen Mitarbeiter sprechen"],
     chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
     hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
-    tCopy:"📋 Nummer kopieren",tShare:"📤 Speichern / teilen",tCopied:"✓ Kopiert",tSaved:"Die Nummer bleibt auf diesem Handy gespeichert und erscheint auch auf der Startseite und unter „Hotline“.",
+    tCopy:"📋 Nummer kopieren",tShare:"📤 Speichern / teilen",tCopied:"✓ Kopiert",tSaved:"Die Nummer bleibt nur auf Ihrem Handy für 12 Stunden gespeichert (Startseite und „Hotline“) – andere Kunden sehen sie nicht.",hide:"Ausblenden",
     myTicket:"Ihre Störungsmeldung",ticketAgo:"gemeldet {t}",shareTitle:"Störungsmeldung {no}",
     shareText:"Meine Störungsmeldung an der Ladesäule\nVorgangsnummer: {no}\nStation: {st}{evse}\nProblem: {pr}\nZeit: {time}\nHotline: {hl}",
     callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln",charger:"Charger",chooseCharger:"Charger wählen",chooseCp:"Ladepunkt wählen",chargerHint:"Wählen Sie einen Charger oder geben Sie oben ein paar Ziffern der EVSE-ID ein.",evseFind:"EVSE-ID vom Aufkleber",evsePh:"z. B. letzte Ziffern eingeben",evseNote:"· EVSE-ID mit dem Aufkleber vergleichen",evseNone:"Keine passende EVSE-ID gefunden – bitte Charger wählen.",pickT:"An welchem Ladepunkt stehen Sie?",pickH:"Jeder Ladepunkt hat einen Aufkleber mit seiner EVSE-ID – damit finden Sie ihn hier am schnellsten."},
@@ -332,7 +337,7 @@ const T = {
     chips:["Charging won't start","Charging card not recognised","Credit card not working","Connector is stuck","I'd like to speak to someone"],
     chatPh:"Type a message…",chatToTeam:"Your message has reached our service team. We'll reply here shortly.",
     hours:"Available 24/7",callBtn:"Call now",stationId:"Station ID",copy:"Copy",copied:"Copied ✓",caseNo:"Reference number",
-    tCopy:"📋 Copy number",tShare:"📤 Save / share",tCopied:"✓ Copied",tSaved:"The number stays saved on this phone and also appears on the start screen and under “Hotline”.",
+    tCopy:"📋 Copy number",tShare:"📤 Save / share",tCopied:"✓ Copied",tSaved:"The number is kept only on your phone for 12 hours (start screen and “Hotline”) – other customers can't see it.",hide:"Hide",
     myTicket:"Your issue report",ticketAgo:"reported {t}",shareTitle:"Issue report {no}",
     shareText:"My issue report at the charging station\nReference number: {no}\nStation: {st}{evse}\nIssue: {pr}\nTime: {time}\nHotline: {hl}",
     callHint:"Please have the EVSE ID ready – it is also on the sticker at the connector. Then we can find it in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector",charger:"Charger",chooseCharger:"Choose charger",chooseCp:"Choose connector",chargerHint:"Choose a charger or enter a few digits of the EVSE ID above.",evseFind:"EVSE ID from the sticker",evsePh:"e.g. enter the last digits",evseNote:"· compare the EVSE ID with the sticker",evseNone:"No matching EVSE ID – please choose a charger.",pickT:"Which connector are you at?",pickH:"Every connector has a sticker with its EVSE ID – that's the quickest way to find it here."}
@@ -429,6 +434,8 @@ function wireSelector(root,after){
 function renderStation(){
   const st=S.stationData||{addr:"",cps:[]};
   $("#stId").textContent=S.label||S.station;
+  const im=$("#stImg"), src=CONFIG.imgBase+encodeURIComponent(S.station)+".jpg?v="+Math.floor(Date.now()/3e5);
+  if(im.dataset.src!==src){ im.dataset.src=src; im.hidden=true; im.onload=()=>{ im.hidden=false; }; im.onerror=()=>{ im.hidden=true; }; im.src=src; }
   $("#stAddr").textContent=st.addr||"";
   $("#cps").outerHTML=`<div id="cps">${selectorHTML()}</div>`;
   wireSelector($("#cps"));
@@ -464,7 +471,9 @@ function show(fn){ S.render=fn; fn(); }   // merkt sich die aktuelle Ansicht (f�
 const TKEY="hc_tickets";
 function loadTickets(){ try{ return JSON.parse(localStorage.getItem(TKEY)||"[]"); }catch(e){ return []; } }
 function saveTicket(t){ try{ const a=loadTickets().filter(x=>x.no!==t.no); a.unshift(t); localStorage.setItem(TKEY,JSON.stringify(a.slice(0,5))); }catch(e){} }
-function recentTicket(){ const lim=Date.now()-3*86400000; return loadTickets().find(t=>t.station===S.station && t.ts>lim) || null; }
+// Nur auf DIESEM Handy gespeichert; nach 12 h oder per ✕ nicht mehr angezeigt
+function recentTicket(){ const lim=Date.now()-12*3600000; return loadTickets().find(t=>t.station===S.station && t.ts>lim && !t.hidden) || null; }
+function hideTicket(no){ try{ const a=loadTickets().map(x=>x.no===no?{...x,hidden:true}:x); localStorage.setItem(TKEY,JSON.stringify(a)); }catch(e){} }
 function ago(ts){ const m=Math.round((Date.now()-ts)/60000), en=lang==="en";
   if(m<1) return en?"just now":"gerade eben"; if(m<60) return en?`${m} min ago`:`vor ${m} Min.`;
   const h=Math.round(m/60); if(h<24) return en?`${h} h ago`:`vor ${h} Std.`;
@@ -488,13 +497,13 @@ window.addEventListener("popstate",()=>{ if(inSub){ inSub=false; $("#composer").
 function home(){
   S.flow=null;S.step=0;S.tried=[]; compact(false); S.render=home;
   const rt=recentTicket();
-  view.innerHTML=`${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr("myTicket")}</span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small></div>
+  view.innerHTML=`${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr("myTicket")}</span><span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small><button class="tk-x" id="tkX" aria-label="${tr("hide")}">✕</button></span></div>
     <div class="ticket">${esc(rt.no)}</div>${ticketActions(rt)}</div>`:""}
   <h2>${tr("what")}</h2><p class="sub">${tr("whatSub")}</p>
   <div class="grid">${TILE_ORDER.map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile ${f.danger?"danger":""} ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
   <p class="privacy">${tr("privacy")}${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">${tr("privacyLink")}</a>`:""}</p>`;
   view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f));
-  if(rt) wireTicketActions(view.querySelector(".tk-banner"),rt);
+  if(rt){ wireTicketActions(view.querySelector(".tk-banner"),rt); $("#tkX").onclick=()=>{ hideTicket(rt.no); S.lastTicket=null; home(); }; }
 }
 
 function startFlow(k){
