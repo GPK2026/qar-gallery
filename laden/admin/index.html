@@ -272,6 +272,8 @@ function renderEditor(){
       <div id="noImg" style="display:none;width:240px;height:135px;border:1.5px dashed var(--line);border-radius:10px;align-items:center;justify-content:center;color:var(--muted)">noch kein Bild</div>
       <div><input type="file" accept="image/*" id="imgIn" class="hidden"><button class="btn ghost sm" id="imgUp">Foto hochladen</button> <button class="btn ghost sm" id="imgDel">Entfernen</button>
       <div class="hint" style="max-width:360px">Eigenes Foto der Ladestation (Querformat). Bilder aus Google Maps dürfen nicht übernommen werden.</div></div></div></div>`:""}
+    <div class="c12"><label>Parken & Tarife – Info für Kunden (erscheint in der App unter „Parken / Tarife / Schranke“)</label><textarea id="f_parking" rows="3" placeholder="z. B. Parken während des Ladens kostenfrei, max. 2 Std. mit Parkscheibe. Ladepreis: 0,59 €/kWh, Blockiergebühr ab 4 Std.">${esc((E.extras||{}).parking_info||"")}</textarea></div>
+    <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_sanitary" style="width:auto" ${(E.extras||{}).sanitary?"checked":""}> Sanitäre Einrichtungen vorhanden (Kachel „Sanitäre Einrichtungen“ in der App)</label></div>
     <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_active" style="width:auto" ${E.active!==false?"checked":""}> Aktiv (in der Kunden-App erreichbar)</label></div>
   </div></div>
 
@@ -331,6 +333,7 @@ function wireChargers(){
 function collect(){
   const v=id=>$("#"+id)?$("#"+id).value.trim():"";
   Object.assign(E,{project_id:v("f_project_id"),name:v("f_name"),address:v("f_address"),lat:v("f_lat"),lng:v("f_lng"),review_url:v("f_review_url"),notify_email:v("f_notify_email"),active:$("#f_active")?$("#f_active").checked:true});
+  E.extras={...(E.extras||{}),parking_info:($("#f_parking")?.value||"").trim(),sanitary:!!$("#f_sanitary")?.checked};
   document.querySelectorAll(".charger").forEach(el=>{ const c=E.chargers[+el.dataset.ci]; if(!c) return;
     c.label=el.querySelector(".c_label").value.trim(); c.model=el.querySelector(".c_model").value.trim();
     el.querySelectorAll(".lp").forEach(r=>{ const x=c.connectors[+r.dataset.lj]; x.t=r.querySelector(".l_t").value; x.kw=r.querySelector(".l_kw").value.trim()||null; x.evse=r.querySelector(".l_evse").value.trim(); });

@@ -129,6 +129,13 @@ textarea.f{min-height:80px;resize:vertical}
 .tk-li code{font-size:16px;font-weight:700;color:#08603d}
 .tk-li small{color:var(--muted)}
 .home-h{font-size:23px;line-height:1.2;margin:2px 0 12px;letter-spacing:-.3px}
+.home-h small{display:block;font-size:15px;font-weight:600;color:var(--brand);margin-top:4px;letter-spacing:0}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.opt{display:flex;flex-direction:column;align-items:flex-start;gap:6px;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:14px;font-weight:700;font-size:15px;color:var(--ink);text-align:left;min-height:84px}
+.opt span{font-size:22px}
+.opt.on{border-color:var(--brand);background:var(--brand-soft)}
+.info-box{white-space:pre-wrap;background:var(--brand-soft);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.5;margin-top:8px}
+textarea.err{border-color:#d03b3b!important}
 .tiles-hint{margin:16px 2px 10px;font-weight:600;color:var(--ink)}
 .tk-banner{border-color:#c9e7d8;background:#f6fbf8}
 .tk-head{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:15px}
@@ -311,26 +318,34 @@ const FLOWS = {
   ]},
   danger: { ic:"⚠️", t:{de:"Beschädigung / Gefahr",en:"Damage / danger"}, danger:true },
   // ── Rund um den Standort (kein technischer Defekt am Ladepunkt → markiert ihn nicht als gestört)
-  // direkt zum Formular mit Foto + Kennzeichen (kein „hat geholfen?“-Schritt)
+  // choose = Auswahl vor dem Formular · info = Infoseite · form = eigene Texte im Formular
   blocked: { ic:"🚗", site:true, plate:true, t:{de:"Ladeplatz blockiert (Verbrenner / Falschparker)",en:"Charging bay blocked (combustion car / wrong parking)"}, steps:[] },
-  parking: { ic:"🅿️", site:true, t:{de:"Parken / Parkgebühr / Schranke",en:"Parking / parking fee / barrier"}, steps:[
-    { t:{de:"Parkregeln vor Ort beachten",en:"Check the parking rules"},
-      h:{de:"Bitte beachten Sie die Beschilderung (Parkscheibe, Höchstparkdauer, Parkticket). Laden und Parken werden oft getrennt abgerechnet. Hilft das nicht weiter, schildern Sie uns kurz das Problem.",
-         en:"Please check the signs (parking disc, maximum stay, parking ticket). Charging and parking are often billed separately. If that doesn't help, describe the problem briefly."} } ]},
-  dirty: { ic:"🧹", site:true, t:{de:"Verschmutzung / Müll",en:"Dirt / litter"}, steps:[] },
-  light: { ic:"💡", site:true, t:{de:"Beleuchtung defekt / zu dunkel",en:"Lighting broken / too dark"}, steps:[] },
-  billing: { ic:"💶", site:true, card:true, t:{de:"Preis / Abrechnung stimmt nicht",en:"Price / billing is wrong"}, steps:[
-    { t:{de:"Beleg prüfen",en:"Check your receipt"},
-      h:{de:"Mit Ladekarte oder App rechnet Ihr Anbieter ab – Preis und Beleg finden Sie in dessen App. Mit Kreditkarte erhalten Sie den Beleg am Terminal (QR-Code). Stimmt etwas nicht, melden Sie es uns mit Uhrzeit und Betrag.",
-         en:"With a charging card or app, your provider bills you – price and receipt are in their app. With a credit card, you get the receipt at the terminal (QR code). If something is wrong, report it with time and amount."} } ]},
-  access: { ic:"♿", site:true, t:{de:"Zufahrt / Barrierefreiheit",en:"Access / accessibility"}, steps:[] },
+  parking: { ic:"🅿️", site:true, info:"parking", t:{de:"Parken / Tarife / Schranke",en:"Parking / fees / barrier"}, steps:[],
+    choose:{ opts:[["machine","🎫",{de:"Kassenautomat defekt",en:"Pay machine broken"}],["barrier","🚧",{de:"Schranke defekt / öffnet nicht",en:"Barrier broken / won't open"}],["other","❓",{de:"Anderes Problem beim Parken",en:"Other parking problem"}]] } },
+  dirty: { ic:"🧹", site:true, t:{de:"Verschmutzung / Müll",en:"Dirt / litter"}, steps:[],
+    choose:{ multi:true, q:{de:"Was ist verschmutzt?",en:"What is dirty?"}, opts:[["area","🅿️",{de:"Parkfläche",en:"Parking area"}],["charger","🔌",{de:"Ladesäule / Kabel",en:"Charger / cable"}],["display","🖥️",{de:"Display",en:"Display"}],["all","🧹",{de:"Gesamte Fläche",en:"Whole site"}]] },
+    form:{ photo:{de:"Foto (optional)",en:"Photo (optional)"} } },
+  light: { ic:"💡", site:true, t:{de:"Beleuchtung",en:"Lighting"}, steps:[],
+    choose:{ q:{de:"Was ist mit der Beleuchtung?",en:"What's wrong with the lighting?"}, opts:[["broken","⚫",{de:"Defekt / aus",en:"Broken / off"}],["flicker","〰️",{de:"Flackert",en:"Flickering"}],["bright","☀️",{de:"Zu hell / blendet",en:"Too bright / glare"}],["dark","🌑",{de:"Zu dunkel",en:"Too dark"}]] } },
+  billing: { ic:"💶", site:true, card:true, t:{de:"Nicht korrekt abgerechnet",en:"Charged incorrectly"}, steps:[],
+    form:{ t:{de:"Abrechnung prüfen lassen",en:"Have your bill checked"},
+      h:{de:"Bitte fotografieren Sie den Beleg oder laden Sie einen Screenshot aus Ihrer Lade-App hoch und nennen Sie Uhrzeit und Betrag. Mit Ladekarte/App rechnet Ihr Anbieter ab – wir klären es mit ihm.",
+         en:"Please take a photo of the receipt or upload a screenshot from your charging app and state the time and amount. With a card/app your provider bills you – we'll sort it out with them."},
+      photo:{de:"Foto vom Beleg oder Screenshot",en:"Photo of the receipt or screenshot"}, descPh:{de:"z. B. 14:20 Uhr, 38,50 € – erwartet waren ca. 25 €",en:"e.g. 2:20 pm, €38.50 – expected about €25"} } },
+  access: { ic:"🚧", site:true, t:{de:"Zufahrt / Barrieren",en:"Access / obstacles"}, steps:[],
+    form:{ t:{de:"Zufahrt / Barrieren melden",en:"Report access problem"}, h:{de:"Bitte beschreiben Sie kurz, was die Zufahrt oder den Zugang zur Ladesäule behindert (z. B. Baustelle, Poller, Stufe, gesperrte Einfahrt). Ein Foto hilft.",en:"Please briefly describe what blocks access to the charger (e.g. construction, bollard, step, closed entrance). A photo helps."},
+      descReq:true, descL:{de:"Was behindert die Zufahrt? (Pflichtfeld)",en:"What is blocking access? (required)"}, descPh:{de:"z. B. Einfahrt wegen Baustelle gesperrt",en:"e.g. entrance closed due to construction"} } },
+  sanitary: { ic:"🚻", site:true, needs:"sanitary", t:{de:"Sanitäre Einrichtungen",en:"Toilets / restrooms"}, steps:[],
+    choose:{ q:{de:"Was ist mit den sanitären Einrichtungen?",en:"What's wrong with the restrooms?"}, opts:[["broken","🔧",{de:"Defekt / geschlossen",en:"Out of order / closed"}],["dirty","🧽",{de:"Stark verschmutzt",en:"Very dirty"}]] } },
   other: { ic:"❓", site:true, t:{de:"Etwas anderes",en:"Something else"}, steps:[], wide:true }
 };
 
 // Reihenfolge im 2er-Raster: Ladesäule (Karte/App + Display) und Terminal (Kreditkarte + Terminal) jeweils in einer Reihe
 const TILE_ORDER=["nostart","abort","card","dispCharger","credit","dispTerminal","stuck","danger"];
-const SITE_ORDER=["blocked","parking","dirty","light","billing","access","other"];   // „Rund um den Standort“
+const SITE_ORDER=["blocked","parking","dirty","light","billing","access","sanitary","other"];   // „Rund um den Standort“
 const ALL_TILES=[...TILE_ORDER,...SITE_ORDER];
+const extras=()=>(S.stationData&&S.stationData.extras)||{};
+const siteTiles=()=>SITE_ORDER.filter(k=>!FLOWS[k].needs||extras()[FLOWS[k].needs]);   // z. B. Sanitär nur, wenn im Dashboard aktiviert
 
 /* ============ TEXTE (DE/EN) ============ */
 const T = {
@@ -352,7 +367,8 @@ const T = {
     chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
     hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
     tCopy:"📋 Nummer kopieren",tShare:"📤 Speichern / teilen",tCopied:"✓ Kopiert",tSaved:"Die Nummer bleibt nur auf Ihrem Handy für 12 Stunden gespeichert (Startseite und „Hotline“) – andere Kunden sehen sie nicht.",hide:"Ausblenden",
-    siteH:"Rund um den Standort",blkT:"Blockierten Ladeplatz melden",blkH:"Ist ein anderer Ladeplatz frei, nutzen Sie bitte diesen. Ein Foto und das Kennzeichen helfen uns, vor Ort zu reagieren – wir können das Fahrzeug nicht selbst entfernen.",
+    siteH:"Rund um den Standort",whatCare:"Wir kümmern uns darum!",sChoice:"Auswahl",multiH:"Mehrfachauswahl möglich.",next:"Weiter",
+    parkT:"Parken & Tarife an diesem Standort",parkNone:"Für diesen Standort sind keine besonderen Parkregeln hinterlegt. Bitte beachten Sie die Beschilderung vor Ort.",parkQ:"Gibt es ein Problem?",parkOk:"Danke, alles klar",blkT:"Blockierten Ladeplatz melden",blkH:"Ist ein anderer Ladeplatz frei, nutzen Sie bitte diesen. Ein Foto und das Kennzeichen helfen uns, vor Ort zu reagieren – wir können das Fahrzeug nicht selbst entfernen.",
     blkPhoto:"Foto vom Fahrzeug (optional)",blkPlate:"Kennzeichen (optional)",blkPlatePh:"z. B. B-AB 1234",blkWhere:"Welcher Ladeplatz ist blockiert? (optional)",blkWherePh:"z. B. Charger 2 · Ladepunkt 1",blkDescPh:"z. B. seit wann, Fahrzeugtyp, Farbe …",myTicket:"Ihre Störungsmeldung",myTickets:"Ihre Störungsmeldungen",
     known:"Störung bekannt",knownT:"An diesem Ladepunkt ist bereits eine Störung gemeldet",knownH:"Seit {t} · {n}× gemeldet. Unser Team arbeitet daran.",
     knownAlt:"Diese Ladepunkte sind frei von Störungsmeldungen:",knownNoAlt:"Leider sind alle Ladepunkte dieses Chargers gestört gemeldet.",
@@ -380,7 +396,8 @@ const T = {
     chatPh:"Type a message…",chatToTeam:"Your message has reached our service team. We'll reply here shortly.",
     hours:"Available 24/7",callBtn:"Call now",stationId:"Station ID",copy:"Copy",copied:"Copied ✓",caseNo:"Reference number",
     tCopy:"📋 Copy number",tShare:"📤 Save / share",tCopied:"✓ Copied",tSaved:"The number is kept only on your phone for 12 hours (start screen and “Hotline”) – other customers can't see it.",hide:"Hide",
-    siteH:"Around the site",blkT:"Report a blocked charging bay",blkH:"If another bay is free, please use it. A photo and the licence plate help us act on site – we can't remove the vehicle ourselves.",
+    siteH:"Around the site",whatCare:"We'll take care of it!",sChoice:"Selection",multiH:"You can select several.",next:"Next",
+    parkT:"Parking & fees at this site",parkNone:"No special parking rules are stored for this site. Please follow the signs on site.",parkQ:"Is there a problem?",parkOk:"Thanks, all clear",blkT:"Report a blocked charging bay",blkH:"If another bay is free, please use it. A photo and the licence plate help us act on site – we can't remove the vehicle ourselves.",
     blkPhoto:"Photo of the vehicle (optional)",blkPlate:"Licence plate (optional)",blkPlatePh:"e.g. B-AB 1234",blkWhere:"Which bay is blocked? (optional)",blkWherePh:"e.g. Charger 2 · Connector 1",blkDescPh:"e.g. since when, vehicle type, colour …",myTicket:"Your issue report",myTickets:"Your issue reports",
     known:"Known fault",knownT:"A fault has already been reported at this connector",knownH:"Since {t} · reported {n}×. Our team is on it.",
     knownAlt:"These connectors have no fault reports:",knownNoAlt:"Unfortunately all connectors of this charger are reported as faulty.",
@@ -429,7 +446,7 @@ async function loadStation(){
   S.station = (m?m[1]:h) || CONFIG.defaultStation; S.prefCharger = m?+m[2]:null;
   S.stationData = CONFIG.stations[S.station] || null; S.cp=null; S.charger=null; S.label=S.station;
   renderStation();
-  try{ const r=await api("station"); if(r.station){ if(r.station.id&&r.station.id!==S.station){ S.station=r.station.id; } S.label=r.station.project_id||S.station; S.stationData={review:r.station.review_url||(CONFIG.stations[S.station]||{}).review||"",addr:r.station.address||r.station.name||"",chargers:r.station.chargers||null,cps:(r.station.connectors||[]).length?r.station.connectors:[{n:1,t:""},{n:2,t:""}],incidents:r.station.incidents||[]}; } }catch(e){}
+  try{ const r=await api("station"); if(r.station){ if(r.station.id&&r.station.id!==S.station){ S.station=r.station.id; } S.label=r.station.project_id||S.station; S.stationData={review:r.station.review_url||(CONFIG.stations[S.station]||{}).review||"",addr:r.station.address||r.station.name||"",chargers:r.station.chargers||null,cps:(r.station.connectors||[]).length?r.station.connectors:[{n:1,t:""},{n:2,t:""}],incidents:r.station.incidents||[],extras:r.station.extras||{}}; } }catch(e){}
   initSelection(); renderStation();
   return "station";
 }
@@ -512,7 +529,7 @@ function pickView(next){
 // Station kompakt (eine Zeile) überall außer auf der Startseite – Tippen klappt sie auf
 const review=()=>((S.stationData&&S.stationData.review)||"");
 const evse=()=>{ const c=curCp(); return (c&&c.evse)||""; };
-function compact(on){ const c=$("#stationCard"); c.classList.toggle("compact",on); c.classList.remove("open"); $("#homeH").hidden=on; $("#homeH").textContent=tr("what"); }
+function compact(on){ const c=$("#stationCard"); c.classList.toggle("compact",on); c.classList.remove("open"); $("#homeH").hidden=on; $("#homeH").innerHTML=esc(tr("what"))+`<small>${esc(tr("whatCare"))}</small>`; }
 $("#stPill").onclick=()=>$("#stationCard").classList.toggle("open");
 const scroller=()=>$("#scroll");
 function toTop(){ scroller().scrollTop=0; }
@@ -564,7 +581,7 @@ function home(){
   <p class="sub tiles-hint">${tr("whatSub")}</p>
   <div class="grid">${TILE_ORDER.map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile ${f.danger?"danger":""} ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
   <h3 class="site-h">${tr("siteH")}</h3>
-  <div class="grid">${SITE_ORDER.map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile site ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
+  <div class="grid">${siteTiles().map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile site ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
   <p class="privacy">${tr("privacy")}${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">${tr("privacyLink")}</a>`:""}</p>`;
   view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f));
   if(rt){ wireTicketActions(view.querySelector(".tk-banner"),rt);
@@ -584,10 +601,39 @@ function startFlow(k){
   const f=FLOWS[k];
   track(f.danger?"danger_open":"flow_start",{flow:k,title:DE(f.t)});
   if(f.danger) return show(dangerView);
+  S.choice=[]; S.choiceL=[];
+  if(f.info) return show(infoView);
+  if(f.choose) return show(chooseView);
   if(!f.steps.length) return openTicket();
   show(stepView);
 }
 
+// Auswahl vor dem Formular (einfach oder mehrfach)
+function chooseView(){
+  const f=FLOWS[S.flow], c=f.choose; compact(true); toTop(); markSub();
+  view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
+  <div class="card"><div class="step-n">${f.ic} ${L(f.t)}</div><div class="step-t">${L(c.q)}</div>${c.multi?`<p class="step-h">${tr("multiH")}</p>`:""}
+  <div class="opts">${c.opts.map(([k,ic,l])=>`<button class="opt ${S.choice.includes(DE(l))?"on":""}" data-k="${k}"><span>${ic}</span>${L(l)}</button>`).join("")}</div>
+  ${c.multi?`<button class="btn primary" id="go" ${S.choice.length?"":"disabled"}>${tr("next")}</button>`:""}</div>`;
+  $("#bk").onclick=home;
+  view.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{ const o=c.opts.find(x=>x[0]===b.dataset.k), lab=DE(o[2]);
+    if(!c.multi){ S.choice=[lab]; S.choiceL=[L(o[2])]; return openTicket(); }
+    const i=S.choice.indexOf(lab); if(i<0){ S.choice.push(lab); (S.choiceL=S.choiceL||[]).push(L(o[2])); } else { S.choice.splice(i,1); S.choiceL.splice(i,1); }
+    b.classList.toggle("on",i<0); $("#go").disabled=!S.choice.length; });
+  if($("#go")) $("#go").onclick=openTicket;
+}
+// Infoseite Parken: Tarife & Besonderheiten aus dem Dashboard, danach ggf. Problem melden
+function infoView(){
+  const f=FLOWS[S.flow], txt=(extras().parking_info||"").trim(); compact(true); toTop(); markSub();
+  view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
+  <div class="card"><div class="step-n">${f.ic} ${L(f.t)}</div><div class="step-t">${tr("parkT")}</div>
+  <div class="info-box">${txt?esc(txt):tr("parkNone")}</div>
+  <p class="step-h" style="margin-top:14px">${tr("parkQ")}</p>
+  <div class="opts">${f.choose.opts.map(([k,ic,l])=>`<button class="opt" data-k="${k}"><span>${ic}</span>${L(l)}</button>`).join("")}</div>
+  <button class="btn ghost" id="ok">${tr("parkOk")}</button></div>`;
+  $("#bk").onclick=home; $("#ok").onclick=()=>{ track("step_ok",{flow_title:DE(f.t),n:1,step:"Parkinfo gelesen"}); home(); };
+  view.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{ const o=f.choose.opts.find(x=>x[0]===b.dataset.k); S.choice=[DE(o[2])]; S.choiceL=[L(o[2])]; openTicket(); });
+}
 function stepView(){
   const f=FLOWS[S.flow], s=f.steps[S.step], n=f.steps.length; compact(true); toTop(); markSub();
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
@@ -643,17 +689,18 @@ function shrink(file){ return new Promise((res)=>{ if(!file) return res(null);
 
 function openTicket(){ track("ticket_open",{flow:S.flow,title:DE(FLOWS[S.flow].t)}); show(ticketView); }
 function ticketView(){
-  const f=FLOWS[S.flow]; compact(true); toTop(); markSub();
+  const f=FLOWS[S.flow], fm=f.form||{}; compact(true); toTop(); markSub();
   const keep={desc:$("#desc")?.value||"",email:$("#email")?.value||S.lastEmail||"",phone:$("#phone")?.value||S.lastPhone||"",card:$("#card")?.value||S.lastCard||"",name:$("#cname")?.value||S.lastName||"",plate:$("#plate")?.value||"",where:$("#where")?.value||"",emsp:$("#emsp")?.value||S.lastEmsp||""};
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
-  <div class="card"><div class="step-t">${f.plate?tr("blkT"):tr("ticketT")}</div>
-  <p class="step-h">${f.plate?tr("blkH"):tr("ticketH")}</p>
+  <div class="card"><div class="step-t">${f.plate?tr("blkT"):fm.t?L(fm.t):tr("ticketT")}</div>
+  <p class="step-h">${f.plate?tr("blkH"):fm.h?L(fm.h):tr("ticketH")}</p>
   ${f.plate?`<label class="f">${tr("blkPhoto")}</label><input class="f" type="file" accept="image/*" capture="environment" id="pic">
   <label class="f">${tr("blkPlate")}</label><input class="f" id="plate" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="${tr("blkPlatePh")}" value="${esc(keep.plate)}">
   <label class="f">${tr("blkWhere")}</label><input class="f" id="where" placeholder="${tr("blkWherePh")}" value="${esc(keep.where||(curCp()?cpLabel(curCp()):""))}">`:""}
-  <div class="summary"><b>${tr("sStation")}</b>${esc(S.label||S.station)}<br>${f.site&&!curCp()?"":`<b>${tr("sCp")}</b>${esc(cpLabel(curCp())||"–")}<br>`}${evse()?`<b>EVSE-ID</b>${esc(evse())}<br>`:""}<b>${tr("sProblem")}</b>${L(f.t)}<br>${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
-  <label class="f">${tr("fDesc")}</label><textarea class="f" id="desc" placeholder="${f.plate?tr("blkDescPh"):tr("fDescPh")}">${esc(keep.desc)}</textarea>
-  ${f.plate?"":`<label class="f">${tr("fPhoto")}</label><input class="f" type="file" accept="image/*" id="pic">`}
+  <div class="summary"><b>${tr("sStation")}</b>${esc(S.label||S.station)}<br>${f.site&&!curCp()?"":`<b>${tr("sCp")}</b>${esc(cpLabel(curCp())||"–")}<br>`}${evse()?`<b>EVSE-ID</b>${esc(evse())}<br>`:""}<b>${tr("sProblem")}</b>${L(f.t)}<br>${(S.choice||[]).length?`<b>${tr("sChoice")}</b>${esc((S.choiceL||S.choice).join(", "))}<br>`:""}${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
+  ${fm.photo&&!f.plate?`<label class="f">${L(fm.photo)}</label><input class="f" type="file" accept="image/*" id="pic">`:""}
+  <label class="f">${fm.descL?L(fm.descL):tr("fDesc")}</label><textarea class="f" id="desc" placeholder="${f.plate?tr("blkDescPh"):fm.descPh?L(fm.descPh):tr("fDescPh")}">${esc(keep.desc)}</textarea>
+  ${f.plate||fm.photo?"":`<label class="f">${tr("fPhoto")}</label><input class="f" type="file" accept="image/*" id="pic">`}
   ${["credit","dispTerminal","danger"].includes(S.flow)||(f.site&&!f.card)?"":`<label class="f">${tr("fCard")}</label><input class="f" id="card" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="${tr("fCardPh")}" value="${esc(keep.card)}">
   <label class="f">${tr("fEmsp")}</label><input class="f" id="emsp" list="emspList" autocomplete="off" placeholder="${tr("fEmspPh")}" value="${esc(keep.emsp)}">
   <datalist id="emspList">${EMSP.map(x=>`<option value="${esc(x)}">`).join("")}</datalist>`}
@@ -662,14 +709,15 @@ function ticketView(){
   <label class="f">${tr("fPhone")}</label><input class="f" id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="${tr("fPhonePh")}" value="${esc(keep.phone)}">
   <button class="btn primary" id="send">${tr("send")}</button>
   <button class="btn ghost" id="toChat">${tr("toChat")}</button></div>`;
-  $("#bk").onclick=()=>FLOWS[S.flow].steps&&FLOWS[S.flow].steps.length?show(stepView):home();
   $("#toChat").onclick=()=>setTab("chat");
+  $("#bk").onclick=()=>f.info?show(infoView):f.choose?show(chooseView):FLOWS[S.flow].steps&&FLOWS[S.flow].steps.length?show(stepView):home();
   $("#send").onclick=async e=>{
+    if(fm.descReq&&!$("#desc").value.trim()){ $("#desc").focus(); $("#desc").classList.add("err"); return; }
     e.target.disabled=true; e.target.textContent=tr("sending");
     const photo=await shrink($("#pic").files[0]);
     const email=$("#email").value.trim(), phone=$("#phone").value.trim(), card=($("#card")?.value||"").trim(), emsp=($("#emsp")?.value||"").trim();
     const cname=($("#cname")?.value||"").trim(); S.lastEmail=email; S.lastPhone=phone; S.lastCard=card; S.lastEmsp=emsp; S.lastName=cname;   // nur für diesen Besuch vorbelegen
-    const extra=[$("#plate")?.value.trim()&&"Kennzeichen: "+$("#plate").value.trim().toUpperCase(),$("#where")?.value.trim()&&"Blockierter Platz: "+$("#where").value.trim()].filter(Boolean).join(" · ");
+    const extra=[(S.choice||[]).length&&"Auswahl: "+S.choice.join(", "),$("#plate")?.value.trim()&&"Kennzeichen: "+$("#plate").value.trim().toUpperCase(),$("#where")?.value.trim()&&"Blockierter Platz: "+$("#where").value.trim()].filter(Boolean).join(" · ");
     if(extra) $("#desc").value=extra+($("#desc").value.trim()?" · "+$("#desc").value.trim():"");
     const tdata={flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),name:cname,email,phone,card,emsp,contact:[email,phone].filter(Boolean).join(" · "),photo};
     // Standort-Themen markieren keinen Ladepunkt als gestört (ohne Ladepunkt melden, gewählten Platz nur vermerken)
@@ -728,7 +776,7 @@ function chatView(){
   if(!S.chat.length) S.chat.push({role:"assistant",content:tr("chatHello",{id:S.label||S.station,cp:curCp()?", "+cpLabel(curCp()):""})});
   view.innerHTML=`<div class="ai-badge">${S.human?tr("chatHuman"):tr("chatBadge")}</div>
   <div class="chat" id="log">${S.chat.map(m=>m.role==="sys"?`<div class="sys">${esc(m.content)}</div>`:`<div class="msg ${m.role==="user"?"me":m.role==="team"?"team":"bot"}">${m.from?`<span class="who">${esc(m.from)}</span>`:""}${esc(m.content)}</div>`).join("")}</div>
-  ${S.chat.length<2?`<div class="chips">${ALL_TILES.map(k=>`<button class="chip ${FLOWS[k].danger?"danger":""}" data-f="${k}">${FLOWS[k].ic} ${L(FLOWS[k].t)}</button>`).join("")}</div>`:""}`;
+  ${S.chat.length<2?`<div class="chips">${[...TILE_ORDER,...siteTiles()].map(k=>`<button class="chip ${FLOWS[k].danger?"danger":""}" data-f="${k}">${FLOWS[k].ic} ${L(FLOWS[k].t)}</button>`).join("")}</div>`:""}`;
   // Gleiche Auswahl wie auf der Startseite: setzt das Problem als Kontext für Chat und Team
   view.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{ const k=c.dataset.f, f=FLOWS[k];
     S.flow=k; S.tried=[]; track(f.danger?"danger_open":"flow_start",{flow:k,title:DE(f.t),from:"chat"});
