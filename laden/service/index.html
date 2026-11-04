@@ -106,6 +106,16 @@ textarea.f{min-height:76px;resize:vertical}
 .pj:active{background:var(--brand-soft)}
 .btn.warnb{background:#fff;color:var(--warn);border:1.5px solid #f3c2bc}
 .hint{font-size:13px;color:var(--amber);background:var(--amber-soft);border-radius:10px;padding:8px 10px;line-height:1.4}
+.prio{display:inline-block;min-width:20px;text-align:center;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;color:#fff;background:#9aa5a0}
+.prio.pA{background:#d03b3b}.prio.pB{background:#eda100}.prio.pC{background:#7a8a83}
+.def{border-left:4px solid #eda100}.def.pA{border-left-color:#d03b3b;background:#fff7f6}.def.pC{border-left-color:#9aa5a0}
+.due-od{color:var(--warn);font-weight:700}
+.def .row{justify-content:space-between;align-items:flex-start;gap:10px}.def .chip{flex:none}
+.big-choice{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:16px;padding:16px;margin-top:10px;cursor:pointer}
+.big-choice>b{display:block;font-size:17px;margin-bottom:4px}.big-choice small{color:var(--muted);font-size:13px;line-height:1.4;display:block}
+.big-choice.st{border-color:#f3c2bc;background:#fff7f6}.big-choice.mg{border-color:#f5d78a;background:#fffbef}.big-choice.gf{border-color:#d03b3b;background:#fdecea}
+.prio-card{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;margin-top:8px;cursor:pointer}
+.prio-card.on{border-color:var(--brand);background:var(--brand-soft)}.prio-card small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
 .no{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:800;background:var(--brand-soft);color:#08603d;border-radius:12px;padding:12px;text-align:center;margin:10px 0}
 </style>
 </head>
@@ -192,31 +202,111 @@ async function homeView(){
     return `<div class="card" style="border-color:#14201b"><b>⏱ Laufender Einsatz</b><div class="small muted">${esc(l.title)}${tk?" · "+esc(tk):""} · seit ${tme(t.started)}</div><button class="btn mt" id="resume" data-c="${esc(cid)}" data-t="${esc(tk)}">Fortsetzen</button></div>`; })()}
   <div class="card"><img class="st-img" id="stImg" hidden alt=""><div class="lbl">Standort</div><h1>${esc(st.project_id||st.id)}</h1><div class="muted">${esc(st.name||"")}${st.address?"<br>"+esc(st.address):""}</div>
     <div class="small muted" style="margin-top:6px">${(st.chargers||[]).length} Charger · ${(st.connectors||[]).length} Ladepunkte</div>
-    <button class="btn warnb mt" id="repInc">⚠️ Störung melden</button></div>
+    <button class="btn warnb mt" id="repInc">⚠️ Problem melden</button></div>
   ${h.incidents.length?`<h2>⚠️ Offene Störungen (${h.incidents.length})</h2>${h.incidents.map(i=>`<div class="card inc"><div class="row"><div><b>${esc(i.connector?cpName(st,i.connector):"Standort allgemein")}</b><br><span class="small">${esc(i.title||"")}</span>${i.desc?`<br><span class="small">${esc(i.desc)}</span>`:""}<br><span class="small muted">${esc(i.ticket_no)} · seit ${fmt(i.created_at)} · ${i.reporter?"🔧 gemeldet von "+esc(i.reporter):i.reports+"× von Kunden gemeldet"}</span></div><span class="chip ${i.status==="in_arbeit"?"amber":"warn"}">${i.status==="in_arbeit"?"in Arbeit":"neu"}</span></div>
       ${stoer?`<button class="btn mt" data-inc="${esc(i.ticket_no)}" data-cp="${i.connector||""}">🔧 Einsatz dokumentieren</button>`:""}</div>`).join("")}`:""}
-  ${(h.defects||[]).length?`<h2>🛠 Offene Mängel (${h.defects.length})</h2>${h.defects.map(d=>`<div class="card inc" id="d-${esc(d.id)}"><div class="row"><div><b>${esc(d.item_text)}</b><br><span class="small">${esc(d.connector?cpName(st,d.connector):d.charger?((st.chargers||[]).find(c=>c.n===d.charger)||{}).label||"Charger "+d.charger:"Standort")}${d.note?" · "+esc(d.note):""}</span><br><span class="small muted">${esc(d.checklist_title||"")} · ${fmt(d.created_at)} · ${esc(d.created_by||"")}</span></div><span class="chip ${d.status==="in_arbeit"?"amber":"warn"}">${d.status==="in_arbeit"?"in Arbeit":"offen"}</span></div>
-      <textarea class="f" data-dn="${esc(d.id)}" placeholder="Was wurde gemacht? (optional)"></textarea>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button class="btn ghost" data-dw="${esc(d.id)}">In Arbeit</button><button class="btn" data-dok="${esc(d.id)}">✓ Behoben</button></div></div>`).join("")}`:""}
+  ${(h.defects||[]).length?`<h2>🛠 Offene Mängel (${h.defects.length})</h2><div class="small muted" style="margin:-4px 2px 10px">Ladepunkt funktioniert – Behebung nach Priorität und Fälligkeit.</div>${h.defects.map(d=>{ const od=d.due_at&&new Date(d.due_at)<new Date();
+      return `<div class="card def p${esc(d.priority||"B")}" id="d-${esc(d.id)}"><div class="row"><div><span class="prio p${esc(d.priority||"B")}">${esc(d.priority||"B")}</span> <b>${esc(d.item_text)}</b><br><span class="small">${esc(defWhere(st,d))}${d.note?" · "+esc(d.note):""}</span>
+        <br><span class="small muted">${esc(d.defect_no||"")} · ${SRC[d.source]||"📋"} ${esc(d.created_by||"")} · ${fmt(d.created_at)}</span>
+        ${d.due_at?`<br><span class="small ${od?"due-od":"muted"}">${od?"⏰ überfällig seit "+fmt(d.due_at):"fällig bis "+fmt(d.due_at)}</span>`:""}</div><span class="chip ${d.status==="in_arbeit"?"amber":"grey"}">${d.status==="in_arbeit"?"in Arbeit":"offen"}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="btn" data-dfix="${esc(d.id)}">🔧 Mangel beheben</button><button class="btn ghost" data-desc="${esc(d.id)}">⬆ Zur Störung</button></div>
+      <div class="small" style="margin-top:8px"><a href="#" data-dw="${esc(d.id)}" class="muted">als „in Arbeit“ markieren</a></div></div>`; }).join("")}`:""}
   <h2>Checklisten</h2>
-  ${h.checklists.length?`<div class="tiles">${h.checklists.map(l=>{ const d=due(l); return `<button class="tile" data-cl="${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.description||"")}</small>
+  ${h.checklists.filter(l=>l.id!=="mangel").length?`<div class="tiles">${h.checklists.filter(l=>l.id!=="mangel").map(l=>{ const d=due(l); return `<button class="tile" data-cl="${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.description||"")}</small>
       <small>${l.last?`zuletzt ${fmt(l.last.finished_at).split(",")[0]} · ${esc(l.last.staff_name)}`:"noch nie durchgeführt"}</small>${d?`<span class="chip ${d==="fällig"?"warn":"amber"}" style="align-self:flex-start">${d}</span>`:""}</button>`; }).join("")}</div>`:`<div class="card muted">Für Ihre Rolle sind keine Checklisten freigeschaltet.</div>`}
   <h2>Letzte Protokolle an diesem Standort</h2>
   <div class="card">${h.recent.length?h.recent.map(r=>`<div class="rec"><span><b>${esc(r.checklist_title)}</b><br><span class="small muted">${fmt(r.finished_at)} · ${esc(r.staff_name)}${r.connector?" · "+esc(cpName(st,r.connector)):""}${r.work_minutes!=null?" · ⏱ "+hm(r.work_minutes):""}</span></span><span class="chip ${r.result==="ok"?"":"warn"}">${r.result==="ok"?"✓ ok":"⚠ Mängel"}</span></div>`).join(""):`<span class="muted small">Noch keine Protokolle.</span>`}</div>`;
   const im=$("#stImg"); im.onload=()=>im.hidden=false; im.src=IMG+encodeURIComponent(st.id)+".jpg?v="+Math.floor(Date.now()/3e5);
   view.querySelectorAll("[data-cl]").forEach(b=>b.onclick=()=>startRun(b.dataset.cl));
   $("#swp").onclick=()=>projectsView();
-  $("#repInc").onclick=()=>{ S.rep={charger:null,connector:null,title:"",desc:"",photo:null,roles:[]}; reportView(); scrollTo(0,0); };
+  $("#repInc").onclick=()=>{ problemView(); scrollTo(0,0); };
   if($("#resume")) $("#resume").onclick=()=>{ const tk=$("#resume").dataset.t, inc=h.incidents.find(i=>i.ticket_no===tk); startRun($("#resume").dataset.c,tk?{ticket:tk,connector:inc?inc.connector:null}:{}); };
-  const defAct=async(id,status,btn)=>{ btn.disabled=true; try{ await api("defect_resolve",{id,status,note:(view.querySelector(`[data-dn="${id}"]`)||{}).value||""}); homeView(); }catch(e){ btn.disabled=false; alert(e.message); } };
-  view.querySelectorAll("[data-dok]").forEach(b=>b.onclick=()=>defAct(b.dataset.dok,"behoben",b));
-  view.querySelectorAll("[data-dw]").forEach(b=>b.onclick=()=>defAct(b.dataset.dw,"in_arbeit",b));
+  view.querySelectorAll("[data-dw]").forEach(b=>b.onclick=async e=>{ e.preventDefault(); try{ await api("defect_resolve",{id:b.dataset.dw,status:"in_arbeit"}); homeView(); }catch(err){ alert(err.message); } });
+  view.querySelectorAll("[data-dfix]").forEach(b=>b.onclick=()=>{ const d=h.defects.find(x=>x.id===b.dataset.dfix); startRun("mangel",{defect:d}); });
+  view.querySelectorAll("[data-desc]").forEach(b=>b.onclick=()=>escalateView(h.defects.find(x=>x.id===b.dataset.desc)));
   view.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>startRun("stoerung",{ticket:b.dataset.inc,connector:+b.dataset.cp||null}));
 }
 
 /* ── Störung melden (Field-Service) ── */
 const REP_TITLES=["Ladevorgang startet nicht","Ladevorgang bricht ab","Display / Bedienung defekt","Kabel / Stecker beschädigt","Offline / keine Kommunikation","Kartenleser / Bezahlterminal defekt","Gefahr – Ladepunkt sperren","Sonstiges"];
 const ROLE_L={technik:"Techniker",fremdfirma:"Servicefirma",elektro:"Elektrofachkraft",reinigung:"Reinigung / Hausmeister",dienstleister:"Dienstleister"};
+/* ── Problem melden: Weiche Störung ↔ Mangel ──
+   Störung = hier kann gerade nicht geladen werden (Ausfall, in der Kunden-App sichtbar)
+   Mangel  = Laden funktioniert, aber etwas ist nicht in Ordnung (Priorität A/B/C, Fälligkeit) */
+const PRIO_TXT={A:"sicherheitsrelevant",B:"funktionsrelevant",C:"optisch"};
+const PRIO_INFO={A:"Behebung innerhalb von 24 Stunden",B:"Behebung innerhalb von 7 Tagen",C:"bei der nächsten Wartung (≈ 30 Tage)"};
+const SRC={checkliste:"📋",field:"🔧",kunde:"👤",restmangel:"↩"};
+const DEF_TITLES=["Gehäuse / Display beschädigt","Kabel / Stecker Verschleiß","Beschriftung / Aufkleber fehlt","Beleuchtung","Verschmutzung","Markierung / Beschilderung","Zufahrt / Anfahrschutz","Sonstiges"];
+function defWhere(st,d){ return d.connector?cpName(st,d.connector):d.charger?(((st.chargers||[]).find(c=>c.n===d.charger)||{}).label||"Charger "+d.charger)+" (ganzer Charger)":"Standort allgemein"; }
+function problemView(){
+  const st=S.home.station;
+  view.innerHTML=`<button class="back" id="bk">‹ Zurück</button>
+  <div class="card"><div class="lbl">${esc(st.project_id||st.id)}</div><h1>Problem melden</h1><div class="muted">Kann an der betroffenen Stelle gerade geladen werden?</div>
+    <button class="big-choice st" id="pSt"><b>⛔ Nein – Laden ist nicht möglich</b><small>→ <b>Störung</b>: Ausfall, wird in der Kunden-App als „Störung bekannt“ angezeigt und zählt in die Verfügbarkeit.</small></button>
+    <button class="big-choice mg" id="pMg"><b>🛠 Ja – aber etwas ist nicht in Ordnung</b><small>→ <b>Mangel</b>: kein Ausfall, Behebung nach Priorität (A sicherheitsrelevant · B funktionsrelevant · C optisch).</small></button>
+    <button class="big-choice gf" id="pGf"><b>🚨 Gefahr – sofort sperren</b><small>Beschädigtes Kabel, offene Teile, Brandgeruch, Wasser … → wird als Störung angelegt, der Ladepunkt gilt als gesperrt.</small></button></div>`;
+  $("#bk").onclick=homeView;
+  const st0=t=>{ S.rep={charger:null,connector:null,title:t||"",desc:"",photo:null,roles:[]}; reportView(); scrollTo(0,0); };
+  $("#pSt").onclick=()=>st0(""); $("#pGf").onclick=()=>st0("Gefahr – Ladepunkt sperren");
+  $("#pMg").onclick=()=>{ S.dfr={charger:null,connector:null,title:"",desc:"",photo:null,roles:[],priority:"B"}; defectView(); scrollTo(0,0); };
+}
+function defectView(){
+  const R=S.dfr, st=S.home.station, chargers=st.chargers||[], cps=(st.connectors||[]).filter(c=>R.charger&&c.charger===R.charger);
+  view.innerHTML=`<button class="back" id="bk">‹ Zurück</button>
+  <div class="card"><div class="lbl">${esc(st.project_id||st.id)}</div><h1>🛠 Mangel melden</h1><div class="muted small">Der Ladepunkt bleibt für Kunden verfügbar. Der Mangel erscheint im Dashboard und beim zuständigen Dienstleister.</div></div>
+  <div class="card"><b>Wo?</b>
+    <div class="sel" id="dCh">${chargers.map(c=>`<button data-ch="${c.n}" class="${R.charger===c.n?"on":""}">${esc(c.label||"Charger "+c.n)}</button>`).join("")}<button data-ch="0" class="${R.charger===0?"on":""}">📍 Standort allgemein</button></div>
+    ${R.charger?`<div style="margin-top:10px"><b>Welcher Ladepunkt?</b> <span class="small muted">(optional)</span><div class="sel" id="dCp"><button data-cp="0" class="${!R.connector?"on":""}">Ganzer Charger</button>${cps.map(c=>`<button data-cp="${c.n}" class="${R.connector===c.n?"on":""}">${esc(cpName(st,c.n).split(" · ").pop())} <span class="small muted">${esc(c.t||"")}</span></button>`).join("")}</div></div>`:""}</div>
+  <div class="card"><b>Was? <span style="color:var(--warn)">*</span></b><div class="opts" id="dT">${DEF_TITLES.map(t=>`<button data-t="${esc(t)}" class="${R.title===t?"on":""}">${esc(t)}</button>`).join("")}</div>
+    <b style="display:block;margin-top:14px">Beschreibung <span style="color:var(--warn)">*</span></b><textarea class="f" id="dDesc" placeholder="Was genau? Wo genau? Ersatzteil nötig?">${esc(R.desc)}</textarea>
+    <div class="photo"><label>📷 Foto<input type="file" accept="image/*" capture="environment" id="dPh"></label>${R.photo?`<img src="${R.photo}" alt="">`:""}</div></div>
+  <div class="card"><b>Priorität</b>${["A","B","C"].map(p=>`<button class="prio-card ${R.priority===p?"on":""}" data-p="${p}"><span class="prio p${p}">${p}</span> <b>${PRIO_TXT[p][0].toUpperCase()+PRIO_TXT[p].slice(1)}</b><small>${PRIO_INFO[p]}</small></button>`).join("")}
+    ${R.priority==="A"?`<div class="hint" style="margin-top:10px">⚠️ Besteht <b>akute Gefahr</b> oder kann deswegen nicht geladen werden? Dann bitte als <b>Störung</b> melden – <a href="#" id="toSt">jetzt umschalten</a>.</div>`:""}</div>
+  <div class="card"><b>Wer soll beheben?</b><div class="small muted">Optional – sonst entscheidet der Betreiber.</div>
+    <div class="opts" id="dR">${Object.entries(ROLE_L).map(([k,l])=>`<button data-r="${k}" class="${R.roles.includes(k)?"on":""}">${l}</button>`).join("")}</div>
+    <div class="err" id="err" style="margin-top:12px"></div><button class="btn" id="dSend">Mangel melden</button></div>`;
+  const keep=()=>{ R.desc=$("#dDesc").value; }, re=()=>{ keep(); const y=scrollY; defectView(); scrollTo(0,y); };
+  $("#bk").onclick=problemView;
+  view.querySelectorAll("#dCh [data-ch]").forEach(b=>b.onclick=()=>{ R.charger=+b.dataset.ch; R.connector=null; re(); });
+  view.querySelectorAll("#dCp [data-cp]").forEach(b=>b.onclick=()=>{ R.connector=+b.dataset.cp||null; re(); });
+  view.querySelectorAll("#dT [data-t]").forEach(b=>b.onclick=()=>{ R.title=b.dataset.t; re(); });
+  view.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{ R.priority=b.dataset.p; re(); });
+  view.querySelectorAll("#dR [data-r]").forEach(b=>b.onclick=()=>{ const k=b.dataset.r; R.roles=R.roles.includes(k)?R.roles.filter(x=>x!==k):[...R.roles,k]; re(); });
+  if($("#toSt")) $("#toSt").onclick=e=>{ e.preventDefault(); keep(); S.rep={charger:R.charger||null,connector:R.connector||null,title:"",desc:R.desc,photo:R.photo,roles:R.roles}; reportView(); scrollTo(0,0); };
+  $("#dPh").onchange=async()=>{ const d=await shrink($("#dPh").files[0]); if(d){ R.photo=d; re(); } };
+  $("#dSend").onclick=async()=>{ keep(); const e=$("#err");
+    if(R.charger==null) return e.textContent="Bitte Charger oder „Standort allgemein“ wählen.";
+    if(!R.title) return e.textContent="Bitte auswählen, was nicht in Ordnung ist.";
+    if(R.desc.trim().length<5) return e.textContent="Bitte kurz beschreiben.";
+    const b=$("#dSend"); b.disabled=true; b.textContent="Wird gemeldet …";
+    try{ const r=await api("defect_report",{charger:R.charger||null,connector:R.connector||null,title:R.title,desc:R.desc.trim(),photo:R.photo,roles:R.roles,priority:R.priority});
+      scrollTo(0,0); view.innerHTML=`<div class="card center"><div class="big">🛠</div><h1>Mangel gemeldet</h1><div class="no">${esc(r.defect_no)}</div>
+        <p class="muted"><span class="prio p${R.priority}">${R.priority}</span> ${PRIO_TXT[R.priority]} · fällig bis ${fmt(r.due_at)}${R.roles.length?"<br>Behebung durch: "+esc(R.roles.map(k=>ROLE_L[k]).join(", ")):""}</p>
+        <button class="btn" id="fixNow">🔧 Jetzt selbst beheben</button><button class="btn ghost mt" id="home">Zurück zum Standort</button></div>`;
+      $("#home").onclick=homeView;
+      $("#fixNow").onclick=async()=>{ await homeView(); const d=(S.home.defects||[]).find(x=>x.defect_no===r.defect_no); if(d) startRun("mangel",{defect:d}); };
+    }catch(err){ b.disabled=false; b.textContent="Mangel melden"; e.textContent=err.message; } };
+}
+function escalateView(d){
+  const st=S.home.station, need=!d.connector&&!d.charger; let cp=d.connector||null;
+  const draw=()=>{ view.innerHTML=`<button class="back" id="bk">‹ Zurück</button>
+  <div class="card"><div class="lbl">${esc(st.project_id||st.id)} · ${esc(d.defect_no||"")}</div><h1>⬆ Mangel zur Störung machen</h1>
+    <div class="hint" style="margin-top:8px"><span class="prio p${esc(d.priority||"B")}">${esc(d.priority||"B")}</span> <b>${esc(d.item_text)}</b> · ${esc(defWhere(st,d))}</div>
+    <p class="muted small">Nur wenn deswegen <b>nicht mehr geladen werden kann</b> oder Gefahr besteht. Der Ladepunkt wird in der Kunden-App als gestört angezeigt${d.charger&&!d.connector?" – bei „ganzer Charger“ für alle seine Ladepunkte":""}. Der Mangel wird mit der Störung verknüpft und geschlossen.</p>
+    ${need?`<b>Welcher Ladepunkt ist betroffen?</b><div class="sel" id="eCp">${(st.connectors||[]).map(c=>`<button data-cp="${c.n}" class="${cp===c.n?"on":""}">${esc(cpName(st,c.n))}</button>`).join("")}</div>`:""}
+    <textarea class="f" id="eWhy" placeholder="Warum? z. B. Kabelmantel jetzt durchgescheuert – Ladung abgebrochen"></textarea>
+    <div class="err" id="err" style="margin-top:10px"></div><button class="btn" id="eGo" style="background:#b42318">Zur Störung eskalieren</button></div>`;
+    $("#bk").onclick=homeView;
+    view.querySelectorAll("#eCp [data-cp]").forEach(b=>b.onclick=()=>{ cp=+b.dataset.cp; const w=$("#eWhy").value; draw(); $("#eWhy").value=w; });
+    $("#eGo").onclick=async()=>{ if(need&&!cp) return $("#err").textContent="Bitte den Ladepunkt wählen.";
+      const b=$("#eGo"); b.disabled=true; b.textContent="Wird angelegt …";
+      try{ const r=await api("defect_escalate",{id:d.id,connector:cp,reason:$("#eWhy").value.trim()});
+        view.innerHTML=`<div class="card center"><div class="big">⛔</div><h1>Störung angelegt</h1><div class="no">${esc(r.tickets.join(", "))}</div><p class="muted">Mangel ${esc(d.defect_no||"")} ist verknüpft und geschlossen.</p><button class="btn" id="home">Zurück zum Standort</button></div>`;
+        $("#home").onclick=homeView; scrollTo(0,0);
+      }catch(err){ b.disabled=false; b.textContent="Zur Störung eskalieren"; $("#err").textContent=err.message; } }; };
+  draw(); scrollTo(0,0);
+}
+
 function reportView(){
   const R=S.rep, st=S.home.station, chargers=st.chargers||[], cps=(st.connectors||[]).filter(c=>R.charger&&c.charger===R.charger);
   const known=n=>(S.home.incidents||[]).find(i=>i.connector===n);
@@ -233,7 +323,7 @@ function reportView(){
     <div class="opts" id="rR">${Object.entries(ROLE_L).map(([k,l])=>`<button data-r="${k}" class="${R.roles.includes(k)?"on":""}">${l}</button>`).join("")}</div>
     <div class="err" id="err" style="margin-top:12px"></div><button class="btn" id="rSend">Störung melden</button></div>`;
   const keep=()=>{ R.desc=$("#rDesc").value; }, re=()=>{ keep(); const y=scrollY; reportView(); scrollTo(0,y); };
-  $("#bk").onclick=homeView;
+  $("#bk").onclick=problemView;
   view.querySelectorAll("#rCh [data-ch]").forEach(b=>b.onclick=()=>{ R.charger=+b.dataset.ch; R.connector=null; re(); });
   view.querySelectorAll("#rCp [data-cp]").forEach(b=>b.onclick=()=>{ R.connector=+b.dataset.cp; re(); });
   view.querySelectorAll("#rT [data-t]").forEach(b=>b.onclick=()=>{ R.title=b.dataset.t; re(); });
@@ -259,10 +349,11 @@ function reportView(){
 function startRun(id,opt={}){
   const cl=S.home.checklists.find(l=>l.id===id); if(!cl) return;
   const c=opt.connector?(S.home.station.connectors||[]).find(x=>x.n===opt.connector):null;
-  const key=station+"|"+id+"|"+(opt.ticket||"");
+  const key=station+"|"+id+"|"+(opt.ticket||opt.defect&&opt.defect.id||"");
   let t=null; try{ t=JSON.parse(localStorage.getItem("hc_timer")||"null"); }catch(e){}
   const resume=t&&t.key===key&&Date.now()-Date.parse(t.started)<16*3600e3;
-  S.run={cl,key,answers:{},charger:c?c.charger:null,connector:opt.connector||null,ticket:opt.ticket||null,notes:"",resolve:false,
+  const dfc=opt.defect||null;
+  S.run={cl,key,answers:{},charger:dfc?dfc.charger:c?c.charger:null,connector:dfc?dfc.connector:opt.connector||null,ticket:opt.ticket||null,defect:dfc,notes:"",resolve:false,restOn:false,rest:"",restPrio:"B",
     started:resume?t.started:new Date().toISOString(),pauseMs:resume?t.pauseMs||0:0,pausedAt:resume?t.pausedAt||null:null,resumed:!!resume,
     corrOn:false,corr:"",timeNote:"",travel:"",km:"",matText:"",matCost:"",howto:false};
   saveTimer(); runView(); scrollTo(0,0);
@@ -294,7 +385,8 @@ function runView(){
   const chargers=st.chargers||[], cps=(st.connectors||[]).filter(c=>!R.charger||c.charger===R.charger);
   view.innerHTML=`<button class="back" id="bk">‹ Abbrechen</button>
   ${timerHTML(R)}
-  <div class="card"><div class="lbl">${esc(st.project_id||st.id)}${R.ticket?" · Störung "+esc(R.ticket):""}</div><h1>${esc(cl.title)}</h1>${cl.description?`<div class="muted small">${esc(cl.description)}</div>`:""}
+  <div class="card"><div class="lbl">${esc(st.project_id||st.id)}${R.ticket?" · Störung "+esc(R.ticket):""}${R.defect?" · Mangel "+esc(R.defect.defect_no||""):""}</div><h1>${esc(cl.title)}</h1>
+    ${R.defect?`<div class="hint" style="margin-top:8px"><span class="prio p${esc(R.defect.priority||"B")}">${esc(R.defect.priority||"B")}</span> <b>${esc(R.defect.item_text)}</b> · ${esc(defWhere(st,R.defect))}${R.defect.note?"<br>"+esc(R.defect.note):""}</div>`:""}${cl.description?`<div class="muted small">${esc(cl.description)}</div>`:""}
     ${cl.scope!=="site"?`<div style="margin-top:14px"><b>Welcher Charger?</b><div class="sel" id="selCh">${chargers.map(c=>`<button data-ch="${c.n}" class="${R.charger===c.n?"on":""}">${esc(c.label||"Charger "+c.n)}</button>`).join("")}</div></div>`:""}
     ${cl.scope==="connector"&&R.charger?`<div style="margin-top:10px"><b>Welcher Ladepunkt?</b><div class="sel" id="selCp">${cps.map(c=>`<button data-cp="${c.n}" class="cpr ${R.connector===c.n?"on":""}"><span>${esc(cpName(st,c.n).split(" · ").pop())} <span class="small muted">${esc(c.t||"")}</span></span>${c.evse?`<code>${esc(c.evse)}</code>`:""}</button>`).join("")}</div></div>`:""}
     <div class="prog"><i style="width:${items.length?done/items.length*100:0}%"></i></div><div class="small muted">${done} von ${items.length} Punkten</div></div>
@@ -310,25 +402,32 @@ function runView(){
     <div class="small muted" style="margin-top:8px">Diese Angaben fließen in die Wirtschaftlichkeits-Auswertung des Betreibers.</div>
   </div>
   <div class="card">
-    ${R.ticket&&S.home.me.can_resolve?`<label class="check"><input type="checkbox" id="resolve" ${R.resolve?"checked":""}><span>Störung ${esc(R.ticket)} ist behoben – in der Kunden-App wieder freigeben</span></label>`:""}
+    ${R.ticket&&S.home.me.can_resolve?`<label class="check"><input type="checkbox" id="resolve" ${R.resolve?"checked":""}><span>Störung ${esc(R.ticket)} ist behoben – in der Kunden-App wieder freigeben</span></label>
+      ${R.resolve?`<label class="check"><input type="checkbox" id="restOn" ${R.restOn?"checked":""}><span>Es bleibt ein Restmangel (Ladepunkt läuft wieder, aber Arbeit offen – z. B. Ersatzteil bestellt)</span></label>
+        ${R.restOn?`<input class="f" id="rest" placeholder="Welcher Restmangel? z. B. Steckergriff provisorisch fixiert, Ersatz bestellt" value="${esc(R.rest)}"><div class="opts" id="restP">${["A","B","C"].map(p=>`<button data-rp="${p}" class="${R.restPrio===p?"on":""}"><span class="prio p${p}">${p}</span> ${PRIO_TXT[p]}</button>`).join("")}</div>`:""}`:""}`:""}
     <div class="err" id="err" style="margin-top:10px"></div>
     <button class="btn" id="send">Protokoll abschließen</button></div>`;
   $("#bk").onclick=()=>{ if(done&&!confirm("Checkliste abbrechen? Eingaben und Zeitmessung gehen verloren.")) return; clearTimer(); S.run=null; homeView(); };
   $("#tmP").onclick=()=>{ keepNotes(); if(R.pausedAt){ R.pauseMs+=Date.now()-Date.parse(R.pausedAt); R.pausedAt=null; } else R.pausedAt=new Date().toISOString(); saveTimer(); const y=scrollY; runView(); scrollTo(0,y); };
   $("#tmInfo").onclick=()=>{ keepNotes(); R.howto=!R.howto; const y=scrollY; runView(); scrollTo(0,y); };
+  if($("#resolve")) $("#resolve").onchange=()=>{ keepNotes(); const y=scrollY; runView(); scrollTo(0,y); };
+  if($("#restOn")) $("#restOn").onchange=()=>{ keepNotes(); R.restOn=$("#restOn").checked; const y=scrollY; runView(); scrollTo(0,y); };
+  view.querySelectorAll("#restP [data-rp]").forEach(b=>b.onclick=()=>{ keepNotes(); R.restPrio=b.dataset.rp; const y=scrollY; runView(); scrollTo(0,y); });
   $("#corrOn").onchange=()=>{ keepNotes(); R.corrOn=$("#corrOn").checked; const y=scrollY; runView(); scrollTo(0,y); };
   view.querySelectorAll("#selCh [data-ch]").forEach(b=>b.onclick=()=>{ R.charger=+b.dataset.ch; R.connector=null; keepNotes(); runView(); });
   view.querySelectorAll("#selCp [data-cp]").forEach(b=>b.onclick=()=>{ R.connector=+b.dataset.cp; keepNotes(); runView(); });
   wireItems(); $("#send").onclick=submit;
 }
 const keepNotes=()=>{ const R=S.run; if(!R) return; if($("#notes")) R.notes=$("#notes").value; if($("#resolve")) R.resolve=$("#resolve").checked;
-  for(const k of ["corr","timeNote","travel","km","matText","matCost"]) if($("#"+k)) R[k]=$("#"+k).value; };
+  for(const k of ["corr","timeNote","travel","km","matText","matCost","rest"]) if($("#"+k)) R[k]=$("#"+k).value; };
 function itemHTML(it,a){
   const q=`<div class="q">${esc(it.text)}${it.required?' <span class="req">*</span>':""}</div>${it.hint?`<div class="hint">💡 ${esc(it.hint)}</div>`:""}`;
   const photo=(label)=>`<div class="photo"><label>📷 ${label}<input type="file" accept="image/*" capture="environment" data-ph="${it.id}"></label>${a.photo?`<img src="${a.photo}" alt="">`:""}</div>`;
   let body="";
   if(it.type==="check") body=`<div class="tri"><button class="ok ${a.ok===true?"on":""}" data-ok="${it.id}">✓ In Ordnung</button><button class="bad ${a.ok===false?"on":""}" data-bad="${it.id}">✗ Mangel</button><button class="na ${a.na?"on":""}" data-na="${it.id}">n. a.</button></div>
-    ${a.ok===false?`<textarea class="f" data-note="${it.id}" placeholder="Was ist der Mangel?">${esc(a.note||"")}</textarea>${photo("Foto vom Mangel")}`:""}`;
+    ${a.ok===false?`<textarea class="f" data-note="${it.id}" placeholder="Was ist der Mangel?">${esc(a.note||"")}</textarea>
+      <div class="small muted" style="margin-top:8px">Priorität des Mangels</div><div class="opts">${["A","B","C"].map(p=>`<button data-pr="${it.id}" data-p="${p}" class="${(a.prio||it.prio||"B")===p?"on":""}"><span class="prio p${p}">${p}</span> ${PRIO_TXT[p]}</button>`).join("")}</div>
+      ${(a.prio||it.prio)==="A"?`<div class="hint" style="margin-top:8px">⚠️ Akute Gefahr oder kann nicht mehr geladen werden? Dann zusätzlich über „Problem melden“ eine <b>Störung</b> anlegen – der Ladepunkt wird gesperrt.</div>`:""}${photo("Foto vom Mangel")}`:""}`;
   else if(it.type==="text") body=`<textarea class="f" data-val="${it.id}">${esc(a.value||"")}</textarea>`;
   else if(it.type==="number") body=`<input class="f" data-val="${it.id}" inputmode="decimal" value="${esc(a.value??"")}">`;
   else if(it.type==="choice") body=`<div class="opts">${(it.options||[]).map(o=>`<button data-choice="${it.id}" data-v="${esc(o)}" class="${a.value===o?"on":""}">${esc(o)}</button>`).join("")}</div>`;
@@ -341,9 +440,13 @@ function wireItems(){
   view.querySelectorAll("[data-ok]").forEach(b=>b.onclick=()=>{ setA(b.dataset.ok,{ok:true,na:false}); re(); });
   view.querySelectorAll("[data-bad]").forEach(b=>b.onclick=()=>{ setA(b.dataset.bad,{ok:false,na:false}); re(); });
   view.querySelectorAll("[data-na]").forEach(b=>b.onclick=()=>{ setA(b.dataset.na,{ok:null,na:true}); re(); });
+  view.querySelectorAll("[data-pr]").forEach(b=>b.onclick=()=>{ setA(b.dataset.pr,{prio:b.dataset.p}); re(); });
   view.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{ setA(b.dataset.choice,{value:b.dataset.v}); re(); });
   view.querySelectorAll("[data-val]").forEach(i=>i.oninput=()=>setA(i.dataset.val,{value:i.value}));
-  view.querySelectorAll("[data-val]").forEach(i=>i.onchange=()=>re());
+  // kein Neuaufbau beim Verlassen des Feldes (sonst geht der nächste Tipp ins Leere) – nur Fortschritt aktualisieren
+  const prog=()=>{ const R=S.run, items=R.cl.items||[], n=items.filter(it=>answered(it,R.answers[it.id])).length, bar=view.querySelector(".prog i"), t=view.querySelector(".prog+div");
+    if(bar) bar.style.width=(items.length?n/items.length*100:0)+"%"; if(t) t.textContent=`${n} von ${items.length} Punkten`; };
+  view.querySelectorAll("[data-val]").forEach(i=>i.addEventListener("input",prog));
   view.querySelectorAll("[data-note]").forEach(i=>i.oninput=()=>setA(i.dataset.note,{note:i.value}));
   view.querySelectorAll("[data-ph]").forEach(i=>i.onchange=async()=>{ const d=await shrink(i.files[0]); if(d){ setA(i.dataset.ph,{photo:d}); re(); } });
 }
@@ -359,6 +462,7 @@ async function submit(){
   if(miss.length){ miss.forEach(it=>$("#it-"+it.id).classList.add("miss")); $("#err").textContent=`Bitte noch ${miss.length} Pflichtpunkt(e) ausfüllen.`; $("#it-"+miss[0].id).scrollIntoView({block:"center"}); return; }
   const num=v=>String(v||"").trim()===""?null:+String(v).replace(",",".");
   const bad=(id,msg)=>{ $("#"+id).classList.add("miss"); $("#err").textContent=msg; $("#"+id).scrollIntoView({block:"center"}); };
+  if(R.resolve&&R.restOn&&!String(R.rest).trim()) return bad("rest","Bitte den Restmangel kurz beschreiben.");
   if(R.corrOn&&String(R.corr).trim()!==""){ const c=num(R.corr); if(!Number.isFinite(c)||c<0||c>1440) return bad("corr","Arbeitszeit bitte in Minuten (0–1440).");
     if(c!==workMin(R)&&!String(R.timeNote).trim()) return bad("timeNote","Bitte begründen, warum die Zeit korrigiert wird."); }
   for(const [k,max,lbl] of [["travel",1440,"Anfahrt"],["km",5000,"km"],["matCost",100000,"Materialkosten"]]){ const v=num(R[k]); if(v!=null&&(!Number.isFinite(v)||v<0||v>max)) return bad(k,lbl+": bitte eine gültige Zahl eingeben."); }
@@ -368,6 +472,7 @@ async function submit(){
     const r=await api("submit",{checklist_id:cl.id,charger:R.charger,connector:R.connector,ticket_no:R.ticket,resolve:R.resolve,notes:R.notes,started_at:R.started,
       pause_minutes:Math.round(R.pauseMs/60000),work_minutes_corrected:R.corrOn?num(R.corr):null,time_note:R.corrOn?R.timeNote:null,
       travel_minutes:num(R.travel),km:num(R.km),material_text:R.matText,material_cost:num(R.matCost),
+      defect_id:R.defect?R.defect.id:null,rest:R.resolve&&R.restOn&&String(R.rest).trim()?{text:String(R.rest).trim(),priority:R.restPrio}:null,
       answers:Object.entries(R.answers).map(([id,a])=>({id,...a}))});
     clearTimer(); doneView(r);
   }catch(e){ b.disabled=false; b.textContent="Protokoll abschließen"; $("#err").textContent=e.message; }
@@ -376,6 +481,7 @@ function doneView(r){
   const cl=S.run.cl; scrollTo(0,0);
   view.innerHTML=`<div class="card center"><div class="big">${r.result==="ok"?"✅":"⚠️"}</div><h1>Protokoll gespeichert</h1>
     <div class="no">${esc(r.report_no)}</div>
+    ${r.defect_resolved?`<p style="color:#08603d;font-weight:700">Mangel ${esc(S.run.defect&&S.run.defect.defect_no||"")} aktualisiert.</p>`:""}
     ${r.work_minutes!=null?`<div class="card" style="text-align:left;margin:10px 0"><div class="tsum"><span>Arbeitszeit vor Ort</span><b>${hm(r.work_minutes)}</b></div>${r.measured_minutes!==r.work_minutes?`<div class="tsum"><span>davon gemessen</span><span>${hm(r.measured_minutes)} (korrigiert)</span></div>`:""}${r.pause_minutes?`<div class="tsum"><span>Pausen abgezogen</span><span>${r.pause_minutes} Min.</span></div>`:""}${r.travel_minutes?`<div class="tsum"><span>Anfahrt</span><span>${r.travel_minutes} Min.</span></div>`:""}</div>`:""}
     <p class="muted">${esc(cl.title)} · ${r.result==="ok"?"ohne Mängel":r.defects+" Mangel/Mängel – das Team wurde informiert."}${r.resolved?"<br><b style=\"color:#08603d\">Störung erledigt – der Ladepunkt ist in der Kunden-App wieder frei.</b>":""}</p>
     <button class="btn" id="home">Zurück zum Standort</button></div>`;

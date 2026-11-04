@@ -145,6 +145,10 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 .cl-pick{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);font-size:14px;margin:0}
 .cl-pick.on{border-color:var(--brand);background:#f3faf6}
 .cl-pick input{width:auto;margin-top:3px}.cl-pick small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.prio{display:inline-block;min-width:20px;text-align:center;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;color:#fff;background:#9aa5a0}
+.prio.pA{background:#d03b3b}.prio.pB{background:#eda100}.prio.pC{background:#7a8a83}
+.due-od{color:#b42318;font-weight:700}
+.esc-box{margin-top:14px;border:1px dashed #f3c2bc;background:#fff7f6;border-radius:10px;padding:10px 12px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:14px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .kpi .k{color:var(--muted);font-size:12.5px;font-weight:600}
@@ -231,7 +235,7 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 <body>
 <header><div class="in">
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="field">Maintenance</button><button data-v="customers">Kunden</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="settings">Einstellungen</button></nav>
+  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="defects">Mängel</button><button data-v="field">Maintenance</button><button data-v="customers">Kunden</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="settings">Einstellungen</button></nav>
   <div class="sp"></div>
   <form id="gsF" class="hidden" autocomplete="off"><input id="gs" type="search" placeholder="🔎 Alles durchsuchen …" title="Volltextsuche: Vorgangsnummer, E-Mail, Telefon, Ladekarte, EVSE-ID, Chat, Beschreibung, Notizen …"></form>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
@@ -268,7 +272,7 @@ async function api(action,payload={}){
 function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#logout").classList.add("hidden"); loginView(); }
 $("#logout").onclick=logout;
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>go(b.dataset.v));
-function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,tickets:ticketsView,settings:settingsView})[v](); }
+function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,tickets:ticketsView,settings:settingsView})[v](); }
 
 /* ---------- Login ---------- */
 function loginView(){
@@ -801,7 +805,7 @@ async function fieldView(){
   if(!FF.preset&&!FF.from) setPreset(FF,"30");
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
   main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Maintenance</h1><p class="sub" style="margin:0">Techniker, Servicefirmen, Reinigung und Dienstleister melden sich am QR-Code über „Service-Zugang“ mit ihrer PIN an, arbeiten Checklisten ab – Arbeitszeit vor Ort, Anfahrt und Material werden je Einsatz erfasst.</p></div></div>
-  <div class="seg" id="ftab" style="margin-bottom:14px">${[["dash","📊 Dashboard"],["reports","Protokolle"],["defects","Mängel"],["staff","Mitarbeiter & PINs"],["lists","Checklisten"],["rates","Sätze & Kosten"],["vis","Sichtbarkeit"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
+  <div class="seg" id="ftab" style="margin-bottom:14px">${[["dash","📊 Dashboard"],["reports","Protokolle"],["staff","Mitarbeiter & PINs"],["lists","Checklisten"],["rates","Sätze & Kosten"],["vis","Sichtbarkeit"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
   <div id="fbody"><div class="muted">Lade …</div></div>`;
   document.querySelectorAll("#ftab button").forEach(b=>b.onclick=()=>{ FF.tab=b.dataset.t; document.querySelectorAll("#ftab button").forEach(x=>x.classList.toggle("on",x===b)); fieldTab(); });
   fieldTab();
@@ -832,30 +836,61 @@ async function fVis(){
   $("#vSave").onclick=async()=>{ try{ await fapi("settings_save",{incidents:[...document.querySelectorAll(".v-incidents:checked")].map(x=>x.value),defects:[...document.querySelectorAll(".v-defects:checked")].map(x=>x.value)}); toast("Gespeichert ✓"); }catch(e){ toast(e.message,true); } };
 }
 /* Mängel */
-let FD={status:"open",station:""};
+let FD={status:"open",station:"",prio:""};
+const PRIO_L={A:"A · sicherheitsrelevant",B:"B · funktionsrelevant",C:"C · optisch"}, SRC_L={checkliste:"📋 Checkliste",field:"🔧 Field-Service",kunde:"👤 Kunde",restmangel:"↩ Restmangel"};
+const prioB=p=>`<span class="prio p${esc(p||"B")}" title="${esc(PRIO_L[p||"B"])}">${esc(p||"B")}</span>`;
+async function defectsView(){
+  if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Mängel</h1><p class="sub" style="margin:0"><b>Mangel</b> = Ladepunkt funktioniert, aber etwas ist nicht in Ordnung – kein Ausfall, Behebung nach Priorität: <b>A</b> sicherheitsrelevant (24 h) · <b>B</b> funktionsrelevant (7 Tage) · <b>C</b> optisch (nächste Wartung). Kann nicht mehr geladen werden, wird daraus eine <b>Störung</b>.</p></div></div><div id="fbody"></div>`;
+  fDefects();
+}
 async function fDefects(){
   await ensureStaff(); if(!FVIS||!FVIS.incidents){ try{ FVIS=await fapi("settings_get"); }catch(e){} }
-  $("#fbody").innerHTML=`<div class="card" style="padding:12px 14px"><div class="row"><div class="seg" id="dSt">${[["open","Offen"],["behoben","Behoben"],["all","Alle"]].map(([k,l])=>`<button data-s="${k}" class="${FD.status===k?"on":""}">${l}</button>`).join("")}</div>
+  $("#fbody").innerHTML=`<div id="dsum"></div><div class="card" style="padding:12px 14px"><div class="row"><div class="seg" id="dSt">${[["open","Offen"],["behoben","Behoben"],["all","Alle"]].map(([k,l])=>`<button data-s="${k}" class="${FD.status===k?"on":""}">${l}</button>`).join("")}</div>
+    <div class="seg" id="dPrio">${[["","Alle Prio"],["A","A"],["B","B"],["C","C"]].map(([k,l])=>`<button data-p="${k}" class="${FD.prio===k?"on":""}">${l}</button>`).join("")}</div>
     <select id="dPr" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${FD.station===s.id?"selected":""}>${esc(s.project_id||s.id)}</option>`).join("")}</select>
-    <span class="muted" style="font-size:13px">Mängel entstehen automatisch aus „✗ Mangel“ in Checklisten. Hier legst du fest, wer sie im Service-Zugang sieht.</span></div></div>
-  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Seit</th><th>Projekt</th><th>Bereich</th><th>Mangel</th><th>Gemeldet von</th><th>Sichtbar für</th><th>Status</th></tr></thead><tbody id="dtb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+    <span class="muted" style="font-size:13px">Quellen: Checklisten, Field-Service, Kunden-App (Standort), Restmängel nach Störungen.</span></div></div>
+  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Prio</th><th>Mangel</th><th>Projekt / Bereich</th><th>Fällig</th><th>Quelle</th><th>Sichtbar für</th><th>Status</th></tr></thead><tbody id="dtb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
   document.querySelectorAll("#dSt button").forEach(b=>b.onclick=()=>{ FD.status=b.dataset.s; fDefects(); });
+  document.querySelectorAll("#dPrio button").forEach(b=>b.onclick=()=>{ FD.prio=b.dataset.p; fDefects(); });
   $("#dPr").onchange=()=>{ FD.station=$("#dPr").value; fDefects(); };
-  try{ const r=await fapi("defect_list",{status:FD.status==="all"?"":FD.status,station:FD.station}), tb=$("#dtb"); const DS={offen:["offen","warn"],in_arbeit:["in Arbeit","amber"],behoben:["behoben","ok"]};
-    tb.innerHTML=r.defects.length?r.defects.map(d=>{ const x=DS[d.status]||DS.offen; return `<tr class="click" data-id="${esc(d.id)}"><td class="chev">▸</td><td>${fmtDT(d.created_at)}</td><td><b>${esc(stLabel(d.station_id))}</b></td><td>${esc(fWhere(d))}</td>
-      <td><b>${esc(d.item_text)}</b>${d.note?`<br><small class="muted">${esc(d.note)}</small>`:""}</td><td>${esc(d.created_by||"")}<br><small class="muted">${esc(d.report_no||"")}</small></td><td>${visSummary(d,FVIS&&FVIS.defects)}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span></td></tr>
+  try{ const r=await fapi("defect_list",{status:FD.status==="all"?"":FD.status,station:FD.station}), tb=$("#dtb"); if(!tb) return; const DS={offen:["offen","warn"],in_arbeit:["in Arbeit","amber"],behoben:["behoben","ok"]};
+    const now=Date.now(), od=d=>d.status!=="behoben"&&d.due_at&&+new Date(d.due_at)<now;
+    let L=r.defects.filter(d=>!FD.prio||(d.priority||"B")===FD.prio);
+    L.sort((a,b)=>(a.status==="behoben")-(b.status==="behoben")||(a.priority||"B").localeCompare(b.priority||"B")||(+new Date(a.due_at||0))-(+new Date(b.due_at||0)));
+    const open=r.defects.filter(d=>d.status!=="behoben"), cnt=p=>open.filter(d=>(d.priority||"B")===p).length;
+    $("#dsum").innerHTML=`<div class="isum">${[["A","sicherheitsrelevant","pA"],["B","funktionsrelevant","pB"],["C","optisch","pC"]].map(([p,l,c])=>`<div class="isum-t ${c==="pA"&&cnt(p)?"open":""}"><div class="k">${prioB(p)} offen · ${l}</div><div class="v">${cnt(p)}</div></div>`).join("")}
+      <div class="isum-t ${open.filter(od).length?"open":""}"><div class="k">⏰ Überfällig</div><div class="v">${open.filter(od).length}</div><div class="s">Fälligkeit überschritten</div></div></div>`;
+    tb.innerHTML=L.length?L.map(d=>{ const x=DS[d.status]||DS.offen; return `<tr class="click" data-id="${esc(d.id)}"><td class="chev">▸</td><td>${prioB(d.priority)}</td><td><b>${esc(d.item_text)}</b>${d.note?`<br><small class="muted">${esc(d.note)}</small>`:""}<br><small class="muted"><code>${esc(d.defect_no||"")}</code></small></td>
+      <td><b>${esc(stLabel(d.station_id))}</b><br><small class="muted">${esc(fWhere(d))}</small></td>
+      <td>${d.status==="behoben"?`<small class="muted">behoben ${d.resolved_at?fmtDT(d.resolved_at):""}</small>`:d.due_at?`<span class="${od(d)?"due-od":""}">${od(d)?"⏰ ":""}${fmtDT(d.due_at)}</span>`:"–"}</td>
+      <td>${esc(SRC_L[d.source]||d.source||"")}<br><small class="muted">${esc(d.created_by||"")} · ${fmtDT(d.created_at)}</small></td><td>${visSummary(d,FVIS&&FVIS.defects)}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span>${d.escalated_ticket?`<br><small class="muted">→ ${esc(d.escalated_ticket)}</small>`:""}</td></tr>
       <tr class="akte hidden" data-for="${esc(d.id)}"><td colspan="8"><div class="akte-in"></div></td></tr>`; }).join(""):`<tr><td colspan="8" class="muted">Keine Mängel ${FD.status==="open"?"offen 🎉":""}</td></tr>`;
     tb.querySelectorAll("tr.click").forEach(row=>row.onclick=()=>{ const d=r.defects.find(x=>x.id===row.dataset.id), ak=tb.querySelector(`tr.akte[data-for="${d.id}"]`), open=ak.classList.toggle("hidden")===false;
-      row.querySelector(".chev").textContent=open?"▾":"▸"; if(!open) return; const box=ak.querySelector(".akte-in");
-      box.innerHTML=`<div class="akte-grid"><div><h3>Mangel</h3><dl><dt>Prüfpunkt</dt><dd>${esc(d.item_text)}</dd><dt>Beschreibung</dt><dd>${esc(d.note||"–")}</dd><dt>Aus Protokoll</dt><dd><code>${esc(d.report_no||"")}</code> · ${esc(d.checklist_title||"")}</dd><dt>Gemeldet</dt><dd>${fmtDT(d.created_at)} · ${esc(d.created_by||"")}</dd>
+      row.querySelector(".chev").textContent=open?"▾":"▸"; if(!open) return; const box=ak.querySelector(".akte-in"), st=stOf(d.station_id);
+      const cpsOf=(st&&st.connectors||[]).filter(c=>!d.charger||c.charger===d.charger);
+      box.innerHTML=`<div class="akte-grid"><div><h3>Mangel ${esc(d.defect_no||"")}</h3><dl><dt>Mangel</dt><dd><b>${esc(d.item_text)}</b></dd><dt>Beschreibung</dt><dd>${esc(d.note||"–")}</dd><dt>Bereich</dt><dd>${esc(stLabel(d.station_id))} · ${esc(fWhere(d))}</dd>
+        <dt>Quelle</dt><dd>${esc(SRC_L[d.source]||d.source||"")}${d.report_no?` · Protokoll <code>${esc(d.report_no)}</code>`:""}${d.incident_ticket?` · aus Störung <a href="#" class="to-inc4" data-no="${esc(d.incident_ticket)}"><code>${esc(d.incident_ticket)}</code></a>`:""}</dd><dt>Gemeldet</dt><dd>${fmtDT(d.created_at)} · ${esc(d.created_by||"")}</dd>
+        ${d.escalated_ticket?`<dt>Eskaliert</dt><dd>zur Störung ${d.escalated_ticket.split(", ").map(n=>`<a href="#" class="to-inc4" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join(", ")}</dd>`:""}
         ${d.resolved_at?`<dt>Behoben</dt><dd>${fmtDT(d.resolved_at)} · ${esc(d.resolved_by||"")}${d.resolve_note?"<br>"+esc(d.resolve_note):""}</dd>`:""}</dl>
         ${d.photo_url?`<a href="${esc(d.photo_url)}" target="_blank" rel="noopener"><img src="${esc(d.photo_url)}" style="width:160px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line);margin-top:8px"></a>`:""}
-        <h3 style="margin-top:14px">Status</h3><select class="d-st" style="width:auto">${Object.entries(DS).map(([k,v])=>`<option value="${k}" ${d.status===k?"selected":""}>${v[0]}</option>`).join("")}</select>
+        <h3 style="margin-top:14px">Bearbeitung</h3><div class="row"><select class="d-prio" style="width:auto">${Object.entries(PRIO_L).map(([k,v])=>`<option value="${k}" ${(d.priority||"B")===k?"selected":""}>${v}</option>`).join("")}</select>
+          <label style="font-size:13px;color:var(--muted)">fällig <input type="date" class="d-due" style="width:auto" value="${d.due_at?isoD(d.due_at):""}"></label>
+          <select class="d-st" style="width:auto">${Object.entries(DS).map(([k,v])=>`<option value="${k}" ${d.status===k?"selected":""}>${v[0]}</option>`).join("")}</select></div>
         <textarea class="d-note" rows="2" placeholder="Notiz (optional)" style="margin-top:8px"></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn sm d-save">Speichern</button></div>
+        ${d.status!=="behoben"?`<div class="esc-box"><b>⬆ Zur Störung eskalieren</b><div class="muted" style="font-size:12.5px;margin:2px 0 6px">Nur wenn deswegen nicht geladen werden kann oder Gefahr besteht – der Ladepunkt wird in der Kunden-App als gestört angezeigt.</div>
+          <div class="row">${!d.connector?`<select class="d-cp" style="width:auto">${d.charger?`<option value="">alle Ladepunkte von ${esc(fWhere(d))}</option>`:`<option value="">Ladepunkt wählen …</option>`}${cpsOf.map(c=>`<option value="${c.n}">${esc(cpLabel(st,c.n))}</option>`).join("")}</select>`:""}<button class="btn warn sm d-esc">Störung anlegen</button></div></div>`:""}
         <div class="notes">${(d.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)} · ${esc(n.by||"")}</span>${n.status?` <b>${esc((DS[n.status]||[n.status])[0])}</b>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div></div>
-        <div><h3>Sichtbar im Service-Zugang für</h3>${assignHTML(d)}<button class="btn sm d-save" style="margin-top:12px">Speichern</button></div></div>`;
+        <div><h3>Sichtbar im Service-Zugang für</h3>${assignHTML(d)}<button class="btn sm d-asave" style="margin-top:12px">Sichtbarkeit speichern</button></div></div>`;
       wireAssign(box);
-      box.querySelector(".d-save").onclick=async()=>{ try{ await fapi("defect_update",{id:d.id,status:box.querySelector(".d-st").value,note:box.querySelector(".d-note").value,...readAssign(box)}); toast("Gespeichert ✓"); fDefects(); }catch(e){ toast(e.message,true); } }; });
+      box.querySelectorAll(".to-inc4").forEach(a=>a.onclick=e=>{ e.preventDefault(); IF.q=a.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
+      const save=async extra=>{ try{ await fapi("defect_update",{id:d.id,status:box.querySelector(".d-st").value,priority:box.querySelector(".d-prio").value,due_at:box.querySelector(".d-due").value||null,note:box.querySelector(".d-note").value,...readAssign(box),...extra}); toast("Gespeichert ✓"); fDefects(); }catch(e){ toast(e.message,true); } };
+      box.querySelector(".d-save").onclick=()=>save({}); box.querySelector(".d-asave").onclick=()=>save({});
+      if(box.querySelector(".d-esc")) box.querySelector(".d-esc").onclick=async()=>{ const sel=box.querySelector(".d-cp"), cp=sel&&sel.value?+sel.value:null;
+        if(!d.connector&&!d.charger&&!cp) return toast("Bitte den Ladepunkt wählen",true);
+        if(!confirm(`Mangel ${d.defect_no} zur Störung machen? Der Ladepunkt wird in der Kunden-App als gestört angezeigt.`)) return;
+        try{ const res=await fapi("defect_escalate_admin",{id:d.id,connector:cp}); toast("Störung angelegt: "+res.tickets.join(", ")); fDefects(); }catch(e){ toast(e.message,true); } }; });
   }catch(e){ toast(e.message,true); }
 }
 const stLabel=id=>{ const s=stOf(id); return s?(s.project_id||s.id):id; };
@@ -925,6 +960,7 @@ async function fDash(){
       <div><b>🚐 Reaktionszeit</b>Erste Kundenmeldung einer Störung → Arbeitsbeginn des ersten Einsatzes vor Ort zu diesem Ticket.</div>
       <div><b>🎫 Ticket-Bearbeitungszeit</b>Erste Kundenmeldung → Status „erledigt“ (egal ob vor Ort oder im Dashboard erledigt). Enthält Wartezeit, Anfahrt und Arbeit.</div>
       <div><b>💶 Kosten je Einsatz</b>Arbeitszeit × Stundensatz + Anfahrtszeit × Stundensatz + km × km-Satz + Material. Stundensatz: individuell je Person, sonst Satz der Rolle (Reiter „Sätze & Kosten“). Der Satz wird beim Abschluss eingefroren.</div>
+      <div><b>⛔ Störung vs. 🛠 Mangel</b>Störung: an der Stelle kann nicht geladen werden – zählt als Ausfall und ist in der Kunden-App sichtbar. Mangel: Laden funktioniert, aber etwas ist nicht in Ordnung – Priorität A (24 h), B (7 Tage), C (nächste Wartung).</div>
       <div><b>🎯 First-Time-Fix</b>Anteil der vor Ort erledigten Störungen, die mit genau einem Einsatz behoben wurden.</div>
       <div><b>⚠ Mängelquote · Fällige Prüfungen</b>Anteil der Protokolle mit mindestens einem Mangel · Checklisten mit Intervall, die am Standort überfällig oder noch nie gemacht sind.</div>
     </div></details>
@@ -961,6 +997,9 @@ function renderDash(d){
   const ms=x=>x==null?"–":fmtDur(x);
   // Gruppierungen
   const grp=(keyFn)=>{ const m={}; for(const r of R){ const key=keyFn(r); const g=m[key]=m[key]||{key,n:0,work:0,labor:0,travel:0,mat:0,total:0}; g.n++; g.work+=+r.work_minutes||0; g.labor+=+r.labor_cost||0; g.travel+=+r.travel_cost||0; g.mat+=+r.material_cost||0; g.total+=+r.total_cost||0; } return Object.values(m).sort((a,b)=>b.total-a.total); };
+  const kindOf=r=>r.ticket_no?"⛔ Störungsbehebung":r.defect_no?"🛠 Mängelbeseitigung":"📋 Wartung & Prüfung";
+  const byKind=grp(kindOf);
+  const DF=d.defects||[], dOpen=DF.filter(x=>x.status!=="behoben"), dOd=dOpen.filter(x=>x.due_at&&+new Date(x.due_at)<Date.now()), dRes=DF.filter(x=>x.resolved_at&&+new Date(x.created_at)>=Date.parse(d.from)).map(x=>+new Date(x.resolved_at)-+new Date(x.created_at));
   const byProj=grp(r=>stLabel(r.station_id)), byWho=grp(r=>(r.company||FROLES[r.role]||r.role||"–")), byCl=grp(r=>r.checklist_title||"–");
   const stack=(rows,showN)=>{ const max=Math.max(1,...rows.map(g=>g.total)); return rows.length?`<div class="cbars">${rows.slice(0,12).map(g=>`<div class="cb-row"><span class="cb-l" title="${esc(g.key)}">${esc(g.key)}</span>
       <span class="cb-track">${[["labor","#2a78d6","Arbeit"],["travel","#eb6834","Anfahrt"],["mat","#1baf7a","Material"]].map(([f,c,l])=>g[f]>0?`<i style="width:${g[f]/max*100}%;background:${c}" data-tip="<b>${esc(g.key)}</b><br>${l}: ${eur(g[f])}"></i>`:"").join("")}</span>
@@ -980,8 +1019,11 @@ function renderDash(d){
       ${k("Ø Ticket-Bearbeitung",ms(avg(tix)),`Median ${ms(median(tix))} · ${tix.length} erledigt · ${openInc} offen`,"","Meldung → erledigt")}
       ${k("First-Time-Fix",fixField?Math.round(ftf/fixField*100)+" %":"–",`${ftf} von ${fixField} vor Ort erledigt`,fixField&&ftf/fixField<.7?"bad":"")}
       ${k("Mängelquote",R.length?Math.round(defects/R.length*100)+" %":"–",`${defects} von ${R.length} Protokollen`)}
+      ${k("Offene Mängel",dOpen.length,`${dOpen.filter(x=>x.priority==="A").length}× Prio A · ${dOd.length} überfällig`,dOd.length||dOpen.some(x=>x.priority==="A")?"bad":"","Mängel = Ladepunkt funktioniert, Behebung nach Priorität")}
+      ${k("Ø Mängelbehebung",ms(avg(dRes)),`${dRes.length} behoben im Zeitraum`,"","Meldung des Mangels → behoben")}
       ${k("Fällige Prüfungen",d.overdue.length,d.overdue.length?"überfällig oder nie gemacht":"alles im Intervall",d.overdue.length?"bad":"")}
     </div>
+    <div class="card"><h2>Kosten nach Art</h2><p class="sub" style="margin:-4px 0 10px">Störungsbehebung = Einsatz zu einer Störung (Ausfall) · Mängelbeseitigung = Einsatz zu einem Mangel · Wartung & Prüfung = Checklisten ohne Ticket</p>${stack(byKind)}</div>
     <div class="grid2c">
       <div class="card"><h2>Kosten je Projekt</h2>${stack(byProj)}</div>
       <div class="card"><h2>Kosten je Firma / Rolle</h2>${stack(byWho)}</div>
@@ -1237,6 +1279,7 @@ async function loadOverview(){
       <div class="kpi link ${openNow?"bad":""}" data-go="open"><div class="k">Offene Störungen ›</div><div class="v">${openNow}</div><div class="s">${openNow?"⚠ in der App als gestört markiert":"✓ alles frei"}</div></div>
       <div class="kpi link" data-go="new"><div class="k">Neue Störungen ›</div><div class="v">${inWin.length}</div><div class="s">${inWin.reduce((a,i)=>a+i.reports,0)} Meldungen von Kunden</div></div>
       <div class="kpi link" data-go="done"><div class="k">Ø Zeit bis erledigt ›</div><div class="v">${mttr?fmtDur(mttr):"–"}</div><div class="s">${solvedInc.length} erledigt im Zeitraum</div></div>
+      <div class="kpi link" data-go="defects" id="kpiDef"><div class="k">Offene Mängel ›</div><div class="v">…</div><div class="s">kein Ausfall · nach Priorität</div></div>
       <div class="kpi link" data-go="visits"><div class="k">QR-Code-Aufrufe ›</div><div class="v">${tot}</div><div class="s">${tot?Math.round(100*self/tot)+" % selbst gelöst":"–"}</div></div>
     </div>
     <div class="card ${AV_OPEN?"":"av-closed"}" id="availCard"><div class="row" style="margin-bottom:8px"><button type="button" class="av-h" id="avT"><span class="chev">${AV_OPEN?"▾":"▸"}</span> Verfügbarkeit je Ladepunkt</button>
@@ -1269,8 +1312,11 @@ async function loadOverview(){
     OV_HEAT={inc:r.incidents.filter(i=>+new Date(i.created_at)>=F&&+new Date(i.created_at)<=T),daily:r.daily}; drawHeat();
     box.querySelectorAll(".kpi[data-go]").forEach(k=>k.onclick=()=>{ const g=k.dataset.go;
       if(g==="avail") return $("#availCard").scrollIntoView({behavior:"smooth"});
+      if(g==="defects"){ Object.assign(FD,{status:"open",station:OF.station||"",prio:""}); return go("defects"); }
       if(g==="visits"){ Object.assign(TF,{q:"",mode:"all",preset:OF.preset,from:OF.from,to:OF.to}); return go("tickets"); }
       Object.assign(IF,{q:"",station:OF.station,filter:g==="open"?"open":g==="done"?"erledigt":"all",preset:g==="open"?"all":OF.preset,from:g==="open"?"":OF.from,to:g==="open"?"":OF.to}); go("incidents"); });
+    (async()=>{ try{ const r=await fapi("defect_list",{status:"open",station:OF.station||""}), el=$("#kpiDef"); if(!el) return; const L=r.defects, od=L.filter(x=>x.due_at&&+new Date(x.due_at)<Date.now()).length, a=L.filter(x=>x.priority==="A").length;
+      el.querySelector(".v").textContent=L.length; el.querySelector(".s").textContent=L.length?`${a}× Prio A · ${od} überfällig`:"✓ keine offen"; el.classList.toggle("bad",!!(a||od)); }catch(e){} })();
     $("#avT").onclick=()=>{ AV_OPEN=!AV_OPEN; try{ localStorage.setItem("hc_av",AV_OPEN?"1":"0"); }catch(e){} $("#availCard").classList.toggle("av-closed",!AV_OPEN); $("#avT .chev").textContent=AV_OPEN?"▾":"▸"; };
     $("#avAll").onclick=()=>{ const bl=[...box.querySelectorAll(".proj-block")], o=!bl.every(b=>b.classList.contains("open")); bl.forEach(b=>{ b.classList.toggle("open",o); b.querySelector(".chev").textContent=o?"▾":"▸"; OV_OPEN[b.dataset.st]=o; }); };
     box.querySelectorAll(".proj-block .proj-h").forEach(h=>h.onclick=()=>{ const b=h.parentElement, o=!b.classList.contains("open"); b.classList.toggle("open",o); h.querySelector(".chev").textContent=o?"▾":"▸"; OV_OPEN[b.dataset.st]=o; });

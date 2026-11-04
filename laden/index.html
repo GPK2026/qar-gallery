@@ -430,6 +430,10 @@ const view=$("#view");
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 /* ============ SERVER ============ */
+// Standortmeldungen (Verschmutzung, Licht, Falschparker …) sind Mängel – kein Ausfall des Ladepunkts; Abrechnung = Anliegen
+const FIELD_API="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-field";
+async function siteReport(d){ const r=await fetch(FIELD_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"site_report",sid:S.sid,station:S.station,lang,...d})});
+  const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||"Fehler"); return j; }
 async function api(action, payload={}, opts={}){
   if(!CONFIG.api) throw new Error("offline");
   const r=await fetch(CONFIG.api,{method:"POST",headers:{"Content-Type":"application/json"},keepalive:!!opts.keepalive,
@@ -754,7 +758,7 @@ function ticketView(){
     if(extra) $("#desc").value=extra+($("#desc").value.trim()?" · "+$("#desc").value.trim():"");
     const tdata={flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),name:cname,email,phone,card,emsp,contact:[email,phone].filter(Boolean).join(" · "),photo};
     // Standort-Themen markieren keinen Ladepunkt als gestört (ohne Ladepunkt melden, gewählten Platz nur vermerken)
-    const r=f.site?await api("event",{type:"ticket_submit",cp:null,data:{...tdata,spot:curCp()?cpLabel(curCp()):""}}).catch(()=>null):await track("ticket_submit",tdata);
+    const r=f.site?await siteReport({...tdata,tried:undefined,spot:($("#where")?.value.trim())||(curCp()?cpLabel(curCp()):"")}).catch(()=>null):await track("ticket_submit",tdata);
     S.attached=!!(r&&r.existing);
     S.ticketMail=r&&r.customerMail?{status:r.customerMail,to:email}:null;
     S.lastTicket=(r&&r.ticketNo)||null; S.ticketFailed=!S.lastTicket;
