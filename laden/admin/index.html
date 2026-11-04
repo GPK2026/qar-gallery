@@ -136,6 +136,10 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 .isum-t .s{color:var(--muted);font-size:12px;margin-top:2px}
 .isum-t.open{border-color:#f3c2bc;background:#fff7f6}.isum-t.open .v{color:#b42318}
 .badge.live b{font-variant-numeric:tabular-nums;font-weight:800}
+.cl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.cl-pick{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);font-size:14px;margin:0}
+.cl-pick.on{border-color:var(--brand);background:#f3faf6}
+.cl-pick input{width:auto;margin-top:3px}.cl-pick small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:14px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .kpi .k{color:var(--muted);font-size:12.5px;font-weight:600}
@@ -329,13 +333,17 @@ function renderEditor(){
   <div class="card"><div class="row" style="margin-bottom:10px"><h2 style="margin:0">Charger & Ladepunkte</h2><span class="muted">${E.chargers.length} Charger · ${E.chargers.reduce((a,c)=>a+c.connectors.length,0)} Ladepunkte</span><div class="sp"></div><button class="btn ghost sm" id="addCh">+ Charger</button></div>
     <div id="chs">${E.chargers.map((c,i)=>chargerHTML(c,i)).join("")}</div></div>
 
+  <div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">Checklisten (Maintenance)</h2><div class="sp"></div><a href="#" id="toLists" class="muted" style="font-size:13px">Checklisten bearbeiten ›</a></div>
+    <p class="sub">Welche Checklisten Techniker, Reinigung & Co. an diesem Standort in der Service-App sehen. Listen mit „alle Projekte“ sind bei neuen Projekten automatisch aktiv.</p><div id="clAssign" class="muted">Lade …</div></div>
+
   ${!isNew?`<div class="card"><h2>QR-Schild</h2><p class="sub">Ein Schild für den ganzen Standort – der Kunde wählt Charger und Ladepunkt (per EVSE-ID) in der App. Druckfertig als PNG.</p><div class="qr-row" id="qrs"></div></div>`:""}
 
   ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon QR-Code-Aufrufe, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
   $("#back").onclick=projectsView;
   $("#save").onclick=save;
   $("#addCh").onclick=()=>{ collect(); const n=E.chargers.length+1; E.chargers.push({label:"LS#"+n,model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}); renderEditor(); };
-  wireChargers();
+  wireChargers(); fillClAssign(isNew);
+  $("#toLists").onclick=e=>{ e.preventDefault(); FF.tab="lists"; go("field"); };
   if(!isNew){ renderQRs(); $("#del").onclick=del; wireImage(); }
 }
 function shrinkImg(file){ return new Promise(res=>{ const img=new Image(), u=URL.createObjectURL(file);
@@ -379,6 +387,17 @@ function wireChargers(){
       renderEditor(); });
   });
 }
+async function fillClAssign(isNew){
+  const box=$("#clAssign"); if(!box) return;
+  try{ if(!FCL.length) FCL=(await fapi("checklist_list")).checklists; }catch(e){ box.textContent=e.message; return; }
+  const L=FCL.filter(l=>l.active);
+  if(!E._cl) E._cl=L.filter(l=>isNew?l.all_stations!==false:clFor(l,E.original_id)).map(l=>l.id);
+  if(!$("#clAssign")) return;
+  $("#clAssign").innerHTML=L.length?`<div class="cl-grid">${L.map(l=>`<label class="cl-pick ${E._cl.includes(l.id)?"on":""}"><input type="checkbox" class="cl-a" value="${esc(l.id)}" ${E._cl.includes(l.id)?"checked":""}>
+      <span><b>${esc(l.title)}</b><small>${l.roles.map(r=>FROLES[r]||r).join(", ")} · ${esc(FSCOPE[l.scope]||"")}${l.interval_days?" · alle "+l.interval_days+" T.":""}${l.all_stations!==false?" · Standard für alle":""}</small></span></label>`).join("")}</div>
+    <div class="hint">Wird mit „Speichern“ oben übernommen.</div>`:`<span class="muted">Noch keine Checklisten angelegt.</span>`;
+  document.querySelectorAll(".cl-a").forEach(x=>x.onchange=()=>{ E._cl=[...document.querySelectorAll(".cl-a:checked")].map(y=>y.value); x.closest(".cl-pick").classList.toggle("on",x.checked); });
+}
 function collect(){
   const v=id=>$("#"+id)?$("#"+id).value.trim():"";
   Object.assign(E,{project_id:v("f_project_id"),name:v("f_name"),address:v("f_address"),lat:v("f_lat"),lng:v("f_lng"),review_url:v("f_review_url"),notify_email:v("f_notify_email"),active:$("#f_active")?$("#f_active").checked:true});
@@ -393,7 +412,9 @@ async function save(){
   if(!E.project_id) return toast("Projekt-ID eingeben",true);
   if(!E.original_id) E.id=E.project_id;   // interne ID = Projekt-ID (nicht sichtbar)
   const b=$("#save"); b.disabled=true; b.textContent="Speichere …";
-  try{ const r=await api("save",{station:E}); toast("Gespeichert – in der App sichtbar ✓"); E={...r.station,original_id:r.station.id}; renderEditor(); }
+  try{ const cl=E._cl; const {_cl,...payload}=E; const r=await api("save",{station:payload});
+    if(cl){ try{ await fapi("checklist_assign",{station:r.station.id,on:cl}); FCL=(await fapi("checklist_list")).checklists; }catch(e){ toast("Projekt gespeichert, Checklisten nicht: "+e.message,true); } }
+    toast("Gespeichert – in der App sichtbar ✓"); E={...r.station,original_id:r.station.id}; renderEditor(); }
   catch(e){ toast(e.message,true); b.disabled=false; b.textContent="Speichern"; }
 }
 async function del(){
@@ -1021,10 +1042,12 @@ function fLists(){
   <div id="clEd"></div><div class="grid" id="clGrid">${FCL.map((c,i)=>`<div class="card pcard" data-i="${i}" style="${c.active?"":"opacity:.55"}"><div class="row"><b style="font-size:16px">${esc(c.title)}</b><div class="sp"></div>${c.active?"":'<span class="badge off">inaktiv</span>'}</div>
     <div class="muted" style="margin:4px 0 8px">${esc(c.description||"")}</div>
     <div class="row" style="gap:6px">${c.roles.map(r=>`<span class="badge amber">${esc(FROLES[r]||r)}</span>`).join("")}</div>
-    <div class="stats"><div><b>${(c.items||[]).length}</b>Prüfpunkte</div><div><b>${esc(FSCOPE[c.scope])}</b>Umfang</div><div><b>${c.interval_days?c.interval_days+" T.":"–"}</b>Intervall</div></div></div>`).join("")}</div>`;
+    <div class="stats"><div><b>${(c.items||[]).length}</b>Prüfpunkte</div><div><b>${esc(FSCOPE[c.scope])}</b>Umfang</div><div><b>${c.interval_days?c.interval_days+" T.":"–"}</b>Intervall</div><div><b>${clProjLabel(c)}</b>Projekte</div></div></div>`).join("")}</div>`;
   $("#cNewL").onclick=()=>listEd({title:"",roles:["technik"],scope:"charger",items:[{type:"check",text:"",required:true}],active:true,sort:100},true);
   document.querySelectorAll("#clGrid .pcard").forEach(c=>c.onclick=()=>listEd(JSON.parse(JSON.stringify(FCL[+c.dataset.i]))));
 }
+const clFor=(l,id)=>l.all_stations!==false?!(l.excluded_stations||[]).includes(id):(l.stations||[]).includes(id);
+const clProjLabel=c=>{ const n=STATIONS.filter(st=>clFor(c,st.id)).length; return c.all_stations!==false?((c.excluded_stations||[]).length?`alle außer ${(c.excluded_stations||[]).length}`:"alle"):n+" von "+STATIONS.length; };
 function listEd(c,isNew){
   const row=(it,i)=>`<div class="lp" data-i="${i}" style="display:grid;grid-template-columns:28px 1fr 150px 92px 96px;gap:8px;align-items:start;padding:8px 0;border-top:1px solid #eef1ef">
     <b style="padding-top:9px">${i+1}.</b><div><input class="it-text" placeholder="Prüfpunkt, z. B. Display gereinigt" value="${esc(it.text||"")}"><input class="it-hint" placeholder="Anleitung / Hinweis (optional)" value="${esc(it.hint||"")}" style="margin-top:6px;font-size:13px">
@@ -1034,6 +1057,8 @@ function listEd(c,isNew){
     <div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn ghost sm it-up" type="button">↑</button><button class="btn ghost sm it-dn" type="button">↓</button><button class="btn ghost sm it-rm" type="button">✕</button></div></div>`;
   const collectL=()=>{ const ed=$("#clEd"); c.title=ed.querySelector(".l-title").value; c.description=ed.querySelector(".l-desc").value; c.scope=ed.querySelector(".l-scope").value;
     c.interval_days=ed.querySelector(".l-int").value; c.sort=ed.querySelector(".l-sort").value; c.active=ed.querySelector(".l-active").checked; c.roles=[...ed.querySelectorAll(".l-role:checked")].map(x=>x.value);
+    c.all_stations=ed.querySelector(".l-all:checked").value==="all"; const chk=[...ed.querySelectorAll(".l-st")];
+    if(c.all_stations){ c.excluded_stations=chk.filter(x=>!x.checked).map(x=>x.value); } else { c.stations=chk.filter(x=>x.checked).map(x=>x.value); }
     c.items=[...ed.querySelectorAll(".lp")].map((r,i)=>({...(c.items[+r.dataset.i]||{}),text:r.querySelector(".it-text").value,hint:r.querySelector(".it-hint").value,type:r.querySelector(".it-type").value,required:r.querySelector(".it-req").checked,
       options:r.querySelector(".it-opts")?r.querySelector(".it-opts").value.split(";").map(x=>x.trim()).filter(Boolean):(c.items[+r.dataset.i]||{}).options})); };
   const draw=()=>{ $("#clEd").innerHTML=`<div class="card" style="border-color:#b9d9c8"><div class="row"><h2 style="margin:0">${isNew?"Neue Checkliste":"Checkliste bearbeiten"}</h2><div class="sp"></div><button class="btn ghost sm" id="lX">Schließen</button></div>
@@ -1044,11 +1069,18 @@ function listEd(c,isNew){
       <div><label>Reihenfolge</label><input class="l-sort" inputmode="numeric" value="${esc(c.sort??100)}"></div></div>
     <label style="margin-top:8px">Beschreibung (sieht der Mitarbeiter)</label><input class="l-desc" value="${esc(c.description||"")}">
     <label style="margin-top:10px">Sichtbar für</label><div class="row" style="gap:14px">${Object.entries(FROLES).map(([k,l])=>`<label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="checkbox" class="l-role" value="${k}" style="width:auto" ${c.roles.includes(k)?"checked":""}> ${l}</label>`).join("")}</div>
+    <label style="margin-top:12px">Gilt für Projekte</label>
+    <div class="row" style="gap:16px;margin-bottom:6px"><label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="radio" name="lall" class="l-all" value="all" style="width:auto" ${c.all_stations!==false?"checked":""}> Alle Projekte – auch neu angelegte</label>
+      <label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="radio" name="lall" class="l-all" value="sel" style="width:auto" ${c.all_stations===false?"checked":""}> Nur ausgewählte Projekte</label></div>
+    <div class="cards-ed" style="max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px">${STATIONS.map(st=>{ const on=c.all_stations!==false?!(c.excluded_stations||[]).includes(st.id):(c.stations||[]).includes(st.id);
+      return `<label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink);margin:3px 0"><input type="checkbox" class="l-st" value="${esc(st.id)}" style="width:auto" ${on?"checked":""}> <b>${esc(st.project_id||st.id)}</b> <span class="muted">${esc(st.name||"")}</span></label>`; }).join("")||'<span class="muted">Noch keine Projekte.</span>'}</div>
+    <div class="hint">${c.all_stations!==false?"Abgewählte Projekte sind Ausnahmen – jedes neue Projekt bekommt die Liste automatisch.":"Neue Projekte bekommen die Liste nicht automatisch – im Projekt-Editor zuschaltbar."}</div>
     <label style="margin-top:12px">Prüfpunkte</label><div id="lItems">${c.items.map(row).join("")}</div>
     <button class="btn ghost sm" id="lAdd" style="margin-top:8px">+ Prüfpunkt</button>
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px;color:var(--ink)"><input type="checkbox" class="l-active" style="width:auto" ${c.active!==false?"checked":""}> aktiv</label>
     <div class="row" style="margin-top:12px"><button class="btn" id="lSave">Speichern</button>${isNew?"":`<button class="btn warn sm" id="lDel">Löschen</button>`}</div></div>`;
     $("#lX").onclick=()=>$("#clEd").innerHTML="";
+    document.querySelectorAll("#clEd .l-all").forEach(r=>r.onchange=()=>{ collectL(); if(!c.all_stations&&!(c.stations||[]).length) c.stations=STATIONS.filter(st=>!(c.excluded_stations||[]).includes(st.id)).map(st=>st.id); if(c.all_stations) c.excluded_stations=STATIONS.filter(st=>!(c.stations||[]).includes(st.id)).map(st=>st.id); draw(); });
     $("#lAdd").onclick=()=>{ collectL(); c.items.push({type:"check",text:"",required:false}); draw(); };
     document.querySelectorAll("#lItems .lp").forEach(r=>{ const i=+r.dataset.i;
       r.querySelector(".it-type").onchange=()=>{ collectL(); draw(); };
