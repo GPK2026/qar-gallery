@@ -84,6 +84,7 @@ p.sub{margin:-4px 2px 14px;color:var(--muted);font-size:15px}
 .svc-link{text-align:center;margin:6px 0 18px;font-size:13px}.svc-link a{color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;display:inline-block;background:#fff}
 /* Startseite: Ladepunkt-Auswahl erst nach der Kachel */
 .station:not(.compact) #cps,.station:not(.compact) #stEvse{display:none}
+.picking #stPill{display:none}   /* Auswahl steht schon in der Karte darunter – nicht doppelt anbieten */
 .st-hint{font-size:13px;color:#b42318;font-weight:600;margin-top:6px}
 .st-hint:empty{display:none}
 .station.compact .st-hint{display:none}
@@ -531,7 +532,7 @@ function needPick(next,k){
   show(()=>pickView(()=>{ S.pickedOnce=true; next(); },k)); return true;
 }
 function pickView(next,k){
-  compact(true); toTop(); markSub(); S.render=()=>pickView(next,k);
+  compact(true); document.body.classList.add("picking"); toTop(); markSub(); S.render=()=>pickView(next,k);
   const f=k&&FLOWS[k];
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
   <div class="card">${f?`<div class="step-n">${f.ic} ${L(f.t)}</div>`:""}<div class="step-t">${tr("pickT")}</div><p class="step-h">${tr("pickH")}</p><div id="pickSel">${selectorHTML()}</div></div>`;
@@ -560,7 +561,7 @@ function knownView(next,k){
 // Station kompakt (eine Zeile) überall außer auf der Startseite – Tippen klappt sie auf
 const review=()=>((S.stationData&&S.stationData.review)||"");
 const evse=()=>{ const c=curCp(); return (c&&c.evse)||""; };
-function compact(on){ const c=$("#stationCard"); c.classList.toggle("compact",on); c.classList.remove("open"); $("#homeH").hidden=on; $("#homeH").innerHTML=esc(tr("what"))+`<small>${esc(tr("whatCare"))}</small>`; }
+function compact(on){ document.body.classList.remove("picking"); const c=$("#stationCard"); c.classList.toggle("compact",on); c.classList.remove("open"); $("#homeH").hidden=on; $("#homeH").innerHTML=esc(tr("what"))+`<small>${esc(tr("whatCare"))}</small>`; }
 $("#stPill").onclick=()=>$("#stationCard").classList.toggle("open");
 const scroller=()=>$("#scroll");
 function toTop(){ scroller().scrollTop=0; }
