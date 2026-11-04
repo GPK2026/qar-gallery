@@ -36,6 +36,9 @@ h2{font-size:16px;margin:0 0 12px}
 .btn:disabled{opacity:.5}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .pcard{cursor:pointer;transition:box-shadow .15s}
+.newtile{border:2px dashed #b9d9c8;background:#f7fbf9;color:#08603d;font-weight:700;font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:160px;width:100%}
+.newtile span{font-size:30px;line-height:1}
+.newtile:hover{background:var(--brand-soft)}
 .pcard:hover{box-shadow:0 4px 14px rgba(0,0,0,.06)}
 .pid{font-size:22px;font-weight:800}
 .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--brand-soft);color:#08603d}
@@ -137,7 +140,7 @@ dt{color:var(--muted)}dd{margin:0}
 .res .m{color:var(--muted);font-size:12.5px;margin-top:2px}
 .res mark{background:#fff1b8;border-radius:3px;padding:0 2px}
 .two{display:grid;grid-template-columns:2fr 1fr;gap:14px}
-@media (max-width:1240px){.logo small{display:none}}
+@media (max-width:1400px){.logo small{display:none}}
 @media (max-width:900px){.two{grid-template-columns:1fr}#gs{width:100%}#gsF{order:9;width:100%}}
 @media (max-width:760px){.c3,.c4,.c6,.c8{grid-column:span 12}.lp{grid-template-columns:50px 1fr 70px 36px}.lp .evse{grid-column:2 / span 3}nav{margin-left:0}header .in{flex-wrap:wrap}}
 </style>
@@ -145,7 +148,7 @@ dt{color:var(--muted)}dd{margin:0}
 <body>
 <header><div class="in">
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="incidents">Störungen</button><button data-v="tickets">Kundenkontakte</button><button data-v="projects">Projekte</button><button data-v="settings">Einstellungen</button></nav>
+  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="tickets">Kundenkontakte</button><button data-v="settings">Einstellungen</button></nav>
   <div class="sp"></div>
   <form id="gsF" class="hidden" autocomplete="off"><input id="gs" type="search" placeholder="🔎 Alles durchsuchen …" title="Volltextsuche: Vorgangsnummer, E-Mail, Telefon, Ladekarte, EVSE-ID, Chat, Beschreibung, Notizen …"></form>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
@@ -195,14 +198,18 @@ async function projectsView(){
   main.innerHTML=`<div class="row" style="margin-bottom:14px"><div><h1>Projekte / Standorte</h1><p class="sub" style="margin:0">Änderungen sind sofort in der Kunden-App sichtbar.</p></div><div class="sp"></div><button class="btn" id="new">+ Neues Projekt</button></div><div class="grid" id="plist"><div class="muted">Lade …</div></div>`;
   $("#new").onclick=()=>editView(null);
   try{ STATIONS=(await api("list")).stations; }catch(e){ return toast(e.message,true); }
-  $("#plist").innerHTML=STATIONS.length?STATIONS.map((s,i)=>`<div class="card pcard" data-i="${i}">
-    <div class="row"><div class="pid">${esc(s.project_id||s.id)}</div><div class="sp"></div>${s.active?`<span class="badge">aktiv</span>`:`<span class="badge off">inaktiv</span>`}</div>
+  $("#plist").innerHTML=projTiles();
+  wireTiles($("#plist"));
+}
+// Projekt-Kacheln (Projekte-Seite und Übersicht) + Kachel „Neues Projekt“
+function projTiles(openBy){ return STATIONS.map((s,i)=>{ const o=openBy?openBy[s.id]||0:0; return `<div class="card pcard" data-i="${i}">
+    <div class="row"><div class="pid">${esc(s.project_id||s.id)}</div><div class="sp"></div>${o?`<span class="badge warn">⚠ ${o} gestört</span> `:""}${s.active?`<span class="badge">aktiv</span>`:`<span class="badge off">inaktiv</span>`}</div>
     <div style="font-weight:600;margin-top:2px">${esc(s.name||"")}</div><div class="muted">${esc(s.address||"")}</div>
     <div class="row" style="margin-top:10px;gap:6px"><span class="badge amber">${(s.chargers||[]).length} Charger</span><span class="badge amber">${lpCount(s)} Ladepunkte</span>${evseMissing(s)?`<span class="badge warn">${evseMissing(s)} ohne EVSE-ID</span>`:""}</div>
     <div class="stats"><div><b>${s.stats.visits}</b>Besuche 30 T.</div><div><b>${s.stats.tickets}</b>Meldungen</div><div><b>${s.stats.danger}</b>Gefahr</div></div>
-  </div>`).join(""):`<div class="muted">Noch keine Projekte.</div>`;
-  document.querySelectorAll(".pcard").forEach(c=>c.onclick=()=>editView(STATIONS[+c.dataset.i]));
-}
+  </div>`; }).join("")+`<button class="card pcard newtile" id="newTile"><span>＋</span>Neues Projekt anlegen</button>`; }
+function wireTiles(root){ root.querySelectorAll(".pcard[data-i]").forEach(c=>c.onclick=()=>{ document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x.dataset.v==="projects")); editView(STATIONS[+c.dataset.i]); });
+  root.querySelector("#newTile").onclick=()=>{ document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("on",x.dataset.v==="projects")); editView(null); }; }
 
 /* ---------- Editor ---------- */
 let E=null; // Arbeitskopie
@@ -537,10 +544,12 @@ let OF={preset:"30",station:""}; setPreset(OF,"30");
 const OUTC=[["solved","Selbst gelöst","#2a78d6"],["ticket","Störung gemeldet","#eb6834"],["hotline","Hotline","#1baf7a"],["chat","Chat","#eda100"],["open","Ohne Ergebnis","#b9beba"]];
 async function overviewView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Übersicht</h1><p class="sub" style="margin:0">Verfügbarkeit, Störungen und Kundenkontakte auf einen Blick.</p></div><div class="sp"></div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Übersicht</h1><p class="sub" style="margin:0">Verfügbarkeit, Störungen und Kundenkontakte auf einen Blick.</p></div><div class="sp"></div><button class="btn" id="newP">+ Neues Projekt</button>
     <select id="oSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${OF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select></div>
+  <div class="grid" id="ovTiles" style="margin-bottom:14px">${projTiles()}</div>
   <div class="card" style="padding:12px 14px">${datesHTML(OF,"of")}</div>
   <div id="ov"><div class="muted">Lade …</div></div>`;
+  wireTiles($("#ovTiles")); $("#newP").onclick=()=>$("#newTile").click();
   $("#oSt").onchange=()=>{ OF.station=$("#oSt").value; loadOverview(); };
   wireDates(OF,"of",loadOverview);
   loadOverview();
@@ -560,6 +569,8 @@ async function loadOverview(){
       rows.push({st,list}); }
     const avail=cpN?100*(1-downAll/(span*cpN)):100;
     const openNow=r.incidents.filter(i=>i.status!=="erledigt").length;
+    const openBy={}; r.incidents.filter(i=>i.status!=="erledigt").forEach(i=>openBy[i.station_id]=(openBy[i.station_id]||0)+1);
+    if($("#ovTiles")){ $("#ovTiles").innerHTML=projTiles(openBy); wireTiles($("#ovTiles")); }
     const inWin=r.incidents.filter(i=>+new Date(i.created_at)>=F);
     const solvedInc=r.incidents.filter(i=>i.resolved_at&&+new Date(i.resolved_at)>=F);
     const mttr=solvedInc.length?solvedInc.reduce((a,i)=>a+(+new Date(i.resolved_at)-new Date(i.created_at)),0)/solvedInc.length:null;
