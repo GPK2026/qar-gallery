@@ -98,7 +98,8 @@ nav.tabs button.on{color:var(--brand);font-weight:700}
 .msg.bot{background:#fff;border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
 .msg.me{background:var(--brand);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
-.chip{border:1.5px solid var(--brand);background:#fff;border-radius:999px;padding:9px 14px;font-size:14px;color:#08603d;font-weight:500}
+.chip{border:1.5px solid var(--brand);background:#fff;border-radius:999px;padding:9px 14px;font-size:14px;color:#08603d;font-weight:500;text-align:left}
+.chip.danger{border-color:#e9a39b;color:var(--warn);background:var(--warn-soft)}
 .composer{padding:8px 12px 4px;display:flex;justify-content:center;border-bottom:1px solid var(--line)}
 .composer .in{display:flex;gap:8px;max-width:536px;width:100%;align-items:center}
 .composer input{flex:1;min-width:0;height:46px;border:1.5px solid var(--line);border-radius:999px;padding:0 16px;font:inherit;font-size:16px;background:var(--bg)}
@@ -496,14 +497,22 @@ function chatView(){
   if(!S.chat.length) S.chat.push({role:"assistant",content:tr("chatHello",{id:S.station,cp:S.cp})});
   view.innerHTML=`<div class="ai-badge">${S.human?tr("chatHuman"):tr("chatBadge")}</div>
   <div class="chat" id="log">${S.chat.map(m=>m.role==="sys"?`<div class="sys">${esc(m.content)}</div>`:`<div class="msg ${m.role==="user"?"me":m.role==="team"?"team":"bot"}">${m.from?`<span class="who">${esc(m.from)}</span>`:""}${esc(m.content)}</div>`).join("")}</div>
-  ${S.chat.length<2?`<div class="chips">${tr("chips").map(c=>`<button class="chip">${c}</button>`).join("")}</div>`:""}`;
-  view.querySelectorAll(".chip").forEach(c=>c.onclick=()=>send(c.textContent));
+  ${S.chat.length<2?`<div class="chips">${TILE_ORDER.map(k=>`<button class="chip ${FLOWS[k].danger?"danger":""}" data-f="${k}">${FLOWS[k].ic} ${L(FLOWS[k].t)}</button>`).join("")}</div>`:""}`;
+  // Gleiche Auswahl wie auf der Startseite: setzt das Problem als Kontext für Chat und Team
+  view.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{ const k=c.dataset.f, f=FLOWS[k];
+    S.flow=k; S.tried=[]; track(f.danger?"danger_open":"flow_start",{flow:k,title:DE(f.t),from:"chat"});
+    send(L(f.t),k); });
   $("#chatIn").placeholder=tr("chatPh");
   scrollEnd();
 }
 function scrollEnd(){ setTimeout(()=>{ const s=scroller(); s.scrollTop=s.scrollHeight; },30); }
 let busy=false, toldTeam=false;
-async function send(text){
+// Antwort ohne Server: zur gewählten Kachel den ersten Lösungsschritt, sonst Stichwort-Antwort
+function chipAnswer(k){ const f=FLOWS[k];
+  if(f.danger) return fallbackBot("beschädigt damaged");
+  if(!f.steps||!f.steps.length) return fallbackBot("");
+  const s=f.steps[0]; return `${L(s.t)}: ${L(s.h)} ${lang==="en"?"Did that help?":"Hat das geholfen?"}`; }
+async function send(text,chip){
   text=(text||"").trim(); if(!text||busy) return;
   busy=true; S.chat.push({role:"user",content:text}); chatView(); startPolling();
   const log=$("#log"); const el=document.createElement("div"); el.className="msg bot"; el.textContent="…"; log.appendChild(el); scrollEnd();
@@ -513,7 +522,7 @@ async function send(text){
     if(r.text) S.chat.push({role:"assistant",content:r.text});
     else if(r.human && !toldTeam){ toldTeam=true; S.chat.push({role:"sys",content:tr("chatToTeam")}); }
     S.online=true;
-  }catch(e){ S.online=false; S.chat.push({role:"assistant",content:fallbackBot(text)}); }
+  }catch(e){ S.online=false; S.chat.push({role:"assistant",content:chip?chipAnswer(chip):fallbackBot(text)}); }
   busy=false; chatView();
 }
 // Team-Antworten aus Telegram abholen
