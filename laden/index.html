@@ -46,6 +46,16 @@ footer.bottom{flex:none;background:#fff;border-top:1px solid var(--line);padding
 .chg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .chg{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px 4px;font-size:15px;font-weight:700;color:var(--ink)}
 .chg.on{border-color:var(--brand);background:var(--brand-soft)}
+.cp-list{display:flex;flex-direction:column;gap:8px}
+.cp-row{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;text-align:left;color:var(--ink)}
+.cp-row.on{border-color:var(--brand);background:var(--brand-soft)}
+.cp-l b{display:block;font-size:14px}.cp-l small{color:var(--muted);font-size:12px}
+.cp-evse{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;font-weight:600;background:var(--bg);border-radius:8px;padding:6px 8px;white-space:nowrap}
+.cp-evse.none{background:none;color:var(--muted)}
+.cp-row.on .cp-evse{background:#fff}
+.lbl-note{text-transform:none;letter-spacing:0;font-weight:400}
+.evse-q{margin:0 0 6px}
+.evse-res .cp-list{margin-bottom:6px}
 .sel-hint{margin-top:10px;font-size:13px;color:var(--amber);background:var(--amber-soft);border-radius:10px;padding:8px 10px}
 .cps{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px}
 .cp{padding:10px 6px}
@@ -54,6 +64,7 @@ footer.bottom{flex:none;background:#fff;border-top:1px solid var(--line);padding
 .st-pill{display:none;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap}
 .station.compact{padding:10px 14px;margin-bottom:10px}
 .station.compact .lbl,.station.compact .addr,.station.compact .cps,.station.compact .evse{display:none}
+.station:not(.compact) .evse{display:none}
 .evse{font-size:12px;color:var(--muted);margin-top:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .evse b{font-family:Inter,system-ui,sans-serif;font-weight:600}
 .station.compact.open .evse{display:block}
@@ -303,7 +314,7 @@ const T = {
     tCopy:"📋 Nummer kopieren",tShare:"📤 Speichern / teilen",tCopied:"✓ Kopiert",tSaved:"Die Nummer bleibt auf diesem Handy gespeichert und erscheint auch auf der Startseite und unter „Hotline“.",
     myTicket:"Ihre Störungsmeldung",ticketAgo:"gemeldet {t}",shareTitle:"Störungsmeldung {no}",
     shareText:"Meine Störungsmeldung an der Ladesäule\nVorgangsnummer: {no}\nStation: {st}{evse}\nProblem: {pr}\nZeit: {time}\nHotline: {hl}",
-    callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln",chooseCharger:"Charger wählen",chooseCp:"Ladepunkt wählen",chargerHint:"Bitte wählen Sie Ihren Charger – die Nummer (z. B. LS#3) steht groß am Gerät.",pickT:"An welchem Ladepunkt stehen Sie?",pickH:"Die Charger-Nummer steht groß am Gerät, der Ladepunkt am Kabel bzw. an der Steckdose."},
+    callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln",charger:"Charger",chooseCharger:"Charger wählen",chooseCp:"Ladepunkt wählen",chargerHint:"Wählen Sie einen Charger oder geben Sie oben ein paar Ziffern der EVSE-ID ein.",evseFind:"EVSE-ID vom Aufkleber",evsePh:"z. B. letzte Ziffern eingeben",evseNote:"· EVSE-ID mit dem Aufkleber vergleichen",evseNone:"Keine passende EVSE-ID gefunden – bitte Charger wählen.",pickT:"An welchem Ladepunkt stehen Sie?",pickH:"Jeder Ladepunkt hat einen Aufkleber mit seiner EVSE-ID – damit finden Sie ihn hier am schnellsten."},
   en:{brand:"<b>HAPPY CHARGING</b> Support",station:"Charging station",tHelp:"Issue",tChat:"Chat",tCall:"Hotline",cp:"Connector",cpShort:"C",
     what:"What isn't working?",whatSub:"Tap your issue – we'll solve it step by step.",
     privacy:"To help you, your selections, chat messages and any details you provide about this charger are stored and passed on to our service team.",privacyLink:"Privacy",
@@ -324,7 +335,7 @@ const T = {
     tCopy:"📋 Copy number",tShare:"📤 Save / share",tCopied:"✓ Copied",tSaved:"The number stays saved on this phone and also appears on the start screen and under “Hotline”.",
     myTicket:"Your issue report",ticketAgo:"reported {t}",shareTitle:"Issue report {no}",
     shareText:"My issue report at the charging station\nReference number: {no}\nStation: {st}{evse}\nIssue: {pr}\nTime: {time}\nHotline: {hl}",
-    callHint:"Please have the EVSE ID ready – it is also on the sticker at the connector. Then we can find it in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector",chooseCharger:"Choose charger",chooseCp:"Choose connector",chargerHint:"Please choose your charger – the number (e.g. LS#3) is shown in large print on the unit.",pickT:"Which connector are you at?",pickH:"The charger number is shown in large print on the unit, the connector number on the cable or socket."}
+    callHint:"Please have the EVSE ID ready – it is also on the sticker at the connector. Then we can find it in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector",charger:"Charger",chooseCharger:"Choose charger",chooseCp:"Choose connector",chargerHint:"Choose a charger or enter a few digits of the EVSE ID above.",evseFind:"EVSE ID from the sticker",evsePh:"e.g. enter the last digits",evseNote:"· compare the EVSE ID with the sticker",evseNone:"No matching EVSE ID – please choose a charger.",pickT:"Which connector are you at?",pickH:"Every connector has a sticker with its EVSE ID – that's the quickest way to find it here."}
 };
 let lang=(navigator.language||"de").toLowerCase().startsWith("de")?"de":"en";
 const tr=(k,v={})=>{ let s=(T[lang]&&T[lang][k]!=null?T[lang][k]:T.de[k]); if(s==null) return k; if(typeof s==="string") s=s.replace(/\{(\w+)\}/g,(_,x)=>v[x]!=null?v[x]:""); return s; };
@@ -379,7 +390,7 @@ const multi=()=>chargers().length>1;
 const curCharger=()=>chargers().find(c=>c.n===S.charger)||null;
 const curCp=()=>{ const st=S.stationData; return st&&st.cps.find(x=>x.n===S.cp)||null; };
 const localNo=c=>{ const ch=chargers().find(x=>x.n===(c.charger||1)); return ch?ch.cps.indexOf(c)+1:c.n; };
-function cpLabel(c){ if(!c) return ""; const ch=chargers().find(x=>x.n===(c.charger||1)); return `${multi()&&ch?ch.label+" · ":""}${tr("cp")} ${localNo(c)}`; }
+function cpLabel(c){ if(!c) return ""; return `${multi()?tr("charger")+" "+(c.charger||1)+" · ":""}${tr("cp")} ${localNo(c)}`; }
 function initSelection(){
   const chs=chargers();
   if(chs.length===1){ S.charger=chs[0].n; S.cp=S.cp||chs[0].cps[0]?.n||null; return; }
@@ -387,19 +398,33 @@ function initSelection(){
   const ch=curCharger(); if(ch && ch.cps.length===1) S.cp=ch.cps[0].n;
 }
 function pickCharger(n){ S.charger=n; S.cp=null; const ch=curCharger(); if(ch&&ch.cps.length===1) S.cp=ch.cps[0].n; track("connector_select",{charger:n,charger_label:ch&&ch.label,cp:S.cp}); }
-function pickCp(n){ S.cp=n; const c=curCp(); track("connector_select",{cp:n,charger:c&&c.charger,label:cpLabel(c)}); }
+function pickCp(n){ S.cp=n; const c=curCp(); if(c&&c.charger) S.charger=c.charger; track("connector_select",{cp:n,charger:c&&c.charger,label:cpLabel(c)}); }
 // Auswahl-Block (Station-Karte und Zwischenschritt vor einer Störung)
+const normE=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+function cpRow(c,withCh){ return `<button class="cp-row ${c.n===S.cp?"on":""}" data-cp="${c.n}" data-chg="${c.charger||1}">
+  <span class="cp-l"><b>${withCh?tr("charger")+" "+(c.charger||1)+" · ":""}${tr("cp")} ${localNo(c)}</b><small>${esc(c.t||"")}${c.kw?" · "+c.kw+" kW":""}</small></span>
+  ${c.evse?`<code class="cp-evse">${esc(c.evse)}</code>`:`<span class="cp-evse none">–</span>`}</button>`; }
 function selectorHTML(){
-  const chs=chargers(), ch=curCharger();
+  const chs=chargers(), ch=curCharger(), hasEvse=(S.stationData?.cps||[]).some(c=>c.evse);
   let h="";
-  if(chs.length>1) h+=`<div class="sel-lbl">${tr("chooseCharger")}</div><div class="chg-grid">${chs.map(c=>`<button class="chg ${c.n===S.charger?"on":""}" data-ch="${c.n}">${esc(c.label)}</button>`).join("")}</div>`;
-  if(ch) h+=`${chs.length>1?`<div class="sel-lbl">${tr("chooseCp")}</div>`:""}<div class="cps">${ch.cps.map(c=>`<button class="cp ${c.n===S.cp?"on":""}" data-cp="${c.n}">${tr("cp")} ${localNo(c)}${c.t?`<small>${esc(c.t)}${c.kw?" · "+c.kw+" kW":""}</small>`:""}</button>`).join("")}</div>`;
+  if(chs.length>1){
+    if(hasEvse) h+=`<div class="sel-lbl">${tr("evseFind")}</div><input class="f evse-q" type="search" inputmode="search" autocomplete="off" placeholder="${tr("evsePh")}"><div class="evse-res"></div>`;
+    h+=`<div class="sel-lbl">${tr("chooseCharger")}</div><div class="chg-grid">${chs.map(c=>`<button class="chg ${c.n===S.charger?"on":""}" data-ch="${c.n}">${c.n}</button>`).join("")}</div>`;
+  }
+  if(ch) h+=`<div class="sel-lbl">${tr("chooseCp")}${hasEvse?` <span class="lbl-note">${tr("evseNote")}</span>`:""}</div><div class="cp-list">${ch.cps.map(c=>cpRow(c,false)).join("")}</div>`;
   else if(chs.length>1) h+=`<div class="sel-hint">${tr("chargerHint")}</div>`;
   return h;
 }
 function wireSelector(root,after){
+  const sel=(btn)=>{ const n=+btn.dataset.cp, chg=+btn.dataset.chg; if(S.charger!==chg) S.charger=chg; pickCp(n); $("#stationCard").classList.remove("open"); renderStation(); after&&after(true); };
   root.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{ pickCharger(+b.dataset.ch); renderStation(); after&&after(false); });
-  root.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>{ pickCp(+b.dataset.cp); $("#stationCard").classList.remove("open"); renderStation(); after&&after(true); });
+  root.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>sel(b));
+  const q=root.querySelector(".evse-q"), res=root.querySelector(".evse-res");
+  if(q) q.oninput=()=>{ const v=normE(q.value);
+    if(v.length<2){ res.innerHTML=""; return; }
+    const hits=(S.stationData?.cps||[]).filter(c=>c.evse&&normE(c.evse).includes(v)).slice(0,6);
+    res.innerHTML=hits.length?`<div class="cp-list">${hits.map(c=>cpRow(c,true)).join("")}</div>`:`<div class="sel-hint">${tr("evseNone")}</div>`;
+    res.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>sel(b)); };
 }
 function renderStation(){
   const st=S.stationData||{addr:"",cps:[]};
