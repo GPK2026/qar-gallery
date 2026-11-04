@@ -80,6 +80,7 @@ footer.bottom{flex:none;background:#fff;border-top:1px solid var(--line);padding
 h2{font-size:20px;margin:18px 2px 10px}
 p.sub{margin:-4px 2px 14px;color:var(--muted);font-size:15px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#plate{text-transform:uppercase}
 .site-h{font-size:15px;margin:22px 2px 10px;color:var(--ink)}
 .tile.site{background:#fbfcfb}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:left;min-height:96px;display:flex;flex-direction:column;gap:8px;color:var(--ink);transition:transform .08s}
@@ -310,10 +311,8 @@ const FLOWS = {
   ]},
   danger: { ic:"⚠️", t:{de:"Beschädigung / Gefahr",en:"Damage / danger"}, danger:true },
   // ── Rund um den Standort (kein technischer Defekt am Ladepunkt → markiert ihn nicht als gestört)
-  blocked: { ic:"🚗", site:true, t:{de:"Ladeplatz blockiert (Verbrenner / Falschparker)",en:"Charging bay blocked (combustion car / wrong parking)"}, steps:[
-    { t:{de:"Anderen Ladeplatz nutzen",en:"Use another bay"},
-      h:{de:"Ist ein anderer Ladeplatz frei, nutzen Sie bitte diesen. Wir können das Fahrzeug nicht selbst entfernen lassen – melden Sie es uns trotzdem, am besten mit Foto (Kennzeichen). So können wir vor Ort reagieren.",
-         en:"If another bay is free, please use it. We can't remove the vehicle ourselves – please report it anyway, ideally with a photo (licence plate), so we can act on site."} } ]},
+  // direkt zum Formular mit Foto + Kennzeichen (kein „hat geholfen?“-Schritt)
+  blocked: { ic:"🚗", site:true, plate:true, t:{de:"Ladeplatz blockiert (Verbrenner / Falschparker)",en:"Charging bay blocked (combustion car / wrong parking)"}, steps:[] },
   parking: { ic:"🅿️", site:true, t:{de:"Parken / Parkgebühr / Schranke",en:"Parking / parking fee / barrier"}, steps:[
     { t:{de:"Parkregeln vor Ort beachten",en:"Check the parking rules"},
       h:{de:"Bitte beachten Sie die Beschilderung (Parkscheibe, Höchstparkdauer, Parkticket). Laden und Parken werden oft getrennt abgerechnet. Hilft das nicht weiter, schildern Sie uns kurz das Problem.",
@@ -353,7 +352,8 @@ const T = {
     chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
     hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
     tCopy:"📋 Nummer kopieren",tShare:"📤 Speichern / teilen",tCopied:"✓ Kopiert",tSaved:"Die Nummer bleibt nur auf Ihrem Handy für 12 Stunden gespeichert (Startseite und „Hotline“) – andere Kunden sehen sie nicht.",hide:"Ausblenden",
-    siteH:"Rund um den Standort",myTicket:"Ihre Störungsmeldung",myTickets:"Ihre Störungsmeldungen",
+    siteH:"Rund um den Standort",blkT:"Blockierten Ladeplatz melden",blkH:"Ist ein anderer Ladeplatz frei, nutzen Sie bitte diesen. Ein Foto und das Kennzeichen helfen uns, vor Ort zu reagieren – wir können das Fahrzeug nicht selbst entfernen.",
+    blkPhoto:"Foto vom Fahrzeug (optional)",blkPlate:"Kennzeichen (optional)",blkPlatePh:"z. B. B-AB 1234",blkWhere:"Welcher Ladeplatz ist blockiert? (optional)",blkWherePh:"z. B. Charger 2 · Ladepunkt 1",blkDescPh:"z. B. seit wann, Fahrzeugtyp, Farbe …",myTicket:"Ihre Störungsmeldung",myTickets:"Ihre Störungsmeldungen",
     known:"Störung bekannt",knownT:"An diesem Ladepunkt ist bereits eine Störung gemeldet",knownH:"Seit {t} · {n}× gemeldet. Unser Team arbeitet daran.",
     knownAlt:"Diese Ladepunkte sind frei von Störungsmeldungen:",knownNoAlt:"Leider sind alle Ladepunkte dieses Chargers gestört gemeldet.",
     plusBtn:"Betrifft mich auch",plusMail:"E-Mail, wenn's wieder geht (optional)",plusSend:"Bestätigen",plusOk:"Danke – wir haben Ihre Meldung gezählt.",plusOkMail:"Wir schreiben Ihnen an {m}, sobald der Ladepunkt wieder funktioniert.",
@@ -380,7 +380,8 @@ const T = {
     chatPh:"Type a message…",chatToTeam:"Your message has reached our service team. We'll reply here shortly.",
     hours:"Available 24/7",callBtn:"Call now",stationId:"Station ID",copy:"Copy",copied:"Copied ✓",caseNo:"Reference number",
     tCopy:"📋 Copy number",tShare:"📤 Save / share",tCopied:"✓ Copied",tSaved:"The number is kept only on your phone for 12 hours (start screen and “Hotline”) – other customers can't see it.",hide:"Hide",
-    siteH:"Around the site",myTicket:"Your issue report",myTickets:"Your issue reports",
+    siteH:"Around the site",blkT:"Report a blocked charging bay",blkH:"If another bay is free, please use it. A photo and the licence plate help us act on site – we can't remove the vehicle ourselves.",
+    blkPhoto:"Photo of the vehicle (optional)",blkPlate:"Licence plate (optional)",blkPlatePh:"e.g. B-AB 1234",blkWhere:"Which bay is blocked? (optional)",blkWherePh:"e.g. Charger 2 · Connector 1",blkDescPh:"e.g. since when, vehicle type, colour …",myTicket:"Your issue report",myTickets:"Your issue reports",
     known:"Known fault",knownT:"A fault has already been reported at this connector",knownH:"Since {t} · reported {n}×. Our team is on it.",
     knownAlt:"These connectors have no fault reports:",knownNoAlt:"Unfortunately all connectors of this charger are reported as faulty.",
     plusBtn:"Affects me too",plusMail:"Email when it works again (optional)",plusSend:"Confirm",plusOk:"Thanks – your report has been counted.",plusOkMail:"We'll write to {m} as soon as the connector works again.",
@@ -643,13 +644,16 @@ function shrink(file){ return new Promise((res)=>{ if(!file) return res(null);
 function openTicket(){ track("ticket_open",{flow:S.flow,title:DE(FLOWS[S.flow].t)}); show(ticketView); }
 function ticketView(){
   const f=FLOWS[S.flow]; compact(true); toTop(); markSub();
-  const keep={desc:$("#desc")?.value||"",email:$("#email")?.value||S.lastEmail||"",phone:$("#phone")?.value||S.lastPhone||"",card:$("#card")?.value||S.lastCard||"",name:$("#cname")?.value||S.lastName||"",emsp:$("#emsp")?.value||S.lastEmsp||""};
+  const keep={desc:$("#desc")?.value||"",email:$("#email")?.value||S.lastEmail||"",phone:$("#phone")?.value||S.lastPhone||"",card:$("#card")?.value||S.lastCard||"",name:$("#cname")?.value||S.lastName||"",plate:$("#plate")?.value||"",where:$("#where")?.value||"",emsp:$("#emsp")?.value||S.lastEmsp||""};
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
-  <div class="card"><div class="step-t">${tr("ticketT")}</div>
-  <p class="step-h">${tr("ticketH")}</p>
-  <div class="summary"><b>${tr("sStation")}</b>${esc(S.label||S.station)}<br><b>${tr("sCp")}</b>${esc(cpLabel(curCp())||"–")}<br>${evse()?`<b>EVSE-ID</b>${esc(evse())}<br>`:""}<b>${tr("sProblem")}</b>${L(f.t)}<br>${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
-  <label class="f">${tr("fDesc")}</label><textarea class="f" id="desc" placeholder="${tr("fDescPh")}">${esc(keep.desc)}</textarea>
-  <label class="f">${tr("fPhoto")}</label><input class="f" type="file" accept="image/*" id="pic">
+  <div class="card"><div class="step-t">${f.plate?tr("blkT"):tr("ticketT")}</div>
+  <p class="step-h">${f.plate?tr("blkH"):tr("ticketH")}</p>
+  ${f.plate?`<label class="f">${tr("blkPhoto")}</label><input class="f" type="file" accept="image/*" capture="environment" id="pic">
+  <label class="f">${tr("blkPlate")}</label><input class="f" id="plate" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="${tr("blkPlatePh")}" value="${esc(keep.plate)}">
+  <label class="f">${tr("blkWhere")}</label><input class="f" id="where" placeholder="${tr("blkWherePh")}" value="${esc(keep.where||(curCp()?cpLabel(curCp()):""))}">`:""}
+  <div class="summary"><b>${tr("sStation")}</b>${esc(S.label||S.station)}<br>${f.site&&!curCp()?"":`<b>${tr("sCp")}</b>${esc(cpLabel(curCp())||"–")}<br>`}${evse()?`<b>EVSE-ID</b>${esc(evse())}<br>`:""}<b>${tr("sProblem")}</b>${L(f.t)}<br>${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
+  <label class="f">${tr("fDesc")}</label><textarea class="f" id="desc" placeholder="${f.plate?tr("blkDescPh"):tr("fDescPh")}">${esc(keep.desc)}</textarea>
+  ${f.plate?"":`<label class="f">${tr("fPhoto")}</label><input class="f" type="file" accept="image/*" id="pic">`}
   ${["credit","dispTerminal","danger"].includes(S.flow)||(f.site&&!f.card)?"":`<label class="f">${tr("fCard")}</label><input class="f" id="card" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="${tr("fCardPh")}" value="${esc(keep.card)}">
   <label class="f">${tr("fEmsp")}</label><input class="f" id="emsp" list="emspList" autocomplete="off" placeholder="${tr("fEmspPh")}" value="${esc(keep.emsp)}">
   <datalist id="emspList">${EMSP.map(x=>`<option value="${esc(x)}">`).join("")}</datalist>`}
@@ -665,6 +669,8 @@ function ticketView(){
     const photo=await shrink($("#pic").files[0]);
     const email=$("#email").value.trim(), phone=$("#phone").value.trim(), card=($("#card")?.value||"").trim(), emsp=($("#emsp")?.value||"").trim();
     const cname=($("#cname")?.value||"").trim(); S.lastEmail=email; S.lastPhone=phone; S.lastCard=card; S.lastEmsp=emsp; S.lastName=cname;   // nur für diesen Besuch vorbelegen
+    const extra=[$("#plate")?.value.trim()&&"Kennzeichen: "+$("#plate").value.trim().toUpperCase(),$("#where")?.value.trim()&&"Blockierter Platz: "+$("#where").value.trim()].filter(Boolean).join(" · ");
+    if(extra) $("#desc").value=extra+($("#desc").value.trim()?" · "+$("#desc").value.trim():"");
     const tdata={flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),name:cname,email,phone,card,emsp,contact:[email,phone].filter(Boolean).join(" · "),photo};
     // Standort-Themen markieren keinen Ladepunkt als gestört (ohne Ladepunkt melden, gewählten Platz nur vermerken)
     const r=f.site?await api("event",{type:"ticket_submit",cp:null,data:{...tdata,spot:curCp()?cpLabel(curCp()):""}}).catch(()=>null):await track("ticket_submit",tdata);
