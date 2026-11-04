@@ -38,7 +38,10 @@ footer.bottom{flex:none;background:#fff;border-top:1px solid var(--line);padding
 .st-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .st-pill{display:none;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap}
 .station.compact{padding:10px 14px;margin-bottom:10px}
-.station.compact .lbl,.station.compact .addr,.station.compact .cps{display:none}
+.station.compact .lbl,.station.compact .addr,.station.compact .cps,.station.compact .evse{display:none}
+.evse{font-size:12px;color:var(--muted);margin-top:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.evse b{font-family:Inter,system-ui,sans-serif;font-weight:600}
+.station.compact.open .evse{display:block}
 .station.compact .id{font-size:16px;margin:0}
 .station.compact .st-pill{display:inline-block}
 .station.compact.open .addr,.station.compact.open .cps{display:block}
@@ -134,6 +137,7 @@ nav.tabs button{position:relative}
     <div class="st-head"><div class="id" id="stId">–</div><button class="st-pill" id="stPill" aria-label="Ladepunkt wechseln"></button></div>
     <div class="addr" id="stAddr">–</div>
     <div class="cps" id="cps"></div>
+    <div class="evse" id="stEvse"></div>
   </section>
 
   <main id="view"></main>
@@ -166,7 +170,7 @@ const CONFIG = {
   defaultStation: "DE-GR7-E0001",
   // Fallback-Stammdaten, falls der Server nicht erreichbar ist (eigentliche Daten: Tabelle charge_stations)
   stations: {
-    "DE-GR7-E0001": { addr: "Musterstraße 1, 12345 Musterstadt", cps: [{n:1,t:"CCS · 150 kW"},{n:2,t:"Typ 2 · 22 kW"}] }
+    "DE-GR7-E0001": { addr: "Spandauer Damm 10, 14059 Berlin", cps: [{n:1,t:"CCS",evse:"DE*CPW*E1234673064*1"},{n:2,t:"CCS",evse:"DE*CPW*E1234673064*2"},{n:3,t:"CHAdeMO",evse:"DE*CPW*E1234673064*3"}] }
   }
 };
 
@@ -248,6 +252,9 @@ const FLOWS = {
   other: { ic:"❓", t:{de:"Etwas anderes",en:"Something else"}, steps:[], wide:true }
 };
 
+// Reihenfolge im 2er-Raster: Ladesäule (Karte/App + Display) und Terminal (Kreditkarte + Terminal) jeweils in einer Reihe
+const TILE_ORDER=["nostart","abort","card","dispCharger","credit","dispTerminal","stuck","danger","other"];
+
 /* ============ TEXTE (DE/EN) ============ */
 const T = {
   de:{brand:"Lade-Support",station:"Ladestation",tHelp:"Störung",tChat:"Chat",tCall:"Hotline",cp:"Ladepunkt",cpShort:"LP",
@@ -267,7 +274,7 @@ const T = {
     chips:["Ladung startet nicht","Ladekarte wird nicht erkannt","Kreditkarte geht nicht","Stecker steckt fest","Ich möchte einen Mitarbeiter sprechen"],
     chatPh:"Nachricht schreiben…",chatToTeam:"Ihre Nachricht ist bei unserem Service-Team angekommen. Wir antworten hier gleich.",
     hours:"24/7 erreichbar",callBtn:"Jetzt anrufen",stationId:"Stations-ID",copy:"Kopieren",copied:"Kopiert ✓",caseNo:"Vorgangsnummer",
-    callHint:"Bitte halten Sie die Stations-ID bereit – dann finden wir den Ladepunkt sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln"},
+    callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln"},
   en:{brand:"Charging Support",station:"Charging station",tHelp:"Issue",tChat:"Chat",tCall:"Hotline",cp:"Connector",cpShort:"C",
     what:"What isn't working?",whatSub:"Tap your issue – we'll solve it step by step.",
     privacy:"To help you, your selections, chat messages and any details you provide about this charger are stored and passed on to our service team.",privacyLink:"Privacy",
@@ -285,7 +292,7 @@ const T = {
     chips:["Charging won't start","Charging card not recognised","Credit card not working","Connector is stuck","I'd like to speak to someone"],
     chatPh:"Type a message…",chatToTeam:"Your message has reached our service team. We'll reply here shortly.",
     hours:"Available 24/7",callBtn:"Call now",stationId:"Station ID",copy:"Copy",copied:"Copied ✓",caseNo:"Reference number",
-    callHint:"Please have the station ID ready – then we can find the connector in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector"}
+    callHint:"Please have the EVSE ID ready – it is also on the sticker at the connector. Then we can find it in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector"}
 };
 let lang=(navigator.language||"de").toLowerCase().startsWith("de")?"de":"en";
 const tr=(k,v={})=>{ let s=(T[lang]&&T[lang][k]!=null?T[lang][k]:T.de[k]); if(s==null) return k; if(typeof s==="string") s=s.replace(/\{(\w+)\}/g,(_,x)=>v[x]!=null?v[x]:""); return s; };
@@ -311,6 +318,7 @@ async function api(action, payload={}, opts={}){
 }
 // Protokoll: jeder Schritt geht an den Server (Fehler werden ignoriert, Seite funktioniert weiter)
 function track(type,data={},keepalive=false){
+  if(evse()&&data.evse==null) data={...data,evse:evse()};
   return api("event",{type,data},{keepalive}).then(r=>{S.online=true;return r;}).catch(e=>{S.online=false;return null;});
 }
 
@@ -331,10 +339,12 @@ function renderStation(){
   $("#cps").innerHTML=st.cps.map(c=>`<button class="cp ${c.n===S.cp?"on":""}" data-cp="${c.n}">${tr("cp")} ${c.n}${c.t?`<small>${esc(c.t)}</small>`:""}</button>`).join("");
   $("#cps").querySelectorAll(".cp").forEach(b=>b.onclick=()=>{ $("#stationCard").classList.remove("open"); if(S.cp===+b.dataset.cp) return; S.cp=+b.dataset.cp; renderStation(); track("connector_select",{cp:S.cp}); });
   const cur=st.cps.find(c=>c.n===S.cp);
+  $("#stEvse").innerHTML=cur&&cur.evse?`<b>EVSE-ID</b> ${esc(cur.evse)}`:"";
   $("#stPill").textContent=`${tr("cp")} ${S.cp}${cur&&cur.t?" · "+cur.t.split(" · ")[0]:""} ▾`;
   $("#stPill").setAttribute("aria-label",tr("switchCp"));
 }
 // Station kompakt (eine Zeile) überall außer auf der Startseite – Tippen klappt sie auf
+const evse=()=>{ const st=S.stationData; const c=st&&st.cps.find(x=>x.n===S.cp); return (c&&c.evse)||""; };
 function compact(on){ const c=$("#stationCard"); c.classList.toggle("compact",on); c.classList.remove("open"); }
 $("#stPill").onclick=()=>$("#stationCard").classList.toggle("open");
 const scroller=()=>$("#scroll");
@@ -345,7 +355,7 @@ function show(fn){ S.render=fn; fn(); }   // merkt sich die aktuelle Ansicht (f�
 function home(){
   S.flow=null;S.step=0;S.tried=[]; compact(false); S.render=home;
   view.innerHTML=`<h2>${tr("what")}</h2><p class="sub">${tr("whatSub")}</p>
-  <div class="grid">${Object.entries(FLOWS).map(([k,f])=>`<button class="tile ${f.danger?"danger":""} ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
+  <div class="grid">${TILE_ORDER.map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile ${f.danger?"danger":""} ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
   <p class="privacy">${tr("privacy")}${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">${tr("privacyLink")}</a>`:""}</p>`;
   view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f));
 }
@@ -417,7 +427,7 @@ function ticketView(){
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
   <div class="card"><div class="step-t">${tr("ticketT")}</div>
   <p class="step-h">${tr("ticketH")}</p>
-  <div class="summary"><b>${tr("sStation")}</b>${esc(S.station)}<br><b>${tr("sCp")}</b>${S.cp}<br><b>${tr("sProblem")}</b>${L(f.t)}<br>${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
+  <div class="summary"><b>${tr("sStation")}</b>${esc(S.station)}<br><b>${tr("sCp")}</b>${S.cp}<br>${evse()?`<b>EVSE-ID</b>${esc(evse())}<br>`:""}<b>${tr("sProblem")}</b>${L(f.t)}<br>${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
   <label class="f">${tr("fDesc")}</label><textarea class="f" id="desc" placeholder="${tr("fDescPh")}">${esc(keep.desc)}</textarea>
   <label class="f">${tr("fPhoto")}</label><input class="f" type="file" accept="image/*" id="pic">
   <label class="f">${tr("fContact")}</label><input class="f" id="contact" placeholder="${tr("fContactPh")}" value="${esc(keep.contact)}">
@@ -437,7 +447,7 @@ function ticketDoneView(){
   const id=S.lastTicket;
   view.innerHTML=`<div class="card"><div class="big-ic">🧾</div>
   ${id?`<div class="step-t center">${tr("ticketNo")}</div><div class="ticket">${id}</div><p class="step-h">${tr("ticketOk")}</p>`
-     :`<div class="step-t center">${tr("ticketFail")}</div><div class="note amber">${tr("ticketFailH",{id:esc(S.station),cp:S.cp})}</div>`}
+     :`<div class="step-t center">${tr("ticketFail")}</div><div class="note amber">${tr("ticketFailH",{id:esc(evse()||S.station),cp:S.cp})}</div>`}
   ${hotlineLink("ghost",tr("callHotline"))}<button class="btn primary" id="hm">${tr("home")}</button></div>`;
   $("#hm").onclick=home; wireCall();
 }
@@ -531,11 +541,11 @@ function callView(){
   view.innerHTML=`<div class="card"><div class="big-ic">📞</div>
   <div class="phone">${CONFIG.hotline}</div><div class="hours">${tr("hours")}</div>
   ${hotlineLink("primary",tr("callBtn"))}
-  <div class="idbox"><span>${tr("stationId")}<br><code>${esc(S.station)}</code> · ${tr("cpShort")} ${S.cp}</span><button class="small-btn" id="cp">${tr("copy")}</button></div>
+  <div class="idbox"><span>${evse()?"EVSE-ID":tr("stationId")}<br><code>${esc(evse()||S.station+" · "+tr("cpShort")+" "+S.cp)}</code></span><button class="small-btn" id="cp">${tr("copy")}</button></div>
   ${S.lastTicket?`<div class="idbox"><span>${tr("caseNo")}<br><code>${S.lastTicket}</code></span></div>`:""}
   <p class="step-h" style="margin-top:14px">${tr("callHint")}</p>
   <div class="note red">${tr("emergency")}</div></div>`;
-  $("#cp").onclick=async e=>{ track("hotline_copy"); try{await navigator.clipboard.writeText(S.station+" / "+tr("cpShort")+" "+S.cp);e.target.textContent=tr("copied");}catch{e.target.textContent=S.station;}};
+  $("#cp").onclick=async e=>{ track("hotline_copy"); try{await navigator.clipboard.writeText(evse()||(S.station+" / "+tr("cpShort")+" "+S.cp));e.target.textContent=tr("copied");}catch{e.target.textContent=S.station;}};
   wireCall();
 }
 
