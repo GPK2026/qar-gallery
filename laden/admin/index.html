@@ -572,7 +572,7 @@ function renderCust(c,box,isNew){
         <div><label>E-Mail</label><input class="f-email" type="email" value="${esc(c.email||"")}"></div><div><label>Telefon</label><input class="f-phone" value="${esc(c.phone||"")}"></div></div>
       <label style="margin-top:8px">Notiz</label><textarea class="f-notes" rows="2">${esc(c.notes||"")}</textarea>
       <h3 style="margin-top:14px">Ladekarten</h3><div class="cards-ed">${(c.cards||[]).map(cardRow).join("")}</div>
-      <datalist id="emspL">${["ADAC e-Charge","Aral pulse","BMW Charging","Chargemap","E.ON Drive","EnBW mobility+","EWE Go","Electroverse (Octopus)","Elli (VW)","IONITY","Maingau EinfachStromLaden","Mercedes me Charge","Plugsurfing","Shell Recharge","Tesla","Vattenfall InCharge"].map(x=>`<option value="${x}">`).join("")}</datalist>
+      <datalist id="emspL">${["CutPower (Last Mile Solutions)","ADAC e-Charge","Aral pulse","BMW Charging","Chargemap","E.ON Drive","EnBW mobility+","EWE Go","Electroverse (Octopus)","Elli (VW)","IONITY","Maingau EinfachStromLaden","Mercedes me Charge","Plugsurfing","Shell Recharge","Tesla","Vattenfall InCharge"].map(x=>`<option value="${x}">`).join("")}</datalist>
       <button class="btn ghost sm k-add">+ Karte</button>
       <div class="row" style="margin-top:12px"><button class="btn sm c-save">Speichern</button>${isNew?"":`<button class="btn warn sm c-del">Kunde löschen</button>`}</div>
       ${!isNew&&c.source==="auto"?`<div class="hint">Automatisch aus einer Störungsmeldung angelegt – bitte prüfen und ergänzen.</div>`:""}
