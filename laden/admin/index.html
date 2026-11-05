@@ -175,6 +175,8 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 .chain{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px}.chain span{border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}.chain span.on{border-color:var(--brand);background:var(--brand-soft);color:#08603d;font-weight:700}
 a.rec2{color:var(--ink);text-decoration:none}tr.inact td{opacity:.5}
 .badge.cat-kunden{background:#e8efff;color:#1d4ed8}.badge.cat-service{background:#e3f4ec;color:#08603d}.badge.cat-partner{background:#f3e8ff;color:#6b21a8}.badge.cat-lieferanten{background:#fff0dc;color:#9a5300}.badge.cat-behoerden{background:#fde0de;color:#b42318}
+th.rn,td.rn{width:34px;text-align:right;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;padding-right:4px!important}
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover{color:var(--ink)}th.s-asc::after{content:" ▲";font-size:10px}th.s-desc::after{content:" ▼";font-size:10px}
 .dtag{display:inline-block;border-radius:999px;padding:1px 8px;font-weight:700;font-size:12px;white-space:nowrap}
 .d-over{background:#d03b3b;color:#fff}.d-urgent{background:#fde0de;color:#b42318}.d-soon{background:#ffe6c7;color:#9a5300}.d-ok{background:#eef1ef;color:#5d6b65}
 .due-box{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fbfcfb}
@@ -641,8 +643,50 @@ function incTimeline(i,reports,visits){
   </div>`;
 }
 
+/* ---------- Tabellen: laufende Nummer links + Sortieren per Klick auf die Spaltenüberschrift ---------- */
+// Datenzeilen = Zeilen ohne colspan; eine direkt folgende Detailzeile (tr.akte) wandert beim Sortieren mit.
+const TSORT={};
+function sortVal(td){ if(!td) return ""; if(td.dataset.sort!=null) return isNaN(+td.dataset.sort)?td.dataset.sort.toLowerCase():+td.dataset.sort;
+  const t=td.textContent.replace(/\s+/g," ").trim();
+  let m=t.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?:,?\s*(\d{1,2}):(\d{2}))?/);
+  if(m){ const y=+m[3]<100?2000+ +m[3]:+m[3]; return +new Date(y,+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)); }
+  m=t.match(/(\d+(?:,\d+)?)\s*(Tage?|Std\.?|h\b|Min\.?)/); if(m){ const n=+m[1].replace(",","."); return /Tag/.test(m[2])?n*1440:/Min/.test(m[2])?n:n*60; }
+  const c=t.replace(/[€%×\s]|\/h|\/km/g,""); if(/^[−-]?\d[\d.]*(,\d+)?$/.test(c)){ const n=+c.replace(/\./g,"").replace(",",".").replace("−","-"); if(!isNaN(n)) return n; }
+  return t.toLowerCase(); }
+function enhanceTables(root){
+  (root||document).querySelectorAll("#main table").forEach(tbl=>{
+    const thead=tbl.tHead, tb=tbl.tBodies[0]; if(!thead||!tb||tbl.classList.contains("mini")||tbl.closest(".akte-in")) return;
+    const hr=thead.rows[0]; if(!hr) return;
+    if(!hr.querySelector("th.rn")){ const th=document.createElement("th"); th.className="rn"; th.textContent="#"; hr.insertBefore(th,hr.firstChild);
+      [...hr.cells].forEach((th,ci)=>{ if(ci===0||!th.textContent.trim()) return; th.classList.add("sortable"); th.title="Klicken zum Sortieren";
+        th.onclick=()=>{ const k=tbl.closest("[id]")?.id+"|"+(tb.id||"")+"|"+ci, cur=TSORT[k]; TSORT[k]=cur==="asc"?"desc":"asc";
+          Object.keys(TSORT).forEach(x=>{ if(x!==k&&x.startsWith(k.slice(0,k.lastIndexOf("|")+1))) delete TSORT[x]; }); applySort(tbl,ci,TSORT[k]); }; }); }
+    const rows=[...tb.rows];
+    rows.forEach(r=>{ if(r.querySelector("td.rn")) return; const span=r.cells.length===1&&r.cells[0].colSpan>1;
+      if(span){ r.cells[0].colSpan=r.cells[0].colSpan+1; r.dataset.rnDone="1"; return; }
+      if(r.dataset.rnDone) return; const td=document.createElement("td"); td.className="rn"; r.insertBefore(td,r.firstChild); });
+    // aktive Sortierung erneut anwenden (nach Neuladen der Liste)
+    const pre=(tbl.closest("[id]")?.id||"")+"|"+(tb.id||"")+"|"; const key=Object.keys(TSORT).find(x=>x.startsWith(pre));
+    if(key) applySort(tbl,+key.split("|")[2],TSORT[key],true); else renumber(tb);
+  }); }
+function applySort(tbl,ci,dir,quiet){ const tb=tbl.tBodies[0], pairs=[]; let cur=null;
+  [...tb.rows].forEach(r=>{ if(r.querySelector("td.rn")){ cur={main:r,extra:[]}; pairs.push(cur); } else if(cur) cur.extra.push(r); else pairs.push({main:r,extra:[],fixed:true}); });
+  const data=pairs.filter(p=>!p.fixed); if(data.length<2){ renumber(tb); return; }
+  data.sort((a,b)=>{ const x=sortVal(a.main.cells[ci]), y=sortVal(b.main.cells[ci]); const c=typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"de",{numeric:true}); return dir==="desc"?-c:c; });
+  data.forEach(p=>{ tb.appendChild(p.main); p.extra.forEach(e=>tb.appendChild(e)); });
+  [...tbl.tHead.rows[0].cells].forEach((th,i)=>{ th.classList.toggle("s-asc",i===ci&&dir==="asc"); th.classList.toggle("s-desc",i===ci&&dir==="desc"); });
+  renumber(tb); }
+function renumber(tb){ let n=0; [...tb.rows].forEach(r=>{ const c=r.querySelector("td.rn"); if(c) c.textContent=++n; }); }
+let ET_H; const ET_MO=new MutationObserver(ms=>{ if(!ms.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&/^(TR|TABLE|TBODY|DIV)$/.test(n.nodeName)))) return; clearTimeout(ET_H); ET_H=setTimeout(runEnh,30); });
+function runEnh(){ const m=document.getElementById("main"); ET_MO.disconnect(); try{ enhanceTables(); }finally{ ET_MO.takeRecords(); ET_MO.observe(m,{childList:true,subtree:true}); } }
+ET_MO.observe(document.getElementById("main"),{childList:true,subtree:true});
+// Sortier-Auswahl (fachlich): opts = [[key,label]], st = Zustand, onch = Neuaufbau
+const sortSel=(id,opts,val)=>`<select id="${id}" class="sortsel" style="width:auto" title="Sortierung">${opts.map(([k,l])=>`<option value="${k}" ${val===k?"selected":""}>↕ ${l}</option>`).join("")}</select>`;
+function freqSort(list,keyFn,tie){ const n={}; list.forEach(x=>{ const k=keyFn(x); n[k]=(n[k]||0)+1; }); return list.sort((a,b)=>n[keyFn(b)]-n[keyFn(a)]||String(keyFn(a)).localeCompare(String(keyFn(b)),"de")||(tie?tie(a,b):0)); }
+
 /* ---------- Störungen (je Ladepunkt eine offene) ---------- */
-let IF={q:"",filter:"open",station:""};
+let IF={q:"",filter:"open",station:"",sort:"new"};
+const ISORT=[["new","Neueste zuerst"],["old","Älteste zuerst"],["long","Längste Dauer"],["short","Kürzeste Dauer"],["freq","Häufigste Probleme"],["reports","Meiste Meldungen"],["site","Standort A–Z"],["cp","Ladepunkt"]];
 async function incidentsView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
   main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Störungen</h1><p class="sub" style="margin:0">Je Ladepunkt höchstens eine offene Störung – weitere Meldungen werden angehängt. Offene Störungen sehen Kunden in der App. „Erledigt“ gibt den Ladepunkt frei und informiert eingetragene Kunden per Mail.</p></div></div>
@@ -651,11 +695,13 @@ async function incidentsView(){
     <select id="iSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${IF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select>
     ${datesHTML(IF,"if")}
     <div class="seg" id="imode">${[["open","Offen"],["erledigt","Erledigt"],["all","Alle"]].map(([k,l])=>`<button data-m="${k}" class="${IF.filter===k?"on":""}">${l}</button>`).join("")}</div>
+    ${sortSel("iSort",ISORT,IF.sort)}
   </div></div>
   <div id="isumBox"></div>
   <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Vorgang</th><th>Projekt / Standort</th><th>Ladepunkt</th><th>Problem</th><th>Seit</th><th>Dauer</th><th>Meldungen</th><th>Status</th></tr></thead><tbody id="ib"><tr><td colspan="9" class="muted">Lade …</td></tr></tbody></table></div>`;
   wireDates(IF,"if",loadIncidents);
   $("#iSt").onchange=()=>{ IF.station=$("#iSt").value; loadIncidents(); };
+  $("#iSort").onchange=()=>{ IF.sort=$("#iSort").value; Object.keys(TSORT).forEach(k=>{ if(k.includes("|ib|")) delete TSORT[k]; }); loadIncidents(); };
   let h; $("#iq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ IF.q=$("#iq").value.trim(); loadIncidents(); },300); };
   document.querySelectorAll("#imode button").forEach(b=>b.onclick=()=>{ IF.filter=b.dataset.m; document.querySelectorAll("#imode button").forEach(x=>x.classList.toggle("on",x===b)); loadIncidents(); });
   loadIncidents();
@@ -665,9 +711,15 @@ async function loadIncidents(){
     const r=await api("incidents",{filter:IF.q?"all":IF.filter,q:IF.q,from:IF.from,to:IF.to}), tb=$("#ib"); if(!tb) return;
     if(IF.station&&!IF.q) r.incidents=r.incidents.filter(i=>i.station_id===IF.station);
     const sb=$("#isumBox"); if(sb) sb.innerHTML=incSummary(r.incidents);
+    { const now=Date.now(), dur=i=>(i.resolved_at?+new Date(i.resolved_at):now)-new Date(i.created_at), cr=i=>+new Date(i.created_at), sl=i=>{ const s=stOf(i.station_id); return s?(s.project_id||s.id):i.station_id; };
+      const L=r.incidents, S=IF.sort;
+      if(S==="old") L.sort((a,b)=>cr(a)-cr(b)); else if(S==="long") L.sort((a,b)=>dur(b)-dur(a)); else if(S==="short") L.sort((a,b)=>dur(a)-dur(b));
+      else if(S==="freq") freqSort(L,i=>i.title||"Sonstiges",(a,b)=>cr(b)-cr(a)); else if(S==="reports") L.sort((a,b)=>(b.reports||0)-(a.reports||0)||cr(b)-cr(a));
+      else if(S==="site") L.sort((a,b)=>sl(a).localeCompare(sl(b),"de",{numeric:true})||cr(b)-cr(a)); else if(S==="cp") L.sort((a,b)=>sl(a).localeCompare(sl(b),"de",{numeric:true})||(a.connector||0)-(b.connector||0));
+      else L.sort((a,b)=>cr(b)-cr(a)); }
     tb.innerHTML=r.incidents.length?r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
       return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.flow==="field"?' <span class="badge amber" title="vom Field-Service gemeldet">🔧 Field-Service</span>':""}${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b>${st&&st.address?`<br><small class="muted">${esc(st.address)}</small>`:""}</td>
-        <td>${esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td><td>${durBadge(i)}</td>
+        <td>${esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td><td data-sort="${(i.resolved_at?+new Date(i.resolved_at):Date.now())-new Date(i.created_at)}">${durBadge(i)}</td>
         <td>${i.reports}×${i.subscribers?` · 📧 ${i.subscribers}`:""}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span></td></tr>
         <tr class="akte hidden" data-for="${esc(i.ticket_no)}"><td colspan="9"><div class="akte-in">Lade …</div></td></tr>`; }).join("")
       :`<tr><td colspan="9" class="muted">${IF.q?"Nichts gefunden.":IF.filter==="open"?"Keine offenen Störungen 🎉":"Keine Einträge."}</td></tr>`;
@@ -999,7 +1051,8 @@ async function fVis(){
   $("#vSave").onclick=async()=>{ try{ await fapi("settings_save",{incidents:[...document.querySelectorAll(".v-incidents:checked")].map(x=>x.value),defects:[...document.querySelectorAll(".v-defects:checked")].map(x=>x.value),remind:$(".v-rm").value,urgent:$(".v-ug").value,data_access:Object.fromEntries([...document.querySelectorAll(".v-da")].map(s=>[s.dataset.k,s.value]))}); CMETA=null; toast("Gespeichert ✓"); }catch(e){ toast(e.message,true); } };
 }
 /* Mängel */
-let FD={status:"open",station:"",prio:""};
+let FD={status:"open",station:"",prio:"",sort:"prio"};
+const DSORT=[["prio","Priorität"],["due","Fällig zuerst"],["new","Neueste zuerst"],["old","Älteste zuerst"],["freq","Häufigste Mängel"],["site","Standort A–Z"],["src","Quelle"]];
 const PRIO_L={A:"A · sicherheitsrelevant",B:"B · funktionsrelevant",C:"C · optisch"}, SRC_L={checkliste:"📋 Checkliste",field:"🔧 Field-Service",kunde:"👤 Kunde",restmangel:"↩ Restmangel"};
 const prioB=p=>`<span class="prio p${esc(p||"B")}" title="${esc(PRIO_L[p||"B"])}">${esc(p||"B")}</span>`;
 async function defectsView(){
@@ -1012,15 +1065,20 @@ async function fDefects(){
   $("#fbody").innerHTML=`<div id="dsum"></div><div class="card" style="padding:12px 14px"><div class="row"><div class="seg" id="dSt">${[["open","Offen"],["behoben","Behoben"],["all","Alle"]].map(([k,l])=>`<button data-s="${k}" class="${FD.status===k?"on":""}">${l}</button>`).join("")}</div>
     <div class="seg" id="dPrio">${[["","Alle Prio"],["A","A"],["B","B"],["C","C"]].map(([k,l])=>`<button data-p="${k}" class="${FD.prio===k?"on":""}">${l}</button>`).join("")}</div>
     <select id="dPr" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${FD.station===s.id?"selected":""}>${esc(s.project_id||s.id)}</option>`).join("")}</select>
-    <span class="muted" style="font-size:13px">Quellen: Checklisten, Field-Service, Kunden-App (Standort), Restmängel nach Störungen.</span></div></div>
+    ${sortSel("dSort",DSORT,FD.sort)}<span class="muted" style="font-size:13px">Quellen: Checklisten, Field-Service, Kunden-App (Standort), Restmängel nach Störungen.</span></div></div>
   <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Prio</th><th>Mangel</th><th>Projekt / Bereich</th><th>Fällig</th><th>Quelle</th><th>Sichtbar für</th><th>Status</th></tr></thead><tbody id="dtb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
   document.querySelectorAll("#dSt button").forEach(b=>b.onclick=()=>{ FD.status=b.dataset.s; fDefects(); });
   document.querySelectorAll("#dPrio button").forEach(b=>b.onclick=()=>{ FD.prio=b.dataset.p; fDefects(); });
   $("#dPr").onchange=()=>{ FD.station=$("#dPr").value; fDefects(); };
+  $("#dSort").onchange=()=>{ FD.sort=$("#dSort").value; Object.keys(TSORT).forEach(k=>{ if(k.includes("|dtb|")) delete TSORT[k]; }); fDefects(); };
   try{ const r=await fapi("defect_list",{status:FD.status==="all"?"":FD.status,station:FD.station}), tb=$("#dtb"); if(!tb) return; const DS={offen:["offen","warn"],in_arbeit:["in Arbeit","amber"],behoben:["behoben","ok"]};
     const now=Date.now(), od=d=>d.status!=="behoben"&&d.due_at&&+new Date(d.due_at)<now;
     let L=r.defects.filter(d=>!FD.prio||(d.priority||"B")===FD.prio);
-    L.sort((a,b)=>(a.status==="behoben")-(b.status==="behoben")||(a.priority||"B").localeCompare(b.priority||"B")||(+new Date(a.due_at||0))-(+new Date(b.due_at||0)));
+    { const cr=d=>+new Date(d.created_at), du=d=>d.due_at?+new Date(d.due_at):9e15, sl=d=>stLabel(d.station_id), S=FD.sort;
+      if(S==="due") L.sort((a,b)=>du(a)-du(b)); else if(S==="new") L.sort((a,b)=>cr(b)-cr(a)); else if(S==="old") L.sort((a,b)=>cr(a)-cr(b));
+      else if(S==="freq") freqSort(L,d=>d.item_text||"",(a,b)=>cr(b)-cr(a)); else if(S==="site") L.sort((a,b)=>sl(a).localeCompare(sl(b),"de",{numeric:true})||du(a)-du(b));
+      else if(S==="src") L.sort((a,b)=>String(a.source).localeCompare(String(b.source))||du(a)-du(b));
+      else L.sort((a,b)=>(a.status==="behoben")-(b.status==="behoben")||(a.priority||"B").localeCompare(b.priority||"B")||du(a)-du(b)); }
     const open=r.defects.filter(d=>d.status!=="behoben"), cnt=p=>open.filter(d=>(d.priority||"B")===p).length;
     $("#dsum").innerHTML=`<div class="isum">${[["A","sicherheitsrelevant","pA"],["B","funktionsrelevant","pB"],["C","optisch","pC"]].map(([p,l,c])=>`<div class="isum-t ${c==="pA"&&cnt(p)?"open":""}"><div class="k">${prioB(p)} offen · ${l}</div><div class="v">${cnt(p)}</div></div>`).join("")}
       <div class="isum-t ${open.filter(od).length?"open":""}"><div class="k">⏰ Überfällig</div><div class="v">${open.filter(od).length}</div><div class="s">Fälligkeit überschritten</div></div></div>`;
@@ -1065,15 +1123,21 @@ async function fReports(){
     <select id="fSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${FF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}</option>`).join("")}</select>
     <select id="fCl" style="width:auto"><option value="">Alle Checklisten</option>${FCL.map(c=>`<option value="${esc(c.id)}" ${FF.checklist===c.id?"selected":""}>${esc(c.title)}</option>`).join("")}</select>
     <div class="seg" id="fRes">${[["","Alle"],["ok","ohne Mängel"],["maengel","mit Mängeln"]].map(([k,l])=>`<button data-r="${k}" class="${FF.result===k?"on":""}">${l}</button>`).join("")}</div>
-    ${datesHTML(FF,"ff")}</div></div>
+    ${datesHTML(FF,"ff")}${sortSel("fSort",[["new","Neueste zuerst"],["old","Älteste zuerst"],["long","Längste Arbeitszeit"],["short","Kürzeste Arbeitszeit"],["cost","Teuerste zuerst"],["freq","Häufigste Checklisten"],["site","Standort A–Z"],["staff","Person A–Z"]],FF.sort||"new")}</div></div>
   <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Zeit</th><th>Protokoll</th><th>Projekt</th><th>Bereich</th><th>Checkliste</th><th>Durchgeführt von</th><th>Arbeitszeit</th><th>Kosten</th><th>Ergebnis</th></tr></thead><tbody id="frb"><tr><td colspan="10" class="muted">Lade …</td></tr></tbody></table></div>`;
   let h; $("#fq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ FF.q=$("#fq").value.trim(); loadFR(); },300); };
+  $("#fSort").onchange=()=>{ FF.sort=$("#fSort").value; Object.keys(TSORT).forEach(k=>{ if(k.includes("|frb|")) delete TSORT[k]; }); loadFR(); };
   $("#fSt").onchange=()=>{ FF.station=$("#fSt").value; loadFR(); }; $("#fCl").onchange=()=>{ FF.checklist=$("#fCl").value; loadFR(); };
   document.querySelectorAll("#fRes button").forEach(b=>b.onclick=()=>{ FF.result=b.dataset.r; document.querySelectorAll("#fRes button").forEach(x=>x.classList.toggle("on",x===b)); loadFR(); });
   wireDates(FF,"ff",loadFR); loadFR();
 }
 async function loadFR(){
   try{ const r=await fapi("report_list",{station:FF.station,checklist:FF.checklist,result:FF.result,q:FF.q,from:FF.from,to:FF.to}), tb=$("#frb"); if(!tb) return;
+    { const L=r.reports, f=x=>+new Date(x.finished_at), S=FF.sort||"new";
+      if(S==="old") L.sort((a,b)=>f(a)-f(b)); else if(S==="long") L.sort((a,b)=>(b.work_minutes||0)-(a.work_minutes||0)); else if(S==="short") L.sort((a,b)=>(a.work_minutes||0)-(b.work_minutes||0));
+      else if(S==="cost") L.sort((a,b)=>(+b.total_cost||0)-(+a.total_cost||0)); else if(S==="freq") freqSort(L,x=>x.checklist_title||"",(a,b)=>f(b)-f(a));
+      else if(S==="site") L.sort((a,b)=>stLabel(a.station_id).localeCompare(stLabel(b.station_id),"de",{numeric:true})||f(b)-f(a)); else if(S==="staff") L.sort((a,b)=>String(a.staff_name).localeCompare(String(b.staff_name),"de")||f(b)-f(a));
+      else L.sort((a,b)=>f(b)-f(a)); }
     tb.innerHTML=r.reports.length?r.reports.map(x=>`<tr class="click" data-id="${esc(x.id)}"><td class="chev">▸</td><td>${fmtDT(x.finished_at)}</td><td><code>${esc(x.report_no)}</code>${x.ticket_no?`<br><small class="muted">${esc(x.ticket_no)}${x.resolved_ticket?" ✓ erledigt":""}</small>`:""}</td>
       <td><b>${esc(stLabel(x.station_id))}</b></td><td>${esc(fWhere(x))}</td><td>${esc(x.checklist_title||"")}</td><td>${esc(x.staff_name||"")}<br><small class="muted">${esc(x.company||"")} · ${esc(FROLES[x.role]||x.role||"")}</small></td>
       <td>${x.work_minutes!=null?`<b>${hmin(x.work_minutes)}</b>${x.time_corrected?' <span class="badge amber">korr.</span>':""}`:"–"}</td><td>${x.total_cost!=null?eur(x.total_cost):"–"}</td>
