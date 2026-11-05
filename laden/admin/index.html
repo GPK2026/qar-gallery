@@ -177,6 +177,13 @@ a.rec2{color:var(--ink);text-decoration:none}tr.inact td{opacity:.5}
 .badge.cat-kunden{background:#e8efff;color:#1d4ed8}.badge.cat-service{background:#e3f4ec;color:#08603d}.badge.cat-partner{background:#f3e8ff;color:#6b21a8}.badge.cat-lieferanten{background:#fff0dc;color:#9a5300}.badge.cat-behoerden{background:#fde0de;color:#b42318}
 th.rn,td.rn{width:34px;text-align:right;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;padding-right:4px!important}
 th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover{color:var(--ink)}th.s-asc::after{content:" ▲";font-size:10px}th.s-desc::after{content:" ▼";font-size:10px}
+.ed-top{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:16px;align-items:start}.ed-top>.card{margin-bottom:16px}.ed-media{grid-template-columns:minmax(0,1fr) 230px}
+@media(max-width:900px){.ed-top,.ed-media{grid-template-columns:1fr}}
+.qr-card .qr{text-align:center}.gal{display:flex;flex-wrap:wrap;gap:10px}.gi{position:relative;width:150px;height:96px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#f4f6f5}
+.gi img{width:100%;height:100%;object-fit:cover}.gi.hero{width:220px;height:124px;border:2px solid var(--brand)}.gi.empty{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;border-style:dashed}
+.gb{position:absolute;left:6px;bottom:6px;background:var(--brand);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px}
+.gs,.gx{position:absolute;top:5px;border:0;border-radius:999px;width:26px;height:26px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.92)}.gx{right:5px;color:#b42318}.gs{right:36px;color:#c26a00}.gs:hover{background:#ffe6c7}
+.pw-wrap{position:relative;display:block}.pw-wrap input{padding-right:44px!important;width:100%}.pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:18px;cursor:pointer;opacity:.45;padding:4px 6px;line-height:1}.pw-eye.on{opacity:1}
 .dtag{display:inline-block;border-radius:999px;padding:1px 8px;font-weight:700;font-size:12px;white-space:nowrap}
 .d-over{background:#d03b3b;color:#fff}.d-urgent{background:#fde0de;color:#b42318}.d-soon{background:#ffe6c7;color:#9a5300}.d-ok{background:#eef1ef;color:#5d6b65}
 .due-box{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fbfcfb}
@@ -333,7 +340,7 @@ async function projectsView(){
 }
 // Projekt-Kacheln (Projekte-Seite und Übersicht) + Kachel „Neues Projekt“
 function projTiles(openBy,only){ return STATIONS.map((s,i)=>{ if(only&&s.id!==only) return ""; const o=openBy?openBy[s.id]||0:0; return `<div class="card pcard" data-i="${i}">
-    <div class="row"><div class="pid">${esc(s.project_id||s.id)}</div><div class="sp"></div>${o?`<span class="badge warn">⚠ ${o} gestört</span> `:""}${s.active?`<span class="badge">aktiv</span>`:`<span class="badge off">inaktiv</span>`}</div>
+    <div class="row"><div class="pid">${esc(s.project_id||s.id)}${(s.extras||{}).project_name?` <span class="muted" style="font-weight:600;font-size:14px">· ${esc(s.extras.project_name)}</span>`:""}</div><div class="sp"></div>${o?`<span class="badge warn">⚠ ${o} gestört</span> `:""}${s.active?`<span class="badge">aktiv</span>`:`<span class="badge off">inaktiv</span>`}</div>
     <div style="font-weight:600;margin-top:2px">${esc(s.name||"")}</div><div class="muted">${esc(s.address||"")}</div>
     <div class="row" style="margin-top:10px;gap:6px"><span class="badge amber">${(s.chargers||[]).length} Charger</span><span class="badge amber">${lpCount(s)} Ladepunkte</span>${evseMissing(s)?`<span class="badge warn">${evseMissing(s)} ohne EVSE-ID</span>`:""}</div>
     <div class="stats"><div><b>${s.stats.visits}</b>QR-Aufrufe 30 T.</div><div><b>${s.stats.tickets}</b>Meldungen</div><div><b>${s.stats.danger}</b>Gefahr</div></div>
@@ -351,28 +358,34 @@ function editView(s){
 }
 function renderEditor(){
   const isNew=!E.original_id, code=E.project_id||E.id;
-  main.innerHTML=`<div class="row" style="margin-bottom:14px"><button class="btn ghost sm" id="back">‹ Projekte</button><h1 style="margin:0">${isNew?"Neues Projekt":"Projekt "+esc(code)}</h1><div class="sp"></div>
+  main.innerHTML=`<div class="row" style="margin-bottom:14px"><button class="btn ghost sm" id="back">‹ Projekte</button><h1 style="margin:0">${isNew?"Neues Projekt":"Projekt "+esc(code)+((E.extras||{}).project_name?" · "+esc(E.extras.project_name):"")}</h1><div class="sp"></div>
     ${!isNew?`<a class="btn ghost sm" href="${APP}#${encodeURIComponent(code)}" target="_blank" rel="noopener">In App öffnen ↗</a>`:""}
     <button class="btn" id="save">Speichern</button></div>
 
+  <div class="ed-top">
   <div class="card"><h2>Standort</h2><div class="form">
-    <div class="c3"><label>Projekt-ID</label><input id="f_project_id" value="${esc(E.project_id)}" placeholder="z. B. 1295"><div class="hint">QR-Code / Link: …/laden/#ID</div></div>
-    <div class="c3"></div>
-    <div class="c6"><label>Name (nur intern, z. B. Betreiber)</label><input id="f_name" value="${esc(E.name)}"></div>
+    <div class="c4"><label>Projekt-ID</label><input id="f_project_id" value="${esc(E.project_id)}" placeholder="z. B. 1295"><div class="hint">QR-Code / Link: …/laden/#ID</div></div>
+    <div class="c8"><label>Projektname <span class="muted">(optional)</span></label><input id="f_pname" value="${esc((E.extras||{}).project_name||"")}" placeholder="z. B. Ladepark Kaiserdamm"><div class="hint">Erscheint neben der ID – im Dashboard und in den Apps.</div></div>
+    <div class="c6"><label>Betreiber / interne Bezeichnung</label><input id="f_name" value="${esc(E.name)}"></div>
     <div class="c6"><label>Adresse (sichtbar für Kunden)</label><input id="f_address" value="${esc(E.address)}"></div>
     <div class="c3"><label>Breitengrad</label><input id="f_lat" value="${E.lat??""}" inputmode="decimal"></div>
     <div class="c3"><label>Längengrad</label><input id="f_lng" value="${E.lng??""}" inputmode="decimal"></div>
-    <div class="c8"><label>Google-Bewertungslink</label><input id="f_review_url" value="${esc(E.review_url)}" placeholder="https://search.google.com/local/writereview?placeid=…"><div class="hint">Erscheint nach erfolgreicher Hilfe. Place-ID finden: <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener">Place ID Finder</a></div></div>
-    <div class="c4"><label>Abweichende Benachrichtigungs-Mail</label><input id="f_notify_email" value="${esc(E.notify_email)}" placeholder="leer = Standard-Empfänger"></div>
-    ${!isNew?`<div class="c12"><label>Standortbild (oben in der Kunden-App)</label><div class="row" style="align-items:flex-start">
-      <img id="stImg" src="${IMG(E.original_id)}?v=${Date.now()}" onerror="this.style.display='none';document.getElementById('noImg').style.display='flex'" style="width:240px;height:135px;object-fit:cover;border-radius:10px;border:1px solid var(--line)">
-      <div id="noImg" style="display:none;width:240px;height:135px;border:1.5px dashed var(--line);border-radius:10px;align-items:center;justify-content:center;color:var(--muted)">noch kein Bild</div>
-      <div><input type="file" accept="image/*" id="imgIn" class="hidden"><button class="btn ghost sm" id="imgUp">Foto hochladen</button> <button class="btn ghost sm" id="imgDel">Entfernen</button>
-      <div class="hint" style="max-width:360px">Eigenes Foto der Ladestation (Querformat). Bilder aus Google Maps dürfen nicht übernommen werden.</div></div></div></div>`:""}
-    <div class="c12"><label>Parken & Tarife – Info für Kunden (erscheint in der App unter „Parken / Tarife / Schranke“)</label><textarea id="f_parking" rows="3" placeholder="z. B. Parken während des Ladens kostenfrei, max. 2 Std. mit Parkscheibe. Ladepreis: 0,59 €/kWh, Blockiergebühr ab 4 Std.">${esc((E.extras||{}).parking_info||"")}</textarea></div>
+    <div class="c6"><label>Abweichende Benachrichtigungs-Mail</label><input id="f_notify_email" value="${esc(E.notify_email)}" placeholder="leer = Standard-Empfänger"></div>
+    <div class="c12"><label>Google-Bewertungslink</label><input id="f_review_url" value="${esc(E.review_url)}" placeholder="https://search.google.com/local/writereview?placeid=…"><div class="hint">Erscheint nach erfolgreicher Hilfe. Place-ID finden: <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener">Place ID Finder</a></div></div>
     <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_sanitary" style="width:auto" ${(E.extras||{}).sanitary?"checked":""}> Sanitäre Einrichtungen vorhanden (Kachel „Sanitäre Einrichtungen“ in der App)</label></div>
     <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_active" style="width:auto" ${E.active!==false?"checked":""}> Aktiv (in der Kunden-App erreichbar)</label></div>
   </div></div>
+  <div class="card"><h2>Infos für Kunden</h2><p class="sub" style="margin-top:0">Erscheinen in der Kunden-App. Leer lassen, wenn es nichts Besonderes gibt.</p>
+    <label>🅿️ Parken</label><textarea id="f_parking" rows="5" placeholder="z. B. Parken während des Ladens kostenfrei, max. 2 Std. mit Parkscheibe. Schranke öffnet automatisch.">${esc((E.extras||{}).parking_info||"")}</textarea>
+    <label style="margin-top:10px">💶 Tarife</label><textarea id="f_tariff" rows="5" placeholder="z. B. Ad-hoc 0,59 €/kWh · Blockiergebühr 0,10 €/Min. ab 4 Std. · mit Ladekarte gilt der Tarif Ihres Anbieters">${esc((E.extras||{}).tariff_info||"")}</textarea>
+    <label style="margin-top:10px">ℹ️ Kundeninfo</label><textarea id="f_cinfo" rows="5" placeholder="z. B. Toiletten im Autohaus (Mo–Fr 8–18 Uhr) · Ladepunkt 3 wird am 12.11. gewartet">${esc((E.extras||{}).customer_info||"")}</textarea>
+  </div>
+  </div>
+  ${!isNew?`<div class="ed-top ed-media"><div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">Fotos</h2><span class="muted" style="font-size:13px">★ = Titelbild oben in der Kunden- und Service-App</span><div class="sp"></div>
+      <input type="file" accept="image/*" multiple id="imgIn" class="hidden"><button class="btn ghost sm" id="imgUp">+ Fotos hochladen</button></div>
+      <div class="gal" id="gal"><span class="muted">Lade …</span></div>
+      <div class="hint">Eigene Fotos der Ladestation (Querformat). Bilder aus Google Maps dürfen nicht übernommen werden.</div></div>
+    <div class="card qr-card"><h2>QR-Schild</h2><div class="qr-row" id="qrs"></div><p class="sub" style="margin:8px 0 0;font-size:12.5px">Ein Schild für den ganzen Standort – Charger und Ladepunkt wählt der Kunde in der App.</p></div></div>`:""}
 
   <div class="card ${CH_OPEN?"":"ch-closed"}" id="chCard"><div class="row ch-top" style="margin-bottom:10px"><button class="fold-btn" id="chFold" title="ein-/ausklappen">${CH_OPEN?"▾":"▸"}</button><h2 style="margin:0;cursor:pointer" id="chFold2">Charger & Ladepunkte</h2><span class="muted">${E.chargers.length} Charger · ${E.chargers.reduce((a,c)=>a+c.connectors.length,0)} Ladepunkte</span><div class="sp"></div>
       <button class="btn ghost sm ch-only" id="chAll">${E.chargers.every(chFolded)?"Alle aufklappen":"Alle zuklappen"}</button><button class="btn ghost sm" id="addCh">+ Charger</button></div>
@@ -381,7 +394,6 @@ function renderEditor(){
   <div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">Checklisten (Maintenance)</h2><div class="sp"></div><a href="#" id="toLists" class="muted" style="font-size:13px">Checklisten bearbeiten ›</a></div>
     <p class="sub">Welche Checklisten Techniker, Reinigung & Co. an diesem Standort in der Service-App sehen. Listen mit „alle Projekte“ sind bei neuen Projekten automatisch aktiv.</p><div id="clAssign" class="muted">Lade …</div></div>
 
-  ${!isNew?`<div class="card"><h2>QR-Schild</h2><p class="sub">Ein Schild für den ganzen Standort – der Kunde wählt Charger und Ladepunkt (per EVSE-ID) in der App. Druckfertig als PNG.</p><div class="qr-row" id="qrs"></div></div>`:""}
 
   ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon QR-Code-Aufrufe, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
   $("#back").onclick=projectsView;
@@ -400,9 +412,11 @@ function shrinkImg(file){ return new Promise(res=>{ const img=new Image(), u=URL
 function wireImage(){
   $("#imgUp").onclick=()=>$("#imgIn").click();
   $("#imgIn").addEventListener("change",e=>e.stopPropagation()); $("#imgIn").addEventListener("input",e=>e.stopPropagation());
-  $("#imgIn").onchange=async()=>{ const f=$("#imgIn").files[0]; if(!f) return; const data=await shrinkImg(f); if(!data) return toast("Bild konnte nicht gelesen werden",true);
-    try{ const r=await api("upload_image",{id:E.original_id,data}); const im=$("#stImg"); im.style.display=""; $("#noImg").style.display="none"; im.src=r.url; toast("Bild gespeichert – in der App sichtbar ✓"); }catch(e){ toast(e.message,true); } };
-  $("#imgDel").onclick=async()=>{ try{ await api("delete_image",{id:E.original_id}); $("#stImg").style.display="none"; $("#noImg").style.display="flex"; toast("Bild entfernt"); }catch(e){ toast(e.message,true); } };
+  $("#imgIn").onchange=async()=>{ const files=[...$("#imgIn").files]; if(!files.length) return; let first=!$("#gal img.hero-on"), n=0;
+    for(const f of files){ const data=await shrinkImg(f); if(!data){ toast("Bild konnte nicht gelesen werden",true); continue; }
+      try{ await api("upload_image",{id:E.original_id,data,gallery:true,hero:first}); first=false; n++; }catch(e){ toast(e.message,true); } }
+    $("#imgIn").value=""; if(n) toast(n+" Foto"+(n>1?"s":"")+" gespeichert ✓"); loadGal(); };
+  loadGal();
 }
 /* Klappbar: ganze Karte (gemerkt) und jeder Charger einzeln (Zustand nicht gespeichert) */
 let CH_OPEN=false;
@@ -454,10 +468,19 @@ async function fillClAssign(isNew){
     <div class="hint">Wird mit „Speichern“ oben übernommen.</div>`:`<span class="muted">Noch keine Checklisten angelegt.</span>`;
   document.querySelectorAll(".cl-a").forEach(x=>x.onchange=()=>{ E._cl=[...document.querySelectorAll(".cl-a:checked")].map(y=>y.value); x.closest(".cl-pick").classList.toggle("on",x.checked); });
 }
+async function loadGal(){ const g=$("#gal"); if(!g) return;
+  try{ const r=await api("list_images",{id:E.original_id}), v="?v="+Date.now();
+    const heroOk=await new Promise(res=>{ const im=new Image(); im.onload=()=>res(true); im.onerror=()=>res(false); im.src=r.hero+v; });
+    g.innerHTML=`${heroOk?`<div class="gi hero"><img src="${r.hero+v}" class="hero-on"><span class="gb">★ Titelbild</span><button class="gx" data-delhero="1" title="Titelbild entfernen">✕</button></div>`:`<div class="gi hero empty">noch kein Titelbild</div>`}
+      ${r.images.map(x=>`<div class="gi"><img src="${x.url}"><button class="gs" data-hero="${esc(x.path)}" title="Als Titelbild verwenden">★</button><button class="gx" data-del="${esc(x.path)}" title="Foto löschen">✕</button></div>`).join("")}`;
+    g.querySelectorAll("[data-hero]").forEach(b=>b.onclick=async()=>{ try{ await api("set_hero",{id:E.original_id,path:b.dataset.hero}); toast("Titelbild gesetzt ✓"); loadGal(); }catch(e){ toast(e.message,true); } });
+    g.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{ if(!confirm("Foto löschen?")) return; try{ await api("delete_image",{id:E.original_id,path:b.dataset.del}); loadGal(); }catch(e){ toast(e.message,true); } });
+    g.querySelectorAll("[data-delhero]").forEach(b=>b.onclick=async()=>{ if(!confirm("Titelbild entfernen? (Die Fotos der Galerie bleiben.)")) return; try{ await api("delete_image",{id:E.original_id}); loadGal(); }catch(e){ toast(e.message,true); } });
+  }catch(e){ g.innerHTML=`<span class="muted">${esc(e.message)}</span>`; } }
 function collect(){
   const v=id=>$("#"+id)?$("#"+id).value.trim():"";
   Object.assign(E,{project_id:v("f_project_id"),name:v("f_name"),address:v("f_address"),lat:v("f_lat"),lng:v("f_lng"),review_url:v("f_review_url"),notify_email:v("f_notify_email"),active:$("#f_active")?$("#f_active").checked:true});
-  E.extras={...(E.extras||{}),parking_info:($("#f_parking")?.value||"").trim(),sanitary:!!$("#f_sanitary")?.checked};
+  E.extras={...(E.extras||{}),parking_info:($("#f_parking")?.value||"").trim(),tariff_info:($("#f_tariff")?.value||"").trim(),customer_info:($("#f_cinfo")?.value||"").trim(),project_name:($("#f_pname")?.value||"").trim(),sanitary:!!$("#f_sanitary")?.checked};
   document.querySelectorAll(".charger").forEach(el=>{ const c=E.chargers[+el.dataset.ci]; if(!c) return;
     c.label=el.querySelector(".c_label").value.trim(); c.model=el.querySelector(".c_model").value.trim();
     el.querySelectorAll(".lp").forEach(r=>{ const x=c.connectors[+r.dataset.lj]; x.t=r.querySelector(".l_t").value; x.kw=r.querySelector(".l_kw").value.trim()||null; x.evse=r.querySelector(".l_evse").value.trim(); });
@@ -481,7 +504,7 @@ async function del(){
 // Druckfertiges QR-Schild: Überschrift, Hinweis, QR-Code, Standort-Nummer (ohne URL)
 function renderQRs(){
   const code=E.project_id||E.id, url=APP+"#"+encodeURIComponent(code), box=$("#qrs");
-  box.innerHTML=`<div class="qr" style="width:auto"><img id="qrSign" alt="QR-Schild" style="width:260px;border:1px solid var(--line);border-radius:10px"><br><button class="btn ghost sm" id="qrDl" style="margin-top:10px">PNG laden</button></div>`;
+  box.innerHTML=`<div class="qr" style="width:auto"><img id="qrSign" alt="QR-Schild" style="width:150px;border:1px solid var(--line);border-radius:10px"><br><button class="btn ghost sm" id="qrDl" style="margin-top:10px">PNG laden</button></div>`;
   const tmp=document.createElement("div"); tmp.style.display="none"; document.body.appendChild(tmp);
   if(!window.QRCode){ box.innerHTML='<div class="muted">QR-Bibliothek nicht geladen.</div>'; return; }
   new QRCode(tmp,{text:url,width:1000,height:1000,correctLevel:QRCode.CorrectLevel.M});
@@ -1360,22 +1383,24 @@ function listEd(c,isNew){
       <div><label>Intervall (Tage, leer = keins)</label><input class="l-int" inputmode="numeric" value="${esc(c.interval_days||"")}"></div>
       <div><label>Reihenfolge</label><input class="l-sort" inputmode="numeric" value="${esc(c.sort??100)}"></div></div>
     <label style="margin-top:8px">Beschreibung (sieht der Mitarbeiter)</label><input class="l-desc" value="${esc(c.description||"")}">
+    <label style="margin-top:12px">Gilt für Projekte</label>
+    <div class="row" style="gap:16px;margin-bottom:6px"><label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="radio" name="lall" class="l-all" value="all" style="width:auto" ${c.all_stations!==false?"checked":""}> Alle Projekte – auch neu angelegte</label>
+      <label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="radio" name="lall" class="l-all" value="sel" style="width:auto" ${c.all_stations===false?"checked":""}> Nur ausgewählte Projekte</label></div>
+    <div class="cards-ed" style="max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px">${STATIONS.map(st=>{ const on=c.all_stations!==false?!(c.excluded_stations||[]).includes(st.id):(c.stations||[]).includes(st.id);
+      return `<div class="l-strow"><label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink);margin:0;flex:1"><input type="checkbox" class="l-st" value="${esc(st.id)}" style="width:auto" ${on?"checked":""}> <b>${esc(st.project_id||st.id)}</b> <span class="muted">${esc(st.name||"")}</span></label></div>`; }).join("")||'<span class="muted">Noch keine Projekte.</span>'}</div>
+    <div class="hint">${c.all_stations!==false?"Abgewählte Projekte sind Ausnahmen – jedes neue Projekt bekommt die Liste automatisch.":"Neue Projekte bekommen die Liste nicht automatisch – im Projekt-Editor zuschaltbar."}</div>
+    <label style="margin-top:10px">Sichtbar für</label>${roleChecks("l-role",c.roles)}
+    <label style="margin-top:10px">Nur für bestimmte Firmen / Personen <span class="muted">(optional – sonst alle der gewählten Rollen)</span></label>
+    <div class="asg"><div class="asg-chips">${(c.assign_companies||[]).map((n,i)=>`<span class="chip-c">🏢 ${esc(n)} <a href="#" data-rmc="${i}">×</a></span>`).join("")}${(c.assign_staff||[]).map((id,i)=>`<span class="chip-c">👤 ${esc((FSTAFF.find(x=>x.id===id)||{}).name||"Person")} <a href="#" data-rms="${i}">×</a></span>`).join("")}${!(c.assign_companies||[]).length&&!(c.assign_staff||[]).length?'<span class="muted" style="font-size:13px">alle Personen der gewählten Rollen</span>':""}</div>
+      <input class="asg-q" placeholder="🔎 Kontakt, Firma oder Mitarbeiter suchen …"><div class="asg-res"></div></div>
     <div class="due-box"><b>📅 Termine &amp; Erinnerung</b>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px">
         <div><label>Fester Termin (alle Projekte)</label><input type="date" class="l-due" value="${esc(c.due_date||"")}"></div>
         <div><label><span class="dtag d-soon">orange</span> Erinnerung ab … Tage vorher</label><input class="l-rm" inputmode="numeric" value="${c.remind_days??""}" placeholder="${REM.remind} (Standard)"></div>
         <div><label><span class="dtag d-urgent">hellrot</span> dringend ab … Tage vorher</label><input class="l-ug" inputmode="numeric" value="${c.urgent_days??""}" placeholder="${REM.urgent} (Standard)"></div></div>
-      <div class="hint">Termin = konkretes Datum (z. B. DGUV-Prüfung am 15.03.); je Projekt abweichend unten bei „Gilt für Projekte“. Mit Intervall wird nach jeder Durchführung neu gerechnet. Überschritten: <span class="dtag d-over">−5 T.</span> · täglich Erinnerungs-Mail an das Team.</div></div>
-    <label style="margin-top:10px">Sichtbar für</label>${roleChecks("l-role",c.roles)}
-    <label style="margin-top:10px">Nur für bestimmte Firmen / Personen <span class="muted">(optional – sonst alle der gewählten Rollen)</span></label>
-    <div class="asg"><div class="asg-chips">${(c.assign_companies||[]).map((n,i)=>`<span class="chip-c">🏢 ${esc(n)} <a href="#" data-rmc="${i}">×</a></span>`).join("")}${(c.assign_staff||[]).map((id,i)=>`<span class="chip-c">👤 ${esc((FSTAFF.find(x=>x.id===id)||{}).name||"Person")} <a href="#" data-rms="${i}">×</a></span>`).join("")}${!(c.assign_companies||[]).length&&!(c.assign_staff||[]).length?'<span class="muted" style="font-size:13px">alle Personen der gewählten Rollen</span>':""}</div>
-      <input class="asg-q" placeholder="🔎 Kontakt, Firma oder Mitarbeiter suchen …"><div class="asg-res"></div></div>
-    <label style="margin-top:12px">Gilt für Projekte</label>
-    <div class="row" style="gap:16px;margin-bottom:6px"><label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="radio" name="lall" class="l-all" value="all" style="width:auto" ${c.all_stations!==false?"checked":""}> Alle Projekte – auch neu angelegte</label>
-      <label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="radio" name="lall" class="l-all" value="sel" style="width:auto" ${c.all_stations===false?"checked":""}> Nur ausgewählte Projekte</label></div>
-    <div class="cards-ed" style="max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px">${STATIONS.map(st=>{ const on=c.all_stations!==false?!(c.excluded_stations||[]).includes(st.id):(c.stations||[]).includes(st.id);
-      return `<div class="l-strow"><label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink);margin:0;flex:1"><input type="checkbox" class="l-st" value="${esc(st.id)}" style="width:auto" ${on?"checked":""}> <b>${esc(st.project_id||st.id)}</b> <span class="muted">${esc(st.name||"")}</span></label><span class="muted" style="font-size:12px">eigener Termin</span><input type="date" class="l-std" data-st="${esc(st.id)}" value="${esc((c.due_dates||{})[st.id]||"")}" style="width:auto;padding:4px 8px"></div>`; }).join("")||'<span class="muted">Noch keine Projekte.</span>'}</div>
-    <div class="hint">${c.all_stations!==false?"Abgewählte Projekte sind Ausnahmen – jedes neue Projekt bekommt die Liste automatisch.":"Neue Projekte bekommen die Liste nicht automatisch – im Projekt-Editor zuschaltbar."}</div>
+      <div class="hint">Termin = konkretes Datum (z. B. DGUV-Prüfung am 15.03.); je Projekt abweichend darunter. Mit Intervall wird nach jeder Durchführung neu gerechnet. Überschritten: <span class="dtag d-over">−5 T.</span> · täglich Erinnerungs-Mail an das Team.</div>
+      ${(()=>{ const sel=STATIONS.filter(st=>c.all_stations!==false?!(c.excluded_stations||[]).includes(st.id):(c.stations||[]).includes(st.id)), n=sel.filter(st=>(c.due_dates||{})[st.id]).length;
+        return `<details class="csec" style="margin-top:8px" ${n?"":""}><summary><b>Abweichender Termin je Projekt</b> <span class="muted">${n?n+" gesetzt":"keine – es gilt der feste Termin bzw. das Intervall"}</span></summary><div class="csec-b">${sel.map(st=>`<div class="l-strow"><span style="flex:1"><b>${esc(st.project_id||st.id)}</b> <span class="muted">${esc(st.name||"")}</span></span><input type="date" class="l-std" data-st="${esc(st.id)}" value="${esc((c.due_dates||{})[st.id]||"")}" style="width:auto;padding:4px 8px"></div>`).join("")||'<span class="muted">Keine Projekte ausgewählt.</span>'}</div></details>`; })()}</div>
     <label style="margin-top:12px">Prüfpunkte</label><div id="lItems">${c.items.map(row).join("")}</div>
     <button class="btn ghost sm" id="lAdd" style="margin-top:8px">+ Prüfpunkt</button>
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px;color:var(--ink)"><input type="checkbox" class="l-active" style="width:auto" ${c.active!==false?"checked":""}> aktiv</label>
@@ -1394,6 +1419,7 @@ function listEd(c,isNew){
         ...crmOnly.map(k=>`<div class="asg-r off">📇 ${esc(k.name)}${k.company?" · "+esc(k.company):""} <span class="muted">– Kontakt ohne Service-Zugang (im Reiter „Mitarbeiter“ anlegen)</span></div>`)].join("")||'<div class="muted" style="padding:6px">Nichts gefunden.</div>';
       ares.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{ collectL(); c.assign_companies=[...new Set([...(c.assign_companies||[]),b.dataset.c])]; draw(); });
       ares.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{ collectL(); c.assign_staff=[...new Set([...(c.assign_staff||[]),b.dataset.s])]; draw(); }); },250); };
+    document.querySelectorAll("#clEd .l-st").forEach(x=>x.onchange=()=>{ collectL(); draw(); });
     document.querySelectorAll("#clEd .l-all").forEach(r=>r.onchange=()=>{ collectL(); if(!c.all_stations&&!(c.stations||[]).length) c.stations=STATIONS.filter(st=>!(c.excluded_stations||[]).includes(st.id)).map(st=>st.id); if(c.all_stations) c.excluded_stations=STATIONS.filter(st=>!(c.stations||[]).includes(st.id)).map(st=>st.id); draw(); });
     $("#lAdd").onclick=()=>{ collectL(); c.items.push({type:"check",text:"",required:false}); draw(); };
     document.querySelectorAll("#lItems .lp").forEach(r=>{ const i=+r.dataset.i;
@@ -1713,6 +1739,14 @@ function settingsView(){
 }
 
 if(token) start(); else loginView();
+
+/* Passwortfelder: Auge zum Ein-/Ausblenden */
+function eyeify(root){ (root||document).querySelectorAll('input[type="password"]:not([data-eye])').forEach(inp=>{ inp.dataset.eye="1";
+  const w=document.createElement("span"); w.className="pw-wrap"; inp.parentNode.insertBefore(w,inp); w.appendChild(inp);
+  const b=document.createElement("button"); b.type="button"; b.className="pw-eye"; b.title="Passwort anzeigen"; b.setAttribute("aria-label","Passwort anzeigen"); b.textContent="👁";
+  b.onclick=()=>{ const show=inp.type==="password"; inp.type=show?"text":"password"; b.classList.toggle("on",show); b.title=show?"Passwort verbergen":"Passwort anzeigen"; inp.focus(); };
+  w.appendChild(b); }); }
+new MutationObserver(ms=>{ if(ms.some(m=>m.addedNodes.length)) eyeify(); }).observe(document.body,{childList:true,subtree:true}); eyeify();
 </script>
 </body>
 </html>

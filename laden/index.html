@@ -191,6 +191,7 @@ nav.tabs button{position:relative}
 .hidden{display:none!important}
 .foot{font-size:12px;color:var(--muted);text-align:center;margin-top:16px}
 .step-ph{display:flex;gap:8px;margin:4px 0 10px}.step-ph .ph{flex:1;position:relative;overflow:hidden;margin:0}.step-ph input{position:absolute;inset:0;opacity:0}.sp-prev{display:flex;gap:10px;align-items:center;margin:0 0 12px;font-size:13px;color:#08603d}.sp-prev img{height:64px;border-radius:10px}
+.cinfo{background:#eef6ff;border-color:#c9defa;font-size:14.5px;line-height:1.45}.cinfo b{display:block;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -524,7 +525,7 @@ function wireSelector(root,after){
 }
 function renderStation(){
   const st=S.stationData||{addr:"",cps:[]};
-  $("#stId").textContent=S.label||S.station;
+  $("#stId").textContent=(S.label||S.station)+((extras().project_name||"").trim()?" · "+extras().project_name.trim():"");
   const im=$("#stImg"), src=CONFIG.imgBase+encodeURIComponent(S.station)+".jpg?v="+Math.floor(Date.now()/3e5);
   if(im.dataset.src!==src){ im.dataset.src=src; im.hidden=true; im.onload=()=>{ im.hidden=false; }; im.onerror=()=>{ im.hidden=true; }; im.src=src; }
   $("#stAddr").textContent=st.addr||"";
@@ -616,7 +617,8 @@ function home(){
   S.flow=null;S.step=0;S.tried=[];S.stepPhoto=null; compact(false); S.render=home;
   const rts=recentTickets(), rt=rts[0], c=curCp(), inc=c&&incOf(c.n);
   const alts=c?((chargers().find(x=>x.n===(c.charger||1))||{cps:[]}).cps.filter(x=>x.n!==c.n&&!incOf(x.n))):[];
-  view.innerHTML=`${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr(rts.length>1?"myTickets":"myTicket")}</span><span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small><button class="tk-x" id="tkX" aria-label="${tr("hide")}">✕</button></span></div>
+  const cinfo=(extras().customer_info||"").trim();
+  view.innerHTML=`${cinfo?`<div class="card cinfo"><b>ℹ️ ${lang==="en"?"Info for this site":"Info zum Standort"}</b><div>${esc(cinfo).replace(/\n/g,"<br>")}</div></div>`:""}${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr(rts.length>1?"myTickets":"myTicket")}</span><span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small><button class="tk-x" id="tkX" aria-label="${tr("hide")}">✕</button></span></div>
     ${rts.length>1?`<div class="tk-list">${rts.map(t=>`<div class="tk-li"><span><code>${esc(t.no)}</code><br><small>${esc(t.cpl||"")} · ${ago(t.ts)}</small></span><button class="small-btn" data-copy="${esc(t.no)}">${tr("copy")}</button></div>`).join("")}</div>`
       :`<div class="ticket">${esc(rt.no)}</div>`}${rts.length>1?`<div class="tk-actions"><button class="btn ghost" id="shAll">${tr("tShare")}</button></div>`:ticketActions(rt)}</div>`:""}
   ${inc?`<div class="card known"><div class="step-t">⚠️ ${tr("knownT")}</div><p class="step-h">${esc(cpLabel(c))} · ${tr("knownH",{t:new Date(inc.since).toLocaleTimeString(locale(),{hour:"2-digit",minute:"2-digit"})+(Date.now()-new Date(inc.since)>20*3600e3?" ("+new Date(inc.since).toLocaleDateString(locale())+")":""),n:inc.reports})}</p>
@@ -670,10 +672,10 @@ function chooseView(){
 }
 // Infoseite Parken: Tarife & Besonderheiten aus dem Dashboard, danach ggf. Problem melden
 function infoView(){
-  const f=FLOWS[S.flow], txt=(extras().parking_info||"").trim(); compact(true); toTop(); markSub();
+  const f=FLOWS[S.flow], txt=(extras().parking_info||"").trim(), tar=(extras().tariff_info||"").trim(); compact(true); toTop(); markSub();
   view.innerHTML=`<button class="back" id="bk">${tr("back")}</button>
   <div class="card"><div class="step-n">${f.ic} ${L(f.t)}</div><div class="step-t">${tr("parkT")}</div>
-  <div class="info-box">${txt?esc(txt):tr("parkNone")}</div>
+  ${txt||tar?`${txt?`<div class="info-box"><b>🅿️ ${lang==="en"?"Parking":"Parken"}</b><br>${esc(txt).replace(/\n/g,"<br>")}</div>`:""}${tar?`<div class="info-box" style="margin-top:8px"><b>💶 ${lang==="en"?"Tariffs":"Tarife"}</b><br>${esc(tar).replace(/\n/g,"<br>")}</div>`:""}`:`<div class="info-box">${tr("parkNone")}</div>`}
   <p class="step-h" style="margin-top:14px">${tr("parkQ")}</p>
   <div class="opts">${f.choose.opts.map(([k,ic,l])=>`<button class="opt" data-k="${k}"><span>${ic}</span>${L(l)}</button>`).join("")}</div>
   <button class="btn ghost" id="ok">${tr("parkOk")}</button></div>`;
