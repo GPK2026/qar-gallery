@@ -82,7 +82,9 @@ input.f,textarea.f{width:100%;border:1.5px solid var(--line);border-radius:12px;
 textarea.f{min-height:76px;resize:vertical}
 .photo{display:flex;align-items:center;gap:10px;margin-top:10px}
 .photo label{border:1.5px dashed #b9d9c8;background:#f7fbf9;border-radius:12px;padding:10px 12px;font-weight:600;font-size:14px;color:#08603d}
-.photo input{display:none}
+.photo{flex-wrap:wrap}.photo input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}.photo label{position:relative;cursor:pointer}.photo label.up{border-color:#d4dbd8;background:#fff;color:#33413b}
+.photo img{max-height:90px;border-radius:10px}.ph-x{border:0;background:#fde0de;color:#b42318;border-radius:999px;width:28px;height:28px;font-weight:700}
+.ka-row{display:flex;gap:10px;align-items:center;margin-top:8px}.ka{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:8px 14px;font-weight:700;font-size:14px;color:var(--muted)}.ka.on{background:#eef1ef;border-color:#9aa5a0;color:var(--ink)}
 .photo img{width:64px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
 .miss{outline:2px solid #d03b3b;outline-offset:4px;border-radius:8px}
 .check{display:flex;gap:10px;align-items:flex-start;font-weight:600;margin-top:12px}
@@ -187,6 +189,7 @@ async function projectsView(){
   $("#out").style.display="inline-block";
   view.innerHTML=`<div class="muted">Lade Projekte …</div>`;
   let r; try{ r=await api("projects"); }catch(e){ view.innerHTML=`<div class="card"><b>${esc(e.message)}</b><button class="btn ghost mt" onclick="logout()">Mit anderer PIN anmelden</button></div>`; return; }
+  if(r.projects.length===1) return pickStation(r.projects[0].id);
   const P=r.projects.map(p=>({...p,work:p.incidents*100+p.defects*10+p.due*5+(p.soon||0)})).sort((a,b)=>b.work-a.work||String(a.project_id).localeCompare(String(b.project_id)));
   const total=P.reduce((x,p)=>({i:x.i+p.incidents,d:x.d+p.defects,f:x.f+p.due+(p.soon||0)}),{i:0,d:0,f:0});
   const me=S.auth&&S.auth.staff||{};
@@ -223,18 +226,19 @@ async function homeView(){
       <div class="small" style="margin-top:8px"><a href="#" data-dw="${esc(d.id)}" class="muted">als „in Arbeit“ markieren</a></div></div>`; }).join("")}`:""}
   ${(h.appointments||[]).length?`<details class="card appts"><summary><b>📅 Nächste Termine (${h.appointments.length})</b><span class="small muted">nächster ${new Date(h.appointments[0].starts_at).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</span> ${dueTag(h.appointments[0].starts_at,S.home.remind,S.home.urgent)}</summary>
     ${h.appointments.map(a=>`<div class="ap-row"><div class="ap-d"><b>${new Date(a.starts_at).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</b><span class="small muted">${a.all_day?"ganztägig":new Date(a.starts_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+(a.ends_at?"–"+new Date(a.ends_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"")}</span></div>
-      <div style="flex:1;min-width:0"><b>${esc(a.title)}</b> <span class="chip grey">${esc(a.kind_label||"Termin")}</span>${a.note?`<div class="small muted">${esc(a.note)}</div>`:""}</div>${dueTag(a.starts_at,S.home.remind,S.home.urgent)}</div>`).join("")}</details>`:""}
+      <div style="flex:1;min-width:0"><b>${esc(a.title)}</b> <span class="chip grey">${esc(a.kind_label||"Termin")}</span>${a.note?`<div class="small muted">${esc(a.note)}</div>`:""}${a.checklist_id&&h.checklists.some(l=>l.id===a.checklist_id)?`<button class="btn ghost sm" style="margin-top:6px" data-apcl="${esc(a.checklist_id)}">📋 ${esc(h.checklists.find(l=>l.id===a.checklist_id).title)} starten</button>`:""}</div>${dueTag(a.starts_at,S.home.remind,S.home.urgent)}</div>`).join("")}</details>`:""}
   <h2>Checklisten</h2>
   ${h.checklists.filter(l=>l.id!=="mangel").length?`<div class="tiles">${h.checklists.filter(l=>l.id!=="mangel").sort((a,b)=>(a.next_due?new Date(a.next_due):Infinity)-(b.next_due?new Date(b.next_due):Infinity)).map(l=>{ const d=due(l); return `<button class="tile" data-cl="${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.description||"")}</small>
-      <small>${l.last?`zuletzt ${fmt(l.last.finished_at).split(",")[0]} · ${esc(l.last.staff_name)}`:"noch nie durchgeführt"}</small>${d?`<span style="align-self:flex-start">${dueTag(l.next_due,l.remind,l.urgent)}</span><small>${l.fixed?"📅 Termin ":""}${new Date(l.next_due).toLocaleDateString("de-DE")}</small>`:""}</button>`; }).join("")}</div>`:`<div class="card muted">Für Ihre Rolle sind keine Checklisten freigeschaltet.</div>`}
-  <h2>Letzte Protokolle an diesem Standort</h2>
-  <div class="card">${h.recent.length?h.recent.map(r=>`<div class="rec"><span><b>${esc(r.checklist_title)}</b><br><span class="small muted">${fmt(r.finished_at)} · ${esc(r.staff_name)}${r.connector?" · "+esc(cpName(st,r.connector)):""}${r.work_minutes!=null?" · ⏱ "+hm(r.work_minutes):""}</span></span><span class="chip ${r.result==="ok"?"":"warn"}">${r.result==="ok"?"✓ ok":"⚠ Mängel"}</span></div>`).join(""):`<span class="muted small">Noch keine Protokolle.</span>`}</div>`;
+      <small>${l.last?`zuletzt ${fmt(l.last.finished_at).split(",")[0]}${l.last.staff_name?" · "+esc(l.last.staff_name):""}`:"noch nie durchgeführt"}</small>${d?`<span style="align-self:flex-start">${dueTag(l.next_due,l.remind,l.urgent)}</span><small>${l.fixed?"📅 Termin ":""}${new Date(l.next_due).toLocaleDateString("de-DE")}</small>`:""}</button>`; }).join("")}</div>`:`<div class="card muted">Für Ihre Rolle sind keine Checklisten freigeschaltet.</div>`}
+  <h2>${h.history==="all"?"Letzte Protokolle an diesem Standort":"Meine letzten Protokolle"}</h2>${h.history==="all"?"":`<div class="small muted" style="margin:-4px 2px 10px">Protokolle anderer sieht nur das Backoffice – außer sie wurden für Sie freigegeben.</div>`}
+  <div class="card">${h.recent.length?h.recent.map(r=>`<div class="rec"><span><b>${esc(r.checklist_title)}</b><br><span class="small muted">${fmt(r.finished_at)} · ${esc(r.staff_name)}${r.connector?" · "+esc(cpName(st,r.connector)):""}${r.work_minutes!=null?" · ⏱ "+hm(r.work_minutes):""}</span></span><span class="chip ${r.result==="ok"?"":"warn"}">${r.result==="ok"?"✓ ok":"⚠ Mängel"}</span></div>`).join(""):`<span class="muted small">Noch keine Protokolle${h.history==="all"?"":" von Ihnen oder für Sie freigegeben"}.</span>`}</div>`;
   const im=$("#stImg"); im.onload=()=>im.hidden=false; im.src=IMG+encodeURIComponent(st.id)+".jpg?v="+Math.floor(Date.now()/3e5);
   view.querySelectorAll("[data-cl]").forEach(b=>b.onclick=()=>startRun(b.dataset.cl));
-  $("#swp").onclick=()=>projectsView();
+  if($("#swp")){ if((h.project_count||1)<2) $("#swp").remove(); else $("#swp").onclick=()=>projectsView(); }
   $("#repInc").onclick=()=>{ problemView(); scrollTo(0,0); };
   if($("#resume")) $("#resume").onclick=()=>{ const tk=$("#resume").dataset.t, inc=h.incidents.find(i=>i.ticket_no===tk); startRun($("#resume").dataset.c,tk?{ticket:tk,connector:inc?inc.connector:null}:{}); };
   view.querySelectorAll("[data-dw]").forEach(b=>b.onclick=async e=>{ e.preventDefault(); try{ await api("defect_resolve",{id:b.dataset.dw,status:"in_arbeit"}); homeView(); }catch(err){ alert(err.message); } });
+  view.querySelectorAll("[data-apcl]").forEach(b=>b.onclick=()=>startRun(b.dataset.apcl,{}));
   view.querySelectorAll("[data-dfix]").forEach(b=>b.onclick=()=>{ const d=h.defects.find(x=>x.id===b.dataset.dfix); startRun("mangel",{defect:d}); });
   view.querySelectorAll("[data-desc]").forEach(b=>b.onclick=()=>escalateView(h.defects.find(x=>x.id===b.dataset.desc)));
   view.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>startRun("stoerung",{ticket:b.dataset.inc,connector:+b.dataset.cp||null}));
@@ -273,7 +277,7 @@ function defectView(){
     ${R.charger?`<div style="margin-top:10px"><b>Welcher Ladepunkt?</b> <span class="small muted">(optional)</span><div class="sel" id="dCp"><button data-cp="0" class="${!R.connector?"on":""}">Ganzer Charger</button>${cps.map(c=>`<button data-cp="${c.n}" class="${R.connector===c.n?"on":""}">${esc(cpName(st,c.n).split(" · ").pop())} <span class="small muted">${esc(c.t||"")}</span></button>`).join("")}</div></div>`:""}</div>
   <div class="card"><b>Was? <span style="color:var(--warn)">*</span></b><div class="opts" id="dT">${DEF_TITLES.map(t=>`<button data-t="${esc(t)}" class="${R.title===t?"on":""}">${esc(t)}</button>`).join("")}</div>
     <b style="display:block;margin-top:14px">Beschreibung <span style="color:var(--warn)">*</span></b><textarea class="f" id="dDesc" placeholder="Was genau? Wo genau? Ersatzteil nötig?">${esc(R.desc)}</textarea>
-    <div class="photo"><label>📷 Foto<input type="file" accept="image/*" capture="environment" id="dPh"></label>${R.photo?`<img src="${R.photo}" alt="">`:""}</div></div>
+    <div class="photo"><label class="ph-b">📷 Kamera<input type="file" accept="image/*" capture="environment" id="dPh"></label><label class="ph-b up">🖼 Hochladen<input type="file" accept="image/*" class="dPh-up"></label>${R.photo?`<img src="${R.photo}" alt="">`:""}</div></div>
   <div class="card"><b>Priorität</b>${["A","B","C"].map(p=>`<button class="prio-card ${R.priority===p?"on":""}" data-p="${p}"><span class="prio p${p}">${p}</span> <b>${PRIO_TXT[p][0].toUpperCase()+PRIO_TXT[p].slice(1)}</b><small>${PRIO_INFO[p]}</small></button>`).join("")}
     ${R.priority==="A"?`<div class="hint" style="margin-top:10px">⚠️ Besteht <b>akute Gefahr</b> oder kann deswegen nicht geladen werden? Dann bitte als <b>Störung</b> melden – <a href="#" id="toSt">jetzt umschalten</a>.</div>`:""}</div>
   <div class="card"><b>Wer soll beheben?</b><div class="small muted">Optional – sonst entscheidet der Betreiber.</div>
@@ -287,7 +291,7 @@ function defectView(){
   view.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{ R.priority=b.dataset.p; re(); });
   view.querySelectorAll("#dR [data-r]").forEach(b=>b.onclick=()=>{ const k=b.dataset.r; R.roles=R.roles.includes(k)?R.roles.filter(x=>x!==k):[...R.roles,k]; re(); });
   if($("#toSt")) $("#toSt").onclick=e=>{ e.preventDefault(); keep(); S.rep={charger:R.charger||null,connector:R.connector||null,title:"",desc:R.desc,photo:R.photo,roles:R.roles}; reportView(); scrollTo(0,0); };
-  $("#dPh").onchange=async()=>{ const d=await shrink($("#dPh").files[0]); if(d){ R.photo=d; re(); } };
+  [$("#dPh"),document.querySelector(".dPh-up")].forEach(inp=>{ if(inp) inp.onchange=async()=>{ const d=await shrink(inp.files[0]); if(d){ R.photo=d; re(); } else if(inp.files[0]) alert("Dieses Bildformat kann nicht gelesen werden – bitte JPG oder PNG wählen."); }; });
   $("#dSend").onclick=async()=>{ keep(); const e=$("#err");
     if(R.charger==null) return e.textContent="Bitte Charger oder „Standort allgemein“ wählen.";
     if(!R.title) return e.textContent="Bitte auswählen, was nicht in Ordnung ist.";
@@ -332,7 +336,7 @@ function reportView(){
     ${R.connector&&known(R.connector)?`<div class="hint" style="margin-top:8px">Hier ist schon Störung ${esc(known(R.connector).ticket_no)} offen – Ihre Meldung wird angehängt.</div>`:""}</div>
   <div class="card"><b>Was ist das Problem? <span style="color:var(--warn)">*</span></b><div class="opts" id="rT">${REP_TITLES.map(t=>`<button data-t="${esc(t)}" class="${R.title===t?"on":""}">${esc(t)}</button>`).join("")}</div>
     <b style="display:block;margin-top:14px">Beschreibung <span style="color:var(--warn)">*</span></b><textarea class="f" id="rDesc" placeholder="Was genau ist defekt? Fehlercode, was wurde schon versucht, Ersatzteil nötig …">${esc(R.desc)}</textarea>
-    <div class="photo"><label>📷 Foto<input type="file" accept="image/*" capture="environment" id="rPh"></label>${R.photo?`<img src="${R.photo}" alt="">`:""}</div></div>
+    <div class="photo"><label class="ph-b">📷 Kamera<input type="file" accept="image/*" capture="environment" id="rPh"></label><label class="ph-b up">🖼 Hochladen<input type="file" accept="image/*" class="rPh-up"></label>${R.photo?`<img src="${R.photo}" alt="">`:""}</div></div>
   <div class="card"><b>Wer soll reparieren?</b><div class="small muted">Optional – sonst entscheidet der Betreiber im Dashboard.</div>
     <div class="opts" id="rR">${Object.entries(ROLE_L).map(([k,l])=>`<button data-r="${k}" class="${R.roles.includes(k)?"on":""}">${l}</button>`).join("")}</div>
     <div class="err" id="err" style="margin-top:12px"></div><button class="btn" id="rSend">Störung melden</button></div>`;
@@ -342,7 +346,7 @@ function reportView(){
   view.querySelectorAll("#rCp [data-cp]").forEach(b=>b.onclick=()=>{ R.connector=+b.dataset.cp; re(); });
   view.querySelectorAll("#rT [data-t]").forEach(b=>b.onclick=()=>{ R.title=b.dataset.t; re(); });
   view.querySelectorAll("#rR [data-r]").forEach(b=>b.onclick=()=>{ const k=b.dataset.r; R.roles=R.roles.includes(k)?R.roles.filter(x=>x!==k):[...R.roles,k]; re(); });
-  $("#rPh").onchange=async()=>{ const d=await shrink($("#rPh").files[0]); if(d){ R.photo=d; re(); } };
+  [$("#rPh"),document.querySelector(".rPh-up")].forEach(inp=>{ if(inp) inp.onchange=async()=>{ const d=await shrink(inp.files[0]); if(d){ R.photo=d; re(); } else if(inp.files[0]) alert("Dieses Bildformat kann nicht gelesen werden – bitte JPG oder PNG wählen."); }; });
   $("#rSend").onclick=async()=>{ keep(); const e=$("#err");
     if(R.charger==null) return e.textContent="Bitte Charger oder „Standort allgemein“ wählen.";
     if(R.charger&&!R.connector) return e.textContent="Bitte den Ladepunkt wählen.";
@@ -392,7 +396,7 @@ function timerHTML(R){
     <button class="i" id="tmInfo" aria-label="Wie wird gemessen?">?</button><button id="tmP">${R.pausedAt?"▶ Weiter":"⏸ Pause"}</button></div>
   ${R.howto?`<div class="howto"><b>So wird die Zeit gemessen</b>Die Arbeitszeit vor Ort startet automatisch, wenn Sie die Checkliste öffnen, und endet mit „Protokoll abschließen“. Pausen (Taste ⏸) werden abgezogen. Stimmt die Zeit nicht – z. B. weil Sie schon vorher gearbeitet haben –, können Sie sie am Ende mit Begründung korrigieren; die gemessene Zeit bleibt im Protokoll sichtbar. Anfahrt und Material werden getrennt erfasst.</div>`:""}`;
 }
-const answered=(it,a)=>!a?false:it.type==="check"?(a.ok!=null||a.na):it.type==="photo"?!!a.photo:(a.value!=null&&a.value!=="");
+const answered=(it,a)=>!a?false:a.na?true:it.type==="check"?(a.ok!=null):it.type==="photo"?!!a.photo:(a.value!=null&&a.value!=="");
 function runView(){
   const R=S.run, cl=R.cl, st=S.home.station, items=cl.items||[];
   const done=items.filter(it=>answered(it,R.answers[it.id])).length;
@@ -436,16 +440,17 @@ const keepNotes=()=>{ const R=S.run; if(!R) return; if($("#notes")) R.notes=$("#
   for(const k of ["corr","timeNote","travel","km","matText","matCost","rest"]) if($("#"+k)) R[k]=$("#"+k).value; };
 function itemHTML(it,a){
   const q=`<div class="q">${esc(it.text)}${it.required?' <span class="req">*</span>':""}</div>${it.hint?`<div class="hint">💡 ${esc(it.hint)}</div>`:""}`;
-  const photo=(label)=>`<div class="photo"><label>📷 ${label}<input type="file" accept="image/*" capture="environment" data-ph="${it.id}"></label>${a.photo?`<img src="${a.photo}" alt="">`:""}</div>`;
+  const photo=(label)=>`<div class="photo"><label class="ph-b">📷 ${label}<input type="file" accept="image/*" capture="environment" data-ph="${it.id}"></label><label class="ph-b up">🖼 Hochladen<input type="file" accept="image/*" data-ph="${it.id}"></label>${a.photo?`<img src="${a.photo}" alt=""><button class="ph-x" data-phx="${it.id}" title="Foto entfernen">✕</button>`:""}</div>`;
+  const ka=`<button class="ka ${a.na?"on":""}" data-na="${it.id}">k. A.</button>`;
   let body="";
-  if(it.type==="check") body=`<div class="tri"><button class="ok ${a.ok===true?"on":""}" data-ok="${it.id}">✓ In Ordnung</button><button class="bad ${a.ok===false?"on":""}" data-bad="${it.id}">✗ Mangel</button><button class="na ${a.na?"on":""}" data-na="${it.id}">n. a.</button></div>
+  if(it.type==="check") body=`<div class="tri"><button class="ok ${a.ok===true?"on":""}" data-ok="${it.id}">✓ In Ordnung</button><button class="bad ${a.ok===false?"on":""}" data-bad="${it.id}">✗ Mangel</button><button class="na ${a.na?"on":""}" data-na="${it.id}" title="keine Angabe / nicht möglich">k. A.</button></div>
     ${a.ok===false?`<textarea class="f" data-note="${it.id}" placeholder="Was ist der Mangel?">${esc(a.note||"")}</textarea>
       <div class="small muted" style="margin-top:8px">Priorität des Mangels</div><div class="opts">${["A","B","C"].map(p=>`<button data-pr="${it.id}" data-p="${p}" class="${(a.prio||it.prio||"B")===p?"on":""}"><span class="prio p${p}">${p}</span> ${PRIO_TXT[p]}</button>`).join("")}</div>
       ${(a.prio||it.prio)==="A"?`<div class="hint" style="margin-top:8px">⚠️ Akute Gefahr oder kann nicht mehr geladen werden? Dann zusätzlich über „Problem melden“ eine <b>Störung</b> anlegen – der Ladepunkt wird gesperrt.</div>`:""}${photo("Foto vom Mangel")}`:""}`;
-  else if(it.type==="text") body=`<textarea class="f" data-val="${it.id}">${esc(a.value||"")}</textarea>`;
-  else if(it.type==="number") body=`<input class="f" data-val="${it.id}" inputmode="decimal" value="${esc(a.value??"")}">`;
-  else if(it.type==="choice") body=`<div class="opts">${(it.options||[]).map(o=>`<button data-choice="${it.id}" data-v="${esc(o)}" class="${a.value===o?"on":""}">${esc(o)}</button>`).join("")}</div>`;
-  else if(it.type==="photo") body=photo(a.photo?"Neues Foto":"Foto aufnehmen");
+  else if(it.type==="text") body=a.na?`<div class="ka-row">${ka}<span class="small muted">keine Angabe</span></div>`:`<textarea class="f" data-val="${it.id}">${esc(a.value||"")}</textarea><div class="ka-row">${ka}</div>`;
+  else if(it.type==="number") body=a.na?`<div class="ka-row">${ka}<span class="small muted">keine Angabe</span></div>`:`<input class="f" data-val="${it.id}" inputmode="decimal" value="${esc(a.value??"")}"><div class="ka-row">${ka}</div>`;
+  else if(it.type==="choice") body=`<div class="opts">${(it.options||[]).map(o=>`<button data-choice="${it.id}" data-v="${esc(o)}" class="${a.value===o&&!a.na?"on":""}">${esc(o)}</button>`).join("")}${ka}</div>`;
+  else if(it.type==="photo") body=a.na?`<div class="ka-row">${ka}<span class="small muted">kein Foto möglich</span></div>`:`${photo(a.photo?"Neues Foto":"Kamera")}<div class="ka-row">${ka}<span class="small muted">wenn kein Foto möglich</span></div>`;
   return `<div class="item" id="it-${it.id}">${q}${body}</div>`;
 }
 function setA(id,patch){ S.run.answers[id]={...(S.run.answers[id]||{}),...patch}; }
@@ -453,20 +458,21 @@ function wireItems(){
   const re=id=>{ keepNotes(); const y=scrollY; runView(); scrollTo(0,y); };
   view.querySelectorAll("[data-ok]").forEach(b=>b.onclick=()=>{ setA(b.dataset.ok,{ok:true,na:false}); re(); });
   view.querySelectorAll("[data-bad]").forEach(b=>b.onclick=()=>{ setA(b.dataset.bad,{ok:false,na:false}); re(); });
-  view.querySelectorAll("[data-na]").forEach(b=>b.onclick=()=>{ setA(b.dataset.na,{ok:null,na:true}); re(); });
+  view.querySelectorAll("[data-na]").forEach(b=>b.onclick=()=>{ const cur=(S.run.answers[b.dataset.na]||{}).na; setA(b.dataset.na,cur?{na:false}:{ok:null,na:true,value:null,photo:null}); re(); });
+  view.querySelectorAll("[data-phx]").forEach(b=>b.onclick=()=>{ setA(b.dataset.phx,{photo:null}); re(); });
   view.querySelectorAll("[data-pr]").forEach(b=>b.onclick=()=>{ setA(b.dataset.pr,{prio:b.dataset.p}); re(); });
-  view.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{ setA(b.dataset.choice,{value:b.dataset.v}); re(); });
+  view.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{ setA(b.dataset.choice,{value:b.dataset.v,na:false}); re(); });
   view.querySelectorAll("[data-val]").forEach(i=>i.oninput=()=>setA(i.dataset.val,{value:i.value}));
   // kein Neuaufbau beim Verlassen des Feldes (sonst geht der nächste Tipp ins Leere) – nur Fortschritt aktualisieren
   const prog=()=>{ const R=S.run, items=R.cl.items||[], n=items.filter(it=>answered(it,R.answers[it.id])).length, bar=view.querySelector(".prog i"), t=view.querySelector(".prog+div");
     if(bar) bar.style.width=(items.length?n/items.length*100:0)+"%"; if(t) t.textContent=`${n} von ${items.length} Punkten`; };
   view.querySelectorAll("[data-val]").forEach(i=>i.addEventListener("input",prog));
   view.querySelectorAll("[data-note]").forEach(i=>i.oninput=()=>setA(i.dataset.note,{note:i.value}));
-  view.querySelectorAll("[data-ph]").forEach(i=>i.onchange=async()=>{ const d=await shrink(i.files[0]); if(d){ setA(i.dataset.ph,{photo:d}); re(); } });
+  view.querySelectorAll("[data-ph]").forEach(i=>i.onchange=async()=>{ const d=await shrink(i.files[0]); if(d){ setA(i.dataset.ph,{photo:d,na:false}); re(); } else if(i.files[0]) alert("Dieses Bildformat kann nicht gelesen werden – bitte JPG oder PNG wählen bzw. in der Kamera-App „Kompatibel“ (JPEG) einstellen."); });
 }
 function shrink(file){ return new Promise(res=>{ if(!file) return res(null); const img=new Image(), u=URL.createObjectURL(file);
   img.onload=()=>{ const k=Math.min(1,1600/Math.max(img.width,img.height)), c=document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u); res(c.toDataURL("image/jpeg",0.75)); };
-  img.onerror=()=>res(null); img.src=u; }); }
+  img.onerror=async()=>{ URL.revokeObjectURL(u); try{ const b=await createImageBitmap(file), k=Math.min(1,1600/Math.max(b.width,b.height)), c=document.createElement("canvas"); c.width=Math.round(b.width*k); c.height=Math.round(b.height*k); c.getContext("2d").drawImage(b,0,0,c.width,c.height); res(c.toDataURL("image/jpeg",0.75)); }catch(e){ res(null); } }; img.src=u; }); }
 async function submit(){
   keepNotes(); const R=S.run, cl=R.cl;
   view.querySelectorAll(".miss").forEach(e=>e.classList.remove("miss"));

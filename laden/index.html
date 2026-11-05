@@ -190,6 +190,7 @@ nav.tabs button{position:relative}
 .qr-card code{font-weight:700}
 .hidden{display:none!important}
 .foot{font-size:12px;color:var(--muted);text-align:center;margin-top:16px}
+.step-ph{display:flex;gap:8px;margin:4px 0 10px}.step-ph .ph{flex:1;position:relative;overflow:hidden;margin:0}.step-ph input{position:absolute;inset:0;opacity:0}.sp-prev{display:flex;gap:10px;align-items:center;margin:0 0 12px;font-size:13px;color:#08603d}.sp-prev img{height:64px;border-radius:10px}
 </style>
 </head>
 <body>
@@ -253,7 +254,7 @@ const CONFIG = {
 /* ============ STÖRUNGSBÄUME (DE/EN) ============ */
 // Titel werden immer auf Deutsch ans Team protokolliert, angezeigt in der gewählten Sprache.
 const FLOWS = {
-  nostart: { ic:"⛔", t:{de:"Ladevorgang startet nicht",en:"Charging won't start"}, steps:[
+  nostart: { ic:"⛔", ok:{de:"✓ Es lädt jetzt",en:"✓ It's charging now"}, no:{de:"Lädt immer noch nicht",en:"Still not charging"}, t:{de:"Ladevorgang startet nicht",en:"Charging won't start"}, steps:[
     { t:{de:"Stecker vollständig einstecken",en:"Plug in fully"},
       h:{de:"Ziehen Sie den Stecker einmal ab und stecken Sie ihn kräftig bis zum Anschlag ein – am Fahrzeug und (bei Typ 2) an der Säule.",
          en:"Unplug once and push the connector in firmly until it clicks – at the car and (for Type 2) at the charger."} },
@@ -264,37 +265,41 @@ const FLOWS = {
       h:{de:"Starten Sie erneut – mit Ladekarte bzw. App an der Ladesäule oder mit Kreditkarte am Terminal.",
          en:"Start again – with your charging card or app at the charger, or with a credit card at the payment terminal."} }
   ]},
-  abort: { ic:"⏹️", t:{de:"Ladevorgang bricht ab",en:"Charging stops"}, steps:[
+  abort: { ic:"⏹️", ok:{de:"✓ Es lädt wieder",en:"✓ It's charging again"}, no:{de:"Bricht weiterhin ab",en:"Still stops"}, t:{de:"Ladevorgang bricht ab",en:"Charging stops"}, steps:[
     { t:{de:"Fahrzeugeinstellungen prüfen",en:"Check the car settings"},
       h:{de:"Ist ein Ziel-Ladestand (z. B. 80 %) erreicht oder ein Ladetimer aktiv?",
-         en:"Has a target charge level (e.g. 80 %) been reached, or is a charging timer active?"} },
+         en:"Has a target charge level (e.g. 80 %) been reached, or is a charging timer active?"},
+      opts:[{l:{de:"✓ Ja, daran lag es",en:"✓ Yes, that was it"},a:"solved"},{l:{de:"Nein, daran liegt es nicht",en:"No, that's not it"},a:"next"}]},
     { t:{de:"Kabel und Stecker prüfen",en:"Check cable and connector"},
       h:{de:"Liegt das Kabel unter Zug oder wurde es bewegt? Stecker neu einstecken und erneut starten.",
          en:"Is the cable under strain or was it moved? Plug in again and restart charging."} }
   ]},
-  card: { ic:"💳", t:{de:"Ladekarte / App wird nicht erkannt",en:"Charging card / app not recognised"}, steps:[
+  card: { ic:"💳", ok:{de:"✓ Es lädt jetzt",en:"✓ It's charging now"}, no:{de:"Wird weiterhin nicht erkannt",en:"Still not recognised"}, t:{de:"Ladekarte / App wird nicht erkannt",en:"Charging card / app not recognised"}, steps:[
     { t:{de:"Ladekarte richtig vorhalten",en:"Hold your charging card correctly"},
       h:{de:"Halten Sie die Ladekarte 2–3 Sekunden flach und ruhig direkt auf das Kartensymbol an der Ladesäule – nicht in der Geldbörse mit anderen Karten.",
          en:"Hold your charging card flat and still on the card symbol at the charger for 2–3 seconds – not inside a wallet with other cards."} },
     { t:{de:"Vertrag / App prüfen",en:"Check your contract / app"},
       h:{de:"Ist Ihre Ladekarte bzw. App für diese Station freigeschaltet (Roaming)? In der App Ihres Anbieters sehen Sie, ob die Station verfügbar ist.",
-         en:"Is your charging card or app enabled for this station (roaming)? Your provider's app shows whether the station is available."} },
+         en:"Is your charging card or app enabled for this station (roaming)? Your provider's app shows whether the station is available."},
+      opts:[{l:{de:"Ist freigeschaltet – trotzdem kein Start",en:"It's enabled – still won't start"},a:"next"},{l:{de:"Nicht freigeschaltet / unsicher",en:"Not enabled / not sure"},a:"info",i:{de:"Dann kann nur Ihr Ladekarten-Anbieter die Freischaltung prüfen – die Kontaktdaten stehen auf der Karte bzw. in der App. Sofort laden können Sie mit Kreditkarte am Terminal (falls vorhanden) oder per App eines anderen Anbieters.",en:"Only your charging card provider can check whether it is enabled – contact details are on the card or in the app. To charge right away, use a credit card at the terminal (if available) or another provider's app."}}]},
     { t:{de:"Andere Startmethode probieren",en:"Try another way to start"},
       h:{de:"Starten Sie per App statt Karte (oder umgekehrt). Alternativ können Sie direkt am Kreditkarten-Terminal bezahlen.",
          en:"Start via the app instead of the card (or vice versa). Alternatively, pay directly at the credit card terminal."} }
   ]},
-  credit: { ic:"🏧", t:{de:"Kreditkarte (Ad-hoc) am Terminal",en:"Credit card (ad hoc) at the terminal"}, steps:[
+  credit: { ic:"🏧", ok:{de:"✓ Es lädt jetzt",en:"✓ It's charging now"}, no:{de:"Hat nicht geklappt",en:"Didn't work"}, t:{de:"Kreditkarte (Ad-hoc) am Terminal",en:"Credit card (ad hoc) at the terminal"}, steps:[
     { t:{de:"Zuerst Ladepunkt am Terminal wählen",en:"Select the connector on the terminal first"},
       h:{de:"Wählen Sie am Kreditkarten-Terminal zuerst die Nummer Ihres Ladepunkts und bestätigen Sie. Erst dann zur Zahlung auffordern lassen.",
-         en:"On the credit card terminal, first select the number of your connector and confirm. Only then will it ask for payment."} },
+         en:"On the credit card terminal, first select the number of your connector and confirm. Only then will it ask for payment."},
+      opts:[{l:{de:"✓ Erledigt – Terminal fragt nach Zahlung",en:"✓ Done – terminal asks for payment"},a:"next"},{l:{de:"Ladepunkt lässt sich nicht wählen",en:"Can't select the connector"},a:"ticket"}]},
     { t:{de:"Karte vorhalten oder einstecken",en:"Tap or insert your card"},
       h:{de:"Halten Sie die Karte ruhig an das Kontaktlos-Symbol, bis es piept. Wird sie abgelehnt, Karte einstecken und PIN eingeben. Hinweis: Es wird zunächst ein Betrag reserviert und nach dem Laden korrekt abgerechnet.",
-         en:"Hold the card still on the contactless symbol until it beeps. If declined, insert the card and enter your PIN. Note: an amount is reserved first and settled correctly after charging."} },
+         en:"Hold the card still on the contactless symbol until it beeps. If declined, insert the card and enter your PIN. Note: an amount is reserved first and settled correctly after charging."},
+      opts:[{l:{de:"✓ Zahlung ok – es lädt",en:"✓ Payment ok – it's charging"},a:"solved"},{l:{de:"Karte wird abgelehnt",en:"Card is declined"},a:"next"}]},
     { t:{de:"Andere Karte oder Smartphone versuchen",en:"Try another card or your phone"},
       h:{de:"Versuchen Sie eine andere Kredit- oder Debitkarte oder Apple Pay / Google Pay.",
          en:"Try another credit or debit card, or Apple Pay / Google Pay."} }
   ]},
-  stuck: { ic:"🔒", t:{de:"Stecker lässt sich nicht lösen",en:"Connector won't release"}, steps:[
+  stuck: { ic:"🔒", ok:{de:"✓ Stecker ist frei",en:"✓ Connector released"}, no:{de:"Sitzt immer noch fest",en:"Still stuck"}, t:{de:"Stecker lässt sich nicht lösen",en:"Connector won't release"}, steps:[
     { t:{de:"Ladevorgang beenden & Fahrzeug entriegeln",en:"End charging & unlock the car"},
       h:{de:"Beenden Sie die Ladung in Fahrzeug, App oder am Terminal, entriegeln Sie dann das Fahrzeug per Schlüssel und warten Sie 10 Sekunden.",
          en:"End charging in the car, the app or at the terminal, then unlock the car with the key and wait 10 seconds."} },
@@ -305,15 +310,18 @@ const FLOWS = {
   dispCharger: { ic:"🖥️", t:{de:"Display der Ladesäule aus / Fehlermeldung",en:"Charger display off / error"}, steps:[
     { t:{de:"Display aufwecken",en:"Wake the display"},
       h:{de:"Das Display der Ladesäule schaltet in den Ruhemodus. Tippen Sie darauf oder halten Sie Ihre Ladekarte an das Lesefeld.",
-         en:"The charger's display goes into sleep mode. Tap it or hold your charging card to the reader."} },
+         en:"The charger's display goes into sleep mode. Tap it or hold your charging card to the reader."},
+      opts:[{l:{de:"✓ Display ist an – alles ok",en:"✓ Display is on – all fine"},a:"solved"},{l:{de:"Display ist an, zeigt einen Fehler",en:"Display is on but shows an error"},a:"next"},{l:{de:"Display bleibt dunkel",en:"Display stays dark"},a:"goto",to:2}]},
     { t:{de:"Fehlermeldung notieren",en:"Note the error message"},
       h:{de:"Zeigt das Display eine Fehlermeldung oder einen Code? Machen Sie ein Foto – das hilft unserem Team sehr.",
-         en:"Does the display show an error message or code? Take a photo – it helps our team a lot."} },
+         en:"Does the display show an error message or code? Take a photo – it helps our team a lot."}, photo:true,
+      opts:[{l:{de:"📝 Mit Foto als Störung melden",en:"📝 Report with photo"},a:"ticket"},{l:{de:"Kein Foto möglich – weiter",en:"Can't take a photo – continue"},a:"next"}]},
     { t:{de:"Anderen Ladepunkt nutzen",en:"Use another connector"},
       h:{de:"Falls ein anderer Ladepunkt frei ist, nutzen Sie diesen. Melden Sie die Störung trotzdem – unser Team kümmert sich darum.",
-         en:"If another connector is free, please use it. Report the issue anyway – our team will take care of it."} }
+         en:"If another connector is free, please use it. Report the issue anyway – our team will take care of it."},
+      opts:[{l:{de:"📝 Störung melden",en:"📝 Report the fault"},a:"ticket"},{l:{de:"Zur Startseite",en:"Back to start"},a:"home"}]}
   ]},
-  dispTerminal: { ic:"📟", t:{de:"Kreditkarten-Terminal aus / reagiert nicht",en:"Card terminal off / not responding"}, steps:[
+  dispTerminal: { ic:"📟", ok:{de:"✓ Terminal reagiert wieder",en:"✓ Terminal works again"}, no:{de:"Reagiert weiterhin nicht",en:"Still not responding"}, t:{de:"Kreditkarten-Terminal aus / reagiert nicht",en:"Card terminal off / not responding"}, steps:[
     { t:{de:"Terminal aufwecken",en:"Wake the terminal"},
       h:{de:"Tippen Sie auf das Display des Kreditkarten-Terminals – es geht nach einiger Zeit in den Ruhemodus.",
          en:"Tap the credit card terminal's display – it goes into sleep mode after a while."} },
@@ -322,7 +330,8 @@ const FLOWS = {
          en:"After a charging session the terminal sometimes restarts. Wait about one minute and try again."} },
     { t:{de:"Mit Ladekarte oder App starten",en:"Start with a charging card or app"},
       h:{de:"Alternativ starten Sie die Ladung mit Ladekarte oder App direkt an der Ladesäule.",
-         en:"Alternatively, start charging with a charging card or app directly at the charger."} }
+         en:"Alternatively, start charging with a charging card or app directly at the charger."},
+      opts:[{l:{de:"✓ So lädt es",en:"✓ That way it charges"},a:"solved"},{l:{de:"Hat auch nicht geklappt",en:"That didn't work either"},a:"next"}]}
   ]},
   danger: { ic:"⚠️", t:{de:"Beschädigung / Gefahr",en:"Damage / danger"}, danger:true },
   // ── Rund um den Standort (kein technischer Defekt am Ladepunkt → markiert ihn nicht als gestört)
@@ -604,7 +613,7 @@ window.addEventListener("popstate",()=>{ if(inSub){ inSub=false; $("#composer").
 
 /* ============ VIEWS ============ */
 function home(){
-  S.flow=null;S.step=0;S.tried=[]; compact(false); S.render=home;
+  S.flow=null;S.step=0;S.tried=[];S.stepPhoto=null; compact(false); S.render=home;
   const rts=recentTickets(), rt=rts[0], c=curCp(), inc=c&&incOf(c.n);
   const alts=c?((chargers().find(x=>x.n===(c.charger||1))||{cps:[]}).cps.filter(x=>x.n!==c.n&&!incOf(x.n))):[];
   view.innerHTML=`${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr(rts.length>1?"myTickets":"myTicket")}</span><span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small><button class="tk-x" id="tkX" aria-label="${tr("hide")}">✕</button></span></div>
@@ -634,7 +643,7 @@ function home(){
 
 function startFlow(k){
   const f0=FLOWS[k]; if(!f0.danger && !f0.site && needPick(()=>startFlow(k),k)) return;
-  S.flow=k;S.step=0;S.tried=[];
+  S.flow=k;S.step=0;S.tried=[];S.stepPhoto=null;
   const f=FLOWS[k];
   track(f.danger?"danger_open":"flow_start",{flow:k,title:DE(f.t)});
   if(f.danger) return show(dangerView);
@@ -679,12 +688,22 @@ function stepView(){
     <div class="progress"><i style="width:${(S.step+1)/n*100}%"></i></div>
     <div class="step-t">${L(s.t)}</div>
     <p class="step-h">${L(s.h)}</p>
-    <button class="btn primary" id="ok">${tr("ok")}</button>
-    <button class="btn ghost" id="no">${tr("no")}</button>
+    ${s.photo?`<div class="step-ph"><label class="btn ghost ph">📷 ${lang==="en"?"Camera":"Kamera"}<input type="file" accept="image/*" capture="environment" class="sp-in"></label><label class="btn ghost ph">🖼 ${lang==="en"?"Upload":"Hochladen"}<input type="file" accept="image/*" class="sp-in"></label></div>${S.stepPhoto?`<div class="sp-prev"><img src="${S.stepPhoto}" alt=""><span>${lang==="en"?"Photo will be attached to the report":"Foto wird der Meldung angehängt"}</span></div>`:""}`:""}
+    ${(s.opts||[{l:f.ok||{de:tr("ok"),en:tr("ok")},a:"solved"},{l:f.no||{de:tr("no"),en:tr("no")},a:"next"}]).map((o,i)=>`<button class="btn ${i===0?"primary":"ghost"}" data-o="${i}">${esc(L(o.l))}</button>`).join("")}
   </div>`;
   $("#bk").onclick=()=>{ track("step_back",{step:DE(s.t)}); S.step?(S.step--,show(stepView)):home(); };
-  $("#ok").onclick=()=>{ track("step_ok",{flow_title:DE(f.t),n:S.step+1,step:DE(s.t)}); solved(); };
-  $("#no").onclick=()=>{ track("step_fail",{flow_title:DE(f.t),n:S.step+1,step:DE(s.t)}); S.tried.push(DE(s.t)); next(); };
+  const opts=s.opts||[{a:"solved",l:f.ok||{de:tr("ok")}},{a:"next",l:f.no||{de:tr("no")}}];
+  view.querySelectorAll(".sp-in").forEach(inp=>inp.onchange=async()=>{ const d=await shrink(inp.files[0]); if(d){ S.stepPhoto=d; show(stepView); } });
+  view.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{ const o=opts[+b.dataset.o];
+    track(o.a==="solved"?"step_ok":"step_fail",{flow_title:DE(f.t),n:S.step+1,step:DE(s.t),choice:DE(o.l)});
+    if(o.a==="solved") return solved();
+    S.tried.push(DE(s.t)+" → "+DE(o.l));
+    if(o.a==="next") return next();
+    if(o.a==="goto"){ S.step=o.to; return show(stepView); }
+    if(o.a==="ticket") return openTicket();
+    if(o.a==="home") return home();
+    if(o.a==="info"){ view.innerHTML=`<button class="back" id="bk2">${tr("back")}</button><div class="card"><div class="step-t">${esc(L(o.l))}</div><p class="step-h">${esc(L(o.i))}</p><button class="btn primary" id="ih">${tr("home")}</button><button class="btn ghost" id="it">${lang==="en"?"Report anyway":"Trotzdem melden"}</button></div>`;
+      $("#bk2").onclick=()=>show(stepView); $("#ih").onclick=()=>home(); $("#it").onclick=()=>openTicket(); } });
 }
 function next(){ const f=FLOWS[S.flow]; if(S.step<f.steps.length-1){S.step++;show(stepView);} else openTicket(); }
 
@@ -737,7 +756,7 @@ function ticketView(){
   <div class="summary"><b>${tr("sStation")}</b>${esc(S.label||S.station)}<br>${f.site&&!curCp()?"":`<b>${tr("sCp")}</b>${esc(cpLabel(curCp())||"–")}<br>`}${evse()?`<b>EVSE-ID</b>${esc(evse())}<br>`:""}<b>${tr("sProblem")}</b>${L(f.t)}<br>${(S.choice||[]).length?`<b>${tr("sChoice")}</b>${esc((S.choiceL||S.choice).join(", "))}<br>`:""}${S.tried.length?`<b>${tr("sTried")}</b>${tr("sTriedN",{n:S.tried.length})}<br>`:""}<b>${tr("sTime")}</b>${new Date().toLocaleString(locale())}</div>
   ${fm.photo&&!f.plate?`<label class="f">${L(fm.photo)}</label><input class="f" type="file" accept="image/*" id="pic">`:""}
   <label class="f">${fm.descL?L(fm.descL):tr("fDesc")}</label><textarea class="f" id="desc" placeholder="${f.plate?tr("blkDescPh"):fm.descPh?L(fm.descPh):tr("fDescPh")}">${esc(keep.desc)}</textarea>
-  ${f.plate||fm.photo?"":`<label class="f">${tr("fPhoto")}</label><input class="f" type="file" accept="image/*" id="pic">`}
+  ${f.plate||fm.photo?"":`<label class="f">${tr("fPhoto")}</label>${S.stepPhoto?`<div class="sp-prev"><img src="${S.stepPhoto}" alt=""><span>${lang==="en"?"Photo from the previous step is attached":"Foto aus dem vorigen Schritt ist angehängt"}</span></div>`:""}<input class="f" type="file" accept="image/*" id="pic">`}
   ${["credit","dispTerminal","danger"].includes(S.flow)||(f.site&&!f.card)?"":`<label class="f">${tr("fCard")}</label><input class="f" id="card" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="${tr("fCardPh")}" value="${esc(keep.card)}">
   <label class="f">${tr("fEmsp")}</label><input class="f" id="emsp" list="emspList" autocomplete="off" placeholder="${tr("fEmspPh")}" value="${esc(keep.emsp)}">
   <datalist id="emspList">${EMSP.map(x=>`<option value="${esc(x)}">`).join("")}</datalist>`}
@@ -751,7 +770,7 @@ function ticketView(){
   $("#send").onclick=async e=>{
     if(fm.descReq&&!$("#desc").value.trim()){ $("#desc").focus(); $("#desc").classList.add("err"); return; }
     e.target.disabled=true; e.target.textContent=tr("sending");
-    const photo=await shrink($("#pic").files[0]);
+    const photo=(await shrink($("#pic").files[0]))||S.stepPhoto||null;
     const email=$("#email").value.trim(), phone=$("#phone").value.trim(), card=($("#card")?.value||"").trim(), emsp=($("#emsp")?.value||"").trim();
     const cname=($("#cname")?.value||"").trim(); S.lastEmail=email; S.lastPhone=phone; S.lastCard=card; S.lastEmsp=emsp; S.lastName=cname;   // nur für diesen Besuch vorbelegen
     const extra=[(S.choice||[]).length&&"Auswahl: "+S.choice.join(", "),$("#plate")?.value.trim()&&"Kennzeichen: "+$("#plate").value.trim().toUpperCase(),$("#where")?.value.trim()&&"Blockierter Platz: "+$("#where").value.trim()].filter(Boolean).join(" · ");
@@ -816,7 +835,7 @@ function chatView(){
   ${S.chat.length<2?`<div class="chips">${[...TILE_ORDER,...siteTiles()].map(k=>`<button class="chip ${FLOWS[k].danger?"danger":""}" data-f="${k}">${FLOWS[k].ic} ${L(FLOWS[k].t)}</button>`).join("")}</div>`:""}`;
   // Gleiche Auswahl wie auf der Startseite: setzt das Problem als Kontext für Chat und Team
   view.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{ const k=c.dataset.f, f=FLOWS[k];
-    S.flow=k; S.tried=[]; track(f.danger?"danger_open":"flow_start",{flow:k,title:DE(f.t),from:"chat"});
+    S.flow=k; S.tried=[];S.stepPhoto=null; track(f.danger?"danger_open":"flow_start",{flow:k,title:DE(f.t),from:"chat"});
     send(L(f.t),k); });
   $("#chatIn").placeholder=tr("chatPh");
   scrollEnd();

@@ -168,6 +168,13 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 .cal-it.d-soon{box-shadow:inset 0 0 0 1px #f0a64a}.cal-it.d-urgent{background:#fde0de}.cal-it.d-over{background:#d03b3b;color:#fff}.cal-it.planned{opacity:.7;font-style:italic}.cal-it.done{opacity:.5;text-decoration:line-through}
 .cal-more{border:0;background:none;color:var(--muted);font-size:11.5px;text-align:left;cursor:pointer;padding:0 4px}
 @media(max-width:700px){.cal-c{min-height:70px}.cal-it{font-size:0;padding:3px;height:8px}.tm-d{width:70px}}
+.cl-seg{margin-bottom:12px;flex-wrap:wrap}.cl-seg .n{font-size:11px;background:#eef1ef;color:var(--muted);border-radius:999px;padding:1px 7px;margin-left:3px}.cl-seg button.on .n{background:#fff}
+.csec{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-top:10px;background:#fbfcfb}.csec>summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.csec>summary::-webkit-details-marker{display:none}.csec>summary::before{content:"▸";color:var(--muted)}.csec[open]>summary::before{content:"▾"}.csec-b{margin-top:8px}
+.rl{display:inline-flex!important;gap:6px;align-items:center;font-size:14px;color:var(--ink);margin:0}.rl input{width:auto}
+.lk{margin-bottom:12px}.lk-r{display:block;padding:5px 0;border-bottom:1px solid #f0f2f1;font-size:13.5px;color:var(--ink);text-decoration:none}a.lk-r:hover{color:var(--brand)}
+.chain{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px}.chain span{border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}.chain span.on{border-color:var(--brand);background:var(--brand-soft);color:#08603d;font-weight:700}
+a.rec2{color:var(--ink);text-decoration:none}tr.inact td{opacity:.5}
+.badge.cat-kunden{background:#e8efff;color:#1d4ed8}.badge.cat-service{background:#e3f4ec;color:#08603d}.badge.cat-partner{background:#f3e8ff;color:#6b21a8}.badge.cat-lieferanten{background:#fff0dc;color:#9a5300}.badge.cat-behoerden{background:#fde0de;color:#b42318}
 .dtag{display:inline-block;border-radius:999px;padding:1px 8px;font-weight:700;font-size:12px;white-space:nowrap}
 .d-over{background:#d03b3b;color:#fff}.d-urgent{background:#fde0de;color:#b42318}.d-soon{background:#ffe6c7;color:#9a5300}.d-ok{background:#eef1ef;color:#5d6b65}
 .due-box{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fbfcfb}
@@ -261,7 +268,7 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 <body>
 <header><div class="in">
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="defects">Mängel</button><button data-v="termine">Termine</button><button data-v="field">Maintenance</button><button data-v="customers">Kontakte</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="settings">Einstellungen</button></nav>
+  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="defects">Mängel</button><button data-v="termine">Termine</button><button data-v="field">Maintenance & Actions</button><button data-v="customers">Kontakte</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="settings">Einstellungen</button></nav>
   <div class="sp"></div>
   <form id="gsF" class="hidden" autocomplete="off"><input id="gs" type="search" placeholder="🔎 Alles durchsuchen …" title="Volltextsuche: Vorgangsnummer, E-Mail, Telefon, Ladekarte, EVSE-ID, Chat, Beschreibung, Notizen …"></form>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
@@ -726,73 +733,179 @@ function custBox(c,cards){ if(!c) return cards.length?`<div class="cust-box">${c
     <div class="muted" style="font-size:12.5px;margin-top:2px">${[c.email,c.phone].filter(Boolean).map(esc).join(" · ")}</div>
     ${[...new Set(cards)].map(k=>`<div style="margin-top:4px">${cardCheck(c,k)}</div>`).join("")}</div>`; }
 function wireCust(root){ root.querySelectorAll(".to-cus").forEach(a=>a.onclick=e=>{ e.preventDefault(); CF.q=""; CF.open=a.dataset.id; go("customers"); }); }
-let CF={q:"",open:null};
+let CF={q:"",open:null,cluster:"all",cat:"",kind:"",access:"",station:"",newCat:""};
+let CMETA=null, CALL=[];
+async function ensureMeta(){ if(!CMETA){ try{ CMETA=await fapi("contact_meta"); }catch(e){ CMETA={clusters:[],rates:{},data_access:{},data_levels:{full:"Name + Kontaktdaten",name:"nur Name",none:"anonym"}}; } } return CMETA; }
+const catLabel=k=>{ for(const g of (CMETA&&CMETA.clusters)||[]) for(const c of g.cats) if(c.k===k) return c.l; return k||"–"; };
+const clusterOf=k=>{ for(const g of (CMETA&&CMETA.clusters)||[]) if(g.cats.some(c=>c.k===k)) return g.k; return ""; };
+const CL_ICON={kunden:"👤",service:"🔧",partner:"🤝",lieferanten:"📦",behoerden:"🚒"};
+const isRoleCat=k=>!!FROLES[k];
+const catSelect=(cls,sel,empty)=>`<select class="${cls}">${empty?`<option value="">${empty}</option>`:""}${((CMETA&&CMETA.clusters)||[]).map(g=>`<optgroup label="${esc(g.l)}">${g.cats.map(c=>`<option value="${esc(c.k)}" ${sel===c.k?"selected":""}>${esc(c.l)}</option>`).join("")}</optgroup>`).join("")}</select>`;
+const rateTxt=r=>r&&(r.hourly!=null||r.km!=null||r.flat!=null)?[r.hourly!=null?eur(r.hourly)+"/h":"",r.km!=null?eur(r.km)+"/km":"",r.flat!=null?"Anfahrt "+eur(r.flat):""].filter(Boolean).join(" · "):"";
 async function customersView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Kontakte</h1><p class="sub" style="margin:0">Kunden, Firmen und Partner – Kundenstamm mit Ladekarten; Kontakte lassen sich Mitarbeitern und Checklisten zuordnen. Meldungen werden automatisch zugeordnet – über Kartennummer, E-Mail oder Telefon.</p></div><div class="sp"></div>
-    <button class="btn ghost" id="cTpl">Vorlage (CSV)</button><button class="btn ghost" id="cExp">Export (CSV)</button><button class="btn ghost" id="cImp">CSV importieren</button><button class="btn" id="cNew">+ Kunde</button><input type="file" id="cFile" accept=".csv,text/csv" class="hidden"></div>
+  await ensureMeta(); await ensureStaff();
+  const cl=(CMETA.clusters||[]).find(g=>g.k===CF.cluster);
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Kontakte</h1><p class="sub" style="margin:0">Eine Datenbank für alles: Ladekarten-Kunden (privat / gewerblich), Service & Technik, Partner & Standort, Lieferanten, Behörden & Einsatzkräfte. Maintenance (Mitarbeiter, Checklisten, Termine, Sätze & Kosten) greift direkt hierauf zu.</p></div><div class="sp"></div>
+    <button class="btn ghost" id="cTpl">Vorlage (CSV)</button><button class="btn ghost" id="cExp">Export (CSV)</button><button class="btn ghost" id="cImp">CSV importieren</button><button class="btn" id="cNew">+ Kontakt</button><input type="file" id="cFile" accept=".csv,text/csv" class="hidden"></div>
   <div id="impBox"></div>
-  <div class="card" style="padding:12px 14px"><input id="cq" type="search" style="width:100%;font-size:15px" placeholder="🔎 Name, Firma, E-Mail, Telefon oder Kartennummer" value="${esc(CF.q)}"></div>
-  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Name</th><th>E-Mail / Telefon</th><th>Ladekarten</th><th>QR-Aufrufe</th><th>Vorgänge</th><th>Letzter Kontakt</th><th>Quelle</th></tr></thead><tbody id="cb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
-  let h; $("#cq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ CF.q=$("#cq").value.trim(); loadCustomers(); },300); };
-  $("#cNew").onclick=()=>{ const tb=$("#cb"); const tr=document.createElement("tr"); tr.className="akte"; tr.innerHTML=`<td colspan="8"><div class="akte-in"></div></td>`; tb.prepend(tr); renderCust({cards:[],visits:[]},tr.querySelector(".akte-in"),true); };
+  <div class="seg cl-seg" id="cCl"><button data-c="all" class="${CF.cluster==="all"?"on":""}">Alle <span class="n" data-n="all"></span></button>${(CMETA.clusters||[]).map(g=>`<button data-c="${esc(g.k)}" class="${CF.cluster===g.k?"on":""}">${CL_ICON[g.k]||"•"} ${esc(g.l)} <span class="n" data-n="${esc(g.k)}"></span></button>`).join("")}</div>
+  <div class="card" style="padding:12px 14px"><div class="row">
+    <input id="cq" type="search" style="flex:1;min-width:220px;font-size:15px" placeholder="🔎 Name, Firma, E-Mail, Telefon, Kartennummer, Tag" value="${esc(CF.q)}">
+    ${CF.cluster==="kunden"?`<div class="seg" id="cCat">${[["","Alle"],["kunde_privat","privat"],["kunde_gewerblich","gewerblich / Flotte"]].map(([k,l])=>`<button data-k="${k}" class="${CF.cat===k?"on":""}">${l}</button>`).join("")}</div>`
+      :`<select id="cCatS" style="width:auto"><option value="">Alle Kategorien</option>${((cl?[cl]:CMETA.clusters)||[]).map(g=>`<optgroup label="${esc(g.l)}">${g.cats.map(c=>`<option value="${esc(c.k)}" ${CF.cat===c.k?"selected":""}>${esc(c.l)}</option>`).join("")}</optgroup>`).join("")}</select>`}
+    <select id="cKind" style="width:auto"><option value="">Personen & Firmen</option><option value="person" ${CF.kind==="person"?"selected":""}>nur Personen</option><option value="company" ${CF.kind==="company"?"selected":""}>nur Firmen</option></select>
+    ${CF.cluster!=="kunden"?`<select id="cAcc" style="width:auto"><option value="">Service-Zugang egal</option><option value="yes" ${CF.access==="yes"?"selected":""}>mit Service-Zugang</option><option value="no" ${CF.access==="no"?"selected":""}>ohne Zugang</option><option value="rates" ${CF.access==="rates"?"selected":""}>mit eigenen Sätzen</option></select>`:""}
+    <select id="cSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${CF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}</option>`).join("")}</select></div></div>
+  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Name / Firma</th><th>Kategorie</th><th>Kontakt</th><th>${CF.cluster==="kunden"?"Ladekarten":"Konditionen"}</th><th>${CF.cluster==="kunden"?"QR-Aufrufe / Vorgänge":"Service-Zugang"}</th><th>Projekte</th><th>Letzter Kontakt</th></tr></thead><tbody id="cb"><tr><td colspan="8" class="muted">Lade …</td></tr></tbody></table></div>`;
+  let h; $("#cq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ CF.q=$("#cq").value.trim(); loadCustomers(true); },300); };
+  document.querySelectorAll("#cCl button").forEach(b=>b.onclick=()=>{ CF.cluster=b.dataset.c; CF.cat=""; customersView(); });
+  document.querySelectorAll("#cCat button").forEach(b=>b.onclick=()=>{ CF.cat=b.dataset.k; document.querySelectorAll("#cCat button").forEach(x=>x.classList.toggle("on",x===b)); loadCustomers(); });
+  if($("#cCatS")) $("#cCatS").onchange=()=>{ CF.cat=$("#cCatS").value; loadCustomers(); };
+  $("#cKind").onchange=()=>{ CF.kind=$("#cKind").value; loadCustomers(); };
+  if($("#cAcc")) $("#cAcc").onchange=()=>{ CF.access=$("#cAcc").value; loadCustomers(); };
+  $("#cSt").onchange=()=>{ CF.station=$("#cSt").value; loadCustomers(); };
+  $("#cNew").onclick=()=>{ const tb=$("#cb"); const tr=document.createElement("tr"); tr.className="akte"; tr.innerHTML=`<td colspan="8"><div class="akte-in"></div></td>`; tb.prepend(tr);
+    const def=CF.cat||(cl?cl.cats[0].k:"kunde_privat"); renderCust({cards:[],visits:[],kind:"person",category:CF.newCat||def,categories:[],stations:CF.station?[CF.station]:[]},tr.querySelector(".akte-in"),true); CF.newCat=""; };
   $("#cImp").onclick=()=>$("#cFile").click();
   $("#cFile").onchange=()=>{ const f=$("#cFile").files[0]; if(f) f.text().then(t=>importPreview(t,f.name)); $("#cFile").value=""; };
-  $("#cTpl").onclick=()=>dlCSV("kunden-vorlage.csv",[["Name","Firma","E-Mail","Telefon","Kartennummer","Anbieter","Status","Notiz"],["Max Mustermann","Demo GmbH","max@example.com","+49 30 1234567","DE-CPW-004140-4","EnBW mobility+","aktiv",""]]);
-  $("#cExp").onclick=async()=>{ try{ const r=await api("customers",{q:""}); const rows=[["Name","Firma","E-Mail","Telefon","Kartennummer","Anbieter","Status","Notiz"]];
-    r.customers.forEach(c=>(c.cards.length?c.cards:[{}]).forEach(k=>rows.push([c.name||"",c.company||"",c.email||"",c.phone||"",k.card_no||"",k.emsp||"",k.status||"",c.notes||""]))); dlCSV("kunden-export.csv",rows); }catch(e){ toast(e.message,true); } };
-  loadCustomers();
+  $("#cTpl").onclick=()=>dlCSV("kontakte-vorlage.csv",[["Name","Firma","E-Mail","Telefon","Kartennummer","Anbieter","Status","Notiz"],["Max Mustermann","Demo GmbH","max@example.com","+49 30 1234567","DE-CPW-004140-4","EnBW mobility+","aktiv",""]]);
+  $("#cExp").onclick=()=>{ const rows=[["Typ","Name","Firma","Kategorie","Weitere Kategorien","E-Mail","Telefon","Adresse","Stundensatz","km-Satz","Anfahrt","Kartennummer","Anbieter","Status","Tags","Notiz"]];
+    custFiltered().forEach(c=>(c.cards&&c.cards.length?c.cards:[{}]).forEach(k=>rows.push([c.kind==="company"?"Firma":"Person",c.name||"",c.company||"",catLabel(c.category),(c.categories||[]).map(catLabel).join(", "),c.email||"",c.phone||"",c.address||"",
+      c.rates&&c.rates.hourly!=null?String(c.rates.hourly).replace(".",","):"",c.rates&&c.rates.km!=null?String(c.rates.km).replace(".",","):"",c.rates&&c.rates.flat!=null?String(c.rates.flat).replace(".",","):"",k.card_no||"",k.emsp||"",k.status||"",(c.tags||[]).join(", "),c.notes||""])));
+    dlCSV("kontakte-export.csv",rows); };
+  loadCustomers(true);
+  if(CF.autoNew){ CF.autoNew=false; $("#cNew").click(); }
 }
-function dlCSV(name,rows){ const csv="﻿"+rows.map(r=>r.map(v=>/[;"\n]/.test(String(v))?`"${String(v).replace(/"/g,'""')}"`:v).join(";")).join("\r\n");
-  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})); a.download=name; a.click(); }
-async function loadCustomers(){
+function custFiltered(){ const cl=(CMETA.clusters||[]).find(g=>g.k===CF.cluster), inCl=c=>!cl||[c.category,...(c.categories||[])].some(k=>cl.cats.some(x=>x.k===k));
+  return CALL.filter(c=>inCl(c)&&(!CF.cat||c.category===CF.cat||(c.categories||[]).includes(CF.cat))&&(!CF.kind||(c.kind||"person")===CF.kind)
+    &&(!CF.access||(CF.access==="yes"?!!c.access:CF.access==="no"?!c.access:!!(c.rates&&Object.keys(c.rates).length)))&&(!CF.station||(c.stations||[]).includes(CF.station)||(c.access&&(c.access.stations||[]).includes(CF.station)))); }
+async function loadCustomers(fetch){
   try{
-    const r=await api("customers",{q:CF.q}), tb=$("#cb"); if(!tb) return;
-    tb.innerHTML=r.customers.length?r.customers.map(c=>`<tr class="click" data-id="${esc(c.id)}"><td class="chev">▸</td><td><b>${esc(c.name||"–")}</b>${c.company?`<br><small class="muted">${esc(c.company)}</small>`:""}</td>
-      <td>${esc(c.email||"")}${c.phone?`<br><small class="muted">${esc(c.phone)}</small>`:""}</td><td>${c.cards.map(k=>`<span class="chip-c ${k.status}" title="${esc(k.emsp||"")} · ${CST[k.status]}">${esc(k.card_no)}</span>`).join("")}</td>
-      <td>${c.visits}</td><td>${c.tickets}</td><td>${c.last_at?fmtDT(c.last_at):"–"}</td><td><span class="badge off">${SRC[c.source]||c.source}</span></td></tr>
-      <tr class="akte hidden" data-for="${esc(c.id)}"><td colspan="8"><div class="akte-in">Lade …</div></td></tr>`).join("")
-      :`<tr><td colspan="8" class="muted">${CF.q?"Kein Kunde gefunden.":"Noch keine Kunden – „+ Kunde“ oder „CSV importieren“."}</td></tr>`;
+    if(fetch!==false||!CALL.length){ const r=await api("customers",{q:CF.q}); CALL=r.customers||[]; }
+    const tb=$("#cb"); if(!tb) return;
+    document.querySelectorAll("#cCl .n").forEach(n=>{ const k=n.dataset.n, cl=(CMETA.clusters||[]).find(g=>g.k===k); n.textContent=k==="all"?CALL.length:CALL.filter(c=>[c.category,...(c.categories||[])].some(x=>cl&&cl.cats.some(y=>y.k===x))).length; });
+    const L=custFiltered(), kunden=CF.cluster==="kunden";
+    tb.innerHTML=L.length?L.map(c=>{ const co=c.kind==="company", acc=c.access;
+      return `<tr class="click ${c.active===false?"inact":""}" data-id="${esc(c.id)}"><td class="chev">▸</td><td>${co?"🏢":"👤"} <b>${esc(co?(c.company||c.name||"–"):(c.name||c.email||"–"))}</b>${!co&&c.company?`<br><small class="muted">${c.parent_id?"↳ ":""}${esc(c.company)}</small>`:""}${co&&c.members?`<br><small class="muted">${c.members} Person${c.members>1?"en":""}</small>`:""}</td>
+      <td><span class="badge cat-${esc(clusterOf(c.category))}">${esc(catLabel(c.category))}</span>${(c.categories||[]).map(k=>` <span class="badge off">${esc(catLabel(k))}</span>`).join("")}${(c.tags||[]).map(t=>` <span class="chip-c">#${esc(t)}</span>`).join("")}</td>
+      <td>${esc(c.email||"")}${c.phone?`<br><small class="muted">${esc(c.phone)}</small>`:""}</td>
+      <td>${kunden?(c.cards||[]).map(k=>`<span class="chip-c ${k.status}" title="${esc(k.emsp||"")} · ${CST[k.status]}">${esc(k.card_no)}</span>`).join(""):`${rateTxt(c.rates)?`<b>${rateTxt(c.rates)}</b>`:c.parent_rates&&rateTxt(c.parent_rates)?`<small class="muted">über Firma: ${rateTxt(c.parent_rates)}</small>`:'<small class="muted">Kategorie-Satz</small>'}${c.terms&&c.terms.contract_until?`<br><small class="muted">Vertrag bis ${d2(c.terms.contract_until)}</small>`:""}${c.terms&&c.terms.payment_days!=null?`<br><small class="muted">Zahlungsziel ${c.terms.payment_days} T.${c.terms.discount?" · "+c.terms.discount+" % Rabatt":""}</small>`:""}`}</td>
+      <td>${kunden?`${c.visits} / ${c.tickets}`:acc?`<span class="badge ${acc.active?"":"off"}">🔑 ${esc(FROLES[acc.role]||acc.role)}</span><br><small class="muted">PIN ${esc(acc.pin_hint||"")}${acc.last_login_at?" · zuletzt "+d2(acc.last_login_at):""}</small>`:'<small class="muted">–</small>'}</td>
+      <td>${[...new Set([...(c.stations||[]),...((acc&&acc.stations)||[])])].map(id=>`<span class="chip-c">${esc(stLabel(id))}</span>`).join("")||'<small class="muted">–</small>'}</td><td>${c.last_at?fmtDT(c.last_at):"–"}</td></tr>
+      <tr class="akte hidden" data-for="${esc(c.id)}"><td colspan="8"><div class="akte-in">Lade …</div></td></tr>`; }).join("")
+      :`<tr><td colspan="8" class="muted">${CF.q||CF.cat||CF.kind||CF.access||CF.station?"Nichts gefunden – Filter anpassen.":"Noch keine Kontakte in dieser Rubrik – „+ Kontakt“."}</td></tr>`;
     tb.querySelectorAll("tr.click").forEach(row=>row.onclick=()=>toggleCust(row.dataset.id));
-    const want=CF.open||(r.customers.length===1&&CF.q?r.customers[0].id:null); CF.open=null;
-    if(want){ if(!tb.querySelector(`tr.click[data-id="${want}"]`)){ const c=(await api("customer",{id:want})).customer; tb.insertAdjacentHTML("afterbegin",`<tr class="click" data-id="${esc(c.id)}"><td class="chev">▸</td><td colspan="7"><b>${esc(c.name||c.email||"Kunde")}</b></td></tr><tr class="akte hidden" data-for="${esc(c.id)}"><td colspan="8"><div class="akte-in"></div></td></tr>`); tb.querySelector(`tr.click[data-id="${want}"]`).onclick=()=>toggleCust(want); }
-      toggleCust(want); tb.querySelector(`tr.click[data-id="${want}"]`).scrollIntoView({block:"center"}); }
+    const want=CF.open||(L.length===1&&CF.q?L[0].id:null); const sec=CF.openSec; CF.open=null; CF.openSec=null;
+    if(want){ if(!tb.querySelector(`tr.click[data-id="${want}"]`)){ const c=(await api("customer",{id:want})).customer; tb.insertAdjacentHTML("afterbegin",`<tr class="click" data-id="${esc(c.id)}"><td class="chev">▸</td><td colspan="7"><b>${esc(c.name||c.company||c.email||"Kontakt")}</b></td></tr><tr class="akte hidden" data-for="${esc(c.id)}"><td colspan="8"><div class="akte-in"></div></td></tr>`); tb.querySelector(`tr.click[data-id="${want}"]`).onclick=()=>toggleCust(want); }
+      await toggleCust(want,sec); tb.querySelector(`tr.click[data-id="${want}"]`).scrollIntoView({block:"center"}); }
   }catch(e){ toast(e.message,true); }
 }
-async function toggleCust(id){
+async function toggleCust(id,sec){
   const row=document.querySelector(`#cb tr.akte[data-for="${id}"]`), head=document.querySelector(`#cb tr.click[data-id="${id}"]`);
   const open=row.classList.toggle("hidden")===false; head.querySelector(".chev").textContent=open?"▾":"▸"; head.classList.toggle("open",open);
-  if(open){ try{ const c=(await api("customer",{id})).customer; renderCust(c,row.querySelector(".akte-in")); }catch(e){ toast(e.message,true); } }
+  if(open){ try{ const c=(await api("customer",{id})).customer; renderCust(c,row.querySelector(".akte-in"),false,sec); }catch(e){ toast(e.message,true); } }
 }
-function renderCust(c,box,isNew){
+function renderCust(c,box,isNew,openSec){
+  c.categories=c.categories||[]; c.stations=c.stations||[]; c.tags=c.tags||[]; c.rates=c.rates||{}; c.terms=c.terms||{};
   const cardRow=k=>`<div class="crow"><input class="k-no" placeholder="Kartennummer, z. B. DE-CPW-004140-4" value="${esc(k.card_no||"")}"><input class="k-emsp" list="emspL" placeholder="Anbieter" value="${esc(k.emsp||"")}">
     <select class="k-st">${Object.entries(CST).map(([v,l])=>`<option value="${v}" ${v===(k.status||"aktiv")?"selected":""}>${l}</option>`).join("")}</select><button class="btn ghost sm k-del" title="Karte entfernen">✕</button></div>`;
-  box.innerHTML=`<div class="akte-grid" style="grid-template-columns:minmax(440px,1.3fr) 1fr">
-    <div><h3>${isNew?"Neuer Kunde":"Kunde"}</h3>
+  const q=s=>box.querySelector(s), co=()=>q(".f-kind:checked")?q(".f-kind:checked").value==="company":c.kind==="company";
+  const allCats=[c.category,...c.categories].filter(Boolean), kunde=allCats.some(k=>/^kunde_/.test(k)), roleCats=allCats.filter(isRoleCat), lief=allCats.some(k=>/^lief_/.test(k));
+  const R=(CMETA&&CMETA.rates)||{}, catRate=roleCats.length?R[roleCats[0]]:null, pr=c.parent_rates||{};
+  const inh=k=>c.parent_id&&pr[k]!=null?`Firma: ${String(pr[k]).replace(".",",")}`:k==="hourly"&&catRate!=null?`Kategorie: ${String(catRate).replace(".",",")}`:k==="km"&&R.km!=null?`Standard: ${String(R.km).replace(".",",")}`:"–";
+  const acc=c.access, dd=(CMETA&&CMETA.data_access)||{}, lv=(CMETA&&CMETA.data_levels)||{}, defLv=roleCats.length?dd[roleCats[0]]||"none":"none";
+  const num=v=>v==null?"":String(v).replace(".",",");
+  const sec=(k,title,sum,body,force)=>`<details class="csec" data-s="${k}" ${openSec===k||force?"open":""}><summary><b>${title}</b> <span class="muted">${sum}</span></summary><div class="csec-b">${body}</div></details>`;
+  box.innerHTML=`<div class="akte-grid" style="grid-template-columns:minmax(460px,1.35fr) 1fr">
+    <div><h3>${isNew?"Neuer Kontakt":co()?"Firma":"Person"}</h3>
+      <div class="row" style="gap:14px;margin-bottom:8px"><label class="rl"><input type="radio" name="kind-${esc(c.id||"n")}" class="f-kind" value="person" ${c.kind!=="company"?"checked":""}> 👤 Person</label><label class="rl"><input type="radio" name="kind-${esc(c.id||"n")}" class="f-kind" value="company" ${c.kind==="company"?"checked":""}> 🏢 Firma</label>
+        <label class="rl" style="margin-left:auto"><input type="checkbox" class="f-active" ${c.active!==false?"checked":""}> aktiv</label></div>
       <div class="grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div><label>Name</label><input class="f-name" value="${esc(c.name||"")}"></div><div><label>Firma</label><input class="f-company" value="${esc(c.company||"")}"></div>
-        <div><label>E-Mail</label><input class="f-email" type="email" value="${esc(c.email||"")}"></div><div><label>Telefon</label><input class="f-phone" value="${esc(c.phone||"")}"></div></div>
-      <label style="margin-top:8px">Notiz</label><textarea class="f-notes" rows="2">${esc(c.notes||"")}</textarea>
-      <h3 style="margin-top:14px">Ladekarten</h3><div class="cards-ed">${(c.cards||[]).map(cardRow).join("")}</div>
-      <datalist id="emspL">${["CutPower (Last Mile Solutions)","ADAC e-Charge","Aral pulse","BMW Charging","Chargemap","E.ON Drive","EnBW mobility+","EWE Go","Electroverse (Octopus)","Elli (VW)","IONITY","Maingau EinfachStromLaden","Mercedes me Charge","Plugsurfing","Shell Recharge","Tesla","Vattenfall InCharge"].map(x=>`<option value="${x}">`).join("")}</datalist>
-      <button class="btn ghost sm k-add">+ Karte</button>
-      <div class="row" style="margin-top:12px"><button class="btn sm c-save">Speichern</button>${isNew?"":`<button class="btn warn sm c-del">Kunde löschen</button>`}</div>
-      ${!isNew&&c.source==="auto"?`<div class="hint">Automatisch aus einer Störungsmeldung angelegt – bitte prüfen und ergänzen.</div>`:""}
+        <div class="f-name-w"><label>Name</label><input class="f-name" value="${esc(c.name||"")}"></div>
+        <div><label class="f-co-l">Firma</label><input class="f-company" value="${esc(c.company||"")}" placeholder="Firmenname">
+          <div class="f-parent-w" style="margin-top:4px">${c.parent_id?`<span class="chip-c">🔗 ${esc(c.parent_name||c.company||"Firma")} <a href="#" class="f-unparent">×</a></span>`:`<input class="f-pq" placeholder="🔎 mit Firmenkontakt verknüpfen …" style="font-size:13px"><div class="asg-res f-pres"></div>`}</div></div>
+        <div><label>E-Mail</label><input class="f-email" type="email" value="${esc(c.email||"")}"></div><div><label>Telefon</label><input class="f-phone" value="${esc(c.phone||"")}"></div>
+        <div><label>Adresse</label><input class="f-address" value="${esc(c.address||"")}"></div><div><label>Website</label><input class="f-web" value="${esc(c.website||"")}"></div>
+        <div><label>Hauptkategorie</label>${catSelect("f-cat",c.category,"– bitte wählen –")}</div><div><label>Tags (mit Komma)</label><input class="f-tags" value="${esc(c.tags.join(", "))}" placeholder="z. B. Rahmenvertrag, Notdienst"></div></div>
+      ${sec("cats","Weitere Kategorien",c.categories.length?c.categories.map(catLabel).join(", "):"keine",`<div class="rgroups">${((CMETA&&CMETA.clusters)||[]).map(g=>`<div class="rgroup"><div class="rg-h">${esc(g.l)}</div><div class="rg-b">${g.cats.map(x=>`<label><input type="checkbox" class="f-cats" value="${esc(x.k)}" ${c.categories.includes(x.k)?"checked":""}> ${esc(x.l)}</label>`).join("")}</div></div>`).join("")}</div>`)}
+      ${sec("proj","Projekte / Standorte",c.stations.length?c.stations.map(stLabel).join(", "):"keinem Projekt zugeordnet",`<div style="max-height:160px;overflow:auto">${STATIONS.map(st=>`<label class="rl" style="display:flex;margin:3px 0"><input type="checkbox" class="f-st" value="${esc(st.id)}" ${c.stations.includes(st.id)?"checked":""}> <b>${esc(st.project_id||st.id)}</b>&nbsp;<span class="muted">${esc(st.name||"")}</span></label>`).join("")}</div><div class="hint">Zuordnung für Filter und Übersicht (z. B. Eigentümer, Standortpartner, Hausmeister).</div>`)}
+      ${kunde||(c.cards||[]).length?sec("cards","Ladekarten",(c.cards||[]).length?(c.cards||[]).length+" Karte(n)":"keine",`<div class="cards-ed">${(c.cards||[]).map(cardRow).join("")}</div>
+        <datalist id="emspL">${["CutPower (Last Mile Solutions)","ADAC e-Charge","Aral pulse","BMW Charging","Chargemap","E.ON Drive","EnBW mobility+","EWE Go","Electroverse (Octopus)","Elli (VW)","IONITY","Maingau EinfachStromLaden","Mercedes me Charge","Plugsurfing","Shell Recharge","Tesla","Vattenfall InCharge"].map(x=>`<option value="${x}">`).join("")}</datalist>
+        <button class="btn ghost sm k-add">+ Karte</button>`,isNew&&kunde):""}
+      ${!kunde||!isNew?sec("rates","💶 Sätze & Konditionen",rateTxt(c.rates)||(c.parent_id&&rateTxt(pr)?"über Firma: "+rateTxt(pr):catRate!=null?"Kategorie: "+eur(catRate)+"/h":"keine"),`
+        <p class="hint" style="margin-top:0">Reihenfolge: <b>Person</b> → <b>Firma</b> (Rahmenvertrag) → <b>Kategorie</b> (Maintenance &amp; Actions › Sätze & Kosten). Leer = geerbt.</p>
+        <div class="rates"><label>Stundensatz<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="r-h" inputmode="decimal" value="${num(c.rates.hourly)}" placeholder="${esc(inh("hourly"))}"><span class="muted">€/h</span></div></label>
+          <label>Kilometer<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="r-km" inputmode="decimal" value="${num(c.rates.km)}" placeholder="${esc(inh("km"))}"><span class="muted">€/km</span></div></label>
+          <label>Anfahrtspauschale<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="r-flat" inputmode="decimal" value="${num(c.rates.flat)}" placeholder="${esc(inh("flat"))}"><span class="muted">€</span></div></label></div>
+        <div class="rg-h" style="margin-top:10px">${lief?"Lieferkonditionen":"Vertrag & Konditionen"}</div>
+        <div class="rates"><label>Kunden-/Lieferantennr.<input class="t-no" value="${esc(c.terms.customer_no||"")}"></label><label>Zahlungsziel (Tage)<input class="t-pay" inputmode="numeric" value="${esc(c.terms.payment_days??"")}"></label>
+          <label>Rabatt %<input class="t-disc" inputmode="decimal" value="${num(c.terms.discount)}"></label><label>Vertrag bis<input type="date" class="t-until" value="${esc(c.terms.contract_until||"")}"></label></div>
+        <label>Preisliste / Vertrag (Link)</label><input class="t-pl" value="${esc(c.terms.pricelist||"")}" placeholder="https://…"><label>Notiz zu Konditionen</label><input class="t-note" value="${esc(c.terms.note||"")}">`):""}
+      ${!kunde?sec("acc","🔑 Service-Zugang & Datenzugriff",acc?`${esc(FROLES[acc.role]||acc.role)} · PIN ${esc(acc.pin_hint||"")}${acc.active?"":" · gesperrt"}`:"kein Zugang",`
+        ${roleCats.length||acc?`<div class="grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label>Rolle im Service-Zugang</label><select class="a-role">${roleGroups().map(([g,rs])=>`<optgroup label="${esc(g)}">${rs.map(r=>`<option value="${esc(r.k)}" ${(acc?acc.role:roleCats[0])===r.k?"selected":""}>${esc(r.l)}</option>`).join("")}</optgroup>`).join("")}</select></div>
+          <div><label>${acc?"Neue PIN (leer = unverändert)":"PIN (4–8 Ziffern)"}</label><div class="row" style="flex-wrap:nowrap"><input class="a-pin" inputmode="numeric" maxlength="8" placeholder="${acc?esc(acc.pin_hint||""):"z. B. 4711"}"><button class="btn ghost sm a-gen" type="button">Zufall</button></div></div></div>
+          <label>Freigeschaltete Projekte (keins = alle)</label><div style="max-height:120px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px">${STATIONS.map(st=>`<label class="rl" style="display:flex;margin:3px 0"><input type="checkbox" class="a-st" value="${esc(st.id)}" ${acc&&(acc.stations||[]).includes(st.id)?"checked":""}> <b>${esc(st.project_id||st.id)}</b></label>`).join("")}</div>
+          <label class="rl" style="margin-top:8px"><input type="checkbox" class="a-active" ${!acc||acc.active?"checked":""}> Zugang aktiv</label>
+          <label class="rl" style="margin-top:8px;margin-left:14px"><input type="checkbox" class="a-hist" ${acc&&acc.history_all?"checked":""}> darf alle Protokolle am Standort sehen</label> ${acc?"":`<label class="rl" style="margin-left:14px"><input type="checkbox" class="a-create"> Service-Zugang beim Speichern anlegen</label>`}`
+          :`<p class="muted">Für einen Service-Zugang braucht der Kontakt eine Kategorie aus Service & Technik, Partner & Standort, Lieferanten oder Behörden.</p>`}
+        <div class="rg-h" style="margin-top:12px">Zugriff auf Kundendaten im Service-Zugang</div>
+        <select class="d-acc"><option value="">Standard der Kategorie: ${esc(lv[defLv]||defLv)}</option>${Object.entries(lv).map(([k,l])=>`<option value="${k}" ${c.data_access===k?"selected":""}>${esc(l)}</option>`).join("")}</select>
+        <div class="hint">Steuert, ob bei Störungen / Kundenmeldungen Name und Telefon/E-Mail des meldenden Kunden angezeigt werden. Standard je Kategorie unter Maintenance &amp; Actions &amp; Actions › Sichtbarkeit.</div>`):""}
+      ${sec("note","Notiz",c.notes?esc(c.notes.slice(0,60)):"–",`<textarea class="f-notes" rows="3">${esc(c.notes||"")}</textarea>`)}
+      <div class="row" style="margin-top:12px"><button class="btn sm c-save">Speichern</button>${isNew?"":`<button class="btn warn sm c-del">Kontakt löschen</button>`}</div>
+      ${!isNew&&c.source==="auto"?`<div class="hint">Automatisch aus einer Meldung angelegt – bitte prüfen und ergänzen.</div>`:""}
     </div>
-    <div><h3>Verlauf</h3><div class="log">${(c.visits||[]).map(v=>{ const st=stOf(v.station_id), o=OUT[v.outcome||"open"]||OUT.open;
+    <div>${isNew?"":`<h3>Verknüpfungen</h3><div class="c-links muted">Lade …</div>`}
+      ${(c.visits||[]).length||kunde?`<details class="csec" style="margin-top:12px"><summary><b>Verlauf (QR-Code-Aufrufe)</b> <span class="muted">${(c.visits||[]).length}</span></summary><div class="log">${(c.visits||[]).map(v=>{ const st=stOf(v.station_id), o=OUT[v.outcome||"open"]||OUT.open;
       return `<div class="log-i"><span class="lt">${fmtDT(v.started_at)}</span><span class="le"><span class="badge ${o[1]==="ok"?"":o[1]}">${o[0]}</span></span><span class="ld">${esc(st?(st.project_id||st.id):v.station_id)} · ${esc(cpLabel(st,v.connector))}
-        ${v.tickets.map(n=>` · <a href="#" class="to-inc2" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join("")}${v.cards.length?`<br>${v.cards.map(k=>cardCheck(c,k)).join("<br>")}`:""}<br><a href="#" class="to-ses" data-id="${esc(v.id)}">Protokoll öffnen ›</a></span></div>`; }).join("")||'<span class="muted">Noch keine QR-Code-Aufrufe verknüpft.</span>'}</div></div>
+        ${v.tickets.map(n=>` · <a href="#" class="to-inc2" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join("")}${v.cards.length?`<br>${v.cards.map(k=>cardCheck(c,k)).join("<br>")}`:""}<br><a href="#" class="to-ses" data-id="${esc(v.id)}">Protokoll öffnen ›</a></span></div>`; }).join("")||'<span class="muted">Noch keine QR-Code-Aufrufe verknüpft.</span>'}</div></details>`:""}</div>
   </div>`;
+  const kindSync=()=>{ const isCo=co(); q(".f-name-w").style.display=isCo?"none":""; q(".f-co-l").textContent=isCo?"Firmenname":"Firma"; q(".f-parent-w").style.display=isCo?"none":""; };
+  box.querySelectorAll(".f-kind").forEach(r=>r.onchange=kindSync); kindSync();
   const ed=box.querySelector(".cards-ed");
-  const wireRows=()=>ed.querySelectorAll(".k-del").forEach(b=>b.onclick=()=>b.closest(".crow").remove());
-  wireRows(); box.querySelector(".k-add").onclick=()=>{ ed.insertAdjacentHTML("beforeend",cardRow({})); wireRows(); };
-  box.querySelector(".c-save").onclick=async()=>{ try{
-    const cust={id:c.id||null,name:box.querySelector(".f-name").value,company:box.querySelector(".f-company").value,email:box.querySelector(".f-email").value,phone:box.querySelector(".f-phone").value,notes:box.querySelector(".f-notes").value,
-      cards:[...ed.querySelectorAll(".crow")].map(r=>({card_no:r.querySelector(".k-no").value,emsp:r.querySelector(".k-emsp").value,status:r.querySelector(".k-st").value})).filter(k=>k.card_no.trim())};
-    const r=await api("save_customer",{customer:cust}); toast("Kunde gespeichert ✓"); CF.open=r.customer.id; loadCustomers(); }catch(e){ toast(e.message,true); } };
-  if(box.querySelector(".c-del")) box.querySelector(".c-del").onclick=async()=>{ if(!confirm("Kunde und seine Ladekarten löschen? QR-Code-Aufrufe bleiben erhalten.")) return; try{ await api("delete_customer",{id:c.id}); toast("Kunde gelöscht"); loadCustomers(); }catch(e){ toast(e.message,true); } };
+  if(ed){ const wireRows=()=>ed.querySelectorAll(".k-del").forEach(b=>b.onclick=()=>b.closest(".crow").remove()); wireRows(); q(".k-add").onclick=()=>{ ed.insertAdjacentHTML("beforeend",cardRow({})); wireRows(); }; }
+  if(q(".a-gen")) q(".a-gen").onclick=()=>{ q(".a-pin").value=String(Math.floor(100000+Math.random()*900000)); if(q(".a-create")) q(".a-create").checked=true; };
+  if(q(".a-pin")&&q(".a-create")) q(".a-pin").oninput=()=>{ q(".a-create").checked=!!q(".a-pin").value; };
+  if(q(".f-unparent")) q(".f-unparent").onclick=e=>{ e.preventDefault(); c.parent_id=null; c.parent_name=null; c.parent_rates=null; q(".f-parent-w").innerHTML=`<span class="muted" style="font-size:12.5px">Verknüpfung wird beim Speichern gelöst</span>`; };
+  if(q(".f-pq")){ let h; q(".f-pq").oninput=()=>{ clearTimeout(h); h=setTimeout(()=>{ const t=q(".f-pq").value.trim().toLowerCase(), res=q(".f-pres"); if(t.length<2){ res.innerHTML=""; return; }
+    const L=CALL.filter(k=>k.kind==="company"&&k.id!==c.id&&[k.company,k.name].join(" ").toLowerCase().includes(t)).slice(0,8);
+    res.innerHTML=L.map(k=>`<button type="button" class="asg-r" data-id="${esc(k.id)}">🏢 <b>${esc(k.company||k.name)}</b> <span class="muted">${esc(catLabel(k.category))}${rateTxt(k.rates)?" · "+rateTxt(k.rates):""}</span></button>`).join("")||'<div class="muted" style="padding:6px">Keine Firma gefunden – als Firma neu anlegen („+ Kontakt“ → Firma).</div>';
+    res.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{ const k=CALL.find(x=>x.id===b.dataset.id); c.parent_id=k.id; c.parent_name=k.company||k.name; c.parent_rates=k.rates; q(".f-company").value=k.company||k.name||""; if(!q(".f-cat").value) q(".f-cat").value=k.category||"";
+      q(".f-parent-w").innerHTML=`<span class="chip-c">🔗 ${esc(c.parent_name)}</span>`; }); },200); }; }
+  q(".c-save").onclick=async()=>{ try{
+    const isCo=co(), name=isCo?"":q(".f-name").value, company=q(".f-company").value;
+    if(!name.trim()&&!company.trim()&&!q(".f-email").value.trim()) return toast("Bitte Name oder Firma eintragen",true);
+    if(!q(".f-cat").value) return toast("Bitte eine Hauptkategorie wählen",true);
+    const cust={id:c.id||null,name,company,email:q(".f-email").value,phone:q(".f-phone").value,notes:q(".f-notes").value,
+      cards:ed?[...ed.querySelectorAll(".crow")].map(r=>({card_no:r.querySelector(".k-no").value,emsp:r.querySelector(".k-emsp").value,status:r.querySelector(".k-st").value})).filter(k=>k.card_no.trim()):(c.cards||[])};
+    const r=await api("save_customer",{customer:cust}), id=r.customer.id, v=s=>q(s)?q(s).value.replace(",","."):null;
+    await fapi("contact_save_ext",{contact:{id,kind:isCo?"company":"person",category:q(".f-cat").value,categories:[...box.querySelectorAll(".f-cats:checked")].map(x=>x.value),parent_id:isCo?null:c.parent_id||null,
+      address:q(".f-address").value,website:q(".f-web").value,tags:q(".f-tags").value,stations:[...box.querySelectorAll(".f-st:checked")].map(x=>x.value),active:q(".f-active").checked,
+      data_access:q(".d-acc")?q(".d-acc").value:c.data_access,
+      rates:q(".r-h")?{hourly:v(".r-h"),km:v(".r-km"),flat:v(".r-flat")}:c.rates,
+      terms:q(".t-no")?{customer_no:q(".t-no").value,payment_days:q(".t-pay").value,discount:v(".t-disc"),contract_until:q(".t-until").value,pricelist:q(".t-pl").value,note:q(".t-note").value}:c.terms}});
+    const pin=q(".a-pin")?q(".a-pin").value.trim():"";
+    if(q(".a-role")&&(acc||(q(".a-create")&&q(".a-create").checked))){
+      await fapi("contact_access_save",{contact_id:id,role:q(".a-role").value,pin,active:q(".a-active").checked,history_all:q(".a-hist").checked,stations:[...box.querySelectorAll(".a-st:checked")].map(x=>x.value)});
+      if(pin) alert(`PIN für ${name||company}: ${pin}\n\nBitte notieren und weitergeben – sie wird nicht wieder angezeigt.`); FSTAFF=[]; }
+    toast("Kontakt gespeichert ✓"); CF.open=id; loadCustomers(); }catch(e){ toast(e.message,true); } };
+  if(q(".c-del")) q(".c-del").onclick=async()=>{ if(!confirm("Kontakt löschen? Ladekarten werden mit gelöscht, QR-Code-Aufrufe bleiben erhalten. Ein Service-Zugang bleibt bestehen und kann unter Maintenance &amp; Actions gesperrt werden.")) return; try{ await api("delete_customer",{id:c.id}); toast("Kontakt gelöscht"); loadCustomers(); }catch(e){ toast(e.message,true); } };
   box.querySelectorAll(".to-inc2").forEach(a=>a.onclick=e=>{ e.preventDefault(); IF.q=a.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
   box.querySelectorAll(".to-ses").forEach(a=>a.onclick=e=>{ e.preventDefault(); TF.q=a.dataset.id; TF.mode="all"; setPreset(TF,"all"); go("tickets"); });
+  if(!isNew) (async()=>{ try{ const L=await fapi("contact_links",{id:c.id}), el=q(".c-links"); if(!el) return; const rc=L.rate_chain||{};
+    el.classList.remove("muted");
+    el.innerHTML=`${L.members.length?`<div class="lk"><div class="rg-h">👥 Personen dieser Firma (${L.members.length})</div>${L.members.map(m=>`<a href="#" class="lk-r" data-cid="${esc(m.id)}">👤 ${esc(m.name||m.email||"–")} <span class="muted">${esc(catLabel(m.category))}${m.phone?" · "+esc(m.phone):""}</span></a>`).join("")}</div>`:""}
+      ${!kunde?`<div class="lk"><div class="rg-h">💶 Satz-Kette</div><div class="chain"><span class="${rc.own&&rc.own.hourly!=null?"on":""}">Person ${rc.own&&rc.own.hourly!=null?eur(rc.own.hourly)+"/h":"–"}</span>›<span class="${(!rc.own||rc.own.hourly==null)&&rc.company&&rc.company.hourly!=null?"on":""}">Firma ${rc.company&&rc.company.hourly!=null?eur(rc.company.hourly)+"/h":"–"}</span>›<span class="${(!rc.own||rc.own.hourly==null)&&(!rc.company||rc.company.hourly==null)?"on":""}">${esc(rc.category_label||"Kategorie")} ${rc.category!=null?eur(rc.category)+"/h":"–"}</span></div></div>`:""}
+      ${L.staff.length?`<div class="lk"><div class="rg-h">🔑 Service-Zugänge</div>${L.staff.map(s=>`<div class="lk-r">${esc(s.name)} · ${esc(FROLES[s.role]||s.role)} ${s.active?"":'<span class="badge off">gesperrt</span>'}</div>`).join("")}</div>`:""}
+      ${!kunde?`<div class="lk"><div class="rg-h">📋 Zugeordnete Checklisten (${L.checklists.length})</div>${L.checklists.map(l=>`<a href="#" class="lk-r" data-cl="${esc(l.id)}">📋 ${esc(l.title)}</a>`).join("")||'<span class="muted" style="font-size:13px">keine direkte Zuordnung – sichtbar über die Rolle</span>'}</div>
+      <div class="lk"><div class="rg-h">📅 Termine (${L.appointments.length})</div>${L.appointments.map(a=>`<a href="#" class="lk-r" data-ap="1">${d2(a.starts_at)} · ${esc(a.title)} ${a.done?'<span class="badge">erledigt</span>':dueTag(a.starts_at,null,null,false)}</a>`).join("")||'<span class="muted" style="font-size:13px">keine</span>'}</div>
+      <div class="lk"><div class="rg-h">🧾 Einsätze</div>${L.report_sum.n?`<b>${L.report_sum.n}</b> Protokolle · <b>${hm(L.report_sum.minutes)}</b> · <b>${eur(L.report_sum.cost)}</b>${L.reports.slice(0,5).map(x=>`<div class="lk-r">${d2(x.finished_at)} · ${esc(x.checklist_title)} · ${esc(stLabel(x.station_id))} · ${eur(x.total_cost||0)}</div>`).join("")}`:'<span class="muted" style="font-size:13px">noch keine</span>'}</div>`:""}`;
+    el.querySelectorAll("[data-cid]").forEach(a=>a.onclick=e=>{ e.preventDefault(); CF.open=a.dataset.cid; CF.q=""; CF.cluster="all"; customersView(); });
+    el.querySelectorAll("[data-cl]").forEach(a=>a.onclick=e=>{ e.preventDefault(); FF.tab="lists"; go("field"); });
+    el.querySelectorAll("[data-ap]").forEach(a=>a.onclick=e=>{ e.preventDefault(); go("termine"); });
+  }catch(e){ const el=q(".c-links"); if(el) el.textContent=e.message; } })();
 }
 // CSV-Import: Trennzeichen und Spalten automatisch erkennen
 function parseCSV(text){ text=text.replace(/^﻿/,""); const first=text.split(/\r?\n/)[0]||""; const d=(first.match(/;/g)||[]).length>=(first.match(/,/g)||[]).length?";":(first.includes("\t")?"\t":",");
@@ -845,10 +958,10 @@ const FTYPES={check:"OK / Mangel",text:"Text",number:"Zahl / Messwert",photo:"Fo
 let FF={tab:"dash",station:"",checklist:"",result:"",q:"",preset:"",from:"",to:""};
 let FCL=[], FSTAFF=[];
 async function fieldView(){
-  if(!FF.preset&&!FF.from) setPreset(FF,"30");
+  if(!FF.preset&&!FF.from) setPreset(FF,"1");
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Maintenance</h1><p class="sub" style="margin:0">Service &amp; Technik, Partner &amp; Standort sowie Behörden &amp; Einsatzkräfte melden sich am QR-Code über „Service-Zugang“ mit ihrer PIN an, arbeiten Checklisten ab – Arbeitszeit vor Ort, Anfahrt und Material werden je Einsatz erfasst.</p></div></div>
-  <div class="seg" id="ftab" style="margin-bottom:14px">${[["dash","📊 Dashboard"],["reports","Protokolle"],["staff","Mitarbeiter & PINs"],["lists","Checklisten"],["rates","Sätze & Kosten"],["vis","Sichtbarkeit & Erinnerungen"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Maintenance &amp; Actions</h1><p class="sub" style="margin:0">Service &amp; Technik, Partner &amp; Standort sowie Behörden &amp; Einsatzkräfte melden sich am QR-Code über „Service-Zugang“ mit ihrer PIN an, arbeiten Checklisten ab – Arbeitszeit vor Ort, Anfahrt und Material werden je Einsatz erfasst.</p></div></div>
+  <div class="seg" id="ftab" style="margin-bottom:14px">${[["dash","📊 Dashboard"],["reports","Protokolle"],["staff","Mitarbeiter (Kontakte)"],["lists","Checklisten"],["rates","Sätze & Kosten"],["vis","Sichtbarkeit & Erinnerungen"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
   <div id="fbody"><div class="muted">Lade …</div></div>`;
   document.querySelectorAll("#ftab button").forEach(b=>b.onclick=()=>{ FF.tab=b.dataset.t; document.querySelectorAll("#ftab button").forEach(x=>x.classList.toggle("on",x===b)); fieldTab(); });
   fieldTab();
@@ -858,16 +971,18 @@ async function fieldTab(){ try{ if(!FCL.length||FF.tab==="lists"){ FCL=(await fa
 /* Sichtbarkeit: wer im Field-Service eine Störung / einen Mangel sieht */
 async function ensureStaff(){ if(!FSTAFF||!FSTAFF.length){ try{ FSTAFF=(await fapi("staff_list")).staff||[]; }catch(e){ FSTAFF=[]; } } return FSTAFF; }
 function visSummary(o,def){ if(o.field_hidden) return '<span class="badge off">🚫 ausgeblendet</span>';
-  const r=(o.field_roles||[]).map(k=>FROLES[k]||k), p=(o.field_staff||[]).map(id=>(FSTAFF.find(x=>x.id===id)||{}).name||"Person");
-  return r.length||p.length?`<span class="badge amber">👁 ${esc([...r,...p].join(", "))}</span>`:`<span class="badge">👁 Standard${def&&def.length?": "+esc(def.map(k=>FROLES[k]).join(", ")):""}</span>`; }
+  const r=(o.field_roles||[]).map(k=>FROLES[k]||k), p=(o.field_staff||[]).map(id=>(FSTAFF.find(x=>x.id===id)||{}).name||"Person"), f=(o.field_companies||[]).map(c=>"🏢 "+c);
+  return r.length||p.length||f.length?`<span class="badge amber">👁 ${esc([...r,...f,...p].join(", "))}</span>`:`<span class="badge">👁 Standard${def&&def.length?": "+esc(def.map(k=>FROLES[k]).join(", ")):""}</span>`; }
 function assignHTML(o){ return `<div class="assign">
   <label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink)"><input type="checkbox" class="a-hidden" style="width:auto" ${o.field_hidden?"checked":""}> Für Field-Service ausblenden (nur intern im Dashboard)</label>
   <div class="a-body" style="${o.field_hidden?"opacity:.4;pointer-events:none":""}">
     <div class="muted" style="font-size:12.5px;margin:8px 0 4px">Sichtbar für Rollen (nichts gewählt = Standard-Einstellung):</div>
     ${roleChecks("a-role",o.field_roles)}
+    <div class="muted" style="font-size:12.5px;margin:8px 0 4px">… oder Firmen (alle Personen mit Service-Zugang dieser Firma):</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px 14px;border:1px solid var(--line);border-radius:10px;padding:6px 10px">${[...new Set(FSTAFF.filter(x=>x.active&&x.company).map(x=>x.company))].sort().map(c=>`<label style="display:flex;gap:6px;align-items:center;font-size:13.5px;color:var(--ink);margin:2px 0"><input type="checkbox" class="a-comp" value="${esc(c)}" style="width:auto" ${(o.field_companies||[]).includes(c)?"checked":""}> 🏢 ${esc(c)}</label>`).join("")||'<span class="muted">keine Firmen mit Zugang</span>'}</div>
     <div class="muted" style="font-size:12.5px;margin:8px 0 4px">… oder gezielt einzelnen Personen zuweisen:</div>
     <div style="max-height:130px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px">${FSTAFF.filter(x=>x.active).map(x=>`<label style="display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--ink);margin:3px 0"><input type="checkbox" class="a-staff" value="${esc(x.id)}" style="width:auto" ${(o.field_staff||[]).includes(x.id)?"checked":""}> ${esc(x.name)} <span class="muted">${esc(x.company||"")} · ${esc(FROLES[x.role])}</span></label>`).join("")||'<span class="muted">Noch keine Mitarbeiter angelegt.</span>'}</div></div></div>`; }
-function readAssign(box){ return { field_hidden:box.querySelector(".a-hidden").checked, field_roles:[...box.querySelectorAll(".a-role:checked")].map(x=>x.value), field_staff:[...box.querySelectorAll(".a-staff:checked")].map(x=>x.value) }; }
+function readAssign(box){ return { field_hidden:box.querySelector(".a-hidden").checked, field_roles:[...box.querySelectorAll(".a-role:checked")].map(x=>x.value), field_staff:[...box.querySelectorAll(".a-staff:checked")].map(x=>x.value), field_companies:[...box.querySelectorAll(".a-comp:checked")].map(x=>x.value) }; }
 function wireAssign(box){ const h=box.querySelector(".a-hidden"); h.onchange=()=>{ const b=box.querySelector(".a-body"); b.style.opacity=h.checked?.4:1; b.style.pointerEvents=h.checked?"none":""; }; }
 let FVIS=null;
 async function fVis(){
@@ -875,11 +990,13 @@ async function fVis(){
   const row=(key,title,sub)=>`<div class="card"><h2 style="margin-bottom:4px">${title}</h2><p class="sub">${sub}</p>${roleChecks("v-"+key,FVIS[key])}</div>`;
   $("#fbody").innerHTML=row("incidents","Kundenstörungen – Standard-Sichtbarkeit","Wer im Service-Zugang offene Störungen aus Kundenmeldungen sieht, solange einer Störung nichts Eigenes zugewiesen ist. Pro Störung lässt sich das in der Störungsakte ändern oder ganz ausblenden.")
     +row("defects","Mängel aus Protokollen – Standard-Sichtbarkeit","Wer offene Mängel aus Checklisten sieht und als behoben melden kann. Pro Mangel im Reiter „Mängel“ änderbar.")
+    +`<div class="card"><h2 style="margin-bottom:4px">🔒 Zugriff auf Kundendaten – Standard je Kategorie</h2><p class="sub">Was Service-Zugänge von meldenden Kunden sehen (Name, Telefon/E-Mail). Pro Kontakt im Kontakt überschreibbar. Kartennummern und Rechnungsdaten sieht der Service-Zugang nie.</p>
+      ${roleGroups().map(([g,rs])=>`<div class="rg-h" style="margin-top:10px">${esc(g)}</div><div class="rates">${rs.map(r=>`<label>${esc(r.l)}<select class="v-da" data-k="${esc(r.k)}">${Object.entries(FVIS.data_levels||{}).map(([k,l])=>`<option value="${k}" ${(FVIS.data_access||{})[r.k]===k?"selected":""}>${esc(l)}</option>`).join("")}</select></label>`).join("")}</div>`).join("")}</div>`
     +`<div class="card"><h2 style="margin-bottom:4px">⏰ Erinnerungen – Standard</h2><p class="sub">Gilt für Checklisten-Termine (wenn in der Checkliste nichts Eigenes eingestellt ist) und für Mängel. Täglich um 7 Uhr geht eine Erinnerungs-Mail an das Team, wenn eine Schwelle erreicht oder ein Termin überschritten ist (Überfälliges zusätzlich jeden Montag).</p>
       <div class="row" style="gap:16px"><label><span class="dtag d-soon">orange</span> Erinnerung ab <input class="v-rm" inputmode="numeric" style="width:70px" value="${FVIS.remind??14}"> Tagen vorher</label>
       <label><span class="dtag d-urgent">hellrot</span> dringend ab <input class="v-ug" inputmode="numeric" style="width:70px" value="${FVIS.urgent??3}"> Tagen vorher</label><span><span class="dtag d-over">−X T.</span> = überfällig</span></div></div>
     <button class="btn" id="vSave">Speichern</button>`;
-  $("#vSave").onclick=async()=>{ try{ await fapi("settings_save",{incidents:[...document.querySelectorAll(".v-incidents:checked")].map(x=>x.value),defects:[...document.querySelectorAll(".v-defects:checked")].map(x=>x.value),remind:$(".v-rm").value,urgent:$(".v-ug").value}); toast("Gespeichert ✓"); }catch(e){ toast(e.message,true); } };
+  $("#vSave").onclick=async()=>{ try{ await fapi("settings_save",{incidents:[...document.querySelectorAll(".v-incidents:checked")].map(x=>x.value),defects:[...document.querySelectorAll(".v-defects:checked")].map(x=>x.value),remind:$(".v-rm").value,urgent:$(".v-ug").value,data_access:Object.fromEntries([...document.querySelectorAll(".v-da")].map(s=>[s.dataset.k,s.value]))}); CMETA=null; toast("Gespeichert ✓"); }catch(e){ toast(e.message,true); } };
 }
 /* Mängel */
 let FD={status:"open",station:"",prio:""};
@@ -968,7 +1085,7 @@ async function loadFR(){
 }
 async function renderFR(id,box){
   try{ const r=(await fapi("report_get",{id})).report, st=stOf(r.station_id);
-    const val=a=>a.type==="check"?(a.na?'<span class="muted">n. a.</span>':a.ok===true?'<span class="chk-ok">✓ in Ordnung</span>':a.ok===false?'<span class="chk-bad">✗ Mangel</span>':"–"):a.type==="photo"?(a.photo_url?"":"–"):esc(a.value??"–");
+    const val=a=>a.na?'<span class="muted" title="keine Angabe / nicht möglich">k. A.</span>':a.type==="check"?(a.ok===true?'<span class="chk-ok">✓ in Ordnung</span>':a.ok===false?'<span class="chk-bad">✗ Mangel</span>':"–"):a.type==="photo"?(a.photo_url?"":"–"):esc(a.value??"–");
     const tm=d=>new Date(d).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
     box.innerHTML=`<div class="akte-grid"><div><h3>Protokoll</h3><dl>
       <dt>Nummer</dt><dd><code>${esc(r.report_no)}</code></dd><dt>Projekt</dt><dd>${esc(stLabel(r.station_id))}${st&&st.address?" · "+esc(st.address):""}</dd><dt>Bereich</dt><dd>${esc(fWhere(r))}</dd>
@@ -981,12 +1098,14 @@ async function renderFR(id,box){
         <dt>Anfahrt</dt><dd>${r.travel_minutes?hmin(r.travel_minutes):"–"}${r.km?" · "+(+r.km).toLocaleString("de-DE")+" km":""}</dd>
         ${r.material_text||r.material_cost?`<dt>Material</dt><dd>${esc(r.material_text||"")}${r.material_cost?" · "+eur(r.material_cost):""}</dd>`:""}
         <dt>Kosten</dt><dd><b>${eur(r.total_cost)}</b><br><small class="muted">Arbeit ${eur(r.labor_cost)} · Anfahrt ${eur(r.travel_cost)}${r.material_cost?" · Material "+eur(r.material_cost):""} · Satz ${eur(r.hourly_rate)}/h${r.km_rate?" · "+eur(r.km_rate)+"/km":""}</small></dd></dl>
+      <label class="rl" style="margin-top:12px"><input type="checkbox" class="fr-share" ${r.shared_field?"checked":""}> 👁 Für Field-Service am Standort freigeben</label><div class="hint" style="margin-top:2px">Standard: Im Service-Zugang sieht jede Person nur ihre eigenen Protokolle. Freigegeben sehen es alle, die an diesem Standort arbeiten (z. B. nachfolgender Techniker).</div>
       ${r.notes?`<h3 style="margin-top:14px">Bemerkung</h3><div>${esc(r.notes)}</div>`:""}
       <div class="row" style="margin-top:12px"><button class="btn ghost sm fr-copy">Kopieren</button></div></div>
       <div><h3>Prüfpunkte</h3><div class="log">${r.answers.map(a=>`<div class="log-i" style="grid-template-columns:1fr auto"><span>${esc(a.text)}${a.note?`<br><span class="chk-bad" style="font-weight:500">${esc(a.note)}</span>`:""}${a.photo_url?`<br><a href="${esc(a.photo_url)}" target="_blank" rel="noopener"><img src="${esc(a.photo_url)}" style="width:140px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--line);margin-top:6px"></a>`:""}</span><span style="white-space:nowrap">${val(a)}</span></div>`).join("")}</div></div></div>`;
     box.querySelectorAll(".to-inc3").forEach(a=>a.onclick=e=>{ e.preventDefault(); IF.q=a.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
+    const sh=box.querySelector(".fr-share"); if(sh) sh.onchange=async()=>{ try{ await fapi("report_share",{id:r.id,shared:sh.checked}); toast(sh.checked?"Für Field-Service freigegeben ✓":"Freigabe entfernt"); }catch(e){ sh.checked=!sh.checked; toast(e.message,true); } };
     box.querySelector(".fr-copy").onclick=async e=>{ const t=[`${r.checklist_title} – ${r.report_no}`,`Projekt: ${stLabel(r.station_id)} · ${fWhere(r)}`,`Durchgeführt: ${r.staff_name}${r.company?" ("+r.company+")":""} · ${new Date(r.finished_at).toLocaleString("de-DE")}`,"",
-      ...r.answers.map(a=>`${a.text}: ${a.type==="check"?(a.na?"n. a.":a.ok?"in Ordnung":a.ok===false?"MANGEL":"–"):a.type==="photo"?(a.photo?"Foto":"–"):(a.value??"–")}${a.note?" – "+a.note:""}`),...(r.notes?["","Bemerkung: "+r.notes]:[])].join("\n");
+      ...r.answers.map(a=>`${a.text}: ${a.na?"k. A.":a.type==="check"?(a.ok?"in Ordnung":a.ok===false?"MANGEL":"–"):a.type==="photo"?(a.photo?"Foto":"–"):(a.value??"–")}${a.note?" – "+a.note:""}`),...(r.notes?["","Bemerkung: "+r.notes]:[])].join("\n");
       try{ await navigator.clipboard.writeText(t); e.target.textContent="Kopiert ✓"; }catch(err){ toast("Kopieren nicht möglich",true); } };
   }catch(e){ box.innerHTML=`<span class="muted">${esc(e.message)}</span>`; }
 }
@@ -1103,56 +1222,44 @@ function renderDash(d){
 async function fRates(){
   let s; try{ s=await fapi("settings_get"); FVIS=s; await ensureStaff(); }catch(e){ return toast(e.message,true); }
   const r=s.rates||{};
-  $("#fbody").innerHTML=`<div class="card"><h2 style="margin-bottom:4px">Stundensätze je Rolle</h2><p class="sub">Gilt für Arbeits- und Anfahrtszeit, wenn bei der Person kein eigener Satz hinterlegt ist (Reiter „Mitarbeiter & PINs“). Änderungen gelten nur für neue Einsätze – abgeschlossene behalten ihren Satz.</p>
+  $("#fbody").innerHTML=`<div class="card"><h2 style="margin-bottom:4px">Standard-Sätze je Kategorie</h2><p class="sub">Gilt für Arbeits- und Anfahrtszeit, wenn weder die Person noch ihre Firma eigene Sätze hat (im Kontakt unter „Sätze & Konditionen“). Änderungen gelten nur für neue Einsätze – abgeschlossene behalten ihren Satz.</p>
     ${roleGroups().map(([g,rs])=>`<div class="rg-h" style="margin-top:12px">${esc(g)}</div><div class="rates">${rs.map(x=>`<label>${esc(x.l)}<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="rt" data-k="${x.k}" inputmode="decimal" value="${esc(String(r[x.k]??"").replace(".",","))}"><span class="muted">€/h</span></div></label>`).join("")}</div>`).join("")}
     <div class="rg-h" style="margin-top:12px">Fahrtkosten</div><div class="rates">
       <label>Kilometer<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="rt" data-k="km" inputmode="decimal" value="${esc(String(r.km??"").replace(".",","))}"><span class="muted">€/km</span></div></label></div>
     <button class="btn" id="rtSave" style="margin-top:14px">Sätze speichern</button></div>
-  <div class="card"><h2 style="margin-bottom:4px">Individuelle Sätze</h2><p class="sub">Personen mit eigenem Satz (z. B. Servicefirma mit Rahmenvertrag):</p>
-    ${FSTAFF.filter(x=>x.hourly_rate!=null).map(x=>`<div class="rec2"><b>${esc(x.name)}</b> <span class="muted">${esc(x.company||"")} · ${esc(FROLES[x.role])}</span><span class="sp"></span><b>${eur(x.hourly_rate)}/h</b></div>`).join("")||'<span class="muted">Keine – alle rechnen mit dem Satz ihrer Rolle.</span>'}</div>`;
+  <div class="card"><h2 style="margin-bottom:4px">Individuelle Sätze aus Kontakten</h2><p class="sub">Firmen (Rahmenvertrag) und Personen mit eigenen Konditionen. Reihenfolge: Person → Firma → Kategorie. Bearbeiten im Kontakt (Klick).</p><div id="rtOv" class="muted">Lade …</div></div>`;
+  (async()=>{ try{ await ensureMeta(); if(!CALL.length) CALL=(await api("customers",{q:""})).customers||[]; const L=CALL.filter(c=>c.rates&&Object.keys(c.rates).length||c.terms&&Object.keys(c.terms).length).sort((a,b)=>(a.kind==="company"?0:1)-(b.kind==="company"?0:1));
+    const el=$("#rtOv"); if(!el) return; el.classList.remove("muted");
+    el.innerHTML=L.map(c=>`<a href="#" class="rec2 rt-c" data-id="${esc(c.id)}">${c.kind==="company"?"🏢":"👤"} <b>${esc(c.kind==="company"?c.company||c.name:c.name)}</b> <span class="muted">${esc(catLabel(c.category))}${c.kind!=="company"&&c.company?" · "+esc(c.company):""}${c.terms&&c.terms.contract_until?" · Vertrag bis "+d2(c.terms.contract_until):""}${c.terms&&c.terms.payment_days!=null?" · Zahlungsziel "+c.terms.payment_days+" T.":""}</span><span class="sp"></span><b>${rateTxt(c.rates)||"–"}</b></a>`).join("")||'<span class="muted">Keine – alle rechnen mit dem Satz ihrer Kategorie.</span>';
+    el.querySelectorAll(".rt-c").forEach(a=>a.onclick=e=>{ e.preventDefault(); CF.open=a.dataset.id; CF.openSec="rates"; CF.q=""; CF.cluster="all"; CF.cat=""; go("customers"); }); }catch(e){} })();
   $("#rtSave").onclick=async()=>{ const rates={}; document.querySelectorAll(".rt").forEach(i=>rates[i.dataset.k]=i.value.replace(",","."));
     try{ await fapi("settings_save",{incidents:s.incidents,defects:s.defects,rates}); toast("Sätze gespeichert ✓"); }catch(e){ toast(e.message,true); } };
 }
-/* Mitarbeiter */
+/* Mitarbeiter = Kontakte mit Service-Zugang */
 async function fStaff(){
-  try{ FSTAFF=(await fapi("staff_list")).staff; }catch(e){ return toast(e.message,true); }
-  $("#fbody").innerHTML=`<div class="row" style="margin-bottom:10px"><p class="sub" style="margin:0;flex:1">Jede Person meldet sich mit ihrer eigenen PIN an. Ohne Standort-Auswahl gilt der Zugang für alle Standorte. Wer Protokolle hat, wird beim Löschen nur gesperrt.</p><button class="btn" id="fNew">+ Mitarbeiter</button></div>
-  <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Name</th><th>Rolle</th><th>PIN</th><th>Standorte</th><th>Protokolle</th><th>Zuletzt angemeldet</th><th>Status</th></tr></thead><tbody id="fsb">
-  ${FSTAFF.map(x=>`<tr class="click" data-id="${esc(x.id)}"><td class="chev">▸</td><td><b>${esc(x.name)}</b>${x.contact_id?' <span title="mit Kontakt verknüpft">📇</span>':""}${x.company?`<br><small class="muted">${esc(x.company)}</small>`:""}</td><td>${esc(FROLES[x.role]||x.role)}${x.hourly_rate!=null?`<br><small class="muted">${eur(x.hourly_rate)}/h</small>`:""}</td><td><code>${esc(x.pin_hint||"–")}</code></td>
-    <td>${x.stations.length?x.stations.map(id=>`<span class="chip-c">${esc(stLabel(id))}</span>`).join(""):'<span class="muted">alle</span>'}</td><td>${x.reports}</td><td>${x.last_login_at?fmtDT(x.last_login_at):"–"}</td><td>${x.active?'<span class="badge">aktiv</span>':'<span class="badge off">gesperrt</span>'}</td></tr>
-    <tr class="akte hidden" data-for="${esc(x.id)}"><td colspan="8"><div class="akte-in"></div></td></tr>`).join("")||`<tr><td colspan="8" class="muted">Noch keine Mitarbeiter.</td></tr>`}</tbody></table></div>`;
-  $("#fNew").onclick=()=>{ const tb=$("#fsb"); const tr=document.createElement("tr"); tr.className="akte"; tr.innerHTML=`<td colspan="8"><div class="akte-in"></div></td>`; tb.prepend(tr); staffEd({stations:[],role:"technik",active:true},tr.querySelector(".akte-in"),true); };
-  document.querySelectorAll("#fsb tr.click").forEach(row=>row.onclick=()=>{ const ak=document.querySelector(`#fsb tr.akte[data-for="${row.dataset.id}"]`), open=ak.classList.toggle("hidden")===false;
-    row.querySelector(".chev").textContent=open?"▾":"▸"; if(open) staffEd(FSTAFF.find(x=>x.id===row.dataset.id),ak.querySelector(".akte-in")); });
-}
-function staffEd(x,box,isNew){
-  box.innerHTML=`<div class="akte-grid" style="grid-template-columns:minmax(380px,1fr) 1fr"><div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div style="grid-column:1/-1" class="ct-box"><label>📇 Kontakt</label>${x.contact_id?`<div class="ct-linked">🔗 verknüpft mit Kontakt <b class="ct-name">…</b> <a href="#" class="ct-unlink">lösen</a></div>`:`<input class="ct-q" placeholder="🔎 In Kontakten suchen und übernehmen (Name, Firma, E-Mail) …"><div class="asg-res ct-res"></div>
-        <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);margin-top:6px"><input type="checkbox" class="ct-new" style="width:auto" ${isNew?"checked":""}> beim Speichern auch als neuen Kontakt anlegen</label>`}</div>
-      <div><label>Name</label><input class="s-name" value="${esc(x.name||"")}"></div><div><label>Firma</label><input class="s-company" value="${esc(x.company||"")}"></div>
-      <div><label>Telefon</label><input class="s-phone" value="${esc(x.phone||"")}"></div><div><label>E-Mail</label><input class="s-email" value="${esc(x.email||"")}"></div>
-      <div><label>Rolle</label><select class="s-role">${roleGroups().map(([g,rs])=>`<optgroup label="${esc(g)}">${rs.map(r=>`<option value="${esc(r.k)}" ${x.role===r.k?"selected":""}>${esc(r.l)}</option>`).join("")}</optgroup>`).join("")}</select></div>
-      <div><label>${isNew?"PIN (4–8 Ziffern)":"Neue PIN (leer = unverändert)"}</label><div class="row" style="flex-wrap:nowrap"><input class="s-pin" inputmode="numeric" maxlength="8" placeholder="${isNew?"z. B. 4711":esc(x.pin_hint||"")}"><button class="btn ghost sm s-gen" type="button">Zufall</button></div></div>
-      <div><label>Eigener Stundensatz € (leer = Satz der Rolle)</label><input class="s-rate" inputmode="decimal" value="${x.hourly_rate!=null?esc(String(x.hourly_rate).replace(".",",")):""}" placeholder="Rolle: ${esc(String(((FVIS&&FVIS.rates)||{})[x.role]??"–"))} €"></div></div>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--ink)"><input type="checkbox" class="s-active" style="width:auto" ${x.active!==false?"checked":""}> Zugang aktiv</label>
-    <div class="row" style="margin-top:12px"><button class="btn sm s-save">Speichern</button>${isNew?"":`<button class="btn warn sm s-del">Löschen / sperren</button>`}</div>
-    <div class="hint">Die PIN wird nur verschlüsselt gespeichert – bitte nach dem Speichern direkt an die Person weitergeben.</div></div>
-    <div><label>Standorte (keiner ausgewählt = alle)</label><div class="cards-ed" style="max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px 10px">${STATIONS.map(st=>`<label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink);margin:4px 0"><input type="checkbox" class="s-st" value="${esc(st.id)}" style="width:auto" ${x.stations.includes(st.id)?"checked":""}> <b>${esc(st.project_id||st.id)}</b> <span class="muted">${esc(st.name||"")}</span></label>`).join("")}</div>
-    <div class="hint" style="margin-top:8px">Sichtbare Checklisten ergeben sich aus der Rolle – und ggf. aus der Zuordnung zu dieser Person oder Firma (Reiter „Checklisten“).</div></div></div>`;
-  box.querySelector(".s-gen").onclick=()=>{ box.querySelector(".s-pin").value=String(Math.floor(100000+Math.random()*900000)); };
-  if(x.contact_id){ contactSearch("").then(L=>{ const k=L.find(y=>y.id===x.contact_id), el=box.querySelector(".ct-name"); if(el) el.textContent=k?(k.name||"")+(k.company?" · "+k.company:""):"(nicht gefunden)"; });
-    box.querySelector(".ct-unlink").onclick=e=>{ e.preventDefault(); x.contact_id=null; staffEd(x,box,isNew); }; }
-  else { const q=box.querySelector(".ct-q"), res=box.querySelector(".ct-res"); let h;
-    q.oninput=()=>{ clearTimeout(h); h=setTimeout(async()=>{ const t=q.value.trim(); if(t.length<2){ res.innerHTML=""; return; } const L=(await contactSearch(t)).slice(0,8);
-      res.innerHTML=L.map(k=>`<button type="button" class="asg-r" data-id="${esc(k.id)}">📇 <b>${esc(k.name||"–")}</b> <span class="muted">${esc([k.company,k.email,k.phone].filter(Boolean).join(" · "))}</span></button>`).join("")||'<div class="muted" style="padding:6px">Kein Kontakt gefunden – Daten unten eintragen.</div>';
-      res.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{ const k=L.find(y=>y.id===b.dataset.id); Object.assign(x,{contact_id:k.id,name:k.name||x.name,company:k.company||x.company,email:k.email||x.email,phone:k.phone||x.phone}); staffEd(x,box,isNew); }); },250); }; }
-  box.querySelector(".s-save").onclick=async()=>{ const pin=box.querySelector(".s-pin").value.trim();
-    if(!x.contact_id&&box.querySelector(".ct-new")&&box.querySelector(".ct-new").checked){ try{ const r=await api("save_customer",{customer:{name:box.querySelector(".s-name").value,company:box.querySelector(".s-company").value,email:box.querySelector(".s-email").value,phone:box.querySelector(".s-phone").value,notes:"Field-Service: "+(FROLES[box.querySelector(".s-role").value]||"")}}); x.contact_id=r.customer&&r.customer.id; }catch(e){ return toast("Kontakt: "+e.message,true); } }
-    try{ await fapi("staff_save",{staff:{id:x.id||null,contact_id:x.contact_id||null,name:box.querySelector(".s-name").value,company:box.querySelector(".s-company").value,phone:box.querySelector(".s-phone").value,email:box.querySelector(".s-email").value,
-      role:box.querySelector(".s-role").value,pin,hourly_rate:box.querySelector(".s-rate").value.replace(",","."),active:box.querySelector(".s-active").checked,stations:[...box.querySelectorAll(".s-st:checked")].map(c=>c.value)}});
-      toast(pin?`Gespeichert ✓ – PIN ${pin} bitte jetzt weitergeben`:"Gespeichert ✓"); if(pin) alert(`PIN für ${box.querySelector(".s-name").value}: ${pin}\n\nBitte notieren und weitergeben – sie wird nicht wieder angezeigt.`); fStaff(); }catch(e){ toast(e.message,true); } };
-  if(box.querySelector(".s-del")) box.querySelector(".s-del").onclick=async()=>{ if(!confirm(`${x.name} löschen? Hat die Person Protokolle, wird der Zugang nur gesperrt.`)) return; try{ const r=await fapi("staff_delete",{id:x.id}); toast(r.deactivated?"Zugang gesperrt (Protokolle bleiben)":"Gelöscht"); fStaff(); }catch(e){ toast(e.message,true); } };
+  try{ FSTAFF=(await fapi("staff_list")).staff; await ensureMeta(); }catch(e){ return toast(e.message,true); }
+  const groups=roleGroups().map(([g,rs])=>[g,FSTAFF.filter(x=>rs.some(r=>r.k===x.role))]).filter(([,l])=>l.length);
+  $("#fbody").innerHTML=`<div class="row" style="margin-bottom:10px"><p class="sub" style="margin:0;flex:1">Mitarbeiter sind <b>Kontakte mit Service-Zugang</b>. Stammdaten, Sätze und Datenzugriff werden im Kontakt gepflegt – ein Klick öffnet ihn. Jede Person meldet sich mit eigener PIN an.</p><button class="btn" id="fNew">+ Mitarbeiter</button></div>
+  <div id="fNewBox"></div>
+  ${groups.map(([g,l])=>`<div class="card" style="padding:0;overflow:auto"><div class="rg-h" style="padding:10px 14px 0">${esc(g)} (${l.length})</div><table><thead><tr><th>Name</th><th>Rolle</th><th>Satz</th><th>Kundendaten</th><th>PIN</th><th>Projekte</th><th>Protokolle</th><th>Zuletzt</th><th>Status</th></tr></thead><tbody>
+  ${l.map(x=>`<tr class="click" data-cid="${esc(x.contact_id||"")}" data-id="${esc(x.id)}"><td><b>${esc(x.name)}</b> ${x.contact_id?'<span title="Kontakt öffnen">📇</span>':'<span class="badge warn" title="noch kein Kontakt">ohne Kontakt</span>'}${x.company?`<br><small class="muted">${esc(x.company)}</small>`:""}</td><td>${esc(FROLES[x.role]||x.role)}</td>
+    <td><b>${eur(x.eff_rate)}/h</b><br><small class="muted">${esc(x.rate_src||"")}</small></td><td>${esc((CMETA.data_levels||{})[x.data_access]||x.data_access)}<br><small class="muted">${esc(x.data_src||"")}</small></td><td><code>${esc(x.pin_hint||"–")}</code>${x.history_all?'<br><small class="muted" title="sieht alle Protokolle am Standort">👁 alle Protokolle</small>':""}</td>
+    <td>${x.stations.length?x.stations.map(id=>`<span class="chip-c">${esc(stLabel(id))}</span>`).join(""):'<span class="muted">alle</span>'}</td><td>${x.reports}</td><td>${x.last_login_at?fmtDT(x.last_login_at):"–"}</td>
+    <td>${x.active?'<span class="badge">aktiv</span>':'<span class="badge off">gesperrt</span>'} <a href="#" class="s-tog" data-id="${esc(x.id)}">${x.active?"sperren":"entsperren"}</a></td></tr>`).join("")}</tbody></table></div>`).join("")||'<div class="card muted">Noch keine Mitarbeiter.</div>'}`;
+  document.querySelectorAll("#fbody tr.click").forEach(row=>row.onclick=e=>{ if(e.target.closest(".s-tog")) return; if(!row.dataset.cid) return toast("Dieser Zugang hat noch keinen Kontakt",true); CF.open=row.dataset.cid; CF.openSec="acc"; CF.q=""; CF.cluster="all"; CF.cat=""; go("customers"); });
+  document.querySelectorAll(".s-tog").forEach(a=>a.onclick=async e=>{ e.preventDefault(); const x=FSTAFF.find(y=>y.id===a.dataset.id);
+    try{ if(x.active&&!confirm(`Zugang von ${x.name} sperren?`)) return;
+      if(x.contact_id) await fapi("contact_access_save",{contact_id:x.contact_id,role:x.role,active:!x.active,history_all:!!x.history_all,stations:x.stations}); else await fapi("staff_delete",{id:x.id});
+      toast("Gespeichert ✓"); fStaff(); }catch(err){ toast(err.message,true); } });
+  $("#fNew").onclick=()=>{ $("#fNewBox").innerHTML=`<div class="card"><h2 style="margin-bottom:4px">Mitarbeiter aus Kontakten</h2><p class="sub">Kontakt suchen (Person oder Firma) – im Kontakt dann Rolle und PIN vergeben. Noch nicht vorhanden? Neu anlegen.</p>
+    <input class="n-q" placeholder="🔎 Name, Firma, E-Mail …"><div class="asg-res n-res"></div>
+    <div class="row" style="margin-top:10px"><button class="btn ghost sm n-new">+ Neuen Kontakt anlegen</button><button class="btn ghost sm n-x">Abbrechen</button></div></div>`;
+    let h; const nq=$(".n-q"), res=$(".n-res"); nq.focus();
+    nq.oninput=()=>{ clearTimeout(h); h=setTimeout(async()=>{ const t=nq.value.trim(); if(t.length<2){ res.innerHTML=""; return; } const L=(await contactSearch(t)).filter(k=>!/^kunde_/.test(k.category||"")).slice(0,10);
+      res.innerHTML=L.map(k=>`<button type="button" class="asg-r" data-id="${esc(k.id)}">${k.kind==="company"?"🏢":"👤"} <b>${esc(k.name||k.company||"–")}</b> <span class="muted">${esc([k.name?k.company:"",catLabel(k.category)].filter(Boolean).join(" · "))}${k.access?" · 🔑 hat schon Zugang":""}</span></button>`).join("")||'<div class="muted" style="padding:6px">Nichts gefunden.</div>';
+      res.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{ CF.open=b.dataset.id; CF.openSec="acc"; CF.q=""; CF.cluster="all"; CF.cat=""; go("customers"); }); },250); };
+    $(".n-new").onclick=()=>{ CF.q=""; CF.cluster="service"; CF.cat=""; CF.newCat="technik"; CF.autoNew=true; go("customers"); };
+    $(".n-x").onclick=()=>$("#fNewBox").innerHTML=""; };
 }
 /* Checklisten */
 function fLists(){
@@ -1270,7 +1377,7 @@ function tmChip(it,small){ const [ic,,c]=TM_T[it.type], di=it.type==="termin"&&i
   const lbl=it.type==="termin"?(TM_KINDS[it.kind]||"Termin"):it.type==="mangel"?"Prio "+(it.priority||"B"):(it.planned?"geplant":"fällig");
   if(small) return `<button type="button" class="cal-it ${c} ${di&&di.d<=it.remind?di.cls:""} ${it.done?"done":""} ${it.planned?"planned":""}" data-k="${esc(tmKey(it))}" title="${esc(it.title+" · "+(st?st.project_id||st.id:""))}">${ic} ${tmTime(it)?`<b>${tmTime(it).slice(0,5)}</b> `:""}${esc(it.title)}</button>`;
   return `<div class="tm-row ${c} ${it.done?"done":""}" data-k="${esc(tmKey(it))}"><div class="tm-d"><b>${new Date(it.at).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</b><small class="muted">${tmTime(it)||(it.type==="termin"&&it.all_day?"ganztägig":"")}</small></div>
-    <div class="tm-i">${ic}</div><div class="tm-m"><b>${esc(it.title)}</b> <span class="badge ${it.type==="mangel"&&it.priority==="A"?"warn":"amber"}">${esc(lbl)}</span>${it.done?' <span class="badge">erledigt</span>':""}
+    <div class="tm-i">${ic}</div><div class="tm-m"><b>${esc(it.title)}</b> <span class="badge ${it.type==="mangel"&&it.priority==="A"?"warn":"amber"}">${esc(lbl)}</span>${it.done?' <span class="badge">erledigt</span>':""}${it.checklist_title?` <span class="badge off">📋 ${esc(it.checklist_title)}</span>`:""}
     <br><small class="muted">${esc(st?(st.project_id||st.id):"ohne Projekt")}${it.defect_no?" · "+esc(it.defect_no):""}${tmWho(it)?" · "+esc(tmWho(it)):""}${it.fixed?" · fester Termin":it.planned?" · Wiederholung (Intervall)":""}</small></div>
     <div class="tm-s">${di?`<span class="dtag ${di.cls}">${di.txt}</span>`:""}</div></div>`; }
 const tmKey=it=>it.type+"|"+(it.id||"")+"|"+(it.station_id||"")+"|"+it.at;
@@ -1314,7 +1421,7 @@ function tmWire(root,L){ root.querySelectorAll("[data-k]").forEach(el=>el.onclic
   $("#tmX").onclick=()=>$("#tmEd").innerHTML="";
   $("#tmGo").onclick=()=>{ if(it.type==="checkliste"){ FF.tab="lists"; go("field"); } else { FD.station=it.station_id; FD.status="open"; go("defects"); } };
   $("#tmEd").scrollIntoView({behavior:"smooth",block:"start"}); }); }
-function tmEdit(it,dayK){ const a=it?{...it,assign_staff:[...(it.assign_staff||[])],assign_companies:[...(it.assign_companies||[])]}:{title:"",kind:"termin",station_id:TM.station||"",all_day:false,assign_staff:[],assign_companies:[],note:"",done:false,starts_at:null};
+async function tmEdit(it,dayK){ if(!FCL.length){ try{ FCL=(await fapi("checklist_list")).checklists||[]; }catch(e){} } const a=it?{...it,assign_staff:[...(it.assign_staff||[])],assign_companies:[...(it.assign_companies||[])]}:{title:"",kind:"termin",station_id:TM.station||"",all_day:false,assign_staff:[],assign_companies:[],note:"",done:false,starts_at:null};
   const sd=a.starts_at?new Date(a.starts_at):dayK?new Date(dayK+"T09:00"):new Date(Date.now()+864e5), ed=a.ends_at?new Date(a.ends_at):null;
   const hm=d=>d?d.toTimeString().slice(0,5):"";
   const draw=()=>{ $("#tmEd").innerHTML=`<div class="card"><div class="row" style="margin-bottom:8px"><h2 style="margin:0">${it?"Termin bearbeiten":"Neuer Termin"}</h2><span class="sp"></span><button class="btn ghost sm" id="tmX">✕</button></div>
@@ -1326,12 +1433,14 @@ function tmEdit(it,dayK){ const a=it?{...it,assign_staff:[...(it.assign_staff||[
       <div><label>Projekt</label><select class="a-st"><option value="">– ohne Projekt –</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${a.station_id===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select></div>
       <div><label>Zuständig (Firma / Person aus Kontakten & Mitarbeitern)</label><div class="asg"><div class="asg-chips">${a.assign_companies.map((c,i)=>`<span class="chip-c">🏢 ${esc(c)} <a href="#" data-rmc="${i}">×</a></span>`).join("")}${a.assign_staff.map((s,i)=>`<span class="chip-c">👤 ${esc((FSTAFF.find(x=>x.id===s)||{}).name||"?")} <a href="#" data-rms="${i}">×</a></span>`).join("")}${!a.assign_companies.length&&!a.assign_staff.length?'<span class="muted" style="font-size:13px">niemand zugeordnet – im Service-Zugang für alle sichtbar</span>':""}</div>
         <input class="asg-q" placeholder="Firma oder Person suchen …"><div class="asg-res"></div></div></div></div>
+    <div class="grid2"><div><label>Checkliste verbinden (optional)</label><select class="a-cl"><option value="">– keine –</option>${FCL.filter(l=>l.active||l.id===a.checklist_id).map(l=>`<option value="${esc(l.id)}" ${a.checklist_id===l.id?"selected":""}>${esc(l.title)}</option>`).join("")}</select>
+      <div class="hint">Im Service-Zugang erscheint am Termin der Button „Checkliste starten“.</div></div><div></div></div>
     <label>Notiz</label><textarea class="a-note" rows="2">${esc(a.note||"")}</textarea>
     ${it?`<label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--ink)"><input type="checkbox" class="a-done" style="width:auto" ${a.done?"checked":""}> erledigt</label>`:""}
     <p class="hint">Erinnerung per Mail ${REM.remind} und ${REM.urgent} Tage sowie 1 Tag vorher (an die Projekt-Adresse). Zugeordnete Mitarbeiter sehen den Termin im Service-Zugang.</p>
     <div class="row"><button class="btn" id="aSave">Speichern</button>${it?`<button class="btn warn sm" id="aDel">Löschen</button>`:""}</div></div>`;
     const E=$("#tmEd"), q=s=>E.querySelector(s);
-    const collect=()=>{ a.title=q(".a-title").value; a.kind=q(".a-kind").value; a.station_id=q(".a-st").value; a.note=q(".a-note").value; a.all_day=q(".a-all").checked; if(q(".a-done")) a.done=q(".a-done").checked;
+    const collect=()=>{ a.title=q(".a-title").value; a.kind=q(".a-kind").value; a.station_id=q(".a-st").value; a.note=q(".a-note").value; a.checklist_id=q(".a-cl").value||null; a.all_day=q(".a-all").checked; if(q(".a-done")) a.done=q(".a-done").checked;
       const d=q(".a-date").value, f=a.all_day?"00:00":(q(".a-from").value||"09:00"), t=a.all_day?"":q(".a-to").value; a.starts_at=d?new Date(d+"T"+f).toISOString():null; a.ends_at=d&&t?new Date(d+"T"+t).toISOString():null; };
     $("#tmX").onclick=()=>E.innerHTML="";
     q(".a-all").onchange=()=>{ q(".a-from").disabled=q(".a-to").disabled=q(".a-all").checked; };
@@ -1349,7 +1458,7 @@ function tmEdit(it,dayK){ const a=it?{...it,assign_staff:[...(it.assign_staff||[
       ar.querySelectorAll("[data-ct]").forEach(b=>b.onclick=()=>{ collect(); a.contact_id=b.dataset.ct; a.assign_companies=[...new Set([...a.assign_companies,b.dataset.cn])]; draw(); });
       ar.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{ collect(); a.assign_staff=[...new Set([...a.assign_staff,b.dataset.s])]; draw(); }); },250); };
     $("#aSave").onclick=async()=>{ collect(); if(!a.title.trim()) return toast("Bitte einen Titel eingeben",true); if(!a.starts_at) return toast("Bitte ein Datum wählen",true);
-      try{ await fapi("appt_save",{appointment:{id:it&&it.id,title:a.title,kind:a.kind,starts_at:a.starts_at,ends_at:a.ends_at,all_day:a.all_day,station_id:a.station_id||null,assign_staff:a.assign_staff,assign_companies:a.assign_companies,contact_id:a.contact_id||null,note:a.note,done:a.done}});
+      try{ await fapi("appt_save",{appointment:{id:it&&it.id,title:a.title,kind:a.kind,starts_at:a.starts_at,ends_at:a.ends_at,all_day:a.all_day,station_id:a.station_id||null,assign_staff:a.assign_staff,assign_companies:a.assign_companies,contact_id:a.contact_id||null,checklist_id:a.checklist_id||null,note:a.note,done:a.done}});
         toast("Termin gespeichert ✓"); E.innerHTML=""; tmLoad(); }catch(e){ toast(e.message,true); } };
     if($("#aDel")) $("#aDel").onclick=async()=>{ if(!confirm(`Termin „${a.title}“ löschen?`)) return; try{ await fapi("appt_delete",{id:it.id}); toast("Gelöscht"); E.innerHTML=""; tmLoad(); }catch(e){ toast(e.message,true); } };
     E.scrollIntoView({behavior:"smooth",block:"start"}); q(".a-title").focus(); };
@@ -1364,7 +1473,7 @@ function setPreset(F,p){ F.preset=p; if(p==="all"){ F.from=""; F.to=""; } else {
 function wireDates(F,k,reload){ const box=$("#"+k+"D");
   box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ setPreset(F,b.dataset.p); box.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b)); box.querySelector('[data-k=from]').value=F.from; box.querySelector('[data-k=to]').value=F.to; reload(); });
   box.querySelectorAll("input").forEach(i=>i.onchange=()=>{ F[i.dataset.k]=i.value; F.preset=""; box.querySelectorAll(".chip").forEach(x=>x.classList.remove("on")); reload(); }); }
-Object.assign(IF,{preset:"all",from:"",to:""}); Object.assign(TF,{preset:"all",from:"",to:""});
+Object.assign(IF,{preset:"all",from:"",to:""}); setPreset(TF,"1");
 
 /* Tooltip für Diagramme */
 const tipEl=document.createElement("div"); tipEl.className="tip hidden"; document.body.appendChild(tipEl);
@@ -1433,7 +1542,7 @@ function drawHeat(){
     <div class="legend" style="margin-top:8px"><span>weniger</span>${[0,.25,.5,.75,1].map(t=>`<b style="background:${t?`rgba(42,120,214,${(0.15+0.85*t).toFixed(2)})`:"#f0f3f1"};width:18px"></b>`).join("")}<span>mehr</span><span style="margin-left:12px">Balken unten = Summe je Stunde</span></div>`;
   box.querySelectorAll("#heatSeg button").forEach(b=>b.onclick=()=>{ HEAT_MODE=b.dataset.m; drawHeat(); });
 }
-let OF={preset:"30",station:""}; const OV_OPEN={}; let OV_REQ=0; let AV_OPEN=false; setPreset(OF,"30");
+let OF={preset:"1",station:""}; const OV_OPEN={}; let OV_REQ=0; let AV_OPEN=false; setPreset(OF,"1");
 const OUTC=[["solved","Selbst gelöst","#2a78d6"],["ticket","Störung gemeldet","#eb6834"],["hotline","Hotline","#1baf7a"],["chat","Chat","#eda100"],["open","Ohne Ergebnis","#b9beba"]];
 async function overviewView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
