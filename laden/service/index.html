@@ -155,7 +155,7 @@ function loginView(msg){
   view.innerHTML=`<div class="card center" style="padding-top:22px">
     <div class="lbl">Service-Zugang${station?" · Standort "+esc(station):""}</div>
     <h1 style="margin-top:6px">Persönliche PIN eingeben</h1>
-    <p class="muted small">Für Techniker, Servicefirmen, Reinigung, Elektrofachkräfte und Dienstleister. Die PIN vergibt euer Betreiber im Dashboard.</p>
+    <p class="muted small">Für Service & Technik, Partner & Standort sowie Behörden & Einsatzkräfte. Die PIN vergibt der Betreiber im Dashboard.</p>
     <div class="pin-dots" id="dots"></div><div class="err" id="err">${esc(msg||"")}</div>
     <div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-k="${n}">${n}</button>`).join("")}<button data-k="del">⌫</button><button data-k="0">0</button><button data-k="ok" style="background:var(--brand);color:#fff;border-color:var(--brand)">OK</button></div>
     ${station?"":`<p class="small muted">Ohne QR-Code: Nach der Anmeldung wählen Sie das Projekt aus.</p>`}
@@ -196,6 +196,7 @@ async function homeView(){
   view.innerHTML=`<div class="muted">Lade Standort …</div>`;
   if(!station) return projectsView();
   try{ S.home=await api("home"); }catch(e){ view.innerHTML=`<div class="card"><b>${esc(e.message)}</b><button class="btn mt" onclick="projectsView()">Anderes Projekt wählen</button><button class="btn ghost mt" onclick="logout()">Mit anderer PIN anmelden</button></div>`; return; }
+  if(Array.isArray(S.home.roles)&&S.home.roles.length){ ROLE_L={}; S.home.roles.filter(r=>r.repair).forEach(r=>ROLE_L[r.k]=r.l); }
   const h=S.home, st=h.station, stoer=h.checklists.find(l=>l.id==="stoerung");
   view.innerHTML=`<div class="row" style="margin:0 2px 8px;align-items:center"><div class="small muted" style="flex:1">Angemeldet: <b style="color:var(--ink)">${esc(h.me.name)}</b> · ${esc(h.me.role_label)}${h.me.company?" · "+esc(h.me.company):""}</div><button class="btn ghost sm" id="swp">⇄ Projekt wechseln</button></div>
   ${(()=>{ let t=null; try{ t=JSON.parse(localStorage.getItem("hc_timer")||"null"); }catch(e){} if(!t||Date.now()-Date.parse(t.started)>16*3600e3) return ""; const [ts,cid,tk]=t.key.split("|"); if(ts!==station&&ts!==st.id) return ""; const l=h.checklists.find(x=>x.id===cid); if(!l) return "";
@@ -229,7 +230,8 @@ async function homeView(){
 
 /* ── Störung melden (Field-Service) ── */
 const REP_TITLES=["Ladevorgang startet nicht","Ladevorgang bricht ab","Display / Bedienung defekt","Kabel / Stecker beschädigt","Offline / keine Kommunikation","Kartenleser / Bezahlterminal defekt","Gefahr – Ladepunkt sperren","Sonstiges"];
-const ROLE_L={technik:"Techniker",fremdfirma:"Servicefirma",elektro:"Elektrofachkraft",reinigung:"Reinigung / Hausmeister",dienstleister:"Dienstleister"};
+// „Wer soll beheben?“ – Rollen mit repair=true kommen vom Server (home.roles)
+let ROLE_L={technik:"Techniker",fremdfirma:"Servicefirma",elektro:"Elektrofachkraft",reinigung:"Reinigung / Hausmeister",dienstleister:"Dienstleister",autohaus:"Autohaus",stadtwerke:"Stadtwerke",vnb:"Verteilnetzbetreiber",security:"Security"};
 /* ── Problem melden: Weiche Störung ↔ Mangel ──
    Störung = hier kann gerade nicht geladen werden (Ausfall, in der Kunden-App sichtbar)
    Mangel  = Laden funktioniert, aber etwas ist nicht in Ordnung (Priorität A/B/C, Fälligkeit) */

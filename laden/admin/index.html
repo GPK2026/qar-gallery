@@ -149,6 +149,10 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 .prio.pA{background:#d03b3b}.prio.pB{background:#eda100}.prio.pC{background:#7a8a83}
 .due-od{color:#b42318;font-weight:700}
 .esc-box{margin-top:14px;border:1px dashed #f3c2bc;background:#fff7f6;border-radius:10px;padding:10px 12px}
+.rgroups{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.rgroup{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fbfcfb}
+.rg-h{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.rg-b{display:flex;flex-direction:column;gap:3px}.rg-b label{display:flex;gap:7px;align-items:center;font-size:13.5px;color:var(--ink);margin:0;font-weight:500}.rg-b input{width:auto}
 .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:14px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .kpi .k{color:var(--muted);font-size:12.5px;font-weight:600}
@@ -260,7 +264,7 @@ async function fapi(action,payload={}){
   const j=await r.json().catch(()=>({}));
   if(r.status===401){ logout(); throw new Error("Bitte neu anmelden"); }
   if(!r.ok) throw new Error(j.error||("Fehler "+r.status));
-  return j;
+  if(j&&j.role_info) setRoleInfo(j.role_info); return j;
 }
 async function api(action,payload={}){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,...payload})});
@@ -796,7 +800,16 @@ function importPreview(text,fname){
 }
 
 /* ---------- Field-Service: Protokolle, Mitarbeiter, Checklisten ---------- */
-const FROLES={technik:"Techniker",fremdfirma:"Servicefirma",reinigung:"Reinigung / Hausmeister",elektro:"Elektrofachkraft",dienstleister:"Dienstleister"};
+/* Rollen – Vorgabe; die aktuelle Liste kommt vom Server (role_info) */
+let ROLE_INFO=[["technik","Techniker",1],["fremdfirma","Servicefirma",1],["elektro","Elektrofachkraft",1],["reinigung","Reinigung / Hausmeister",1],["dienstleister","Dienstleister",1],["autohaus","Autohaus",1],["stadtwerke","Stadtwerke",1],["vnb","Verteilnetzbetreiber",1],
+  ["partner","Partner",2],["standortpartner","Standortpartner",2],["eigentuemer","Standorteigentümer",2],["agentur","Agentur",2],["fotograf","Fotograf",2],["security","Security",2],
+  ["behoerde","Behörde",3],["polizei","Polizei",3],["feuerwehr","Feuerwehr",3],["thw","THW",3],["sanitaeter","Arzt / Sanitäter",3]]
+  .map(([k,l,g])=>({k,l,g:["","Service & Technik","Partner & Standort","Behörden & Einsatzkräfte"][g]}));
+const FROLES={}; ROLE_INFO.forEach(r=>FROLES[r.k]=r.l);
+function setRoleInfo(ri){ if(!Array.isArray(ri)||!ri.length) return; ROLE_INFO=ri; Object.keys(FROLES).forEach(k=>delete FROLES[k]); ri.forEach(r=>FROLES[r.k]=r.l); }
+const roleGroups=()=>{ const g={}; ROLE_INFO.forEach(r=>(g[r.g||"Weitere"]=g[r.g||"Weitere"]||[]).push(r)); return Object.entries(g); };
+// Rollen-Auswahl gruppiert (Checkboxen): cls = CSS-Klasse der Inputs, sel = Array gewählter Schlüssel
+function roleChecks(cls,sel){ return `<div class="rgroups">${roleGroups().map(([g,rs])=>`<div class="rgroup"><div class="rg-h">${esc(g)}</div><div class="rg-b">${rs.map(r=>`<label><input type="checkbox" class="${cls}" value="${esc(r.k)}" ${(sel||[]).includes(r.k)?"checked":""}> ${esc(r.l)}</label>`).join("")}</div></div>`).join("")}</div>`; }
 const FSCOPE={site:"ganzer Standort",charger:"je Charger",connector:"je Ladepunkt"};
 const FTYPES={check:"OK / Mangel",text:"Text",number:"Zahl / Messwert",photo:"Foto",choice:"Auswahl"};
 let FF={tab:"dash",station:"",checklist:"",result:"",q:"",preset:"",from:"",to:""};
@@ -804,7 +817,7 @@ let FCL=[], FSTAFF=[];
 async function fieldView(){
   if(!FF.preset&&!FF.from) setPreset(FF,"30");
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Maintenance</h1><p class="sub" style="margin:0">Techniker, Servicefirmen, Reinigung und Dienstleister melden sich am QR-Code über „Service-Zugang“ mit ihrer PIN an, arbeiten Checklisten ab – Arbeitszeit vor Ort, Anfahrt und Material werden je Einsatz erfasst.</p></div></div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Maintenance</h1><p class="sub" style="margin:0">Service &amp; Technik, Partner &amp; Standort sowie Behörden &amp; Einsatzkräfte melden sich am QR-Code über „Service-Zugang“ mit ihrer PIN an, arbeiten Checklisten ab – Arbeitszeit vor Ort, Anfahrt und Material werden je Einsatz erfasst.</p></div></div>
   <div class="seg" id="ftab" style="margin-bottom:14px">${[["dash","📊 Dashboard"],["reports","Protokolle"],["staff","Mitarbeiter & PINs"],["lists","Checklisten"],["rates","Sätze & Kosten"],["vis","Sichtbarkeit"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
   <div id="fbody"><div class="muted">Lade …</div></div>`;
   document.querySelectorAll("#ftab button").forEach(b=>b.onclick=()=>{ FF.tab=b.dataset.t; document.querySelectorAll("#ftab button").forEach(x=>x.classList.toggle("on",x===b)); fieldTab(); });
@@ -821,7 +834,7 @@ function assignHTML(o){ return `<div class="assign">
   <label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink)"><input type="checkbox" class="a-hidden" style="width:auto" ${o.field_hidden?"checked":""}> Für Field-Service ausblenden (nur intern im Dashboard)</label>
   <div class="a-body" style="${o.field_hidden?"opacity:.4;pointer-events:none":""}">
     <div class="muted" style="font-size:12.5px;margin:8px 0 4px">Sichtbar für Rollen (nichts gewählt = Standard-Einstellung):</div>
-    <div class="row" style="gap:12px">${Object.entries(FROLES).map(([k,l])=>`<label style="display:flex;gap:6px;align-items:center;font-size:13.5px;color:var(--ink)"><input type="checkbox" class="a-role" value="${k}" style="width:auto" ${(o.field_roles||[]).includes(k)?"checked":""}> ${l}</label>`).join("")}</div>
+    ${roleChecks("a-role",o.field_roles)}
     <div class="muted" style="font-size:12.5px;margin:8px 0 4px">… oder gezielt einzelnen Personen zuweisen:</div>
     <div style="max-height:130px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px">${FSTAFF.filter(x=>x.active).map(x=>`<label style="display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--ink);margin:3px 0"><input type="checkbox" class="a-staff" value="${esc(x.id)}" style="width:auto" ${(o.field_staff||[]).includes(x.id)?"checked":""}> ${esc(x.name)} <span class="muted">${esc(x.company||"")} · ${esc(FROLES[x.role])}</span></label>`).join("")||'<span class="muted">Noch keine Mitarbeiter angelegt.</span>'}</div></div></div>`; }
 function readAssign(box){ return { field_hidden:box.querySelector(".a-hidden").checked, field_roles:[...box.querySelectorAll(".a-role:checked")].map(x=>x.value), field_staff:[...box.querySelectorAll(".a-staff:checked")].map(x=>x.value) }; }
@@ -829,7 +842,7 @@ function wireAssign(box){ const h=box.querySelector(".a-hidden"); h.onchange=()=
 let FVIS=null;
 async function fVis(){
   try{ FVIS=await fapi("settings_get"); }catch(e){ return toast(e.message,true); }
-  const row=(key,title,sub)=>`<div class="card"><h2 style="margin-bottom:4px">${title}</h2><p class="sub">${sub}</p><div class="row" style="gap:14px">${Object.entries(FROLES).map(([k,l])=>`<label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="checkbox" class="v-${key}" value="${k}" style="width:auto" ${FVIS[key].includes(k)?"checked":""}> ${l}</label>`).join("")}</div></div>`;
+  const row=(key,title,sub)=>`<div class="card"><h2 style="margin-bottom:4px">${title}</h2><p class="sub">${sub}</p>${roleChecks("v-"+key,FVIS[key])}</div>`;
   $("#fbody").innerHTML=row("incidents","Kundenstörungen – Standard-Sichtbarkeit","Wer im Service-Zugang offene Störungen aus Kundenmeldungen sieht, solange einer Störung nichts Eigenes zugewiesen ist. Pro Störung lässt sich das in der Störungsakte ändern oder ganz ausblenden.")
     +row("defects","Mängel aus Protokollen – Standard-Sichtbarkeit","Wer offene Mängel aus Checklisten sieht und als behoben melden kann. Pro Mangel im Reiter „Mängel“ änderbar.")
     +`<button class="btn" id="vSave">Speichern</button>`;
@@ -1056,7 +1069,8 @@ async function fRates(){
   let s; try{ s=await fapi("settings_get"); FVIS=s; await ensureStaff(); }catch(e){ return toast(e.message,true); }
   const r=s.rates||{};
   $("#fbody").innerHTML=`<div class="card"><h2 style="margin-bottom:4px">Stundensätze je Rolle</h2><p class="sub">Gilt für Arbeits- und Anfahrtszeit, wenn bei der Person kein eigener Satz hinterlegt ist (Reiter „Mitarbeiter & PINs“). Änderungen gelten nur für neue Einsätze – abgeschlossene behalten ihren Satz.</p>
-    <div class="rates">${Object.entries(FROLES).map(([k,l])=>`<label>${esc(l)}<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="rt" data-k="${k}" inputmode="decimal" value="${esc(String(r[k]??"").replace(".",","))}"><span class="muted">€/h</span></div></label>`).join("")}
+    ${roleGroups().map(([g,rs])=>`<div class="rg-h" style="margin-top:12px">${esc(g)}</div><div class="rates">${rs.map(x=>`<label>${esc(x.l)}<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="rt" data-k="${x.k}" inputmode="decimal" value="${esc(String(r[x.k]??"").replace(".",","))}"><span class="muted">€/h</span></div></label>`).join("")}</div>`).join("")}
+    <div class="rg-h" style="margin-top:12px">Fahrtkosten</div><div class="rates">
       <label>Kilometer<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="rt" data-k="km" inputmode="decimal" value="${esc(String(r.km??"").replace(".",","))}"><span class="muted">€/km</span></div></label></div>
     <button class="btn" id="rtSave" style="margin-top:14px">Sätze speichern</button></div>
   <div class="card"><h2 style="margin-bottom:4px">Individuelle Sätze</h2><p class="sub">Personen mit eigenem Satz (z. B. Servicefirma mit Rahmenvertrag):</p>
@@ -1081,7 +1095,7 @@ function staffEd(x,box,isNew){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div><label>Name</label><input class="s-name" value="${esc(x.name||"")}"></div><div><label>Firma</label><input class="s-company" value="${esc(x.company||"")}"></div>
       <div><label>Telefon</label><input class="s-phone" value="${esc(x.phone||"")}"></div><div><label>E-Mail</label><input class="s-email" value="${esc(x.email||"")}"></div>
-      <div><label>Rolle</label><select class="s-role">${Object.entries(FROLES).map(([k,l])=>`<option value="${k}" ${x.role===k?"selected":""}>${l}</option>`).join("")}</select></div>
+      <div><label>Rolle</label><select class="s-role">${roleGroups().map(([g,rs])=>`<optgroup label="${esc(g)}">${rs.map(r=>`<option value="${esc(r.k)}" ${x.role===r.k?"selected":""}>${esc(r.l)}</option>`).join("")}</optgroup>`).join("")}</select></div>
       <div><label>${isNew?"PIN (4–8 Ziffern)":"Neue PIN (leer = unverändert)"}</label><div class="row" style="flex-wrap:nowrap"><input class="s-pin" inputmode="numeric" maxlength="8" placeholder="${isNew?"z. B. 4711":esc(x.pin_hint||"")}"><button class="btn ghost sm s-gen" type="button">Zufall</button></div></div>
       <div><label>Eigener Stundensatz € (leer = Satz der Rolle)</label><input class="s-rate" inputmode="decimal" value="${x.hourly_rate!=null?esc(String(x.hourly_rate).replace(".",",")):""}" placeholder="Rolle: ${esc(String(((FVIS&&FVIS.rates)||{})[x.role]??"–"))} €"></div></div>
     <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--ink)"><input type="checkbox" class="s-active" style="width:auto" ${x.active!==false?"checked":""}> Zugang aktiv</label>
@@ -1128,7 +1142,7 @@ function listEd(c,isNew){
       <div><label>Intervall (Tage, leer = keins)</label><input class="l-int" inputmode="numeric" value="${esc(c.interval_days||"")}"></div>
       <div><label>Reihenfolge</label><input class="l-sort" inputmode="numeric" value="${esc(c.sort??100)}"></div></div>
     <label style="margin-top:8px">Beschreibung (sieht der Mitarbeiter)</label><input class="l-desc" value="${esc(c.description||"")}">
-    <label style="margin-top:10px">Sichtbar für</label><div class="row" style="gap:14px">${Object.entries(FROLES).map(([k,l])=>`<label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="checkbox" class="l-role" value="${k}" style="width:auto" ${c.roles.includes(k)?"checked":""}> ${l}</label>`).join("")}</div>
+    <label style="margin-top:10px">Sichtbar für</label>${roleChecks("l-role",c.roles)}
     <label style="margin-top:12px">Gilt für Projekte</label>
     <div class="row" style="gap:16px;margin-bottom:6px"><label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="radio" name="lall" class="l-all" value="all" style="width:auto" ${c.all_stations!==false?"checked":""}> Alle Projekte – auch neu angelegte</label>
       <label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="radio" name="lall" class="l-all" value="sel" style="width:auto" ${c.all_stations===false?"checked":""}> Nur ausgewählte Projekte</label></div>
