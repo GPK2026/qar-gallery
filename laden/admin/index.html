@@ -153,6 +153,21 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 .rgroup{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fbfcfb}
 .rg-h{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .rg-b{display:flex;flex-direction:column;gap:3px}.rg-b label{display:flex;gap:7px;align-items:center;font-size:13.5px;color:var(--ink);margin:0;font-weight:500}.rg-b input{width:auto}
+.tm-g{padding:0;overflow:hidden}.tm-gh{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:12px 16px;font-size:15px;cursor:pointer;text-align:left;flex-wrap:wrap}.tm-gh .chev{color:var(--muted)}.tm-gb{display:none;border-top:1px solid var(--line)}.tm-g.open .tm-gb{display:block}
+.tm-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line);cursor:pointer;border-left:4px solid transparent}.tm-row:hover{background:#f6faf8}.tm-row:last-child{border-bottom:0}
+.tm-row.t-ap{border-left-color:#2f6fed}.tm-row.t-cl{border-left-color:#0a8f5a}.tm-row.t-mg{border-left-color:#c26a00}.tm-row.done{opacity:.55}
+.tm-d{width:92px;display:flex;flex-direction:column;font-size:13.5px}.tm-i{font-size:18px}.tm-m{flex:1;min-width:0}.tm-s{white-space:nowrap}
+#calDay .tm-row,#tmBody .card>.tm-row{padding:8px 4px}
+#tmTy .chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}#tmTy .chip.t-ap.on{background:#2f6fed;border-color:#2f6fed;color:#fff}#tmTy .chip.t-cl.on{background:#0a8f5a;border-color:#0a8f5a;color:#fff}#tmTy .chip.t-mg.on{background:#c26a00;border-color:#c26a00;color:#fff}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}.cal-h{font-size:12px;font-weight:700;color:var(--muted);padding:6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#f6f8f7}
+.cal-c{min-height:104px;padding:4px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}.cal-c:hover{background:#f8fbf9}.cal-c.out{background:#fafbfa}.cal-c.out .cal-n span{color:#b9c2be}.cal-c.we{background:#fcfcfb}
+.cal-n{display:flex;align-items:center;font-size:12.5px;font-weight:700;color:var(--muted)}.cal-n span{padding:1px 6px;border-radius:999px}.cal-c.today .cal-n span{background:var(--brand);color:#fff}
+.cal-add{margin-left:auto;border:0;background:none;color:var(--muted);font-size:16px;line-height:1;cursor:pointer;opacity:0}.cal-c:hover .cal-add{opacity:1}
+.cal-it{display:block;width:100%;text-align:left;border:0;border-left:3px solid #999;border-radius:5px;padding:2px 5px;font-size:11.5px;background:#eef1ef;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;color:var(--ink)}
+.cal-it.t-ap{border-left-color:#2f6fed;background:#e8efff}.cal-it.t-cl{border-left-color:#0a8f5a;background:#e3f4ec}.cal-it.t-mg{border-left-color:#c26a00;background:#fff0dc}
+.cal-it.d-soon{box-shadow:inset 0 0 0 1px #f0a64a}.cal-it.d-urgent{background:#fde0de}.cal-it.d-over{background:#d03b3b;color:#fff}.cal-it.planned{opacity:.7;font-style:italic}.cal-it.done{opacity:.5;text-decoration:line-through}
+.cal-more{border:0;background:none;color:var(--muted);font-size:11.5px;text-align:left;cursor:pointer;padding:0 4px}
+@media(max-width:700px){.cal-c{min-height:70px}.cal-it{font-size:0;padding:3px;height:8px}.tm-d{width:70px}}
 .dtag{display:inline-block;border-radius:999px;padding:1px 8px;font-weight:700;font-size:12px;white-space:nowrap}
 .d-over{background:#d03b3b;color:#fff}.d-urgent{background:#fde0de;color:#b42318}.d-soon{background:#ffe6c7;color:#9a5300}.d-ok{background:#eef1ef;color:#5d6b65}
 .due-box{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fbfcfb}
@@ -246,7 +261,7 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 <body>
 <header><div class="in">
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="defects">Mängel</button><button data-v="field">Maintenance</button><button data-v="customers">Kontakte</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="settings">Einstellungen</button></nav>
+  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="defects">Mängel</button><button data-v="termine">Termine</button><button data-v="field">Maintenance</button><button data-v="customers">Kontakte</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="settings">Einstellungen</button></nav>
   <div class="sp"></div>
   <form id="gsF" class="hidden" autocomplete="off"><input id="gs" type="search" placeholder="🔎 Alles durchsuchen …" title="Volltextsuche: Vorgangsnummer, E-Mail, Telefon, Ladekarte, EVSE-ID, Chat, Beschreibung, Notizen …"></form>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
@@ -283,7 +298,7 @@ async function api(action,payload={}){
 function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#logout").classList.add("hidden"); loginView(); }
 $("#logout").onclick=logout;
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>go(b.dataset.v));
-function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,tickets:ticketsView,settings:settingsView})[v](); }
+function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,termine:termineView,tickets:ticketsView,settings:settingsView})[v](); }
 
 /* ---------- Login ---------- */
 function loginView(){
@@ -362,7 +377,7 @@ function renderEditor(){
   ${!isNew?`<div class="card"><h2>Projekt entfernen</h2><p class="sub">Hat das Projekt schon QR-Code-Aufrufe, wird es nur deaktiviert (Protokolle bleiben erhalten).</p><button class="btn warn" id="del">Projekt löschen / deaktivieren</button></div>`:""}`;
   $("#back").onclick=projectsView;
   $("#save").onclick=save;
-  const tgl=()=>{ CH_OPEN=!CH_OPEN; try{ localStorage.setItem("hc_ch",CH_OPEN?"1":"0"); }catch(e){} $("#chCard").classList.toggle("ch-closed",!CH_OPEN); $("#chFold").textContent=CH_OPEN?"▾":"▸"; };
+  const tgl=()=>{ CH_OPEN=!CH_OPEN; $("#chCard").classList.toggle("ch-closed",!CH_OPEN); $("#chFold").textContent=CH_OPEN?"▾":"▸"; };
   $("#chFold").onclick=tgl; $("#chFold2").onclick=tgl;
   $("#chAll").onclick=()=>{ collect(); const v=!E.chargers.every(chFolded); E.chargers.forEach(c=>setFold(c,v)); renderEditor(); };
   $("#addCh").onclick=()=>{ collect(); E.chargers.forEach(c=>setFold(c,true)); CH_OPEN=true; const n=E.chargers.length+1; E.chargers.push({label:"LS#"+n,model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}); setFold(E.chargers[E.chargers.length-1],false); renderEditor(); };
@@ -381,8 +396,8 @@ function wireImage(){
   $("#imgDel").onclick=async()=>{ try{ await api("delete_image",{id:E.original_id}); $("#stImg").style.display="none"; $("#noImg").style.display="flex"; toast("Bild entfernt"); }catch(e){ toast(e.message,true); } };
 }
 /* Klappbar: ganze Karte (gemerkt) und jeder Charger einzeln (Zustand nicht gespeichert) */
-let CH_OPEN=(()=>{ try{ return localStorage.getItem("hc_ch")!=="0"; }catch(e){ return true; } })();
-const chFolded=c=>c.__fold===undefined?(E&&E.chargers&&E.chargers.length>3):c.__fold;
+let CH_OPEN=false;
+const chFolded=c=>c.__fold===undefined?true:c.__fold;
 const setFold=(c,v)=>Object.defineProperty(c,"__fold",{value:v,writable:true,configurable:true,enumerable:false});
 function chargerHTML(c,i){
   const f=chFolded(c), kinds=[...new Set(c.connectors.map(x=>x.t+(x.kw?" "+x.kw+" kW":"")))].join(" · "), ev=c.connectors.filter(x=>x.evse).length;
@@ -980,7 +995,7 @@ const eur=n=>(+n||0).toLocaleString("de-DE",{style:"currency",currency:"EUR",max
 const hmin=m=>{ m=Math.round(+m||0); return m<60?m+" Min.":Math.floor(m/60)+":"+String(m%60).padStart(2,"0")+" h"; };
 const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 const median=a=>{ if(!a.length) return null; const s=[...a].sort((x,y)=>x-y), m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; };
-let MD_HOW=(()=>{ try{ return localStorage.getItem("hc_md_how")!=="0"; }catch(e){ return true; } })();
+let MD_HOW=false;
 async function fDash(){
   $("#fbody").innerHTML=`<div class="card" style="padding:12px 14px"><div class="row">
     <select id="mdSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${FF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select>
@@ -996,7 +1011,7 @@ async function fDash(){
       <div><b>⚠ Mängelquote · Fällige Prüfungen</b>Anteil der Protokolle mit mindestens einem Mangel · Checklisten mit Intervall, die am Standort überfällig oder noch nie gemacht sind.</div>
     </div></details>
   <div id="mdBody"><div class="muted">Lade …</div></div>`;
-  $("#mdHow").addEventListener("toggle",()=>{ MD_HOW=$("#mdHow").open; try{ localStorage.setItem("hc_md_how",MD_HOW?"1":"0"); }catch(e){} });
+  $("#mdHow").addEventListener("toggle",()=>{ MD_HOW=$("#mdHow").open; });
   $("#mdSt").onchange=()=>{ FF.station=$("#mdSt").value; loadDash(); };
   $("#mdRates").onclick=()=>{ FF.tab="rates"; document.querySelectorAll("#ftab button").forEach(x=>x.classList.toggle("on",x.dataset.t==="rates")); fieldTab(); };
   wireDates(FF,"md",loadDash); loadDash();
@@ -1221,6 +1236,125 @@ function listEd(c,isNew){
   draw();
 }
 
+/* ---------- Termine: alles mit Datum in der Zukunft (Checklisten-Fälligkeiten, Mängel-Fristen, eigene Termine) ---------- */
+let TM={mode:"list",station:"",types:{termin:true,checkliste:true,mangel:true},ahead:"90",month:null,open:{},data:null};
+const TM_T={termin:["📅","Termin","t-ap"],checkliste:["📋","Checkliste","t-cl"],mangel:["🛠","Mangel","t-mg"]};
+let TM_KINDS={termin:"Termin",wartung:"Wartung",pruefung:"Prüfung",begehung:"Begehung",reinigung:"Reinigung",foto:"Fotoshooting",behoerde:"Behördentermin",lieferung:"Lieferung / Montage",sonstiges:"Sonstiges"};
+const tmTime=it=>it.type==="termin"&&!it.all_day?new Date(it.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+(it.ends_at?"–"+new Date(it.ends_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):""):"";
+const tmWho=it=>{ const s=(it.assign_staff||[]).map(id=>(FSTAFF.find(x=>x.id===id)||{}).name).filter(Boolean), c=it.assign_companies||[];
+  if(it.type==="checkliste") return (it.roles||[]).map(r=>FROLES[r]||r).join(", ");
+  return [...c.map(x=>"🏢 "+x),...s.map(x=>"👤 "+x)].join(", ")||(it.type==="termin"?"alle":""); };
+const tmDayKey=iso=>isoD(iso);
+async function termineView(){
+  if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
+  if(!TM.month){ const d=new Date(); TM.month=new Date(d.getFullYear(),d.getMonth(),1); }
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Termine</h1><p class="sub" style="margin:0">Alles, was mit Datum geplant ist: eigene <b>Termine</b> (Begehung, Prüfung, Fotoshooting …), fällige <b>Checklisten</b> (Intervall oder festes Datum, inkl. geplanter Wiederholungen) und <b>Mängel</b>-Fristen. Farben: <span class="dtag d-soon">Erinnerung</span> <span class="dtag d-urgent">dringend</span> <span class="dtag d-over">überfällig</span></p></div><div class="sp"></div><button class="btn" id="tmNew">+ Termin</button></div>
+  <div class="card" style="padding:12px 14px"><div class="row"><div class="seg" id="tmMode"><button data-m="list" class="${TM.mode==="list"?"on":""}">☰ Liste</button><button data-m="cal" class="${TM.mode==="cal"?"on":""}">▦ Kalender</button></div>
+    <select id="tmSt" style="width:auto"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${TM.station===s.id?"selected":""}>${esc(s.project_id||s.id)}</option>`).join("")}</select>
+    <div class="row" style="gap:6px" id="tmTy">${Object.entries(TM_T).map(([k,[i,l,c]])=>`<button type="button" class="chip ${TM.types[k]?"on":""} ${c}" data-t="${k}">${i} ${l}</button>`).join("")}</div>
+    ${TM.mode==="list"?`<div class="seg" id="tmAh">${[["30","30 T."],["90","90 T."],["180","6 Mon."],["365","1 Jahr"]].map(([k,l])=>`<button data-a="${k}" class="${TM.ahead===k?"on":""}">${l}</button>`).join("")}</div>`:""}</div></div>
+  <div id="tmEd"></div><div id="tmBody"><div class="card muted">Lade …</div></div>`;
+  document.querySelectorAll("#tmMode button").forEach(b=>b.onclick=()=>{ TM.mode=b.dataset.m; termineView(); });
+  document.querySelectorAll("#tmTy button").forEach(b=>b.onclick=()=>{ TM.types[b.dataset.t]=!TM.types[b.dataset.t]; b.classList.toggle("on"); tmRender(); });
+  document.querySelectorAll("#tmAh button").forEach(b=>b.onclick=()=>{ TM.ahead=b.dataset.a; termineView(); });
+  $("#tmSt").onchange=()=>{ TM.station=$("#tmSt").value; tmLoad(); };
+  $("#tmNew").onclick=()=>tmEdit(null);
+  tmLoad();
+}
+function tmRange(){ if(TM.mode==="cal"){ const m=TM.month, first=new Date(m.getFullYear(),m.getMonth(),1), off=(first.getDay()+6)%7, start=new Date(first); start.setDate(1-off); const end=new Date(start); end.setDate(start.getDate()+41); return [isoD(start),isoD(end),start]; }
+  return [isoD(Date.now()-30*864e5),isoD(Date.now()+(+TM.ahead)*864e5)]; }
+async function tmLoad(){ const [from,to]=tmRange(); await ensureStaff();
+  try{ const r=await fapi("schedule",{from,to,station:TM.station}); if(r.kinds) TM_KINDS=r.kinds; TM.data=r; tmRender(); }catch(e){ const b=$("#tmBody"); if(b) b.innerHTML=`<div class="card" style="color:#b42318">${esc(e.message)}</div>`; } }
+const tmItems=()=>((TM.data&&TM.data.items)||[]).filter(it=>TM.types[it.type]);
+function tmChip(it,small){ const [ic,,c]=TM_T[it.type], di=it.type==="termin"&&it.done?null:dueInfo(it.at,it.remind,it.urgent), st=stOf(it.station_id);
+  const lbl=it.type==="termin"?(TM_KINDS[it.kind]||"Termin"):it.type==="mangel"?"Prio "+(it.priority||"B"):(it.planned?"geplant":"fällig");
+  if(small) return `<button type="button" class="cal-it ${c} ${di&&di.d<=it.remind?di.cls:""} ${it.done?"done":""} ${it.planned?"planned":""}" data-k="${esc(tmKey(it))}" title="${esc(it.title+" · "+(st?st.project_id||st.id:""))}">${ic} ${tmTime(it)?`<b>${tmTime(it).slice(0,5)}</b> `:""}${esc(it.title)}</button>`;
+  return `<div class="tm-row ${c} ${it.done?"done":""}" data-k="${esc(tmKey(it))}"><div class="tm-d"><b>${new Date(it.at).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</b><small class="muted">${tmTime(it)||(it.type==="termin"&&it.all_day?"ganztägig":"")}</small></div>
+    <div class="tm-i">${ic}</div><div class="tm-m"><b>${esc(it.title)}</b> <span class="badge ${it.type==="mangel"&&it.priority==="A"?"warn":"amber"}">${esc(lbl)}</span>${it.done?' <span class="badge">erledigt</span>':""}
+    <br><small class="muted">${esc(st?(st.project_id||st.id):"ohne Projekt")}${it.defect_no?" · "+esc(it.defect_no):""}${tmWho(it)?" · "+esc(tmWho(it)):""}${it.fixed?" · fester Termin":it.planned?" · Wiederholung (Intervall)":""}</small></div>
+    <div class="tm-s">${di?`<span class="dtag ${di.cls}">${di.txt}</span>`:""}</div></div>`; }
+const tmKey=it=>it.type+"|"+(it.id||"")+"|"+(it.station_id||"")+"|"+it.at;
+function tmRender(){ const box=$("#tmBody"); if(!box||!TM.data) return; const L=tmItems();
+  if(TM.mode==="cal") return tmCal(box,L);
+  const now=Date.now(), over=L.filter(it=>!(it.type==="termin"&&it.done)&&dueInfo(it.at).d<0), rest=L.filter(it=>!over.includes(it)&&dueInfo(it.at).d>=0);
+  const groups=[]; if(over.length) groups.push(["over","⏰ Überfällig",over]);
+  const byM={}; rest.forEach(it=>{ const k=it.at.slice(0,7); (byM[k]=byM[k]||[]).push(it); });
+  Object.keys(byM).sort().forEach(k=>groups.push([k,new Date(k+"-15").toLocaleDateString("de-DE",{month:"long",year:"numeric"}),byM[k]]));
+  const cnt=(l,cls)=>l.filter(it=>{ const d=dueInfo(it.at,it.remind,it.urgent); return d&&d.cls===cls&&!(it.type==="termin"&&it.done); }).length;
+  const ap=L.filter(it=>it.type==="termin"&&!it.done&&+new Date(it.at)>=now), nx=ap[0];
+  box.innerHTML=`<div class="isum"><div class="isum-t ${over.length?"open":""}"><div class="k">⏰ Überfällig</div><div class="v">${over.length}</div></div>
+    <div class="isum-t"><div class="k">Nächste 14 Tage</div><div class="v">${rest.filter(it=>+new Date(it.at)<now+14*864e5).length}</div><div class="s">${cnt(rest,"d-urgent")} dringend</div></div>
+    <div class="isum-t"><div class="k">📅 Eigene Termine</div><div class="v">${ap.length}</div><div class="s">${nx?"nächster "+d2(nx.at):"keine geplant"}</div></div>
+    <div class="isum-t"><div class="k">Im Zeitraum gesamt</div><div class="v">${L.length}</div></div></div>
+    ${groups.length?groups.map(([k,t,l])=>{ const o=!!TM.open[k]; return `<div class="card tm-g ${o?"open":""}" data-g="${esc(k)}"><button type="button" class="tm-gh"><span class="chev">${o?"▾":"▸"}</span><b>${esc(t)}</b><span class="muted">${l.length} Eintr${l.length>1?"äge":"ag"}</span><span class="sp"></span>
+      ${cnt(l,"d-over")?`<span class="dtag d-over">${cnt(l,"d-over")} überfällig</span>`:""}${cnt(l,"d-urgent")?`<span class="dtag d-urgent">${cnt(l,"d-urgent")} dringend</span>`:""}${cnt(l,"d-soon")?`<span class="dtag d-soon">${cnt(l,"d-soon")} Erinnerung</span>`:""}</button>
+      <div class="tm-gb">${l.map(it=>tmChip(it)).join("")}</div></div>`; }).join(""):`<div class="card muted">Keine Einträge im Zeitraum.</div>`}`;
+  box.querySelectorAll(".tm-gh").forEach(h=>h.onclick=()=>{ const g=h.parentElement, o=!g.classList.contains("open"); g.classList.toggle("open",o); h.querySelector(".chev").textContent=o?"▾":"▸"; TM.open[g.dataset.g]=o; });
+  tmWire(box,L); }
+function tmCal(box,L){ const [,,start]=tmRange(), m=TM.month, today=isoD(Date.now()), by={};
+  L.forEach(it=>{ const k=tmDayKey(it.at); (by[k]=by[k]||[]).push(it); });
+  let cells=""; for(let i=0;i<42;i++){ const d=new Date(start); d.setDate(start.getDate()+i); const k=isoD(d), l=by[k]||[], out=d.getMonth()!==m.getMonth();
+    cells+=`<div class="cal-c ${out?"out":""} ${k===today?"today":""} ${(d.getDay()+6)%7>4?"we":""}" data-d="${k}"><div class="cal-n"><span>${d.getDate()}</span><button type="button" class="cal-add" data-d="${k}" title="Termin an diesem Tag">+</button></div>
+      ${l.slice(0,4).map(it=>tmChip(it,true)).join("")}${l.length>4?`<button type="button" class="cal-more" data-d="${k}">+${l.length-4} weitere</button>`:""}</div>`; }
+  box.innerHTML=`<div class="card" style="padding:12px"><div class="row" style="margin-bottom:10px"><button class="btn ghost sm" id="calP">‹</button><h2 style="margin:0;min-width:180px;text-align:center">${m.toLocaleDateString("de-DE",{month:"long",year:"numeric"})}</h2><button class="btn ghost sm" id="calN">›</button><button class="btn ghost sm" id="calT">Heute</button><span class="sp"></span><span class="muted" style="font-size:12px">Tag anklicken = Liste · „+“ = neuer Termin</span></div>
+    <div class="cal"><div class="cal-h">Mo</div><div class="cal-h">Di</div><div class="cal-h">Mi</div><div class="cal-h">Do</div><div class="cal-h">Fr</div><div class="cal-h">Sa</div><div class="cal-h">So</div>${cells}</div></div><div id="calDay"></div>`;
+  const mv=n=>{ TM.month=new Date(m.getFullYear(),m.getMonth()+n,1); termineView(); };
+  $("#calP").onclick=()=>mv(-1); $("#calN").onclick=()=>mv(1); $("#calT").onclick=()=>{ TM.month=null; termineView(); };
+  box.querySelectorAll(".cal-add").forEach(b=>b.onclick=e=>{ e.stopPropagation(); tmEdit(null,b.dataset.d); });
+  const day=k=>{ const l=by[k]||[]; $("#calDay").innerHTML=`<div class="card"><div class="row" style="margin-bottom:8px"><h2 style="margin:0">${new Date(k+"T12:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"long"})}</h2><span class="sp"></span><button class="btn ghost sm" id="cdAdd">+ Termin</button></div>${l.map(it=>tmChip(it)).join("")||'<p class="muted">Nichts geplant.</p>'}</div>`;
+    $("#cdAdd").onclick=()=>tmEdit(null,k); tmWire($("#calDay"),L); };
+  box.querySelectorAll(".cal-c").forEach(c=>c.onclick=e=>{ if(e.target.closest(".cal-it")) return; day(c.dataset.d); });
+  tmWire(box,L); }
+function tmWire(root,L){ root.querySelectorAll("[data-k]").forEach(el=>el.onclick=e=>{ e.stopPropagation(); const it=L.find(x=>tmKey(x)===el.dataset.k); if(!it) return;
+  if(it.type==="termin") return tmEdit(it);
+  const st=stOf(it.station_id);
+  $("#tmEd").innerHTML=`<div class="card"><div class="row"><h2 style="margin:0">${TM_T[it.type][0]} ${esc(it.title)}</h2><span class="sp"></span><button class="btn ghost sm" id="tmX">✕</button></div>
+    <p>${esc(st?(st.project_id||st.id)+(st.address?" – "+st.address:""):"")}</p><p>Fällig: ${dueTag(it.at,it.remind,it.urgent)}${it.planned?' <span class="muted">· geplante Wiederholung aus dem Intervall</span>':""}${it.last?` <span class="muted">· zuletzt erledigt ${d2(it.last)}</span>`:""}</p>
+    ${it.type==="checkliste"?`<p class="muted">Durchführung: ${esc(tmWho(it))}. Termin und Erinnerung werden in der Checkliste eingestellt.</p><button class="btn ghost sm" id="tmGo">Checkliste öffnen</button>`:`<p class="muted">${esc(PRIO_L[it.priority||"B"]||"")} · ${esc(SRC_L[it.source]||"")}</p><button class="btn ghost sm" id="tmGo">Zu den Mängeln</button>`}</div>`;
+  $("#tmX").onclick=()=>$("#tmEd").innerHTML="";
+  $("#tmGo").onclick=()=>{ if(it.type==="checkliste"){ FF.tab="lists"; go("field"); } else { FD.station=it.station_id; FD.status="open"; go("defects"); } };
+  $("#tmEd").scrollIntoView({behavior:"smooth",block:"start"}); }); }
+function tmEdit(it,dayK){ const a=it?{...it,assign_staff:[...(it.assign_staff||[])],assign_companies:[...(it.assign_companies||[])]}:{title:"",kind:"termin",station_id:TM.station||"",all_day:false,assign_staff:[],assign_companies:[],note:"",done:false,starts_at:null};
+  const sd=a.starts_at?new Date(a.starts_at):dayK?new Date(dayK+"T09:00"):new Date(Date.now()+864e5), ed=a.ends_at?new Date(a.ends_at):null;
+  const hm=d=>d?d.toTimeString().slice(0,5):"";
+  const draw=()=>{ $("#tmEd").innerHTML=`<div class="card"><div class="row" style="margin-bottom:8px"><h2 style="margin:0">${it?"Termin bearbeiten":"Neuer Termin"}</h2><span class="sp"></span><button class="btn ghost sm" id="tmX">✕</button></div>
+    <div class="grid2"><div><label>Titel</label><input class="a-title" value="${esc(a.title)}" placeholder="z. B. Begehung mit Eigentümer"></div>
+      <div><label>Art</label><select class="a-kind">${Object.entries(TM_KINDS).map(([k,l])=>`<option value="${k}" ${a.kind===k?"selected":""}>${esc(l)}</option>`).join("")}</select></div>
+      <div><label>Datum</label><input type="date" class="a-date" value="${isoD(sd)}"></div>
+      <div><label>Uhrzeit</label><div class="row" style="gap:6px"><input type="time" class="a-from" value="${hm(a.starts_at||dayK?sd:null)||"09:00"}" style="width:auto" ${a.all_day?"disabled":""}> – <input type="time" class="a-to" value="${hm(ed)}" style="width:auto" ${a.all_day?"disabled":""}>
+        <label style="display:flex;gap:6px;align-items:center;margin:0;font-size:14px;color:var(--ink)"><input type="checkbox" class="a-all" style="width:auto" ${a.all_day?"checked":""}> ganztägig</label></div></div>
+      <div><label>Projekt</label><select class="a-st"><option value="">– ohne Projekt –</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${a.station_id===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select></div>
+      <div><label>Zuständig (Firma / Person aus Kontakten & Mitarbeitern)</label><div class="asg"><div class="asg-chips">${a.assign_companies.map((c,i)=>`<span class="chip-c">🏢 ${esc(c)} <a href="#" data-rmc="${i}">×</a></span>`).join("")}${a.assign_staff.map((s,i)=>`<span class="chip-c">👤 ${esc((FSTAFF.find(x=>x.id===s)||{}).name||"?")} <a href="#" data-rms="${i}">×</a></span>`).join("")}${!a.assign_companies.length&&!a.assign_staff.length?'<span class="muted" style="font-size:13px">niemand zugeordnet – im Service-Zugang für alle sichtbar</span>':""}</div>
+        <input class="asg-q" placeholder="Firma oder Person suchen …"><div class="asg-res"></div></div></div></div>
+    <label>Notiz</label><textarea class="a-note" rows="2">${esc(a.note||"")}</textarea>
+    ${it?`<label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--ink)"><input type="checkbox" class="a-done" style="width:auto" ${a.done?"checked":""}> erledigt</label>`:""}
+    <p class="hint">Erinnerung per Mail ${REM.remind} und ${REM.urgent} Tage sowie 1 Tag vorher (an die Projekt-Adresse). Zugeordnete Mitarbeiter sehen den Termin im Service-Zugang.</p>
+    <div class="row"><button class="btn" id="aSave">Speichern</button>${it?`<button class="btn warn sm" id="aDel">Löschen</button>`:""}</div></div>`;
+    const E=$("#tmEd"), q=s=>E.querySelector(s);
+    const collect=()=>{ a.title=q(".a-title").value; a.kind=q(".a-kind").value; a.station_id=q(".a-st").value; a.note=q(".a-note").value; a.all_day=q(".a-all").checked; if(q(".a-done")) a.done=q(".a-done").checked;
+      const d=q(".a-date").value, f=a.all_day?"00:00":(q(".a-from").value||"09:00"), t=a.all_day?"":q(".a-to").value; a.starts_at=d?new Date(d+"T"+f).toISOString():null; a.ends_at=d&&t?new Date(d+"T"+t).toISOString():null; };
+    $("#tmX").onclick=()=>E.innerHTML="";
+    q(".a-all").onchange=()=>{ q(".a-from").disabled=q(".a-to").disabled=q(".a-all").checked; };
+    E.querySelectorAll("[data-rmc]").forEach(x=>x.onclick=e=>{ e.preventDefault(); collect(); a.assign_companies.splice(+x.dataset.rmc,1); draw(); });
+    E.querySelectorAll("[data-rms]").forEach(x=>x.onclick=e=>{ e.preventDefault(); collect(); a.assign_staff.splice(+x.dataset.rms,1); draw(); });
+    let h; const aq=q(".asg-q"), ar=q(".asg-res");
+    aq.oninput=()=>{ clearTimeout(h); h=setTimeout(async()=>{ const t=aq.value.trim().toLowerCase(); if(t.length<2){ ar.innerHTML=""; return; }
+      const crm=await contactSearch(t), comps=[...new Set([...crm.map(k=>k.company),...FSTAFF.map(x=>x.company)].filter(x=>x&&x.toLowerCase().includes(t)))].slice(0,8);
+      const staff=FSTAFF.filter(x=>[x.name,x.company,x.email].join(" ").toLowerCase().includes(t)).slice(0,8);
+      const linked=new Set(FSTAFF.map(x=>x.contact_id).filter(Boolean)), crmOnly=crm.filter(k=>!linked.has(k.id)&&k.name).slice(0,5);
+      ar.innerHTML=[...comps.map(n=>`<button type="button" class="asg-r" data-c="${esc(n)}">🏢 <b>${esc(n)}</b> <span class="muted">Firma</span></button>`),
+        ...staff.map(x=>`<button type="button" class="asg-r" data-s="${esc(x.id)}">👤 <b>${esc(x.name)}</b> <span class="muted">${esc(x.company||"")} · ${esc(FROLES[x.role]||x.role)}</span></button>`),
+        ...crmOnly.map(k=>`<button type="button" class="asg-r" data-ct="${esc(k.id)}" data-cn="${esc(k.company||k.name)}">📇 ${esc(k.name)}${k.company?" · "+esc(k.company):""} <span class="muted">Kontakt – als ${k.company?"Firma":"Name"} eintragen</span></button>`)].join("")||'<div class="muted" style="padding:6px">Nichts gefunden.</div>';
+      ar.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{ collect(); a.assign_companies=[...new Set([...a.assign_companies,b.dataset.c])]; draw(); });
+      ar.querySelectorAll("[data-ct]").forEach(b=>b.onclick=()=>{ collect(); a.contact_id=b.dataset.ct; a.assign_companies=[...new Set([...a.assign_companies,b.dataset.cn])]; draw(); });
+      ar.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{ collect(); a.assign_staff=[...new Set([...a.assign_staff,b.dataset.s])]; draw(); }); },250); };
+    $("#aSave").onclick=async()=>{ collect(); if(!a.title.trim()) return toast("Bitte einen Titel eingeben",true); if(!a.starts_at) return toast("Bitte ein Datum wählen",true);
+      try{ await fapi("appt_save",{appointment:{id:it&&it.id,title:a.title,kind:a.kind,starts_at:a.starts_at,ends_at:a.ends_at,all_day:a.all_day,station_id:a.station_id||null,assign_staff:a.assign_staff,assign_companies:a.assign_companies,contact_id:a.contact_id||null,note:a.note,done:a.done}});
+        toast("Termin gespeichert ✓"); E.innerHTML=""; tmLoad(); }catch(e){ toast(e.message,true); } };
+    if($("#aDel")) $("#aDel").onclick=async()=>{ if(!confirm(`Termin „${a.title}“ löschen?`)) return; try{ await fapi("appt_delete",{id:it.id}); toast("Gelöscht"); E.innerHTML=""; tmLoad(); }catch(e){ toast(e.message,true); } };
+    E.scrollIntoView({behavior:"smooth",block:"start"}); q(".a-title").focus(); };
+  draw(); }
+
 /* ---------- Zeitraum-Auswahl (wiederverwendbar) ---------- */
 const isoD=d=>{ const x=new Date(d); return new Date(x.getTime()-x.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
 const PRESETS=[["1","Heute"],["7","7 Tage"],["30","30 Tage"],["90","90 Tage"],["all","Alle"]];
@@ -1299,7 +1433,7 @@ function drawHeat(){
     <div class="legend" style="margin-top:8px"><span>weniger</span>${[0,.25,.5,.75,1].map(t=>`<b style="background:${t?`rgba(42,120,214,${(0.15+0.85*t).toFixed(2)})`:"#f0f3f1"};width:18px"></b>`).join("")}<span>mehr</span><span style="margin-left:12px">Balken unten = Summe je Stunde</span></div>`;
   box.querySelectorAll("#heatSeg button").forEach(b=>b.onclick=()=>{ HEAT_MODE=b.dataset.m; drawHeat(); });
 }
-let OF={preset:"30",station:""}; const OV_OPEN={}; let OV_REQ=0; let AV_OPEN=true; try{ AV_OPEN=localStorage.getItem("hc_av")!=="0"; }catch(e){} setPreset(OF,"30");
+let OF={preset:"30",station:""}; const OV_OPEN={}; let OV_REQ=0; let AV_OPEN=false; setPreset(OF,"30");
 const OUTC=[["solved","Selbst gelöst","#2a78d6"],["ticket","Störung gemeldet","#eb6834"],["hotline","Hotline","#1baf7a"],["chat","Chat","#eda100"],["open","Ohne Ergebnis","#b9beba"]];
 async function overviewView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
@@ -1354,7 +1488,7 @@ async function loadOverview(){
       <span class="muted" style="font-size:13px">Ø ${pctTxt(avail)} · ${cpN} Ladepunkte</span><div class="sp"></div><button class="btn ghost sm av-body" id="avAll" type="button">Alle auf / zu</button></div>
       <div class="av-body">
       <div class="legend"><span><b style="background:#d5eed5;border:1px solid #0ca30c"></b>✓ verfügbar</span><span><b style="background:#d03b3b"></b>⚠ Störung gemeldet (bis „erledigt“)</span><span>Quelle: Kundenmeldungen, keine Live-Daten der Säule</span></div>
-      ${rows.map(({st,list})=>{ const pd=list.reduce((a,x)=>a+x.down,0), pp=list.length?100*(1-pd/(span*list.length)):100, bad=list.filter(x=>x.segs.length).length, open=OV_OPEN[st.id]!==undefined?OV_OPEN[st.id]:(bad>0||rows.length===1);
+      ${rows.map(({st,list})=>{ const pd=list.reduce((a,x)=>a+x.down,0), pp=list.length?100*(1-pd/(span*list.length)):100, bad=list.filter(x=>x.segs.length).length, open=OV_OPEN[st.id]!==undefined?OV_OPEN[st.id]:false;
         return `<div class="proj-block ${open?"open":""}" data-st="${esc(st.id)}"><button class="proj-h" type="button"><span class="chev">${open?"▾":"▸"}</span><b>${esc(st.project_id||st.id)}</b>${st.name?` <span class="muted" style="font-weight:500">· ${esc(st.name)}</span>`:""}
           <span class="sp"></span><span class="muted" style="font-weight:500">${list.length} Ladepunkte · ${bad?`<span style="color:#b42318">⚠ ${bad} mit Störung</span>`:"✓ keine Störung"}</span>
           <div class="up-bar mini" data-tip="${esc(st.project_id||st.id)}: ${pctTxt(pp)} verfügbar">${list.flatMap(x=>x.segs).map(s=>`<i style="left:${(s.a-F)/span*100}%;width:${(s.b-s.a)/span*100}%;opacity:.55"></i>`).join("")}</div>
@@ -1385,7 +1519,7 @@ async function loadOverview(){
       Object.assign(IF,{q:"",station:OF.station,filter:g==="open"?"open":g==="done"?"erledigt":"all",preset:g==="open"?"all":OF.preset,from:g==="open"?"":OF.from,to:g==="open"?"":OF.to}); go("incidents"); });
     (async()=>{ try{ const r=await fapi("defect_list",{status:"open",station:OF.station||""}), el=$("#kpiDef"); if(!el) return; const L=r.defects, od=L.filter(x=>x.due_at&&+new Date(x.due_at)<Date.now()).length, a=L.filter(x=>x.priority==="A").length;
       el.querySelector(".v").textContent=L.length; el.querySelector(".s").textContent=L.length?`${a}× Prio A · ${od} überfällig`:"✓ keine offen"; el.classList.toggle("bad",!!(a||od)); }catch(e){} })();
-    $("#avT").onclick=()=>{ AV_OPEN=!AV_OPEN; try{ localStorage.setItem("hc_av",AV_OPEN?"1":"0"); }catch(e){} $("#availCard").classList.toggle("av-closed",!AV_OPEN); $("#avT .chev").textContent=AV_OPEN?"▾":"▸"; };
+    $("#avT").onclick=()=>{ AV_OPEN=!AV_OPEN; $("#availCard").classList.toggle("av-closed",!AV_OPEN); $("#avT .chev").textContent=AV_OPEN?"▾":"▸"; };
     $("#avAll").onclick=()=>{ const bl=[...box.querySelectorAll(".proj-block")], o=!bl.every(b=>b.classList.contains("open")); bl.forEach(b=>{ b.classList.toggle("open",o); b.querySelector(".chev").textContent=o?"▾":"▸"; OV_OPEN[b.dataset.st]=o; }); };
     box.querySelectorAll(".proj-block .proj-h").forEach(h=>h.onclick=()=>{ const b=h.parentElement, o=!b.classList.contains("open"); b.classList.toggle("open",o); h.querySelector(".chev").textContent=o?"▾":"▸"; OV_OPEN[b.dataset.st]=o; });
     box.querySelectorAll(".up-bar i[data-no]").forEach(s=>s.onclick=()=>{ IF.q=s.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });

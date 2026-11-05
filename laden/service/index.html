@@ -24,6 +24,9 @@ header .t span{font-weight:500;color:var(--muted)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
 h1{font-size:22px;margin:0 0 6px;letter-spacing:-.3px}
 h2{font-size:16px;margin:18px 2px 10px}
+.appts summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.appts summary::-webkit-details-marker{display:none}.appts summary::before{content:"▸";color:var(--muted)}.appts[open] summary::before{content:"▾"}.appts[open] summary{margin-bottom:8px}
+.ap-row{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.ap-d{display:flex;flex-direction:column;width:78px;font-size:14px}
+
 .muted{color:var(--muted)}
 .small{font-size:13px}
 .btn{display:block;width:100%;border:0;border-radius:14px;padding:14px;font-weight:700;font-size:16px;background:var(--brand);color:#fff;text-align:center}
@@ -218,6 +221,9 @@ async function homeView(){
         ${d.due_at?`<br>${dueTag(d.due_at,S.home.remind,S.home.urgent)} <span class="small muted">${fmt(d.due_at)}</span>`:""}</div><span class="chip ${d.status==="in_arbeit"?"amber":"grey"}">${d.status==="in_arbeit"?"in Arbeit":"offen"}</span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="btn" data-dfix="${esc(d.id)}">🔧 Mangel beheben</button><button class="btn ghost" data-desc="${esc(d.id)}">⬆ Zur Störung</button></div>
       <div class="small" style="margin-top:8px"><a href="#" data-dw="${esc(d.id)}" class="muted">als „in Arbeit“ markieren</a></div></div>`; }).join("")}`:""}
+  ${(h.appointments||[]).length?`<details class="card appts"><summary><b>📅 Nächste Termine (${h.appointments.length})</b><span class="small muted">nächster ${new Date(h.appointments[0].starts_at).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</span> ${dueTag(h.appointments[0].starts_at,S.home.remind,S.home.urgent)}</summary>
+    ${h.appointments.map(a=>`<div class="ap-row"><div class="ap-d"><b>${new Date(a.starts_at).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</b><span class="small muted">${a.all_day?"ganztägig":new Date(a.starts_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+(a.ends_at?"–"+new Date(a.ends_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"")}</span></div>
+      <div style="flex:1;min-width:0"><b>${esc(a.title)}</b> <span class="chip grey">${esc(a.kind_label||"Termin")}</span>${a.note?`<div class="small muted">${esc(a.note)}</div>`:""}</div>${dueTag(a.starts_at,S.home.remind,S.home.urgent)}</div>`).join("")}</details>`:""}
   <h2>Checklisten</h2>
   ${h.checklists.filter(l=>l.id!=="mangel").length?`<div class="tiles">${h.checklists.filter(l=>l.id!=="mangel").sort((a,b)=>(a.next_due?new Date(a.next_due):Infinity)-(b.next_due?new Date(b.next_due):Infinity)).map(l=>{ const d=due(l); return `<button class="tile" data-cl="${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.description||"")}</small>
       <small>${l.last?`zuletzt ${fmt(l.last.finished_at).split(",")[0]} · ${esc(l.last.staff_name)}`:"noch nie durchgeführt"}</small>${d?`<span style="align-self:flex-start">${dueTag(l.next_due,l.remind,l.urgent)}</span><small>${l.fixed?"📅 Termin ":""}${new Date(l.next_due).toLocaleDateString("de-DE")}</small>`:""}</button>`; }).join("")}</div>`:`<div class="card muted">Für Ihre Rolle sind keine Checklisten freigeschaltet.</div>`}
