@@ -272,6 +272,64 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 @media (max-width:1400px){.logo small{display:none}}
 @media (max-width:900px){.two{grid-template-columns:1fr}#gs{width:100%}#gsF{order:9;width:100%}}
 @media (max-width:760px){.c3,.c4,.c6,.c8{grid-column:span 12}.lp{grid-template-columns:50px 1fr 70px 36px}.lp .evse{grid-column:2 / span 3}nav{margin-left:0}header .in{flex-wrap:wrap}}
+
+/* ── Responsive: Tablet & Smartphone ── */
+@media (max-width:1180px){
+  header .in{flex-wrap:wrap;row-gap:8px}
+  nav{order:9;width:100%;margin-left:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  nav::-webkit-scrollbar{display:none}
+  #gsF{flex:1;min-width:160px}#gs{width:100%}
+}
+@media (max-width:760px){
+  body{font-size:14.5px}
+  header .in{padding:10px 12px;gap:10px}
+  .logo{font-size:15px}.logo small{display:none}
+  #gsF{order:5;flex-basis:100%}
+  nav button{padding:9px 11px;font-size:14px}
+  .wrap{padding:12px 10px}
+  .card{padding:14px 12px;border-radius:12px}
+  h1{font-size:19px}
+  .sub{font-size:13.5px}
+  /* Kopfzeilen mit Aktionen umbrechen, Buttons griffig */
+  #main>.row,.card>.row,#fbody>.row{flex-wrap:wrap}
+  #main>.row>div:first-child{flex-basis:100%}
+  .btn{padding:10px 14px}.btn.sm{padding:8px 11px}
+  /* Formulare & Raster einspaltig */
+  .form{grid-template-columns:1fr}
+  .form>[class^="c"],.form>[class*=" c"]{grid-column:1 / -1!important}
+  #main [style*="grid-template-columns"]:not(.cal):not(.rates){grid-template-columns:1fr!important}
+  .grid2{grid-template-columns:1fr!important}
+  .akte-grid{grid-template-columns:1fr!important;gap:14px}
+  .kpis,.isum{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .kpi .v,.isum-t .v{font-size:22px}
+  .rates{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .stats{flex-wrap:wrap;gap:10px}
+  /* Filterleisten: Felder volle Breite, Segmente scrollbar */
+  .card .row>select,.card .row>input[type=search],.card .row>input:not([type=checkbox]):not([type=radio]):not([type=date]){width:100%!important;flex:1 1 100%!important;min-width:0!important}
+  .seg{max-width:100%;overflow-x:auto;scrollbar-width:none}.seg::-webkit-scrollbar{display:none}.seg button{white-space:nowrap}
+  .dates{width:100%}.dates input[type=date]{flex:1;min-width:0}
+  /* Tabellen: horizontal wischen statt quetschen */
+  .card[style*="overflow:auto"],.card[style*="overflow: auto"]{-webkit-overflow-scrolling:touch}
+  #main table{font-size:13px}
+  #main th,#main td{padding:8px 6px}
+  #main table:not(.mini) td{min-width:0}
+  #main table:not(.mini){min-width:640px}
+  .akte-in{padding:10px 4px}
+  .akte-in table,.akte-in table:not(.mini){min-width:0}
+  /* Termine */
+  .tm-row{padding:10px 12px;gap:8px;flex-wrap:wrap}.tm-d{width:auto;flex-direction:row;gap:6px}.tm-m{flex-basis:100%;order:3}.tm-s{margin-left:auto}
+  .cal-c{min-height:58px;padding:2px}.cal-n{font-size:11.5px}
+  /* Projekt-Editor & Galerie */
+  .gi{width:calc(50% - 5px);height:90px}.gi.hero{width:100%;height:160px}
+  .ed-media{grid-template-columns:1fr}
+  .qr-card .qr img{width:130px!important}
+  /* Kontakte */
+  .cl-seg{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.cl-seg::-webkit-scrollbar{display:none}
+  .chain{font-size:12px}
+  /* Toast unten über die volle Breite */
+  .toast{left:10px!important;right:10px!important;transform:none!important;max-width:none!important}
+}
+@media (max-width:420px){ .kpis,.isum{grid-template-columns:1fr 1fr} .kpi .k,.isum-t .k{font-size:11.5px} }
 </style>
 </head>
 <body>
@@ -314,7 +372,7 @@ async function api(action,payload={}){
 function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#logout").classList.add("hidden"); loginView(); }
 $("#logout").onclick=logout;
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>go(b.dataset.v));
-function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,termine:termineView,tickets:ticketsView,settings:settingsView})[v](); }
+function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); { const on=document.querySelector("#nav button.on"); if(on&&on.scrollIntoView) on.scrollIntoView({block:"nearest",inline:"center"}); } scrollTo(0,0); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,termine:termineView,tickets:ticketsView,settings:settingsView})[v](); }
 
 /* ---------- Login ---------- */
 function loginView(){
