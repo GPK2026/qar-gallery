@@ -605,7 +605,7 @@ function incSummary(list){
   const tile=(k,v,s,cls="")=>`<div class="isum-t ${cls}"><div class="k">${k}</div><div class="v">${v}</div>${s?`<div class="s">${s}</div>`:""}</div>`;
   let h="";
   if(done.length) h+=tile("✅ Gesamtzeit erledigt (kumuliert)",fmtDur(sum(done)),`${done.length} Störung${done.length>1?"en":""} · Meldung → erledigt`)
-    +tile("Ø je Störung",fmtDur(sum(done)/done.length),`Median ${fmtDur(med)}`)+tile("Längste",fmtDur(dd[dd.length-1]),`kürzeste ${fmtDur(dd[0])}`);
+    +tile("Ø je Störung",fmtDur((sum(done)+sum(open))/(done.length+open.length)),open.length?`inkl. ${open.length} offener · nur erledigte Ø ${fmtDur(sum(done)/done.length)}`:`Median ${fmtDur(med)}`)+tile("Längste",fmtDur(dd[dd.length-1]),`kürzeste ${fmtDur(dd[0])}`);
   if(open.length) h+=tile("⏱ Offen seit (kumuliert)",`<span data-sum-open='${JSON.stringify(open.map(i=>+new Date(i.created_at)))}'>${liveFmt(sum(open))}</span>`,`${open.length} offene Störung${open.length>1?"en":""} zusammen`,"open")
     +tile("Älteste offen",`<span data-since="${oldest}">${liveFmt(now-oldest)}</span>`,"läuft seit erster Meldung","open");
   return h?`<div class="isum">${h}</div>`:"";
@@ -1123,7 +1123,7 @@ async function fDash(){
     <div class="how-grid">
       <div><b>⏱ Arbeitszeit vor Ort</b>Startet automatisch, wenn die Person am Charger die Checkliste in der Service-App öffnet, und endet mit „Protokoll abschließen“. Pausen (⏸ in der App) werden abgezogen. Korrigiert jemand die Zeit, ist eine Begründung Pflicht – die gemessene Zeit bleibt gespeichert und der Einsatz ist mit <span class="badge amber">korrigiert</span> markiert.</div>
       <div><b>🚐 Reaktionszeit</b>Erste Kundenmeldung einer Störung → Arbeitsbeginn des ersten Einsatzes vor Ort zu diesem Ticket.</div>
-      <div><b>🎫 Ticket-Bearbeitungszeit</b>Erste Kundenmeldung → Status „erledigt“ (egal ob vor Ort oder im Dashboard erledigt). Enthält Wartezeit, Anfahrt und Arbeit.</div>
+      <div><b>🎫 Ticket-Bearbeitungszeit</b>Erste Kundenmeldung → Status „erledigt“ (egal ob vor Ort oder im Dashboard erledigt). Enthält Wartezeit, Anfahrt und Arbeit. Noch offene Störungen zählen mit ihrer bisherigen Dauer (Meldung → jetzt) und ziehen den Schnitt hoch.</div>
       <div><b>💶 Kosten je Einsatz</b>Arbeitszeit × Stundensatz + Anfahrtszeit × Stundensatz + km × km-Satz + Material. Stundensatz: individuell je Person, sonst Satz der Rolle (Reiter „Sätze & Kosten“). Der Satz wird beim Abschluss eingefroren.</div>
       <div><b>⛔ Störung vs. 🛠 Mangel</b>Störung: an der Stelle kann nicht geladen werden – zählt als Ausfall und ist in der Kunden-App sichtbar. Mangel: Laden funktioniert, aber etwas ist nicht in Ordnung – Priorität A (24 h), B (7 Tage), C (nächste Wartung).</div>
       <div><b>🎯 First-Time-Fix</b>Anteil der vor Ort erledigten Störungen, die mit genau einem Einsatz behoben wurden.</div>
@@ -1152,10 +1152,10 @@ function renderDash(d){
   const cps=d.stations.reduce((x,s)=>x+(s.connectors||0),0);
   // Störungen: Reaktion / Ticketzeit / First-Time-Fix
   const byT={}; for(const v of d.ticket_reports) (byT[v.ticket_no]=byT[v.ticket_no]||[]).push(v);
-  const react=[], tix=[]; let fixField=0, ftf=0;
+  const react=[], tix=[], tixOpen=[]; let fixField=0, ftf=0;
   for(const i of I){ const vs=(byT[i.ticket_no]||[]).filter(v=>v.work_started_at).sort((a,b)=>Date.parse(a.work_started_at)-Date.parse(b.work_started_at));
     if(vs.length) react.push(Date.parse(vs[0].work_started_at)-Date.parse(i.created_at));
-    if(i.resolved_at) tix.push(Date.parse(i.resolved_at)-Date.parse(i.created_at));
+    if(i.resolved_at) tix.push(Date.parse(i.resolved_at)-Date.parse(i.created_at)); else tixOpen.push(Date.now()-Date.parse(i.created_at));
     if(vs.some(v=>v.resolved_ticket)){ fixField++; if(vs.length===1) ftf++; } }
   const openInc=I.filter(i=>i.status!=="erledigt").length;
   const k=(lbl,val,sub,cls="",tip="")=>`<div class="kpi ${cls}" ${tip?`data-tip="${esc(tip)}"`:""}><div class="k">${lbl}</div><div class="v">${val}</div><div class="s">${sub}</div></div>`;
@@ -1181,7 +1181,7 @@ function renderDash(d){
       ${k("Kosten gesamt",eur(total),`Arbeit ${eur(labor)} · Anfahrt ${eur(trav)} · Material ${eur(mat)}`)}
       ${k("Kosten je Ladepunkt / Monat",cps?eur(total/cps/months):"–",`${cps} Ladepunkte · ${days} Tage`,"","Gesamtkosten ÷ Ladepunkte ÷ Monate im Zeitraum")}
       ${k("Ø Reaktionszeit",ms(avg(react)),`Median ${ms(median(react))} · ${react.length} Störungen mit Einsatz`,"","Meldung → Arbeitsbeginn vor Ort")}
-      ${k("Ø Ticket-Bearbeitung",ms(avg(tix)),`Median ${ms(median(tix))} · ${tix.length} erledigt · ${openInc} offen`,"","Meldung → erledigt")}
+      ${k("Ø Ticket-Bearbeitung",ms(avg([...tix,...tixOpen])),`${tix.length} erledigt${tixOpen.length?` + ${tixOpen.length} offen (laufen mit) · nur erledigte Ø ${ms(avg(tix))}`:` · Median ${ms(median(tix))}`}`,"","Erledigte: Meldung → erledigt · Offene: Meldung → jetzt")}
       ${k("First-Time-Fix",fixField?Math.round(ftf/fixField*100)+" %":"–",`${ftf} von ${fixField} vor Ort erledigt`,fixField&&ftf/fixField<.7?"bad":"")}
       ${k("Mängelquote",R.length?Math.round(defects/R.length*100)+" %":"–",`${defects} von ${R.length} Protokollen`)}
       ${k("Offene Mängel",dOpen.length,`${dOpen.filter(x=>x.priority==="A").length}× Prio A · ${dOd.length} überfällig`,dOd.length||dOpen.some(x=>x.priority==="A")?"bad":"","Mängel = Ladepunkt funktioniert, Behebung nach Priorität")}
@@ -1576,6 +1576,10 @@ async function loadOverview(){
     const inWin=r.incidents.filter(i=>+new Date(i.created_at)>=F);
     const solvedInc=r.incidents.filter(i=>i.resolved_at&&+new Date(i.resolved_at)>=F);
     const mttr=solvedInc.length?solvedInc.reduce((a,i)=>a+(+new Date(i.resolved_at)-new Date(i.created_at)),0)/solvedInc.length:null;
+    // Ø Störungsdauer inkl. offener Störungen (laufen mit ihrer bisherigen Dauer ein und ziehen den Schnitt hoch)
+    const openInc=r.incidents.filter(i=>i.status!=="erledigt"), nowMs=Date.now();
+    const durAll=[...solvedInc.map(i=>+new Date(i.resolved_at)-new Date(i.created_at)),...openInc.map(i=>nowMs-new Date(i.created_at))];
+    const mttrAll=durAll.length?durAll.reduce((a,b)=>a+b,0)/durAll.length:null;
     // Tagesverlauf
     const days=[]; for(let d=new Date(isoD(F)+"T12:00:00"); isoD(d)<=isoD(T); d=new Date(+d+864e5)) days.push(isoD(d));
     const by={}; r.daily.forEach(x=>{ const k=OUTC.some(o=>o[0]===x.outcome)?x.outcome:(x.outcome==="danger"?"ticket":"open"); (by[x.d]||={})[k]=((by[x.d]||{})[k]||0)+x.n; });
@@ -1589,7 +1593,7 @@ async function loadOverview(){
       <div class="kpi link ${avail<98?"bad":""}" data-go="avail"><div class="k">Verfügbarkeit Ø ›</div><div class="v">${pctTxt(avail)}</div><div class="s">aus Störungsmeldungen · ${cpN} Ladepunkte</div></div>
       <div class="kpi link ${openNow?"bad":""}" data-go="open"><div class="k">Offene Störungen ›</div><div class="v">${openNow}</div><div class="s">${openNow?"⚠ in der App als gestört markiert":"✓ alles frei"}</div></div>
       <div class="kpi link" data-go="new"><div class="k">Neue Störungen ›</div><div class="v">${inWin.length}</div><div class="s">${inWin.reduce((a,i)=>a+i.reports,0)} Meldungen von Kunden</div></div>
-      <div class="kpi link" data-go="done"><div class="k">Ø Zeit bis erledigt ›</div><div class="v">${mttr?fmtDur(mttr):"–"}</div><div class="s">${solvedInc.length} erledigt im Zeitraum</div></div>
+      <div class="kpi link ${openInc.length?"bad":""}" data-go="done" title="Erledigte: Meldung → erledigt. Offene: Meldung → jetzt (laufen weiter)."><div class="k">Ø Störungsdauer ›</div><div class="v">${mttrAll?fmtDur(mttrAll):"–"}</div><div class="s">${solvedInc.length} erledigt${openInc.length?` + ${openInc.length} offen (laufen mit)`:""}${openInc.length&&mttr?` · nur erledigte Ø ${fmtDur(mttr)}`:""}</div></div>
       <div class="kpi link" data-go="defects" id="kpiDef"><div class="k">Offene Mängel ›</div><div class="v">…</div><div class="s">kein Ausfall · nach Priorität</div></div>
       <div class="kpi link" data-go="visits"><div class="k">QR-Code-Aufrufe ›</div><div class="v">${tot}</div><div class="s">${tot?Math.round(100*self/tot)+" % selbst gelöst":"–"}</div></div>
     </div>
