@@ -153,6 +153,13 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 .rgroup{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fbfcfb}
 .rg-h{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .rg-b{display:flex;flex-direction:column;gap:3px}.rg-b label{display:flex;gap:7px;align-items:center;font-size:13.5px;color:var(--ink);margin:0;font-weight:500}.rg-b input{width:auto}
+.dtag{display:inline-block;border-radius:999px;padding:1px 8px;font-weight:700;font-size:12px;white-space:nowrap}
+.d-over{background:#d03b3b;color:#fff}.d-urgent{background:#fde0de;color:#b42318}.d-soon{background:#ffe6c7;color:#9a5300}.d-ok{background:#eef1ef;color:#5d6b65}
+.due-box{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fbfcfb}
+.l-strow{display:flex;gap:8px;align-items:center;padding:3px 0}
+.asg{border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:#fbfcfb}.asg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.asg-chips a{color:#b42318;text-decoration:none;margin-left:2px}
+.asg-res{display:flex;flex-direction:column;gap:2px;margin-top:4px}.asg-r{display:block;text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13.5px;cursor:pointer}.asg-r:hover{border-color:var(--brand)}.asg-r.off{cursor:default;color:var(--muted);background:#f6f7f6}
+.ct-box{border:1px dashed #b9d9c8;border-radius:10px;padding:8px 10px;background:#f7fbf9}.ct-linked{font-size:14px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:14px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .kpi .k{color:var(--muted);font-size:12.5px;font-weight:600}
@@ -239,7 +246,7 @@ table.mini{width:100%;font-size:13px}table.mini th{font-size:12px}
 <body>
 <header><div class="in">
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="defects">Mängel</button><button data-v="field">Maintenance</button><button data-v="customers">Kunden</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="settings">Einstellungen</button></nav>
+  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="defects">Mängel</button><button data-v="field">Maintenance</button><button data-v="customers">Kontakte</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="settings">Einstellungen</button></nav>
   <div class="sp"></div>
   <form id="gsF" class="hidden" autocomplete="off"><input id="gs" type="search" placeholder="🔎 Alles durchsuchen …" title="Volltextsuche: Vorgangsnummer, E-Mail, Telefon, Ladekarte, EVSE-ID, Chat, Beschreibung, Notizen …"></form>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
@@ -264,7 +271,7 @@ async function fapi(action,payload={}){
   const j=await r.json().catch(()=>({}));
   if(r.status===401){ logout(); throw new Error("Bitte neu anmelden"); }
   if(!r.ok) throw new Error(j.error||("Fehler "+r.status));
-  if(j&&j.role_info) setRoleInfo(j.role_info); return j;
+  if(j&&j.role_info) setRoleInfo(j.role_info); if(j&&j.remind!=null) REM={remind:j.remind,urgent:j.urgent}; return j;
 }
 async function api(action,payload={}){
   const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,...payload})});
@@ -707,7 +714,7 @@ function wireCust(root){ root.querySelectorAll(".to-cus").forEach(a=>a.onclick=e
 let CF={q:"",open:null};
 async function customersView(){
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
-  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Kunden</h1><p class="sub" style="margin:0">Kundenstamm mit Ladekarten. Meldungen werden automatisch zugeordnet – über Kartennummer, E-Mail oder Telefon.</p></div><div class="sp"></div>
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Kontakte</h1><p class="sub" style="margin:0">Kunden, Firmen und Partner – Kundenstamm mit Ladekarten; Kontakte lassen sich Mitarbeitern und Checklisten zuordnen. Meldungen werden automatisch zugeordnet – über Kartennummer, E-Mail oder Telefon.</p></div><div class="sp"></div>
     <button class="btn ghost" id="cTpl">Vorlage (CSV)</button><button class="btn ghost" id="cExp">Export (CSV)</button><button class="btn ghost" id="cImp">CSV importieren</button><button class="btn" id="cNew">+ Kunde</button><input type="file" id="cFile" accept=".csv,text/csv" class="hidden"></div>
   <div id="impBox"></div>
   <div class="card" style="padding:12px 14px"><input id="cq" type="search" style="width:100%;font-size:15px" placeholder="🔎 Name, Firma, E-Mail, Telefon oder Kartennummer" value="${esc(CF.q)}"></div>
@@ -800,6 +807,14 @@ function importPreview(text,fname){
 }
 
 /* ---------- Field-Service: Protokolle, Mitarbeiter, Checklisten ---------- */
+/* Termine & Erinnerungen: überfällig rot mit „−X T.“, ≤ dringend hellrot, ≤ Erinnerung orange */
+let REM={remind:14,urgent:3};
+function dueInfo(iso,rm,ug){ if(!iso) return null; rm=rm??REM.remind; ug=ug??REM.urgent; const d=Math.ceil((new Date(iso)-Date.now())/864e5);
+  return {d,cls:d<0?"d-over":d<=ug?"d-urgent":d<=rm?"d-soon":"d-ok",txt:d<0?`−${-d} T.`:d===0?"heute":`in ${d} T.`}; }
+const dueTag=(iso,rm,ug,withDate=true)=>{ const i=dueInfo(iso,rm,ug); return i?`<span class="dtag ${i.cls}" title="${d2(iso)}">${i.txt}</span>${withDate?` <small class="muted">${d2(iso)}</small>`:""}`:"–"; };
+const d2=iso=>new Date(iso).toLocaleDateString("de-DE");
+/* Kontakte (CRM) durchsuchen – für Mitarbeiter und Checklisten */
+async function contactSearch(q){ try{ return (await api("customers",{q})).customers||[]; }catch(e){ return []; } }
 /* Rollen – Vorgabe; die aktuelle Liste kommt vom Server (role_info) */
 let ROLE_INFO=[["technik","Techniker",1],["fremdfirma","Servicefirma",1],["elektro","Elektrofachkraft",1],["reinigung","Reinigung / Hausmeister",1],["dienstleister","Dienstleister",1],["autohaus","Autohaus",1],["stadtwerke","Stadtwerke",1],["vnb","Verteilnetzbetreiber",1],
   ["partner","Partner",2],["standortpartner","Standortpartner",2],["eigentuemer","Standorteigentümer",2],["agentur","Agentur",2],["fotograf","Fotograf",2],["security","Security",2],
@@ -818,12 +833,12 @@ async function fieldView(){
   if(!FF.preset&&!FF.from) setPreset(FF,"30");
   if(!STATIONS.length){ try{ STATIONS=(await api("list")).stations; }catch(e){} }
   main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Maintenance</h1><p class="sub" style="margin:0">Service &amp; Technik, Partner &amp; Standort sowie Behörden &amp; Einsatzkräfte melden sich am QR-Code über „Service-Zugang“ mit ihrer PIN an, arbeiten Checklisten ab – Arbeitszeit vor Ort, Anfahrt und Material werden je Einsatz erfasst.</p></div></div>
-  <div class="seg" id="ftab" style="margin-bottom:14px">${[["dash","📊 Dashboard"],["reports","Protokolle"],["staff","Mitarbeiter & PINs"],["lists","Checklisten"],["rates","Sätze & Kosten"],["vis","Sichtbarkeit"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
+  <div class="seg" id="ftab" style="margin-bottom:14px">${[["dash","📊 Dashboard"],["reports","Protokolle"],["staff","Mitarbeiter & PINs"],["lists","Checklisten"],["rates","Sätze & Kosten"],["vis","Sichtbarkeit & Erinnerungen"]].map(([k,l])=>`<button data-t="${k}" class="${FF.tab===k?"on":""}">${l}</button>`).join("")}</div>
   <div id="fbody"><div class="muted">Lade …</div></div>`;
   document.querySelectorAll("#ftab button").forEach(b=>b.onclick=()=>{ FF.tab=b.dataset.t; document.querySelectorAll("#ftab button").forEach(x=>x.classList.toggle("on",x===b)); fieldTab(); });
   fieldTab();
 }
-async function fieldTab(){ try{ if(!FCL.length||FF.tab==="lists") FCL=(await fapi("checklist_list")).checklists; }catch(e){ return toast(e.message,true); }
+async function fieldTab(){ try{ if(!FCL.length||FF.tab==="lists"){ FCL=(await fapi("checklist_list")).checklists; await ensureStaff(); } }catch(e){ return toast(e.message,true); }
   ({dash:fDash,reports:fReports,defects:fDefects,staff:fStaff,lists:fLists,rates:fRates,vis:fVis})[FF.tab](); }
 /* Sichtbarkeit: wer im Field-Service eine Störung / einen Mangel sieht */
 async function ensureStaff(){ if(!FSTAFF||!FSTAFF.length){ try{ FSTAFF=(await fapi("staff_list")).staff||[]; }catch(e){ FSTAFF=[]; } } return FSTAFF; }
@@ -845,8 +860,11 @@ async function fVis(){
   const row=(key,title,sub)=>`<div class="card"><h2 style="margin-bottom:4px">${title}</h2><p class="sub">${sub}</p>${roleChecks("v-"+key,FVIS[key])}</div>`;
   $("#fbody").innerHTML=row("incidents","Kundenstörungen – Standard-Sichtbarkeit","Wer im Service-Zugang offene Störungen aus Kundenmeldungen sieht, solange einer Störung nichts Eigenes zugewiesen ist. Pro Störung lässt sich das in der Störungsakte ändern oder ganz ausblenden.")
     +row("defects","Mängel aus Protokollen – Standard-Sichtbarkeit","Wer offene Mängel aus Checklisten sieht und als behoben melden kann. Pro Mangel im Reiter „Mängel“ änderbar.")
-    +`<button class="btn" id="vSave">Speichern</button>`;
-  $("#vSave").onclick=async()=>{ try{ await fapi("settings_save",{incidents:[...document.querySelectorAll(".v-incidents:checked")].map(x=>x.value),defects:[...document.querySelectorAll(".v-defects:checked")].map(x=>x.value)}); toast("Gespeichert ✓"); }catch(e){ toast(e.message,true); } };
+    +`<div class="card"><h2 style="margin-bottom:4px">⏰ Erinnerungen – Standard</h2><p class="sub">Gilt für Checklisten-Termine (wenn in der Checkliste nichts Eigenes eingestellt ist) und für Mängel. Täglich um 7 Uhr geht eine Erinnerungs-Mail an das Team, wenn eine Schwelle erreicht oder ein Termin überschritten ist (Überfälliges zusätzlich jeden Montag).</p>
+      <div class="row" style="gap:16px"><label><span class="dtag d-soon">orange</span> Erinnerung ab <input class="v-rm" inputmode="numeric" style="width:70px" value="${FVIS.remind??14}"> Tagen vorher</label>
+      <label><span class="dtag d-urgent">hellrot</span> dringend ab <input class="v-ug" inputmode="numeric" style="width:70px" value="${FVIS.urgent??3}"> Tagen vorher</label><span><span class="dtag d-over">−X T.</span> = überfällig</span></div></div>
+    <button class="btn" id="vSave">Speichern</button>`;
+  $("#vSave").onclick=async()=>{ try{ await fapi("settings_save",{incidents:[...document.querySelectorAll(".v-incidents:checked")].map(x=>x.value),defects:[...document.querySelectorAll(".v-defects:checked")].map(x=>x.value),remind:$(".v-rm").value,urgent:$(".v-ug").value}); toast("Gespeichert ✓"); }catch(e){ toast(e.message,true); } };
 }
 /* Mängel */
 let FD={status:"open",station:"",prio:""};
@@ -876,7 +894,7 @@ async function fDefects(){
       <div class="isum-t ${open.filter(od).length?"open":""}"><div class="k">⏰ Überfällig</div><div class="v">${open.filter(od).length}</div><div class="s">Fälligkeit überschritten</div></div></div>`;
     tb.innerHTML=L.length?L.map(d=>{ const x=DS[d.status]||DS.offen; return `<tr class="click" data-id="${esc(d.id)}"><td class="chev">▸</td><td>${prioB(d.priority)}</td><td><b>${esc(d.item_text)}</b>${d.note?`<br><small class="muted">${esc(d.note)}</small>`:""}<br><small class="muted"><code>${esc(d.defect_no||"")}</code></small></td>
       <td><b>${esc(stLabel(d.station_id))}</b><br><small class="muted">${esc(fWhere(d))}</small></td>
-      <td>${d.status==="behoben"?`<small class="muted">behoben ${d.resolved_at?fmtDT(d.resolved_at):""}</small>`:d.due_at?`<span class="${od(d)?"due-od":""}">${od(d)?"⏰ ":""}${fmtDT(d.due_at)}</span>`:"–"}</td>
+      <td>${d.status==="behoben"?`<small class="muted">behoben ${d.resolved_at?fmtDT(d.resolved_at):""}</small>`:d.due_at?dueTag(d.due_at):"–"}</td>
       <td>${esc(SRC_L[d.source]||d.source||"")}<br><small class="muted">${esc(d.created_by||"")} · ${fmtDT(d.created_at)}</small></td><td>${visSummary(d,FVIS&&FVIS.defects)}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span>${d.escalated_ticket?`<br><small class="muted">→ ${esc(d.escalated_ticket)}</small>`:""}</td></tr>
       <tr class="akte hidden" data-for="${esc(d.id)}"><td colspan="8"><div class="akte-in"></div></td></tr>`; }).join(""):`<tr><td colspan="8" class="muted">Keine Mängel ${FD.status==="open"?"offen 🎉":""}</td></tr>`;
     tb.querySelectorAll("tr.click").forEach(row=>row.onclick=()=>{ const d=r.defects.find(x=>x.id===row.dataset.id), ak=tb.querySelector(`tr.akte[data-for="${d.id}"]`), open=ak.classList.toggle("hidden")===false;
@@ -1034,7 +1052,7 @@ function renderDash(d){
       ${k("Mängelquote",R.length?Math.round(defects/R.length*100)+" %":"–",`${defects} von ${R.length} Protokollen`)}
       ${k("Offene Mängel",dOpen.length,`${dOpen.filter(x=>x.priority==="A").length}× Prio A · ${dOd.length} überfällig`,dOd.length||dOpen.some(x=>x.priority==="A")?"bad":"","Mängel = Ladepunkt funktioniert, Behebung nach Priorität")}
       ${k("Ø Mängelbehebung",ms(avg(dRes)),`${dRes.length} behoben im Zeitraum`,"","Meldung des Mangels → behoben")}
-      ${k("Fällige Prüfungen",d.overdue.length,d.overdue.length?"überfällig oder nie gemacht":"alles im Intervall",d.overdue.length?"bad":"")}
+      ${k("Fällige Prüfungen",d.overdue.length,`${(d.upcoming||[]).filter(o=>o.days>=0).length} in den nächsten ${REM.remind} Tagen`,d.overdue.length?"bad":"","Überfällig oder noch nie durchgeführt")}
     </div>
     <div class="card"><h2>Kosten nach Art</h2><p class="sub" style="margin:-4px 0 10px">Störungsbehebung = Einsatz zu einer Störung (Ausfall) · Mängelbeseitigung = Einsatz zu einem Mangel · Wartung & Prüfung = Checklisten ohne Ticket</p>${stack(byKind)}</div>
     <div class="grid2c">
@@ -1046,7 +1064,9 @@ function renderDash(d){
         <div class="tl-legend" style="margin-top:26px"><span><b style="background:#2a78d6"></b>Arbeit vor Ort (Std.)</span><span><b style="background:#eb6834"></b>Anfahrt</span></div>`:`<div class="muted">Keine Einsätze im Zeitraum.</div>`}</div>
       <div class="card"><h2>Zeit je Checkliste</h2>${byCl.length?`<table class="mini"><thead><tr><th>Checkliste</th><th>Einsätze</th><th>Ø Zeit</th><th>Σ Zeit</th><th>Ø Kosten</th></tr></thead><tbody>${byCl.map(g=>`<tr><td>${esc(g.key)}</td><td>${g.n}</td><td><b>${hmin(g.work/g.n)}</b></td><td>${hmin(g.work)}</td><td>${eur(g.total/g.n)}</td></tr>`).join("")}</tbody></table>`:`<div class="muted">–</div>`}</div>
     </div>
-    ${d.overdue.length?`<div class="card"><h2>⚠ Fällige Prüfungen (${d.overdue.length})</h2><table class="mini"><thead><tr><th>Projekt</th><th>Checkliste</th><th>Intervall</th><th>Zuletzt</th></tr></thead><tbody>${d.overdue.slice(0,50).map(o=>`<tr><td><b>${esc(o.project_id||o.station_id)}</b></td><td>${esc(o.checklist_title)}</td><td>${o.interval_days} Tage</td><td>${o.last?fmtDT(o.last)+` <span class="badge warn">${Math.floor((Date.now()-Date.parse(o.last))/864e5)} T.</span>`:'<span class="badge warn">noch nie</span>'}</td></tr>`).join("")}</tbody></table></div>`:""}
+    ${(()=>{ const U=[...(d.upcoming||[]).map(o=>({...o,kind:"📋 Checkliste",title:o.checklist_title,proj:o.project_id||o.station_id,info:o.fixed?`Termin ${d2(o.fixed)}`:o.interval_days?`alle ${o.interval_days} T.${o.last?" · zuletzt "+d2(o.last):" · noch nie"}`:""})),
+        ...DF.filter(x=>x.status!=="behoben"&&x.due_at&&dueInfo(x.due_at).d<=REM.remind).map(x=>({kind:`🛠 Mangel ${x.defect_no}`,title:"Priorität "+x.priority,proj:stLabel(x.station_id),due:x.due_at,remind:REM.remind,urgent:REM.urgent,info:SRC_L[x.source]||""}))].sort((a,b)=>new Date(a.due)-new Date(b.due));
+      return U.length?`<div class="card"><h2>📅 Anstehende Termine (${U.length})</h2><p class="sub" style="margin:-4px 0 10px"><span class="dtag d-over">−X T.</span> überfällig · <span class="dtag d-urgent">hellrot</span> dringend · <span class="dtag d-soon">orange</span> Erinnerung</p><table class="mini"><thead><tr><th>Fällig</th><th>Projekt</th><th>Art</th><th>Was</th><th></th></tr></thead><tbody>${U.slice(0,80).map(o=>`<tr><td style="white-space:nowrap">${dueTag(o.due,o.remind,o.urgent)}</td><td><b>${esc(o.proj)}</b></td><td>${esc(o.kind)}</td><td>${esc(o.title)}</td><td class="muted" style="font-size:12px">${esc(o.info||"")}</td></tr>`).join("")}</tbody></table></div>`:""; })()}
     <div class="card" style="padding:0;overflow:auto"><div style="padding:14px 16px 4px"><h2 style="margin:0">Einsätze im Zeitraum (${R.length})</h2><p class="sub" style="margin:4px 0 0">Klick öffnet das Protokoll. Beginn/Ende = Zeitstempel aus der Service-App.</p></div>
       <table><thead><tr><th>Datum</th><th>Projekt</th><th>Checkliste / Ticket</th><th>Person</th><th>Beginn – Ende</th><th>Pause</th><th>Arbeitszeit</th><th>Anfahrt</th><th>Kosten</th></tr></thead><tbody id="mdRows">
       ${R.slice(0,300).map(r=>`<tr class="click" data-id="${esc(r.id)}"><td>${new Date(r.finished_at).toLocaleDateString("de-DE")}</td><td><b>${esc(stLabel(r.station_id))}</b></td><td>${esc(r.checklist_title||"")}${r.ticket_no?`<br><small class="muted">${esc(r.ticket_no)}${r.resolved_ticket?" ✓":""}</small>`:""}</td>
@@ -1083,7 +1103,7 @@ async function fStaff(){
   try{ FSTAFF=(await fapi("staff_list")).staff; }catch(e){ return toast(e.message,true); }
   $("#fbody").innerHTML=`<div class="row" style="margin-bottom:10px"><p class="sub" style="margin:0;flex:1">Jede Person meldet sich mit ihrer eigenen PIN an. Ohne Standort-Auswahl gilt der Zugang für alle Standorte. Wer Protokolle hat, wird beim Löschen nur gesperrt.</p><button class="btn" id="fNew">+ Mitarbeiter</button></div>
   <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th></th><th>Name</th><th>Rolle</th><th>PIN</th><th>Standorte</th><th>Protokolle</th><th>Zuletzt angemeldet</th><th>Status</th></tr></thead><tbody id="fsb">
-  ${FSTAFF.map(x=>`<tr class="click" data-id="${esc(x.id)}"><td class="chev">▸</td><td><b>${esc(x.name)}</b>${x.company?`<br><small class="muted">${esc(x.company)}</small>`:""}</td><td>${esc(FROLES[x.role]||x.role)}${x.hourly_rate!=null?`<br><small class="muted">${eur(x.hourly_rate)}/h</small>`:""}</td><td><code>${esc(x.pin_hint||"–")}</code></td>
+  ${FSTAFF.map(x=>`<tr class="click" data-id="${esc(x.id)}"><td class="chev">▸</td><td><b>${esc(x.name)}</b>${x.contact_id?' <span title="mit Kontakt verknüpft">📇</span>':""}${x.company?`<br><small class="muted">${esc(x.company)}</small>`:""}</td><td>${esc(FROLES[x.role]||x.role)}${x.hourly_rate!=null?`<br><small class="muted">${eur(x.hourly_rate)}/h</small>`:""}</td><td><code>${esc(x.pin_hint||"–")}</code></td>
     <td>${x.stations.length?x.stations.map(id=>`<span class="chip-c">${esc(stLabel(id))}</span>`).join(""):'<span class="muted">alle</span>'}</td><td>${x.reports}</td><td>${x.last_login_at?fmtDT(x.last_login_at):"–"}</td><td>${x.active?'<span class="badge">aktiv</span>':'<span class="badge off">gesperrt</span>'}</td></tr>
     <tr class="akte hidden" data-for="${esc(x.id)}"><td colspan="8"><div class="akte-in"></div></td></tr>`).join("")||`<tr><td colspan="8" class="muted">Noch keine Mitarbeiter.</td></tr>`}</tbody></table></div>`;
   $("#fNew").onclick=()=>{ const tb=$("#fsb"); const tr=document.createElement("tr"); tr.className="akte"; tr.innerHTML=`<td colspan="8"><div class="akte-in"></div></td>`; tb.prepend(tr); staffEd({stations:[],role:"technik",active:true},tr.querySelector(".akte-in"),true); };
@@ -1093,6 +1113,8 @@ async function fStaff(){
 function staffEd(x,box,isNew){
   box.innerHTML=`<div class="akte-grid" style="grid-template-columns:minmax(380px,1fr) 1fr"><div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="grid-column:1/-1" class="ct-box"><label>📇 Kontakt</label>${x.contact_id?`<div class="ct-linked">🔗 verknüpft mit Kontakt <b class="ct-name">…</b> <a href="#" class="ct-unlink">lösen</a></div>`:`<input class="ct-q" placeholder="🔎 In Kontakten suchen und übernehmen (Name, Firma, E-Mail) …"><div class="asg-res ct-res"></div>
+        <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);margin-top:6px"><input type="checkbox" class="ct-new" style="width:auto" ${isNew?"checked":""}> beim Speichern auch als neuen Kontakt anlegen</label>`}</div>
       <div><label>Name</label><input class="s-name" value="${esc(x.name||"")}"></div><div><label>Firma</label><input class="s-company" value="${esc(x.company||"")}"></div>
       <div><label>Telefon</label><input class="s-phone" value="${esc(x.phone||"")}"></div><div><label>E-Mail</label><input class="s-email" value="${esc(x.email||"")}"></div>
       <div><label>Rolle</label><select class="s-role">${roleGroups().map(([g,rs])=>`<optgroup label="${esc(g)}">${rs.map(r=>`<option value="${esc(r.k)}" ${x.role===r.k?"selected":""}>${esc(r.l)}</option>`).join("")}</optgroup>`).join("")}</select></div>
@@ -1102,10 +1124,17 @@ function staffEd(x,box,isNew){
     <div class="row" style="margin-top:12px"><button class="btn sm s-save">Speichern</button>${isNew?"":`<button class="btn warn sm s-del">Löschen / sperren</button>`}</div>
     <div class="hint">Die PIN wird nur verschlüsselt gespeichert – bitte nach dem Speichern direkt an die Person weitergeben.</div></div>
     <div><label>Standorte (keiner ausgewählt = alle)</label><div class="cards-ed" style="max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px 10px">${STATIONS.map(st=>`<label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink);margin:4px 0"><input type="checkbox" class="s-st" value="${esc(st.id)}" style="width:auto" ${x.stations.includes(st.id)?"checked":""}> <b>${esc(st.project_id||st.id)}</b> <span class="muted">${esc(st.name||"")}</span></label>`).join("")}</div>
-    <div class="hint" style="margin-top:8px">Sichtbare Checklisten ergeben sich aus der Rolle (siehe Reiter „Checklisten“).</div></div></div>`;
+    <div class="hint" style="margin-top:8px">Sichtbare Checklisten ergeben sich aus der Rolle – und ggf. aus der Zuordnung zu dieser Person oder Firma (Reiter „Checklisten“).</div></div></div>`;
   box.querySelector(".s-gen").onclick=()=>{ box.querySelector(".s-pin").value=String(Math.floor(100000+Math.random()*900000)); };
+  if(x.contact_id){ contactSearch("").then(L=>{ const k=L.find(y=>y.id===x.contact_id), el=box.querySelector(".ct-name"); if(el) el.textContent=k?(k.name||"")+(k.company?" · "+k.company:""):"(nicht gefunden)"; });
+    box.querySelector(".ct-unlink").onclick=e=>{ e.preventDefault(); x.contact_id=null; staffEd(x,box,isNew); }; }
+  else { const q=box.querySelector(".ct-q"), res=box.querySelector(".ct-res"); let h;
+    q.oninput=()=>{ clearTimeout(h); h=setTimeout(async()=>{ const t=q.value.trim(); if(t.length<2){ res.innerHTML=""; return; } const L=(await contactSearch(t)).slice(0,8);
+      res.innerHTML=L.map(k=>`<button type="button" class="asg-r" data-id="${esc(k.id)}">📇 <b>${esc(k.name||"–")}</b> <span class="muted">${esc([k.company,k.email,k.phone].filter(Boolean).join(" · "))}</span></button>`).join("")||'<div class="muted" style="padding:6px">Kein Kontakt gefunden – Daten unten eintragen.</div>';
+      res.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{ const k=L.find(y=>y.id===b.dataset.id); Object.assign(x,{contact_id:k.id,name:k.name||x.name,company:k.company||x.company,email:k.email||x.email,phone:k.phone||x.phone}); staffEd(x,box,isNew); }); },250); }; }
   box.querySelector(".s-save").onclick=async()=>{ const pin=box.querySelector(".s-pin").value.trim();
-    try{ await fapi("staff_save",{staff:{id:x.id||null,name:box.querySelector(".s-name").value,company:box.querySelector(".s-company").value,phone:box.querySelector(".s-phone").value,email:box.querySelector(".s-email").value,
+    if(!x.contact_id&&box.querySelector(".ct-new")&&box.querySelector(".ct-new").checked){ try{ const r=await api("save_customer",{customer:{name:box.querySelector(".s-name").value,company:box.querySelector(".s-company").value,email:box.querySelector(".s-email").value,phone:box.querySelector(".s-phone").value,notes:"Field-Service: "+(FROLES[box.querySelector(".s-role").value]||"")}}); x.contact_id=r.customer&&r.customer.id; }catch(e){ return toast("Kontakt: "+e.message,true); } }
+    try{ await fapi("staff_save",{staff:{id:x.id||null,contact_id:x.contact_id||null,name:box.querySelector(".s-name").value,company:box.querySelector(".s-company").value,phone:box.querySelector(".s-phone").value,email:box.querySelector(".s-email").value,
       role:box.querySelector(".s-role").value,pin,hourly_rate:box.querySelector(".s-rate").value.replace(",","."),active:box.querySelector(".s-active").checked,stations:[...box.querySelectorAll(".s-st:checked")].map(c=>c.value)}});
       toast(pin?`Gespeichert ✓ – PIN ${pin} bitte jetzt weitergeben`:"Gespeichert ✓"); if(pin) alert(`PIN für ${box.querySelector(".s-name").value}: ${pin}\n\nBitte notieren und weitergeben – sie wird nicht wieder angezeigt.`); fStaff(); }catch(e){ toast(e.message,true); } };
   if(box.querySelector(".s-del")) box.querySelector(".s-del").onclick=async()=>{ if(!confirm(`${x.name} löschen? Hat die Person Protokolle, wird der Zugang nur gesperrt.`)) return; try{ const r=await fapi("staff_delete",{id:x.id}); toast(r.deactivated?"Zugang gesperrt (Protokolle bleiben)":"Gelöscht"); fStaff(); }catch(e){ toast(e.message,true); } };
@@ -1116,7 +1145,8 @@ function fLists(){
   <div id="clEd"></div><div class="grid" id="clGrid">${FCL.map((c,i)=>`<div class="card pcard" data-i="${i}" style="${c.active?"":"opacity:.55"}"><div class="row"><b style="font-size:16px">${esc(c.title)}</b><div class="sp"></div>${c.active?"":'<span class="badge off">inaktiv</span>'}</div>
     <div class="muted" style="margin:4px 0 8px">${esc(c.description||"")}</div>
     <div class="row" style="gap:6px">${c.roles.map(r=>`<span class="badge amber">${esc(FROLES[r]||r)}</span>`).join("")}</div>
-    <div class="stats"><div><b>${(c.items||[]).length}</b>Prüfpunkte</div><div><b>${esc(FSCOPE[c.scope])}</b>Umfang</div><div><b>${c.interval_days?c.interval_days+" T.":"–"}</b>Intervall</div><div><b>${clProjLabel(c)}</b>Projekte</div></div></div>`).join("")}</div>`;
+    <div class="stats"><div><b>${(c.items||[]).length}</b>Prüfpunkte</div><div><b>${esc(FSCOPE[c.scope])}</b>Umfang</div><div><b>${c.interval_days?c.interval_days+" T.":"–"}</b>Intervall</div><div><b>${clProjLabel(c)}</b>Projekte</div></div>
+    ${c.due_date||Object.keys(c.due_dates||{}).length||(c.assign_companies||[]).length||(c.assign_staff||[]).length?`<div class="row" style="gap:6px;margin-top:8px">${c.due_date?`<span class="badge">📅 ${d2(c.due_date)} ${dueTag(c.due_date+"T23:59:59",c.remind_days,c.urgent_days,false)}</span>`:""}${Object.keys(c.due_dates||{}).length?`<span class="badge">📅 ${Object.keys(c.due_dates).length} Projekttermin(e)</span>`:""}${(c.assign_companies||[]).length||(c.assign_staff||[]).length?`<span class="badge amber">🎯 ${[...(c.assign_companies||[]),...(c.assign_staff||[]).map(id=>(FSTAFF.find(x=>x.id===id)||{}).name||"Person")].map(esc).join(", ")}</span>`:""}</div>`:""}</div>`).join("")}</div>`;
   $("#cNewL").onclick=()=>listEd({title:"",roles:["technik"],scope:"charger",items:[{type:"check",text:"",required:true}],active:true,sort:100},true);
   document.querySelectorAll("#clGrid .pcard").forEach(c=>c.onclick=()=>listEd(JSON.parse(JSON.stringify(FCL[+c.dataset.i]))));
 }
@@ -1131,6 +1161,8 @@ function listEd(c,isNew){
     <div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn ghost sm it-up" type="button">↑</button><button class="btn ghost sm it-dn" type="button">↓</button><button class="btn ghost sm it-rm" type="button">✕</button></div></div>`;
   const collectL=()=>{ const ed=$("#clEd"); c.title=ed.querySelector(".l-title").value; c.description=ed.querySelector(".l-desc").value; c.scope=ed.querySelector(".l-scope").value;
     c.interval_days=ed.querySelector(".l-int").value; c.sort=ed.querySelector(".l-sort").value; c.active=ed.querySelector(".l-active").checked; c.roles=[...ed.querySelectorAll(".l-role:checked")].map(x=>x.value);
+    c.due_date=ed.querySelector(".l-due").value||null; c.remind_days=ed.querySelector(".l-rm").value; c.urgent_days=ed.querySelector(".l-ug").value;
+    c.due_dates={}; ed.querySelectorAll(".l-std").forEach(i=>{ if(i.value) c.due_dates[i.dataset.st]=i.value; });
     c.all_stations=ed.querySelector(".l-all:checked").value==="all"; const chk=[...ed.querySelectorAll(".l-st")];
     if(c.all_stations){ c.excluded_stations=chk.filter(x=>!x.checked).map(x=>x.value); } else { c.stations=chk.filter(x=>x.checked).map(x=>x.value); }
     c.items=[...ed.querySelectorAll(".lp")].map((r,i)=>({...(c.items[+r.dataset.i]||{}),text:r.querySelector(".it-text").value,hint:r.querySelector(".it-hint").value,type:r.querySelector(".it-type").value,required:r.querySelector(".it-req").checked,
@@ -1142,18 +1174,40 @@ function listEd(c,isNew){
       <div><label>Intervall (Tage, leer = keins)</label><input class="l-int" inputmode="numeric" value="${esc(c.interval_days||"")}"></div>
       <div><label>Reihenfolge</label><input class="l-sort" inputmode="numeric" value="${esc(c.sort??100)}"></div></div>
     <label style="margin-top:8px">Beschreibung (sieht der Mitarbeiter)</label><input class="l-desc" value="${esc(c.description||"")}">
+    <div class="due-box"><b>📅 Termine &amp; Erinnerung</b>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px">
+        <div><label>Fester Termin (alle Projekte)</label><input type="date" class="l-due" value="${esc(c.due_date||"")}"></div>
+        <div><label><span class="dtag d-soon">orange</span> Erinnerung ab … Tage vorher</label><input class="l-rm" inputmode="numeric" value="${c.remind_days??""}" placeholder="${REM.remind} (Standard)"></div>
+        <div><label><span class="dtag d-urgent">hellrot</span> dringend ab … Tage vorher</label><input class="l-ug" inputmode="numeric" value="${c.urgent_days??""}" placeholder="${REM.urgent} (Standard)"></div></div>
+      <div class="hint">Termin = konkretes Datum (z. B. DGUV-Prüfung am 15.03.); je Projekt abweichend unten bei „Gilt für Projekte“. Mit Intervall wird nach jeder Durchführung neu gerechnet. Überschritten: <span class="dtag d-over">−5 T.</span> · täglich Erinnerungs-Mail an das Team.</div></div>
     <label style="margin-top:10px">Sichtbar für</label>${roleChecks("l-role",c.roles)}
+    <label style="margin-top:10px">Nur für bestimmte Firmen / Personen <span class="muted">(optional – sonst alle der gewählten Rollen)</span></label>
+    <div class="asg"><div class="asg-chips">${(c.assign_companies||[]).map((n,i)=>`<span class="chip-c">🏢 ${esc(n)} <a href="#" data-rmc="${i}">×</a></span>`).join("")}${(c.assign_staff||[]).map((id,i)=>`<span class="chip-c">👤 ${esc((FSTAFF.find(x=>x.id===id)||{}).name||"Person")} <a href="#" data-rms="${i}">×</a></span>`).join("")}${!(c.assign_companies||[]).length&&!(c.assign_staff||[]).length?'<span class="muted" style="font-size:13px">alle Personen der gewählten Rollen</span>':""}</div>
+      <input class="asg-q" placeholder="🔎 Kontakt, Firma oder Mitarbeiter suchen …"><div class="asg-res"></div></div>
     <label style="margin-top:12px">Gilt für Projekte</label>
     <div class="row" style="gap:16px;margin-bottom:6px"><label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="radio" name="lall" class="l-all" value="all" style="width:auto" ${c.all_stations!==false?"checked":""}> Alle Projekte – auch neu angelegte</label>
       <label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)"><input type="radio" name="lall" class="l-all" value="sel" style="width:auto" ${c.all_stations===false?"checked":""}> Nur ausgewählte Projekte</label></div>
     <div class="cards-ed" style="max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px">${STATIONS.map(st=>{ const on=c.all_stations!==false?!(c.excluded_stations||[]).includes(st.id):(c.stations||[]).includes(st.id);
-      return `<label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink);margin:3px 0"><input type="checkbox" class="l-st" value="${esc(st.id)}" style="width:auto" ${on?"checked":""}> <b>${esc(st.project_id||st.id)}</b> <span class="muted">${esc(st.name||"")}</span></label>`; }).join("")||'<span class="muted">Noch keine Projekte.</span>'}</div>
+      return `<div class="l-strow"><label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink);margin:0;flex:1"><input type="checkbox" class="l-st" value="${esc(st.id)}" style="width:auto" ${on?"checked":""}> <b>${esc(st.project_id||st.id)}</b> <span class="muted">${esc(st.name||"")}</span></label><span class="muted" style="font-size:12px">eigener Termin</span><input type="date" class="l-std" data-st="${esc(st.id)}" value="${esc((c.due_dates||{})[st.id]||"")}" style="width:auto;padding:4px 8px"></div>`; }).join("")||'<span class="muted">Noch keine Projekte.</span>'}</div>
     <div class="hint">${c.all_stations!==false?"Abgewählte Projekte sind Ausnahmen – jedes neue Projekt bekommt die Liste automatisch.":"Neue Projekte bekommen die Liste nicht automatisch – im Projekt-Editor zuschaltbar."}</div>
     <label style="margin-top:12px">Prüfpunkte</label><div id="lItems">${c.items.map(row).join("")}</div>
     <button class="btn ghost sm" id="lAdd" style="margin-top:8px">+ Prüfpunkt</button>
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px;color:var(--ink)"><input type="checkbox" class="l-active" style="width:auto" ${c.active!==false?"checked":""}> aktiv</label>
     <div class="row" style="margin-top:12px"><button class="btn" id="lSave">Speichern</button>${isNew?"":`<button class="btn warn sm" id="lDel">Löschen</button>`}</div></div>`;
     $("#lX").onclick=()=>$("#clEd").innerHTML="";
+    const ed=$("#clEd"), aq=ed.querySelector(".asg-q"), ares=ed.querySelector(".asg-res"); let ah;
+    ed.querySelectorAll("[data-rmc]").forEach(a=>a.onclick=e=>{ e.preventDefault(); collectL(); c.assign_companies.splice(+a.dataset.rmc,1); draw(); });
+    ed.querySelectorAll("[data-rms]").forEach(a=>a.onclick=e=>{ e.preventDefault(); collectL(); c.assign_staff.splice(+a.dataset.rms,1); draw(); });
+    aq.oninput=()=>{ clearTimeout(ah); ah=setTimeout(async()=>{ const q=aq.value.trim().toLowerCase(); if(q.length<2){ ares.innerHTML=""; return; }
+      await ensureStaff(); const crm=await contactSearch(q);
+      const comps=[...new Set([...crm.map(k=>k.company),...FSTAFF.map(x=>x.company)].filter(x=>x&&x.toLowerCase().includes(q)))].slice(0,8);
+      const staff=FSTAFF.filter(x=>[x.name,x.company,x.email].join(" ").toLowerCase().includes(q)).slice(0,8);
+      const linked=new Set(FSTAFF.map(x=>x.contact_id).filter(Boolean)), crmOnly=crm.filter(k=>!linked.has(k.id)&&k.name).slice(0,5);
+      ares.innerHTML=[...comps.map(n=>`<button type="button" class="asg-r" data-c="${esc(n)}">🏢 <b>${esc(n)}</b> <span class="muted">Firma – alle Mitarbeiter dieser Firma</span></button>`),
+        ...staff.map(x=>`<button type="button" class="asg-r" data-s="${esc(x.id)}">👤 <b>${esc(x.name)}</b> <span class="muted">${esc(x.company||"")} · ${esc(FROLES[x.role]||x.role)}</span></button>`),
+        ...crmOnly.map(k=>`<div class="asg-r off">📇 ${esc(k.name)}${k.company?" · "+esc(k.company):""} <span class="muted">– Kontakt ohne Service-Zugang (im Reiter „Mitarbeiter“ anlegen)</span></div>`)].join("")||'<div class="muted" style="padding:6px">Nichts gefunden.</div>';
+      ares.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{ collectL(); c.assign_companies=[...new Set([...(c.assign_companies||[]),b.dataset.c])]; draw(); });
+      ares.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{ collectL(); c.assign_staff=[...new Set([...(c.assign_staff||[]),b.dataset.s])]; draw(); }); },250); };
     document.querySelectorAll("#clEd .l-all").forEach(r=>r.onchange=()=>{ collectL(); if(!c.all_stations&&!(c.stations||[]).length) c.stations=STATIONS.filter(st=>!(c.excluded_stations||[]).includes(st.id)).map(st=>st.id); if(c.all_stations) c.excluded_stations=STATIONS.filter(st=>!(c.stations||[]).includes(st.id)).map(st=>st.id); draw(); });
     $("#lAdd").onclick=()=>{ collectL(); c.items.push({type:"check",text:"",required:false}); draw(); };
     document.querySelectorAll("#lItems .lp").forEach(r=>{ const i=+r.dataset.i;

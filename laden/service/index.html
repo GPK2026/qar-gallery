@@ -116,6 +116,8 @@ textarea.f{min-height:76px;resize:vertical}
 .big-choice.st{border-color:#f3c2bc;background:#fff7f6}.big-choice.mg{border-color:#f5d78a;background:#fffbef}.big-choice.gf{border-color:#d03b3b;background:#fdecea}
 .prio-card{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;margin-top:8px;cursor:pointer}
 .prio-card.on{border-color:var(--brand);background:var(--brand-soft)}.prio-card small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.dtag{display:inline-block;border-radius:999px;padding:2px 9px;font-weight:700;font-size:12px;white-space:nowrap}
+.d-over{background:#d03b3b;color:#fff}.d-urgent{background:#fde0de;color:#b42318}.d-soon{background:#ffe6c7;color:#9a5300}.d-ok{background:#eef1ef;color:#5d6b65}
 .no{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:800;background:var(--brand-soft);color:#08603d;border-radius:12px;padding:12px;text-align:center;margin:10px 0}
 </style>
 </head>
@@ -172,21 +174,25 @@ function loginView(msg){
 
 /* ── Standort-Übersicht ── */
 const cpName=(st,n)=>{ const c=(st.connectors||[]).find(x=>x.n===n); if(!c) return n?"LP "+n:""; const ch=(st.chargers||[]).find(x=>x.n===c.charger); const loc=(st.connectors||[]).filter(x=>x.charger===c.charger).findIndex(x=>x.n===n)+1; return (ch?ch.label+" · ":"")+"Ladepunkt "+loc; };
-function due(l){ if(!l.interval_days) return null; if(!l.last) return "fällig"; const days=(Date.now()-new Date(l.last.finished_at))/864e5; return days>=l.interval_days?"fällig":days>=l.interval_days*.85?"bald fällig":null; }
+// Termine: überfällig rot „−X T.“, ≤ dringend (Std. 3 T.) hellrot, ≤ Erinnerung (Std. 14 T.) orange
+function dueInfo(iso,rm,ug){ if(!iso) return null; const d=Math.ceil((new Date(iso)-Date.now())/864e5); rm=rm??14; ug=ug??3;
+  return {d,cls:d<0?"d-over":d<=ug?"d-urgent":d<=rm?"d-soon":"d-ok",txt:d<0?`−${-d} T. überfällig`:d===0?"heute fällig":`fällig in ${d} T.`}; }
+const dueTag=(iso,rm,ug)=>{ const i=dueInfo(iso,rm,ug); return i?`<span class="dtag ${i.cls}">${i.txt}</span>`:""; };
+function due(l){ return dueInfo(l.next_due,l.remind,l.urgent); }
 /* ── Projektauswahl: anstehende Arbeiten je Projekt ── */
 async function projectsView(){
   $("#out").style.display="inline-block";
   view.innerHTML=`<div class="muted">Lade Projekte …</div>`;
   let r; try{ r=await api("projects"); }catch(e){ view.innerHTML=`<div class="card"><b>${esc(e.message)}</b><button class="btn ghost mt" onclick="logout()">Mit anderer PIN anmelden</button></div>`; return; }
-  const P=r.projects.map(p=>({...p,work:p.incidents*100+p.defects*10+p.due})).sort((a,b)=>b.work-a.work||String(a.project_id).localeCompare(String(b.project_id)));
-  const total=P.reduce((x,p)=>({i:x.i+p.incidents,d:x.d+p.defects,f:x.f+p.due}),{i:0,d:0,f:0});
+  const P=r.projects.map(p=>({...p,work:p.incidents*100+p.defects*10+p.due*5+(p.soon||0)})).sort((a,b)=>b.work-a.work||String(a.project_id).localeCompare(String(b.project_id)));
+  const total=P.reduce((x,p)=>({i:x.i+p.incidents,d:x.d+p.defects,f:x.f+p.due+(p.soon||0)}),{i:0,d:0,f:0});
   const me=S.auth&&S.auth.staff||{};
   const draw=q=>{ q=(q||"").toLowerCase(); const L=P.filter(p=>!q||[p.project_id,p.name,p.address,p.id].join(" ").toLowerCase().includes(q));
     $("#plist").innerHTML=L.map(p=>`<button class="card pj" data-st="${esc(p.id)}"><div class="row"><div style="text-align:left"><b style="font-size:17px">${esc(p.project_id||p.id)}</b><div class="small muted">${esc(p.name||"")}${p.address?" · "+esc(p.address):""}</div></div><span class="muted" style="font-size:22px">›</span></div>
-      <div class="pj-c">${p.incidents?`<span class="chip warn">⚠️ ${p.incidents} Störung${p.incidents>1?"en":""}</span>`:""}${p.defects?`<span class="chip amber">🛠 ${p.defects} Mangel${p.defects>1?"/Mängel":""}</span>`:""}${p.due?`<span class="chip amber">📋 ${p.due} Checkliste${p.due>1?"n":""} fällig</span>`:""}${p.work?"":`<span class="chip">✓ nichts offen</span>`}<span class="chip grey">${p.connectors} Ladepunkte</span></div></button>`).join("")||`<div class="card muted">Kein Projekt gefunden.</div>`;
+      <div class="pj-c">${p.incidents?`<span class="chip warn">⚠️ ${p.incidents} Störung${p.incidents>1?"en":""}</span>`:""}${p.defects?`<span class="chip amber">🛠 ${p.defects} Mangel${p.defects>1?"/Mängel":""}</span>`:""}${p.due?`<span class="dtag d-over">📋 ${p.due} überfällig</span>`:""}${p.urgent?`<span class="dtag d-urgent">📋 ${p.urgent} dringend</span>`:""}${(p.soon||0)-(p.urgent||0)>0?`<span class="dtag d-soon">📋 ${(p.soon||0)-(p.urgent||0)} bald fällig</span>`:""}${p.work?"":`<span class="chip">✓ nichts offen</span>`}<span class="chip grey">${p.connectors} Ladepunkte</span></div></button>`).join("")||`<div class="card muted">Kein Projekt gefunden.</div>`;
     view.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>pickStation(b.dataset.st)); };
   view.innerHTML=`<div class="small muted" style="margin:0 2px 8px">Angemeldet: <b style="color:var(--ink)">${esc(me.name||"")}</b>${me.role_label?" · "+esc(me.role_label):""}</div>
-    <div class="card"><h1>Projekt wählen</h1><div class="muted small">Anstehende Arbeiten für Ihre Rolle: <b>${total.i}</b> Störungen · <b>${total.d}</b> Mängel · <b>${total.f}</b> fällige Checklisten in ${P.length} Projekt${P.length===1?"":"en"}.</div>
+    <div class="card"><h1>Projekt wählen</h1><div class="muted small">Anstehende Arbeiten für Ihre Rolle: <b>${total.i}</b> Störungen · <b>${total.d}</b> Mängel · <b>${total.f}</b> fällige/bald fällige Checklisten in ${P.length} Projekt${P.length===1?"":"en"}.</div>
       ${P.length>4?`<input class="f" id="pq" type="search" placeholder="🔎 Projekt, Name oder Adresse">`:""}</div>
     <div id="plist"></div>`;
   draw(""); if($("#pq")) $("#pq").oninput=()=>draw($("#pq").value);
@@ -209,12 +215,12 @@ async function homeView(){
   ${(h.defects||[]).length?`<h2>🛠 Offene Mängel (${h.defects.length})</h2><div class="small muted" style="margin:-4px 2px 10px">Ladepunkt funktioniert – Behebung nach Priorität und Fälligkeit.</div>${h.defects.map(d=>{ const od=d.due_at&&new Date(d.due_at)<new Date();
       return `<div class="card def p${esc(d.priority||"B")}" id="d-${esc(d.id)}"><div class="row"><div><span class="prio p${esc(d.priority||"B")}">${esc(d.priority||"B")}</span> <b>${esc(d.item_text)}</b><br><span class="small">${esc(defWhere(st,d))}${d.note?" · "+esc(d.note):""}</span>
         <br><span class="small muted">${esc(d.defect_no||"")} · ${SRC[d.source]||"📋"} ${esc(d.created_by||"")} · ${fmt(d.created_at)}</span>
-        ${d.due_at?`<br><span class="small ${od?"due-od":"muted"}">${od?"⏰ überfällig seit "+fmt(d.due_at):"fällig bis "+fmt(d.due_at)}</span>`:""}</div><span class="chip ${d.status==="in_arbeit"?"amber":"grey"}">${d.status==="in_arbeit"?"in Arbeit":"offen"}</span></div>
+        ${d.due_at?`<br>${dueTag(d.due_at,S.home.remind,S.home.urgent)} <span class="small muted">${fmt(d.due_at)}</span>`:""}</div><span class="chip ${d.status==="in_arbeit"?"amber":"grey"}">${d.status==="in_arbeit"?"in Arbeit":"offen"}</span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="btn" data-dfix="${esc(d.id)}">🔧 Mangel beheben</button><button class="btn ghost" data-desc="${esc(d.id)}">⬆ Zur Störung</button></div>
       <div class="small" style="margin-top:8px"><a href="#" data-dw="${esc(d.id)}" class="muted">als „in Arbeit“ markieren</a></div></div>`; }).join("")}`:""}
   <h2>Checklisten</h2>
-  ${h.checklists.filter(l=>l.id!=="mangel").length?`<div class="tiles">${h.checklists.filter(l=>l.id!=="mangel").map(l=>{ const d=due(l); return `<button class="tile" data-cl="${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.description||"")}</small>
-      <small>${l.last?`zuletzt ${fmt(l.last.finished_at).split(",")[0]} · ${esc(l.last.staff_name)}`:"noch nie durchgeführt"}</small>${d?`<span class="chip ${d==="fällig"?"warn":"amber"}" style="align-self:flex-start">${d}</span>`:""}</button>`; }).join("")}</div>`:`<div class="card muted">Für Ihre Rolle sind keine Checklisten freigeschaltet.</div>`}
+  ${h.checklists.filter(l=>l.id!=="mangel").length?`<div class="tiles">${h.checklists.filter(l=>l.id!=="mangel").sort((a,b)=>(a.next_due?new Date(a.next_due):Infinity)-(b.next_due?new Date(b.next_due):Infinity)).map(l=>{ const d=due(l); return `<button class="tile" data-cl="${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.description||"")}</small>
+      <small>${l.last?`zuletzt ${fmt(l.last.finished_at).split(",")[0]} · ${esc(l.last.staff_name)}`:"noch nie durchgeführt"}</small>${d?`<span style="align-self:flex-start">${dueTag(l.next_due,l.remind,l.urgent)}</span><small>${l.fixed?"📅 Termin ":""}${new Date(l.next_due).toLocaleDateString("de-DE")}</small>`:""}</button>`; }).join("")}</div>`:`<div class="card muted">Für Ihre Rolle sind keine Checklisten freigeschaltet.</div>`}
   <h2>Letzte Protokolle an diesem Standort</h2>
   <div class="card">${h.recent.length?h.recent.map(r=>`<div class="rec"><span><b>${esc(r.checklist_title)}</b><br><span class="small muted">${fmt(r.finished_at)} · ${esc(r.staff_name)}${r.connector?" · "+esc(cpName(st,r.connector)):""}${r.work_minutes!=null?" · ⏱ "+hm(r.work_minutes):""}</span></span><span class="chip ${r.result==="ok"?"":"warn"}">${r.result==="ok"?"✓ ok":"⚠ Mängel"}</span></div>`).join(""):`<span class="muted small">Noch keine Protokolle.</span>`}</div>`;
   const im=$("#stImg"); im.onload=()=>im.hidden=false; im.src=IMG+encodeURIComponent(st.id)+".jpg?v="+Math.floor(Date.now()/3e5);
