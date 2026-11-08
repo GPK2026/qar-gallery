@@ -72,7 +72,7 @@ textarea.i{min-height:90px;resize:vertical}
 .cats{display:flex;flex-wrap:wrap;gap:6px}
 .cats label{border:1px solid var(--line);border-radius:999px;padding:6px 11px;font-size:13px;cursor:pointer;background:#fff;user-select:none}
 .cats input{display:none}.cats label:has(input:checked){background:var(--brand-soft);border-color:#9fd6bb;color:#08603d;font-weight:600}
-.cert-row{display:grid;grid-template-columns:1.4fr 1fr auto auto;gap:8px;align-items:center;margin-bottom:8px}
+.cert-row{display:grid;grid-template-columns:1.4fr 1fr auto auto;gap:8px;align-items:center;margin-bottom:8px}.cert-row.wide{grid-template-columns:1.2fr 1fr 1fr auto auto}
 .cert-row select,.cert-row input{border:1px solid var(--line);border-radius:10px;padding:8px;font-size:14px;background:#fff;width:100%}
 .file{display:inline-flex;align-items:center;gap:6px;border:1.5px dashed var(--line);border-radius:10px;padding:7px 10px;font-size:13px;cursor:pointer;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
 .file input{display:none}.file.has{border-style:solid;border-color:#9fd6bb;background:var(--brand-soft)}
@@ -85,7 +85,7 @@ textarea.i{min-height:90px;resize:vertical}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;font-size:14px;z-index:30;display:none;max-width:90vw}
 #zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:40}#zoom img{max-width:94vw;max-height:90vh;border-radius:10px}
 footer{max-width:860px;margin:0 auto;padding:0 16px 30px;font-size:12px;color:var(--muted);line-height:1.5}
-@media(max-width:700px){.jobs{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.grid2,.grid3{grid-template-columns:1fr}.dl{grid-template-columns:1fr}.dl dt{margin-top:6px}.cert-row{grid-template-columns:1fr 1fr}.hero{padding:18px}h1{font-size:21px}}
+@media(max-width:700px){.jobs{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.grid2,.grid3{grid-template-columns:1fr}.dl{grid-template-columns:1fr}.dl dt{margin-top:6px}.cert-row,.cert-row.wide{grid-template-columns:1fr 1fr}.hero{padding:18px}h1{font-size:21px}}
 </style>
 </head>
 <body>
@@ -107,7 +107,7 @@ const fmtD=d=>d?new Date(d).toLocaleDateString("de-DE",{timeZone:"Europe/Berlin"
 const fmtDT=d=>d?new Date(d).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short",timeZone:"Europe/Berlin"}):"–";
 const eur=n=>Number(n).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
 const left=d=>{ if(!d) return ""; const ms=Date.parse(d)-Date.now(); if(ms<0) return "abgelaufen"; const h=Math.floor(ms/36e5); return h<48?`noch ${h} Std.`:`noch ${Math.floor(h/24)} Tage`; };
-let S={token:null,me:null,jobs:[],certs:{},cats:{},crefo_max:249,tab:"jobs",f:{q:"",cat:"",src:""}};
+let S={token:null,me:null,jobs:[],certs:{},cats:{},brands:{},software:{},crefo_max:249,tab:"jobs",f:{q:"",cat:"",src:""}};
 try{ const t=JSON.parse(localStorage.getItem("hc_market")||"null"); if(t&&t.exp>Date.now()) S.token=t.token; }catch(e){}
 
 async function api(action,payload={}){
@@ -139,7 +139,7 @@ function go(tab,arg){ S.tab=tab; renderHead(); scrollTo(0,0);
 $("#home").onclick=()=>go("jobs");
 window.addEventListener("hashchange",()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(h) go("job",h); });
 
-async function loadMe(){ if(!S.token) return null; try{ const r=await api("me"); S.me=r.me; S.certs=r.certs; S.cats=r.cats; return S.me; }catch(e){ return null; } }
+async function loadMe(){ if(!S.token) return null; try{ const r=await api("me"); S.me=r.me; S.certs=r.certs; S.cats=r.cats; S.brands=r.brands||{}; S.software=r.software||{}; return S.me; }catch(e){ return null; } }
 function eligBox(el,ctx){
   if(!el) return "";
   if(el.ok) return `<div class="ok">✅ Ihr Betrieb ist freigegeben${ctx?" und erfüllt alle Voraussetzungen für diesen Auftrag":""}.</div>`;
@@ -158,7 +158,7 @@ async function jobsView(){
     <select id="fs"><option value="">Alle Arten</option><option>Störung</option><option>Mangel</option><option>Wartung / Checkliste</option><option>Auftrag</option></select></div>
     <div id="list"><div class="empty">Lade Aufträge…</div></div>`;
   if(S.token) loadMe().then(me=>{ if(me) $("#meBox").innerHTML=me.eligible.ok?"":eligBox(me.eligible)+"<div style='height:12px'></div>"; });
-  try{ const r=await api("jobs"); S.jobs=r.jobs; S.certs=r.certs; S.cats=r.cats; S.crefo_max=r.crefo_max; }
+  try{ const r=await api("jobs"); S.jobs=r.jobs; S.certs=r.certs; S.cats=r.cats; S.brands=r.brands||{}; S.software=r.software||{}; S.crefo_max=r.crefo_max; }
   catch(e){ $("#list").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   const cats=[...new Set(S.jobs.map(j=>j.category).filter(Boolean))];
   $("#fc").innerHTML=`<option value="">Alle Gewerke</option>`+cats.map(c=>`<option value="${c}">${esc(S.cats[c]||c)}</option>`).join("");
@@ -255,15 +255,18 @@ function loginView(){
 function certRows(id){ return `<div id="${id}"></div><button type="button" class="btn ghost sm" onclick="addCert('${id}')">+ Nachweis hinzufügen</button>`; }
 function addCert(id,type){
   const row=document.createElement("div"); row.className="cert-row";
-  row.innerHTML=`<select>${Object.entries(S.certs).map(([k,l])=>`<option value="${k}" ${k===type?"selected":""}>${esc(l)}</option>`).join("")}</select>
+  row.innerHTML=`<select class="ct">${Object.entries(S.certs).filter(([k])=>k!=="sonstiges").map(([k,l])=>`<option value="${k}" ${k===type?"selected":""}>${esc(l)}</option>`).join("")}<option value="hersteller">Herstellerschulung (Ladesäulen-Hersteller) …</option><option value="software">Backend-/Software-Zertifizierung …</option><option value="sonstiges">${esc(S.certs.sonstiges||"Sonstiger Nachweis")}</option></select>
+    <select class="cs" style="display:none"></select>
     <input type="date" title="Gültig bis (falls befristet)"><label class="file">📎 <span>Datei wählen</span><input type="file" accept="image/*,application/pdf"></label><button type="button" class="x" title="Entfernen">×</button>`;
+  const ct=row.querySelector(".ct"), cs=row.querySelector(".cs");
+  ct.onchange=()=>{ const v=ct.value, src=v==="hersteller"?S.brands:v==="software"?S.software:null; cs.style.display=src?"":"none"; if(src) cs.innerHTML=Object.entries(src).map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join(""); row.classList.toggle("wide",!!src); };
   const inp=row.querySelector("input[type=file]");
   inp.onchange=async()=>{ const f=inp.files[0]; if(!f) return; try{ row._data=await readFile(f); row._name=f.name; row.querySelector(".file span").textContent=f.name; row.querySelector(".file").classList.add("has"); }catch(e){ toast(e.message); } };
   row.querySelector(".x").onclick=()=>row.remove();
   $("#"+id).appendChild(row);
 }
-const collectCerts=id=>[...document.querySelectorAll(`#${id} .cert-row`)].filter(r=>r._data).map(r=>({type:r.querySelector("select").value,valid_until:r.querySelector("input[type=date]").value,name:r._name,data:r._data}));
-async function ensureMeta(){ if(Object.keys(S.certs).length) return; try{ const r=await api("jobs"); S.certs=r.certs; S.cats=r.cats; S.crefo_max=r.crefo_max; S.jobs=r.jobs; }catch(e){} }
+const collectCerts=id=>[...document.querySelectorAll(`#${id} .cert-row`)].filter(r=>r._data).map(r=>({type:(v=>v==="hersteller"||v==="software"?v+":"+r.querySelector(".cs").value:v)(r.querySelector(".ct").value),valid_until:r.querySelector("input[type=date]").value,name:r._name,data:r._data}));
+async function ensureMeta(){ if(Object.keys(S.certs).length&&Object.keys(S.brands).length) return; try{ const r=await api("jobs"); S.certs=r.certs; S.cats=r.cats; S.brands=r.brands||{}; S.software=r.software||{}; S.crefo_max=r.crefo_max; S.jobs=r.jobs; }catch(e){} }
 const catBoxes=sel=>`<div class="cats">${Object.entries(S.cats).map(([k,l])=>`<label><input type="checkbox" value="${k}" ${(sel||[]).includes(k)?"checked":""}>${esc(l)}</label>`).join("")}</div>`;
 async function registerView(){
   await ensureMeta();

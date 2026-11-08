@@ -274,7 +274,7 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 @media (max-width:760px){.c3,.c4,.c6,.c8{grid-column:span 12}.lp{grid-template-columns:50px 1fr 70px 36px}.lp .evse{grid-column:2 / span 3}nav{margin-left:0}header .in{flex-wrap:wrap}}
 
 /* ── Responsive: Tablet & Smartphone ── */
-@media (max-width:1180px){
+@media (max-width:1560px){
   header .in{flex-wrap:wrap;row-gap:8px}
   nav{order:9;width:100%;margin-left:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
   nav::-webkit-scrollbar{display:none}
@@ -362,9 +362,10 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 <body>
 <header><div class="in">
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="defects">Mängel</button><button data-v="termine">Termine</button><button data-v="market">Auftragsbörse</button><button data-v="field">Maintenance & Actions</button><button data-v="customers">Kontakte</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="settings">Einstellungen</button></nav>
+  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="defects">Mängel</button><button data-v="termine">Termine</button><button data-v="market">Auftragsbörse</button><button data-v="field">Maintenance & Actions</button><button data-v="customers">Kontakte</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="sim">🧪 Simulation</button><button data-v="settings">Einstellungen</button></nav>
   <div class="sp"></div>
   <form id="gsF" class="hidden" autocomplete="off"><input id="gs" type="search" placeholder="🔎 Alles durchsuchen …" title="Volltextsuche: Vorgangsnummer, E-Mail, Telefon, Ladekarte, EVSE-ID, Chat, Beschreibung, Notizen …"></form>
+  <button class="btn ghost sm hidden" id="simTg" title="Daten aus Simulationen (Test-Agenten) ein- oder ausblenden">🧪 SIM</button>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
 </div></header>
 <div class="wrap" id="main"></div>
@@ -378,28 +379,29 @@ const TYPES=["CCS","CHAdeMO","Typ 2","Typ 2 (Kabel)","Schuko","Tesla"];
 const $=s=>document.querySelector(s), main=$("#main");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let token=null; try{ token=sessionStorage.getItem("hc_admin"); }catch(e){}
+let SIMSHOW=false; try{ SIMSHOW=sessionStorage.getItem("hc_simshow")==="1"; }catch(e){}
 let STATIONS=[];
 
 function toast(msg,err){ const t=$("#toast"); t.textContent=msg; t.classList.toggle("err",!!err); t.classList.add("on"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("on"),2800); }
 const FAPI="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-field";
 async function fapi(action,payload={}){
-  const r=await fetch(FAPI,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,...payload})});
+  const r=await fetch(FAPI,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,sim_show:SIMSHOW,...payload})});
   const j=await r.json().catch(()=>({}));
   if(r.status===401){ logout(); throw new Error("Bitte neu anmelden"); }
   if(!r.ok) throw new Error(j.error||("Fehler "+r.status));
   if(j&&j.role_info) setRoleInfo(j.role_info); if(j&&j.remind!=null) REM={remind:j.remind,urgent:j.urgent}; return j;
 }
 async function api(action,payload={}){
-  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,...payload})});
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,sim_show:SIMSHOW,...payload})});
   const j=await r.json().catch(()=>({}));
   if(r.status===401 && action!=="login" && action!=="set_password"){ logout(); throw new Error("Bitte neu anmelden"); }
   if(!r.ok) throw new Error(j.error||("Fehler "+r.status));
   return j;
 }
-function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#logout").classList.add("hidden"); loginView(); }
+function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#logout").classList.add("hidden"); $("#simTg").classList.add("hidden"); loginView(); }
 $("#logout").onclick=logout;
 document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>go(b.dataset.v));
-function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); { const on=document.querySelector("#nav button.on"); if(on&&on.scrollIntoView) on.scrollIntoView({block:"nearest",inline:"center"}); } scrollTo(0,0); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,termine:termineView,market:marketView,tickets:ticketsView,settings:settingsView})[v](); }
+function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); { const on=document.querySelector("#nav button.on"); if(on&&on.scrollIntoView) on.scrollIntoView({block:"nearest",inline:"center"}); } scrollTo(0,0); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,termine:termineView,market:marketView,tickets:ticketsView,sim:simView,settings:settingsView})[v](); }
 
 /* ---------- Login ---------- */
 function loginView(){
@@ -410,7 +412,9 @@ function loginView(){
     try{ const r=await api("login",{password:$("#pw").value}); token=r.token; try{ sessionStorage.setItem("hc_admin",token); }catch(e){} start(); }
     catch(err){ toast(err.message,true); } };
 }
-function start(){ $("#nav").classList.remove("hidden"); $("#gsF").classList.remove("hidden"); $("#logout").classList.remove("hidden"); go("overview"); }
+function simTgPaint(){ const b=$("#simTg"); b.textContent=SIMSHOW?"🧪 SIM sichtbar":"🧪 SIM"; b.style.background=SIMSHOW?"var(--amber-soft)":""; b.style.borderColor=SIMSHOW?"#f0d9a0":""; }
+$("#simTg").onclick=()=>{ SIMSHOW=!SIMSHOW; try{ sessionStorage.setItem("hc_simshow",SIMSHOW?"1":"0"); }catch(e){} simTgPaint(); toast(SIMSHOW?"Simulationsdaten werden eingeblendet":"Simulationsdaten ausgeblendet"); const on=document.querySelector("#nav button.on"); go(on?on.dataset.v:"overview"); };
+function start(){ $("#nav").classList.remove("hidden"); $("#gsF").classList.remove("hidden"); $("#logout").classList.remove("hidden"); $("#simTg").classList.remove("hidden"); simTgPaint(); go("overview"); }
 $("#gsF").onsubmit=e=>{ e.preventDefault(); SQ.q=$("#gs").value.trim(); if(SQ.q.length>=2) go("search"); };
 
 /* ---------- Projekte ---------- */
@@ -465,6 +469,13 @@ function renderEditor(){
     <label style="margin-top:10px">💶 Tarife</label><textarea id="f_tariff" rows="5" placeholder="z. B. Ad-hoc 0,59 €/kWh · Blockiergebühr 0,10 €/Min. ab 4 Std. · mit Ladekarte gilt der Tarif Ihres Anbieters">${esc((E.extras||{}).tariff_info||"")}</textarea>
     <label style="margin-top:10px">ℹ️ Kundeninfo</label><textarea id="f_cinfo" rows="5" placeholder="z. B. Toiletten im Autohaus (Mo–Fr 8–18 Uhr) · Ladepunkt 3 wird am 12.11. gewartet">${esc((E.extras||{}).customer_info||"")}</textarea>
   </div>
+  <div class="card"><h2>Software &amp; Inventar</h2><p class="sub" style="margin-top:0">Grundlage für die automatischen Nachweis-Vorschläge der Auftragsbörse. Hersteller/Modell der Ladesäulen stehen bei den Chargern.</p>
+    <div class="row" style="gap:10px"><div style="flex:1;min-width:140px"><label>Backend / CPMS</label><input id="f_cpms" list="cpmsList" value="${esc((E.extras||{}).cpms||"")}" placeholder="z. B. Monta"><datalist id="cpmsList">${["Monta","has·to·be (Chargepoint)","Virta","AMPECO","ChargePoint","reev","be.ENERGISED","Driivz","ECG"].map(x=>`<option value="${x}">`).join("")}</datalist></div>
+      <div style="width:110px"><label>OCPP</label><select id="f_ocpp">${["","1.6J","2.0.1","2.1"].map(v=>`<option ${((E.extras||{}).ocpp||"")===v?"selected":""} value="${v}">${v||"–"}</option>`).join("")}</select></div></div>
+    <div class="row" style="gap:10px;margin-top:10px"><div style="flex:1;min-width:140px"><label>Bezahlterminal</label><input id="f_payment" value="${esc((E.extras||{}).payment||"")}" placeholder="z. B. Payter Apollo"></div>
+      <div style="flex:1;min-width:140px"><label>Kommunikation</label><input id="f_comms" value="${esc((E.extras||{}).comms||"")}" placeholder="z. B. LTE (Telekom), LAN"></div></div>
+    <label style="margin-top:10px">Weitere Komponenten / Hinweise</label><textarea id="f_inv" rows="3" placeholder="z. B. Trafostation, Lastmanagement, Eichrechts-Zähler, Firmware-Stand">${esc((E.extras||{}).inventory_note||"")}</textarea>
+</div>
   </div>
   ${!isNew?`<div class="ed-top ed-media"><div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">Fotos</h2><span class="muted" style="font-size:13px">★ = Titelbild oben in der Kunden- und Service-App</span><div class="sp"></div>
       <input type="file" accept="image/*" multiple id="imgIn" class="hidden"><button class="btn ghost sm" id="imgUp">+ Fotos hochladen</button></div>
@@ -565,7 +576,7 @@ async function loadGal(){ const g=$("#gal"); if(!g) return;
 function collect(){
   const v=id=>$("#"+id)?$("#"+id).value.trim():"";
   Object.assign(E,{project_id:v("f_project_id"),name:v("f_name"),address:v("f_address"),lat:v("f_lat"),lng:v("f_lng"),review_url:v("f_review_url"),notify_email:v("f_notify_email"),active:$("#f_active")?$("#f_active").checked:true});
-  E.extras={...(E.extras||{}),parking_info:($("#f_parking")?.value||"").trim(),tariff_info:($("#f_tariff")?.value||"").trim(),customer_info:($("#f_cinfo")?.value||"").trim(),project_name:($("#f_pname")?.value||"").trim(),sanitary:!!$("#f_sanitary")?.checked};
+  E.extras={...(E.extras||{}),parking_info:($("#f_parking")?.value||"").trim(),tariff_info:($("#f_tariff")?.value||"").trim(),customer_info:($("#f_cinfo")?.value||"").trim(),project_name:($("#f_pname")?.value||"").trim(),sanitary:!!$("#f_sanitary")?.checked,cpms:($("#f_cpms")?.value||"").trim(),ocpp:$("#f_ocpp")?.value||"",payment:($("#f_payment")?.value||"").trim(),comms:($("#f_comms")?.value||"").trim(),inventory_note:($("#f_inv")?.value||"").trim()};
   document.querySelectorAll(".charger").forEach(el=>{ const c=E.chargers[+el.dataset.ci]; if(!c) return;
     c.label=el.querySelector(".c_label").value.trim(); c.model=el.querySelector(".c_model").value.trim();
     el.querySelectorAll(".lp").forEach(r=>{ const x=c.connectors[+r.dataset.lj]; x.t=r.querySelector(".l_t").value; x.kw=r.querySelector(".l_kw").value.trim()||null; x.evse=r.querySelector(".l_evse").value.trim(); });
@@ -1838,7 +1849,7 @@ new MutationObserver(ms=>{ if(ms.some(m=>m.addedNodes.length)) eyeify(); }).obse
 /* ── Auftragsbörse ── */
 const MAPI="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-market";
 async function mapi(action,payload={}){
-  const r=await fetch(MAPI,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,...payload})});
+  const r=await fetch(MAPI,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,sim_show:SIMSHOW,...payload})});
   const j=await r.json().catch(()=>({}));
   if(r.status===401){ logout(); throw new Error("Bitte neu anmelden"); }
   if(!r.ok){ const e=new Error(j.error||("Fehler "+r.status)); e.why=j.why; throw e; }
@@ -1848,6 +1859,7 @@ let MKT={tab:"jobs",status:"",pstatus:"",meta:null};
 const MK_ST={entwurf:["Entwurf","off"],offen:["ausgeschrieben",""],vergeben:["vergeben","amber"],erledigt:["erledigt","off"],abgebrochen:["abgebrochen","off"]};
 const MK_PST={neu:["zu prüfen","amber"],geprueft:["freigegeben",""],gesperrt:["gesperrt","warn"]};
 const MK_BST={abgegeben:["offen",""],zurueckgezogen:["zurückgezogen","off"],angenommen:["Zuschlag","amber"],abgelehnt:["abgelehnt","off"]};
+const mkCL=k=>{ const m=MKT.meta||{}; if((m.certs||{})[k]) return m.certs[k]; if(/^hersteller:/.test(k)){ const b=k.slice(11); return "Herstellerschulung "+((m.brands||{})[b]||b); } if(/^software:/.test(k)){ const x=k.slice(9); return "Backend-Zertifizierung "+((m.software||{})[x]||x); } return k; };
 const mkEur=n=>n==null?"–":Number(n).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
 const mkStars=r=>r?`${"★".repeat(Math.round(r.avg))}${"☆".repeat(5-Math.round(r.avg))} <small class="muted">${r.avg.toFixed(1)} (${r.n})</small>`:'<small class="muted">noch keine</small>';
 const mkLocal=iso=>{ if(!iso) return ""; const d=new Date(iso); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); };
@@ -1902,14 +1914,37 @@ async function mkEdit(j){
       <div class="row" style="gap:10px;margin-top:10px"><div style="flex:1"><label>Ausführung ab</label><input type="date" id="mjF" value="${esc(j.desired_from||"")}"></div><div style="flex:1"><label>bis</label><input type="date" id="mjTo" value="${esc(j.desired_to||"")}"></div></div>
       <div class="row" style="gap:10px;margin-top:10px"><div style="flex:1.3"><label>Angebotsfrist</label><input type="datetime-local" id="mjDl" value="${dl}"></div><div style="flex:1"><label>Richtwert € <small>(optional, nur für Freigegebene)</small></label><input id="mjH" inputmode="decimal" value="${j.price_hint??""}"></div>
         <div style="flex:.8"><label>Wiederkehrend (Tage)</label><input id="mjR" inputmode="numeric" value="${j.recurring_days??""}"></div></div>
-      <label style="margin-top:10px">Erforderliche Nachweise</label><div class="row" style="gap:6px" id="mjQ">${Object.entries(m.certs).filter(([k])=>k!=="sonstiges").map(([k,l])=>`<button type="button" class="chip ${(j.qualifications||[]).includes(k)?"on":""}" data-q="${k}" style="border:1.5px solid var(--line);border-radius:999px;padding:4px 10px;background:#fff;font-size:12.5px">${esc(l)}</button>`).join("")}</div>
-      <div class="hint">Unabhängig davon gilt für alle: Betrieb geprüft und Creditreform-Index ≤ ${m.crefo_max}.</div>
+    </div></div>
+    <div class="card" style="background:#f8faf9;padding:12px 14px;margin:12px 0 0">
+      <div class="row"><b style="flex:1;min-width:180px">🎓 Erforderliche Nachweise</b><button type="button" class="btn ghost sm" id="mjRe">↻ Vorschlag neu berechnen</button></div>
+      <div class="hint" style="margin-top:4px">Vom System aus <b>Hardware</b> (Hersteller, Leistung), <b>Software</b> (Backend, OCPP, Terminal) des Projekts und der <b>Aufgabe</b> vorgeschlagen. Bitte prüfen, ergänzen oder entfernen – die finale Freigabe liegt beim Admin.</div>
+      <div id="mjInv" class="hint" style="margin-top:4px"></div>
+      <div id="mjQ" style="margin-top:8px"></div>
+      <div class="row" style="gap:6px;margin-top:8px"><select id="mjQadd" style="flex:1;min-width:180px"></select><button type="button" class="btn ghost sm" id="mjQaddB">+ hinzufügen</button></div>
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;color:var(--ink);font-size:13.5px;font-weight:600"><input type="checkbox" id="mjQok" style="width:auto;margin-top:2px" ${j.quals_confirmed?"checked":""}> Nachweise geprüft und bestätigt <span class="muted" style="font-weight:400">(Pflicht vor dem Ausschreiben)</span></label>
+      <div class="hint">Für alle Betriebe gilt zusätzlich: geprüft und freigegeben, Creditreform-Index ≤ ${m.crefo_max}.</div>
+    <div>
     </div></div>
     ${!isNew?`<h3 style="margin-top:14px">Fotos</h3><div class="row" id="mjPhs"></div><label class="btn ghost sm" style="display:inline-block;margin-top:6px;cursor:pointer">📷 Foto hinzufügen<input type="file" accept="image/*" multiple id="mjUp" style="display:none"></label>`:""}
     <div class="row" style="margin-top:16px"><button class="btn" id="mjSave">${isNew?"Als Entwurf speichern":"Speichern"}</button>${j.status!=="vergeben"&&j.status!=="erledigt"?`<button class="btn" id="mjPub" style="background:#F08C00">${j.status==="offen"?"Speichern":"Speichern & ausschreiben"}</button>`:""}<button class="btn ghost" data-close>Abbrechen</button></div>`);
   const q=s=>md.querySelector(s);
-  q("#mjQ").querySelectorAll("button").forEach(b=>b.onclick=()=>{ b.classList.toggle("on"); b.style.background=b.classList.contains("on")?"var(--brand-soft)":"#fff"; b.style.borderColor=b.classList.contains("on")?"var(--brand)":"var(--line)"; });
-  q("#mjQ").querySelectorAll("button.on").forEach(b=>{ b.style.background="var(--brand-soft)"; b.style.borderColor="var(--brand)"; });
+  // Nachweise: Systemvorschlag (mit Begründung) + manuelle Ergänzungen; jede Änderung hebt die Bestätigung auf
+  let SUG=(j.quals_suggested||[]).map(x=>({k:x.k,why:x.why||"",src:"system"}));
+  let QL=(j.qualifications||[]).map(k=>SUG.find(x=>x.k===k)||{k,why:"",src:"admin"});
+  const unconfirm=()=>{ if(q("#mjQok").checked){ q("#mjQok").checked=false; toast("Nachweise geändert – bitte erneut bestätigen"); } };
+  const paintQ=()=>{ q("#mjQ").innerHTML=QL.length?QL.map((x,i)=>`<div class="row" style="gap:8px;padding:6px 0;border-top:1px solid var(--line);flex-wrap:nowrap;align-items:flex-start"><span class="badge ${x.src==="system"?"":"amber"}" style="flex:none">${x.src==="system"?"System":"Admin"}</span><div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(mkCL(x.k))}</b>${x.why?`<div class="muted" style="font-size:12px">${esc(x.why)}</div>`:""}</div><button type="button" class="btn ghost sm" data-rm="${i}" title="entfernen" style="flex:none">✕</button></div>`).join(""):'<div class="muted" style="font-size:13px">Keine besonderen Nachweise.</div>';
+    q("#mjQ").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ QL.splice(+b.dataset.rm,1); unconfirm(); paintQ(); });
+    const opts=[...Object.keys(m.certs),...Object.keys(m.brands||{}).map(b=>"hersteller:"+b),...Object.keys(m.software||{}).map(x=>"software:"+x)].filter(k=>!QL.some(x=>x.k===k));
+    q("#mjQadd").innerHTML=`<option value="">Nachweis hinzufügen …</option>`+opts.map(k=>`<option value="${esc(k)}">${esc(mkCL(k))}</option>`).join(""); };
+  q("#mjQaddB").onclick=()=>{ const k=q("#mjQadd").value; if(!k) return; QL.push(SUG.find(x=>x.k===k)||{k,why:"manuell ergänzt",src:"admin"}); unconfirm(); paintQ(); };
+  const resug=async(quiet)=>{ try{ const r=await mapi("m_suggest",{job:{...collect(),qualifications:undefined}}); SUG=(r.suggested||[]).map(x=>({k:x.k,why:x.why,src:"system"}));
+      const manual=QL.filter(x=>x.src!=="system"&&!SUG.some(s=>s.k===x.k)); const before=QL.map(x=>x.k).sort().join();
+      QL=[...SUG,...manual]; if(QL.map(x=>x.k).sort().join()!==before) unconfirm();
+      const inv=r.inventory; q("#mjInv").innerHTML=inv?`Inventar: ${esc((inv.chargers||[]).map(c=>`${c.label}: ${c.brand?(m.brands||{})[c.brand]||c.brand:"Hersteller ?"} ${c.kw?c.kw+" kW":""}`).join(" · ")||"keine Charger")}${inv.cpms?` · Backend ${esc(inv.cpms)}${inv.ocpp?" (OCPP "+esc(inv.ocpp)+")":""}`:" · Backend nicht hinterlegt"}${inv.payment?` · Terminal ${esc(inv.payment)}`:""}`:"Kein Projekt gewählt – Hardware/Software fließen nicht ein.";
+      paintQ(); if(!quiet) toast("Vorschlag aktualisiert"); }catch(e){ toast(e.message,true); } };
+  q("#mjRe").onclick=()=>resug(false);
+  ["#mjS","#mjC"].forEach(id=>q(id).addEventListener("change",()=>resug(true)));
+  paintQ(); setTimeout(()=>resug(true),0);
   q("#mjS").onchange=()=>{ const s=STATIONS.find(x=>x.id===q("#mjS").value); if(s&&!q("#mjL").value){ const mm=String(s.address||"").match(/\b\d{5}\s+([^,]+)/); q("#mjL").value=mm?mm[1].trim():""; } };
   const photos=list=>{ const el=q("#mjPhs"); if(!el) return; el.innerHTML=(list.urls||[]).map((u,i)=>`<div style="position:relative"><img src="${esc(u)}" style="width:110px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"><button class="btn warn sm" data-p="${esc(list.paths[i])}" style="position:absolute;top:3px;right:3px;padding:1px 6px">✕</button></div>`).join("")||'<span class="muted" style="font-size:13px">keine Fotos</span>';
     el.querySelectorAll("[data-p]").forEach(b=>b.onclick=async()=>{ try{ const r=await mapi("m_photo_delete",{id:j.id,path:b.dataset.p}); photos({urls:r.photos,paths:r.paths}); }catch(e){ toast(e.message,true); } }); };
@@ -1918,8 +1953,8 @@ async function mkEdit(j){
   const collect=()=>({ id:j.id, source_type:j.source_type, source_ref:j.source_ref, photo_src:q("#mjPh")&&q("#mjPh").checked?j.photo_src:null,
     title:q("#mjT").value, description:q("#mjD").value, station_id:q("#mjS").value, location_public:q("#mjL").value, category:q("#mjC").value, price_type:q("#mjP").value,
     desired_from:q("#mjF").value, desired_to:q("#mjTo").value, bid_deadline:q("#mjDl").value?new Date(q("#mjDl").value).toISOString():null, price_hint:q("#mjH").value, recurring_days:q("#mjR").value,
-    qualifications:[...q("#mjQ").querySelectorAll("button.on")].map(b=>b.dataset.q) });
-  const save=async pub=>{ try{ const r=await mapi("m_job_save",{job:collect()});
+    qualifications:typeof QL!=="undefined"?QL.map(x=>x.k):(j.qualifications||[]), quals_suggested:typeof SUG!=="undefined"?SUG.map(({k,why})=>({k,why})):(j.quals_suggested||[]), quals_confirmed:!!(q("#mjQok")&&q("#mjQok").checked) });
+  const save=async pub=>{ if(pub&&!q("#mjQok").checked){ q("#mjQok").closest("label").style.color="var(--warn)"; return toast("Bitte die erforderlichen Nachweise prüfen und bestätigen",true); } try{ const r=await mapi("m_job_save",{job:collect()});
       if(pub){ if(!confirm("Auftrag jetzt öffentlich ausschreiben? Passende freigegebene Betriebe bekommen eine E-Mail.")) { md.remove(); MKT.tab="jobs"; go("market"); return; }
         const p=await mapi("m_publish",{id:r.job.id}); toast(`Ausgeschrieben ✓${p.notified?` · ${p.notified} Betrieb(e) informiert`:""}`); }
       else toast("Gespeichert ✓");
@@ -1940,7 +1975,7 @@ async function mkJob(id){
       ${["entwurf","offen"].includes(j.status)?`<button class="btn warn sm" id="mkX">Zurückziehen</button>`:""}
       ${j.status==="offen"?`<a class="btn ghost sm" href="../auftraege/#${esc(j.job_no)}" target="_blank" rel="noopener">Öffentlich ansehen ↗</a>`:""}</div>
     <details><summary style="cursor:pointer;font-weight:600">Beschreibung & Anforderungen</summary><div style="white-space:pre-wrap;margin:8px 0;font-size:14px">${esc(j.description||"–")}</div>
-      <div class="row" style="gap:6px">${(j.qualifications||[]).map(q=>`<span class="badge">${esc(m.certs[q]||q)}</span>`).join("")||'<span class="muted">keine besonderen Nachweise</span>'}</div>
+      <div class="row" style="gap:6px">${(j.qualifications||[]).map(q=>`<span class="badge">${esc(mkCL(q))}</span>`).join("")||'<span class="muted">keine besonderen Nachweise</span>'}</div>
       ${(j.photo_urls||[]).length?`<div class="row" style="margin-top:8px">${j.photo_urls.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" style="width:100px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join("")}</div>`:""}</details>
     <h3 style="margin-top:16px">Angebote (${r.bids.filter(b=>b.status!=="zurueckgezogen").length})</h3>
     <div style="overflow:auto"><table class="mini"><thead><tr><th>Betrieb</th><th>Angebot</th><th>≈ Gesamt</th><th>Ab</th><th>Bewertung</th><th>Bonität</th><th>Voraussetzungen</th><th></th></tr></thead><tbody>
@@ -2005,7 +2040,7 @@ async function mkProv(id){
       <div class="row" style="gap:10px"><div style="flex:1.2"><label>Crefonummer</label><input id="mpN" value="${esc(p.crefo_no||"")}"></div><div style="flex:1"><label>Bonitätsindex (100–600)</label><input id="mpI" inputmode="numeric" value="${p.crefo_index??""}"></div><div style="flex:1.2"><label>Geprüft am</label><input type="date" id="mpD" value="${esc(p.crefo_checked_at?String(p.crefo_checked_at).slice(0,10):"")}"></div></div>
       <div class="hint">Gut = Index ≤ ${m.crefo_max}. Die Prüfung muss jünger als ${Math.round(m.crefo_age/30)} Monate sein. Auskunft über Ihren Creditreform-Zugang abrufen und hier eintragen.</div>
       <h3 style="margin-top:14px">Nachweise</h3>
-      ${(p.certs||[]).length?`<div style="overflow:auto"><table class="mini"><thead><tr><th>Art</th><th>Datei</th><th>Gültig bis</th><th>Geprüft</th><th></th></tr></thead><tbody>${p.certs.map(c=>`<tr data-c="${esc(c.id)}"><td><select data-k="type" style="font-size:12.5px;padding:5px">${Object.entries(m.certs).map(([k,l])=>`<option value="${k}" ${k===c.type?"selected":""}>${esc(l)}</option>`).join("")}</select></td>
+      ${(p.certs||[]).length?`<div style="overflow:auto"><table class="mini"><thead><tr><th>Art</th><th>Datei</th><th>Gültig bis</th><th>Geprüft</th><th></th></tr></thead><tbody>${p.certs.map(c=>`<tr data-c="${esc(c.id)}"><td><select data-k="type" style="font-size:12.5px;padding:5px">${(m.certs[c.type]?[]:[[c.type,mkCL(c.type)]]).concat(Object.entries(m.certs)).map(([k,l])=>`<option value="${esc(k)}" ${k===c.type?"selected":""}>${esc(l)}</option>`).join("")}</select></td>
         <td>${c.url?`<a href="${esc(c.url)}" target="_blank" rel="noopener">📎 ${esc(c.name||"öffnen")}</a>`:esc(c.name||"–")}<br><small class="muted">${fmtDT(c.at)}</small></td>
         <td><input type="date" data-k="valid_until" value="${esc(c.valid_until||"")}" style="font-size:12.5px;padding:5px;${c.valid_until&&c.valid_until<today?"border-color:#f3c1bc":""}"></td><td><input type="checkbox" data-k="verified" ${c.verified?"checked":""} style="width:auto"></td>
         <td><label style="margin:0;font-weight:500;display:inline-flex;gap:3px"><input type="checkbox" data-k="remove" style="width:auto">🗑</label></td></tr>`).join("")}</tbody></table></div>`:'<div class="muted" style="font-size:13px">Keine Nachweise hochgeladen.</div>'}
@@ -2022,6 +2057,112 @@ async function mkProv(id){
     try{ await mapi("m_provider_set",{id:p.id,provider:collect(status)}); toast(status==="geprueft"&&p.status!=="geprueft"?"Freigegeben ✓ · Betrieb per E-Mail informiert":"Gespeichert ✓"); md.remove(); if($("#mkBody")) MKT.tab==="prov"?mkProviders():mkJobs(); }catch(e){ toast(e.message,true); } };
   q("#mpSave").onclick=()=>save(q("#mpS").value);
   if(q("#mpOk")) q("#mpOk").onclick=()=>{ if(!q("#mpI").value||!q("#mpD").value) return toast("Bitte vorher Bonitätsindex und Prüfdatum eintragen",true); md.querySelectorAll('[data-k=verified]').forEach(c=>{ const tr=c.closest("tr"); if(!tr.querySelector('[data-k=remove]').checked) c.checked=true; }); save("geprueft"); };
+}
+
+/* ── Simulation (KI-Agenten testen das System) ── */
+const SAPI="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-sim";
+async function sapi(action,payload={}){
+  const r=await fetch(SAPI,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,...payload})});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401){ logout(); throw new Error("Bitte neu anmelden"); }
+  if(!r.ok){ const e=new Error(j.error||("Fehler "+r.status)); e.data=j; throw e; }
+  return j;
+}
+let SIMV={cat:null,sc:"stoerung",station:"",max:150,run:null,after:0,log:[],loop:false,filter:"all"};
+const SIM_ROLE={kunde:["👤","Kunde"],dispo:["🗂","Disposition"],pruefer:["🔎","Prüfer"],anbieter:["🏢","Dienstleister"],field:["🔧","Service-App"],system:["⚙️","System"]};
+const SIM_KIND={think:["💭","Gedanke","#5d6b65"],action:["▶","Aktion","#14201b"],error:["⚠","Fehler","#b42318"],finding:["🐞","Befund","#9a6700"],done:["✅","Phase fertig","#08603d"],phase:["🎬","Phase","#1d4ed8"],info:["ℹ","Info","#5d6b65"],mail:["📧","Mail","#5d6b65"]};
+const SIM_ST={laeuft:["läuft",""],pausiert:["pausiert","amber"],fertig:["fertig","off"],abgebrochen:["abgebrochen","off"],fehler:["Fehler","warn"]};
+async function simView(){
+  SIMV.loop=false;
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div style="flex:1;min-width:260px"><h1>🧪 Simulation</h1><p class="sub" style="margin:0">KI-Agenten spielen Kunden, Disposition, Prüfer, Dienstleister (Techniker, Servicefirma, Elektro-Prüfer, Folierer, Reinigung, Fotograf, Security, IT, Lieferant) und Service-App-Nutzer – und benutzen dabei die <b>echten</b> Funktionen. Alle Daten sind als <b>SIM</b> markiert (im Dashboard ausgeblendet, Schalter „🧪 SIM“ oben), es gehen keine Mails oder Telegram-Nachrichten raus, und SIM-Agenten sehen nur SIM-Daten. Auffälligkeiten melden die Agenten als <b>Befunde</b>.</p></div></div>
+  <div id="simBody"><div class="card muted">Lade …</div></div>`;
+  try{ const [c,r]=await Promise.all([sapi("catalog"),sapi("runs")]); SIMV.cat=c; SIMV.runs=r.runs; }catch(e){ return $("#simBody").innerHTML=`<div class="card muted">${esc(e.message)}</div>`; }
+  const live=(SIMV.runs||[]).find(x=>x.status==="laeuft");
+  if(live) return simRun(live.id);
+  simHome();
+}
+function simHome(){
+  const c=SIMV.cat, sc=c.scenarios.find(x=>x.k===SIMV.sc)||c.scenarios[0];
+  const groups={}; c.personas.forEach(p=>(groups[p.group]||=[]).push(p));
+  $("#simBody").innerHTML=`${c.has_key?"":`<div class="card" style="background:var(--warn-soft);border-color:#f3c1bc">Der Schlüssel ANTHROPIC_API_KEY fehlt in den Supabase-Secrets – ohne ihn können die Agenten nicht arbeiten.</div>`}
+  <div class="grid2c"><div class="card"><h2 style="margin-top:0">Neue Simulation</h2>
+    <label>Szenario</label><div id="simSc" style="display:flex;flex-direction:column;gap:8px">${c.scenarios.map(s=>`<label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid ${s.k===sc.k?"var(--brand)":"var(--line)"};background:${s.k===sc.k?"var(--brand-soft)":"#fff"};border-radius:10px;padding:10px;margin:0;cursor:pointer;color:var(--ink);font-weight:500">
+      <input type="radio" name="simsc" value="${s.k}" ${s.k===sc.k?"checked":""} style="width:auto;margin-top:3px"><div><b>${esc(s.label)}</b> <span class="muted" style="font-size:12px">· ${s.phases} Phasen · ${s.personas.length} Agenten</span><div class="muted" style="font-size:12.5px;margin-top:2px">${esc(s.desc)}</div>
+      <div class="row" style="gap:4px;margin-top:6px">${s.personas.map(k=>{ const p=c.personas.find(x=>x.key===k); return p?`<span class="badge ${p.role==="anbieter"?"amber":p.role==="kunde"?"":"off"}" title="${esc(p.who)}">${SIM_ROLE[p.role][0]} ${esc(p.name.replace(" (SIM)",""))}</span>`:""; }).join("")}</div></div></label>`).join("")}</div>
+    <div class="row" style="gap:10px;margin-top:12px"><div style="flex:2;min-width:180px"><label>Standort</label><select id="simSt">${c.stations.map(s=>`<option value="${esc(s.id)}" ${SIMV.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.address?" · "+esc(s.address):""}</option>`).join("")}</select></div>
+      <div style="flex:1;min-width:110px"><label>Max. KI-Züge</label><input id="simMax" type="number" min="10" max="400" value="${SIMV.max}"></div></div>
+    <div class="hint">Modell: ${esc(c.model)} (Einstellung SIM_MODEL). Ein Zug ≈ 3–8 Tsd. Tokens. Der Lauf arbeitet, solange diese Seite offen ist, und lässt sich jederzeit pausieren.</div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="simGo" ${c.has_key?"":"disabled"}>▶ Simulation starten</button></div></div>
+  <div><div class="card"><h2 style="margin-top:0">Bisherige Läufe</h2>${(SIMV.runs||[]).length?`<div style="overflow:auto"><table class="mini"><thead><tr><th>Start</th><th>Szenario</th><th>Status</th><th>Züge</th><th>Befunde</th><th>Tokens</th></tr></thead><tbody>${SIMV.runs.map(r=>`<tr class="click" data-r="${esc(r.id)}" style="cursor:pointer"><td>${fmtDT(r.created_at)}</td><td>${esc((c.scenarios.find(s=>s.k===r.scenario)||{}).label||r.scenario)}</td><td><span class="badge ${(SIM_ST[r.status]||["","off"])[1]}">${(SIM_ST[r.status]||[r.status])[0]}</span></td><td>${r.steps}</td><td><b>${r.findings}</b></td><td>${Math.round((r.tokens_in+r.tokens_out)/1000)}k</td></tr>`).join("")}</tbody></table></div>`:'<div class="muted" style="font-size:13px">Noch keine Läufe.</div>'}</div>
+    <div class="card"><h2 style="margin-top:0">Aufräumen</h2><p class="sub" style="margin:0 0 10px">Löscht alle SIM-Daten: Störungen, Mängel, Protokolle, Termine, Kontakte, Service-Zugänge, Aufträge, Betriebe und Angebote aus Simulationen. Echte Daten bleiben unberührt.</p>
+      <label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-weight:500"><input type="checkbox" id="simCR" style="width:auto"> auch die Lauf-Protokolle löschen</label>
+      <button class="btn warn" id="simClean" style="margin-top:8px">🧹 Alle SIM-Daten löschen</button></div></div></div>
+  <h2>Agenten (${c.personas.length})</h2>
+  <div class="grid">${Object.entries(groups).map(([g,l])=>`<div class="card"><div class="rg-h" style="margin-bottom:6px">${esc(g)}</div>${l.map(p=>`<div style="padding:6px 0;border-top:1px solid var(--line)"><b>${SIM_ROLE[p.role][0]} ${esc(p.name.replace(" (SIM)",""))}</b><div class="muted" style="font-size:12.5px">${esc(p.who)}</div><div style="font-size:12px;margin-top:2px"><i>${esc(p.char)}</i></div>${p.certs?`<div class="row" style="gap:3px;margin-top:4px">${p.certs.map(k=>`<span class="badge off" style="font-size:10.5px">${esc(mkCL(k))}</span>`).join("")}${p.crefo!==undefined?`<span class="badge ${p.crefo&&p.crefo<=249?"":"warn"}" style="font-size:10.5px">Crefo ${p.crefo??"–"}</span>`:""}</div>`:""}</div>`).join("")}</div>`).join("")}</div>`;
+  if(!MKT.meta) mkMeta().then(()=>{}).catch(()=>{});
+  document.querySelectorAll('input[name=simsc]').forEach(r=>r.onchange=()=>{ SIMV.sc=r.value; SIMV.station=$("#simSt").value; SIMV.max=+$("#simMax").value||150; simHome(); });
+  $("#simBody").querySelectorAll("tr[data-r]").forEach(t=>t.onclick=()=>simRun(t.dataset.r));
+  $("#simGo").onclick=async()=>{ SIMV.station=$("#simSt").value; SIMV.max=+$("#simMax").value||150; $("#simGo").disabled=true;
+    try{ const r=await sapi("start",{scenario:SIMV.sc,station:SIMV.station,max_steps:SIMV.max}); toast("Simulation gestartet"); simRun(r.id,true); }catch(e){ $("#simGo").disabled=false; toast(e.message,true); if(e.data&&e.data.run) simRun(e.data.run); } };
+  $("#simClean").onclick=async()=>{ if(!confirm("Alle SIM-Daten löschen? Echte Daten bleiben unberührt.")) return; try{ const r=await sapi("cleanup",{runs:$("#simCR").checked}); const n=Object.values(r.deleted||{}).reduce((a,b)=>a+b,0); toast(`Aufgeräumt ✓ · ${n} Einträge gelöscht`); simView(); }catch(e){ toast(e.message,true); } };
+}
+async function simRun(id,autostart){
+  SIMV.run=null; SIMV.after=0; SIMV.log=[]; SIMV.loop=false;
+  $("#simBody").innerHTML=`<div class="card muted">Lade Lauf …</div>`;
+  await simPull(id);
+  simPaint(true);
+  if(autostart||SIMV.run.status==="laeuft") simLoop();
+}
+async function simPull(id){
+  const r=await sapi("run",{id:id||SIMV.run.id,after:SIMV.after});
+  SIMV.run=r.run; if(r.log.length){ SIMV.log.push(...r.log); SIMV.after=r.log[r.log.length-1].id; }
+  return r.log.length;
+}
+async function simLoop(){
+  if(SIMV.loop) return; SIMV.loop=true; simPaint();
+  const id=SIMV.run.id;
+  while(SIMV.loop&&SIMV.run&&SIMV.run.id===id&&SIMV.run.status==="laeuft"&&document.querySelector("#simLog")){
+    try{ const st=await sapi("step",{id}); if(st.busy) await new Promise(r=>setTimeout(r,3000)); }catch(e){ toast(e.message,true); await new Promise(r=>setTimeout(r,4000)); }
+    try{ await simPull(); }catch(e){}
+    if(!document.querySelector("#simLog")) break; simPaint();
+  }
+  SIMV.loop=false; if(document.querySelector("#simLog")) simPaint();
+}
+function simPaint(full){
+  const r=SIMV.run, c=SIMV.cat; if(!r||!document.querySelector("#simBody")) return;
+  const st=SIM_ST[r.status]||[r.status,"off"], fnd=SIMV.log.filter(l=>l.kind==="finding");
+  const sev={kritisch:0,fehler:0,ux:0,idee:0}; fnd.forEach(f=>{ const s=(f.data&&f.data.severity)||"ux"; sev[s]=(sev[s]||0)+1; });
+  if(full||!document.querySelector("#simLog")){
+    $("#simBody").innerHTML=`<div class="row" style="margin-bottom:10px"><button class="btn ghost sm" id="simBack">‹ Übersicht</button><h2 style="margin:0;flex:1;min-width:200px">${esc((c.scenarios.find(s=>s.k===r.scenario)||{}).label||r.scenario)} <span class="badge ${st[1]}" id="simSt2">${st[0]}</span></h2><span id="simBtns"></span></div>
+      <div class="kpis" id="simK"></div>
+      <div class="grid2c"><div><div class="card"><h3 style="margin-top:0">Phasen</h3><div id="simPh"></div></div><div class="card"><h3 style="margin-top:0">Befunde</h3><div id="simF"></div></div></div>
+      <div class="card"><div class="row" style="margin-bottom:8px"><h3 style="margin:0;flex:1">Live-Protokoll</h3><div class="seg" id="simFl">${[["all","Alles"],["finding","Befunde"],["action","Aktionen"],["think","Gedanken"],["error","Fehler"]].map(([k,l])=>`<button data-f="${k}" class="${SIMV.filter===k?"on":""}">${l}</button>`).join("")}</div></div><div id="simLog" style="max-height:70vh;overflow:auto;font-size:13px"></div></div></div>`;
+    $("#simBack").onclick=()=>{ SIMV.loop=false; simView(); };
+    $("#simFl").querySelectorAll("button").forEach(b=>b.onclick=()=>{ SIMV.filter=b.dataset.f; $("#simFl").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); simPaintLog(true); });
+  }
+  $("#simSt2").className="badge "+st[1]; $("#simSt2").textContent=st[0]+(SIMV.loop&&r.status==="laeuft"?" …":"");
+  $("#simBtns").innerHTML=r.status==="laeuft"?(SIMV.loop?`<button class="btn ghost sm" id="simPause">⏸ Pausieren</button>`:`<button class="btn sm" id="simCont">▶ Weiter</button>`)+` <button class="btn warn sm" id="simStop">■ Beenden</button>`:"";
+  if($("#simPause")) $("#simPause").onclick=()=>{ SIMV.loop=false; toast("Pausiert – mit „Weiter“ fortsetzen"); simPaint(); };
+  if($("#simCont")) $("#simCont").onclick=()=>simLoop();
+  if($("#simStop")) $("#simStop").onclick=async()=>{ if(!confirm("Simulation beenden?")) return; SIMV.loop=false; await sapi("stop",{id:r.id}).catch(()=>{}); await simPull(); simPaint(); };
+  const ph=r.phases||[], done=ph.filter(p=>p.done).length;
+  $("#simK").innerHTML=`<div class="kpi"><div class="k">Fortschritt</div><div class="v">${done}/${ph.length}</div><div class="s">Phasen</div></div><div class="kpi"><div class="k">KI-Züge</div><div class="v">${r.steps}</div><div class="s">von max. ${r.max_steps}</div></div>
+    <div class="kpi ${sev.kritisch+sev.fehler?"bad":""}"><div class="k">Befunde</div><div class="v">${fnd.length}</div><div class="s">${sev.kritisch} kritisch · ${sev.fehler} Fehler · ${sev.ux} UX · ${sev.idee} Ideen</div></div><div class="kpi"><div class="k">Tokens</div><div class="v">${Math.round((r.tokens_in+r.tokens_out)/1000)}k</div><div class="s">${Math.round(r.tokens_in/1000)}k ein · ${Math.round(r.tokens_out/1000)}k aus</div></div>`;
+  $("#simPh").innerHTML=ph.map((p,i)=>`<div style="display:flex;gap:8px;padding:6px 0;border-top:1px solid var(--line)"><span style="flex:none;width:22px;text-align:center">${p.done?"✅":i===done&&r.status==="laeuft"?"⏳":"○"}</span><div style="min-width:0"><b style="font-size:13px">${esc(p.name.replace(" (SIM)",""))}</b><div class="muted" style="font-size:12px">${esc(p.goal.length>160?p.goal.slice(0,160)+" …":p.goal)}</div>${p.summary?`<div style="font-size:12px;margin-top:2px;background:#f3f6f4;border-radius:6px;padding:4px 6px">${esc(p.summary)}</div>`:""}</div></div>`).join("");
+  const order={kritisch:0,fehler:1,ux:2,idee:3};
+  $("#simF").innerHTML=fnd.length?fnd.slice().sort((a,b)=>(order[(a.data||{}).severity]??2)-(order[(b.data||{}).severity]??2)).map(f=>{ const s=(f.data||{}).severity||"ux"; return `<div style="padding:6px 0;border-top:1px solid var(--line);font-size:13px"><span class="badge ${s==="kritisch"||s==="fehler"?"warn":s==="ux"?"amber":"off"}">${esc(s)}</span> <b>${esc(f.agent.replace(" (SIM)",""))}</b><div>${esc(f.text.replace(/^\[[a-z]+\]\s*/,""))}</div></div>`; }).join(""):'<div class="muted" style="font-size:13px">Noch keine Befunde.</div>';
+  simPaintLog(full);
+}
+function simPaintLog(full){
+  const box=$("#simLog"); if(!box) return;
+  const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;
+  const L=SIMV.log.filter(l=>SIMV.filter==="all"||l.kind===SIMV.filter||(SIMV.filter==="action"&&l.kind==="phase"));
+  box.innerHTML=L.length?L.map(l=>{ const k=SIM_KIND[l.kind]||["·",l.kind,"#5d6b65"], ro=SIM_ROLE[l.role]||["",""];
+    const res=l.data&&l.data.result!=null?`<details style="margin-top:2px"><summary style="cursor:pointer;color:var(--muted);font-size:12px">Antwort</summary><pre style="white-space:pre-wrap;word-break:break-word;font-size:11.5px;background:#f6f8f7;border-radius:6px;padding:6px;margin:4px 0 0;max-height:240px;overflow:auto">${esc(typeof l.data.result==="string"?l.data.result:JSON.stringify(l.data.result,null,1))}</pre></details>`:"";
+    return `<div style="display:grid;grid-template-columns:44px 1fr;gap:6px;padding:6px 0;border-top:1px solid #eef1ef;${l.kind==="phase"?"background:#f1f5ff;":l.kind==="finding"?"background:#fff8e6;":l.kind==="error"?"background:#fdf1ef;":""}">
+      <span class="muted" style="font-size:11px;font-variant-numeric:tabular-nums">${new Date(l.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</span>
+      <div style="min-width:0"><span style="color:${k[2]};font-weight:700">${k[0]} ${k[1]}</span> · <b>${ro[0]} ${esc((l.agent||"").replace(" (SIM)",""))}</b><div style="white-space:pre-wrap;word-break:break-word;color:${l.kind==="think"?"var(--muted)":"var(--ink)"}">${esc(l.text||"")}</div>${res}</div></div>`; }).join(""):'<div class="muted">Noch keine Einträge.</div>';
+  if(full||atBottom) box.scrollTop=box.scrollHeight;
 }
 </script>
 </body>
