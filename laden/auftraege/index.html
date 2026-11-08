@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>HAPPY CHARGING Auftragsbörse</title>
+<meta name="description" content="Aufträge rund um Ladeinfrastruktur: Störungen, Mängel, Wartung. Für geprüfte Fachbetriebe.">
+<link rel="icon" href="../favicon.ico" sizes="48x48">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6f5;--card:#fff;--ink:#14201b;--muted:#5d6b65;--line:#e1e6e3;--brand:#0a8f5a;--brand-soft:#e3f4ec;--warn:#b42318;--warn-soft:#fdecea;--amber:#9a6700;--amber-soft:#fff6db;--r:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:16px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:12px 16px}
+header svg{width:20px;height:26px;flex:none}
+header .t{font-weight:800;font-size:16px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+header .t span{font-weight:500;color:var(--muted)}
+nav.tabs{display:flex;gap:6px;max-width:860px;margin:0 auto;padding:12px 16px 0;overflow-x:auto}
+nav.tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:14px;font-weight:600;white-space:nowrap}
+nav.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.wrap{max-width:860px;margin:0 auto;padding:16px 16px 50px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+h1{font-size:24px;margin:0 0 6px;letter-spacing:-.3px}
+h2{font-size:17px;margin:20px 2px 10px}
+h3{font-size:15px;margin:0 0 6px}
+.muted{color:var(--muted)}.small{font-size:13px}
+.btn{display:inline-block;border:0;border-radius:12px;padding:12px 18px;font-weight:700;font-size:15px;background:var(--brand);color:#fff;text-align:center;text-decoration:none}
+.btn.block{display:block;width:100%}
+.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+.btn.sm{padding:7px 12px;font-size:14px;border-radius:10px}
+.btn.danger{background:#fff;border:1.5px solid #f3c0bb;color:var(--warn)}
+.btn:disabled{opacity:.5}
+.back{background:none;border:0;color:var(--muted);padding:4px 0 10px;font-size:15px}
+.chip{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;background:var(--brand-soft);color:#08603d;margin:0 4px 4px 0}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}.chip.amber{background:var(--amber-soft);color:var(--amber)}.chip.grey{background:#eef1ef;color:var(--muted)}
+.hero{background:linear-gradient(135deg,#0d2a1f,#0a8f5a);color:#fff;border-radius:20px;padding:22px;margin-bottom:16px}
+.hero h1{color:#fff}.hero p{margin:6px 0 0;opacity:.9;line-height:1.5}
+.hero .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.hero .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.steps div{background:rgba(255,255,255,.1);border-radius:12px;padding:10px;font-size:13px;line-height:1.4}
+.steps b{display:block;font-size:14px;margin-bottom:2px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters input,.filters select{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#fff;font-size:14px}
+.filters input{flex:1;min-width:180px}
+.jobs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.job{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px;cursor:pointer;display:flex;flex-direction:column;gap:6px;transition:border-color .15s}
+.job:hover{border-color:var(--brand)}
+.job .no{font-size:12px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+.job .tt{font-weight:700;font-size:16px;line-height:1.3}
+.job .meta{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.job .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:13px;padding-top:6px;border-top:1px solid var(--line)}
+.dl{display:grid;grid-template-columns:160px 1fr;gap:6px 12px;font-size:14px}.dl dt{color:var(--muted)}.dl dd{margin:0}
+.photos{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.photos img{width:120px;height:90px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in}
+.desc{white-space:pre-wrap;line-height:1.55;font-size:15px}
+.lock{background:var(--amber-soft);border:1px solid #f1dc9c;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.5}
+.lock ul{margin:6px 0 0;padding-left:18px}
+.ok{background:var(--brand-soft);border:1px solid #bfe5d2;border-radius:12px;padding:12px 14px;font-size:14px}
+label.f{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:10px 0 4px}
+input.i,select.i,textarea.i{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;font-size:15px}
+textarea.i{min-height:90px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:0 12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{flex:1;border:0;background:#fff;padding:10px;font-weight:600;font-size:14px}
+.seg button.on{background:var(--ink);color:#fff}
+.cats{display:flex;flex-wrap:wrap;gap:6px}
+.cats label{border:1px solid var(--line);border-radius:999px;padding:6px 11px;font-size:13px;cursor:pointer;background:#fff;user-select:none}
+.cats input{display:none}.cats label:has(input:checked){background:var(--brand-soft);border-color:#9fd6bb;color:#08603d;font-weight:600}
+.cert-row{display:grid;grid-template-columns:1.4fr 1fr auto auto;gap:8px;align-items:center;margin-bottom:8px}
+.cert-row select,.cert-row input{border:1px solid var(--line);border-radius:10px;padding:8px;font-size:14px;background:#fff;width:100%}
+.file{display:inline-flex;align-items:center;gap:6px;border:1.5px dashed var(--line);border-radius:10px;padding:7px 10px;font-size:13px;cursor:pointer;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.file input{display:none}.file.has{border-style:solid;border-color:#9fd6bb;background:var(--brand-soft)}
+.x{border:0;background:none;color:var(--muted);font-size:18px;padding:4px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}.tbl td,.tbl th{padding:9px 8px;border-top:1px solid var(--line);text-align:left;vertical-align:top}.tbl th{font-size:12px;color:var(--muted);font-weight:600;border-top:0}
+.price{font-weight:800;font-size:18px}
+.err{color:var(--warn);font-size:14px;margin-top:8px;min-height:1px}
+.empty{text-align:center;padding:34px 16px;color:var(--muted)}
+.eye{position:relative}.eye input{padding-right:42px}.eye button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--muted);font-size:16px;padding:6px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;font-size:14px;z-index:30;display:none;max-width:90vw}
+#zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:40}#zoom img{max-width:94vw;max-height:90vh;border-radius:10px}
+footer{max-width:860px;margin:0 auto;padding:0 16px 30px;font-size:12px;color:var(--muted);line-height:1.5}
+@media(max-width:700px){.jobs{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.grid2,.grid3{grid-template-columns:1fr}.dl{grid-template-columns:1fr}.dl dt{margin-top:6px}.cert-row{grid-template-columns:1fr 1fr}.hero{padding:18px}h1{font-size:21px}}
+</style>
+</head>
+<body>
+<header>
+  <svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>
+  <div class="t" id="home">HAPPY CHARGING <span>Auftragsbörse</span></div>
+  <button class="btn ghost sm" id="acct">Anmelden</button>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<div class="wrap" id="view"></div>
+<footer>Vermittlungsplattform: Der Auftrag kommt direkt zwischen Auftraggeber und Betrieb zustande. Es fallen keine Gebühren an, und über die Plattform werden keine Zahlungen abgewickelt. Angebote dürfen nur geprüfte Fachbetriebe abgeben (Nachweise und Creditreform-Bonität).</footer>
+<div id="toast"></div>
+<div id="zoom" onclick="this.style.display='none'"><img alt=""></div>
+<script>
+const API="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-market";
+const $=s=>document.querySelector(s), view=$("#view");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtD=d=>d?new Date(d).toLocaleDateString("de-DE",{timeZone:"Europe/Berlin"}):"–";
+const fmtDT=d=>d?new Date(d).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short",timeZone:"Europe/Berlin"}):"–";
+const eur=n=>Number(n).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const left=d=>{ if(!d) return ""; const ms=Date.parse(d)-Date.now(); if(ms<0) return "abgelaufen"; const h=Math.floor(ms/36e5); return h<48?`noch ${h} Std.`:`noch ${Math.floor(h/24)} Tage`; };
+let S={token:null,me:null,jobs:[],certs:{},cats:{},crefo_max:249,tab:"jobs",f:{q:"",cat:"",src:""}};
+try{ const t=JSON.parse(localStorage.getItem("hc_market")||"null"); if(t&&t.exp>Date.now()) S.token=t.token; }catch(e){}
+
+async function api(action,payload={}){
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token:S.token,...payload})});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401&&j.relogin){ logout(true); throw new Error(j.error||"Bitte anmelden"); }
+  if(!r.ok){ const e=new Error(j.error||("Fehler "+r.status)); e.why=j.why; throw e; }
+  return j;
+}
+function setToken(t){ S.token=t; try{ localStorage.setItem("hc_market",JSON.stringify({token:t,exp:Date.now()+11.5*36e5})); }catch(e){} }
+function logout(silent){ S.token=null; S.me=null; try{ localStorage.removeItem("hc_market"); }catch(e){} renderHead(); if(!silent){ toast("Abgemeldet"); go("jobs"); } }
+function toast(t){ const el=$("#toast"); el.textContent=t; el.style.display="block"; clearTimeout(toast.h); toast.h=setTimeout(()=>el.style.display="none",3200); }
+function zoom(src){ $("#zoom img").src=src; $("#zoom").style.display="flex"; }
+function eyeify(root){ root.querySelectorAll('input[type=password]').forEach(i=>{ if(i.parentNode.classList.contains("eye")) return; const w=document.createElement("div"); w.className="eye"; i.parentNode.insertBefore(w,i); w.appendChild(i); const b=document.createElement("button"); b.type="button"; b.textContent="👁"; b.setAttribute("aria-label","Passwort anzeigen"); b.onclick=()=>{ i.type=i.type==="password"?"text":"password"; b.textContent=i.type==="password"?"👁":"🙈"; }; w.appendChild(b); }); }
+function readFile(f,maxPx=1800){ return new Promise((res,rej)=>{ if(f.size>12*1024*1024) return rej(new Error("Datei zu groß (max. 12 MB)"));
+  if(f.type==="application/pdf"){ if(f.size>5*1024*1024) return rej(new Error("PDF zu groß (max. 5 MB)")); const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); return; }
+  const img=new Image(), u=URL.createObjectURL(f); img.onload=()=>{ const s=Math.min(1,maxPx/Math.max(img.width,img.height)); const c=document.createElement("canvas"); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s); c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u); res(c.toDataURL("image/jpeg",.85)); }; img.onerror=()=>rej(new Error("Bild nicht lesbar")); img.src=u; }); }
+
+function renderHead(){
+  $("#acct").textContent=S.token?"Abmelden":"Anmelden";
+  $("#acct").onclick=()=>S.token?logout():go("login");
+  const tabs=[["jobs","Offene Aufträge"]].concat(S.token?[["my","Meine Angebote"],["profile","Mein Betrieb"]]:[["register","Als Betrieb registrieren"]]);
+  $("#tabs").innerHTML=tabs.map(([k,l])=>`<button data-t="${k}" class="${S.tab===k?"on":""}">${l}</button>`).join("");
+  $("#tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>go(b.dataset.t));
+}
+function go(tab,arg){ S.tab=tab; renderHead(); scrollTo(0,0);
+  if(tab!=="job" && location.hash) history.replaceState(null,"",location.pathname);
+  ({jobs:jobsView,job:()=>jobView(arg),login:loginView,register:registerView,my:myView,profile:profileView}[tab]||jobsView)(); }
+$("#home").onclick=()=>go("jobs");
+window.addEventListener("hashchange",()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(h) go("job",h); });
+
+async function loadMe(){ if(!S.token) return null; try{ const r=await api("me"); S.me=r.me; S.certs=r.certs; S.cats=r.cats; return S.me; }catch(e){ return null; } }
+function eligBox(el,ctx){
+  if(!el) return "";
+  if(el.ok) return `<div class="ok">✅ Ihr Betrieb ist freigegeben${ctx?" und erfüllt alle Voraussetzungen für diesen Auftrag":""}.</div>`;
+  return `<div class="lock"><b>🔒 ${ctx?"Für diesen Auftrag noch nicht freigegeben":"Noch nicht für Angebote freigegeben"}</b><ul>${el.why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>
+    <div class="small muted" style="margin-top:6px">Nachweise können Sie unter <a href="#" onclick="go('profile');return false">Mein Betrieb</a> hochladen. Die Prüfung übernehmen wir.</div></div>`;
+}
+
+/* ── Liste ── */
+async function jobsView(){
+  view.innerHTML=`${S.token?"":`<div class="hero"><h1>Aufträge für Fachbetriebe rund ums Laden</h1>
+    <p>Störungen, Mängel und Wartungen an Ladestationen, ausgeschrieben gegen Angebot, pauschal oder nach Stundensatz. Keine Gebühren, keine Provision.</p>
+    <div class="steps"><div><b>1 · Registrieren</b>Firmendaten, Nachweise und Crefonummer hinterlegen</div><div><b>2 · Prüfung</b>Wir prüfen Nachweise und Creditreform-Bonität</div><div><b>3 · Anbieten</b>Freigegebene Betriebe sehen alle Details und geben Angebote ab</div></div>
+    <div class="row"><button class="btn" onclick="go('register')">Jetzt registrieren</button><button class="btn ghost" onclick="go('login')">Anmelden</button></div></div>`}
+    <div id="meBox"></div>
+    <div class="filters"><input id="fq" placeholder="Suche nach Ort, Titel, Nummer…" value="${esc(S.f.q)}"><select id="fc"><option value="">Alle Gewerke</option></select>
+    <select id="fs"><option value="">Alle Arten</option><option>Störung</option><option>Mangel</option><option>Wartung / Checkliste</option><option>Auftrag</option></select></div>
+    <div id="list"><div class="empty">Lade Aufträge…</div></div>`;
+  if(S.token) loadMe().then(me=>{ if(me) $("#meBox").innerHTML=me.eligible.ok?"":eligBox(me.eligible)+"<div style='height:12px'></div>"; });
+  try{ const r=await api("jobs"); S.jobs=r.jobs; S.certs=r.certs; S.cats=r.cats; S.crefo_max=r.crefo_max; }
+  catch(e){ $("#list").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  const cats=[...new Set(S.jobs.map(j=>j.category).filter(Boolean))];
+  $("#fc").innerHTML=`<option value="">Alle Gewerke</option>`+cats.map(c=>`<option value="${c}">${esc(S.cats[c]||c)}</option>`).join("");
+  $("#fc").value=S.f.cat; $("#fs").value=S.f.src;
+  const upd=()=>{ S.f={q:$("#fq").value,cat:$("#fc").value,src:$("#fs").value}; renderList(); };
+  $("#fq").oninput=upd; $("#fc").onchange=upd; $("#fs").onchange=upd; renderList();
+}
+function renderList(){
+  const q=S.f.q.trim().toLowerCase();
+  const l=S.jobs.filter(j=>(!S.f.cat||j.category===S.f.cat)&&(!S.f.src||j.source_label===S.f.src)&&(!q||[j.title,j.location,j.job_no,j.category_label].join(" ").toLowerCase().includes(q)));
+  if(!l.length){ $("#list").innerHTML=`<div class="empty">${S.jobs.length?"Keine Aufträge für diese Filter.":"Aktuell sind keine Aufträge ausgeschrieben. Registrierte Betriebe bekommen neue passende Aufträge per E-Mail."}</div>`; return; }
+  $("#list").innerHTML=`<div class="small muted" style="margin:0 2px 8px">${l.length} offene${l.length===1?"r":""} Auftrag${l.length===1?"":"e"}</div><div class="jobs">${l.map(j=>`<div class="job" data-no="${esc(j.job_no)}">
+    <div class="no">${esc(j.job_no)} · ${esc(j.source_label)}</div><div class="tt">${esc(j.title)}</div>
+    <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}${j.desired_from||j.desired_to?`<span>📅 ${j.desired_from?fmtD(j.desired_from):""}${j.desired_to?" – "+fmtD(j.desired_to):""}</span>`:""}${j.recurring_days?`<span>🔁 alle ${j.recurring_days} Tage</span>`:""}</div>
+    <div>${j.qualifications.map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join("")}</div>
+    <div class="foot"><span>⏳ Frist ${fmtD(j.bid_deadline)} <b>${left(j.bid_deadline)}</b></span><span class="muted">${j.bids} Angebot${j.bids===1?"":"e"}</span></div></div>`).join("")}</div>`;
+  $("#list").querySelectorAll(".job").forEach(c=>c.onclick=()=>{ location.hash=c.dataset.no; });
+}
+
+/* ── Detail + Angebot ── */
+async function jobView(no){
+  S.tab="job"; renderHead();
+  view.innerHTML=`<button class="back" onclick="history.replaceState(null,'',location.pathname);go('jobs')">‹ Alle Aufträge</button><div id="jd"><div class="empty">Lade…</div></div>`;
+  let r;
+  if(S.token){ try{ r=await api("job",{id:no}); }catch(e){ $("#jd").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } }
+  else{ if(!S.jobs.length){ try{ const x=await api("jobs"); S.jobs=x.jobs; S.certs=x.certs; S.cats=x.cats; }catch(e){} }
+    const j=S.jobs.find(x=>x.job_no===no||x.id===no); if(!j){ $("#jd").innerHTML=`<div class="empty">Auftrag nicht gefunden oder nicht mehr offen.</div>`; return; } r={job:j,eligible:null}; }
+  const j=r.job, full="description" in j, mb=r.my_bid;
+  const stat={offen:"",vergeben:mb?.status==="angenommen"?`<span class="chip">Zuschlag erhalten</span>`:`<span class="chip grey">vergeben</span>`,erledigt:`<span class="chip grey">erledigt</span>`}[j.status||"offen"]||"";
+  $("#jd").innerHTML=`<div class="card"><div class="small muted" style="font-family:ui-monospace,Menlo,monospace">${esc(j.job_no)} · ${esc(j.source_label)} ${stat}</div>
+    <h1 style="margin-top:6px">${esc(j.title)}</h1>
+    <dl class="dl" style="margin-top:12px"><dt>Ort</dt><dd>📍 ${esc(j.location||"–")}${r.site?` · <b>${esc(r.site.address||"")}</b>`:full?` <span class="small muted">(genaue Adresse nach Zuschlag)</span>`:""}</dd>
+    ${j.category_label?`<dt>Gewerk</dt><dd>${esc(j.category_label)}</dd>`:""}
+    <dt>Zeitraum</dt><dd>${j.desired_from||j.desired_to?`${j.desired_from?"ab "+fmtD(j.desired_from):""}${j.desired_to?" bis "+fmtD(j.desired_to):""}`:"nach Absprache"}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
+    <dt>Angebotsfrist</dt><dd><b>${fmtDT(j.bid_deadline)}</b> <span class="muted">${left(j.bid_deadline)}</span></dd>
+    <dt>Gewünschte Abrechnung</dt><dd>${{fix:"Pauschalpreis",stunde:"Stundensatz",offen:"Pauschal oder Stundensatz"}[j.price_type]||"–"}${full&&j.price_hint?` · Richtwert ca. ${eur(j.price_hint)}`:""}</dd>
+    <dt>Erforderliche Nachweise</dt><dd>${j.qualifications.length?j.qualifications.map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join(""):"<span class='muted'>keine besonderen</span>"}</dd>
+    <dt>Angebote bisher</dt><dd>${j.bids??"–"}</dd></dl></div>
+    ${full?`<div class="card"><h3>Beschreibung</h3><div class="desc">${esc(j.description||"–")}</div>${(j.photos||[]).length?`<div class="photos">${j.photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy" onclick="zoom(this.src)">`).join("")}</div>`:""}</div>`
+      :`<div class="card"><h3>Beschreibung</h3><div class="muted">Die vollständige Beschreibung${j.photos_count?" und "+j.photos_count+" Foto"+(j.photos_count>1?"s":""):""} sehen nur freigegebene Fachbetriebe.</div>
+        <div style="margin-top:12px">${S.token?eligBox(r.eligible,true):`<button class="btn" onclick="go('login')">Anmelden</button> <button class="btn ghost" onclick="go('register')">Als Betrieb registrieren</button>`}</div></div>`}
+    ${r.site?`<div class="card ok"><b>Ihr Service-Zugang</b><br>Projekt ${esc(r.site.project_id)} · <a href="${esc(r.site.service_url)}" target="_blank" rel="noopener">${esc(r.site.service_url)}</a><br><span class="small">Die PIN haben Sie per E-Mail erhalten. Dort starten Sie vor Ort die Checkliste mit Arbeitszeit, Fotos und Protokoll.</span></div>`:""}
+    <div id="bidBox"></div>`;
+  if(full && S.token) bidBox(j,r);
+}
+function bidBox(j,r){
+  const mb=r.my_bid, open=(j.status||"offen")==="offen"&&(!j.bid_deadline||Date.parse(j.bid_deadline)>Date.now());
+  const box=$("#bidBox");
+  if(mb&&mb.status!=="abgegeben"&&mb.status!=="zurueckgezogen"){ box.innerHTML=`<div class="card"><h3>Ihr Angebot</h3>${bidLine(mb)}</div>`; return; }
+  if(!open){ box.innerHTML=mb?`<div class="card"><h3>Ihr Angebot</h3>${bidLine(mb)}</div>`:""; return; }
+  if(!r.eligible.ok){ box.innerHTML=`<div class="card">${eligBox(r.eligible,true)}</div>`; return; }
+  const t0=mb&&mb.status==="abgegeben"?mb.price_type:(j.price_type==="stunde"?"stunde":"fix");
+  box.innerHTML=`<div class="card"><h3>${mb&&mb.status==="abgegeben"?"Ihr Angebot ändern":"Angebot abgeben"}</h3>
+    ${mb&&mb.status==="abgegeben"?`<div class="small muted" style="margin-bottom:8px">Abgegeben: ${bidLine(mb)}</div>`:""}
+    <label class="f">Abrechnung</label><div class="seg" id="pt"><button data-v="fix">Pauschal</button><button data-v="stunde">Stundensatz</button></div>
+    <div class="grid3"><div><label class="f" id="plab">Preis netto (€)</label><input class="i" id="bp" inputmode="decimal" placeholder="z. B. 380"></div>
+      <div id="hw"><label class="f">Geschätzte Stunden</label><input class="i" id="bh" inputmode="decimal" placeholder="z. B. 3"></div>
+      <div><label class="f">Frühester Termin</label><input class="i" id="bd" type="date"></div></div>
+    <div id="sum" class="small muted" style="margin-top:6px"></div>
+    <label class="f">Anmerkung (Leistungsumfang, Anfahrt, Material…)</label><textarea class="i" id="bn" maxlength="2000"></textarea>
+    <div class="err" id="be"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn" id="bs">${mb&&mb.status==="abgegeben"?"Angebot aktualisieren":"Verbindlich anbieten"}</button>
+    ${mb&&mb.status==="abgegeben"?`<button class="btn danger" id="bw">Angebot zurückziehen</button>`:""}</div>
+    <div class="small muted" style="margin-top:8px">Bis zum Ende der Frist können Sie Ihr Angebot ändern oder zurückziehen. Alle Preise netto zzgl. MwSt.</div></div>`;
+  let pt=t0; const setPt=v=>{ pt=v; box.querySelectorAll("#pt button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); $("#plab").textContent=v==="stunde"?"Stundensatz netto (€/h)":"Pauschalpreis netto (€)"; $("#hw").style.visibility=v==="stunde"?"visible":"hidden"; sum(); };
+  const sum=()=>{ const p=+String($("#bp").value).replace(",","."), h=+String($("#bh").value).replace(",","."); $("#sum").textContent=pt==="stunde"&&p&&h?`≈ ${eur(p*h)} bei ${h} Std.`:""; };
+  box.querySelectorAll("#pt button").forEach(b=>b.onclick=()=>setPt(b.dataset.v));
+  if(mb&&mb.status==="abgegeben"){ $("#bp").value=String(mb.price).replace(".",","); $("#bh").value=mb.hours_est?String(mb.hours_est).replace(".",","):""; $("#bd").value=mb.earliest_date||""; $("#bn").value=mb.note||""; }
+  else if(j.desired_from) $("#bd").value=j.desired_from;
+  $("#bp").oninput=sum; $("#bh").oninput=sum; setPt(t0);
+  $("#bs").onclick=async()=>{ $("#be").textContent=""; const btn=$("#bs"); btn.disabled=true;
+    try{ await api("bid",{job_id:j.id,bid:{price_type:pt,price:$("#bp").value,hours_est:pt==="stunde"?$("#bh").value:null,earliest_date:$("#bd").value,note:$("#bn").value}}); toast("✅ Angebot gespeichert"); jobView(j.job_no); }
+    catch(e){ $("#be").textContent=e.message; btn.disabled=false; } };
+  if($("#bw")) $("#bw").onclick=async()=>{ if(!confirm("Angebot wirklich zurückziehen?")) return; try{ await api("withdraw",{job_id:j.id}); toast("Angebot zurückgezogen"); jobView(j.job_no); }catch(e){ $("#be").textContent=e.message; } };
+}
+const BST={abgegeben:["abgegeben",""],zurueckgezogen:["zurückgezogen","grey"],angenommen:["Zuschlag ✓",""],abgelehnt:["nicht berücksichtigt","grey"]};
+function bidLine(b){ const s=BST[b.status]||[b.status,"grey"]; return `<span class="price">${b.price_type==="stunde"?eur(b.price)+"/h":eur(b.price)}</span> ${b.price_type==="stunde"?(b.hours_est?`· ca. ${String(b.hours_est).replace(".",",")} Std. (≈ ${eur(b.price*b.hours_est)})`:""):"pauschal"} ${b.earliest_date?"· ab "+fmtD(b.earliest_date):""} <span class="chip ${s[1]}">${s[0]}</span>`; }
+
+/* ── Anmeldung ── */
+function loginView(){
+  view.innerHTML=`<div class="card" style="max-width:420px;margin:10px auto"><h1>Anmelden</h1><p class="muted small">Für registrierte Fachbetriebe</p>
+    <label class="f">E-Mail</label><input class="i" id="le" type="email" autocomplete="username">
+    <label class="f">Passwort</label><input class="i" id="lp" type="password" autocomplete="current-password">
+    <div class="err" id="lerr"></div><button class="btn block" id="lb" style="margin-top:12px">Anmelden</button>
+    <p class="small muted" style="margin-top:14px">Noch kein Konto? <a href="#" onclick="go('register');return false">Als Betrieb registrieren</a><br>Passwort vergessen? Bitte kurz per E-Mail melden, wir setzen es zurück.</p></div>`;
+  eyeify(view);
+  const run=async()=>{ $("#lerr").textContent=""; $("#lb").disabled=true;
+    try{ const r=await api("login",{email:$("#le").value,password:$("#lp").value}); setToken(r.token); await loadMe(); toast("Angemeldet"); const h=decodeURIComponent(location.hash.slice(1)); h?go("job",h):go("jobs"); }
+    catch(e){ $("#lerr").textContent=e.message; $("#lb").disabled=false; } };
+  $("#lb").onclick=run; $("#lp").onkeydown=e=>{ if(e.key==="Enter") run(); };
+}
+
+/* ── Registrierung ── */
+function certRows(id){ return `<div id="${id}"></div><button type="button" class="btn ghost sm" onclick="addCert('${id}')">+ Nachweis hinzufügen</button>`; }
+function addCert(id,type){
+  const row=document.createElement("div"); row.className="cert-row";
+  row.innerHTML=`<select>${Object.entries(S.certs).map(([k,l])=>`<option value="${k}" ${k===type?"selected":""}>${esc(l)}</option>`).join("")}</select>
+    <input type="date" title="Gültig bis (falls befristet)"><label class="file">📎 <span>Datei wählen</span><input type="file" accept="image/*,application/pdf"></label><button type="button" class="x" title="Entfernen">×</button>`;
+  const inp=row.querySelector("input[type=file]");
+  inp.onchange=async()=>{ const f=inp.files[0]; if(!f) return; try{ row._data=await readFile(f); row._name=f.name; row.querySelector(".file span").textContent=f.name; row.querySelector(".file").classList.add("has"); }catch(e){ toast(e.message); } };
+  row.querySelector(".x").onclick=()=>row.remove();
+  $("#"+id).appendChild(row);
+}
+const collectCerts=id=>[...document.querySelectorAll(`#${id} .cert-row`)].filter(r=>r._data).map(r=>({type:r.querySelector("select").value,valid_until:r.querySelector("input[type=date]").value,name:r._name,data:r._data}));
+async function ensureMeta(){ if(Object.keys(S.certs).length) return; try{ const r=await api("jobs"); S.certs=r.certs; S.cats=r.cats; S.crefo_max=r.crefo_max; S.jobs=r.jobs; }catch(e){} }
+const catBoxes=sel=>`<div class="cats">${Object.entries(S.cats).map(([k,l])=>`<label><input type="checkbox" value="${k}" ${(sel||[]).includes(k)?"checked":""}>${esc(l)}</label>`).join("")}</div>`;
+async function registerView(){
+  await ensureMeta();
+  view.innerHTML=`<div class="card"><h1>Als Fachbetrieb registrieren</h1>
+    <p class="muted small" style="line-height:1.5">Angebote abgeben können nur geprüfte Betriebe. Wir prüfen Gewerbe- und Fachnachweise, die Versicherung und die Bonität bei Creditreform (Bonitätsindex bis ${S.crefo_max}). Die Registrierung ist kostenlos.</p>
+    <h2>Firma</h2>
+    <div class="grid2"><div><label class="f">Firmenname *</label><input class="i" id="r_company" autocomplete="organization"></div><div><label class="f">Rechtsform</label><input class="i" id="r_legal" placeholder="GmbH, e.K., GbR…"></div>
+    <div><label class="f">Straße, Nr.</label><input class="i" id="r_street"></div><div class="grid2" style="gap:0 8px"><div><label class="f">PLZ</label><input class="i" id="r_zip" inputmode="numeric"></div><div><label class="f">Ort</label><input class="i" id="r_city"></div></div>
+    <div><label class="f">USt-IdNr.</label><input class="i" id="r_vat"></div><div><label class="f">Website</label><input class="i" id="r_web" placeholder="https://"></div>
+    <div><label class="f">Crefonummer (Creditreform)</label><input class="i" id="r_crefo" placeholder="10-stellig, falls bekannt"></div><div><label class="f">Einsatzradius (km)</label><input class="i" id="r_radius" inputmode="numeric" placeholder="z. B. 80"></div></div>
+    <label class="f">Gewerke / Leistungen</label>${catBoxes([])}
+    <label class="f">Kurzprofil</label><textarea class="i" id="r_about" placeholder="Leistungen, Hersteller-Erfahrung (z. B. Alpitronic, ABB, Kempower), Teamgröße…"></textarea>
+    <h2>Ansprechpartner & Zugang</h2>
+    <div class="grid2"><div><label class="f">Name</label><input class="i" id="r_name" autocomplete="name"></div><div><label class="f">Telefon</label><input class="i" id="r_phone" type="tel" autocomplete="tel"></div>
+    <div><label class="f">E-Mail *</label><input class="i" id="r_email" type="email" autocomplete="email"></div><div><label class="f">Passwort * (min. 10 Zeichen)</label><input class="i" id="r_pw" type="password" autocomplete="new-password"></div></div>
+    <h2>Nachweise</h2><p class="small muted" style="margin-top:-4px">PDF oder Foto, max. 5 MB je Datei. Mindestens Gewerbeanmeldung bzw. Handwerksrolle und Betriebshaftpflicht. Weitere Nachweise können Sie später nachreichen.</p>
+    ${certRows("rc")}
+    <label style="display:flex;gap:8px;align-items:flex-start;margin-top:16px;font-size:14px;line-height:1.45"><input type="checkbox" id="r_acc" style="margin-top:3px">Ich bestätige die Richtigkeit der Angaben und bin mit der Prüfung der Nachweise und einer Bonitätsauskunft bei Creditreform einverstanden. Die Hinweise zum Datenschutz habe ich gelesen.</label>
+    <div class="err" id="rerr"></div><button class="btn block" id="rb" style="margin-top:12px">Registrierung absenden</button></div>`;
+  addCert("rc","gewerbe"); addCert("rc","haftpflicht"); eyeify(view);
+  $("#rb").onclick=async()=>{ $("#rerr").textContent="";
+    const v=id=>$("#"+id).value.trim();
+    const p={company:v("r_company"),legal_form:v("r_legal"),street:v("r_street"),zip:v("r_zip"),city:v("r_city"),vat_id:v("r_vat"),website:v("r_web"),crefo_no:v("r_crefo"),radius_km:v("r_radius"),about:v("r_about"),
+      contact_name:v("r_name"),phone:v("r_phone"),email:v("r_email"),password:$("#r_pw").value,accept:$("#r_acc").checked,categories:[...view.querySelectorAll(".cats input:checked")].map(i=>i.value),certs:collectCerts("rc")};
+    if(!p.company||!p.email) return $("#rerr").textContent="Bitte Firmenname und E-Mail angeben.";
+    if(p.password.length<10) return $("#rerr").textContent="Passwort: mindestens 10 Zeichen.";
+    if(!p.accept) return $("#rerr").textContent="Bitte die Bestätigung ankreuzen.";
+    $("#rb").disabled=true; $("#rb").textContent="Wird gesendet…";
+    try{ const r=await api("register",{provider:p}); setToken(r.token); await loadMe();
+      view.innerHTML=`<div class="card" style="text-align:center;padding:30px 18px"><div style="font-size:44px">✅</div><h1>Danke für Ihre Registrierung!</h1><p class="muted" style="line-height:1.55">Wir prüfen jetzt Ihre Angaben, Nachweise und die Bonität. Sobald Ihr Betrieb freigegeben ist, bekommen Sie eine E-Mail und können Angebote abgeben. Bis dahin sehen Sie offene Aufträge bereits in der Übersicht.</p>
+        <button class="btn" onclick="go('profile')">Zu Mein Betrieb</button> <button class="btn ghost" onclick="go('jobs')">Offene Aufträge</button></div>`; renderHead(); }
+    catch(e){ $("#rerr").textContent=e.message; $("#rb").disabled=false; $("#rb").textContent="Registrierung absenden"; } };
+}
+
+/* ── Meine Angebote ── */
+async function myView(){
+  if(!S.token) return loginView();
+  view.innerHTML=`<h1>Meine Angebote & Aufträge</h1><div id="ml"><div class="empty">Lade…</div></div>`;
+  let r; try{ r=await api("my"); }catch(e){ $("#ml").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  if(!r.items.length){ $("#ml").innerHTML=`<div class="empty">Noch keine Angebote abgegeben.<br><br><button class="btn" onclick="go('jobs')">Offene Aufträge ansehen</button></div>`; return; }
+  const grp=[["Zuschlag erhalten",x=>x.bid.status==="angenommen"],["Offene Angebote",x=>x.bid.status==="abgegeben"],["Abgeschlossen",x=>["abgelehnt","zurueckgezogen"].includes(x.bid.status)]];
+  $("#ml").innerHTML=grp.map(([t,f])=>{ const l=r.items.filter(f); if(!l.length) return ""; return `<h2>${t} (${l.length})</h2><div class="card" style="padding:4px 12px;overflow-x:auto"><table class="tbl"><tr><th>Auftrag</th><th>Ort</th><th>Frist</th><th>Ihr Angebot</th></tr>
+    ${l.map(x=>`<tr style="cursor:pointer" onclick="location.hash='${esc(x.job?.job_no||"")}'"><td><b>${esc(x.job?.title||"–")}</b><div class="small muted">${esc(x.job?.job_no||"")}${x.job?.status&&x.job.status!=="offen"?" · "+esc(x.job.status):""}</div></td><td>${esc(x.job?.location||"–")}</td><td>${fmtD(x.job?.bid_deadline)}</td><td>${bidLine(x.bid)}</td></tr>`).join("")}</table></div>`; }).join("");
+}
+
+/* ── Mein Betrieb ── */
+async function profileView(){
+  if(!S.token) return loginView();
+  view.innerHTML=`<div class="empty">Lade…</div>`;
+  const me=await loadMe(); if(!me) return loginView();
+  const st={neu:["in Prüfung","amber"],geprueft:["geprüft & freigegeben",""],gesperrt:["gesperrt","warn"]}[me.status]||[me.status,"grey"];
+  const crefo=me.crefo_index!=null?`Index ${me.crefo_index} ${me.crefo_index<=me.crefo_max?"✓":"✗"} · geprüft ${fmtD(me.crefo_checked_at)}`:"noch nicht geprüft";
+  view.innerHTML=`<h1>${esc(me.company)}</h1><div style="margin-bottom:12px"><span class="chip ${st[1]}">${st[0]}</span></div>
+    ${eligBox(me.eligible)}
+    <h2>Prüfstatus</h2><div class="card"><dl class="dl"><dt>Betrieb</dt><dd>${st[0]}${me.status_note?` · <span class="muted">${esc(me.status_note)}</span>`:""}</dd><dt>Creditreform</dt><dd>${esc(me.crefo_no||"Crefonummer fehlt")} · ${crefo}</dd></dl></div>
+    <h2>Nachweise</h2><div class="card">
+      ${(me.certs||[]).length?`<table class="tbl" style="margin-bottom:10px"><tr><th>Nachweis</th><th>Gültig bis</th><th>Status</th></tr>${me.certs.map(c=>{ const exp=c.valid_until&&Date.parse(c.valid_until+"T23:59:59")<Date.now(); return `<tr><td>${esc(c.label)}<div class="small muted">${esc(c.name||"")}</div></td><td>${c.valid_until?fmtD(c.valid_until):"–"}</td><td>${exp?`<span class="chip warn">abgelaufen</span>`:c.verified?`<span class="chip">geprüft</span>`:`<span class="chip amber">in Prüfung</span>`}</td></tr>`; }).join("")}</table>`:`<p class="muted small">Noch keine Nachweise hochgeladen.</p>`}
+      <h3 style="margin-top:6px">Nachweis nachreichen</h3>${certRows("pc")}<div><button class="btn sm" id="pcu" style="margin-top:8px">Hochladen</button></div></div>
+    <h2>Firmendaten</h2><div class="card">
+      <div class="grid2"><div><label class="f">Ansprechpartner</label><input class="i" id="p_name" value="${esc(me.contact_name||"")}"></div><div><label class="f">Telefon</label><input class="i" id="p_phone" value="${esc(me.phone||"")}"></div>
+      <div><label class="f">Straße, Nr.</label><input class="i" id="p_street" value="${esc(me.street||"")}"></div><div class="grid2" style="gap:0 8px"><div><label class="f">PLZ</label><input class="i" id="p_zip" value="${esc(me.zip||"")}"></div><div><label class="f">Ort</label><input class="i" id="p_city" value="${esc(me.city||"")}"></div></div>
+      <div><label class="f">Website</label><input class="i" id="p_web" value="${esc(me.website||"")}"></div><div><label class="f">Einsatzradius (km)</label><input class="i" id="p_radius" value="${esc(me.radius_km??"")}"></div>
+      ${me.crefo_index==null?`<div><label class="f">Crefonummer</label><input class="i" id="p_crefo" value="${esc(me.crefo_no||"")}"></div>`:""}<div><label class="f">Neues Passwort (optional)</label><input class="i" id="p_pw" type="password" autocomplete="new-password"></div></div>
+      <label class="f">Gewerke / Leistungen</label><div id="pcats">${catBoxes(me.categories)}</div>
+      <label class="f">Kurzprofil</label><textarea class="i" id="p_about">${esc(me.about||"")}</textarea>
+      <div class="err" id="perr"></div><button class="btn" id="ps" style="margin-top:10px">Speichern</button>
+      <p class="small muted">Firmenname und E-Mail ändern wir auf Anfrage, damit die Prüfung gültig bleibt.</p></div>`;
+  eyeify(view);
+  $("#pcu").onclick=async()=>{ const c=collectCerts("pc"); if(!c.length) return toast("Bitte eine Datei wählen"); $("#pcu").disabled=true; try{ await api("doc_upload",{certs:c}); toast("✅ Nachweis hochgeladen, wir prüfen ihn."); profileView(); }catch(e){ toast(e.message); $("#pcu").disabled=false; } };
+  $("#ps").onclick=async()=>{ $("#perr").textContent=""; const v=id=>$("#"+id)?$("#"+id).value.trim():undefined;
+    try{ await api("profile_save",{provider:{contact_name:v("p_name"),phone:v("p_phone"),street:v("p_street"),zip:v("p_zip"),city:v("p_city"),website:v("p_web"),radius_km:v("p_radius"),crefo_no:v("p_crefo"),about:v("p_about"),password:$("#p_pw").value||undefined,categories:[...$("#pcats").querySelectorAll("input:checked")].map(i=>i.value)}}); toast("✅ Gespeichert"); profileView(); }
+    catch(e){ $("#perr").textContent=e.message; } };
+}
+
+/* ── Start ── */
+(async()=>{ renderHead(); const h=decodeURIComponent(location.hash.slice(1)); if(S.token) await loadMe(); h?go("job",h):go("jobs"); })();
+</script>
+</body>
+</html>
