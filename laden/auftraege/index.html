@@ -151,30 +151,31 @@ function eligBox(el,ctx){
 async function jobsView(){
   view.innerHTML=`${S.token?"":`<div class="hero"><h1>Aufträge für Fachbetriebe rund ums Laden</h1>
     <p>Störungen, Mängel und Wartungen an Ladestationen, ausgeschrieben gegen Angebot, pauschal oder nach Stundensatz. Keine Gebühren, keine Provision.</p>
-    <div class="steps"><div><b>1 · Registrieren</b>Firmendaten, Nachweise und Crefonummer hinterlegen</div><div><b>2 · Prüfung</b>Wir prüfen Nachweise und Creditreform-Bonität</div><div><b>3 · Anbieten</b>Freigegebene Betriebe sehen alle Details und geben Angebote ab</div></div>
+    <div class="steps"><div><b>1 · Registrieren</b>Firmendaten, Nachweise und Crefonummer hinterlegen</div><div><b>2 · Prüfung</b>Wir prüfen Nachweise und Creditreform-Bonität</div><div><b>3 · Anbieten</b>Registrierte Betriebe sehen alle Details, freigegebene Betriebe geben Angebote ab</div></div>
     <div class="row"><button class="btn" onclick="go('register')">Jetzt registrieren</button><button class="btn ghost" onclick="go('login')">Anmelden</button></div></div>`}
     <div id="meBox"></div>
-    <div class="filters"><input id="fq" placeholder="Suche nach Ort, Titel, Nummer…" value="${esc(S.f.q)}"><select id="fc"><option value="">Alle Gewerke</option></select>
+    <div class="filters"><input id="fq" placeholder="Suche nach Ort, Tätigkeit, Nummer…" value="${esc(S.f.q)}"><select id="fc"><option value="">Alle Gewerke</option></select>
     <select id="fs"><option value="">Alle Arten</option><option>Störung</option><option>Mangel</option><option>Wartung / Checkliste</option><option>Auftrag</option></select></div>
     <div id="list"><div class="empty">Lade Aufträge…</div></div>`;
   if(S.token) loadMe().then(me=>{ if(me) $("#meBox").innerHTML=me.eligible.ok?"":eligBox(me.eligible)+"<div style='height:12px'></div>"; });
-  try{ const r=await api("jobs"); S.jobs=r.jobs; S.certs=r.certs; S.cats=r.cats; S.brands=r.brands||{}; S.software=r.software||{}; S.crefo_max=r.crefo_max; }
+  try{ const r=await api("jobs"); S.jobs=r.jobs; S.reg=!!r.registered; S.certs=r.certs; S.cats=r.cats; S.brands=r.brands||{}; S.software=r.software||{}; S.crefo_max=r.crefo_max; }
   catch(e){ $("#list").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   const cats=[...new Set(S.jobs.map(j=>j.category).filter(Boolean))];
   $("#fc").innerHTML=`<option value="">Alle Gewerke</option>`+cats.map(c=>`<option value="${c}">${esc(S.cats[c]||c)}</option>`).join("");
+  if(!S.reg){ S.f.src=""; $("#fs").style.display="none"; }
   $("#fc").value=S.f.cat; $("#fs").value=S.f.src;
   const upd=()=>{ S.f={q:$("#fq").value,cat:$("#fc").value,src:$("#fs").value}; renderList(); };
   $("#fq").oninput=upd; $("#fc").onchange=upd; $("#fs").onchange=upd; renderList();
 }
 function renderList(){
   const q=S.f.q.trim().toLowerCase();
-  const l=S.jobs.filter(j=>(!S.f.cat||j.category===S.f.cat)&&(!S.f.src||j.source_label===S.f.src)&&(!q||[j.title,j.location,j.job_no,j.category_label].join(" ").toLowerCase().includes(q)));
+  const l=S.jobs.filter(j=>(!S.f.cat||j.category===S.f.cat)&&(!S.f.src||j.source_label===S.f.src)&&(!q||[j.activity,j.title,j.location,j.job_no,j.category_label].join(" ").toLowerCase().includes(q)));
   if(!l.length){ $("#list").innerHTML=`<div class="empty">${S.jobs.length?"Keine Aufträge für diese Filter.":"Aktuell sind keine Aufträge ausgeschrieben. Registrierte Betriebe bekommen neue passende Aufträge per E-Mail."}</div>`; return; }
   $("#list").innerHTML=`<div class="small muted" style="margin:0 2px 8px">${l.length} offene${l.length===1?"r":""} Auftrag${l.length===1?"":"e"}</div><div class="jobs">${l.map(j=>`<div class="job" data-no="${esc(j.job_no)}">
-    <div class="no">${esc(j.job_no)} · ${esc(j.source_label)}</div><div class="tt">${esc(j.title)}</div>
-    <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}${j.desired_from||j.desired_to?`<span>📅 ${j.desired_from?fmtD(j.desired_from):""}${j.desired_to?" – "+fmtD(j.desired_to):""}</span>`:""}${j.recurring_days?`<span>🔁 alle ${j.recurring_days} Tage</span>`:""}</div>
-    <div>${j.qualifications.map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join("")}</div>
-    <div class="foot"><span>⏳ Frist ${fmtD(j.bid_deadline)} <b>${left(j.bid_deadline)}</b></span><span class="muted">${j.bids} Angebot${j.bids===1?"":"e"}</span></div></div>`).join("")}</div>`;
+    <div class="no">${esc(j.job_no)}${j.source_label?" · "+esc(j.source_label):""}</div><div class="tt">${esc(S.reg?j.title:j.activity)}</div>
+    <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${S.reg&&j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}<span>📅 ${j.desired_from||j.desired_to?`${j.desired_from?fmtD(j.desired_from):""}${j.desired_to?" – "+fmtD(j.desired_to):""}`:"nach Absprache"}</span>${j.recurring_days?`<span>🔁 alle ${j.recurring_days} Tage</span>`:""}</div>
+    ${S.reg?`<div>${(j.qualifications||[]).map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join("")}</div>`:""}
+    <div class="foot"><span>⏳ Frist ${fmtD(j.bid_deadline)} <b>${left(j.bid_deadline)}</b></span>${S.reg?`<span class="muted">${j.bids} Angebot${j.bids===1?"":"e"}</span>`:`<span class="muted">🔒 Details nach Registrierung</span>`}</div></div>`).join("")}</div>`;
   $("#list").querySelectorAll(".job").forEach(c=>c.onclick=()=>{ location.hash=c.dataset.no; });
 }
 
@@ -187,15 +188,22 @@ async function jobView(no){
   else{ if(!S.jobs.length){ try{ const x=await api("jobs"); S.jobs=x.jobs; S.certs=x.certs; S.cats=x.cats; }catch(e){} }
     const j=S.jobs.find(x=>x.job_no===no||x.id===no); if(!j){ $("#jd").innerHTML=`<div class="empty">Auftrag nicht gefunden oder nicht mehr offen.</div>`; return; } r={job:j,eligible:null}; }
   const j=r.job, full="description" in j, mb=r.my_bid;
+  if(!S.token){ $("#jd").innerHTML=`<div class="card"><div class="small muted" style="font-family:ui-monospace,Menlo,monospace">${esc(j.job_no)}</div>
+    <h1 style="margin-top:6px">${esc(j.activity||"Auftrag")}</h1>
+    <dl class="dl" style="margin-top:12px"><dt>Ort</dt><dd>📍 ${esc(j.location||"–")}</dd>
+    <dt>Zeitraum</dt><dd>${j.desired_from||j.desired_to?`${j.desired_from?"ab "+fmtD(j.desired_from):""}${j.desired_to?" bis "+fmtD(j.desired_to):""}`:"nach Absprache"}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
+    <dt>Angebotsfrist</dt><dd><b>${fmtDT(j.bid_deadline)}</b> <span class="muted">${left(j.bid_deadline)}</span></dd></dl></div>
+    <div class="card"><h3>🔒 Weitere Informationen</h3><div class="muted">Aufgabenbeschreibung, Fotos, erforderliche Nachweise und Abrechnungsart sehen registrierte Betriebe. Die Registrierung ist kostenlos.</div>
+    <div style="margin-top:12px"><button class="btn" onclick="go('register')">Als Betrieb registrieren</button> <button class="btn ghost" onclick="go('login')">Anmelden</button></div></div>`; return; }
   const stat={offen:"",vergeben:mb?.status==="angenommen"?`<span class="chip">Zuschlag erhalten</span>`:`<span class="chip grey">vergeben</span>`,erledigt:`<span class="chip grey">erledigt</span>`}[j.status||"offen"]||"";
-  $("#jd").innerHTML=`<div class="card"><div class="small muted" style="font-family:ui-monospace,Menlo,monospace">${esc(j.job_no)} · ${esc(j.source_label)} ${stat}</div>
+  $("#jd").innerHTML=`<div class="card"><div class="small muted" style="font-family:ui-monospace,Menlo,monospace">${esc(j.job_no)}${j.source_label?" · "+esc(j.source_label):""} ${stat}</div>
     <h1 style="margin-top:6px">${esc(j.title)}</h1>
     <dl class="dl" style="margin-top:12px"><dt>Ort</dt><dd>📍 ${esc(j.location||"–")}${r.site?` · <b>${esc(r.site.address||"")}</b>`:full?` <span class="small muted">(genaue Adresse nach Zuschlag)</span>`:""}</dd>
     ${j.category_label?`<dt>Gewerk</dt><dd>${esc(j.category_label)}</dd>`:""}
     <dt>Zeitraum</dt><dd>${j.desired_from||j.desired_to?`${j.desired_from?"ab "+fmtD(j.desired_from):""}${j.desired_to?" bis "+fmtD(j.desired_to):""}`:"nach Absprache"}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
     <dt>Angebotsfrist</dt><dd><b>${fmtDT(j.bid_deadline)}</b> <span class="muted">${left(j.bid_deadline)}</span></dd>
     <dt>Gewünschte Abrechnung</dt><dd>${{fix:"Pauschalpreis",stunde:"Stundensatz",offen:"Pauschal oder Stundensatz"}[j.price_type]||"–"}${full&&j.price_hint?` · Richtwert ca. ${eur(j.price_hint)}`:""}</dd>
-    <dt>Erforderliche Nachweise</dt><dd>${j.qualifications.length?j.qualifications.map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join(""):"<span class='muted'>keine besonderen</span>"}</dd>
+    <dt>Erforderliche Nachweise</dt><dd>${(j.qualifications||[]).length?j.qualifications.map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join(""):"<span class='muted'>keine besonderen</span>"}</dd>
     <dt>Angebote bisher</dt><dd>${j.bids??"–"}</dd></dl></div>
     ${full?`<div class="card"><h3>Beschreibung</h3><div class="desc">${esc(j.description||"–")}</div>${(j.photos||[]).length?`<div class="photos">${j.photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy" onclick="zoom(this.src)">`).join("")}</div>`:""}</div>`
       :`<div class="card"><h3>Beschreibung</h3><div class="muted">Die vollständige Beschreibung${j.photos_count?" und "+j.photos_count+" Foto"+(j.photos_count>1?"s":""):""} sehen nur freigegebene Fachbetriebe.</div>

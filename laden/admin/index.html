@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="20261109c">
+<meta name="build" content="20261109d">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>HAPPY CHARGING Support · Betreiber</title>
@@ -1903,13 +1903,15 @@ async function mkEdit(j){
   const dl=j.bid_deadline?mkLocal(j.bid_deadline):mkLocal(new Date(Date.now()+5*864e5).setHours(18,0,0,0));
   const md=mkModal(`<div class="row"><h2 style="margin:0;flex:1">${isNew?"Auftrag ausschreiben":"Auftrag bearbeiten"} <small class="muted">${esc(m.src[j.source_type]||"")}${j.source_ref?" · "+esc(j.source_ref):""}</small></h2><button class="btn ghost sm" data-close>✕</button></div>
     <div class="grid2c" style="margin-top:12px"><div>
-      <label>Titel (öffentlich)</label><input id="mjT" value="${esc(j.title||"")}" maxlength="160">
-      <label style="margin-top:10px">Beschreibung <small>(sehen nur freigegebene Betriebe)</small></label><textarea id="mjD" rows="9">${esc(j.description||"")}</textarea>
+      <label>Öffentlich sichtbar <small>(grob, ohne Details – sieht jeder)</small></label><input id="mjTP" value="${esc(j.title_public||"")}" maxlength="120" placeholder="${esc(j.title_public_auto?"automatisch: "+j.title_public_auto:"leer = automatisch aus Gewerk und Art")}">
+      <div class="hint">Öffentlich sind nur diese Kurzbeschreibung, der Ort und der Zeitraum. Alles andere sehen nur registrierte Betriebe.</div>
+      <label style="margin-top:10px">Titel <small>(nur registrierte Betriebe)</small></label><input id="mjT" value="${esc(j.title||"")}" maxlength="160">
+      <label style="margin-top:10px">Beschreibung <small>(nur registrierte Betriebe)</small></label><textarea id="mjD" rows="9">${esc(j.description||"")}</textarea>
       <div class="hint">Keine Kundendaten, Codes oder Zugangsdaten. Die genaue Adresse und den Service-Zugang bekommt nur der Betrieb mit dem Zuschlag.</div>
       ${isNew&&j.photo_src?`<label style="margin-top:8px;display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox" id="mjPh" checked style="width:auto"> Foto aus der Meldung übernehmen</label>`:""}
     </div><div>
       <div class="row" style="gap:10px"><div style="flex:1"><label>Projekt (intern)</label><select id="mjS"><option value="">– ohne –</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${s.id===j.station_id?"selected":""}>${esc(s.project_id||s.id)}${s.address?" · "+esc(s.address):""}</option>`).join("")}</select></div>
-        <div style="flex:1"><label>Ort (öffentlich)</label><input id="mjL" value="${esc(j.location_public||"")}" placeholder="z. B. Hamburg-Altona"></div></div>
+        <div style="flex:1"><label>Ort (öffentlich, nur Stadt/Stadtteil)</label><input id="mjL" value="${esc(j.location_public||"")}" placeholder="z. B. Hamburg-Altona"></div></div>
       <div class="row" style="gap:10px;margin-top:10px"><div style="flex:1"><label>Gewerk</label><select id="mjC"><option value="">– beliebig –</option>${Object.entries(m.cats).map(([k,l])=>`<option value="${k}" ${k===j.category?"selected":""}>${esc(l)}</option>`).join("")}</select></div>
         <div style="flex:1"><label>Abrechnung</label><select id="mjP">${[["fix","Pauschalpreis"],["stunde","Stundensatz"],["offen","Pauschal oder Stundensatz"]].map(([k,l])=>`<option value="${k}" ${k===(j.price_type||"fix")?"selected":""}>${l}</option>`).join("")}</select></div></div>
       <div class="row" style="gap:10px;margin-top:10px"><div style="flex:1"><label>Ausführung ab</label><input type="date" id="mjF" value="${esc(j.desired_from||"")}"></div><div style="flex:1"><label>bis</label><input type="date" id="mjTo" value="${esc(j.desired_to||"")}"></div></div>
@@ -1975,7 +1977,7 @@ async function mkEdit(j){
   if(!isNew){ photos({urls:j.photo_urls||[],paths:j.photos||[]});
     q("#mjUp").onchange=async()=>{ for(const f of q("#mjUp").files){ try{ const data=await mkImg(f); const r=await mapi("m_photo",{id:j.id,data}); photos({urls:r.photos,paths:r.paths}); }catch(e){ toast(e.message,true); } } }; }
   const collect=()=>({ id:j.id, source_type:j.source_type, source_ref:j.source_ref, photo_src:q("#mjPh")&&q("#mjPh").checked?j.photo_src:null,
-    title:q("#mjT").value, description:q("#mjD").value, station_id:q("#mjS").value, location_public:q("#mjL").value, category:q("#mjC").value, price_type:q("#mjP").value,
+    title:q("#mjT").value, title_public:q("#mjTP").value, description:q("#mjD").value, station_id:q("#mjS").value, location_public:q("#mjL").value, category:q("#mjC").value, price_type:q("#mjP").value,
     desired_from:q("#mjF").value, desired_to:q("#mjTo").value, bid_deadline:q("#mjDl").value?new Date(q("#mjDl").value).toISOString():null, price_hint:q("#mjH").value, recurring_days:q("#mjR").value,
     target_cats:typeof CSEL!=="undefined"?CSEL:(j.target_cats||[]), invite:typeof RCP!=="undefined"?RCP:(j.invite||[]),
     qualifications:typeof QL!=="undefined"?QL.map(x=>x.k):(j.qualifications||[]), quals_suggested:typeof SUG!=="undefined"?SUG.map(({k,why})=>({k,why})):(j.quals_suggested||[]), quals_confirmed:!!(q("#mjQok")&&q("#mjQok").checked) });
