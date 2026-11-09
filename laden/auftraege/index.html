@@ -53,6 +53,11 @@ h3{font-size:15px;margin:0 0 6px}
 .job:hover{border-color:var(--brand)}
 .job .no{font-size:12px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
 .job .tt{font-weight:700;font-size:16px;line-height:1.3}
+.job{position:relative}.job .no{padding-right:34px}
+.star{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:18px;line-height:1;cursor:pointer;color:#b8c0bb;display:flex;align-items:center;justify-content:center;padding:0}
+.star.on{color:#F08C00;border-color:#F08C00;background:#fff8ec}.star:hover{border-color:#F08C00}
+.demo{display:inline-block;background:#7c3aed;color:#fff;font:700 11px/1 system-ui,sans-serif;letter-spacing:.06em;padding:4px 7px;border-radius:6px;vertical-align:middle;margin-right:6px}
+.star.inl{position:static;display:inline-flex;vertical-align:middle;margin-left:8px}
 .job .meta{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .job .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:13px;padding-top:6px;border-top:1px solid var(--line)}
 .dl{display:grid;grid-template-columns:160px 1fr;gap:6px 12px;font-size:14px}.dl dt{color:var(--muted)}.dl dd{margin:0}
@@ -129,13 +134,13 @@ function readFile(f,maxPx=1800){ return new Promise((res,rej)=>{ if(f.size>12*10
 function renderHead(){
   $("#acct").textContent=S.token?"Abmelden":"Anmelden";
   $("#acct").onclick=()=>S.token?logout():go("login");
-  const tabs=[["jobs","Offene Aufträge"]].concat(S.token?[["my","Meine Angebote"],["profile","Mein Betrieb"]]:[["register","Als Betrieb registrieren"]]);
+  const tabs=[["jobs","Offene Aufträge"]].concat(S.token?[["favs","★ Favoriten"],["my","Meine Angebote"],["profile","Mein Betrieb"]]:[["register","Als Betrieb registrieren"]]);
   $("#tabs").innerHTML=tabs.map(([k,l])=>`<button data-t="${k}" class="${S.tab===k?"on":""}">${l}</button>`).join("");
   $("#tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>go(b.dataset.t));
 }
 function go(tab,arg){ S.tab=tab; renderHead(); scrollTo(0,0);
   if(tab!=="job" && location.hash) history.replaceState(null,"",location.pathname);
-  ({jobs:jobsView,job:()=>jobView(arg),login:loginView,register:registerView,my:myView,profile:profileView}[tab]||jobsView)(); }
+  ({jobs:jobsView,job:()=>jobView(arg),login:loginView,register:registerView,my:myView,favs:favView,profile:profileView}[tab]||jobsView)(); }
 $("#home").onclick=()=>go("jobs");
 window.addEventListener("hashchange",()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(h) go("job",h); });
 
@@ -171,12 +176,13 @@ function renderList(){
   const q=S.f.q.trim().toLowerCase();
   const l=S.jobs.filter(j=>(!S.f.cat||j.category===S.f.cat)&&(!S.f.src||j.source_label===S.f.src)&&(!q||[j.activity,j.title,j.location,j.job_no,j.category_label].join(" ").toLowerCase().includes(q)));
   if(!l.length){ $("#list").innerHTML=`<div class="empty">${S.jobs.length?"Keine Aufträge für diese Filter.":"Aktuell sind keine Aufträge ausgeschrieben. Registrierte Betriebe bekommen neue passende Aufträge per E-Mail."}</div>`; return; }
-  $("#list").innerHTML=`<div class="small muted" style="margin:0 2px 8px">${l.length} offene${l.length===1?"r":""} Auftrag${l.length===1?"":"e"}</div><div class="jobs">${l.map(j=>`<div class="job" data-no="${esc(j.job_no)}">
-    <div class="no">${esc(j.job_no)}${j.source_label?" · "+esc(j.source_label):""}</div><div class="tt">${esc(S.reg?j.title:j.activity)}</div>
+  $("#list").innerHTML=`<div class="small muted" style="margin:0 2px 8px">${l.length} offene${l.length===1?"r":""} Auftrag${l.length===1?"":"e"}</div><div class="jobs">${l.map(j=>`<div class="job" data-no="${esc(j.job_no)}">${S.reg?starBtn(j):""}
+    <div class="no">${esc(j.job_no)}${j.source_label?" · "+esc(j.source_label):""}</div><div class="tt">${demoB(j)}${esc(S.reg?tt(j.title):j.activity)}</div>
     <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${S.reg&&j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}<span>📅 ${j.desired_from||j.desired_to?`${j.desired_from?fmtD(j.desired_from):""}${j.desired_to?" – "+fmtD(j.desired_to):""}`:"nach Absprache"}</span>${j.recurring_days?`<span>🔁 alle ${j.recurring_days} Tage</span>`:""}</div>
     ${S.reg?`<div>${(j.qualifications||[]).map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join("")}</div>`:""}
     <div class="foot"><span>⏳ Frist ${fmtD(j.bid_deadline)} <b>${left(j.bid_deadline)}</b></span>${S.reg?`<span class="muted">${j.bids} Angebot${j.bids===1?"":"e"}</span>`:`<span class="muted">🔒 Details nach Registrierung</span>`}</div></div>`).join("")}</div>`;
   $("#list").querySelectorAll(".job").forEach(c=>c.onclick=()=>{ location.hash=c.dataset.no; });
+  wireStars($("#list"));
 }
 
 /* ── Detail + Angebot ── */
@@ -189,7 +195,7 @@ async function jobView(no){
     const j=S.jobs.find(x=>x.job_no===no||x.id===no); if(!j){ $("#jd").innerHTML=`<div class="empty">Auftrag nicht gefunden oder nicht mehr offen.</div>`; return; } r={job:j,eligible:null}; }
   const j=r.job, full="description" in j, mb=r.my_bid;
   if(!S.token){ $("#jd").innerHTML=`<div class="card"><div class="small muted" style="font-family:ui-monospace,Menlo,monospace">${esc(j.job_no)}</div>
-    <h1 style="margin-top:6px">${esc(j.activity||"Auftrag")}</h1>
+    <h1 style="margin-top:6px">${demoB(j)}${esc(j.activity||"Auftrag")}</h1>${isDemo(j)?`<div class="small muted">Demo-Ausschreibung zum Ausprobieren – es wird kein echter Auftrag vergeben.</div>`:""}
     <dl class="dl" style="margin-top:12px"><dt>Ort</dt><dd>📍 ${esc(j.location||"–")}</dd>
     <dt>Zeitraum</dt><dd>${j.desired_from||j.desired_to?`${j.desired_from?"ab "+fmtD(j.desired_from):""}${j.desired_to?" bis "+fmtD(j.desired_to):""}`:"nach Absprache"}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
     <dt>Angebotsfrist</dt><dd><b>${fmtDT(j.bid_deadline)}</b> <span class="muted">${left(j.bid_deadline)}</span></dd></dl></div>
@@ -197,7 +203,7 @@ async function jobView(no){
     <div style="margin-top:12px"><button class="btn" onclick="go('register')">Als Betrieb registrieren</button> <button class="btn ghost" onclick="go('login')">Anmelden</button></div></div>`; return; }
   const stat={offen:"",vergeben:mb?.status==="angenommen"?`<span class="chip">Zuschlag erhalten</span>`:`<span class="chip grey">vergeben</span>`,erledigt:`<span class="chip grey">erledigt</span>`}[j.status||"offen"]||"";
   $("#jd").innerHTML=`<div class="card"><div class="small muted" style="font-family:ui-monospace,Menlo,monospace">${esc(j.job_no)}${j.source_label?" · "+esc(j.source_label):""} ${stat}</div>
-    <h1 style="margin-top:6px">${esc(j.title)}</h1>
+    <h1 style="margin-top:6px">${demoB(j)}${esc(tt(j.title))}${starBtn(j,true)}</h1>${isDemo(j)?`<div class="small muted">Demo-Ausschreibung zum Ausprobieren – es wird kein echter Auftrag vergeben.</div>`:""}
     <dl class="dl" style="margin-top:12px"><dt>Ort</dt><dd>📍 ${esc(j.location||"–")}${r.site?` · <b>${esc(r.site.address||"")}</b>`:full?` <span class="small muted">(genaue Adresse nach Zuschlag)</span>`:""}</dd>
     ${j.category_label?`<dt>Gewerk</dt><dd>${esc(j.category_label)}</dd>`:""}
     <dt>Zeitraum</dt><dd>${j.desired_from||j.desired_to?`${j.desired_from?"ab "+fmtD(j.desired_from):""}${j.desired_to?" bis "+fmtD(j.desired_to):""}`:"nach Absprache"}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
@@ -210,6 +216,7 @@ async function jobView(no){
         <div style="margin-top:12px">${S.token?eligBox(r.eligible,true):`<button class="btn" onclick="go('login')">Anmelden</button> <button class="btn ghost" onclick="go('register')">Als Betrieb registrieren</button>`}</div></div>`}
     ${r.site?`<div class="card ok"><b>Ihr Service-Zugang</b><br>Projekt ${esc(r.site.project_id)} · <a href="${esc(r.site.service_url)}" target="_blank" rel="noopener">${esc(r.site.service_url)}</a><br><span class="small">Die PIN haben Sie per E-Mail erhalten. Dort starten Sie vor Ort die Checkliste mit Arbeitszeit, Fotos und Protokoll.</span></div>`:""}
     <div id="bidBox"></div>`;
+  wireStars($("#jd"));
   if(full && S.token) bidBox(j,r);
 }
 function bidBox(j,r){
@@ -310,6 +317,30 @@ async function registerView(){
 }
 
 /* ── Meine Angebote ── */
+/* ── Demo-Kennzeichnung ── */
+const isDemo=j=>/^AU-DEMO-/.test(j?.job_no||"")||/^\[DEMO\]/.test(j?.title||"");
+const demoB=j=>isDemo(j)?`<span class="demo" title="Demo-Ausschreibung – keine echte Beauftragung">DEMO</span>`:"";
+const tt=t=>String(t||"").replace(/^\[DEMO\]\s*/,"");
+/* ── Favoriten ── */
+function starBtn(j,inl){ return `<button class="star${j.fav?" on":""}${inl?" inl":""}" data-fav="${esc(j.id)}" title="${j.fav?"Aus Favoriten entfernen":"Als Favorit merken"}" aria-label="Favorit">${j.fav?"★":"☆"}</button>`; }
+function wireStars(root){ root.querySelectorAll("[data-fav]").forEach(b=>b.onclick=async e=>{ e.stopPropagation(); const on=!b.classList.contains("on"); b.disabled=true;
+  try{ await api("fav",{job_id:b.dataset.fav,on}); b.classList.toggle("on",on); b.textContent=on?"★":"☆"; b.title=on?"Aus Favoriten entfernen":"Als Favorit merken";
+    const j=(S.jobs||[]).find(x=>x.id===b.dataset.fav); if(j) j.fav=on; toast(on?"★ Zu Favoriten hinzugefügt":"Aus Favoriten entfernt");
+    if(S.tab==="favs"&&!on){ const c=b.closest(".job"); c&&c.remove(); if(!document.querySelector("#fl .job")) favView(); } }
+  catch(err){ toast(err.message,true); } b.disabled=false; }); }
+async function favView(){
+  if(!S.token) return loginView();
+  view.innerHTML=`<h1>★ Meine Favoriten</h1><div class="small muted" style="margin:-4px 2px 12px">Gemerkte Ausschreibungen – mit dem Stern in der Auftragsliste hinzufügen oder entfernen.</div><div id="fl"><div class="empty">Lade…</div></div>`;
+  let r; try{ r=await api("favs"); }catch(e){ $("#fl").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  if(!r.items.length){ $("#fl").innerHTML=`<div class="empty">Noch keine Favoriten.<br>Tippen Sie in der Auftragsliste auf ☆, um eine Ausschreibung zu merken.<br><br><button class="btn" onclick="go('jobs')">Offene Aufträge ansehen</button></div>`; return; }
+  const st=j=>{ const open=j.status==="offen"&&(!j.bid_deadline||Date.parse(j.bid_deadline)>Date.now()); return j.my_bid?`<span class="chip">${j.my_bid.status==="angenommen"?"Zuschlag erhalten":j.my_bid.status==="abgegeben"?"Angebot abgegeben":"Angebot "+esc(j.my_bid.status)}</span>`:open?`<b>${left(j.bid_deadline)}</b>`:`<span class="chip grey">${j.status==="offen"?"Frist abgelaufen":esc(j.status)}</span>`; };
+  $("#fl").innerHTML=`<div class="jobs">${r.items.map(j=>`<div class="job" data-no="${esc(j.job_no)}">${starBtn(j)}
+    <div class="no">${esc(j.job_no)}${j.source_label?" · "+esc(j.source_label):""}</div><div class="tt">${demoB(j)}${esc(tt(j.title))}</div>
+    <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}<span>📅 ${j.desired_from||j.desired_to?`${j.desired_from?fmtD(j.desired_from):""}${j.desired_to?" – "+fmtD(j.desired_to):""}`:"nach Absprache"}</span></div>
+    <div class="foot"><span>⏳ Frist ${fmtD(j.bid_deadline)}</span><span>${st(j)}</span></div></div>`).join("")}</div>`;
+  $("#fl").querySelectorAll(".job").forEach(c=>c.onclick=()=>{ location.hash=c.dataset.no; });
+  wireStars($("#fl"));
+}
 async function myView(){
   if(!S.token) return loginView();
   view.innerHTML=`<h1>Meine Angebote & Aufträge</h1><div id="ml"><div class="empty">Lade…</div></div>`;
@@ -317,7 +348,7 @@ async function myView(){
   if(!r.items.length){ $("#ml").innerHTML=`<div class="empty">Noch keine Angebote abgegeben.<br><br><button class="btn" onclick="go('jobs')">Offene Aufträge ansehen</button></div>`; return; }
   const grp=[["Zuschlag erhalten",x=>x.bid.status==="angenommen"],["Offene Angebote",x=>x.bid.status==="abgegeben"],["Abgeschlossen",x=>["abgelehnt","zurueckgezogen"].includes(x.bid.status)]];
   $("#ml").innerHTML=grp.map(([t,f])=>{ const l=r.items.filter(f); if(!l.length) return ""; return `<h2>${t} (${l.length})</h2><div class="card" style="padding:4px 12px;overflow-x:auto"><table class="tbl"><tr><th>Auftrag</th><th>Ort</th><th>Frist</th><th>Ihr Angebot</th></tr>
-    ${l.map(x=>`<tr style="cursor:pointer" onclick="location.hash='${esc(x.job?.job_no||"")}'"><td><b>${esc(x.job?.title||"–")}</b><div class="small muted">${esc(x.job?.job_no||"")}${x.job?.status&&x.job.status!=="offen"?" · "+esc(x.job.status):""}</div></td><td>${esc(x.job?.location||"–")}</td><td>${fmtD(x.job?.bid_deadline)}</td><td>${bidLine(x.bid)}</td></tr>`).join("")}</table></div>`; }).join("");
+    ${l.map(x=>`<tr style="cursor:pointer" onclick="location.hash='${esc(x.job?.job_no||"")}'"><td>${demoB(x.job)}<b>${esc(tt(x.job?.title)||"–")}</b><div class="small muted">${esc(x.job?.job_no||"")}${x.job?.status&&x.job.status!=="offen"?" · "+esc(x.job.status):""}</div></td><td>${esc(x.job?.location||"–")}</td><td>${fmtD(x.job?.bid_deadline)}</td><td>${bidLine(x.bid)}</td></tr>`).join("")}</table></div>`; }).join("");
 }
 
 /* ── Mein Betrieb ── */

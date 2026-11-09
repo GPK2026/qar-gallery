@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="20261109d">
+<meta name="build" content="20261109e">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>HAPPY CHARGING Support · Betreiber</title>
@@ -1888,7 +1888,7 @@ async function mkJobs(){
     <div class="kpi link ${pr.providers.length?"bad":""}" id="mkKP"><div class="k">Betriebe zu prüfen</div><div class="v">${pr.providers.length}</div><div class="s">neu registriert</div></div></div>
     <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>Auftrag</th><th>Quelle</th><th>Ort</th><th>Frist</th><th>Angebote</th><th>Bestes Pauschal</th><th>Status</th></tr></thead><tbody>
     ${all.length?all.map(j=>{ const s=MK_ST[j.status]||[j.status,"off"], late=j.status==="offen"&&j.bid_deadline&&Date.parse(j.bid_deadline)<Date.now();
-      return `<tr class="click" data-id="${esc(j.id)}"><td><b>${esc(j.title)}</b><br><small class="muted"><code>${esc(j.job_no)}</code>${j.station_id?" · "+esc(stLabel(j.station_id)):""}</small></td><td>${esc(r.src[j.source_type]||j.source_type)}${j.source_ref?`<br><small class="muted">${esc(j.source_ref.length>20?j.source_ref.slice(0,8)+"…":j.source_ref)}</small>`:""}</td>
+      return `<tr class="click" data-id="${esc(j.id)}"><td>${/^AU-DEMO-/.test(j.job_no||"")||/^\[DEMO\]/.test(j.title||"")?'<span class="badge" style="background:#7c3aed;color:#fff">DEMO</span> ':""}<b>${esc(j.title)}</b><br><small class="muted"><code>${esc(j.job_no)}</code>${j.station_id?" · "+esc(stLabel(j.station_id)):""}</small></td><td>${esc(r.src[j.source_type]||j.source_type)}${j.source_ref?`<br><small class="muted">${esc(j.source_ref.length>20?j.source_ref.slice(0,8)+"…":j.source_ref)}</small>`:""}</td>
         <td>${esc(j.location_public||"–")}</td><td data-sort="${j.bid_deadline||""}">${j.bid_deadline?fmtDT(j.bid_deadline):"–"}${late?' <span class="badge warn">abgelaufen</span>':""}</td><td>${j.bids}</td><td>${mkEur(j.best)}</td><td><span class="badge ${s[1]}">${s[0]}</span>${j.status==="offen"?` <a href="../auftraege/#${esc(j.job_no)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Öffentlich ansehen">↗</a>`:""}</td></tr>`; }).join("")
       :`<tr><td colspan="7" class="muted">Noch keine Aufträge. Über „+ Freier Auftrag“ oder bei einer Störung, einem Mangel oder einer Checkliste mit „Zur Vergabe stellen“ anlegen.</td></tr>`}</tbody></table></div>`;
   $("#mkKP").onclick=()=>{ MKT.tab="prov"; MKT.pstatus="neu"; marketView(); };
