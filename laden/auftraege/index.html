@@ -134,7 +134,7 @@ function readFile(f,maxPx=1800){ return new Promise((res,rej)=>{ if(f.size>12*10
 function renderHead(){
   $("#acct").textContent=S.token?"Abmelden":"Anmelden";
   $("#acct").onclick=()=>S.token?logout():go("login");
-  const tabs=[["jobs","Offene Aufträge"]].concat(S.token?[["favs","★ Favoriten"],["my","Meine Angebote"],["profile","Mein Betrieb"]]:[["register","Als Betrieb registrieren"]]);
+  const tabs=[["jobs","Offene Aufträge"],["favs","★ Favoriten"]].concat(S.token?[["my","Meine Angebote"],["profile","Mein Betrieb"]]:[["register","Als Betrieb registrieren"]]);
   $("#tabs").innerHTML=tabs.map(([k,l])=>`<button data-t="${k}" class="${S.tab===k?"on":""}">${l}</button>`).join("");
   $("#tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>go(b.dataset.t));
 }
@@ -176,7 +176,7 @@ function renderList(){
   const q=S.f.q.trim().toLowerCase();
   const l=S.jobs.filter(j=>(!S.f.cat||j.category===S.f.cat)&&(!S.f.src||j.source_label===S.f.src)&&(!q||[j.activity,j.title,j.location,j.job_no,j.category_label].join(" ").toLowerCase().includes(q)));
   if(!l.length){ $("#list").innerHTML=`<div class="empty">${S.jobs.length?"Keine Aufträge für diese Filter.":"Aktuell sind keine Aufträge ausgeschrieben. Registrierte Betriebe bekommen neue passende Aufträge per E-Mail."}</div>`; return; }
-  $("#list").innerHTML=`<div class="small muted" style="margin:0 2px 8px">${l.length} offene${l.length===1?"r":""} Auftrag${l.length===1?"":"e"}</div><div class="jobs">${l.map(j=>`<div class="job" data-no="${esc(j.job_no)}">${S.reg?starBtn(j):""}
+  $("#list").innerHTML=`<div class="small muted" style="margin:0 2px 8px">${l.length} offene${l.length===1?"r":""} Auftrag${l.length===1?"":"e"}</div><div class="jobs">${l.map(j=>`<div class="job" data-no="${esc(j.job_no)}">${starBtn(j)}
     <div class="no">${esc(j.job_no)}${j.source_label?" · "+esc(j.source_label):""}</div><div class="tt">${demoB(j)}${esc(S.reg?tt(j.title):j.activity)}</div>
     <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${S.reg&&j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}<span>📅 ${j.desired_from||j.desired_to?`${j.desired_from?fmtD(j.desired_from):""}${j.desired_to?" – "+fmtD(j.desired_to):""}`:"nach Absprache"}</span>${j.recurring_days?`<span>🔁 alle ${j.recurring_days} Tage</span>`:""}</div>
     ${S.reg?`<div>${(j.qualifications||[]).map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join("")}</div>`:""}
@@ -322,14 +322,17 @@ const isDemo=j=>/^AU-DEMO-/.test(j?.job_no||"")||/^\[DEMO\]/.test(j?.title||"");
 const demoB=j=>isDemo(j)?`<span class="demo" title="Demo-Ausschreibung – keine echte Beauftragung">DEMO</span>`:"";
 const tt=t=>String(t||"").replace(/^\[DEMO\]\s*/,"");
 /* ── Favoriten ── */
-function starBtn(j,inl){ return `<button class="star${j.fav?" on":""}${inl?" inl":""}" data-fav="${esc(j.id)}" title="${j.fav?"Aus Favoriten entfernen":"Als Favorit merken"}" aria-label="Favorit">${j.fav?"★":"☆"}</button>`; }
-function wireStars(root){ root.querySelectorAll("[data-fav]").forEach(b=>b.onclick=async e=>{ e.stopPropagation(); const on=!b.classList.contains("on"); b.disabled=true;
+function starBtn(j,inl){ return `<button class="star${j.fav?" on":""}${inl?" inl":""}" data-fav="${esc(j.id||"")}" data-no="${esc(j.job_no||"")}" title="${S.token?(j.fav?"Aus Favoriten entfernen":"Als Favorit merken"):"Zum Merken als Betrieb anmelden"}" aria-label="Favorit">${j.fav?"★":"☆"}</button>`; }
+function wireStars(root){ root.querySelectorAll("[data-fav]").forEach(b=>b.onclick=async e=>{ e.stopPropagation();
+  if(!S.token||!b.dataset.fav){ toast("Favoriten merken: bitte als Betrieb anmelden oder kostenlos registrieren"); go("login"); return; }
+  const on=!b.classList.contains("on"); b.disabled=true;
   try{ await api("fav",{job_id:b.dataset.fav,on}); b.classList.toggle("on",on); b.textContent=on?"★":"☆"; b.title=on?"Aus Favoriten entfernen":"Als Favorit merken";
     const j=(S.jobs||[]).find(x=>x.id===b.dataset.fav); if(j) j.fav=on; toast(on?"★ Zu Favoriten hinzugefügt":"Aus Favoriten entfernt");
     if(S.tab==="favs"&&!on){ const c=b.closest(".job"); c&&c.remove(); if(!document.querySelector("#fl .job")) favView(); } }
   catch(err){ toast(err.message,true); } b.disabled=false; }); }
 async function favView(){
-  if(!S.token) return loginView();
+  if(!S.token){ view.innerHTML=`<h1>★ Favoriten</h1><div class="card"><div class="muted">Mit der Merkliste speichern Sie interessante Ausschreibungen und sehen auf einen Blick Frist und Stand Ihres Angebots. Dafür bitte als Betrieb anmelden – die Registrierung ist kostenlos.</div>
+    <div style="margin-top:12px"><button class="btn" onclick="go('login')">Anmelden</button> <button class="btn ghost" onclick="go('register')">Als Betrieb registrieren</button></div></div>`; return; }
   view.innerHTML=`<h1>★ Meine Favoriten</h1><div class="small muted" style="margin:-4px 2px 12px">Gemerkte Ausschreibungen – mit dem Stern in der Auftragsliste hinzufügen oder entfernen.</div><div id="fl"><div class="empty">Lade…</div></div>`;
   let r; try{ r=await api("favs"); }catch(e){ $("#fl").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   if(!r.items.length){ $("#fl").innerHTML=`<div class="empty">Noch keine Favoriten.<br>Tippen Sie in der Auftragsliste auf ☆, um eine Ausschreibung zu merken.<br><br><button class="btn" onclick="go('jobs')">Offene Aufträge ansehen</button></div>`; return; }
