@@ -40,6 +40,10 @@ body.authed{padding-left:232px}
 .ov-left .pcard{padding:14px}
 .ov-lh{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#8a9690;margin:2px 2px 8px}
 .ov-right{min-width:0}
+/* Desktop: Kopf, Filter & Projekte stehen – nur die rechte Spalte scrollt */
+.ov-split.fit{align-items:stretch}
+.ov-split.fit .ov-left{position:static;max-height:none;height:100%;overflow-y:auto}
+.ov-split.fit .ov-right{height:100%;overflow-y:auto;scrollbar-width:thin;padding-right:6px;overscroll-behavior:contain}
 .ov-right .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media (max-width:620px){ .ov-right .kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
 .ov-left #newTile{min-height:0!important;padding:14px!important;flex-direction:row;gap:8px}
@@ -2013,10 +2017,15 @@ async function overviewView(){
   <div class="ov-split"><aside class="ov-left"><div class="ov-lh">Projekte <span class="muted">${STATIONS.length}</span></div><div class="grid" id="ovTiles">${projTiles(null,OF.station)}</div></aside>
   <div class="ov-right" id="ov"><div class="muted">Lade …</div></div></div>`;
   wireTiles($("#ovTiles")); $("#newP").onclick=()=>$("#newTile").click();
+  ovFit(); setTimeout(ovFit,50);
   $("#oSt").onchange=()=>{ OF.station=$("#oSt").value; loadOverview(); };
   wireDates(OF,"of",loadOverview);
   loadOverview();
 }
+function ovFit(){ const sp=document.querySelector(".ov-split"); if(!sp) return;
+  if(innerWidth<=1000||innerHeight<560){ sp.style.height=""; sp.classList.remove("fit"); return; }
+  scrollTo(0,0); const t=sp.getBoundingClientRect().top; sp.style.height=Math.max(320,innerHeight-t-22)+"px"; sp.classList.add("fit"); }
+addEventListener("resize",()=>{ clearTimeout(ovFit.t); ovFit.t=setTimeout(ovFit,120); });
 const fmtDur=ms=>{ const h=ms/36e5; return h<1?Math.round(h*60)+" Min.":h<48?(Math.round(h*10)/10).toLocaleString("de-DE")+" Std.":(Math.round(h/24*10)/10).toLocaleString("de-DE")+" Tage"; };
 async function loadOverview(){
   const box=$("#ov"); if(!box) return;
