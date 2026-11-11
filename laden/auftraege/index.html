@@ -48,6 +48,10 @@ h3{font-size:15px;margin:0 0 6px}
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .filters input,.filters select{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#fff;font-size:14px}
 .filters input{flex:1;min-width:180px}
+.fbox{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 12px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:-4px 0 12px}
+.fbox select,.fbox input{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;font-size:14px}
+.fbox label.f{margin:0 0 4px}.fchk{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}.fchk label{display:flex;gap:6px;align-items:center;font-size:14px;cursor:pointer}.fchk input{width:auto!important}
+.chip.warn{background:#fff1e6;color:#b45f00}
 .jobs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .job{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px;cursor:pointer;display:flex;flex-direction:column;gap:6px;transition:border-color .15s}
 .job:hover{border-color:var(--brand)}
@@ -111,8 +115,9 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const fmtD=d=>d?new Date(d).toLocaleDateString("de-DE",{timeZone:"Europe/Berlin"}):"–";
 const fmtDT=d=>d?new Date(d).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short",timeZone:"Europe/Berlin"}):"–";
 const eur=n=>Number(n).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const ago=d=>{ if(!d) return "–"; const t0=new Date(new Date().toDateString()).getTime(), t=Date.parse(d); if(t>=t0) return "heute"; if(t>=t0-864e5) return "gestern"; const n=Math.ceil((t0-t)/864e5); return n<=14?`vor ${n} Tagen`:"am "+fmtD(d); };
 const left=d=>{ if(!d) return ""; const ms=Date.parse(d)-Date.now(); if(ms<0) return "abgelaufen"; const h=Math.floor(ms/36e5); return h<48?`noch ${h} Std.`:`noch ${Math.floor(h/24)} Tage`; };
-let S={token:null,me:null,jobs:[],certs:{},cats:{},brands:{},software:{},crefo_max:249,tab:"jobs",f:{q:"",cat:"",src:""}};
+let S={token:null,me:null,jobs:[],certs:{},cats:{},brands:{},software:{},crefo_max:249,tab:"jobs",f:{q:"",cat:"",src:"",loc:"",start:"",dl:"",pub:"",pt:"",elig:false,fav:false,demo:true,sort:"new"},fOpen:false};
 try{ const t=JSON.parse(localStorage.getItem("hc_market")||"null"); if(t&&t.exp>Date.now()) S.token=t.token; }catch(e){}
 
 async function api(action,payload={}){
@@ -159,27 +164,55 @@ async function jobsView(){
     <div class="steps"><div><b>1 · Registrieren</b>Firmendaten, Nachweise und Crefonummer hinterlegen</div><div><b>2 · Prüfung</b>Wir prüfen Nachweise und Creditreform-Bonität</div><div><b>3 · Anbieten</b>Registrierte Betriebe sehen alle Details, freigegebene Betriebe geben Angebote ab</div></div>
     <div class="row"><button class="btn" onclick="go('register')">Jetzt registrieren</button><button class="btn ghost" onclick="go('login')">Anmelden</button></div></div>`}
     <div id="meBox"></div>
-    <div class="filters"><input id="fq" placeholder="Suche nach Ort, Tätigkeit, Nummer…" value="${esc(S.f.q)}"><select id="fc"><option value="">Alle Gewerke</option></select>
-    <select id="fs"><option value="">Alle Arten</option><option>Störung</option><option>Mangel</option><option>Wartung / Checkliste</option><option>Auftrag</option></select></div>
+    <div class="filters"><input id="fq" placeholder="Suche nach Ort, Tätigkeit, Nummer…" value="${esc(S.f.q)}">
+      <select id="fsort" title="Sortierung"><option value="new">Neueste zuerst</option><option value="dl">Frist endet bald</option><option value="start">Frühester Start</option><option value="loc">Ort A–Z</option></select>
+      <button class="btn ghost" id="fmore" type="button">⚙︎ Filter <span id="fcnt"></span></button></div>
+    <div class="fbox" id="fbox" style="display:${S.fOpen?"grid":"none"}">
+      <div><label class="f">Gewerk</label><select id="fc"><option value="">Alle Gewerke</option></select></div>
+      <div><label class="f">Ort / Region</label><select id="floc"><option value="">Alle Orte</option></select></div>
+      <div><label class="f">Ausführung ab</label><input type="date" id="fstart"></div>
+      <div><label class="f">Angebotsfrist</label><select id="fdl"><option value="">beliebig</option><option value="3">endet in ≤ 3 Tagen</option><option value="7">endet in ≤ 7 Tagen</option><option value="14">endet in ≤ 14 Tagen</option><option value="15+">länger als 14 Tage</option></select></div>
+      <div><label class="f">Eingestellt</label><select id="fpub"><option value="">jederzeit</option><option value="1">heute</option><option value="3">letzte 3 Tage</option><option value="7">letzte 7 Tage</option><option value="30">letzte 30 Tage</option></select></div>
+      <div class="reg-only"><label class="f">Art</label><select id="fs"><option value="">Alle Arten</option><option>Störung</option><option>Mangel</option><option>Wartung / Checkliste</option><option>Auftrag</option></select></div>
+      <div class="reg-only"><label class="f">Abrechnung</label><select id="fpt"><option value="">beliebig</option><option value="fix">Pauschalpreis</option><option value="stunde">Stundensatz</option><option value="offen">Pauschal oder Stunde</option></select></div>
+      <div class="fchk"><label class="reg-only"><input type="checkbox" id="felig"> nur Aufträge, für die ich alle Nachweise habe</label><label class="reg-only"><input type="checkbox" id="ffav"> nur Favoriten ★</label><label><input type="checkbox" id="fdemo"> Demo-Ausschreibungen anzeigen</label></div>
+      <div class="fchk"><button class="btn ghost sm" id="freset" type="button">Filter zurücksetzen</button></div>
+    </div>
     <div id="list"><div class="empty">Lade Aufträge…</div></div>`;
   if(S.token) loadMe().then(me=>{ if(me) $("#meBox").innerHTML=me.eligible.ok?"":eligBox(me.eligible)+"<div style='height:12px'></div>"; });
   try{ const r=await api("jobs"); S.jobs=r.jobs; S.reg=!!r.registered; S.certs=r.certs; S.cats=r.cats; S.brands=r.brands||{}; S.software=r.software||{}; S.crefo_max=r.crefo_max; }
   catch(e){ $("#list").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   const cats=[...new Set(S.jobs.map(j=>j.category).filter(Boolean))];
   $("#fc").innerHTML=`<option value="">Alle Gewerke</option>`+cats.map(c=>`<option value="${c}">${esc(S.cats[c]||c)}</option>`).join("");
-  if(!S.reg){ S.f.src=""; $("#fs").style.display="none"; }
-  $("#fc").value=S.f.cat; $("#fs").value=S.f.src;
-  const upd=()=>{ S.f={q:$("#fq").value,cat:$("#fc").value,src:$("#fs").value}; renderList(); };
-  $("#fq").oninput=upd; $("#fc").onchange=upd; $("#fs").onchange=upd; renderList();
+  const city=l=>String(l||"").split(/[-,(]/)[0].trim();
+  const locs=[...new Set(S.jobs.map(j=>city(j.location)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"de"));
+  $("#floc").innerHTML=`<option value="">Alle Orte</option>`+locs.map(c=>`<option>${esc(c)}</option>`).join("");
+  if(!S.reg){ S.f.src=""; S.f.pt=""; S.f.elig=false; S.f.fav=false; document.querySelectorAll(".reg-only").forEach(x=>x.style.display="none"); }
+  const F=S.f; $("#fc").value=F.cat; $("#fs").value=F.src; $("#floc").value=F.loc; $("#fstart").value=F.start; $("#fdl").value=F.dl; $("#fpub").value=F.pub; $("#fpt").value=F.pt;
+  $("#felig").checked=F.elig; $("#ffav").checked=F.fav; $("#fdemo").checked=F.demo; $("#fsort").value=F.sort;
+  const upd=()=>{ S.f={q:$("#fq").value,cat:$("#fc").value,src:$("#fs").value,loc:$("#floc").value,start:$("#fstart").value,dl:$("#fdl").value,pub:$("#fpub").value,pt:$("#fpt").value,
+      elig:$("#felig").checked,fav:$("#ffav").checked,demo:$("#fdemo").checked,sort:$("#fsort").value}; renderList(); };
+  ["#fq","#fstart"].forEach(x=>$(x).oninput=upd); ["#fc","#fs","#floc","#fstart","#fdl","#fpub","#fpt","#felig","#ffav","#fdemo","#fsort"].forEach(x=>$(x).onchange=upd);
+  $("#fmore").onclick=()=>{ S.fOpen=!S.fOpen; $("#fbox").style.display=S.fOpen?"grid":"none"; };
+  $("#freset").onclick=()=>{ S.f={q:"",cat:"",src:"",loc:"",start:"",dl:"",pub:"",pt:"",elig:false,fav:false,demo:true,sort:"new"}; jobsView(); };
+  renderList();
 }
 function renderList(){
-  const q=S.f.q.trim().toLowerCase();
-  const l=S.jobs.filter(j=>(!S.f.cat||j.category===S.f.cat)&&(!S.f.src||j.source_label===S.f.src)&&(!q||[j.activity,j.title,j.location,j.job_no,j.category_label].join(" ").toLowerCase().includes(q)));
+  const F=S.f, q=F.q.trim().toLowerCase(), now=Date.now(), D=864e5, city=l=>String(l||"").split(/[-,(]/)[0].trim();
+  const l=S.jobs.filter(j=>(!F.cat||j.category===F.cat)&&(!F.src||j.source_label===F.src)&&(!F.loc||city(j.location)===F.loc)
+    &&(!F.start||!j.desired_to||j.desired_to>=F.start)
+    &&(!F.dl||(j.bid_deadline&&(F.dl==="15+"?Date.parse(j.bid_deadline)-now>14*D:Date.parse(j.bid_deadline)-now<=+F.dl*D)))
+    &&(!F.pub||(j.published_at&&now-Date.parse(j.published_at)<=(+F.pub===1?(now-new Date(new Date().toDateString()).getTime()):+F.pub*D)))
+    &&(!F.pt||j.price_type===F.pt)&&(!F.elig||j.eligible_ok)&&(!F.fav||j.fav)&&(F.demo||!isDemo(j))
+    &&(!q||[j.activity,j.title,j.location,j.job_no,j.category_label].join(" ").toLowerCase().includes(q)));
+  const key={new:j=>-Date.parse(j.published_at||0),dl:j=>Date.parse(j.bid_deadline||"2999-01-01"),start:j=>Date.parse(j.desired_from||"2999-01-01"),loc:j=>0}[F.sort]||(j=>0);
+  l.sort((a,b)=>F.sort==="loc"?String(a.location||"").localeCompare(String(b.location||""),"de"):key(a)-key(b));
+  const act=["cat","src","loc","start","dl","pub","pt"].filter(k=>F[k]).length+(F.elig?1:0)+(F.fav?1:0)+(F.demo?0:1); const fc=$("#fcnt"); if(fc) fc.textContent=act?`(${act})`:"";
   if(!l.length){ $("#list").innerHTML=`<div class="empty">${S.jobs.length?"Keine Aufträge für diese Filter.":"Aktuell sind keine Aufträge ausgeschrieben. Registrierte Betriebe bekommen neue passende Aufträge per E-Mail."}</div>`; return; }
   $("#list").innerHTML=`<div class="small muted" style="margin:0 2px 8px">${l.length} offene${l.length===1?"r":""} Auftrag${l.length===1?"":"e"}</div><div class="jobs">${l.map(j=>`<div class="job" data-no="${esc(j.job_no)}">${starBtn(j)}
     <div class="no">${esc(j.job_no)}${j.source_label?" · "+esc(j.source_label):""}</div><div class="tt">${demoB(j)}${esc(S.reg?tt(j.title):j.activity)}</div>
-    <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${S.reg&&j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}<span>📅 ${j.desired_from||j.desired_to?`${j.desired_from?fmtD(j.desired_from):""}${j.desired_to?" – "+fmtD(j.desired_to):""}`:"nach Absprache"}</span>${j.recurring_days?`<span>🔁 alle ${j.recurring_days} Tage</span>`:""}</div>
-    ${S.reg?`<div>${(j.qualifications||[]).map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join("")}</div>`:""}
+    <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${S.reg&&j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}<span>📅 ${j.desired_from||j.desired_to?`${j.desired_from?fmtD(j.desired_from):""}${j.desired_to?" – "+fmtD(j.desired_to):""}`:"nach Absprache"}</span>${j.recurring_days?`<span>🔁 alle ${j.recurring_days} Tage</span>`:""}<span title="Eingestellt am ${fmtDT(j.published_at)}">🕒 eingestellt ${ago(j.published_at)}</span></div>
+    ${S.reg?`<div>${(j.qualifications||[]).map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join("")}${j.eligible_ok===false?`<span class="chip warn">Nachweise fehlen</span>`:j.eligible_ok?`<span class="chip">✓ Sie können anbieten</span>`:""}</div>`:""}
     <div class="foot"><span>⏳ Frist ${fmtD(j.bid_deadline)} <b>${left(j.bid_deadline)}</b></span>${S.reg?`<span class="muted">${j.bids} Angebot${j.bids===1?"":"e"}</span>`:`<span class="muted">🔒 Details nach Registrierung</span>`}</div></div>`).join("")}</div>`;
   $("#list").querySelectorAll(".job").forEach(c=>c.onclick=()=>{ location.hash=c.dataset.no; });
   wireStars($("#list"));
@@ -198,7 +231,8 @@ async function jobView(no){
     <h1 style="margin-top:6px">${demoB(j)}${esc(j.activity||"Auftrag")}</h1>${isDemo(j)?`<div class="small muted">Demo-Ausschreibung zum Ausprobieren – es wird kein echter Auftrag vergeben.</div>`:""}
     <dl class="dl" style="margin-top:12px"><dt>Ort</dt><dd>📍 ${esc(j.location||"–")}</dd>
     <dt>Zeitraum</dt><dd>${j.desired_from||j.desired_to?`${j.desired_from?"ab "+fmtD(j.desired_from):""}${j.desired_to?" bis "+fmtD(j.desired_to):""}`:"nach Absprache"}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
-    <dt>Angebotsfrist</dt><dd><b>${fmtDT(j.bid_deadline)}</b> <span class="muted">${left(j.bid_deadline)}</span></dd></dl></div>
+    <dt>Angebotsfrist</dt><dd><b>${fmtDT(j.bid_deadline)}</b> <span class="muted">${left(j.bid_deadline)}</span></dd>
+    <dt>Eingestellt</dt><dd>${fmtDT(j.published_at)} <span class="muted">(${ago(j.published_at)})</span></dd></dl></div>
     <div class="card"><h3>🔒 Weitere Informationen</h3><div class="muted">Aufgabenbeschreibung, Fotos, erforderliche Nachweise und Abrechnungsart sehen registrierte Betriebe. Die Registrierung ist kostenlos.</div>
     <div style="margin-top:12px"><button class="btn" onclick="go('register')">Als Betrieb registrieren</button> <button class="btn ghost" onclick="go('login')">Anmelden</button></div></div>`; return; }
   const stat={offen:"",vergeben:mb?.status==="angenommen"?`<span class="chip">Zuschlag erhalten</span>`:`<span class="chip grey">vergeben</span>`,erledigt:`<span class="chip grey">erledigt</span>`}[j.status||"offen"]||"";
@@ -208,15 +242,16 @@ async function jobView(no){
     ${j.category_label?`<dt>Gewerk</dt><dd>${esc(j.category_label)}</dd>`:""}
     <dt>Zeitraum</dt><dd>${j.desired_from||j.desired_to?`${j.desired_from?"ab "+fmtD(j.desired_from):""}${j.desired_to?" bis "+fmtD(j.desired_to):""}`:"nach Absprache"}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
     <dt>Angebotsfrist</dt><dd><b>${fmtDT(j.bid_deadline)}</b> <span class="muted">${left(j.bid_deadline)}</span></dd>
+    <dt>Eingestellt</dt><dd>${fmtDT(j.published_at)} <span class="muted">(${ago(j.published_at)})</span></dd>
     <dt>Gewünschte Abrechnung</dt><dd>${{fix:"Pauschalpreis",stunde:"Stundensatz",offen:"Pauschal oder Stundensatz"}[j.price_type]||"–"}${full&&j.price_hint?` · Richtwert ca. ${eur(j.price_hint)}`:""}</dd>
     <dt>Erforderliche Nachweise</dt><dd>${(j.qualifications||[]).length?j.qualifications.map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join(""):"<span class='muted'>keine besonderen</span>"}</dd>
     <dt>Angebote bisher</dt><dd>${j.bids??"–"}</dd></dl></div>
     ${full?`<div class="card"><h3>Beschreibung</h3><div class="desc">${esc(j.description||"–")}</div>${(j.photos||[]).length?`<div class="photos">${j.photos.map(p=>`<img src="${esc(p)}" alt="" loading="lazy" onclick="zoom(this.src)">`).join("")}</div>`:""}</div>`
       :`<div class="card"><h3>Beschreibung</h3><div class="muted">Die vollständige Beschreibung${j.photos_count?" und "+j.photos_count+" Foto"+(j.photos_count>1?"s":""):""} sehen nur freigegebene Fachbetriebe.</div>
         <div style="margin-top:12px">${S.token?eligBox(r.eligible,true):`<button class="btn" onclick="go('login')">Anmelden</button> <button class="btn ghost" onclick="go('register')">Als Betrieb registrieren</button>`}</div></div>`}
-    ${r.site?`<div class="card ok"><b>Ihr Service-Zugang</b><br>Projekt ${esc(r.site.project_id)} · <a href="${esc(r.site.service_url)}" target="_blank" rel="noopener">${esc(r.site.service_url)}</a><br><span class="small">Die PIN haben Sie per E-Mail erhalten. Dort starten Sie vor Ort die Checkliste mit Arbeitszeit, Fotos und Protokoll.</span></div>`:""}
+    ${r.site?`<div class="card ok"><b>Ihr Service-Zugang</b><br>Projekt ${esc(r.site.project_id)} · <a href="${esc(r.site.service_url)}" target="_blank" rel="noopener">${esc(r.site.service_url)}</a><br><span class="small">Die PIN haben Sie mit der Zuschlags-E-Mail erhalten. Dort starten Sie vor Ort die Checkliste mit Arbeitszeit, Fotos und Protokoll.</span>${pinBtn()}</div>`:""}
     <div id="bidBox"></div>`;
-  wireStars($("#jd"));
+  wireStars($("#jd")); wirePin($("#jd"));
   if(full && S.token) bidBox(j,r);
 }
 function bidBox(j,r){
@@ -344,10 +379,15 @@ async function favView(){
   $("#fl").querySelectorAll(".job").forEach(c=>c.onclick=()=>{ location.hash=c.dataset.no; });
   wireStars($("#fl"));
 }
+const pinBtn=()=>`<div class="pinbox" style="margin-top:10px"><button class="btn sm" data-pin type="button">🔑 Neue Service-PIN erzeugen</button> <span class="small muted">PIN vergessen? Eine neue PIN ersetzt die alte sofort.</span></div>`;
+function wirePin(root){ root.querySelectorAll("[data-pin]").forEach(b=>b.onclick=async()=>{ if(!confirm("Neue Service-PIN erzeugen? Die bisherige PIN funktioniert danach nicht mehr.")) return; b.disabled=true;
+  try{ const r=await api("service_pin"); b.closest(".pinbox").innerHTML=`<div class="card ok" style="margin:0"><b>Ihre neue Service-PIN:</b> <span style="font:700 22px ui-monospace,Menlo,monospace;letter-spacing:3px">${esc(r.pin)}</span><br><span class="small">Bitte notieren und vertraulich behandeln – sie wird nur jetzt angezeigt. Anmeldung im Service-Zugang: <a href="${esc(r.service_url)}" target="_blank" rel="noopener">${esc(r.service_url)}</a></span></div>`; }
+  catch(e){ toast(e.message); b.disabled=false; } }); }
 async function myView(){
   if(!S.token) return loginView();
-  view.innerHTML=`<h1>Meine Angebote & Aufträge</h1><div id="ml"><div class="empty">Lade…</div></div>`;
+  view.innerHTML=`<h1>Meine Angebote & Aufträge</h1><div id="msvc"></div><div id="ml"><div class="empty">Lade…</div></div>`;
   let r; try{ r=await api("my"); }catch(e){ $("#ml").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  if((r.items||[]).some(x=>x.bid.status==="angenommen")){ $("#msvc").innerHTML=`<div class="card ok"><b>🔧 Service-Zugang</b><br><span class="small">Mit dem Zuschlag haben Sie eine persönliche Service-PIN per E-Mail erhalten. Damit melden Sie sich vor Ort im Service-Zugang an (Checkliste, Arbeitszeit, Fotos, Protokoll).</span>${pinBtn()}</div>`; wirePin($("#msvc")); }
   if(!r.items.length){ $("#ml").innerHTML=`<div class="empty">Noch keine Angebote abgegeben.<br><br><button class="btn" onclick="go('jobs')">Offene Aufträge ansehen</button></div>`; return; }
   const grp=[["Zuschlag erhalten",x=>x.bid.status==="angenommen"],["Offene Angebote",x=>x.bid.status==="abgegeben"],["Abgeschlossen",x=>["abgelehnt","zurueckgezogen"].includes(x.bid.status)]];
   $("#ml").innerHTML=grp.map(([t,f])=>{ const l=r.items.filter(f); if(!l.length) return ""; return `<h2>${t} (${l.length})</h2><div class="card" style="padding:4px 12px;overflow-x:auto"><table class="tbl"><tr><th>Auftrag</th><th>Ort</th><th>Frist</th><th>Ihr Angebot</th></tr>

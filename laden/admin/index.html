@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="20261112a">
+<meta name="build" content="20261112b">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>HAPPY CHARGING Support · Betreiber</title>
@@ -583,6 +583,93 @@ async function loadGal(){ const g=$("#gal"); if(!g) return;
     g.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{ if(!confirm("Foto löschen?")) return; try{ await api("delete_image",{id:E.original_id,path:b.dataset.del}); loadGal(); }catch(e){ toast(e.message,true); } });
     g.querySelectorAll("[data-delhero]").forEach(b=>b.onclick=async()=>{ if(!confirm("Titelbild entfernen? (Die Fotos der Galerie bleiben.)")) return; try{ await api("delete_image",{id:E.original_id}); loadGal(); }catch(e){ toast(e.message,true); } });
   }catch(e){ g.innerHTML=`<span class="muted">${esc(e.message)}</span>`; } }
+/* ── Katalog-Import: DATANORM (4/5), BMEcat (1.2/2005), CSV ── */
+let INV_EXT=null;
+async function invLoadExt(force){ if(INV_EXT&&!force) return INV_EXT; try{ const r=await api("catalog"); INV_EXT=r.items||[]; INV_EXT._src=r.sources||{}; }catch(e){ INV_EXT=INV_EXT||[]; } return INV_EXT; }
+const INV_GUESS=[["pu",/power ?(unit|cabinet)|leistungseinheit/i],["lis_dc",/\bdc\b|hpc|schnelllad|ccs|chademo|\bhyc|dispenser|satellit/i],["lis_ac",/wallbox|ladestation|ladesäule|ladepunkt|typ ?2|\bt2s?\b|amtron|kecontact|ladecontroller|e-?mobil/i],
+ ["pay",/bezahlterminal|kartenterminal|payter|kartenleser|ec-?terminal/i],["net",/router|switch|\blte\b|\b5g\b|modem|sim-?karte|antenne|hutschienen-?netzteil/i],["video",/kamera|rekorder|\bnvr\b|videoüberw/i],
+ ["licht",/leuchte|strahler|beleuchtung|lichtsteuer/i],["lm",/lastmanagement|energiemanag|energiezähler|smart ?meter/i],["mws",/wandler|zählerschrank|verteilerschrank|kabelverteiler|messwandler/i],["trafo",/trafo|transformator|ortsnetzstation/i],
+ ["bess",/batteriespeicher|stromspeicher|\bbess\b|speichersystem/i],["lock",/schließzylinder|schließanlage|iloq/i],["fund",/fundament|betonsockel/i],["sonst",/poller|anfahrschutz|beschilderung|bodenmarkierung/i]];
+const invGuess=t=>{ for(const[c,re] of INV_GUESS) if(re.test(t)) return c; return ""; };
+const INV_BRANDS=()=>[...new Set(INV_CAT.map(x=>x.b).filter(b=>b&&b!=="Sonstige"))].concat(["Phoenix Contact","Bender","Schneider","Siemens","ABB","Hager","Eaton","Legrand","Weidmüller","Lapp","Teltonika","Mennekes","Hikvision","Axis"]);
+const invBrandOf=t=>{ const l=" "+t.toLowerCase()+" "; let best="",bi=1e9;
+  for(const b of INV_BRANDS()){ const m=l.search(new RegExp("[^a-z0-9äöü]"+b.toLowerCase().replace(/[.*+?^${}()|[\]\\/]/g,"\\$&")+"[^a-z0-9äöü]")); if(m>=0&&(m<bi||(m===bi&&b.length>best.length))){ best=b; bi=m; } } return best; };
+const CP850={0x80:"Ç",0x81:"ü",0x82:"é",0x83:"â",0x84:"ä",0x85:"à",0x86:"å",0x87:"ç",0x88:"ê",0x89:"ë",0x8a:"è",0x8b:"ï",0x8c:"î",0x8d:"ì",0x8e:"Ä",0x8f:"Å",0x90:"É",0x94:"ö",0x99:"Ö",0x9a:"Ü",0xe1:"ß",0xf8:"°",0xfd:"²",0xe6:"µ"};
+function invDecode(buf){ const u=new Uint8Array(buf);
+  try{ return new TextDecoder("utf-8",{fatal:true}).decode(u); }catch(e){}
+  let dos=0,win=0; for(const b of u){ if(b===0x81||b===0x84||b===0x94||b===0xe1||b===0x9a) dos++; if(b===0xfc||b===0xe4||b===0xf6||b===0xdf||b===0xdc) win++; }
+  if(dos>win){ let s=""; for(const b of u) s+=b<128?String.fromCharCode(b):(CP850[b]||"?"); return s; }
+  return new TextDecoder("windows-1252").decode(u); }
+function invParse(text,fname){
+  const t=text.trimStart();
+  if(t.startsWith("<")) return invParseBME(t);
+  const lines=text.split(/\r?\n/);
+  if(lines.some(l=>/^A;/.test(l))||lines.some(l=>/^A[NLAD ]/.test(l)&&l.length>=90)) return invParseDN(lines);
+  return invParseCSV(lines);
+}
+function invParseBME(t){ const doc=new DOMParser().parseFromString(t,"application/xml"); if(doc.querySelector("parsererror")) throw new Error("XML konnte nicht gelesen werden");
+  const q=(el,...names)=>{ for(const n of names){ const x=el.getElementsByTagName(n)[0]; if(x&&x.textContent.trim()) return x.textContent.trim(); } return ""; };
+  const items=[...doc.getElementsByTagName("PRODUCT")].concat([...doc.getElementsByTagName("ARTICLE")]);
+  return items.map(p=>{ const n=q(p,"DESCRIPTION_SHORT"), long=q(p,"DESCRIPTION_LONG").replace(/<[^>]+>/g," ").slice(0,300);
+    let ean=""; for(const x of p.getElementsByTagName("INTERNATIONAL_PID")){ if(/ean|gtin/i.test(x.getAttribute("type")||"ean")){ ean=x.textContent.trim(); break; } } ean=ean||q(p,"EAN");
+    const b=q(p,"MANUFACTURER_NAME")||invBrandOf(n);
+    return {art:q(p,"SUPPLIER_PID","SUPPLIER_AID"),n,b,ean,wg:q(p,"REFERENCE_FEATURE_GROUP_ID","CATALOG_GROUP_ID"),hint:long}; }).filter(x=>x.n); }
+function invParseDN(lines){ const map=new Map(), ean={};
+  for(const l of lines){
+    if(/^A;/.test(l)){ const f=l.split(";"); const art=(f[2]||"").trim(), n=[f[4],f[5]].map(x=>(x||"").trim()).filter(Boolean).join(" "); if(art&&n) map.set(art,{art,n,wg:(f[11]||"").trim()}); }
+    else if(/^B;/.test(l)){ const f=l.split(";"); const art=(f[2]||"").trim(); const e=f.find(x=>/^\d{8}$|^\d{12,14}$/.test((x||"").trim())); if(art&&e) ean[art]=e.trim(); }
+    else if(/^A/.test(l)&&l.length>=90&&!l.includes(";")){ const art=l.slice(2,17).trim(), n=(l.slice(18,58).trim()+" "+l.slice(58,98).trim()).trim(); if(art&&n) map.set(art,{art,n,wg:l.slice(120,127).trim()}); } }
+  return [...map.values()].map(x=>({...x,ean:ean[x.art]||"",b:invBrandOf(x.n)})); }
+function invParseCSV(lines){ const L=lines.filter(l=>l.trim()); if(L.length<2) throw new Error("Format nicht erkannt (DATANORM, BMEcat-XML oder CSV mit Kopfzeile)");
+  const sep=[";","\t",","].sort((a,b)=>L[0].split(b).length-L[0].split(a).length)[0];
+  const split=l=>{ const out=[]; let cur="",qq=false; for(const ch of l){ if(ch==='"'){ qq=!qq; continue; } if(ch===sep&&!qq){ out.push(cur); cur=""; } else cur+=ch; } out.push(cur); return out.map(x=>x.trim()); };
+  const h=split(L[0]).map(x=>x.toLowerCase()); const col=re=>h.findIndex(x=>re.test(x));
+  const cN=col(/bezeichnung|kurztext|name|beschreibung|description|titel/), cA=col(/artikel|art\.?-?nr|sku|^nr|pid|aid/), cB=col(/hersteller|marke|brand|manufacturer/), cE=col(/ean|gtin/), cK=col(/kategorie|category|gruppe|warengr/);
+  if(cN<0) throw new Error("CSV: Spalte „Bezeichnung“ (oder Name/Kurztext) fehlt");
+  return L.slice(1).map(l=>{ const f=split(l); const n=f[cN]||""; return {n,art:cA>=0?f[cA]:"",b:cB>=0&&f[cB]?f[cB]:invBrandOf(n),ean:cE>=0?f[cE]:"",wg:cK>=0?f[cK]:""}; }).filter(x=>x.n); }
+
+async function invImportDialog(){
+  await invLoadExt(true);
+  const md=mkModal(`<div class="row"><h2 style="margin:0;flex:1">📥 Produktkatalog importieren</h2><button class="btn ghost sm" data-close>✕</button></div>
+    <p class="sub">DATANORM (4.0/5.0, z. B. *.001), BMEcat (XML) oder CSV mit Kopfzeile (Bezeichnung; Artikelnummer; Hersteller; EAN). Die Datei wird im Browser gelesen – nur die ausgewählten Produkte werden gespeichert.</p>
+    <div id="ciSrc"></div>
+    <div class="row" style="gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:10px">
+      <div style="flex:2;min-width:200px"><label>Datei</label><input type="file" id="ciF" accept=".001,.002,.dat,.txt,.xml,.csv,.tsv,*/*"></div>
+      <div style="flex:1;min-width:160px"><label>Quelle (Name)</label><input id="ciN" placeholder="z. B. Sonepar 11/2026"></div></div>
+    <div id="ciP" style="margin-top:12px"></div>`);
+  const box=md.querySelector("#ciP");
+  const paintSrc=()=>{ const s=INV_EXT._src||{}; md.querySelector("#ciSrc").innerHTML=Object.keys(s).length?`<div class="iv-gh">Bereits importiert</div>${Object.entries(s).map(([k,n])=>`<div class="iv-r"><div class="iv-n"><b>${esc(k)}</b> <span class="muted">${n.toLocaleString("de-DE")} Produkte</span></div><button class="btn ghost sm" data-del="${esc(k)}">Löschen</button></div>`).join("")}`:`<div class="muted" style="font-size:13px">Noch keine Importe – im Katalog stehen ${INV_CAT.length} Standard-Produkte.</div>`;
+    md.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{ if(!confirm(`Import „${b.dataset.del}“ aus dem Katalog löschen? (Bereits erfasstes Inventar bleibt erhalten.)`)) return;
+      try{ await api("catalog_delete",{src:b.dataset.del}); await invLoadExt(true); paintSrc(); toast("Import gelöscht"); }catch(e){ toast(e.message,true); } }); };
+  paintSrc();
+  md.querySelector("#ciF").onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
+    if(f.size>150*1024*1024) return toast("Datei zu groß (max. 150 MB)",true);
+    md.querySelector("#ciN").value=md.querySelector("#ciN").value||f.name.replace(/\.[^.]+$/,"");
+    box.innerHTML=`<div class="muted">Lese ${esc(f.name)} …</div>`;
+    let rows; try{ rows=invParse(invDecode(await f.arrayBuffer()),f.name); }catch(err){ box.innerHTML=`<div class="err">${esc(err.message)}</div>`; return; }
+    if(!rows.length){ box.innerHTML=`<div class="err">Keine Artikel gefunden – Format prüfen.</div>`; return; }
+    rows.forEach(r=>{ r.c=invGuess(r.n+" "+(r.hint||"")+" "+(r.wg||"")); });
+    let onlyRel=rows.length>500, kw="";
+    const sel=()=>rows.filter(r=>(!onlyRel||r.c)&&(!kw||invNorm(r.n+" "+r.b+" "+r.art).includes(invNorm(kw))));
+    const paint=()=>{ const s=sel(), cnt={}; s.forEach(r=>cnt[r.c||"sonst"]=(cnt[r.c||"sonst"]||0)+1);
+      box.innerHTML=`<div class="card" style="margin:0;padding:12px"><b>${rows.length.toLocaleString("de-DE")} Artikel gelesen</b> · ${rows.filter(r=>r.c).length.toLocaleString("de-DE")} davon ladeinfrastruktur-relevant erkannt
+        <div class="row" style="gap:10px;margin-top:8px;flex-wrap:wrap;align-items:center"><label style="display:flex;gap:6px;align-items:center;font-weight:500;color:var(--ink)"><input type="checkbox" id="ciRel" style="width:auto" ${onlyRel?"checked":""}> nur relevante Artikel</label>
+          <input id="ciK" placeholder="zusätzlich filtern, z. B. Wallbox" value="${esc(kw)}" style="flex:1;min-width:160px"></div>
+        <div style="margin-top:8px;font-size:13px">${Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<span class="badge" style="margin:2px">${esc(INV_CATS[c]||c)}: ${n}</span>`).join("")}</div>
+        <div style="max-height:220px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:8px"><table class="mini" style="width:100%"><tr><th>Art.-Nr.</th><th>Bezeichnung</th><th>Hersteller</th><th>Kategorie</th></tr>
+          ${s.slice(0,40).map(r=>`<tr><td><code>${esc(r.art)}</code></td><td>${esc(r.n)}</td><td>${esc(r.b)}</td><td>${esc(INV_CATS[r.c||"sonst"])}</td></tr>`).join("")}</table></div>
+        ${s.length>40?`<div class="hint">… und ${(s.length-40).toLocaleString("de-DE")} weitere</div>`:""}
+        <div class="row" style="margin-top:10px;gap:8px"><button class="btn" id="ciGo" ${s.length?"":"disabled"}>${s.length.toLocaleString("de-DE")} Produkte importieren</button><span id="ciPr" class="muted"></span></div></div>`;
+      box.querySelector("#ciRel").onchange=e=>{ onlyRel=e.target.checked; paint(); };
+      const k=box.querySelector("#ciK"); k.onchange=()=>{ kw=k.value.trim(); paint(); };
+      box.querySelector("#ciGo").onclick=async()=>{ const src=md.querySelector("#ciN").value.trim()||"Import"; const all=sel(), btn=box.querySelector("#ciGo"); btn.disabled=true;
+        try{ for(let i=0;i<all.length;i+=1000){ box.querySelector("#ciPr").textContent=`${Math.min(i+1000,all.length).toLocaleString("de-DE")} / ${all.length.toLocaleString("de-DE")} …`;
+            await api("catalog_import",{src,rows:all.slice(i,i+1000).map(r=>({c:r.c||"sonst",b:r.b,n:r.n,art:r.art,ean:r.ean,wg:r.wg}))}); }
+          await invLoadExt(true); paintSrc(); box.innerHTML=`<div class="card ok" style="margin:0">✅ ${all.length.toLocaleString("de-DE")} Produkte aus „${esc(src)}“ importiert – sie stehen jetzt in der Produktsuche aller Projekte.</div>`; }
+        catch(err){ toast(err.message,true); btn.disabled=false; } }; };
+    paint(); };
+}
+
 /* ── Produktkatalog Software & Inventar (aus CUT POWER Projektvorlage + gängige Produkte) ── */
 const INV_CATS={lis_dc:"DC-Ladesäule / Dispenser",lis_ac:"AC-Ladestation",pu:"Power Unit / Power Cabinet",km:"Kabelmanagement / Powerstacks",pay:"Bezahlterminal",software:"Backend / CPMS",lm:"Lastmanagement",net:"Netzwerk / Router / SIM",video:"Videosystem",licht:"Lichtsystem",media:"Media / Werbedisplay",lock:"Schließanlage",dach:"Dachsystem",bess:"Batteriespeicher (BESS)",trafo:"Trafostation",mws:"Messwandler- / Verteilerschrank",fund:"Fundament",sonst:"Sonstiges / Baustelle"};
 const INV_RAW={
@@ -655,6 +742,7 @@ const INV_CAT=[];for(const[c,bs]of Object.entries(INV_RAW))for(const[b,ns]of Obj
 const invKey=x=>(x.c+"|"+x.b+"|"+x.n).toLowerCase();
 /* eigene Einträge aus allen Projekten wiederverwenden */
 function invCatalog(){ const m=new Map(INV_CAT.map(x=>[invKey(x),x]));
+  for(const x of (INV_EXT||[]))if(!m.has(invKey(x)))m.set(invKey(x),{c:x.c,b:x.b,n:x.n,art:x.art,src:x.src});
   for(const s of (typeof STATIONS!=="undefined"?STATIONS:[]))for(const x of ((s.extras||{}).inventory||[]))if(x.x&&!m.has(invKey(x)))m.set(invKey(x),{c:x.c,b:x.b,n:x.n,x:true});
   return [...m.values()]; }
 const invNorm=s=>String(s||"").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g,"");
@@ -670,7 +758,7 @@ function invCombo(input,cats,onPick){
   const C=()=>typeof cats==="function"?cats():cats;
   const show=()=>{ res=invSearch(input.value,C(),40); idx=-1;
     const q=input.value.trim();
-    dd.innerHTML=(res.length?res.map((x,i)=>`<div class="ivc-o" data-i="${i}"><b>${esc(invLabel(x))}</b><small>${esc(INV_CATS[x.c])}${x.x?" · eigener Eintrag":""}</small></div>`).join(""):"")
+    dd.innerHTML=(res.length?res.map((x,i)=>`<div class="ivc-o" data-i="${i}"><b>${esc(invLabel(x))}</b><small>${esc(INV_CATS[x.c]||x.c)}${x.art?" · Art.-Nr. "+esc(x.art):""}${x.src?" · "+esc(x.src):""}${x.x?" · eigener Eintrag":""}</small></div>`).join(""):"")
       +(q&&!res.some(x=>invLabel(x).toLowerCase()===q.toLowerCase())?`<div class="ivc-o ivc-free" data-i="-2">＋ „${esc(q)}“ übernehmen (eigener Eintrag)</div>`:"")
       ||`<div class="ivc-empty">Kein Treffer – Text eingeben, um einen eigenen Eintrag anzulegen.</div>`;
     dd.style.display="block"; };
@@ -692,13 +780,13 @@ function invMount(box){
   box.innerHTML=`<div class="row" style="gap:8px;align-items:flex-end;flex-wrap:wrap">
       <div style="flex:2;min-width:200px"><label>Produkt suchen &amp; hinzufügen</label><input id="ivQ" placeholder="z. B. HYC 1000, Teltonika, Pixii, Trafo 1.000 …"></div>
       <div style="flex:1;min-width:150px"><label>Kategorie</label><select id="ivC"><option value="">Alle Kategorien</option>${Object.entries(INV_CATS).map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join("")}</select></div></div>
-    <div class="hint" style="margin-top:4px">${INV_CAT.length} Produkte im Katalog. Nicht dabei? Einfach eintippen und „übernehmen“ – eigene Einträge stehen danach in allen Projekten zur Auswahl.</div>
+    <div class="hint" style="margin-top:4px"><span id="ivCnt">${INV_CAT.length}</span> Produkte im Katalog · <a href="#" id="ivImp">📥 DATANORM / BMEcat / CSV importieren</a>. Nicht dabei? Einfach eintippen und „übernehmen“ – eigene Einträge stehen danach in allen Projekten zur Auswahl.</div>
     <div id="ivL" style="margin-top:10px"></div>`;
   const q=box.querySelector("#ivQ"), L=box.querySelector("#ivL");
   const paint=()=>{ if(!inv.length){ L.innerHTML=`<div class="muted" style="font-size:13px">Noch kein Inventar erfasst.</div>`; return; }
     const g={}; inv.forEach((x,i)=>(g[x.c]=g[x.c]||[]).push([x,i]));
     L.innerHTML=Object.keys(INV_CATS).filter(c=>g[c]).concat(Object.keys(g).filter(c=>!INV_CATS[c])).map(c=>`<div class="iv-g"><div class="iv-gh">${esc(INV_CATS[c]||c)}</div>${g[c].map(([x,i])=>`<div class="iv-r" data-i="${i}">
-      <div class="iv-n"><b>${esc(invLabel(x))}</b>${x.x?' <span class="badge">eigener Eintrag</span>':""}</div>
+      <div class="iv-n"><b>${esc(invLabel(x))}</b>${x.art?` <small class="muted">Art.-Nr. ${esc(x.art)}</small>`:""}${x.x?' <span class="badge">eigener Eintrag</span>':""}</div>
       <div class="iv-q"><button class="icon-btn" data-a="m">−</button><input class="iv-qty" value="${x.q||1}" inputmode="numeric"><button class="icon-btn" data-a="p">+</button></div>
       <button class="icon-btn" data-a="rm" title="Entfernen">✕</button></div>`).join("")}</div>`).join("");
     L.querySelectorAll(".iv-r").forEach(r=>{ const x=inv[+r.dataset.i];
@@ -706,7 +794,9 @@ function invMount(box){
       r.querySelector("[data-a=p]").onclick=()=>{ x.q=(x.q||1)+1; paint(); };
       r.querySelector(".iv-qty").onchange=e=>{ x.q=Math.max(1,Math.min(9999,parseInt(e.target.value)||1)); paint(); };
       r.querySelector("[data-a=rm]").onclick=()=>{ inv.splice(+r.dataset.i,1); paint(); }; }); };
-  invCombo(q,()=>cat?[cat]:null,(x,isFree)=>{ const it={c:isFree?(cat||"sonst"):x.c,b:x.b||"",n:x.n,q:1,x:!!(isFree||x.x)};
+  invLoadExt().then(()=>{ const c=box.querySelector("#ivCnt"); if(c) c.textContent=invCatalog().length.toLocaleString("de-DE"); });
+  box.querySelector("#ivImp").onclick=e=>{ e.preventDefault(); invImportDialog(); };
+  invCombo(q,()=>cat?[cat]:null,(x,isFree)=>{ const it={c:isFree?(cat||"sonst"):x.c,b:x.b||"",n:x.n,q:1,x:!!(isFree||x.x),...(x.art?{art:x.art}:{})};
     const ex=inv.find(y=>invKey(y)===invKey(it)); if(ex) ex.q=(ex.q||1)+1; else inv.push(it);
     setTimeout(()=>{ q.value=""; q.focus(); },0); paint(); toast(ex?"Stückzahl erhöht":"Hinzugefügt: "+invLabel(it)); });
   const sel=box.querySelector("#ivC"); sel.onchange=()=>{ cat=sel.value; q.focus(); q.dispatchEvent(new Event("input")); };
@@ -2028,7 +2118,7 @@ async function mkJobs(){
     <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>Auftrag</th><th>Quelle</th><th>Ort</th><th>Frist</th><th>Angebote</th><th>Bestes Pauschal</th><th>Status</th></tr></thead><tbody>
     ${all.length?all.map(j=>{ const s=MK_ST[j.status]||[j.status,"off"], late=j.status==="offen"&&j.bid_deadline&&Date.parse(j.bid_deadline)<Date.now();
       return `<tr class="click" data-id="${esc(j.id)}"><td>${/^AU-DEMO-/.test(j.job_no||"")||/^\[DEMO\]/.test(j.title||"")?'<span class="badge" style="background:#7c3aed;color:#fff">DEMO</span> ':""}<b>${esc(j.title)}</b><br><small class="muted"><code>${esc(j.job_no)}</code>${j.station_id?" · "+esc(stLabel(j.station_id)):""}</small></td><td>${esc(r.src[j.source_type]||j.source_type)}${j.source_ref?`<br><small class="muted">${esc(j.source_ref.length>20?j.source_ref.slice(0,8)+"…":j.source_ref)}</small>`:""}</td>
-        <td>${esc(j.location_public||"–")}</td><td data-sort="${j.bid_deadline||""}">${j.bid_deadline?fmtDT(j.bid_deadline):"–"}${late?' <span class="badge warn">abgelaufen</span>':""}</td><td>${j.bids}</td><td>${mkEur(j.best)}</td><td><span class="badge ${s[1]}">${s[0]}</span>${j.status==="offen"?` <a href="../auftraege/#${esc(j.job_no)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Öffentlich ansehen">↗</a>`:""}</td></tr>`; }).join("")
+        <td>${esc(j.location_public||"–")}</td><td data-sort="${j.bid_deadline||""}">${j.bid_deadline?fmtDT(j.bid_deadline):"–"}${late?' <span class="badge warn">abgelaufen</span>':""}${j.published_at?`<br><small class="muted">eingestellt ${fmtDT(j.published_at)}</small>`:""}</td><td>${j.bids}</td><td>${mkEur(j.best)}</td><td><span class="badge ${s[1]}">${s[0]}</span>${j.status==="offen"?` <a href="../auftraege/#${esc(j.job_no)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Öffentlich ansehen">↗</a>`:""}</td></tr>`; }).join("")
       :`<tr><td colspan="7" class="muted">Noch keine Aufträge. Über „+ Freier Auftrag“ oder bei einer Störung, einem Mangel oder einer Checkliste mit „Zur Vergabe stellen“ anlegen.</td></tr>`}</tbody></table></div>`;
   $("#mkKP").onclick=()=>{ MKT.tab="prov"; MKT.pstatus="neu"; marketView(); };
   $("#mkBody").querySelectorAll("tr.click").forEach(t=>t.onclick=()=>mkJob(t.dataset.id));
@@ -2180,7 +2270,7 @@ async function mkJob(id){
     b.disabled=true;
     try{ const a=await mapi("m_award",{bid:bid.id,force});
       md.querySelectorAll("[data-aw]").forEach(x=>x.remove());
-      q("#mkAwOut").innerHTML=`<div class="card" style="margin-top:12px;background:var(--brand-soft);border-color:#bfe5d2"><b>✅ Zuschlag erteilt an ${esc(bid.provider.company)}</b><br>${a.pin?`Service-PIN (wird nur jetzt angezeigt und wurde per E-Mail verschickt): <code style="font-size:20px;letter-spacing:2px">${esc(a.pin)}</code>`:"Bestehender Service-Zugang wurde um dieses Projekt erweitert."}<br><small>Kontakt, Zuordnung und Termin sind angelegt.</small> <button class="btn ghost sm" id="mkAwC">Kontakt öffnen</button> <button class="btn ghost sm" data-close>Schließen</button></div>`;
+      q("#mkAwOut").innerHTML=`<div class="card" style="margin-top:12px;background:var(--brand-soft);border-color:#bfe5d2"><b>✅ Zuschlag erteilt an ${esc(bid.provider.company)}</b><br>${a.pin?`Service-PIN (wird nur jetzt angezeigt und wurde per E-Mail verschickt): <code style="font-size:20px;letter-spacing:2px">${esc(a.pin)}</code>`:"Bestehender Service-Zugang wurde um dieses Projekt erweitert. Hat der Betrieb seine PIN nicht mehr, erzeugt er in der Auftragsbörse unter „Meine Angebote“ selbst eine neue."}<br><small>Kontakt, Zuordnung und Termin sind angelegt.</small> <button class="btn ghost sm" id="mkAwC">Kontakt öffnen</button> <button class="btn ghost sm" data-close>Schließen</button></div>`;
       q("#mkAwOut [data-close]").onclick=reload;
       q("#mkAwC").onclick=()=>{ md.remove(); CF.cluster="service"; CF.q=bid.provider.company; go("customers"); };
       toast("Zuschlag erteilt ✓"); }catch(e){ b.disabled=false; toast(e.message,true); } });
