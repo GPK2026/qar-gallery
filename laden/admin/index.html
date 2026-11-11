@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="20261109e">
+<meta name="build" content="20261112a">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>HAPPY CHARGING Support · Betreiber</title>
@@ -358,6 +358,12 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 
 }
 
+.ivc{position:relative}.ivc-dd{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.14);max-height:300px;overflow:auto;margin-top:3px}
+.ivc-o{padding:8px 11px;cursor:pointer;display:flex;flex-direction:column;gap:1px;border-bottom:1px solid #f0f2f1;font-size:13.5px}.ivc-o small{color:var(--muted);font-size:11.5px}.ivc-o:hover,.ivc-o.on{background:#fff6e8}
+.ivc-free{color:#b45f00;font-weight:600}.ivc-empty{padding:10px;color:var(--muted);font-size:13px}
+.iv-g{margin-bottom:8px}.iv-gh{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:6px 0 4px}
+.iv-r{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:9px;margin-bottom:4px;background:#fff}.iv-n{flex:1;min-width:0;font-size:13.5px;overflow-wrap:break-word}
+.iv-q{display:flex;align-items:center;gap:3px}.iv-qty{width:46px!important;text-align:center;padding:5px!important}
 </style>
 </head>
 <body>
@@ -471,11 +477,12 @@ function renderEditor(){
     <label style="margin-top:10px">ℹ️ Kundeninfo</label><textarea id="f_cinfo" rows="5" placeholder="z. B. Toiletten im Autohaus (Mo–Fr 8–18 Uhr) · Ladepunkt 3 wird am 12.11. gewartet">${esc((E.extras||{}).customer_info||"")}</textarea>
   </div>
   <div class="card"><h2>Software &amp; Inventar</h2><p class="sub" style="margin-top:0">Grundlage für die automatischen Nachweis-Vorschläge der Auftragsbörse. Hersteller/Modell der Ladesäulen stehen bei den Chargern.</p>
-    <div class="row" style="gap:10px"><div style="flex:1;min-width:140px"><label>Backend / CPMS</label><input id="f_cpms" list="cpmsList" value="${esc((E.extras||{}).cpms||"")}" placeholder="z. B. Monta"><datalist id="cpmsList">${["Monta","has·to·be (Chargepoint)","Virta","AMPECO","ChargePoint","reev","be.ENERGISED","Driivz","ECG"].map(x=>`<option value="${x}">`).join("")}</datalist></div>
+    <div class="row" style="gap:10px"><div style="flex:1;min-width:140px"><label>Backend / CPMS</label><input id="f_cpms" value="${esc((E.extras||{}).cpms||"")}" placeholder="Suchen, z. B. Monta"></div>
       <div style="width:110px"><label>OCPP</label><select id="f_ocpp">${["","1.6J","2.0.1","2.1"].map(v=>`<option ${((E.extras||{}).ocpp||"")===v?"selected":""} value="${v}">${v||"–"}</option>`).join("")}</select></div></div>
-    <div class="row" style="gap:10px;margin-top:10px"><div style="flex:1;min-width:140px"><label>Bezahlterminal</label><input id="f_payment" value="${esc((E.extras||{}).payment||"")}" placeholder="z. B. Payter Apollo"></div>
-      <div style="flex:1;min-width:140px"><label>Kommunikation</label><input id="f_comms" value="${esc((E.extras||{}).comms||"")}" placeholder="z. B. LTE (Telekom), LAN"></div></div>
-    <label style="margin-top:10px">Weitere Komponenten / Hinweise</label><textarea id="f_inv" rows="3" placeholder="z. B. Trafostation, Lastmanagement, Eichrechts-Zähler, Firmware-Stand">${esc((E.extras||{}).inventory_note||"")}</textarea>
+    <div class="row" style="gap:10px;margin-top:10px"><div style="flex:1;min-width:140px"><label>Bezahlterminal</label><input id="f_payment" value="${esc((E.extras||{}).payment||"")}" placeholder="Suchen, z. B. Payter Apollo"></div>
+      <div style="flex:1;min-width:140px"><label>Kommunikation</label><input id="f_comms" value="${esc((E.extras||{}).comms||"")}" placeholder="Suchen, z. B. Teltonika, Telekom M2M"></div></div>
+    <h3 style="margin:16px 0 4px;font-size:15px">📦 Inventar am Standort</h3><div id="invBox"></div>
+    <label style="margin-top:12px">Weitere Hinweise</label><textarea id="f_inv" rows="2" placeholder="z. B. Firmware-Stand, Seriennummern, Besonderheiten">${esc((E.extras||{}).inventory_note||"")}</textarea>
 </div>
   </div>
   ${!isNew?`<div class="ed-top ed-media"><div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">Fotos</h2><span class="muted" style="font-size:13px">★ = Titelbild oben in der Kunden- und Service-App</span><div class="sp"></div>
@@ -500,6 +507,8 @@ function renderEditor(){
   $("#chAll").onclick=()=>{ collect(); const v=!E.chargers.every(chFolded); E.chargers.forEach(c=>setFold(c,v)); renderEditor(); };
   $("#addCh").onclick=()=>{ collect(); E.chargers.forEach(c=>setFold(c,true)); CH_OPEN=true; const n=E.chargers.length+1; E.chargers.push({label:"LS#"+n,model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}); setFold(E.chargers[E.chargers.length-1],false); renderEditor(); };
   wireChargers(); fillClAssign(isNew);
+  if($("#invBox")){ invMount($("#invBox")); invCombo($("#f_cpms"),["software"]); invCombo($("#f_payment"),["pay"]); invCombo($("#f_comms"),["net"]); }
+  document.querySelectorAll(".c_model").forEach(i=>invCombo(i,["lis_dc","lis_ac","pu"]));
   $("#toLists").onclick=e=>{ e.preventDefault(); FF.tab="lists"; go("field"); };
   if(!isNew){ renderQRs(); $("#del").onclick=del; wireImage(); }
 }
@@ -526,7 +535,7 @@ function chargerHTML(c,i){
     <div class="ch-body">
     <div class="ch-head">
       <div><label>Bezeichnung</label><input class="c_label" value="${esc(c.label)}"></div>
-      <div><label>Modell / Seriennummer (intern)</label><input class="c_model" value="${esc(c.model)}"></div>
+      <div><label>Hersteller / Modell</label><input class="c_model" value="${esc(c.model)}" placeholder="Suchen, z. B. HYC 400"></div>
       <div class="row" style="gap:6px"><button class="icon-btn" data-act="up" title="nach oben">↑</button><button class="icon-btn" data-act="down" title="nach unten">↓</button><button class="icon-btn" data-act="rm" title="Charger entfernen">✕</button></div>
     </div>
     ${c.connectors.map((x,j)=>`<div class="lp" data-lj="${j}">
@@ -574,6 +583,136 @@ async function loadGal(){ const g=$("#gal"); if(!g) return;
     g.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{ if(!confirm("Foto löschen?")) return; try{ await api("delete_image",{id:E.original_id,path:b.dataset.del}); loadGal(); }catch(e){ toast(e.message,true); } });
     g.querySelectorAll("[data-delhero]").forEach(b=>b.onclick=async()=>{ if(!confirm("Titelbild entfernen? (Die Fotos der Galerie bleiben.)")) return; try{ await api("delete_image",{id:E.original_id}); loadGal(); }catch(e){ toast(e.message,true); } });
   }catch(e){ g.innerHTML=`<span class="muted">${esc(e.message)}</span>`; } }
+/* ── Produktkatalog Software & Inventar (aus CUT POWER Projektvorlage + gängige Produkte) ── */
+const INV_CATS={lis_dc:"DC-Ladesäule / Dispenser",lis_ac:"AC-Ladestation",pu:"Power Unit / Power Cabinet",km:"Kabelmanagement / Powerstacks",pay:"Bezahlterminal",software:"Backend / CPMS",lm:"Lastmanagement",net:"Netzwerk / Router / SIM",video:"Videosystem",licht:"Lichtsystem",media:"Media / Werbedisplay",lock:"Schließanlage",dach:"Dachsystem",bess:"Batteriespeicher (BESS)",trafo:"Trafostation",mws:"Messwandler- / Verteilerschrank",fund:"Fundament",sonst:"Sonstiges / Baustelle"};
+const INV_RAW={
+lis_dc:{Alpitronic:["HYC 50 Wall Mount (2 x CCS bis 50 kW)","HYC 50 Pedestal (2 x CCS bis 50 kW)","HYC 200-1 (2 x CCS bis 100 kW)","HYC 200-2 (2 x CCS bis 200 kW)","HYC 300-2 (2 x CCS bis 150 kW)","HYC 300-2 (2 x CCS bis 150 kW, 1 x CHAdeMO bis 75 kW)","HYC 300-3 (2 x CCS bis 275 kW)","HYC 300-3 (2 x CCS bis 275 kW, 1 x CHAdeMO bis 75 kW)","HYC 300-4 (2 x CCS bis 300 kW)","HYC 300-4 (2 x CCS bis 300 kW, 1 x CHAdeMO bis 75 kW)","HYC 400-2 (2 x CCS bis 200 kW)","HYC 400-2 (2 x CCS bis 200 kW; Front-Display)","HYC 400-3 (2 x CCS bis 300 kW)","HYC 400-3 (2 x CCS bis 300 kW; Front-Display)","HYC 400-4 (2 x CCS bis 400 kW)","HYC 400-4 (2 x CCS bis 400 kW; Front-Display)","HYC 400-4 (2 x CCS LC bis 400 kW)","HYC 400-4 (1 x CCS LC bis 400 kW)","HYC 1000 Dispenser (1 x CCS bis 400 kW)","HYC 1000 Dispenser (2 x CCS bis 400 kW)","HYC 1000 Dispenser (1 x CCS LC bis 600 kW)","HYC 1000 Dispenser (2 x CCS LC bis 600 kW)","HYC 1000 Dispenser (1 x MCS bis 1.000 kW, 1 x CCS bis 600 kW)"],
+ Ekoenergetyka:["SAT 400 (1 x CCS bis 320 kW)","SAT 400 (2 x CCS bis 320 kW)","SAT 600 (1 x CCS bis 320 kW)","SAT 600 (1 x CCS LC bis 400 kW)","Axon Easy 100","Axon Easy 160","Axon Easy 200"],
+ "i-charging":["blueberry PLUS User Unit (1 x CCS bis 400 kW)","blueberry PLUS User Unit (2 x CCS bis 400 kW)","i-light Satellite (1 x CCS LC bis 800 kW)","i-light Satellite (1 x CCS LC bis 1.000 kW)","i-light Satellite (1 x MCS bis 1.500 kW)","Satellite (1 x CCS bis 200 kW)","Satellite (1 x CCS bis 400 kW)","Satellite (1 x CCS LC bis 800 kW)"],
+ Nidec:["DC Tower 160 (2 x CCS bis 160 kW)","DC Tower 400 (2 x CCS bis 400 kW)","DC Tower Dispenser (2 x CCS LC bis 480 kW)","DC Compact Dispenser (1 x CCS LC bis 480 kW)","DC Compact Dispenser (2 x CCS LC bis 480 kW)"],
+ ABB:["Terra 54","Terra 94","Terra 124","Terra 184","Terra 360","A200","A300","A400","Terra DC Wallbox 24 kW"],
+ Kempower:["Satellite S-Series","Satellite T-Series","Station Charger","Single Charger","Movable Charger"],
+ Tritium:["RTM75","PKM150","MSC (Modular Scalable Charger)"],
+ Compleo:["eTower 200","Cito BM 500 (DC)","Cito 240"],
+ Siemens:["SICHARGE D 160 kW","SICHARGE D 300 kW","SICHARGE D Dispenser"],
+ Delta:["UFC 200","SLIM 100","DC Wallbox 25 kW"],
+ "ADS-TEC":["ChargeBox","ChargePost"],
+ Efacec:["QC45","HV160","HV350"],
+ XCharge:["C6","GridLink"],
+ Autel:["MaxiCharger DC Compact","MaxiCharger DC Fast","MaxiCharger DH480"],
+ Circontrol:["Raption 50","Raption 100","Raption 150"],
+ Wallbox:["Supernova 60 kW","Supernova 120 kW"],
+ Heliox:["Flex 180 kW","Mega 360 kW"],
+ SICON:["Alpha Plus DC 60/120/180 kW"],
+ EnerCharge:["CELLCHARGE DC"],
+ Kostad:["Kostad HPC Dispenser"],
+ Tesla:["Supercharger V3","Supercharger V4"]},
+lis_ac:{Alfen:["Eve Single Pro-line (1 x Typ 2 bis 22 kW)","Eve Double Pro-line (2 x Typ 2 bis 22 kW)","Eve Single S-line"],
+ ABL:["eM4 Single (1 x Typ 2 bis 22 kW)","eM4 Twin (2 x Typ 2 bis 22 kW)","eMH3"],
+ Mennekes:["AMTRON 4Business 700","AMTRON 4Business 780","AMTRON Professional+","AMTRON Charge Control"],
+ Compleo:["eBox professional","eBox smart","Cito 500 (AC)"],
+ KEBA:["KeContact P30 c-series","KeContact P30 x-series","KeContact P40 Pro"],
+ Wallbox:["Commander 2","Copper SB","Pulsar Pro","Pulsar Plus"],
+ Easee:["Charge","Charge Max","Charge Core"],
+ Zaptec:["Pro","Go 2"],
+ Webasto:["Unite","Next"],
+ "Schneider Electric":["EVlink Pro AC","Schneider Charge"],
+ Hager:["witty park","witty share"],
+ Siemens:["VersiCharge AC"],
+ "Walther Electric":["smartEVO duo+","basicEVO"],
+ Elli:["Charger Connect 2","Charger Pro 2"],
+ Heidelberg:["Energy Control"],
+ Delta:["AC MAX Basic 22 kW","AC MAX Smart 22 kW"],
+ ABB:["Terra AC Wallbox"],
+ "go-e":["Charger Gemini flex","Charger Pro"],
+ "Bender / ebee":["CC613 Ladecontroller","Berlin Ladesäule"]},
+pu:{Alpitronic:["HYC 1000-4 Power Cabinet (bis 500 kW; max. 8 LP)","HYC 1000-5 Power Cabinet (bis 625 kW; max. 8 LP)","HYC 1000-6 Power Cabinet (bis 750 kW; max. 8 LP)","HYC 1000-7 Power Cabinet (bis 875 kW; max. 8 LP)","HYC 1000-8 Power Cabinet (bis 1.000 kW; max. 8 LP)"],
+ Ekoenergetyka:["Axon Side DLBS (bis 240 kW; max. 6 LP)","Axon Side DLBS (bis 400 kW; max. 6 LP)"],
+ "i-charging":["PowerUnit 200 (bis 200 kW; max. 4 LP)","PowerUnit 300 (bis 300 kW; max. 4 LP)","MAX power cabinet (bis 800 kW; max. 8 LP)","MAX power cabinet (bis 1.000 kW; max. 8 LP)","MAX power cabinet (bis 1.200 kW; max. 8 LP)","MAX power cabinet (bis 1.400 kW; max. 8 LP)","MAX power cabinet (bis 1.600 kW; max. 8 LP)"],
+ Nidec:["DC Split Power Unit 480 (bis 480 kW; max. 12 LP)","DC Split Power Unit 640 (bis 640 kW; max. 12 LP)","Mega Power Unit (bis 1.280 kW; max. 12 LP)"],
+ Kempower:["Power Unit 600 kW","Power Unit 400 kW"],
+ ABB:["HVC360 Power Cabinet","MCS1200 Power Cabinet"],
+ Siemens:["SICHARGE FLEX Power Unit"]},
+km:{Alpitronic:["Kabelmanagement 2-fach für HYC 200","Kabelmanagement 2-fach für HYC 300","Kabelmanagement 2-fach für HYC 400","Powerstacks 75 kW für HYC 150/300","Powerstacks 100 kW für HYC 200/400"],Nidec:["Kabelmanagement 2-fach für DC Tower"]},
+pay:{"i-charging":["e-flow Bezahlterminal"],Payter:["Apollo","P68","Apollo Pro"],Nayax:["Onyx","VPOS Touch"],CCV:["IM30","IUP250"],Worldline:["VALINA","Self 2000"],FEIG:["cVEND plug","cVEND BOX"],Ingenico:["Self/2000"],Adyen:["UX410 / UX300"]},
+software:{Monta:["Monta CPMS"],"has·to·be":["be.ENERGISED"],Virta:["Virta Platform"],AMPECO:["AMPECO CPMS"],ChargePoint:["ChargePoint Cloud"],reev:["reev Dashboard"],eCarUp:["eCarUp"],Driivz:["Driivz"],ECG:["ECG Backend"],Spirii:["Spirii Connect"],GreenFlux:["GreenFlux Platform"],chargecloud:["chargecloud"],Wirelane:["Wirelane Backend"],Etrel:["Etrel Lemo"],Hubject:["Intercharge (Roaming)"],GIREVE:["GIREVE (Roaming)"],"S.A.F.E.":["Transparenzsoftware (Eichrecht)"],Alpitronic:["hypercharger Cockpit / Management Portal"],Kempower:["ChargEye"],ABB:["ChargerSync / Driver App"]},
+lm:{Regelkraft:["LM - Regelkraft"],"The Mobility House":["ChargePilot"],Janitza:["UMG Energiemessung"],"Phoenix Contact":["CHARX control"],Bender:["Lastmanagement-Controller"],Kempower:["Dynamic Power Management"]},
+net:{Teltonika:["Router RUT241","Router RUT956","Router RUTX11","Router RUTX50 (5G)","8 Port Switch","Netzteil","Housing"],INSYS:["icom MRX LTE"],LANCOM:["LTE-Router"],"Cisco Meraki":["MX / MG Router"],Telekom:["M2M-SIM (LTE)"],Vodafone:["IoT-SIM (LTE)"],"1NCE":["IoT-SIM"],emnify:["IoT-SIM"],Sonstige:["LAN / Glasfaser-Anschluss","Wifi-Bridge"]},
+video:{R8XK:["Rekorder mit 4 Kanälen","Rekorder mit 8 Kanälen","Rekorder mit 16 Kanälen"],PRO:["Dome-Kamera PD20K","Bullet-Kamera PB40K","PTZ-Kamera PTZK-L"],BASCOM:["Mastbefestigung"],Axis:["Netzwerkkamera"],Hikvision:["Netzwerkkamera"],Mobotix:["Netzwerkkamera"],Dahua:["Netzwerkkamera"]},
+licht:{ChargeLight:["ChargeLight Plus","ChargeLight"],Lichtwart:["Lichtwart Controller"]},
+media:{Ekoenergetyka:["Werbedisplay (Einseitig) - 23,8 Zoll","Werbedisplay (Zweiseitig) - 23,8 Zoll"],"i-charging":["i-light Werbedisplay (Einseitig) - 32 Zoll"],Nidec:["Werbedisplay (Einseitig) - 32 Zoll"],Samsung:["Outdoor Display (Einseitig) - 24 Zoll"],Sonstige:["LED-Wall","Media-Stele"]},
+lock:{iLOQ:["System Ladestationen","System Trafostation / Messwandlerschrank"]},
+dach:{genE:["Duo-Port","Quatro-Port"],MDT:["MDT Überdachung"],Sonstige:["Dach - Montage","Carport / Überdachung"]},
+bess:{Pixii:["PowerShaper2 (50 kW) - Fan-Filter","PowerShaper2 (50 kW) - Air-Con","PowerShaper XL (60 kW / 200 kWh) - Fan-Filter","PowerShaper XL (60 kW / 200 kWh) - Air-Con","Power Base PowerShaper2 (600 kW / 600 kWh)","Power Base PowerShaper2 (480 kW / 1,2 MWh)","Power Base PowerShaper XL (445 kW / 1,28 MWh)","Power Base PowerShaper XL (540 kW / 1,8 MWh)","Noise Reduction Muffler","Multi-cabinet Switch"],
+ Tesvolt:["TPS-E (20 feet)","TPS-E (40 feet)","TPS-E (45 feet)","Forton Outdoor (92 kW / 92 kWh)","Tallon 20-ft-Container (2,5 MW / 5,015 MWh)"],
+ neoom:["TERRA (125–750 kW / 215–5160 kWh)","TERRA (125–750 kW / 258–6192 kWh)","BLOKK (120–704 kW / 99,5–2387 kWh)","BLOKK LIGHT NEA (30–120 kW / 61,6–398 kWh)"],
+ "ADS-TEC":["ChargeBox (Speicher)"],Tesla:["Megapack"],Intilion:["scalebloc"],FENECON:["Industrial L / XL"]},
+trafo:{Trafostation:["Trafo 400 kVA","Trafo 630 kVA","Trafo 800 kVA","Trafo 1.000 kVA","Trafo 1.250 kVA","Trafo 2.000 kVA","Trafo 2.500 kVA"]},
+mws:{Messwandlerschrank:["MWS 250 A","MWS 400 A","MWS 630 A","MWS 800 A"],Sonstige:["Kabelverteilschrank","Husse Messwandlerschrank","Eichrechtskonformer Zähler (MID)"]},
+fund:{Fundament:["AC mit Stele","Small-DC - Alpitronic HYC50","DC - Alpitronic HYC150/200/300/400","DC - Alpitronic HYC1000 Dispenser","PC - Alpitronic HYC1000 Power Cabinet","DC - Ekoenergetyka SAT400","PU - Ekoenergetyka Axon Side DLBS 240/400","DC - i-charging blueberry PLUS User Unit","DC - i-charging i-light","DC - i-charging Satellite","PU - i-charging Power Unit 200/300","PU - i-charging Power Unit MAX","BESS - Pixii PowerShaper2 (50 kW)","Systemfundament ChargeBase (HYC300/400 bzw. SAT400 + ChargeLight)"]},
+sonst:{Sonstige:["Anfahrschutz Poller Pkw","Anfahrschutz Beton-Kegelpoller Lkw","Pfosten Beschilderung inkl. Schellen","Stellplatzmarkierung & Piktogramm Pkw","Stellplatzmarkierung & Piktogramm Lkw","Hinweisbeschilderung Set","Wegweiser Beschilderung Pkw","Wegweiser Beschilderung Lkw","Folierung & Branding"]}};
+const INV_CAT=[];for(const[c,bs]of Object.entries(INV_RAW))for(const[b,ns]of Object.entries(bs))for(const n of ns)INV_CAT.push({c,b,n});
+const invKey=x=>(x.c+"|"+x.b+"|"+x.n).toLowerCase();
+/* eigene Einträge aus allen Projekten wiederverwenden */
+function invCatalog(){ const m=new Map(INV_CAT.map(x=>[invKey(x),x]));
+  for(const s of (typeof STATIONS!=="undefined"?STATIONS:[]))for(const x of ((s.extras||{}).inventory||[]))if(x.x&&!m.has(invKey(x)))m.set(invKey(x),{c:x.c,b:x.b,n:x.n,x:true});
+  return [...m.values()]; }
+const invNorm=s=>String(s||"").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g,"");
+function invSearch(q,cats,limit=60){ const t=invNorm(q).split(/\s+/).filter(Boolean);
+  return invCatalog().filter(x=>(!cats||cats.includes(x.c))&&t.every(w=>invNorm(x.b+" "+x.n+" "+INV_CATS[x.c]).includes(w))).slice(0,limit); }
+const invLabel=x=>(x.b&&x.b!=="Sonstige"&&!x.n.toLowerCase().startsWith(x.b.toLowerCase())?x.b+" ":"")+x.n;
+
+/* Combobox: Suchfeld mit Auswahlliste (freie Eingabe bleibt möglich) */
+function invCombo(input,cats,onPick){
+  const wrap=document.createElement("div"); wrap.className="ivc"; input.parentNode.insertBefore(wrap,input); wrap.appendChild(input);
+  const dd=document.createElement("div"); dd.className="ivc-dd"; wrap.appendChild(dd); input.setAttribute("autocomplete","off");
+  let idx=-1, res=[];
+  const C=()=>typeof cats==="function"?cats():cats;
+  const show=()=>{ res=invSearch(input.value,C(),40); idx=-1;
+    const q=input.value.trim();
+    dd.innerHTML=(res.length?res.map((x,i)=>`<div class="ivc-o" data-i="${i}"><b>${esc(invLabel(x))}</b><small>${esc(INV_CATS[x.c])}${x.x?" · eigener Eintrag":""}</small></div>`).join(""):"")
+      +(q&&!res.some(x=>invLabel(x).toLowerCase()===q.toLowerCase())?`<div class="ivc-o ivc-free" data-i="-2">＋ „${esc(q)}“ übernehmen (eigener Eintrag)</div>`:"")
+      ||`<div class="ivc-empty">Kein Treffer – Text eingeben, um einen eigenen Eintrag anzulegen.</div>`;
+    dd.style.display="block"; };
+  const pick=i=>{ if(i===-2){ const q=input.value.trim(); onPick?onPick({c:(C()||["sonst"])[0],b:"",n:q,x:true},true):0; }
+    else if(res[i]){ input.value=invLabel(res[i]); onPick&&onPick(res[i],false); }
+    dd.style.display="none"; input.dispatchEvent(new Event("change",{bubbles:true})); };
+  input.addEventListener("focus",show); input.addEventListener("input",show);
+  input.addEventListener("keydown",e=>{ const o=[...dd.querySelectorAll(".ivc-o")]; if(!o.length) return;
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); idx=(idx+(e.key==="ArrowDown"?1:-1)+o.length)%o.length; o.forEach((x,i)=>x.classList.toggle("on",i===idx)); o[idx].scrollIntoView({block:"nearest"}); }
+    else if(e.key==="Enter"&&idx>=0){ e.preventDefault(); pick(+o[idx].dataset.i); } else if(e.key==="Escape") dd.style.display="none"; });
+  dd.addEventListener("mousedown",e=>{ const o=e.target.closest(".ivc-o"); if(o){ e.preventDefault(); pick(+o.dataset.i); } });
+  input.addEventListener("blur",()=>setTimeout(()=>dd.style.display="none",120));
+}
+
+/* Inventarliste mit Suchfeld, Kategorie-Filter und Stückzahl */
+function invMount(box){
+  E.extras=E.extras||{}; const inv=E.extras.inventory=E.extras.inventory||[];
+  let cat="";
+  box.innerHTML=`<div class="row" style="gap:8px;align-items:flex-end;flex-wrap:wrap">
+      <div style="flex:2;min-width:200px"><label>Produkt suchen &amp; hinzufügen</label><input id="ivQ" placeholder="z. B. HYC 1000, Teltonika, Pixii, Trafo 1.000 …"></div>
+      <div style="flex:1;min-width:150px"><label>Kategorie</label><select id="ivC"><option value="">Alle Kategorien</option>${Object.entries(INV_CATS).map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join("")}</select></div></div>
+    <div class="hint" style="margin-top:4px">${INV_CAT.length} Produkte im Katalog. Nicht dabei? Einfach eintippen und „übernehmen“ – eigene Einträge stehen danach in allen Projekten zur Auswahl.</div>
+    <div id="ivL" style="margin-top:10px"></div>`;
+  const q=box.querySelector("#ivQ"), L=box.querySelector("#ivL");
+  const paint=()=>{ if(!inv.length){ L.innerHTML=`<div class="muted" style="font-size:13px">Noch kein Inventar erfasst.</div>`; return; }
+    const g={}; inv.forEach((x,i)=>(g[x.c]=g[x.c]||[]).push([x,i]));
+    L.innerHTML=Object.keys(INV_CATS).filter(c=>g[c]).concat(Object.keys(g).filter(c=>!INV_CATS[c])).map(c=>`<div class="iv-g"><div class="iv-gh">${esc(INV_CATS[c]||c)}</div>${g[c].map(([x,i])=>`<div class="iv-r" data-i="${i}">
+      <div class="iv-n"><b>${esc(invLabel(x))}</b>${x.x?' <span class="badge">eigener Eintrag</span>':""}</div>
+      <div class="iv-q"><button class="icon-btn" data-a="m">−</button><input class="iv-qty" value="${x.q||1}" inputmode="numeric"><button class="icon-btn" data-a="p">+</button></div>
+      <button class="icon-btn" data-a="rm" title="Entfernen">✕</button></div>`).join("")}</div>`).join("");
+    L.querySelectorAll(".iv-r").forEach(r=>{ const x=inv[+r.dataset.i];
+      r.querySelector("[data-a=m]").onclick=()=>{ x.q=Math.max(1,(x.q||1)-1); paint(); };
+      r.querySelector("[data-a=p]").onclick=()=>{ x.q=(x.q||1)+1; paint(); };
+      r.querySelector(".iv-qty").onchange=e=>{ x.q=Math.max(1,Math.min(9999,parseInt(e.target.value)||1)); paint(); };
+      r.querySelector("[data-a=rm]").onclick=()=>{ inv.splice(+r.dataset.i,1); paint(); }; }); };
+  invCombo(q,()=>cat?[cat]:null,(x,isFree)=>{ const it={c:isFree?(cat||"sonst"):x.c,b:x.b||"",n:x.n,q:1,x:!!(isFree||x.x)};
+    const ex=inv.find(y=>invKey(y)===invKey(it)); if(ex) ex.q=(ex.q||1)+1; else inv.push(it);
+    setTimeout(()=>{ q.value=""; q.focus(); },0); paint(); toast(ex?"Stückzahl erhöht":"Hinzugefügt: "+invLabel(it)); });
+  const sel=box.querySelector("#ivC"); sel.onchange=()=>{ cat=sel.value; q.focus(); q.dispatchEvent(new Event("input")); };
+  paint();
+}
+
 function collect(){
   const v=id=>$("#"+id)?$("#"+id).value.trim():"";
   Object.assign(E,{project_id:v("f_project_id"),name:v("f_name"),address:v("f_address"),lat:v("f_lat"),lng:v("f_lng"),review_url:v("f_review_url"),notify_email:v("f_notify_email"),active:$("#f_active")?$("#f_active").checked:true});
