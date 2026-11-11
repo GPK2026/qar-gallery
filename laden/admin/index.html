@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="20261112b">
+<meta name="build" content="20261112c">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>HAPPY CHARGING Support · Betreiber</title>
@@ -17,13 +17,51 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
 header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
-header .in{max-width:1180px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px}
+header .in{max-width:1180px;margin:0 auto;padding:10px 20px;min-height:57px;box-sizing:border-box;display:flex;align-items:center;gap:14px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;white-space:nowrap}
 .logo svg{width:22px;height:28px}
 .logo small{font-weight:500;color:var(--muted);margin-left:6px}
-nav{display:flex;gap:2px;margin-left:12px}
-nav button{background:none;border:0;padding:8px 9px;border-radius:8px;color:var(--muted);font-weight:600;white-space:nowrap}
-nav button.on{background:var(--brand-soft);color:#08603d}
+/* ── Navigation: Seitenleiste (Desktop) / Schublade (Tablet & Handy) ── */
+#nav{position:fixed;top:0;left:0;bottom:0;width:232px;background:#fff;border-right:1px solid var(--line);z-index:30;display:flex;flex-direction:column;gap:1px;padding:0 10px 16px;overflow-y:auto;scrollbar-width:thin}
+#nav.hidden{display:none}
+#nav .nhead{display:flex;align-items:center;gap:9px;height:57px;padding:0 6px;margin:0 -10px 6px;padding-left:16px;border-bottom:1px solid var(--line);font-size:14.5px;white-space:nowrap;position:sticky;top:0;background:#fff;z-index:1}
+#nav .nhead svg{width:18px;height:23px;flex:none}#nav .nhead b{flex:1}
+#nav .nclose{display:none;background:none;border:0;font-size:18px;padding:6px 8px;border-radius:8px;color:var(--muted);cursor:pointer}
+#nav .ng{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#8a9690;margin:14px 10px 4px}
+#nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:9px;color:#3c4a44;font-weight:600;font-size:14px;white-space:nowrap;cursor:pointer;line-height:1.2}
+#nav button .ni{width:20px;text-align:center;font-size:15px;flex:none}
+#nav button:hover{background:#f3f6f4}
+#nav button.on{background:var(--brand-soft);color:#08603d}
+body.authed{padding-left:232px}
+/* Übersicht: links Projekte, rechts Kennzahlen & Grafiken */
+.ov-split{display:grid;grid-template-columns:minmax(270px,330px) minmax(0,1fr);gap:16px;align-items:start}
+.ov-left{position:sticky;top:72px;max-height:calc(100vh - 86px);overflow-y:auto;scrollbar-width:thin;padding-right:2px}
+.ov-left .grid{grid-template-columns:1fr;gap:10px}
+.ov-left .pcard{padding:14px}
+.ov-lh{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#8a9690;margin:2px 2px 8px}
+.ov-right{min-width:0}
+.ov-right .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:620px){ .ov-right .kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.ov-left #newTile{min-height:0!important;padding:14px!important;flex-direction:row;gap:8px}
+.ov-left .pcard{margin-bottom:0}
+body.authed #gs{width:100%;max-width:none}
+@media (max-width:1000px){ .ov-split{grid-template-columns:1fr} .ov-left{position:static;max-height:none;overflow:visible} .ov-left .grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))} }
+body.authed header .sp{display:none} body.authed #gsF{flex:1;max-width:560px;margin-right:auto}
+@media (max-width:760px){ #simTg .t{display:none} }
+.navbtn{display:none;background:none;border:1px solid var(--line);border-radius:10px;font-size:19px;width:40px;height:38px;line-height:1;cursor:pointer;flex:none;color:var(--ink)}
+.curT{display:none;font-weight:700;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.navbg{display:none}
+body.authed header .logo{display:none}
+@media (max-width:1100px){
+  body.authed{padding-left:0}
+  body.authed header .logo{display:flex}
+  #nav{transform:translateX(-105%);transition:transform .22s ease;width:min(290px,86vw);box-shadow:0 0 0 rgba(0,0,0,0)}
+  #nav.open{transform:none;box-shadow:8px 0 30px rgba(0,0,0,.18)}
+  #nav .nclose{display:block}
+  .navbg.on{display:block;position:fixed;inset:0;background:rgba(20,32,27,.35);z-index:29}
+  .navbtn:not(.hidden){display:inline-flex;align-items:center;justify-content:center}
+}
+@media (max-width:760px){ body.authed header .logo{display:none} .curT{display:block;flex:1} }
 .sp{flex:1}
 .wrap{max-width:1180px;margin:0 auto;padding:20px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
@@ -272,13 +310,11 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 .two{display:grid;grid-template-columns:2fr 1fr;gap:14px}
 @media (max-width:1400px){.logo small{display:none}}
 @media (max-width:900px){.two{grid-template-columns:1fr}#gs{width:100%}#gsF{order:9;width:100%}}
-@media (max-width:760px){.c3,.c4,.c6,.c8{grid-column:span 12}.lp{grid-template-columns:50px 1fr 70px 36px}.lp .evse{grid-column:2 / span 3}nav{margin-left:0}header .in{flex-wrap:wrap}}
+@media (max-width:760px){.c3,.c4,.c6,.c8{grid-column:span 12}.lp{grid-template-columns:50px 1fr 70px 36px}.lp .evse{grid-column:2 / span 3}header .in{flex-wrap:wrap}}
 
 /* ── Responsive: Tablet & Smartphone ── */
-@media (max-width:1560px){
+@media (max-width:1100px){
   header .in{flex-wrap:wrap;row-gap:8px}
-  nav{order:9;width:100%;margin-left:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
-  nav::-webkit-scrollbar{display:none}
   #gsF{flex:1;min-width:160px}#gs{width:100%}
 }
 @media (max-width:760px){
@@ -286,7 +322,6 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
   header .in{padding:10px 12px;gap:10px}
   .logo{font-size:15px}.logo small{display:none}
   #gsF{order:5;flex-basis:100%}
-  nav button{padding:9px 11px;font-size:14px}
   .wrap{padding:12px 10px}
   .card{padding:14px 12px;border-radius:12px}
   h1{font-size:19px}
@@ -368,13 +403,17 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 </head>
 <body>
 <header><div class="in">
+  <button class="navbtn hidden" id="navBtn" aria-label="Menü öffnen" title="Menü">☰</button>
   <div class="logo"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg>HAPPY CHARGING Support <small>Betreiber</small></div>
-  <nav id="nav" class="hidden"><button data-v="overview" class="on">Übersicht</button><button data-v="projects">Projekte</button><button data-v="incidents">Störungen</button><button data-v="defects">Mängel</button><button data-v="termine">Termine</button><button data-v="market">Auftragsbörse</button><button data-v="field">Maintenance & Actions</button><button data-v="customers">Kontakte</button><button data-v="tickets">QR-Code-Aufrufe</button><button data-v="sim">🧪 Simulation</button><button data-v="settings">Einstellungen</button></nav>
+  <div class="curT" id="curT"></div>
+
   <div class="sp"></div>
   <form id="gsF" class="hidden" autocomplete="off"><input id="gs" type="search" placeholder="🔎 Alles durchsuchen …" title="Volltextsuche: Vorgangsnummer, E-Mail, Telefon, Ladekarte, EVSE-ID, Chat, Beschreibung, Notizen …"></form>
-  <button class="btn ghost sm hidden" id="simTg" title="Daten aus Simulationen (Test-Agenten) ein- oder ausblenden">🧪 SIM</button>
+  <button class="btn ghost sm hidden" id="simTg" title="Daten aus Simulationen (Test-Agenten) ein- oder ausblenden">🧪 <span class="t">SIM</span></button>
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
 </div></header>
+<div id="navBg" class="navbg"></div>
+<nav id="nav" class="hidden" aria-label="Hauptmenü"><div class="nhead"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg><b>HAPPY CHARGING</b><button class="nclose" id="navX" aria-label="Menü schließen">✕</button></div><button class="on" data-v="overview"><span class="ni">📊</span>Übersicht</button><div class="ng">Betrieb</div><button data-v="projects"><span class="ni">📍</span>Projekte</button><button data-v="incidents"><span class="ni">⚡</span>Störungen</button><button data-v="defects"><span class="ni">🛠️</span>Mängel</button><button data-v="tickets"><span class="ni">📱</span>QR-Code-Aufrufe</button><div class="ng">Service & Aufträge</div><button data-v="termine"><span class="ni">📅</span>Termine</button><button data-v="field"><span class="ni">✅</span>Maintenance & Actions</button><button data-v="market"><span class="ni">🤝</span>Auftragsbörse</button><div class="ng">Kontakte</div><button data-v="customers"><span class="ni">👥</span>Kontakte</button><div class="ng">System</div><button data-v="sim"><span class="ni">🧪</span>Simulation</button><button data-v="settings"><span class="ni">⚙️</span>Einstellungen</button></nav>
 <div class="wrap" id="main"></div>
 <div class="toast" id="toast"></div>
 
@@ -405,10 +444,14 @@ async function api(action,payload={}){
   if(!r.ok) throw new Error(j.error||("Fehler "+r.status));
   return j;
 }
-function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#logout").classList.add("hidden"); $("#simTg").classList.add("hidden"); loginView(); }
+function logout(){ token=null; try{ sessionStorage.removeItem("hc_admin"); }catch(e){} $("#nav").classList.add("hidden"); $("#navBtn").classList.add("hidden"); document.body.classList.remove("authed"); $("#curT").textContent=""; $("#logout").classList.add("hidden"); $("#simTg").classList.add("hidden"); loginView(); }
 $("#logout").onclick=logout;
-document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>go(b.dataset.v));
-function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); { const on=document.querySelector("#nav button.on"); if(on&&on.scrollIntoView) on.scrollIntoView({block:"nearest",inline:"center"}); } scrollTo(0,0); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,termine:termineView,market:marketView,tickets:ticketsView,sim:simView,settings:settingsView})[v](); }
+document.querySelectorAll("#nav button[data-v]").forEach(b=>b.onclick=()=>go(b.dataset.v));
+function navOpen(o){ $("#nav").classList.toggle("open",o); $("#navBg").classList.toggle("on",o); document.body.style.overflow=o&&innerWidth<=1100?"hidden":""; }
+$("#navBtn").onclick=()=>navOpen(true); $("#navX").onclick=()=>navOpen(false); $("#navBg").onclick=()=>navOpen(false);
+addEventListener("keydown",e=>{ if(e.key==="Escape"&&$("#nav").classList.contains("open")) navOpen(false); });
+function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); navOpen(false);
+  { const on=document.querySelector("#nav button.on"); $("#curT").textContent=on?on.lastChild.textContent.trim():""; } scrollTo(0,0); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,termine:termineView,market:marketView,tickets:ticketsView,sim:simView,settings:settingsView})[v](); }
 
 /* ---------- Login ---------- */
 function loginView(){
@@ -419,9 +462,9 @@ function loginView(){
     try{ const r=await api("login",{password:$("#pw").value}); token=r.token; try{ sessionStorage.setItem("hc_admin",token); }catch(e){} start(); }
     catch(err){ toast(err.message,true); } };
 }
-function simTgPaint(){ const b=$("#simTg"); b.textContent=SIMSHOW?"🧪 SIM sichtbar":"🧪 SIM"; b.style.background=SIMSHOW?"var(--amber-soft)":""; b.style.borderColor=SIMSHOW?"#f0d9a0":""; }
+function simTgPaint(){ const b=$("#simTg"); b.innerHTML=SIMSHOW?'🧪 <span class="t">SIM sichtbar</span>':'🧪 <span class="t">SIM</span>'; b.style.background=SIMSHOW?"var(--amber-soft)":""; b.style.borderColor=SIMSHOW?"#f0d9a0":""; }
 $("#simTg").onclick=()=>{ SIMSHOW=!SIMSHOW; try{ sessionStorage.setItem("hc_simshow",SIMSHOW?"1":"0"); }catch(e){} simTgPaint(); toast(SIMSHOW?"Simulationsdaten werden eingeblendet":"Simulationsdaten ausgeblendet"); const on=document.querySelector("#nav button.on"); go(on?on.dataset.v:"overview"); };
-function start(){ $("#nav").classList.remove("hidden"); $("#gsF").classList.remove("hidden"); $("#logout").classList.remove("hidden"); $("#simTg").classList.remove("hidden"); simTgPaint(); go("overview"); }
+function start(){ $("#nav").classList.remove("hidden"); $("#navBtn").classList.remove("hidden"); document.body.classList.add("authed"); $("#gsF").classList.remove("hidden"); $("#logout").classList.remove("hidden"); $("#simTg").classList.remove("hidden"); simTgPaint(); go("overview"); }
 $("#gsF").onsubmit=e=>{ e.preventDefault(); SQ.q=$("#gs").value.trim(); if(SQ.q.length>=2) go("search"); };
 
 /* ---------- Projekte ---------- */
@@ -1967,8 +2010,8 @@ async function overviewView(){
   main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Übersicht</h1><p class="sub" style="margin:0">Verfügbarkeit, Störungen und QR-Code-Aufrufe auf einen Blick.</p></div><div class="sp"></div><button class="btn" id="newP">+ Neues Projekt</button></div>
   <div class="card" style="padding:12px 14px"><div class="row"><b style="font-size:13px">Projekt</b><select id="oSt" style="width:auto;min-width:220px"><option value="">Alle Projekte</option>${STATIONS.map(s=>`<option value="${esc(s.id)}" ${OF.station===s.id?"selected":""}>${esc(s.project_id||s.id)}${s.name?" · "+esc(s.name):""}</option>`).join("")}</select>
     <span style="width:12px"></span><b style="font-size:13px">Zeitraum</b>${datesHTML(OF,"of")}</div></div>
-  <div class="grid" id="ovTiles" style="margin-bottom:14px">${projTiles(null,OF.station)}</div>
-  <div id="ov"><div class="muted">Lade …</div></div>`;
+  <div class="ov-split"><aside class="ov-left"><div class="ov-lh">Projekte <span class="muted">${STATIONS.length}</span></div><div class="grid" id="ovTiles">${projTiles(null,OF.station)}</div></aside>
+  <div class="ov-right" id="ov"><div class="muted">Lade …</div></div></div>`;
   wireTiles($("#ovTiles")); $("#newP").onclick=()=>$("#newTile").click();
   $("#oSt").onchange=()=>{ OF.station=$("#oSt").value; loadOverview(); };
   wireDates(OF,"of",loadOverview);
