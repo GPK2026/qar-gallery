@@ -114,7 +114,7 @@ const $=s=>document.querySelector(s), view=$("#view");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmtD=d=>d?new Date(d).toLocaleDateString("de-DE",{timeZone:"Europe/Berlin"}):"–";
 const fmtDT=d=>d?new Date(d).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short",timeZone:"Europe/Berlin"}):"–";
-const eur=n=>Number(n).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const eur=n=>n==null||n===""?"–":Number(n).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
 const ago=d=>{ if(!d) return "–"; const t0=new Date(new Date().toDateString()).getTime(), t=Date.parse(d); if(t>=t0) return "heute"; if(t>=t0-864e5) return "gestern"; const n=Math.ceil((t0-t)/864e5); return n<=14?`vor ${n} Tagen`:"am "+fmtD(d); };
 const left=d=>{ if(!d) return ""; const ms=Date.parse(d)-Date.now(); if(ms<0) return "abgelaufen"; const h=Math.floor(ms/36e5); return h<48?`noch ${h} Std.`:`noch ${Math.floor(h/24)} Tage`; };
 let S={token:null,me:null,jobs:[],certs:{},cats:{},brands:{},software:{},crefo_max:249,tab:"jobs",f:{q:"",cat:"",src:"",loc:"",start:"",dl:"",pub:"",pt:"",elig:false,fav:false,demo:true,sort:"new"},fOpen:false};
@@ -144,10 +144,10 @@ function renderHead(){
   $("#tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>go(b.dataset.t));
 }
 function go(tab,arg){ S.tab=tab; renderHead(); scrollTo(0,0);
-  if(tab!=="job" && location.hash) history.replaceState(null,"",location.pathname);
+  if(tab!=="job" && location.hash && !(tab==="my"&&location.hash==="#meine")) history.replaceState(null,"",location.pathname);
   ({jobs:jobsView,job:()=>jobView(arg),login:loginView,register:registerView,my:myView,favs:favView,profile:profileView}[tab]||jobsView)(); }
 $("#home").onclick=()=>go("jobs");
-window.addEventListener("hashchange",()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(h) go("job",h); });
+window.addEventListener("hashchange",()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(h==="meine") go("my"); else if(h) go("job",h); });
 
 async function loadMe(){ if(!S.token) return null; try{ const r=await api("me"); S.me=r.me; S.certs=r.certs; S.cats=r.cats; S.brands=r.brands||{}; S.software=r.software||{}; return S.me; }catch(e){ return null; } }
 function eligBox(el,ctx){
@@ -391,7 +391,53 @@ async function myView(){
   if(!r.items.length){ $("#ml").innerHTML=`<div class="empty">Noch keine Angebote abgegeben.<br><br><button class="btn" onclick="go('jobs')">Offene Aufträge ansehen</button></div>`; return; }
   const grp=[["Zuschlag erhalten",x=>x.bid.status==="angenommen"],["Offene Angebote",x=>x.bid.status==="abgegeben"],["Abgeschlossen",x=>["abgelehnt","zurueckgezogen"].includes(x.bid.status)]];
   $("#ml").innerHTML=grp.map(([t,f])=>{ const l=r.items.filter(f); if(!l.length) return ""; return `<h2>${t} (${l.length})</h2><div class="card" style="padding:4px 12px;overflow-x:auto"><table class="tbl"><tr><th>Auftrag</th><th>Ort</th><th>Frist</th><th>Ihr Angebot</th></tr>
-    ${l.map(x=>`<tr style="cursor:pointer" onclick="location.hash='${esc(x.job?.job_no||"")}'"><td>${demoB(x.job)}<b>${esc(tt(x.job?.title)||"–")}</b><div class="small muted">${esc(x.job?.job_no||"")}${x.job?.status&&x.job.status!=="offen"?" · "+esc(x.job.status):""}</div></td><td>${esc(x.job?.location||"–")}</td><td>${fmtD(x.job?.bid_deadline)}</td><td>${bidLine(x.bid)}</td></tr>`).join("")}</table></div>`; }).join("");
+    ${l.map(x=>`<tr style="cursor:pointer" onclick="location.hash='${esc(x.job?.job_no||"")}'"><td>${demoB(x.job)}<b>${esc(tt(x.job?.title)||"–")}</b><div class="small muted">${esc(x.job?.job_no||"")}${x.job?.status&&x.job.status!=="offen"?" · "+esc(x.job.status):""}${(x.changes||[]).some(c=>c.kind==="aenderung"&&c.status==="offen")?` · <span class="chip amber">✏️ Änderung bestätigen</span>`:""}</div></td><td>${esc(x.job?.location||"–")}</td><td>${fmtD(x.job?.bid_deadline)}</td><td>${bidLine(x.bid)}</td></tr>`).join("")}</table></div>`; }).join("");
+  const run=r.items.filter(x=>x.bid.status==="angenommen"&&x.job);
+  if(run.length){ $("#ml").insertAdjacentHTML("afterbegin",`<h2>📑 Änderungen & Nachträge</h2><div class="small muted" style="margin:-4px 2px 10px">Änderungen des Auftraggebers gelten erst nach Ihrer Bestätigung. <b>Mehrkosten bitte immer vor der Ausführung anmelden</b> (§ 2 Abs. 6 VOB/B) – sonst kann der Vergütungsanspruch entfallen.</div>${run.map(x=>coBox(x,r.co_basis||{})).join("")}`); wireCo($("#ml"),run); }
+}
+const CO_ST={offen:["bitte bestätigen","amber"],bestaetigt:["bestätigt",""],abgelehnt:["abgelehnt","warn"],zurueckgezogen:["zurückgezogen","grey"],angemeldet:["wartet auf Freigabe","amber"],freigegeben:["freigegeben",""]};
+const CO_F={desired_from:"Termin ab",desired_to:"Termin bis",location_public:"Ort",description:"Leistungsbeschreibung"};
+const coV=(k,v)=>v==null||v===""?"–":/^desired_/.test(k)?fmtD(v):k==="description"?String(v).slice(0,200)+(String(v).length>200?" …":""):String(v);
+function coBox(x,basis){
+  const j=x.job, co=x.co||{}, cl=x.changes||[], done=j.status!=="vergeben";
+  return `<div class="card" data-co="${esc(j.id)}"><div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:200px">${demoB(j)}<b>${esc(tt(j.title))}</b><div class="small muted">${esc(j.job_no)} · Vertragsstand v${j.version||1}</div></div>
+      <div class="small" style="text-align:right">Zuschlag <b>${co.base_type==="stunde"?eur(co.base)+"/h":eur(co.base)}</b>${co.approved?`<br>+ Nachträge <b>${eur(co.approved)}</b>`:""}${co.contract!=null&&co.approved?`<br>= <b>${eur(co.contract)}</b>`:""}</div></div>
+    ${cl.length?cl.map(c=>{ const st=CO_ST[c.status]||[c.status,"grey"];
+      return `<div style="border-top:1px solid var(--line,#e6ebe8);padding:10px 0;margin-top:8px"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="flex:1">${c.kind==="nachtrag"?"📝 Ihr Nachtrag":"✏️ Änderung des Auftraggebers"} · ${esc(c.change_no)}</b><span class="chip ${st[1]}">${st[0]}</span></div>
+        <div class="small muted">${new Date(c.created_at).toLocaleString("de-DE")}${c.basis_label?" · "+esc(c.basis_label):""}</div>
+        ${Object.keys(c.changes||{}).length?`<table class="tbl" style="margin:6px 0">${Object.entries(c.changes).map(([k,v])=>`<tr><td class="muted">${esc(CO_F[k]||k)}</td><td style="text-decoration:line-through;color:#999">${esc(coV(k,v.from))}</td><td><b>${esc(coV(k,v.to))}</b></td></tr>`).join("")}</table>`:""}
+        ${c.kind==="nachtrag"?`<div><b>${esc(c.title||"")}</b></div>`:""}${c.description?`<div class="small" style="white-space:pre-wrap">${esc(c.description)}</div>`:""}
+        <div class="small">${c.amount!=null?`Betrag: <b>${c.amount>0?"+":""}${eur(c.amount)}</b>${c.approved_amount!=null&&+c.approved_amount!==+c.amount?` → freigegeben <b>${eur(c.approved_amount)}</b>`:""}`:""}${c.time_days?` · Zeit: <b>${c.time_days>0?"+":""}${c.time_days} Tag(e)</b>`:""}</div>
+        ${c.decision_note?`<div class="small muted">Hinweis: ${esc(c.decision_note)}</div>`:""}
+        ${c.kind==="aenderung"&&c.status==="offen"?`<div style="margin-top:8px"><textarea class="i" data-ackn="${esc(c.id)}" rows="2" placeholder="Anmerkung (bei Ablehnung Pflicht)"></textarea><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-ack="${esc(c.id)}" data-ok="1">✓ Änderung bestätigen</button><button class="btn sm ghost" data-ack="${esc(c.id)}" data-ok="0">Ablehnen</button></div><div class="small muted" style="margin-top:4px">Entstehen Mehrkosten? Bitte zusätzlich unten einen Nachtrag anmelden – vor der Ausführung.</div></div>`:""}
+        ${c.kind==="nachtrag"&&c.status==="angemeldet"?`<div class="small" style="margin-top:6px;color:#9a6700"><b>Bitte erst nach der Freigabe ausführen.</b> <a href="#" data-cow="${esc(c.id)}">Zurückziehen</a></div>`:""}</div>`; }).join(""):""}
+    ${done?"":`<div style="margin-top:10px"><button class="btn sm ghost" data-conew="${esc(j.id)}">📝 Mehrkosten / Nachtrag anmelden</button></div>
+    <div data-coform="${esc(j.id)}" style="display:none;margin-top:10px;border-top:1px solid var(--line,#e6ebe8);padding-top:10px">
+      <label class="f">Art</label><select class="i" data-cf="basis">${Object.entries(basis).map(([k,l])=>`<option value="${esc(k)}">${esc(l)}</option>`).join("")}</select>
+      <label class="f">Leistung (kurz) *</label><input class="i" data-cf="title" placeholder="z. B. Zusätzlicher Erdungsspieß, Kabeltrasse 12 m">
+      <label class="f">Begründung / Beschreibung *</label><textarea class="i" data-cf="description" rows="3" placeholder="Was ist vor Ort anders als ausgeschrieben, wer hat es angeordnet?"></textarea>
+      <div class="grid2"><div><label class="f">Mehrkosten netto (€)</label><input class="i" data-cf="amount" inputmode="decimal" placeholder="0,00"></div><div><label class="f">Mehrzeit (Tage)</label><input class="i" data-cf="time_days" type="number" min="0" placeholder="0"></div></div>
+      <label class="f">Foto / Angebot (JPG, PNG, PDF – optional)</label><input class="i" type="file" data-cf="file" accept="image/jpeg,image/png,application/pdf">
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px" class="small"><input type="checkbox" data-cf="before" checked style="width:auto;margin-top:2px"> Die Leistung ist <b>noch nicht</b> ausgeführt (Anzeige vor Ausführung)</label>
+      <div class="small muted" style="margin-top:6px">Bis ${eur(co.limit)} ohne Mehrzeit wird automatisch freigegeben. Darüber entscheidet der Auftraggeber – bitte erst nach der Freigabe ausführen.</div>
+      <div class="err" data-cferr></div><button class="btn sm" data-cosend="${esc(j.id)}" style="margin-top:8px">Nachtrag verbindlich anmelden</button></div>`}</div>`;
+}
+function wireCo(root,run){
+  root.querySelectorAll("[data-ack]").forEach(b=>b.onclick=async()=>{ const ok=b.dataset.ok==="1", note=root.querySelector(`[data-ackn="${b.dataset.ack}"]`).value;
+    if(!ok&&!note.trim()) return toast("Bitte kurz begründen, warum Sie ablehnen");
+    if(ok&&!confirm("Änderung verbindlich bestätigen? Sie wird damit Vertragsstand.")) return; b.disabled=true;
+    try{ await api("change_ack",{id:b.dataset.ack,accept:ok,note}); toast(ok?"✓ Änderung bestätigt":"Änderung abgelehnt – der Auftraggeber ist informiert"); myView(); }catch(e){ toast(e.message); b.disabled=false; } });
+  root.querySelectorAll("[data-cow]").forEach(a=>a.onclick=async e=>{ e.preventDefault(); if(!confirm("Nachtrag zurückziehen?")) return; try{ await api("co_withdraw",{id:a.dataset.cow}); toast("Zurückgezogen"); myView(); }catch(err){ toast(err.message); } });
+  root.querySelectorAll("[data-conew]").forEach(b=>b.onclick=()=>{ const f=root.querySelector(`[data-coform="${b.dataset.conew}"]`); f.style.display=f.style.display==="none"?"block":"none"; });
+  root.querySelectorAll("[data-cosend]").forEach(b=>b.onclick=async()=>{ const f=root.querySelector(`[data-coform="${b.dataset.cosend}"]`), g=k=>f.querySelector(`[data-cf="${k}"]`), err=f.querySelector("[data-cferr]");
+    const co={basis:g("basis").value,title:g("title").value,description:g("description").value,amount:g("amount").value,time_days:g("time_days").value?+g("time_days").value:undefined,before_execution:g("before").checked};
+    err.textContent="";
+    if(!co.title.trim()||!co.description.trim()) return err.textContent="Bitte Leistung und Begründung angeben.";
+    if(!co.amount&&!co.time_days) return err.textContent="Bitte Mehrkosten oder Mehrzeit angeben.";
+    const file=g("file").files[0]; if(file){ if(file.size>8*1024*1024) return err.textContent="Datei zu groß (max. 8 MB)."; co.attachment=await new Promise(res=>{ const rd=new FileReader(); rd.onload=()=>res(rd.result); rd.readAsDataURL(file); }); }
+    if(!co.before_execution&&!confirm("Sie geben an, dass die Leistung bereits ausgeführt ist. Ohne vorherige Anzeige kann der Anspruch auf zusätzliche Vergütung entfallen. Trotzdem anmelden?")) return;
+    b.disabled=true;
+    try{ const r=await api("co_submit",{job_id:b.dataset.cosend,co}); toast(r.change.status==="freigegeben"?"✓ Nachtrag angemeldet und automatisch freigegeben":"✓ Nachtrag angemeldet – bitte Freigabe abwarten"); myView(); }catch(e){ err.textContent=e.message; b.disabled=false; } });
 }
 
 /* ── Mein Betrieb ── */
@@ -424,7 +470,7 @@ async function profileView(){
 }
 
 /* ── Start ── */
-(async()=>{ renderHead(); const h=decodeURIComponent(location.hash.slice(1)); if(S.token) await loadMe(); h?go("job",h):go("jobs"); })();
+(async()=>{ renderHead(); const h=decodeURIComponent(location.hash.slice(1)); if(S.token) await loadMe(); h==="meine"?go("my"):h?go("job",h):go("jobs"); })();
 </script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="20261112h">
+<meta name="build" content="20261112j">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>HAPPY CHARGING Support · Betreiber</title>
@@ -34,6 +34,8 @@ header .in{max-width:1180px;margin:0 auto;padding:10px 20px;min-height:57px;box-
 #nav button.on{background:var(--brand-soft);color:#08603d}
 body.authed{padding-left:232px}
 /* Feststehende Kopfbereiche (Titel, Filter, Kennzahlen) auf Listen-Seiten */
+.nb{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}.nb-chips{display:flex;gap:6px;overflow-x:auto;padding:10px 10px 8px;border-bottom:1px solid var(--line);scrollbar-width:none}.nb-chips button{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer;white-space:nowrap;color:var(--ink)}.nb-chips button.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand);font-weight:600}
+.nb-row{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--line)}.nb-row:last-child{border-bottom:0}.nb-ic{flex:none;width:36px;height:36px;border-radius:50%;background:#f1f5f3;display:grid;place-items:center;font-size:18px}.nb-m{flex:1;min-width:0}.nb-n{font-weight:600;font-size:14px}.nb-s{color:var(--muted);font-size:12.5px}.nb-o{font-size:12.5px;margin-top:2px}.nb-r{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;text-decoration:none;color:var(--brand);font-weight:700}.nb-x{flex:none;border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;padding:6px}.nb-add{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8faf9;border-top:1px solid var(--line);flex-wrap:wrap}
 .kpi.on{outline:2px solid var(--brand);outline-offset:-2px}.kpi.good .v{color:var(--brand)}
 .pinned{position:sticky;z-index:4;box-shadow:0 0 0 7px var(--bg)}
 .pinned:not(.card){background:var(--bg)}
@@ -527,10 +529,11 @@ function renderEditor(){
     <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_sanitary" style="width:auto" ${(E.extras||{}).sanitary?"checked":""}> Sanitäre Einrichtungen vorhanden (Kachel „Sanitäre Einrichtungen“ in der App)</label></div>
     <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_active" style="width:auto" ${E.active!==false?"checked":""}> Aktiv (in der Kunden-App erreichbar)</label></div>
   </div></div>
-  <div class="card"><div class="row" style="margin-bottom:4px"><h2 style="margin:0;flex:1">Infos für Kunden</h2><button class="btn ghost sm" id="geoBtn" type="button" title="WC, Essen, Einkaufen, Parken usw. im Umkreis der Adresse aus OpenStreetMap">🌐 Infos aus der Umgebung laden</button></div><p class="sub" style="margin-top:0">Erscheinen in der Kunden-App. Leer lassen, wenn es nichts Besonderes gibt. Bei Auswahl der Adresse werden Umgebungs-Infos automatisch vorgeschlagen.</p>
+  <div class="card"><div class="row" style="margin-bottom:4px"><h2 style="margin:0;flex:1">Weitere Standortinfos</h2><button class="btn ghost sm" id="geoBtn" type="button" title="WC, Essen, Einkaufen, Parken usw. im Umkreis der Adresse aus OpenStreetMap">🌐 Umgebung laden</button></div><p class="sub" style="margin-top:0">Erscheinen in der Kunden-App. Bei Auswahl der Adresse wird die Umgebung automatisch geladen.</p>
     <label>🅿️ Parken</label><textarea id="f_parking" rows="5" placeholder="z. B. Parken während des Ladens kostenfrei, max. 2 Std. mit Parkscheibe. Schranke öffnet automatisch.">${esc((E.extras||{}).parking_info||"")}</textarea>
     <label style="margin-top:10px">💶 Tarife</label><textarea id="f_tariff" rows="5" placeholder="z. B. Ad-hoc 0,59 €/kWh · Blockiergebühr 0,10 €/Min. ab 4 Std. · mit Ladekarte gilt der Tarif Ihres Anbieters">${esc((E.extras||{}).tariff_info||"")}</textarea>
-    <label style="margin-top:10px">ℹ️ Kundeninfo</label><textarea id="f_cinfo" rows="5" placeholder="z. B. Toiletten im Autohaus (Mo–Fr 8–18 Uhr) · Ladepunkt 3 wird am 12.11. gewartet">${esc((E.extras||{}).customer_info||"")}</textarea>
+    <label style="margin-top:10px">📍 In der Nähe</label><div id="nbBox"></div>
+    <label style="margin-top:10px">ℹ️ Hinweise zum Standort</label><textarea id="f_cinfo" rows="3" placeholder="z. B. Toiletten im Autohaus (Mo–Fr 8–18 Uhr) · Ladepunkt 3 wird am 12.11. gewartet">${esc((E.extras||{}).customer_info||"")}</textarea>
   </div>
   <div class="card"><h2>Software &amp; Inventar</h2><p class="sub" style="margin-top:0">Grundlage für die automatischen Nachweis-Vorschläge der Auftragsbörse. Hersteller/Modell der Ladesäulen stehen bei den Chargern.</p>
     <div class="row" style="gap:10px"><div style="flex:1;min-width:140px"><label>Backend / CPMS</label><input id="f_cpms" value="${esc((E.extras||{}).cpms||"")}" placeholder="Suchen, z. B. Monta"></div>
@@ -565,6 +568,7 @@ function renderEditor(){
   wireChargers(); fillClAssign(isNew);
   if($("#f_address")) geoAddress($("#f_address"));
   if($("#geoBtn")) $("#geoBtn").onclick=()=>geoNearby(+$("#f_lat").value||0,+$("#f_lng").value||0);
+  if($("#nbBox")) nbMount($("#nbBox"));
   if($("#invBox")){ invMount($("#invBox")); invCombo($("#f_cpms"),["software"]); invCombo($("#f_payment"),["pay"]); invCombo($("#f_comms"),["net"]); }
   document.querySelectorAll(".c_model").forEach(i=>invCombo(i,["lis_dc","lis_ac","pu"]));
   $("#toLists").onclick=e=>{ e.preventDefault(); FF.tab="lists"; go("field"); };
@@ -672,7 +676,8 @@ function geoAddress(input){
     geoNearby(lat,lng,{auto:true}); };
 }
 const geoDist=(a,b,c,d)=>{ const R=6371e3,t=x=>x*Math.PI/180, dl=t(c-a), dg=t(d-b); const h=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dg/2)**2; return Math.round(2*R*Math.asin(Math.sqrt(h))); };
-const geoOH=s=>String(s||"").replace(/\bMo\b/g,"Mo").replace(/24\/7/,"rund um die Uhr").replace(/;\s*/g,", ").replace(/\bPH off\b/i,"").replace(/,\s*$/,"").slice(0,80);
+const geoOH=s=>String(s||"").replace(/24\/7/,"rund um die Uhr").replace(/\bPH off\b/i,"").replace(/\bPH\b/g,"Feiertag").replace(/\boff\b/g,"geschlossen").replace(/\b(Mo|Tu|We|Th|Fr|Sa|Su)\b/g,d=>({Mo:"Mo",Tu:"Di",We:"Mi",Th:"Do",Fr:"Fr",Sa:"Sa",Su:"So"})[d]).replace(/(\d|[A-Za-z]{2})-(\d|[A-Z][a-z])/g,"$1–$2").replace(/;\s*/g,", ").replace(/,\s*$/,"").slice(0,80);
+const NB_CUI={italian:"italienisch",pizza:"Pizza",german:"deutsch",regional:"regional",asian:"asiatisch",chinese:"chinesisch",vietnamese:"vietnamesisch",thai:"thailändisch",japanese:"japanisch",sushi:"Sushi",indian:"indisch",turkish:"türkisch",kebab:"Döner",greek:"griechisch",burger:"Burger",sandwich:"Sandwiches",coffee_shop:"Kaffee",ice_cream:"Eis",chicken:"Hähnchen",mexican:"mexikanisch",steak_house:"Steakhaus",bakery:"Backwaren",fish:"Fisch",vegetarian:"vegetarisch",vegan:"vegan"};
 async function geoNearby(lat,lng,opt={}){
   if(!lat||!lng){ const a=$("#f_address")?.value.trim(); if(!a) return toast("Bitte zuerst eine Adresse eingeben",true);
     try{ const j=await (await fetch(`${GEO_PHOTON}?q=${encodeURIComponent(a)}&lang=de&limit=1`)).json(); const f=(j.features||[])[0]; if(!f) return toast("Adresse nicht gefunden",true);
@@ -681,15 +686,10 @@ async function geoNearby(lat,lng,opt={}){
   const q=`[out:json][timeout:25];(nwr(around:600,${lat},${lng})[amenity~"^(toilets|cafe|restaurant|fast_food|fuel|parking|charging_station|atm|pharmacy)$"];nwr(around:600,${lat},${lng})[shop~"^(supermarket|convenience|bakery|kiosk|mall|department_store|doityourself)$"];nwr(around:600,${lat},${lng})[tourism~"^(hotel|attraction|museum)$"];nwr(around:600,${lat},${lng})[leisure~"^(playground|park)$"][name];);out center tags 120;`;
   let els=[]; try{ const r=await fetch(GEO_OVERPASS,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"}}); els=(await r.json()).elements||[]; }
   catch(e){ if(btn){ btn.disabled=false; btn.textContent="🌐 Infos aus der Umgebung laden"; } return toast("Umgebungsdaten gerade nicht erreichbar – bitte später erneut",true); }
-  const P=els.map(e=>{ const la=e.lat??e.center?.lat, lo=e.lon??e.center?.lon, t=e.tags||{}; return {t,d:la?geoDist(lat,lng,la,lo):9e9,name:t.name||t.brand||t.operator||""}; }).filter(x=>x.d<=600).sort((a,b)=>a.d-b.d);
+  const P=els.map(e=>{ const la=e.lat??e.center?.lat, lo=e.lon??e.center?.lon, t=e.tags||{}; return {t,la,lo,d:la?geoDist(lat,lng,la,lo):9e9,name:t.name||t.brand||t.operator||""}; }).filter(x=>x.d<=600).sort((a,b)=>a.d-b.d);
   const pick=(f,n=2)=>P.filter(f).slice(0,n);
-  const line=(x,extra)=>`${x.name||"ohne Namen"} (${x.d} m${extra?", "+extra:""})`;
-  const wc=pick(x=>x.t.amenity==="toilets",2), fuel=pick(x=>x.t.amenity==="fuel",1), food=pick(x=>["cafe","restaurant","fast_food"].includes(x.t.amenity)||x.t.shop==="bakery",3),
-    shop=pick(x=>["supermarket","convenience","kiosk","mall","department_store","doityourself"].includes(x.t.shop),2), atm=pick(x=>x.t.amenity==="atm",1), ph=pick(x=>x.t.amenity==="pharmacy",1),
-    hotel=pick(x=>x.t.tourism==="hotel",1), park=pick(x=>x.t.leisure,1), play=pick(x=>x.t.leisure==="playground",1);
-  const L=[]; const add=(ic,lab,arr,oh=true)=>{ if(arr.length) L.push(`${ic} ${lab}: ${arr.map(x=>line(x,oh&&x.t.opening_hours?geoOH(x.t.opening_hours):"")).join(" · ")}`); };
-  add("🚻","WC",wc,true); add("☕","Essen & Trinken",food); add("🛒","Einkaufen",shop); add("⛽","Tankstelle / Shop",fuel); add("💶","Geldautomat",atm,false); add("💊","Apotheke",ph); add("🏨","Hotel",hotel,false); add("🌳","Grünfläche / Spielplatz",[...park,...play].slice(0,2),false);
-  const cinfo=L.length?"In der Nähe (Fußweg):\n"+L.join("\n"):"";
+  const nb=nbFromOsm(P);
+  const wc=pick(x=>x.t.amenity==="toilets",2), fuel=pick(x=>x.t.amenity==="fuel",1);
   const pk=pick(x=>x.t.amenity==="parking",1)[0]; let parking="";
   if(pk){ const t=pk.t, f=[]; f.push(`Parkplatz${pk.name?" „"+pk.name+"“":""} (${pk.d} m)`);
     if(t.fee) f.push(t.fee==="no"?"kostenfrei":t.fee==="yes"?"gebührenpflichtig":"Gebühr: "+t.fee);
@@ -701,19 +701,60 @@ async function geoNearby(lat,lng,opt={}){
     parking=f.join(" · "); }
   const sanitary=wc.some(x=>x.d<=300)||fuel.some(x=>x.d<=150);
   if(btn){ btn.disabled=false; btn.textContent="🌐 Infos aus der Umgebung laden"; }
-  if(!cinfo&&!parking){ if(!opt.auto) toast("Keine passenden Einrichtungen im Umkreis von 600 m gefunden"); return; }
-  const f={park:$("#f_parking"),info:$("#f_cinfo")}, empty=!f.park.value.trim()&&!f.info.value.trim();
-  const apply=(p,c)=>{ if(p!=null) f.park.value=p; if(c!=null) f.info.value=c; if(sanitary&&$("#f_sanitary")&&!$("#f_sanitary").checked) $("#f_sanitary").checked=true;
-    toast("🌐 Umgebungs-Infos eingetragen – bitte kurz prüfen"); };
-  if(empty&&opt.auto) return apply(parking||null,cinfo||null);
-  const md=mkModal(`<div class="row"><h2 style="margin:0;flex:1">🌐 Infos aus der Umgebung</h2><button class="btn ghost sm" data-close>✕</button></div>
-    <p class="sub">Gefunden im Umkreis von 600 m (Daten © OpenStreetMap-Mitwirkende). Vor dem Übernehmen gerne anpassen.</p>
-    <label>🅿️ Parken</label><textarea id="gP" rows="3">${esc(parking)}</textarea>
-    <label style="margin-top:10px">ℹ️ Kundeninfo</label><textarea id="gC" rows="8">${esc(cinfo)}</textarea>
-    ${sanitary?`<div class="hint">🚻 WC in der Nähe gefunden – „Sanitäre Einrichtungen“ wird angehakt.</div>`:""}
-    <div class="row" style="margin-top:12px;gap:8px"><button class="btn" id="gOk">Übernehmen (ersetzen)</button><button class="btn ghost" id="gAdd">Anhängen</button><button class="btn ghost" data-close>Abbrechen</button></div>`);
-  md.querySelector("#gOk").onclick=()=>{ apply(md.querySelector("#gP").value,md.querySelector("#gC").value); md.remove(); };
-  md.querySelector("#gAdd").onclick=()=>{ const a=(o,n)=>[o.trim(),n.trim()].filter(Boolean).join("\n"); apply(a(f.park.value,md.querySelector("#gP").value),a(f.info.value,md.querySelector("#gC").value)); md.remove(); };
+  if(!nb.length&&!parking){ if(!opt.auto) toast("Keine passenden Einrichtungen im Umkreis von 600 m gefunden"); return; }
+  const fp=$("#f_parking"), had=(E.extras?.nearby||[]).length, user=(E.extras?.nearby||[]).filter(x=>x.own);
+  const apply=(mode)=>{ E.extras=E.extras||{};
+    if(mode==="merge"){ const key=x=>(x.cat+"|"+x.name).toLowerCase(), cur=E.extras.nearby||[], seen=new Set(cur.map(key)); E.extras.nearby=[...cur,...nb.filter(x=>!seen.has(key(x)))]; }
+    else E.extras.nearby=[...user,...nb];
+    E.extras.nearby_at=new Date().toISOString();
+    if(parking&&fp&&!fp.value.trim()) fp.value=parking;
+    if(sanitary&&$("#f_sanitary")&&!$("#f_sanitary").checked) $("#f_sanitary").checked=true;
+    nbMount($("#nbBox")); toast(`📍 ${nb.length} Orte in der Nähe übernommen – bitte kurz prüfen`); };
+  if(!had||opt.auto&&!had) return apply("replace");
+  if(opt.auto) return;
+  const md=mkModal(`<div class="row"><h2 style="margin:0;flex:1">🌐 Umgebung neu geladen</h2><button class="btn ghost sm" data-close>✕</button></div>
+    <p class="sub">${nb.length} Orte im Umkreis von 600 m gefunden (Daten © OpenStreetMap-Mitwirkende). Es sind bereits ${had} Einträge hinterlegt.</p>
+    <div style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:12px">${nbList(nb,false)}</div>
+    <div class="row" style="margin-top:12px;gap:8px"><button class="btn" id="gOk">Ersetzen</button><button class="btn ghost" id="gAdd">Nur neue ergänzen</button><button class="btn ghost" data-close>Abbrechen</button></div>`);
+  md.querySelector("#gOk").onclick=()=>{ apply("replace"); md.remove(); };
+  md.querySelector("#gAdd").onclick=()=>{ apply("merge"); md.remove(); };
+}
+/* ── „In der Nähe“: strukturierte Orte wie in Google Maps ── */
+const NB_CAT={wc:["🚻","Toiletten"],food:["🍽️","Essen & Trinken"],cafe:["☕","Café & Bäckerei"],shop:["🛒","Einkaufen"],fuel:["⛽","Tankstelle"],atm:["💶","Geldautomat"],pharmacy:["💊","Apotheke"],hotel:["🏨","Hotel"],leisure:["🌳","Park & Spielplatz"],sight:["🏛️","Sehenswürdigkeit"],other:["📍","Sonstiges"]};
+const NB_SUB={restaurant:"Restaurant",fast_food:"Schnellimbiss",cafe:"Café",bakery:"Bäckerei",supermarket:"Supermarkt",convenience:"Kiosk / Laden",kiosk:"Kiosk",mall:"Einkaufszentrum",department_store:"Kaufhaus",doityourself:"Baumarkt",toilets:"Öffentliche Toilette",fuel:"Tankstelle",atm:"Geldautomat",pharmacy:"Apotheke",hotel:"Hotel",playground:"Spielplatz",park:"Park",museum:"Museum",attraction:"Sehenswürdigkeit"};
+const nbWalk=d=>Math.max(1,Math.round(d/80));
+function nbFromOsm(P){
+  const catOf=t=>t.amenity==="toilets"?"wc":["restaurant","fast_food"].includes(t.amenity)?"food":t.amenity==="cafe"||t.shop==="bakery"?"cafe":t.shop?"shop":t.amenity==="fuel"?"fuel":t.amenity==="atm"?"atm":t.amenity==="pharmacy"?"pharmacy":t.tourism==="hotel"?"hotel":t.leisure?"leisure":t.tourism?"sight":null;
+  const lim={wc:2,food:4,cafe:3,shop:3,fuel:1,atm:1,pharmacy:1,hotel:2,leisure:2,sight:2}, n={}, out=[];
+  for(const x of P){ const c=catOf(x.t); if(!c||(n[c]||0)>=lim[c]) continue; if(!x.name&&!["wc","atm","leisure"].includes(c)) continue;
+    n[c]=(n[c]||0)+1; const t=x.t, sub=NB_SUB[t.amenity]||NB_SUB[t.shop]||NB_SUB[t.tourism]||NB_SUB[t.leisure]||"";
+    out.push({cat:c,name:(x.name||sub||NB_CAT[c][1]).slice(0,80),sub:(t.cuisine?sub+" · "+String(t.cuisine).split(";").slice(0,2).map(c=>NB_CUI[c.trim()]||c.trim().replace(/_/g," ")).join(", "):(x.name?sub:"")).slice(0,80),d:x.d,oh:t.opening_hours?geoOH(t.opening_hours):"",
+      lat:x.la!=null?+(+x.la).toFixed(6):null,lon:x.lo!=null?+(+x.lo).toFixed(6):null,wc:t.toilets==="yes"||t.amenity==="toilets"?1:0}); }
+  return out.sort((a,b)=>a.d-b.d);
+}
+function nbList(list,edit,filter){
+  const L=(list||[]).map((x,i)=>({...x,i})).filter(x=>!filter||x.cat===filter);
+  if(!L.length) return `<div class="muted" style="padding:12px;font-size:13.5px">${edit?"Noch keine Orte – „🌐 Umgebung laden“ oder eigenen Ort hinzufügen.":"Keine Orte."}</div>`;
+  return L.map(x=>{ const c=NB_CAT[x.cat]||NB_CAT.other, url=x.lat!=null?`https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=${x.lat},${x.lon}`:"";
+    return `<div class="nb-row"><div class="nb-ic">${c[0]}</div><div class="nb-m"><div class="nb-n">${esc(x.name)}</div><div class="nb-s">${esc(x.sub||c[1])}${x.d!=null?` · ${x.d<1000?x.d+" m":(x.d/1000).toFixed(1).replace(".",",")+" km"} · 🚶 ${nbWalk(x.d)} Min.`:""}</div>${x.oh?`<div class="nb-o">🕒 ${esc(x.oh)}</div>`:""}${x.note?`<div class="nb-o">${esc(x.note)}</div>`:""}</div>
+      ${url?`<a class="nb-r" href="${url}" target="_blank" rel="noopener" title="Route in Google Maps">↗</a>`:""}${edit?`<button class="nb-x" data-nbx="${x.i}" type="button" title="Entfernen">✕</button>`:""}</div>`; }).join("");
+}
+function nbMount(box){ if(!box) return; E.extras=E.extras||{}; const list=E.extras.nearby=E.extras.nearby||[]; box._f=box._f||"";
+  const cats=Object.keys(NB_CAT).filter(k=>list.some(x=>x.cat===k));
+  box.innerHTML=`<div class="nb">${list.length?`<div class="nb-chips"><button type="button" data-nbf="" class="${!box._f?"on":""}">Alle ${list.length}</button>${cats.map(k=>`<button type="button" data-nbf="${k}" class="${box._f===k?"on":""}">${NB_CAT[k][0]} ${NB_CAT[k][1]}</button>`).join("")}</div>`:""}
+    <div class="nb-list">${nbList(list,true,box._f)}</div>
+    <div class="nb-add"><button type="button" class="btn ghost sm" id="nbAdd">+ Ort hinzufügen</button>${E.extras.nearby_at?`<span class="muted" style="font-size:12px">Stand ${fmtDT(E.extras.nearby_at)} · © OpenStreetMap</span>`:""}</div></div>`;
+  box.querySelectorAll("[data-nbf]").forEach(b=>b.onclick=()=>{ box._f=b.dataset.nbf; nbMount(box); });
+  box.querySelectorAll("[data-nbx]").forEach(b=>b.onclick=()=>{ list.splice(+b.dataset.nbx,1); if(box._f&&!list.some(x=>x.cat===box._f)) box._f=""; nbMount(box); });
+  box.querySelector("#nbAdd").onclick=()=>{ const d=mkModal(`<div class="row"><h2 style="margin:0;flex:1">📍 Ort hinzufügen</h2><button class="btn ghost sm" data-close>✕</button></div>
+      <label>Kategorie<select id="naC">${Object.entries(NB_CAT).map(([k,v])=>`<option value="${k}">${v[0]} ${v[1]}</option>`).join("")}</select></label>
+      <label>Name *<input id="naN" placeholder="z. B. Autohaus Müller – Kunden-WC"></label>
+      <div class="row" style="gap:10px"><label style="flex:1">Entfernung (m)<input id="naD" type="number" min="0" placeholder="z. B. 120"></label><label style="flex:2">Öffnungszeiten<input id="naO" placeholder="z. B. Mo–Fr 8–18 Uhr"></label></div>
+      <label>Hinweis<input id="naH" placeholder="z. B. Schlüssel an der Kasse"></label>
+      <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="naS">Hinzufügen</button></div>`);
+    d.querySelector("#naS").onclick=()=>{ const g=s=>d.querySelector(s).value.trim(), name=g("#naN"); if(!name) return toast("Bitte einen Namen angeben",true);
+      const dist=g("#naD")===""?null:Math.max(0,Math.round(+g("#naD")));
+      list.push({cat:g("#naC"),name:name.slice(0,80),sub:"",d:dist,oh:g("#naO").slice(0,80),note:g("#naH").slice(0,120),lat:null,lon:null,own:1}); list.sort((a,b)=>(a.d??9e9)-(b.d??9e9)); d.remove(); nbMount(box); }; };
 }
 
 /* ── Inventar ⇄ Charger/Ladepunkte synchronisieren ── */
@@ -2328,22 +2369,25 @@ async function marketView(){
 }
 async function mkJobs(){
   $("#mkFil").innerHTML=`<div class="seg" id="mkSt">${[["","Alle"],["entwurf","Entwürfe"],["offen","Ausgeschrieben"],["vergeben","Vergeben"],["erledigt","Erledigt"],["abgebrochen","Abgebrochen"]].map(([k,l])=>`<button data-s="${k}" class="${MKT.status===k?"on":""}">${l}</button>`).join("")}</div>`;
-  $("#mkSt").querySelectorAll("button").forEach(b=>b.onclick=()=>{ MKT.status=b.dataset.s; MKT.bidsOnly=false; mkJobs(); });
+  $("#mkSt").querySelectorAll("button").forEach(b=>b.onclick=()=>{ MKT.status=b.dataset.s; MKT.bidsOnly=false; MKT.coOnly=false; mkJobs(); });
   let r, pr; try{ [r,pr]=await Promise.all([mapi("m_jobs",{status:MKT.status||undefined}),mapi("m_providers",{status:"neu"})]); }catch(e){ return $("#mkBody").innerHTML=`<div class="card muted">${esc(e.message)}</div>`; }
-  const all0=r.jobs, open=all0.filter(j=>j.status==="offen"), all=MKT.bidsOnly?all0.filter(j=>j.status==="offen"&&j.bids>0):all0;
+  const all0=r.jobs, open=all0.filter(j=>j.status==="offen"), all=MKT.bidsOnly?all0.filter(j=>j.status==="offen"&&j.bids>0):MKT.coOnly?all0.filter(j=>j.nt_open||j.ch_open):all0;
   const bidN=open.reduce((s,j)=>s+j.bids,0), bidJ=open.filter(j=>j.bids>0).length;
   $("#mkBody").innerHTML=`<div class="kpis"><div class="kpi link ${MKT.bidsOnly?"on":""} ${bidN?"good":""}" id="mkKB" title="Offene Aufträge mit Angeboten anzeigen"><div class="k">Angebote</div><div class="v">${bidN}</div><div class="s">${bidN?`zu ${bidJ} Auftr${bidJ===1?"ag":"ägen"} · zur Entscheidung`:"noch keine eingegangen"}</div></div>
     <div class="kpi"><div class="k">Ausgeschrieben</div><div class="v">${open.length}</div><div class="s">${open.reduce((s,j)=>s+j.bids,0)} Angebote</div></div>
     <div class="kpi ${open.filter(j=>j.bid_deadline&&Date.parse(j.bid_deadline)<Date.now()).length?"bad":""}"><div class="k">Frist abgelaufen</div><div class="v">${open.filter(j=>j.bid_deadline&&Date.parse(j.bid_deadline)<Date.now()).length}</div><div class="s">bitte vergeben</div></div>
     <div class="kpi"><div class="k">Vergeben</div><div class="v">${all0.filter(j=>j.status==="vergeben").length}</div><div class="s">in Ausführung</div></div>
+    <div class="kpi link ${MKT.coOnly?"on":""} ${all0.some(j=>j.nt_open)?"bad":""}" id="mkKN" title="Vergebene Aufträge mit offenen Nachträgen oder Änderungen"><div class="k">Nachträge</div><div class="v">${all0.reduce((s,j)=>s+(j.nt_open||0),0)}</div><div class="s">zur Freigabe${all0.some(j=>j.ch_open)?` · ${all0.reduce((s,j)=>s+(j.ch_open||0),0)} Änderung(en) unbestätigt`:""}</div></div>
     <div class="kpi link ${pr.providers.length?"bad":""}" id="mkKP"><div class="k">Betriebe zu prüfen</div><div class="v">${pr.providers.length}</div><div class="s">neu registriert</div></div></div>
     <div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>Auftrag</th><th>Quelle</th><th>Ort</th><th>Frist</th><th>Angebote</th><th>Bestes Pauschal</th><th>Status</th></tr></thead><tbody>
     ${all.length?all.map(j=>{ const s=MK_ST[j.status]||[j.status,"off"], late=j.status==="offen"&&j.bid_deadline&&Date.parse(j.bid_deadline)<Date.now();
       return `<tr class="click" data-id="${esc(j.id)}"><td>${/^AU-DEMO-/.test(j.job_no||"")||/^\[DEMO\]/.test(j.title||"")?'<span class="badge" style="background:#7c3aed;color:#fff">DEMO</span> ':""}<b>${esc(j.title)}</b><br><small class="muted"><code>${esc(j.job_no)}</code>${j.station_id?" · "+esc(stLabel(j.station_id)):""}</small></td><td>${esc(r.src[j.source_type]||j.source_type)}${j.source_ref?`<br><small class="muted">${esc(j.source_ref.length>20?j.source_ref.slice(0,8)+"…":j.source_ref)}</small>`:""}</td>
-        <td>${esc(j.location_public||"–")}</td><td data-sort="${j.bid_deadline||""}">${j.bid_deadline?fmtDT(j.bid_deadline):"–"}${late?' <span class="badge warn">abgelaufen</span>':""}${j.published_at?`<br><small class="muted">eingestellt ${fmtDT(j.published_at)}</small>`:""}</td><td>${j.bids}</td><td>${mkEur(j.best)}</td><td><span class="badge ${s[1]}">${s[0]}</span>${j.status==="offen"?` <a href="../auftraege/#${esc(j.job_no)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Öffentlich ansehen">↗</a>`:""}</td></tr>`; }).join("")
+        <td>${esc(j.location_public||"–")}</td><td data-sort="${j.bid_deadline||""}">${j.bid_deadline?fmtDT(j.bid_deadline):"–"}${late?' <span class="badge warn">abgelaufen</span>':""}${j.published_at?`<br><small class="muted">eingestellt ${fmtDT(j.published_at)}</small>`:""}</td><td>${j.bids}</td><td>${mkEur(j.best)}</td><td><span class="badge ${s[1]}">${s[0]}</span>${j.nt_open?` <span class="badge warn" title="Nachtrag zur Freigabe">📝 ${j.nt_open}</span>`:""}${j.ch_open?` <span class="badge" style="background:#fff4e0;color:#9a6700" title="Änderung wartet auf Bestätigung des Betriebs">✏️ unbestätigt</span>`:""}${j.version>1?` <small class="muted">v${j.version}</small>`:""}${j.status==="offen"?` <a href="../auftraege/#${esc(j.job_no)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Öffentlich ansehen">↗</a>`:""}</td></tr>`; }).join("")
       :`<tr><td colspan="7" class="muted">Noch keine Aufträge. Über „+ Freier Auftrag“ oder bei einer Störung, einem Mangel oder einer Checkliste mit „Zur Vergabe stellen“ anlegen.</td></tr>`}</tbody></table></div>`;
   $("#mkKP").onclick=()=>{ MKT.tab="prov"; MKT.pstatus="neu"; marketView(); };
-  $("#mkKB").onclick=()=>{ MKT.bidsOnly=!MKT.bidsOnly; if(MKT.bidsOnly) MKT.status=""; mkJobs(); };
+  $("#mkKB").onclick=()=>{ MKT.bidsOnly=!MKT.bidsOnly; MKT.coOnly=false; if(MKT.bidsOnly) MKT.status=""; mkJobs(); };
+  $("#mkKN").onclick=()=>{ MKT.coOnly=!MKT.coOnly; MKT.bidsOnly=false; if(MKT.coOnly) MKT.status=""; mkJobs(); };
+  if(MKT.coOnly) $("#mkBody").insertAdjacentHTML("afterbegin",`<div class="hint" style="margin-bottom:8px">Filter: offene Nachträge / unbestätigte Änderungen · <a href="#" id="mkKNx">aufheben</a></div>`), $("#mkKNx").onclick=e=>{ e.preventDefault(); MKT.coOnly=false; mkJobs(); };
   if(MKT.bidsOnly) $("#mkBody").insertAdjacentHTML("afterbegin",`<div class="hint" style="margin-bottom:8px">Filter: nur ausgeschriebene Aufträge mit Angeboten · <a href="#" id="mkKBx">aufheben</a></div>`), $("#mkKBx").onclick=e=>{ e.preventDefault(); MKT.bidsOnly=false; mkJobs(); };
   $("#mkBody").querySelectorAll("tr.click").forEach(t=>t.onclick=()=>mkJob(t.dataset.id));
 }
@@ -2474,6 +2518,7 @@ async function mkJob(id){
         <td>${open&&b.status==="abgegeben"?`<button class="btn sm" data-aw="${esc(b.id)}" data-el="${p.eligible.ok?1:0}">Zuschlag</button>`:`<span class="badge ${bs[1]}">${bs[0]}</span>`}</td></tr>`; }).join("")
       :`<tr><td colspan="8" class="muted">${open?"Noch keine Angebote.":"Keine Angebote."}</td></tr>`}</tbody></table></div>
     <div id="mkAwOut"></div>
+    ${["vergeben","erledigt"].includes(j.status)?mkCoCard(r):""}
     ${j.status==="vergeben"?`<div class="card" style="margin-top:14px;background:#f8faf9"><h3 style="margin-top:0">Abschluss & Bewertung</h3><div class="row" style="gap:16px">${[["quality","Qualität"],["punctuality","Termintreue"],["communication","Kommunikation"]].map(([k,l])=>`<label style="margin:0">${l}<select data-r="${k}" style="width:auto;margin-top:4px">${[5,4,3,2,1].map(n=>`<option value="${n}">${"★".repeat(n)}</option>`).join("")}</select></label>`).join("")}</div>
       <textarea id="mkRc" rows="2" placeholder="Kommentar (intern)" style="margin-top:8px"></textarea><button class="btn sm" id="mkDone" style="margin-top:8px">Als erledigt markieren</button></div>`:""}
     ${r.rating?`<div class="hint" style="margin-top:10px">Bewertung: Qualität ${r.rating.quality}★ · Termintreue ${r.rating.punctuality}★ · Kommunikation ${r.rating.communication}★${r.rating.comment?" · "+esc(r.rating.comment):""}</div>`:""}`);
@@ -2499,7 +2544,53 @@ async function mkJob(id){
       q("#mkAwC").onclick=()=>{ md.remove(); CF.cluster="service"; CF.q=bid.provider.company; go("customers"); };
       toast("Zuschlag erteilt ✓"); }catch(e){ b.disabled=false; toast(e.message,true); } });
   if(q("#mkDone")) q("#mkDone").onclick=async()=>{ const rating={comment:q("#mkRc").value}; md.querySelectorAll("[data-r]").forEach(s=>rating[s.dataset.r]=+s.value);
-    try{ await mapi("m_done",{id:j.id,rating}); toast("Erledigt ✓"); reload(); }catch(e){ toast(e.message,true); } };
+    try{ await mapi("m_done",{id:j.id,rating}); toast("Erledigt ✓"); reload(); }catch(e){ if(/offene Änderung/.test(e.message)&&confirm(e.message+"\n\nTrotzdem abschließen?")){ try{ await mapi("m_done",{id:j.id,rating,force:true}); toast("Erledigt ✓"); reload(); }catch(e2){ toast(e2.message,true); } } else toast(e.message,true); } };
+  const again=()=>{ md.remove(); mkJob(j.id); if($("#mkBody")&&MKT.tab==="jobs") mkJobs(); };
+  if(q("#mkCh")) q("#mkCh").onclick=()=>mkChangeDlg(j,r,again);
+  md.querySelectorAll("[data-chw]").forEach(b=>b.onclick=async()=>{ if(!confirm("Änderung zurückziehen? Der Betrieb wird informiert, es gilt die bisherige Fassung.")) return; try{ await mapi("m_change_withdraw",{id:b.dataset.chw}); toast("Zurückgezogen"); again(); }catch(e){ toast(e.message,true); } });
+  md.querySelectorAll("[data-cod]").forEach(b=>b.onclick=async()=>{ const c=r.changes.find(x=>x.id===b.dataset.cod), ok=b.dataset.ok==="1";
+    let amount, note;
+    if(ok){ const a=prompt(`Nachtrag ${c.change_no} freigeben.\nBetrag (angemeldet ${mkEur(c.amount)}) – bei Bedarf anpassen:`, c.amount!=null?String(c.amount).replace(".",","):""); if(a===null) return; amount=a; note=prompt("Hinweis an den Betrieb (optional):","")||""; }
+    else { note=prompt(`Nachtrag ${c.change_no} ablehnen – Begründung (geht an den Betrieb):`,""); if(!note) return; }
+    try{ await mapi("m_co_decide",{id:c.id,approve:ok,amount,note}); toast(ok?"Freigegeben ✓ · Betrieb informiert":"Abgelehnt · Betrieb informiert"); again(); }catch(e){ toast(e.message,true); } });
+}
+
+const CH_ST={offen:["wartet auf Betrieb","warn"],bestaetigt:["bestätigt",""],abgelehnt:["abgelehnt","warn"],zurueckgezogen:["zurückgezogen","off"],angemeldet:["zur Freigabe","warn"],freigegeben:["freigegeben",""]};
+function mkCoCard(r){
+  const co=r.co||{}, cl=r.changes||[], j=r.job, fd=r.ch_fields||{}, sv=(k,v)=>v==null||v===""?"–":/^desired_/.test(k)?d2(v):k==="description"?String(v).slice(0,160)+(String(v).length>160?" …":""):String(v);
+  return `<div class="card" style="margin-top:14px"><div class="row"><h3 style="margin:0;flex:1">📑 Änderungen & Nachträge <small class="muted">Vertragsstand v${j.version||1}</small></h3>${j.status==="vergeben"?`<button class="btn ghost sm" id="mkCh">✏️ Änderung an Betrieb senden</button>`:""}</div>
+    <div class="kpis" style="margin:10px 0"><div class="kpi"><div class="k">Zuschlag</div><div class="v" style="font-size:20px">${co.base_type==="stunde"?mkEur(co.base)+"/h":mkEur(co.base)}</div></div>
+      <div class="kpi"><div class="k">Nachträge freigegeben</div><div class="v" style="font-size:20px">${mkEur(co.approved)}</div><div class="s">${co.approved_n||0} Stück${co.days?` · +${co.days} Tag(e)`:""}</div></div>
+      <div class="kpi ${co.pending?"bad":""}"><div class="k">Zur Freigabe</div><div class="v" style="font-size:20px">${co.pending||0}</div></div>
+      ${co.contract!=null?`<div class="kpi good"><div class="k">Auftragssumme aktuell</div><div class="v" style="font-size:20px">${mkEur(co.contract)}</div></div>`:""}</div>
+    <div class="hint" style="margin-bottom:8px">Änderungen gelten erst, wenn der Betrieb sie bestätigt hat. Mehrkosten muss der Betrieb <b>vor der Ausführung</b> als Nachtrag anmelden (§ 2 Abs. 6 VOB/B). Bis ${mkEur(co.limit)} (Schwelle: ${mkEur(co.limit_eur)} bzw. ${co.limit_pct} % des Pauschalpreises) wird automatisch freigegeben, darüber, bei Mehrzeit oder nachträglicher Anzeige entscheidet ihr hier.</div>
+    ${cl.length?cl.map(c=>{ const st=CH_ST[c.status]||[c.status,"off"];
+      return `<div style="border-top:1px solid var(--line);padding:10px 0"><div class="row" style="gap:8px"><b style="flex:1">${c.kind==="nachtrag"?"📝 Nachtrag":"✏️ Änderung"} <code>${esc(c.change_no)}</code> · ${esc(c.title||"")}</b><span class="badge ${st[1]}">${st[0]}</span></div>
+        <div class="muted" style="font-size:12.5px">${fmtDT(c.created_at)} · ${esc(c.created_by||"")}${c.basis_label?" · "+esc(c.basis_label):""}${c.decided_at&&c.status!=="offen"&&c.status!=="angemeldet"?` · entschieden ${fmtDT(c.decided_at)} von ${esc(c.decided_by||"")}`:""}</div>
+        ${Object.keys(c.changes||{}).length?`<table class="mini" style="margin:6px 0">${Object.entries(c.changes).map(([k,v])=>`<tr><td class="muted">${esc(fd[k]||k)}</td><td style="text-decoration:line-through;color:#999">${esc(sv(k,v.from))}</td><td><b>${esc(sv(k,v.to))}</b></td></tr>`).join("")}</table>`:""}
+        ${c.description?`<div style="font-size:13.5px;white-space:pre-wrap;margin:4px 0">${esc(c.description)}</div>`:""}
+        <div style="font-size:13.5px">${c.amount!=null?`Betrag: <b>${c.amount>0?"+":""}${mkEur(c.amount)}</b>${c.approved_amount!=null&&+c.approved_amount!==+c.amount?` → freigegeben <b>${mkEur(c.approved_amount)}</b>`:""}`:""}${c.time_days?` · Zeit: <b>${c.time_days>0?"+":""}${c.time_days} Tag(e)</b>`:""}
+          ${c.kind==="nachtrag"&&c.before_execution===false?` <span class="badge warn">⚠ nach Ausführung angezeigt</span>`:""}${c.attachment_url?` · <a href="${esc(c.attachment_url)}" target="_blank" rel="noopener">📎 Anhang</a>`:""}</div>
+        ${c.decision_note?`<div class="hint">${c.kind==="aenderung"?"Betrieb":"Entscheidung"}: ${esc(c.decision_note)}</div>`:""}
+        <div class="row" style="margin-top:6px;gap:6px">${c.kind==="aenderung"&&c.status==="offen"?`<button class="btn ghost sm" data-chw="${esc(c.id)}">Zurückziehen</button>`:""}
+          ${c.kind==="nachtrag"&&c.status==="angemeldet"?`<button class="btn sm" data-cod="${esc(c.id)}" data-ok="1">✓ Freigeben</button><button class="btn warn sm" data-cod="${esc(c.id)}" data-ok="0">Ablehnen</button>`:""}
+          ${c.kind==="nachtrag"&&c.status==="freigegeben"&&!c.needs_approval?`<button class="btn ghost sm" data-cod="${esc(c.id)}" data-ok="0" title="Automatisch freigegebenen Nachtrag doch ablehnen">Ablehnen</button>`:""}</div></div>`; }).join("")
+      :`<div class="muted" style="font-size:13.5px">Noch keine Änderungen oder Nachträge.</div>`}</div>`;
+}
+function mkChangeDlg(j,r,done){
+  const d=mkModal(`<div class="row"><h2 style="margin:0;flex:1">✏️ Änderung an ${esc((r.bids.find(b=>b.status==="angenommen")||{}).provider?.company||"Betrieb")}</h2><button class="btn ghost sm" data-close>✕</button></div>
+    <div class="hint" style="margin:6px 0 12px">Die Änderung wird dem Betrieb zur Bestätigung geschickt. Bis dahin gilt die bisherige Fassung (v${j.version||1}). Nur geänderte Felder werden übernommen.</div>
+    <div class="grid2"><label>Termin ab<input type="date" id="cgF" value="${esc(j.desired_from||"")}"></label><label>Termin bis<input type="date" id="cgT" value="${esc(j.desired_to||"")}"></label></div>
+    <label>Ort (öffentlich)<input id="cgL" value="${esc(j.location_public||"")}"></label>
+    <label>Leistungsbeschreibung<textarea id="cgD" rows="5">${esc(j.description||"")}</textarea></label>
+    <div class="grid2"><label>Vergütung ± € <small class="muted">(optional, z. B. bei Wegfall)</small><input id="cgA" inputmode="decimal" placeholder="0"></label><label>Ausführungszeit ± Tage<input id="cgZ" type="number" placeholder="0"></label></div>
+    <label>Begründung * <small class="muted">(geht an den Betrieb)</small><textarea id="cgN" rows="2" placeholder="z. B. Standort erst ab 20.11. zugänglich"></textarea></label>
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn ghost" data-close>Abbrechen</button><button class="btn" id="cgS">Zur Bestätigung senden</button></div>`);
+  const g=s=>d.querySelector(s);
+  g("#cgS").onclick=async()=>{ g("#cgS").disabled=true;
+    try{ await mapi("m_change",{id:j.id,note:g("#cgN").value,amount:g("#cgA").value,time_days:g("#cgZ").value?+g("#cgZ").value:undefined,
+        changes:{desired_from:g("#cgF").value,desired_to:g("#cgT").value,location_public:g("#cgL").value,description:g("#cgD").value}});
+      toast("Änderung gesendet ✓ · wartet auf Bestätigung"); d.remove(); done(); }catch(e){ g("#cgS").disabled=false; toast(e.message,true); } };
 }
 
 async function mkProviders(){

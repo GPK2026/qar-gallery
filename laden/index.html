@@ -191,6 +191,8 @@ nav.tabs button{position:relative}
 .hidden{display:none!important}
 .foot{font-size:12px;color:var(--muted);text-align:center;margin-top:16px}
 .step-ph{display:flex;gap:8px;margin:4px 0 10px}.step-ph .ph{flex:1;position:relative;overflow:hidden;margin:0}.step-ph input{position:absolute;inset:0;opacity:0}.sp-prev{display:flex;gap:10px;align-items:center;margin:0 0 12px;font-size:13px;color:#08603d}.sp-prev img{height:64px;border-radius:10px}
+.nbc{padding:0;overflow:hidden}.nbc h4{margin:0;padding:12px 14px 6px;font-size:15px}.nbc-ch{display:flex;gap:6px;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none}.nbc-ch button{flex:none;border:1px solid #dfe5e2;background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;white-space:nowrap;color:inherit}.nbc-ch button.on{background:#e8f6ef;border-color:#0a8f5a;color:#08603d;font-weight:600}
+.nbc-r{display:flex;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid #eef1ef;text-decoration:none;color:inherit}.nbc-i{flex:none;width:38px;height:38px;border-radius:50%;background:#f1f5f3;display:grid;place-items:center;font-size:19px}.nbc-m{flex:1;min-width:0}.nbc-n{font-weight:600;font-size:14.5px}.nbc-s{color:#667;font-size:12.5px}.nbc-go{flex:none;color:#0a8f5a;font-weight:700;font-size:13px}.nbc-more{display:block;width:100%;border:0;border-top:1px solid #eef1ef;background:#fafbfa;padding:10px;font-size:13.5px;color:#08603d;font-weight:600}
 .cinfo{background:#eef6ff;border-color:#c9defa;font-size:14.5px;line-height:1.45}.cinfo b{display:block;margin-bottom:4px}
 </style>
 </head>
@@ -612,13 +614,29 @@ let inSub=false;
 function markSub(){ if(!inSub){ try{ history.pushState({hc:1},"",location.href); }catch(e){} inSub=true; } }
 window.addEventListener("popstate",()=>{ if(inSub){ inSub=false; $("#composer").classList.add("hidden"); document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab==="help")); S.tab="help"; home(); } });
 
+/* ── In der Nähe (wie Google Maps: Kategorien, Entfernung, Gehzeit, Route) ── */
+const NBC={wc:["🚻","Toiletten","Toilets"],food:["🍽️","Essen & Trinken","Food & drink"],cafe:["☕","Café & Bäckerei","Café & bakery"],shop:["🛒","Einkaufen","Shopping"],fuel:["⛽","Tankstelle","Petrol station"],atm:["💶","Geldautomat","ATM"],pharmacy:["💊","Apotheke","Pharmacy"],hotel:["🏨","Hotel","Hotel"],leisure:["🌳","Park & Spielplatz","Park & playground"],sight:["🏛️","Sehenswürdigkeit","Sights"],other:["📍","Sonstiges","Other"]};
+let NBF="", NBALL=false;
+function nearbyCard(){ const all=(extras().nearby||[]).filter(x=>x&&x.name); if(!all.length) return ""; const en=lang==="en";
+  const cats=Object.keys(NBC).filter(k=>all.some(x=>x.cat===k)), L=all.filter(x=>!NBF||x.cat===NBF), show=NBALL||NBF?L:L.slice(0,5);
+  const dist=d=>d==null?"":(d<1000?d+" m":(d/1000).toFixed(1).replace(".",",")+" km")+" · 🚶 "+Math.max(1,Math.round(d/80))+" Min.";
+  return `<div class="card nbc" id="nbc"><h4>📍 ${en?"Nearby while you charge":"In der Nähe – während des Ladens"}</h4>
+    ${cats.length>1?`<div class="nbc-ch"><button data-nbf="" class="${!NBF?"on":""}">${en?"All":"Alle"}</button>${cats.map(k=>`<button data-nbf="${k}" class="${NBF===k?"on":""}">${NBC[k][0]} ${NBC[k][en?2:1]}</button>`).join("")}</div>`:""}
+    ${show.map(x=>{ const c=NBC[x.cat]||NBC.other, u=x.lat!=null&&x.lon!=null?`https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=${x.lat},${x.lon}`:"";
+      const inner=`<span class="nbc-i">${c[0]}</span><span class="nbc-m"><span class="nbc-n">${esc(x.name)}</span><br><span class="nbc-s">${esc(x.sub||c[en?2:1])}${x.d!=null?" · "+dist(x.d):""}</span>${x.oh?`<br><span class="nbc-s">🕒 ${esc(x.oh)}</span>`:""}${x.note?`<br><span class="nbc-s">${esc(x.note)}</span>`:""}</span>${u?`<span class="nbc-go">${en?"Route":"Route"} ›</span>`:""}`;
+      return u?`<a class="nbc-r" href="${u}" target="_blank" rel="noopener">${inner}</a>`:`<div class="nbc-r">${inner}</div>`; }).join("")}
+    ${!NBALL&&!NBF&&L.length>5?`<button class="nbc-more" id="nbMore">${en?`Show all ${L.length}`:`Alle ${L.length} anzeigen`}</button>`:""}</div>`; }
+function wireNearby(){ const c=$("#nbc"); if(!c) return;
+  c.querySelectorAll("[data-nbf]").forEach(b=>b.onclick=()=>{ NBF=b.dataset.nbf; c.outerHTML=nearbyCard(); wireNearby(); });
+  const m=$("#nbMore"); if(m) m.onclick=()=>{ NBALL=true; c.outerHTML=nearbyCard(); wireNearby(); }; }
+
 /* ============ VIEWS ============ */
 function home(){
   S.flow=null;S.step=0;S.tried=[];S.stepPhoto=null; compact(false); S.render=home;
   const rts=recentTickets(), rt=rts[0], c=curCp(), inc=c&&incOf(c.n);
   const alts=c?((chargers().find(x=>x.n===(c.charger||1))||{cps:[]}).cps.filter(x=>x.n!==c.n&&!incOf(x.n))):[];
   const cinfo=(extras().customer_info||"").trim();
-  view.innerHTML=`${cinfo?`<div class="card cinfo"><b>ℹ️ ${lang==="en"?"Info for this site":"Info zum Standort"}</b><div>${esc(cinfo).replace(/\n/g,"<br>")}</div></div>`:""}${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr(rts.length>1?"myTickets":"myTicket")}</span><span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small><button class="tk-x" id="tkX" aria-label="${tr("hide")}">✕</button></span></div>
+  view.innerHTML=`${cinfo?`<div class="card cinfo"><b>ℹ️ ${lang==="en"?"Info for this site":"Info zum Standort"}</b><div>${esc(cinfo).replace(/\n/g,"<br>")}</div></div>`:""}${nearbyCard()}${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr(rts.length>1?"myTickets":"myTicket")}</span><span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small><button class="tk-x" id="tkX" aria-label="${tr("hide")}">✕</button></span></div>
     ${rts.length>1?`<div class="tk-list">${rts.map(t=>`<div class="tk-li"><span><code>${esc(t.no)}</code><br><small>${esc(t.cpl||"")} · ${ago(t.ts)}</small></span><button class="small-btn" data-copy="${esc(t.no)}">${tr("copy")}</button></div>`).join("")}</div>`
       :`<div class="ticket">${esc(rt.no)}</div>`}${rts.length>1?`<div class="tk-actions"><button class="btn ghost" id="shAll">${tr("tShare")}</button></div>`:ticketActions(rt)}</div>`:""}
   ${inc?`<div class="card known"><div class="step-t">⚠️ ${tr("knownT")}</div><p class="step-h">${esc(cpLabel(c))} · ${tr("knownH",{t:new Date(inc.since).toLocaleTimeString(locale(),{hour:"2-digit",minute:"2-digit"})+(Date.now()-new Date(inc.since)>20*3600e3?" ("+new Date(inc.since).toLocaleDateString(locale())+")":""),n:inc.reports})}</p>
@@ -631,7 +649,7 @@ function home(){
   <div class="grid">${siteTiles().map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile site ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
   <p class="privacy">${tr("privacy")}${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">${tr("privacyLink")}</a>`:""}</p>
   <p class="svc-link"><a href="service/#${encodeURIComponent(S.label||S.station)}">🔧 ${tr("svc")}</a></p>`;
-  view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f));
+  view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f)); wireNearby();
   if(rt){ wireTicketActions(view.querySelector(".tk-banner"),rt);
     if($("#shAll")) $("#shAll").onclick=async e=>{ const text=rts.map(ticketText).join("\n\n"); if(navigator.share){ try{ await navigator.share({title:tr("myTickets"),text}); return; }catch(err){ if(err&&err.name==="AbortError") return; } } copyText(text,e.target); }; view.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>copyText(b.dataset.copy,b));
     $("#tkX").onclick=()=>{ rts.forEach(t=>hideTicket(t.no)); S.lastTicket=null; home(); }; }
