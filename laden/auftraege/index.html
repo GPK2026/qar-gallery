@@ -114,6 +114,9 @@ const $=s=>document.querySelector(s), view=$("#view");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmtD=d=>d?new Date(d).toLocaleDateString("de-DE",{timeZone:"Europe/Berlin"}):"–";
 const fmtDT=d=>d?new Date(d).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short",timeZone:"Europe/Berlin"}):"–";
+const fmtT=d=>new Date(d).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+const whenS=j=>j.exec_at?`<b>${fmtD(j.exec_at)} · ${fmtT(j.exec_at)} Uhr</b> (fest)`:j.desired_from||j.desired_to?`${j.desired_from?fmtD(j.desired_from):""}${j.desired_to&&j.desired_to!==j.desired_from?" – "+fmtD(j.desired_to):""}`:"nach Absprache";
+const whenL=j=>j.exec_at?`<b>${fmtD(j.exec_at)}, ${fmtT(j.exec_at)} Uhr</b> – fester Termin`:j.desired_from||j.desired_to?`${j.desired_from?"ab "+fmtD(j.desired_from):""}${j.desired_to?" bis "+fmtD(j.desired_to):""}`:"nach Absprache";
 const eur=n=>n==null||n===""?"–":Number(n).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
 const ago=d=>{ if(!d) return "–"; const t0=new Date(new Date().toDateString()).getTime(), t=Date.parse(d); if(t>=t0) return "heute"; if(t>=t0-864e5) return "gestern"; const n=Math.ceil((t0-t)/864e5); return n<=14?`vor ${n} Tagen`:"am "+fmtD(d); };
 const left=d=>{ if(!d) return ""; const ms=Date.parse(d)-Date.now(); if(ms<0) return "abgelaufen"; const h=Math.floor(ms/36e5); return h<48?`noch ${h} Std.`:`noch ${Math.floor(h/24)} Tage`; };
@@ -205,13 +208,13 @@ function renderList(){
     &&(!F.pub||(j.published_at&&now-Date.parse(j.published_at)<=(+F.pub===1?(now-new Date(new Date().toDateString()).getTime()):+F.pub*D)))
     &&(!F.pt||j.price_type===F.pt)&&(!F.elig||j.eligible_ok)&&(!F.fav||j.fav)&&(F.demo||!isDemo(j))
     &&(!q||[j.activity,j.title,j.location,j.job_no,j.category_label].join(" ").toLowerCase().includes(q)));
-  const key={new:j=>-Date.parse(j.published_at||0),dl:j=>Date.parse(j.bid_deadline||"2999-01-01"),start:j=>Date.parse(j.desired_from||"2999-01-01"),loc:j=>0}[F.sort]||(j=>0);
+  const key={new:j=>-Date.parse(j.published_at||0),dl:j=>Date.parse(j.bid_deadline||"2999-01-01"),start:j=>Date.parse(j.exec_at||j.desired_from||"2999-01-01"),loc:j=>0}[F.sort]||(j=>0);
   l.sort((a,b)=>F.sort==="loc"?String(a.location||"").localeCompare(String(b.location||""),"de"):key(a)-key(b));
   const act=["cat","src","loc","start","dl","pub","pt"].filter(k=>F[k]).length+(F.elig?1:0)+(F.fav?1:0)+(F.demo?0:1); const fc=$("#fcnt"); if(fc) fc.textContent=act?`(${act})`:"";
   if(!l.length){ $("#list").innerHTML=`<div class="empty">${S.jobs.length?"Keine Aufträge für diese Filter.":"Aktuell sind keine Aufträge ausgeschrieben. Registrierte Betriebe bekommen neue passende Aufträge per E-Mail."}</div>`; return; }
   $("#list").innerHTML=`<div class="small muted" style="margin:0 2px 8px">${l.length} offene${l.length===1?"r":""} Auftrag${l.length===1?"":"e"}</div><div class="jobs">${l.map(j=>`<div class="job" data-no="${esc(j.job_no)}">${starBtn(j)}
     <div class="no">${esc(j.job_no)}${j.source_label?" · "+esc(j.source_label):""}</div><div class="tt">${demoB(j)}${esc(S.reg?tt(j.title):j.activity)}</div>
-    <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${S.reg&&j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}<span>📅 ${j.desired_from||j.desired_to?`${j.desired_from?fmtD(j.desired_from):""}${j.desired_to?" – "+fmtD(j.desired_to):""}`:"nach Absprache"}</span>${j.recurring_days?`<span>🔁 alle ${j.recurring_days} Tage</span>`:""}<span title="Eingestellt am ${fmtDT(j.published_at)}">🕒 eingestellt ${ago(j.published_at)}</span></div>
+    <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${S.reg&&j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}<span>📅 ${whenS(j)}</span>${j.recurring_days?`<span>🔁 alle ${j.recurring_days} Tage</span>`:""}<span title="Eingestellt am ${fmtDT(j.published_at)}">🕒 eingestellt ${ago(j.published_at)}</span></div>
     ${S.reg?`<div>${(j.qualifications||[]).map(q=>`<span class="chip grey">${esc(q.l)}</span>`).join("")}${j.eligible_ok===false?`<span class="chip warn">Nachweise fehlen</span>`:j.eligible_ok?`<span class="chip">✓ Sie können anbieten</span>`:""}</div>`:""}
     <div class="foot"><span>⏳ Frist ${fmtD(j.bid_deadline)} <b>${left(j.bid_deadline)}</b></span>${S.reg?`<span class="muted">${j.bids} Angebot${j.bids===1?"":"e"}</span>`:`<span class="muted">🔒 Details nach Registrierung</span>`}</div></div>`).join("")}</div>`;
   $("#list").querySelectorAll(".job").forEach(c=>c.onclick=()=>{ location.hash=c.dataset.no; });
@@ -230,7 +233,7 @@ async function jobView(no){
   if(!S.token){ $("#jd").innerHTML=`<div class="card"><div class="small muted" style="font-family:ui-monospace,Menlo,monospace">${esc(j.job_no)}</div>
     <h1 style="margin-top:6px">${demoB(j)}${esc(j.activity||"Auftrag")}</h1>${isDemo(j)?`<div class="small muted">Demo-Ausschreibung zum Ausprobieren – es wird kein echter Auftrag vergeben.</div>`:""}
     <dl class="dl" style="margin-top:12px"><dt>Ort</dt><dd>📍 ${esc(j.location||"–")}</dd>
-    <dt>Zeitraum</dt><dd>${j.desired_from||j.desired_to?`${j.desired_from?"ab "+fmtD(j.desired_from):""}${j.desired_to?" bis "+fmtD(j.desired_to):""}`:"nach Absprache"}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
+    <dt>${j.exec_at?"Ausführungstermin":"Zeitraum"}</dt><dd>${whenL(j)}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
     <dt>Angebotsfrist</dt><dd><b>${fmtDT(j.bid_deadline)}</b> <span class="muted">${left(j.bid_deadline)}</span></dd>
     <dt>Eingestellt</dt><dd>${fmtDT(j.published_at)} <span class="muted">(${ago(j.published_at)})</span></dd></dl></div>
     <div class="card"><h3>🔒 Weitere Informationen</h3><div class="muted">Aufgabenbeschreibung, Fotos, erforderliche Nachweise und Abrechnungsart sehen registrierte Betriebe. Die Registrierung ist kostenlos.</div>
@@ -240,7 +243,7 @@ async function jobView(no){
     <h1 style="margin-top:6px">${demoB(j)}${esc(tt(j.title))}${starBtn(j,true)}</h1>${isDemo(j)?`<div class="small muted">Demo-Ausschreibung zum Ausprobieren – es wird kein echter Auftrag vergeben.</div>`:""}
     <dl class="dl" style="margin-top:12px"><dt>Ort</dt><dd>📍 ${esc(j.location||"–")}${r.site?` · <b>${esc(r.site.address||"")}</b>`:full?` <span class="small muted">(genaue Adresse nach Zuschlag)</span>`:""}</dd>
     ${j.category_label?`<dt>Gewerk</dt><dd>${esc(j.category_label)}</dd>`:""}
-    <dt>Zeitraum</dt><dd>${j.desired_from||j.desired_to?`${j.desired_from?"ab "+fmtD(j.desired_from):""}${j.desired_to?" bis "+fmtD(j.desired_to):""}`:"nach Absprache"}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
+    <dt>${j.exec_at?"Ausführungstermin":"Zeitraum"}</dt><dd>${whenL(j)}${j.recurring_days?` · wiederkehrend alle ${j.recurring_days} Tage`:""}</dd>
     <dt>Angebotsfrist</dt><dd><b>${fmtDT(j.bid_deadline)}</b> <span class="muted">${left(j.bid_deadline)}</span></dd>
     <dt>Eingestellt</dt><dd>${fmtDT(j.published_at)} <span class="muted">(${ago(j.published_at)})</span></dd>
     <dt>Gewünschte Abrechnung</dt><dd>${{fix:"Pauschalpreis",stunde:"Stundensatz",offen:"Pauschal oder Stundensatz"}[j.price_type]||"–"}${full&&j.price_hint?` · Richtwert ca. ${eur(j.price_hint)}`:""}</dd>
@@ -266,7 +269,8 @@ function bidBox(j,r){
     <label class="f">Abrechnung</label><div class="seg" id="pt"><button data-v="fix">Pauschal</button><button data-v="stunde">Stundensatz</button></div>
     <div class="grid3"><div><label class="f" id="plab">Preis netto (€)</label><input class="i" id="bp" inputmode="decimal" placeholder="z. B. 380"></div>
       <div id="hw"><label class="f">Geschätzte Stunden</label><input class="i" id="bh" inputmode="decimal" placeholder="z. B. 3"></div>
-      <div><label class="f">Frühester Termin</label><input class="i" id="bd" type="date"></div></div>
+      ${j.exec_at?`<div><label class="f">Ausführungstermin</label><div class="i" style="background:#f3f6f4">${fmtD(j.exec_at)}, ${fmtT(j.exec_at)} Uhr</div><input type="hidden" id="bd"></div>`:`<div><label class="f">Frühester Termin</label><input class="i" id="bd" type="date"></div>`}</div>
+      ${j.exec_at?`<label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:8px"><input type="checkbox" id="bxok" style="width:auto;margin-top:2px"> Ich bestätige den festen Ausführungstermin <b>${fmtD(j.exec_at)}, ${fmtT(j.exec_at)} Uhr</b>.</label>`:""}
     <div id="sum" class="small muted" style="margin-top:6px"></div>
     <label class="f">Anmerkung (Leistungsumfang, Anfahrt, Material…)</label><textarea class="i" id="bn" maxlength="2000"></textarea>
     <div class="err" id="be"></div>
@@ -277,9 +281,11 @@ function bidBox(j,r){
   const sum=()=>{ const p=+String($("#bp").value).replace(",","."), h=+String($("#bh").value).replace(",","."); $("#sum").textContent=pt==="stunde"&&p&&h?`≈ ${eur(p*h)} bei ${h} Std.`:""; };
   box.querySelectorAll("#pt button").forEach(b=>b.onclick=()=>setPt(b.dataset.v));
   if(mb&&mb.status==="abgegeben"){ $("#bp").value=String(mb.price).replace(".",","); $("#bh").value=mb.hours_est?String(mb.hours_est).replace(".",","):""; $("#bd").value=mb.earliest_date||""; $("#bn").value=mb.note||""; }
+  else if(j.exec_at) $("#bd").value=new Date(j.exec_at).toISOString().slice(0,10);
   else if(j.desired_from) $("#bd").value=j.desired_from;
   $("#bp").oninput=sum; $("#bh").oninput=sum; setPt(t0);
   $("#bs").onclick=async()=>{ $("#be").textContent=""; const btn=$("#bs"); btn.disabled=true;
+    if($("#bxok")&&!$("#bxok").checked){ toast("Bitte den festen Ausführungstermin bestätigen"); $("#bxok").closest("label").style.color="#b42318"; btn.disabled=false; return; }
     try{ await api("bid",{job_id:j.id,bid:{price_type:pt,price:$("#bp").value,hours_est:pt==="stunde"?$("#bh").value:null,earliest_date:$("#bd").value,note:$("#bn").value}}); toast("✅ Angebot gespeichert"); jobView(j.job_no); }
     catch(e){ $("#be").textContent=e.message; btn.disabled=false; } };
   if($("#bw")) $("#bw").onclick=async()=>{ if(!confirm("Angebot wirklich zurückziehen?")) return; try{ await api("withdraw",{job_id:j.id}); toast("Angebot zurückgezogen"); jobView(j.job_no); }catch(e){ $("#be").textContent=e.message; } };
@@ -374,7 +380,7 @@ async function favView(){
   const st=j=>{ const open=j.status==="offen"&&(!j.bid_deadline||Date.parse(j.bid_deadline)>Date.now()); return j.my_bid?`<span class="chip">${j.my_bid.status==="angenommen"?"Zuschlag erhalten":j.my_bid.status==="abgegeben"?"Angebot abgegeben":"Angebot "+esc(j.my_bid.status)}</span>`:open?`<b>${left(j.bid_deadline)}</b>`:`<span class="chip grey">${j.status==="offen"?"Frist abgelaufen":esc(j.status)}</span>`; };
   $("#fl").innerHTML=`<div class="jobs">${r.items.map(j=>`<div class="job" data-no="${esc(j.job_no)}">${starBtn(j)}
     <div class="no">${esc(j.job_no)}${j.source_label?" · "+esc(j.source_label):""}</div><div class="tt">${demoB(j)}${esc(tt(j.title))}</div>
-    <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}<span>📅 ${j.desired_from||j.desired_to?`${j.desired_from?fmtD(j.desired_from):""}${j.desired_to?" – "+fmtD(j.desired_to):""}`:"nach Absprache"}</span></div>
+    <div class="meta"><span>📍 ${esc(j.location||"–")}</span>${j.category_label?`<span>🔧 ${esc(j.category_label)}</span>`:""}<span>📅 ${whenS(j)}</span></div>
     <div class="foot"><span>⏳ Frist ${fmtD(j.bid_deadline)}</span><span>${st(j)}</span></div></div>`).join("")}</div>`;
   $("#fl").querySelectorAll(".job").forEach(c=>c.onclick=()=>{ location.hash=c.dataset.no; });
   wireStars($("#fl"));
@@ -396,8 +402,8 @@ async function myView(){
   if(run.length){ $("#ml").insertAdjacentHTML("afterbegin",`<h2>📑 Änderungen & Nachträge</h2><div class="small muted" style="margin:-4px 2px 10px">Änderungen des Auftraggebers gelten erst nach Ihrer Bestätigung. <b>Mehrkosten bitte immer vor der Ausführung anmelden</b> (§ 2 Abs. 6 VOB/B) – sonst kann der Vergütungsanspruch entfallen.</div>${run.map(x=>coBox(x,r.co_basis||{})).join("")}`); wireCo($("#ml"),run); }
 }
 const CO_ST={offen:["bitte bestätigen","amber"],bestaetigt:["bestätigt",""],abgelehnt:["abgelehnt","warn"],zurueckgezogen:["zurückgezogen","grey"],angemeldet:["wartet auf Freigabe","amber"],freigegeben:["freigegeben",""]};
-const CO_F={desired_from:"Termin ab",desired_to:"Termin bis",location_public:"Ort",description:"Leistungsbeschreibung"};
-const coV=(k,v)=>v==null||v===""?"–":/^desired_/.test(k)?fmtD(v):k==="description"?String(v).slice(0,200)+(String(v).length>200?" …":""):String(v);
+const CO_F={exec_at:"Ausführungstermin",desired_from:"Termin ab",desired_to:"Termin bis",location_public:"Ort",description:"Leistungsbeschreibung"};
+const coV=(k,v)=>v==null||v===""?"–":k==="exec_at"?fmtD(v)+" "+fmtT(v)+" Uhr":/^desired_/.test(k)?fmtD(v):k==="description"?String(v).slice(0,200)+(String(v).length>200?" …":""):String(v);
 function coBox(x,basis){
   const j=x.job, co=x.co||{}, cl=x.changes||[], done=j.status!=="vergeben";
   return `<div class="card" data-co="${esc(j.id)}"><div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:200px">${demoB(j)}<b>${esc(tt(j.title))}</b><div class="small muted">${esc(j.job_no)} · Vertragsstand v${j.version||1}</div></div>

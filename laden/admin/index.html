@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="20261112j">
+<meta name="build" content="20261112k">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>HAPPY CHARGING Support · Betreiber</title>
@@ -36,6 +36,7 @@ body.authed{padding-left:232px}
 /* Feststehende Kopfbereiche (Titel, Filter, Kennzahlen) auf Listen-Seiten */
 .nb{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}.nb-chips{display:flex;gap:6px;overflow-x:auto;padding:10px 10px 8px;border-bottom:1px solid var(--line);scrollbar-width:none}.nb-chips button{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer;white-space:nowrap;color:var(--ink)}.nb-chips button.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand);font-weight:600}
 .nb-row{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--line)}.nb-row:last-child{border-bottom:0}.nb-ic{flex:none;width:36px;height:36px;border-radius:50%;background:#f1f5f3;display:grid;place-items:center;font-size:18px}.nb-m{flex:1;min-width:0}.nb-n{font-weight:600;font-size:14px}.nb-s{color:var(--muted);font-size:12.5px}.nb-o{font-size:12.5px;margin-top:2px}.nb-r{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;text-decoration:none;color:var(--brand);font-weight:700}.nb-x{flex:none;border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;padding:6px}.nb-add{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8faf9;border-top:1px solid var(--line);flex-wrap:wrap}
+.mk-src{margin:8px 0}.mk-src-a{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid #c7d2fe;background:#f5f7ff;border-radius:12px;padding:9px 12px;text-decoration:none;color:var(--ink);font-size:13.5px;margin-bottom:6px}.mk-src-a:hover{border-color:#6366f1}.mk-src-go{margin-left:auto;color:#3730a3;font-weight:600}
 .kpi.on{outline:2px solid var(--brand);outline-offset:-2px}.kpi.good .v{color:var(--brand)}
 .pinned{position:sticky;z-index:4;box-shadow:0 0 0 7px var(--bg)}
 .pinned:not(.card){background:var(--bg)}
@@ -1288,7 +1289,7 @@ async function incidentsView(){
 }
 async function loadIncidents(){
   try{
-    const r=await api("incidents",{filter:IF.q?"all":IF.filter,q:IF.q,from:IF.from,to:IF.to}), tb=$("#ib"); if(!tb) return;
+    const [r]=await Promise.all([api("incidents",{filter:IF.q?"all":IF.filter,q:IF.q,from:IF.from,to:IF.to}),mkSrcLoad()]), tb=$("#ib"); if(!tb) return;
     if(IF.station&&!IF.q) r.incidents=r.incidents.filter(i=>i.station_id===IF.station);
     const sb=$("#isumBox"); if(sb) sb.innerHTML=incSummary(r.incidents);
     { const now=Date.now(), dur=i=>(i.resolved_at?+new Date(i.resolved_at):now)-new Date(i.created_at), cr=i=>+new Date(i.created_at), sl=i=>{ const s=stOf(i.station_id); return s?(s.project_id||s.id):i.station_id; };
@@ -1298,7 +1299,7 @@ async function loadIncidents(){
       else if(S==="site") L.sort((a,b)=>sl(a).localeCompare(sl(b),"de",{numeric:true})||cr(b)-cr(a)); else if(S==="cp") L.sort((a,b)=>sl(a).localeCompare(sl(b),"de",{numeric:true})||(a.connector||0)-(b.connector||0));
       else L.sort((a,b)=>cr(b)-cr(a)); }
     tb.innerHTML=r.incidents.length?r.incidents.map(i=>{ const st=stOf(i.station_id), x=TST[i.status]||TST.neu;
-      return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.flow==="field"?' <span class="badge amber" title="vom Field-Service gemeldet">🔧 Field-Service</span>':""}${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b>${st&&st.address?`<br><small class="muted">${esc(st.address)}</small>`:""}</td>
+      return `<tr class="click" data-no="${esc(i.ticket_no)}"><td class="chev">▸</td><td><code>${esc(i.ticket_no)}</code>${i.flow==="field"?' <span class="badge amber" title="vom Field-Service gemeldet">🔧 Field-Service</span>':""}${i.escalated_at&&i.status!=="erledigt"?' <span class="badge warn">Charger aus</span>':""}${mkSrcBadge("stoerung",i.ticket_no)}</td><td><b>${esc(st?(st.project_id||st.id):i.station_id)}</b>${st&&st.address?`<br><small class="muted">${esc(st.address)}</small>`:""}</td>
         <td>${esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")}${evseOf(st,i.connector)?`<br><small class="muted">${esc(evseOf(st,i.connector))}</small>`:""}</td><td>${esc(i.title||"")}</td><td>${fmtDT(i.created_at)}</td><td data-sort="${(i.resolved_at?+new Date(i.resolved_at):Date.now())-new Date(i.created_at)}">${durBadge(i)}</td>
         <td>${i.reports}×${i.subscribers?` · 📧 ${i.subscribers}`:""}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span></td></tr>
         <tr class="akte hidden" data-for="${esc(i.ticket_no)}"><td colspan="9"><div class="akte-in">Lade …</div></td></tr>`; }).join("")
@@ -1324,7 +1325,7 @@ async function renderInc(no,box){
         <h3 style="margin-top:16px">Bearbeitung</h3>
         <div class="row"><select class="i-status" style="width:auto">${Object.entries(TST).map(([k,v])=>`<option value="${k}" ${k===i.status?"selected":""}>${v[0]}</option>`).join("")}</select></div>
         <textarea class="i-note" rows="2" placeholder="Interne Notiz (z. B. Techniker beauftragt, Kunde zurückgerufen …)" style="margin-top:8px"></textarea>
-        <div class="row" style="margin-top:8px"><button class="btn sm i-save">Speichern</button><button class="btn ghost sm i-copy">Kopieren</button><button class="btn ghost sm i-sess">QR-Aufrufe ansehen</button>${i.status!=="erledigt"?`<button class="btn ghost sm i-mkt">🏷 Zur Vergabe stellen</button>`:""}</div>
+        <div class="row" style="margin-top:8px"><button class="btn sm i-save">Speichern</button><button class="btn ghost sm i-copy">Kopieren</button><button class="btn ghost sm i-sess">QR-Aufrufe ansehen</button>${i.status!=="erledigt"?`<button class="btn ghost sm i-mkt">🏷 ${mkSrcActive("stoerung",i.ticket_no).length?"Weiteren Auftrag vergeben":"Zur Vergabe stellen"}</button>`:""}</div>${mkSrcBox("stoerung",i.ticket_no)}
         <h3 style="margin-top:16px">Field-Service</h3><div class="i-vis-sum" style="margin-bottom:6px"></div><div class="i-assign"></div><button class="btn ghost sm i-asave" style="margin-top:8px">Sichtbarkeit speichern</button>
         <div class="hint">„Erledigt“: Ladepunkt ist in der App sofort wieder frei${(i.subscribers||[]).length?`, ${i.subscribers.length} Kunde(n) bekommen eine Info-Mail`:""}.</div>
         <div class="notes">${(i.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)}</span>${n.status?` <span class="badge ${TST[n.status][1]==="ok"?"":TST[n.status][1]}">${TST[n.status][0]}</span>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div>
@@ -1335,7 +1336,7 @@ async function renderInc(no,box){
     box.querySelector(".i-save").onclick=async()=>{ try{ const s2=box.querySelector(".i-status").value, note=box.querySelector(".i-note").value.trim();
       if(s2==="erledigt"&&i.status!=="erledigt"&&!confirm(`${i.ticket_no} auf „erledigt“ setzen? Der Ladepunkt wird in der App wieder freigegeben${(i.subscribers||[]).length?" und "+i.subscribers.length+" Kunde(n) per Mail informiert":""}.`)) return;
       const res=await api("update_incident",{ticket_no:no,status:s2,note}); toast(res.informed?`Gespeichert ✓ · ${res.informed} Kunde(n) informiert`:"Gespeichert ✓"); loadIncidents(); }catch(e){ toast(e.message,true); } };
-    if(box.querySelector(".i-mkt")) box.querySelector(".i-mkt").onclick=()=>mkNew("stoerung",i.ticket_no);
+    if(box.querySelector(".i-mkt")) box.querySelector(".i-mkt").onclick=()=>mkNew("stoerung",i.ticket_no); mkSrcWire(box);
     wireCust(box);
     if(i.reported_by&&i.reported_by.photo) (async()=>{ try{ const rb=(await fapi("incident_field_info",{ticket_no:i.ticket_no})).reported_by; const el=box.querySelector(".i-fphoto"); if(el&&rb&&rb.photo_url) el.innerHTML=`<a href="${esc(rb.photo_url)}" target="_blank" rel="noopener"><img src="${esc(rb.photo_url)}" style="width:160px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line);margin-top:6px"></a>`; }catch(e){} })();
     (async()=>{ try{ const v=(await fapi("report_list",{q:i.ticket_no})).reports.filter(x=>x.ticket_no===i.ticket_no); const t=box.querySelector(".i-tl"); if(t) t.innerHTML=incTimeline(i,r.reports,v); }catch(e){} })();
@@ -1652,7 +1653,7 @@ async function fDefects(){
   document.querySelectorAll("#dPrio button").forEach(b=>b.onclick=()=>{ FD.prio=b.dataset.p; fDefects(); });
   $("#dPr").onchange=()=>{ FD.station=$("#dPr").value; fDefects(); };
   $("#dSort").onchange=()=>{ FD.sort=$("#dSort").value; Object.keys(TSORT).forEach(k=>{ if(k.includes("|dtb|")) delete TSORT[k]; }); fDefects(); };
-  try{ const r=await fapi("defect_list",{status:FD.status==="all"?"":FD.status,station:FD.station}), tb=$("#dtb"); if(!tb) return; const DS={offen:["offen","warn"],in_arbeit:["in Arbeit","amber"],behoben:["behoben","ok"]};
+  try{ const [r]=await Promise.all([fapi("defect_list",{status:FD.status==="all"?"":FD.status,station:FD.station}),mkSrcLoad()]), tb=$("#dtb"); if(!tb) return; const DS={offen:["offen","warn"],in_arbeit:["in Arbeit","amber"],behoben:["behoben","ok"]};
     const now=Date.now(), od=d=>d.status!=="behoben"&&d.due_at&&+new Date(d.due_at)<now;
     let L=r.defects.filter(d=>!FD.prio||(d.priority||"B")===FD.prio);
     { const cr=d=>+new Date(d.created_at), du=d=>d.due_at?+new Date(d.due_at):9e15, sl=d=>stLabel(d.station_id), S=FD.sort;
@@ -1666,7 +1667,7 @@ async function fDefects(){
     tb.innerHTML=L.length?L.map(d=>{ const x=DS[d.status]||DS.offen; return `<tr class="click" data-id="${esc(d.id)}"><td class="chev">▸</td><td>${prioB(d.priority)}</td><td><b>${esc(d.item_text)}</b>${d.note?`<br><small class="muted">${esc(d.note)}</small>`:""}<br><small class="muted"><code>${esc(d.defect_no||"")}</code></small></td>
       <td><b>${esc(stLabel(d.station_id))}</b><br><small class="muted">${esc(fWhere(d))}</small></td>
       <td>${d.status==="behoben"?`<small class="muted">behoben ${d.resolved_at?fmtDT(d.resolved_at):""}</small>`:d.due_at?dueTag(d.due_at):"–"}</td>
-      <td>${esc(SRC_L[d.source]||d.source||"")}<br><small class="muted">${esc(d.created_by||"")} · ${fmtDT(d.created_at)}</small></td><td>${visSummary(d,FVIS&&FVIS.defects)}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span>${d.escalated_ticket?`<br><small class="muted">→ ${esc(d.escalated_ticket)}</small>`:""}</td></tr>
+      <td>${esc(SRC_L[d.source]||d.source||"")}<br><small class="muted">${esc(d.created_by||"")} · ${fmtDT(d.created_at)}</small></td><td>${visSummary(d,FVIS&&FVIS.defects)}</td><td><span class="badge ${x[1]==="ok"?"":x[1]}">${x[0]}</span>${mkSrcBadge("mangel",d.id)}${d.escalated_ticket?`<br><small class="muted">→ ${esc(d.escalated_ticket)}</small>`:""}</td></tr>
       <tr class="akte hidden" data-for="${esc(d.id)}"><td colspan="8"><div class="akte-in"></div></td></tr>`; }).join(""):`<tr><td colspan="8" class="muted">Keine Mängel ${FD.status==="open"?"offen 🎉":""}</td></tr>`;
     tb.querySelectorAll("tr.click").forEach(row=>row.onclick=()=>{ const d=r.defects.find(x=>x.id===row.dataset.id), ak=tb.querySelector(`tr.akte[data-for="${d.id}"]`), open=ak.classList.toggle("hidden")===false;
       row.querySelector(".chev").textContent=open?"▾":"▸"; if(!open) return; const box=ak.querySelector(".akte-in"), st=stOf(d.station_id);
@@ -1680,7 +1681,7 @@ async function fDefects(){
           <label style="font-size:13px;color:var(--muted)">fällig <input type="date" class="d-due" style="width:auto" value="${d.due_at?isoD(d.due_at):""}"></label>
           <select class="d-st" style="width:auto">${Object.entries(DS).map(([k,v])=>`<option value="${k}" ${d.status===k?"selected":""}>${v[0]}</option>`).join("")}</select></div>
         <textarea class="d-note" rows="2" placeholder="Notiz (optional)" style="margin-top:8px"></textarea>
-        <div class="row" style="margin-top:8px"><button class="btn sm d-save">Speichern</button>${d.status!=="behoben"?`<button class="btn ghost sm d-mkt">🏷 Zur Vergabe stellen</button>`:""}</div>
+        <div class="row" style="margin-top:8px"><button class="btn sm d-save">Speichern</button>${d.status!=="behoben"?`<button class="btn ghost sm d-mkt">🏷 ${mkSrcActive("mangel",d.id).length?"Weiteren Auftrag vergeben":"Zur Vergabe stellen"}</button>`:""}</div>${mkSrcBox("mangel",d.id)}
         ${d.status!=="behoben"?`<div class="esc-box"><b>⬆ Zur Störung eskalieren</b><div class="muted" style="font-size:12.5px;margin:2px 0 6px">Nur wenn deswegen nicht geladen werden kann oder Gefahr besteht – der Ladepunkt wird in der Kunden-App als gestört angezeigt.</div>
           <div class="row">${!d.connector?`<select class="d-cp" style="width:auto">${d.charger?`<option value="">alle Ladepunkte von ${esc(fWhere(d))}</option>`:`<option value="">Ladepunkt wählen …</option>`}${cpsOf.map(c=>`<option value="${c.n}">${esc(cpLabel(st,c.n))}</option>`).join("")}</select>`:""}<button class="btn warn sm d-esc">Störung anlegen</button></div></div>`:""}
         <div class="notes">${(d.notes||[]).slice().reverse().map(n=>`<div class="note-i"><span class="muted">${fmtDT(n.at)} · ${esc(n.by||"")}</span>${n.status?` <b>${esc((DS[n.status]||[n.status])[0])}</b>`:""}${n.text?`<div>${esc(n.text)}</div>`:""}</div>`).join("")}</div></div>
@@ -1688,7 +1689,7 @@ async function fDefects(){
       wireAssign(box);
       box.querySelectorAll(".to-inc4").forEach(a=>a.onclick=e=>{ e.preventDefault(); IF.q=a.dataset.no; IF.filter="all"; setPreset(IF,"all"); go("incidents"); });
       const save=async extra=>{ try{ await fapi("defect_update",{id:d.id,status:box.querySelector(".d-st").value,priority:box.querySelector(".d-prio").value,due_at:box.querySelector(".d-due").value||null,note:box.querySelector(".d-note").value,...readAssign(box),...extra}); toast("Gespeichert ✓"); fDefects(); }catch(e){ toast(e.message,true); } };
-      box.querySelector(".d-save").onclick=()=>save({}); if(box.querySelector(".d-mkt")) box.querySelector(".d-mkt").onclick=()=>mkNew("mangel",d.id); box.querySelector(".d-asave").onclick=()=>save({});
+      box.querySelector(".d-save").onclick=()=>save({}); if(box.querySelector(".d-mkt")) box.querySelector(".d-mkt").onclick=()=>mkNew("mangel",d.id); mkSrcWire(box); box.querySelector(".d-asave").onclick=()=>save({});
       if(box.querySelector(".d-esc")) box.querySelector(".d-esc").onclick=async()=>{ const sel=box.querySelector(".d-cp"), cp=sel&&sel.value?+sel.value:null;
         if(!d.connector&&!d.charger&&!cp) return toast("Bitte den Ladepunkt wählen",true);
         if(!confirm(`Mangel ${d.defect_no} zur Störung machen? Der Ladepunkt wird in der Kunden-App als gestört angezeigt.`)) return;
@@ -1996,6 +1997,7 @@ function listEd(c,isNew){
       r.querySelector(".it-dn").onclick=()=>{ collectL(); if(i<c.items.length-1){ [c.items[i+1],c.items[i]]=[c.items[i],c.items[i+1]]; } draw(); }; });
     $("#lSave").onclick=async()=>{ collectL(); c.items=c.items.filter(it=>it.text.trim()); try{ await fapi("checklist_save",{checklist:c}); toast("Checkliste gespeichert ✓"); FCL=(await fapi("checklist_list")).checklists; fLists(); }catch(e){ toast(e.message,true); } };
     if($("#lMkt")) $("#lMkt").onclick=()=>mkNew("checkliste",c.id,(c.stations||[])[0]||null);
+    if(!isNew) mkSrcLoad().then(()=>{ const b=$("#lMkt"); if(b&&!document.querySelector("#lMktBox")){ b.closest(".row").insertAdjacentHTML("afterend",`<div id="lMktBox">${mkSrcBox("checkliste",c.id)}</div>`); mkSrcWire($("#lMktBox")); } });
     if($("#lDel")) $("#lDel").onclick=async()=>{ if(!confirm(`„${c.title}“ löschen? Gibt es schon Protokolle, wird sie nur deaktiviert.`)) return; try{ const r=await fapi("checklist_delete",{id:c.id}); toast(r.deactivated?"Deaktiviert (Protokolle bleiben)":"Gelöscht"); FCL=(await fapi("checklist_list")).checklists; fLists(); }catch(e){ toast(e.message,true); } };
     $("#clEd").scrollIntoView({behavior:"smooth",block:"start"}); };
   draw();
@@ -2392,7 +2394,23 @@ async function mkJobs(){
   $("#mkBody").querySelectorAll("tr.click").forEach(t=>t.onclick=()=>mkJob(t.dataset.id));
 }
 
+/* Verknüpfung Quelle (Störung/Mangel/Checkliste) → Auftrag in der Börse */
+let MKSRC=null, MKSRC_T=0;
+async function mkSrcLoad(force){ if(!force&&MKSRC&&Date.now()-MKSRC_T<60e3) return MKSRC;
+  try{ const r=await mapi("m_jobs",{}); MKSRC={}; for(const j of r.jobs||[]) if(j.source_ref) (MKSRC[j.source_type+"|"+j.source_ref]||=[]).push(j); MKSRC_T=Date.now(); }catch(e){ MKSRC=MKSRC||{}; }
+  return MKSRC; }
+const mkSrcJobs=(type,ref)=>((MKSRC||{})[type+"|"+ref]||[]);
+const mkSrcActive=(type,ref)=>mkSrcJobs(type,ref).filter(j=>j.status!=="abgebrochen");
+function mkSrcBadge(type,ref){ const l=mkSrcActive(type,ref); if(!l.length) return ""; const j=l[0], st=MK_ST[j.status]||[j.status,"off"];
+  return ` <span class="badge" style="background:#eef2ff;color:#3730a3" title="In der Auftragsbörse: ${esc(j.job_no)} · ${esc(st[0])}">🤝 ${esc(st[0])}</span>`; }
+function mkSrcBox(type,ref){ const l=mkSrcJobs(type,ref); if(!l.length) return "";
+  return `<div class="mk-src">${l.map(j=>{ const st=MK_ST[j.status]||[j.status,"off"];
+    return `<a href="#" class="mk-src-a" data-mkj="${esc(j.id)}"><span>🤝 <b>Auftragsbörse</b> <code>${esc(j.job_no)}</code></span><span class="badge ${st[1]}">${esc(st[0])}</span>${j.status==="offen"?`<span class="muted">${j.bids} Angebot(e)</span>`:""}${j.exec_at?`<span class="muted">📅 ${fmtDT(j.exec_at)}</span>`:j.desired_from?`<span class="muted">📅 ab ${d2(j.desired_from)}</span>`:""}${j.nt_open?`<span class="badge warn">📝 Nachtrag</span>`:""}<span class="mk-src-go">öffnen ›</span></a>`; }).join("")}</div>`; }
+function mkSrcWire(root){ root.querySelectorAll("[data-mkj]").forEach(a=>a.onclick=e=>{ e.preventDefault(); mkJob(a.dataset.mkj); }); }
+
 async function mkNew(type,ref,station){
+  const ex=(await mkSrcLoad(true), mkSrcActive(type,ref));
+  if(ex.length&&!confirm(`Dazu gibt es schon den Auftrag ${ex[0].job_no} (${(MK_ST[ex[0].status]||[ex[0].status])[0]}) in der Auftragsbörse.\n\nTrotzdem einen weiteren Auftrag anlegen?`)){ mkJob(ex[0].id); return; }
   try{ await mkMeta(); const r=await mapi("m_source",{type,ref,station}); mkEdit(r.prefill); }catch(e){ toast(e.message,true); }
 }
 async function mkEdit(j){
@@ -2411,7 +2429,9 @@ async function mkEdit(j){
         <div style="flex:1"><label>Ort (öffentlich, nur Stadt/Stadtteil)</label><input id="mjL" value="${esc(j.location_public||"")}" placeholder="z. B. Hamburg-Altona"></div></div>
       <div class="row" style="gap:10px;margin-top:10px"><div style="flex:1"><label>Gewerk</label><select id="mjC"><option value="">– beliebig –</option>${Object.entries(m.cats).map(([k,l])=>`<option value="${k}" ${k===j.category?"selected":""}>${esc(l)}</option>`).join("")}</select></div>
         <div style="flex:1"><label>Abrechnung</label><select id="mjP">${[["fix","Pauschalpreis"],["stunde","Stundensatz"],["offen","Pauschal oder Stundensatz"]].map(([k,l])=>`<option value="${k}" ${k===(j.price_type||"fix")?"selected":""}>${l}</option>`).join("")}</select></div></div>
-      <div class="row" style="gap:10px;margin-top:10px"><div style="flex:1"><label>Ausführung ab</label><input type="date" id="mjF" value="${esc(j.desired_from||"")}"></div><div style="flex:1"><label>bis</label><input type="date" id="mjTo" value="${esc(j.desired_to||"")}"></div></div>
+      <div style="margin-top:10px"><label>Ausführung</label><div class="seg" id="mjWm"><button type="button" data-m="fix" class="${j.exec_at?"on":""}">📅 Fester Termin</button><button type="button" data-m="range" class="${j.exec_at?"":"on"}">Zeitraum</button></div></div>
+      <div class="row" id="mjFixR" style="gap:10px;margin-top:8px;${j.exec_at?"":"display:none"}"><div style="flex:1"><label>Datum</label><input type="date" id="mjXd" value="${j.exec_at?isoD(j.exec_at):""}"></div><div style="flex:1"><label>Uhrzeit</label><input type="time" id="mjXt" value="${j.exec_at?new Date(j.exec_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"08:00"}"></div></div>
+      <div class="row" id="mjRangeR" style="gap:10px;margin-top:8px;${j.exec_at?"display:none":""}"><div style="flex:1"><label>Ausführung ab</label><input type="date" id="mjF" value="${esc(j.desired_from||"")}"></div><div style="flex:1"><label>bis</label><input type="date" id="mjTo" value="${esc(j.desired_to||"")}"></div></div>
       <div class="row" style="gap:10px;margin-top:10px"><div style="flex:1.3"><label>Angebotsfrist</label><input type="datetime-local" id="mjDl" value="${dl}"></div><div style="flex:1"><label>Richtwert € <small>(optional, nur für Freigegebene)</small></label><input id="mjH" inputmode="decimal" value="${j.price_hint??""}"></div>
         <div style="flex:.8"><label>Wiederkehrend (Tage)</label><input id="mjR" inputmode="numeric" value="${j.recurring_days??""}"></div></div>
     </div></div>
@@ -2468,6 +2488,7 @@ async function mkEdit(j){
   q("#mjRe").onclick=()=>resug(false);
   ["#mjS","#mjC"].forEach(id=>q(id).addEventListener("change",()=>resug(true)));
   paintQ(); paintR(); setTimeout(()=>resug(true),0);
+  q("#mjWm").querySelectorAll("button").forEach(b=>b.onclick=()=>{ q("#mjWm").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); const fix=b.dataset.m==="fix"; q("#mjFixR").style.display=fix?"":"none"; q("#mjRangeR").style.display=fix?"none":""; if(fix&&!q("#mjXd").value) q("#mjXd").value=q("#mjF").value||""; });
   q("#mjS").onchange=()=>{ const s=STATIONS.find(x=>x.id===q("#mjS").value); if(s&&!q("#mjL").value){ const mm=String(s.address||"").match(/\b\d{5}\s+([^,]+)/); q("#mjL").value=mm?mm[1].trim():""; } };
   const photos=list=>{ const el=q("#mjPhs"); if(!el) return; el.innerHTML=(list.urls||[]).map((u,i)=>`<div style="position:relative"><img src="${esc(u)}" style="width:110px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"><button class="btn warn sm" data-p="${esc(list.paths[i])}" style="position:absolute;top:3px;right:3px;padding:1px 6px">✕</button></div>`).join("")||'<span class="muted" style="font-size:13px">keine Fotos</span>';
     el.querySelectorAll("[data-p]").forEach(b=>b.onclick=async()=>{ try{ const r=await mapi("m_photo_delete",{id:j.id,path:b.dataset.p}); photos({urls:r.photos,paths:r.paths}); }catch(e){ toast(e.message,true); } }); };
@@ -2475,10 +2496,10 @@ async function mkEdit(j){
     q("#mjUp").onchange=async()=>{ for(const f of q("#mjUp").files){ try{ const data=await mkImg(f); const r=await mapi("m_photo",{id:j.id,data}); photos({urls:r.photos,paths:r.paths}); }catch(e){ toast(e.message,true); } } }; }
   const collect=()=>({ id:j.id, source_type:j.source_type, source_ref:j.source_ref, photo_src:q("#mjPh")&&q("#mjPh").checked?j.photo_src:null,
     title:q("#mjT").value, title_public:q("#mjTP").value, description:q("#mjD").value, station_id:q("#mjS").value, location_public:q("#mjL").value, category:q("#mjC").value, price_type:q("#mjP").value,
-    desired_from:q("#mjF").value, desired_to:q("#mjTo").value, bid_deadline:q("#mjDl").value?new Date(q("#mjDl").value).toISOString():null, price_hint:q("#mjH").value, recurring_days:q("#mjR").value,
+    ...(q("#mjWm .on").dataset.m==="fix"?{exec_at:q("#mjXd").value?new Date(q("#mjXd").value+"T"+(q("#mjXt").value||"08:00")).toISOString():null,desired_from:q("#mjXd").value,desired_to:q("#mjXd").value}:{exec_at:null,desired_from:q("#mjF").value,desired_to:q("#mjTo").value}), bid_deadline:q("#mjDl").value?new Date(q("#mjDl").value).toISOString():null, price_hint:q("#mjH").value, recurring_days:q("#mjR").value,
     target_cats:typeof CSEL!=="undefined"?CSEL:(j.target_cats||[]), invite:typeof RCP!=="undefined"?RCP:(j.invite||[]),
     qualifications:typeof QL!=="undefined"?QL.map(x=>x.k):(j.qualifications||[]), quals_suggested:typeof SUG!=="undefined"?SUG.map(({k,why})=>({k,why})):(j.quals_suggested||[]), quals_confirmed:!!(q("#mjQok")&&q("#mjQok").checked) });
-  const save=async pub=>{ if(pub&&!q("#mjQok").checked){ q("#mjQok").closest("label").style.color="var(--warn)"; return toast("Bitte die erforderlichen Nachweise prüfen und bestätigen",true); } try{ const r=await mapi("m_job_save",{job:collect()});
+  const save=async pub=>{ MKSRC_T=0; if(pub&&!q("#mjQok").checked){ q("#mjQok").closest("label").style.color="var(--warn)"; return toast("Bitte die erforderlichen Nachweise prüfen und bestätigen",true); } try{ const r=await mapi("m_job_save",{job:collect()});
       if(pub){ if(!confirm("Auftrag jetzt öffentlich ausschreiben? Passende freigegebene Betriebe bekommen eine E-Mail.")) { md.remove(); MKT.tab="jobs"; go("market"); return; }
         const p=await mapi("m_publish",{id:r.job.id}); toast(`Ausgeschrieben ✓${p.notified?` · ${p.notified} Betrieb(e) informiert`:""}`); }
       else toast("Gespeichert ✓");
@@ -2493,7 +2514,7 @@ async function mkJob(id){
   const est=b=>b.price_type==="stunde"&&b.hours_est?+b.price*+b.hours_est:b.price_type==="fix"?+b.price:null;
   const bids=r.bids.slice().sort((a,b)=>(a.status==="zurueckgezogen")-(b.status==="zurueckgezogen")||(est(a)??1e9)-(est(b)??1e9));
   const md=mkModal(`<div class="row"><h2 style="margin:0;flex:1">${esc(j.title)} <span class="badge ${s[1]}">${s[0]}</span></h2><button class="btn ghost sm" data-close>✕</button></div>
-    <div class="muted" style="font-size:13px;margin:4px 0 12px"><code>${esc(j.job_no)}</code> · ${esc(m.src[j.source_type]||"")}${j.source_ref?" "+esc(j.source_ref):""} · ${esc(j.location_public||"–")}${j.station_id?" · "+esc(stLabel(j.station_id)):""} · Frist ${j.bid_deadline?fmtDT(j.bid_deadline):"–"}${j.published_at?" · ausgeschrieben "+fmtDT(j.published_at):""}</div>
+    <div class="muted" style="font-size:13px;margin:4px 0 12px"><code>${esc(j.job_no)}</code> · ${esc(m.src[j.source_type]||"")}${j.source_ref?" "+esc(j.source_ref):""} · ${esc(j.location_public||"–")}${j.station_id?" · "+esc(stLabel(j.station_id)):""} · ${j.exec_at?`<b>📅 Termin ${fmtDT(j.exec_at)}</b>`:j.desired_from||j.desired_to?`📅 ${j.desired_from?"ab "+d2(j.desired_from):""}${j.desired_to?" bis "+d2(j.desired_to):""}`:"📅 nach Absprache"} · Frist ${j.bid_deadline?fmtDT(j.bid_deadline):"–"}${j.published_at?" · ausgeschrieben "+fmtDT(j.published_at):""}</div>
     <div class="row" style="margin-bottom:12px">${["entwurf","offen","abgebrochen"].includes(j.status)?`<button class="btn ghost sm" id="mkE">✏️ Bearbeiten</button>`:""}
       ${j.status!=="offen"&&["entwurf","abgebrochen"].includes(j.status)?`<button class="btn sm" id="mkP" style="background:#F08C00">📣 Ausschreiben</button>`:""}
       ${["entwurf","offen"].includes(j.status)?`<button class="btn warn sm" id="mkX">Zurückziehen</button>`:""}
@@ -2557,7 +2578,7 @@ async function mkJob(id){
 
 const CH_ST={offen:["wartet auf Betrieb","warn"],bestaetigt:["bestätigt",""],abgelehnt:["abgelehnt","warn"],zurueckgezogen:["zurückgezogen","off"],angemeldet:["zur Freigabe","warn"],freigegeben:["freigegeben",""]};
 function mkCoCard(r){
-  const co=r.co||{}, cl=r.changes||[], j=r.job, fd=r.ch_fields||{}, sv=(k,v)=>v==null||v===""?"–":/^desired_/.test(k)?d2(v):k==="description"?String(v).slice(0,160)+(String(v).length>160?" …":""):String(v);
+  const co=r.co||{}, cl=r.changes||[], j=r.job, fd=r.ch_fields||{}, sv=(k,v)=>v==null||v===""?"–":k==="exec_at"?fmtDT(v):/^desired_/.test(k)?d2(v):k==="description"?String(v).slice(0,160)+(String(v).length>160?" …":""):String(v);
   return `<div class="card" style="margin-top:14px"><div class="row"><h3 style="margin:0;flex:1">📑 Änderungen & Nachträge <small class="muted">Vertragsstand v${j.version||1}</small></h3>${j.status==="vergeben"?`<button class="btn ghost sm" id="mkCh">✏️ Änderung an Betrieb senden</button>`:""}</div>
     <div class="kpis" style="margin:10px 0"><div class="kpi"><div class="k">Zuschlag</div><div class="v" style="font-size:20px">${co.base_type==="stunde"?mkEur(co.base)+"/h":mkEur(co.base)}</div></div>
       <div class="kpi"><div class="k">Nachträge freigegeben</div><div class="v" style="font-size:20px">${mkEur(co.approved)}</div><div class="s">${co.approved_n||0} Stück${co.days?` · +${co.days} Tag(e)`:""}</div></div>
@@ -2580,7 +2601,8 @@ function mkCoCard(r){
 function mkChangeDlg(j,r,done){
   const d=mkModal(`<div class="row"><h2 style="margin:0;flex:1">✏️ Änderung an ${esc((r.bids.find(b=>b.status==="angenommen")||{}).provider?.company||"Betrieb")}</h2><button class="btn ghost sm" data-close>✕</button></div>
     <div class="hint" style="margin:6px 0 12px">Die Änderung wird dem Betrieb zur Bestätigung geschickt. Bis dahin gilt die bisherige Fassung (v${j.version||1}). Nur geänderte Felder werden übernommen.</div>
-    <div class="grid2"><label>Termin ab<input type="date" id="cgF" value="${esc(j.desired_from||"")}"></label><label>Termin bis<input type="date" id="cgT" value="${esc(j.desired_to||"")}"></label></div>
+    <div class="grid2"><label>📅 Fester Ausführungstermin – Datum<input type="date" id="cgXd" value="${j.exec_at?isoD(j.exec_at):""}"></label><label>Uhrzeit<input type="time" id="cgXt" value="${j.exec_at?new Date(j.exec_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):""}"></label></div>
+    <div class="grid2"><label>oder Zeitraum: ab<input type="date" id="cgF" value="${esc(j.desired_from||"")}"></label><label>bis<input type="date" id="cgT" value="${esc(j.desired_to||"")}"></label></div>
     <label>Ort (öffentlich)<input id="cgL" value="${esc(j.location_public||"")}"></label>
     <label>Leistungsbeschreibung<textarea id="cgD" rows="5">${esc(j.description||"")}</textarea></label>
     <div class="grid2"><label>Vergütung ± € <small class="muted">(optional, z. B. bei Wegfall)</small><input id="cgA" inputmode="decimal" placeholder="0"></label><label>Ausführungszeit ± Tage<input id="cgZ" type="number" placeholder="0"></label></div>
@@ -2589,7 +2611,7 @@ function mkChangeDlg(j,r,done){
   const g=s=>d.querySelector(s);
   g("#cgS").onclick=async()=>{ g("#cgS").disabled=true;
     try{ await mapi("m_change",{id:j.id,note:g("#cgN").value,amount:g("#cgA").value,time_days:g("#cgZ").value?+g("#cgZ").value:undefined,
-        changes:{desired_from:g("#cgF").value,desired_to:g("#cgT").value,location_public:g("#cgL").value,description:g("#cgD").value}});
+        changes:{exec_at:g("#cgXd").value?new Date(g("#cgXd").value+"T"+(g("#cgXt").value||"08:00")).toISOString():"",desired_from:g("#cgF").value,desired_to:g("#cgT").value,location_public:g("#cgL").value,description:g("#cgD").value}});
       toast("Änderung gesendet ✓ · wartet auf Bestätigung"); d.remove(); done(); }catch(e){ g("#cgS").disabled=false; toast(e.message,true); } };
 }
 
