@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="20261112c">
+<meta name="build" content="20261112f">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>HAPPY CHARGING Support · Betreiber</title>
@@ -33,6 +33,12 @@ header .in{max-width:1180px;margin:0 auto;padding:10px 20px;min-height:57px;box-
 #nav button:hover{background:#f3f6f4}
 #nav button.on{background:var(--brand-soft);color:#08603d}
 body.authed{padding-left:232px}
+/* Feststehende Kopfbereiche (Titel, Filter, Kennzahlen) auf Listen-Seiten */
+.pinned{position:sticky;z-index:4;box-shadow:0 0 0 7px var(--bg)}
+.pinned:not(.card){background:var(--bg)}
+#main.haspin .card:has(> table){overflow:visible!important}
+#main.haspin .card > table > thead th{position:sticky;top:var(--pinb);z-index:3;background:#f7f9f8;box-shadow:0 1px 0 var(--line)}
+.pinned.pinlast{box-shadow:0 0 0 7px var(--bg),0 16px 14px -12px rgba(20,32,27,.22)}
 /* Übersicht: links Projekte, rechts Kennzahlen & Grafiken */
 .ov-split{display:grid;grid-template-columns:minmax(270px,330px) minmax(0,1fr);gap:16px;align-items:start}
 .ov-left{position:sticky;top:72px;max-height:calc(100vh - 86px);overflow-y:auto;scrollbar-width:thin;padding-right:2px}
@@ -397,6 +403,8 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 
 }
 
+.ivsync{margin-top:10px;padding:10px 12px;border:1px solid #cfe6db;background:#f2faf6;border-radius:10px;font-size:13.5px;line-height:1.5}.warn-t{color:#b45f00;font-weight:600}
+.kww{position:relative;display:block}.kww .l_kw{width:100%}.kwr,.kwm{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:#fff6e8;border:1px solid #f0d9a0;border-radius:6px;font-size:12px;padding:1px 5px;cursor:pointer;color:#b45f00}.kwm{cursor:default}
 .ivc{position:relative}.ivc-dd{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.14);max-height:300px;overflow:auto;margin-top:3px}
 .ivc-o{padding:8px 11px;cursor:pointer;display:flex;flex-direction:column;gap:1px;border-bottom:1px solid #f0f2f1;font-size:13.5px}.ivc-o small{color:var(--muted);font-size:11.5px}.ivc-o:hover,.ivc-o.on{background:#fff6e8}
 .ivc-free{color:#b45f00;font-weight:600}.ivc-empty{padding:10px;color:var(--muted);font-size:13px}
@@ -425,7 +433,7 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 const API="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-admin";
 const APP="https://qar.gallery/laden/";
 const IMG=id=>`https://xsyuhfleesstrchcwspg.supabase.co/storage/v1/object/public/charge-public/stations/${encodeURIComponent(id)}.jpg`;
-const TYPES=["CCS","CHAdeMO","Typ 2","Typ 2 (Kabel)","Schuko","Tesla"];
+const TYPES=["CCS","CHAdeMO","MCS","Typ 2","Typ 2 (Kabel)","Schuko","Tesla"];
 const $=s=>document.querySelector(s), main=$("#main");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let token=null; try{ token=sessionStorage.getItem("hc_admin"); }catch(e){}
@@ -510,7 +518,7 @@ function renderEditor(){
     <div class="c4"><label>Projekt-ID</label><input id="f_project_id" value="${esc(E.project_id)}" placeholder="z. B. 1295"><div class="hint">QR-Code / Link: …/laden/#ID</div></div>
     <div class="c8"><label>Projektname <span class="muted">(optional)</span></label><input id="f_pname" value="${esc((E.extras||{}).project_name||"")}" placeholder="z. B. Ladepark Kaiserdamm"><div class="hint">Erscheint neben der ID – im Dashboard und in den Apps.</div></div>
     <div class="c6"><label>Betreiber / interne Bezeichnung</label><input id="f_name" value="${esc(E.name)}"></div>
-    <div class="c6"><label>Adresse (sichtbar für Kunden)</label><input id="f_address" value="${esc(E.address)}"></div>
+    <div class="c6"><label>Adresse (sichtbar für Kunden)</label><input id="f_address" value="${esc(E.address)}" placeholder="Straße Nr., PLZ Ort – tippen für Vorschläge"></div>
     <div class="c3"><label>Breitengrad</label><input id="f_lat" value="${E.lat??""}" inputmode="decimal"></div>
     <div class="c3"><label>Längengrad</label><input id="f_lng" value="${E.lng??""}" inputmode="decimal"></div>
     <div class="c6"><label>Abweichende Benachrichtigungs-Mail</label><input id="f_notify_email" value="${esc(E.notify_email)}" placeholder="leer = Standard-Empfänger"></div>
@@ -518,7 +526,7 @@ function renderEditor(){
     <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_sanitary" style="width:auto" ${(E.extras||{}).sanitary?"checked":""}> Sanitäre Einrichtungen vorhanden (Kachel „Sanitäre Einrichtungen“ in der App)</label></div>
     <div class="c12"><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)"><input type="checkbox" id="f_active" style="width:auto" ${E.active!==false?"checked":""}> Aktiv (in der Kunden-App erreichbar)</label></div>
   </div></div>
-  <div class="card"><h2>Infos für Kunden</h2><p class="sub" style="margin-top:0">Erscheinen in der Kunden-App. Leer lassen, wenn es nichts Besonderes gibt.</p>
+  <div class="card"><div class="row" style="margin-bottom:4px"><h2 style="margin:0;flex:1">Infos für Kunden</h2><button class="btn ghost sm" id="geoBtn" type="button" title="WC, Essen, Einkaufen, Parken usw. im Umkreis der Adresse aus OpenStreetMap">🌐 Infos aus der Umgebung laden</button></div><p class="sub" style="margin-top:0">Erscheinen in der Kunden-App. Leer lassen, wenn es nichts Besonderes gibt. Bei Auswahl der Adresse werden Umgebungs-Infos automatisch vorgeschlagen.</p>
     <label>🅿️ Parken</label><textarea id="f_parking" rows="5" placeholder="z. B. Parken während des Ladens kostenfrei, max. 2 Std. mit Parkscheibe. Schranke öffnet automatisch.">${esc((E.extras||{}).parking_info||"")}</textarea>
     <label style="margin-top:10px">💶 Tarife</label><textarea id="f_tariff" rows="5" placeholder="z. B. Ad-hoc 0,59 €/kWh · Blockiergebühr 0,10 €/Min. ab 4 Std. · mit Ladekarte gilt der Tarif Ihres Anbieters">${esc((E.extras||{}).tariff_info||"")}</textarea>
     <label style="margin-top:10px">ℹ️ Kundeninfo</label><textarea id="f_cinfo" rows="5" placeholder="z. B. Toiletten im Autohaus (Mo–Fr 8–18 Uhr) · Ladepunkt 3 wird am 12.11. gewartet">${esc((E.extras||{}).customer_info||"")}</textarea>
@@ -554,6 +562,8 @@ function renderEditor(){
   $("#chAll").onclick=()=>{ collect(); const v=!E.chargers.every(chFolded); E.chargers.forEach(c=>setFold(c,v)); renderEditor(); };
   $("#addCh").onclick=()=>{ collect(); E.chargers.forEach(c=>setFold(c,true)); CH_OPEN=true; const n=E.chargers.length+1; E.chargers.push({label:"LS#"+n,model:"",connectors:[{t:"CCS",kw:null,evse:""},{t:"CCS",kw:null,evse:""}]}); setFold(E.chargers[E.chargers.length-1],false); renderEditor(); };
   wireChargers(); fillClAssign(isNew);
+  if($("#f_address")) geoAddress($("#f_address"));
+  if($("#geoBtn")) $("#geoBtn").onclick=()=>geoNearby(+$("#f_lat").value||0,+$("#f_lng").value||0);
   if($("#invBox")){ invMount($("#invBox")); invCombo($("#f_cpms"),["software"]); invCombo($("#f_payment"),["pay"]); invCombo($("#f_comms"),["net"]); }
   document.querySelectorAll(".c_model").forEach(i=>invCombo(i,["lis_dc","lis_ac","pu"]));
   $("#toLists").onclick=e=>{ e.preventDefault(); FF.tab="lists"; go("field"); };
@@ -582,13 +592,13 @@ function chargerHTML(c,i){
     <div class="ch-body">
     <div class="ch-head">
       <div><label>Bezeichnung</label><input class="c_label" value="${esc(c.label)}"></div>
-      <div><label>Hersteller / Modell</label><input class="c_model" value="${esc(c.model)}" placeholder="Suchen, z. B. HYC 400"></div>
+      <div><label>Hersteller / Modell ${c.inv?'<span class="badge" title="Kommt aus dem Inventar – Stückzahl/Produkt dort ändern">🔗 Inventar</span>':""}</label><input class="c_model" value="${esc(c.model)}" placeholder="Suchen, z. B. HYC 400" ${c.inv?'readonly title="Kommt aus dem Inventar"':""}></div>
       <div class="row" style="gap:6px"><button class="icon-btn" data-act="up" title="nach oben">↑</button><button class="icon-btn" data-act="down" title="nach unten">↓</button><button class="icon-btn" data-act="rm" title="Charger entfernen">✕</button></div>
     </div>
     ${c.connectors.map((x,j)=>`<div class="lp" data-lj="${j}">
       <div class="no">LP ${j+1}</div>
       <select class="l_t">${TYPES.map(t=>`<option ${t===x.t?"selected":""}>${t}</option>`).join("")}</select>
-      <input class="l_kw" value="${x.kw??""}" placeholder="kW" inputmode="numeric">
+      <span class="kww"><input class="l_kw" value="${x.kw??""}" placeholder="kW" inputmode="numeric" data-man="${x.man?1:""}" title="${x.man?"Leistung manuell angepasst (z. B. Drosselung) – wird beim Abgleich nicht überschrieben":"Leistung in kW"}">${x.man&&c.inv?`<button class="kwr" data-act="kwreset" title="Leistung wieder aus dem Produkt übernehmen">↺</button>`:x.man?'<span class="kwm" title="manuell">✎</span>':""}</span>
       <input class="l_evse evse" value="${esc(x.evse)}" placeholder="EVSE-ID, z. B. DE*CPW*E1234673064*${j+1}">
       <button class="icon-btn" data-act="rmlp" title="Ladepunkt entfernen">✕</button>
     </div>`).join("")}
@@ -597,11 +607,15 @@ function chargerHTML(c,i){
   </div></div>`;
 }
 function wireChargers(){
+  document.querySelectorAll(".charger .l_kw, .charger .l_t").forEach(i=>i.addEventListener("input",()=>{ const k=i.closest(".lp").querySelector(".l_kw"); k.dataset.man="1"; }));
   document.querySelectorAll(".charger").forEach(el=>{
     const i=+el.dataset.ci;
     el.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{ collect(); const c=E.chargers[i], a=b.dataset.act;
       if(a==="fold"){ setFold(c,!chFolded(c)); el.classList.toggle("fold",chFolded(c)); el.querySelector(".fold-i").textContent=chFolded(c)?"▸":"▾"; const all=$("#chAll"); if(all) all.textContent=E.chargers.every(chFolded)?"Alle aufklappen":"Alle zuklappen"; return; }
-      if(a==="rm"){ if(E.chargers.length<2) return toast("Mindestens ein Charger",true); E.chargers.splice(i,1); }
+      if(a==="kwreset"){ const j=+b.closest(".lp").dataset.lj; delete c.connectors[j].man; return invSync(false); }
+      if(a==="rm"){ if(E.chargers.length<2) return toast("Mindestens ein Charger",true);
+        if(c.inv){ const it=((E.extras||{}).inventory||[]).find(x=>invKey(x)===c.inv); if(it){ it.q=(it.q||1)-1; if(it.q<1) E.extras.inventory.splice(E.extras.inventory.indexOf(it),1); toast("Stückzahl im Inventar angepasst"); } }
+        E.chargers.splice(i,1); }
       if(a==="up"&&i>0) [E.chargers[i-1],E.chargers[i]]=[E.chargers[i],E.chargers[i-1]];
       if(a==="down"&&i<E.chargers.length-1) [E.chargers[i+1],E.chargers[i]]=[E.chargers[i],E.chargers[i+1]];
       if(a==="addlp") c.connectors.push({t:"CCS",kw:null,evse:""});
@@ -630,6 +644,132 @@ async function loadGal(){ const g=$("#gal"); if(!g) return;
     g.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{ if(!confirm("Foto löschen?")) return; try{ await api("delete_image",{id:E.original_id,path:b.dataset.del}); loadGal(); }catch(e){ toast(e.message,true); } });
     g.querySelectorAll("[data-delhero]").forEach(b=>b.onclick=async()=>{ if(!confirm("Titelbild entfernen? (Die Fotos der Galerie bleiben.)")) return; try{ await api("delete_image",{id:E.original_id}); loadGal(); }catch(e){ toast(e.message,true); } });
   }catch(e){ g.innerHTML=`<span class="muted">${esc(e.message)}</span>`; } }
+/* ── Adresse vervollständigen (OpenStreetMap/Photon) & Umgebungs-Infos (Overpass) ── */
+const GEO_PHOTON="https://photon.komoot.io/api/", GEO_OVERPASS="https://overpass-api.de/api/interpreter";
+function geoFmt(p){ const a=p.properties||{}; const street=[a.street||(a.type==="street"?a.name:""),a.housenumber].filter(Boolean).join(" ");
+  const city=[a.postcode,a.city||a.town||a.village||a.district].filter(Boolean).join(" ");
+  const name=a.name&&a.name!==a.street&&!a.housenumber?a.name:""; return [name,street,city].filter(Boolean).join(", "); }
+function geoAddress(input){
+  const wrap=document.createElement("div"); wrap.className="ivc"; input.parentNode.insertBefore(wrap,input); wrap.appendChild(input);
+  const dd=document.createElement("div"); dd.className="ivc-dd"; wrap.appendChild(dd); input.setAttribute("autocomplete","off");
+  input.placeholder=input.placeholder||"Straße Nr., PLZ Ort – tippen für Vorschläge";
+  let tm, res=[], idx=-1, ctl;
+  const show=()=>{ dd.innerHTML=res.length?res.map((r,i)=>`<div class="ivc-o" data-i="${i}"><b>${esc(geoFmt(r))}</b><small>${esc([r.properties.state,r.properties.country].filter(Boolean).join(", "))}</small></div>`).join("")+`<div class="ivc-empty" style="font-size:11px">Daten © OpenStreetMap-Mitwirkende</div>`:""; dd.style.display=res.length?"block":"none"; idx=-1; };
+  input.addEventListener("input",()=>{ clearTimeout(tm); const q=input.value.trim(); if(q.length<4){ res=[]; show(); return; }
+    tm=setTimeout(async()=>{ try{ ctl?.abort(); ctl=new AbortController();
+      const lat=+$("#f_lat")?.value, lng=+$("#f_lng")?.value, bias=lat&&lng?`&lat=${lat}&lon=${lng}`:"&lat=51.2&lon=10.4";
+      const j=await (await fetch(`${GEO_PHOTON}?q=${encodeURIComponent(q)}&lang=de&limit=6${bias}&layer=house&layer=street&layer=locality`,{signal:ctl.signal})).json();
+      res=(j.features||[]).filter(f=>geoFmt(f)); show(); }catch(e){} },300); });
+  input.addEventListener("keydown",e=>{ const o=[...dd.querySelectorAll(".ivc-o")]; if(!o.length) return;
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); idx=(idx+(e.key==="ArrowDown"?1:-1)+o.length)%o.length; o.forEach((x,i)=>x.classList.toggle("on",i===idx)); }
+    else if(e.key==="Enter"&&idx>=0){ e.preventDefault(); pick(idx); } else if(e.key==="Escape") dd.style.display="none"; });
+  dd.addEventListener("mousedown",e=>{ const o=e.target.closest(".ivc-o"); if(o){ e.preventDefault(); pick(+o.dataset.i); } });
+  input.addEventListener("blur",()=>setTimeout(()=>dd.style.display="none",150));
+  const pick=i=>{ const r=res[i]; if(!r) return; dd.style.display="none";
+    input.value=geoFmt(r); const [lng,lat]=r.geometry.coordinates; $("#f_lat").value=lat.toFixed(6); $("#f_lng").value=lng.toFixed(6);
+    const pn=$("#f_pname"); if(pn&&!pn.value.trim()&&r.properties.name&&!r.properties.housenumber) pn.value=r.properties.name;
+    geoNearby(lat,lng,{auto:true}); };
+}
+const geoDist=(a,b,c,d)=>{ const R=6371e3,t=x=>x*Math.PI/180, dl=t(c-a), dg=t(d-b); const h=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dg/2)**2; return Math.round(2*R*Math.asin(Math.sqrt(h))); };
+const geoOH=s=>String(s||"").replace(/\bMo\b/g,"Mo").replace(/24\/7/,"rund um die Uhr").replace(/;\s*/g,", ").replace(/\bPH off\b/i,"").replace(/,\s*$/,"").slice(0,80);
+async function geoNearby(lat,lng,opt={}){
+  if(!lat||!lng){ const a=$("#f_address")?.value.trim(); if(!a) return toast("Bitte zuerst eine Adresse eingeben",true);
+    try{ const j=await (await fetch(`${GEO_PHOTON}?q=${encodeURIComponent(a)}&lang=de&limit=1`)).json(); const f=(j.features||[])[0]; if(!f) return toast("Adresse nicht gefunden",true);
+      [lng,lat]=f.geometry.coordinates; $("#f_lat").value=lat.toFixed(6); $("#f_lng").value=lng.toFixed(6); }catch(e){ return toast("Adresssuche nicht erreichbar",true); } }
+  const btn=$("#geoBtn"); if(btn){ btn.disabled=true; btn.textContent="⏳ Suche Umgebung …"; }
+  const q=`[out:json][timeout:25];(nwr(around:600,${lat},${lng})[amenity~"^(toilets|cafe|restaurant|fast_food|fuel|parking|charging_station|atm|pharmacy)$"];nwr(around:600,${lat},${lng})[shop~"^(supermarket|convenience|bakery|kiosk|mall|department_store|doityourself)$"];nwr(around:600,${lat},${lng})[tourism~"^(hotel|attraction|museum)$"];nwr(around:600,${lat},${lng})[leisure~"^(playground|park)$"][name];);out center tags 120;`;
+  let els=[]; try{ const r=await fetch(GEO_OVERPASS,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"}}); els=(await r.json()).elements||[]; }
+  catch(e){ if(btn){ btn.disabled=false; btn.textContent="🌐 Infos aus der Umgebung laden"; } return toast("Umgebungsdaten gerade nicht erreichbar – bitte später erneut",true); }
+  const P=els.map(e=>{ const la=e.lat??e.center?.lat, lo=e.lon??e.center?.lon, t=e.tags||{}; return {t,d:la?geoDist(lat,lng,la,lo):9e9,name:t.name||t.brand||t.operator||""}; }).filter(x=>x.d<=600).sort((a,b)=>a.d-b.d);
+  const pick=(f,n=2)=>P.filter(f).slice(0,n);
+  const line=(x,extra)=>`${x.name||"ohne Namen"} (${x.d} m${extra?", "+extra:""})`;
+  const wc=pick(x=>x.t.amenity==="toilets",2), fuel=pick(x=>x.t.amenity==="fuel",1), food=pick(x=>["cafe","restaurant","fast_food"].includes(x.t.amenity)||x.t.shop==="bakery",3),
+    shop=pick(x=>["supermarket","convenience","kiosk","mall","department_store","doityourself"].includes(x.t.shop),2), atm=pick(x=>x.t.amenity==="atm",1), ph=pick(x=>x.t.amenity==="pharmacy",1),
+    hotel=pick(x=>x.t.tourism==="hotel",1), park=pick(x=>x.t.leisure,1), play=pick(x=>x.t.leisure==="playground",1);
+  const L=[]; const add=(ic,lab,arr,oh=true)=>{ if(arr.length) L.push(`${ic} ${lab}: ${arr.map(x=>line(x,oh&&x.t.opening_hours?geoOH(x.t.opening_hours):"")).join(" · ")}`); };
+  add("🚻","WC",wc,true); add("☕","Essen & Trinken",food); add("🛒","Einkaufen",shop); add("⛽","Tankstelle / Shop",fuel); add("💶","Geldautomat",atm,false); add("💊","Apotheke",ph); add("🏨","Hotel",hotel,false); add("🌳","Grünfläche / Spielplatz",[...park,...play].slice(0,2),false);
+  const cinfo=L.length?"In der Nähe (Fußweg):\n"+L.join("\n"):"";
+  const pk=pick(x=>x.t.amenity==="parking",1)[0]; let parking="";
+  if(pk){ const t=pk.t, f=[]; f.push(`Parkplatz${pk.name?" „"+pk.name+"“":""} (${pk.d} m)`);
+    if(t.fee) f.push(t.fee==="no"?"kostenfrei":t.fee==="yes"?"gebührenpflichtig":"Gebühr: "+t.fee);
+    if(t.maxstay) f.push("max. Parkdauer "+t.maxstay.replace(/hours?/,"Std.").replace(/minutes?/,"Min."));
+    if(t["parking:disc"]==="yes"||/disc/i.test(t["parking:condition"]||"")) f.push("mit Parkscheibe");
+    if(t.access&&!["yes","public"].includes(t.access)) f.push("Zugang: "+({customers:"nur Kunden",private:"privat",permissive:"geduldet"}[t.access]||t.access));
+    if(t.opening_hours) f.push("geöffnet "+geoOH(t.opening_hours));
+    if(t.capacity) f.push(t.capacity+" Stellplätze");
+    parking=f.join(" · "); }
+  const sanitary=wc.some(x=>x.d<=300)||fuel.some(x=>x.d<=150);
+  if(btn){ btn.disabled=false; btn.textContent="🌐 Infos aus der Umgebung laden"; }
+  if(!cinfo&&!parking){ if(!opt.auto) toast("Keine passenden Einrichtungen im Umkreis von 600 m gefunden"); return; }
+  const f={park:$("#f_parking"),info:$("#f_cinfo")}, empty=!f.park.value.trim()&&!f.info.value.trim();
+  const apply=(p,c)=>{ if(p!=null) f.park.value=p; if(c!=null) f.info.value=c; if(sanitary&&$("#f_sanitary")&&!$("#f_sanitary").checked) $("#f_sanitary").checked=true;
+    toast("🌐 Umgebungs-Infos eingetragen – bitte kurz prüfen"); };
+  if(empty&&opt.auto) return apply(parking||null,cinfo||null);
+  const md=mkModal(`<div class="row"><h2 style="margin:0;flex:1">🌐 Infos aus der Umgebung</h2><button class="btn ghost sm" data-close>✕</button></div>
+    <p class="sub">Gefunden im Umkreis von 600 m (Daten © OpenStreetMap-Mitwirkende). Vor dem Übernehmen gerne anpassen.</p>
+    <label>🅿️ Parken</label><textarea id="gP" rows="3">${esc(parking)}</textarea>
+    <label style="margin-top:10px">ℹ️ Kundeninfo</label><textarea id="gC" rows="8">${esc(cinfo)}</textarea>
+    ${sanitary?`<div class="hint">🚻 WC in der Nähe gefunden – „Sanitäre Einrichtungen“ wird angehakt.</div>`:""}
+    <div class="row" style="margin-top:12px;gap:8px"><button class="btn" id="gOk">Übernehmen (ersetzen)</button><button class="btn ghost" id="gAdd">Anhängen</button><button class="btn ghost" data-close>Abbrechen</button></div>`);
+  md.querySelector("#gOk").onclick=()=>{ apply(md.querySelector("#gP").value,md.querySelector("#gC").value); md.remove(); };
+  md.querySelector("#gAdd").onclick=()=>{ const a=(o,n)=>[o.trim(),n.trim()].filter(Boolean).join("\n"); apply(a(f.park.value,md.querySelector("#gP").value),a(f.info.value,md.querySelector("#gC").value)); md.remove(); };
+}
+
+/* ── Inventar ⇄ Charger/Ladepunkte synchronisieren ── */
+const invNum=s=>+String(s||"").replace(/\./g,"").replace(",",".");
+const IS_LIS=x=>x&&(x.c==="lis_dc"||x.c==="lis_ac");
+/* Ladepunkte eines Produkts aus der Bezeichnung ableiten */
+function invSpec(x){ const n=String(x.n||""), out=[];
+  for(const m of n.matchAll(/(\d+)\s*x\s*(CCS(?:\s*LC)?|CHAdeMO|MCS|Typ\s*2|Schuko)(?:\s*bis\s*([\d.,]+)\s*kW)?/gi)){
+    const t=/mcs/i.test(m[2])?"MCS":/chademo/i.test(m[2])?"CHAdeMO":/typ/i.test(m[2])?"Typ 2":/schuko/i.test(m[2])?"Schuko":"CCS";
+    for(let i=0;i<Math.min(+m[1],8);i++) out.push({t,kw:m[3]?invNum(m[3]):null}); }
+  if(out.length) return out;
+  const kwM=n.match(/([\d.,]+)\s*kW/i), kw=kwM?invNum(kwM[1]):null;
+  if(x.c==="lis_ac"){ const k=/double|twin|duo|doppel|2-fach/i.test(n)?2:1; return Array.from({length:k},()=>({t:"Typ 2",kw:kw||22})); }
+  const k=/single|1-fach|einzel|1 x|dispenser \(1/i.test(n)?1:2, mdl=n.match(/(?:terra|hyc|a|ufc|sat|raption|rtm|pkm)\s*-?\s*(\d{2,3})/i);
+  return Array.from({length:k},()=>({t:"CCS",kw:kw||(mdl?+mdl[1]:null)})); }
+/* Power Units: gemeinsame Leistung für Dispenser/Satellites */
+function invPower(){ const inv=(E.extras||{}).inventory||[]; let cap=0, pus=0;
+  for(const x of inv.filter(y=>y.c==="pu")){ const m=x.n.match(/bis\s*([\d.,]+)\s*kW/i); if(m){ cap+=invNum(m[1])*(x.q||1); pus+=x.q||1; } }
+  const sat=E.chargers.filter(c=>/dispenser|satellit|user unit|\bsat\b/i.test(c.model||"")).reduce((a,c)=>a+c.connectors.length,0);
+  return cap&&sat?{cap,pus,lp:sat,avg:Math.round(cap/sat)}:null; }
+function invNextLabel(){ let n=0; for(const c of E.chargers){ const m=String(c.label||"").match(/(\d+)\s*$/); if(m) n=Math.max(n,+m[1]); } return "LS#"+(n+1); }
+const blankCharger=c=>!c.inv&&!c.model&&c.connectors.every(x=>!x.evse&&!x.kw);
+function invSync(interactive=true){
+  collect(); const inv=(E.extras||{}).inventory||[], lis=inv.filter(IS_LIS), keys=new Set(lis.map(invKey)), log=[];
+  const hasEvse=c=>c.connectors.some(x=>x.evse);
+  // 1) Charger zu entfernten Inventar-Positionen
+  const orphan=E.chargers.filter(c=>c.inv&&!keys.has(c.inv));
+  if(orphan.length){ const withE=orphan.filter(hasEvse);
+    if(!withE.length||!interactive||confirm(`${orphan.length} Charger gehören zu nicht mehr vorhandenem Inventar (${orphan.map(c=>c.label).join(", ")}).\n${withE.length?withE.length+" davon haben EVSE-IDs.\n":""}\nEntfernen? (Abbrechen = behalten, Verknüpfung wird gelöst)`)){
+      E.chargers=E.chargers.filter(c=>!orphan.includes(c)); log.push(`${orphan.length} Charger entfernt`); }
+    else orphan.forEach(c=>{ delete c.inv; }); }
+  for(const x of lis){ const key=invKey(x), want=x.q||1, label=invLabel(x), spec=invSpec(x);
+    let linked=E.chargers.filter(c=>c.inv===key);
+    // vorhandene, passende Charger übernehmen (gleiches Modell oder leere Platzhalter)
+    for(const c of E.chargers){ if(linked.length>=want) break; if(!c.inv&&c.model&&invNorm(c.model)===invNorm(label)){ c.inv=key; linked.push(c); } }
+    for(const c of E.chargers){ if(linked.length>=want) break; if(blankCharger(c)){ c.inv=key; c.model=label; linked.push(c); } }
+    let added=0; while(linked.length<want){ const c={label:invNextLabel(),model:label,inv:key,connectors:spec.map(s=>({t:s.t,kw:s.kw,evse:""}))}; E.chargers.push(c); linked.push(c); added++; }
+    if(added) log.push(`${added}× ${label} angelegt`);
+    if(linked.length>want){ const extra=linked.slice(want), withE=extra.filter(hasEvse);
+      if(!withE.length||!interactive||confirm(`Stückzahl „${label}“ auf ${want} reduziert – ${extra.length} Charger (${extra.map(c=>c.label).join(", ")}) entfernen?${withE.length?"\n"+withE.length+" davon haben bereits EVSE-IDs.":""}`)){
+        E.chargers=E.chargers.filter(c=>!extra.includes(c)); log.push(`${extra.length}× ${label} entfernt`); }
+      else extra.forEach(c=>{ delete c.inv; }); linked=linked.slice(0,want); }
+    // Ladepunkte je Charger an das Produkt angleichen – EVSE-IDs und manuelle Leistung bleiben
+    for(const c of linked){ c.model=label;
+      spec.forEach((s,j)=>{ const lp=c.connectors[j]; if(!lp){ c.connectors.push({t:s.t,kw:s.kw,evse:""}); return; } if(!lp.man){ lp.t=s.t; lp.kw=s.kw; } });
+      while(c.connectors.length>spec.length&&!c.connectors[c.connectors.length-1].evse) c.connectors.pop(); } }
+  if(!E.chargers.length) E.chargers.push({label:"LS#1",model:"",connectors:[{t:"CCS",kw:null,evse:""}]});
+  const y=scrollY; CH_OPEN=true; renderEditor(); scrollTo(0,y);
+  if(log.length) toast("🔗 Charger synchronisiert: "+log.join(" · "));
+  return log; }
+function invSyncInfo(){ const inv=(E.extras||{}).inventory||[], lis=inv.filter(IS_LIS); if(!lis.length) return "";
+  const lp=E.chargers.filter(c=>c.inv).reduce((a,c)=>a+c.connectors.length,0), noE=E.chargers.filter(c=>c.inv).reduce((a,c)=>a+c.connectors.filter(x=>!x.evse).length,0), P=invPower();
+  return `<div class="ivsync"><b>🔗 Mit Chargern verknüpft:</b> ${lis.map(x=>`${x.q||1}× ${esc(invLabel(x))}`).join(", ")} → ${E.chargers.filter(c=>c.inv).length} Charger · ${lp} Ladepunkte${noE?` · <span class="warn-t">${noE} EVSE-IDs fehlen</span>`:""}
+    ${P?`<br>⚡ Power Unit${P.pus>1?"s":""} ${P.cap.toLocaleString("de-DE")} kW für ${P.lp} Ladepunkte – bei gleichzeitiger Nutzung Ø ${P.avg} kW je Ladepunkt (Spitze laut Dispenser).`:""}
+    <div class="hint" style="margin-top:4px">Ladesäulen im Inventar erzeugen die Charger automatisch. Typ und Leistung kommen aus dem Produkt – gedrosselte Leistung (z. B. weniger Powerstacks) einfach beim Ladepunkt ändern, sie bleibt dann erhalten (✎). EVSE-IDs bitte bei den Chargern nachtragen.</div>
+    <button class="btn ghost sm" id="ivSyncBtn" type="button" style="margin-top:6px">↻ Jetzt abgleichen</button></div>`; }
+
 /* ── Katalog-Import: DATANORM (4/5), BMEcat (1.2/2005), CSV ── */
 let INV_EXT=null;
 async function invLoadExt(force){ if(INV_EXT&&!force) return INV_EXT; try{ const r=await api("catalog"); INV_EXT=r.items||[]; INV_EXT._src=r.sources||{}; }catch(e){ INV_EXT=INV_EXT||[]; } return INV_EXT; }
@@ -830,6 +970,7 @@ function invMount(box){
     <div class="hint" style="margin-top:4px"><span id="ivCnt">${INV_CAT.length}</span> Produkte im Katalog · <a href="#" id="ivImp">📥 DATANORM / BMEcat / CSV importieren</a>. Nicht dabei? Einfach eintippen und „übernehmen“ – eigene Einträge stehen danach in allen Projekten zur Auswahl.</div>
     <div id="ivL" style="margin-top:10px"></div>`;
   const q=box.querySelector("#ivQ"), L=box.querySelector("#ivL");
+  const after=x=>{ if(IS_LIS(x)) invSync(); else paint(); };
   const paint=()=>{ if(!inv.length){ L.innerHTML=`<div class="muted" style="font-size:13px">Noch kein Inventar erfasst.</div>`; return; }
     const g={}; inv.forEach((x,i)=>(g[x.c]=g[x.c]||[]).push([x,i]));
     L.innerHTML=Object.keys(INV_CATS).filter(c=>g[c]).concat(Object.keys(g).filter(c=>!INV_CATS[c])).map(c=>`<div class="iv-g"><div class="iv-gh">${esc(INV_CATS[c]||c)}</div>${g[c].map(([x,i])=>`<div class="iv-r" data-i="${i}">
@@ -837,15 +978,16 @@ function invMount(box){
       <div class="iv-q"><button class="icon-btn" data-a="m">−</button><input class="iv-qty" value="${x.q||1}" inputmode="numeric"><button class="icon-btn" data-a="p">+</button></div>
       <button class="icon-btn" data-a="rm" title="Entfernen">✕</button></div>`).join("")}</div>`).join("");
     L.querySelectorAll(".iv-r").forEach(r=>{ const x=inv[+r.dataset.i];
-      r.querySelector("[data-a=m]").onclick=()=>{ x.q=Math.max(1,(x.q||1)-1); paint(); };
-      r.querySelector("[data-a=p]").onclick=()=>{ x.q=(x.q||1)+1; paint(); };
-      r.querySelector(".iv-qty").onchange=e=>{ x.q=Math.max(1,Math.min(9999,parseInt(e.target.value)||1)); paint(); };
-      r.querySelector("[data-a=rm]").onclick=()=>{ inv.splice(+r.dataset.i,1); paint(); }; }); };
+      r.querySelector("[data-a=m]").onclick=()=>{ x.q=Math.max(1,(x.q||1)-1); after(x); };
+      r.querySelector("[data-a=p]").onclick=()=>{ x.q=(x.q||1)+1; after(x); };
+      r.querySelector(".iv-qty").onchange=e=>{ x.q=Math.max(1,Math.min(9999,parseInt(e.target.value)||1)); after(x); };
+      r.querySelector("[data-a=rm]").onclick=()=>{ inv.splice(+r.dataset.i,1); after(x); }; });
+    L.insertAdjacentHTML("beforeend",invSyncInfo()); const sb=L.querySelector("#ivSyncBtn"); if(sb) sb.onclick=()=>invSync(); };
   invLoadExt().then(()=>{ const c=box.querySelector("#ivCnt"); if(c) c.textContent=invCatalog().length.toLocaleString("de-DE"); });
   box.querySelector("#ivImp").onclick=e=>{ e.preventDefault(); invImportDialog(); };
   invCombo(q,()=>cat?[cat]:null,(x,isFree)=>{ const it={c:isFree?(cat||"sonst"):x.c,b:x.b||"",n:x.n,q:1,x:!!(isFree||x.x),...(x.art?{art:x.art}:{})};
     const ex=inv.find(y=>invKey(y)===invKey(it)); if(ex) ex.q=(ex.q||1)+1; else inv.push(it);
-    setTimeout(()=>{ q.value=""; q.focus(); },0); paint(); toast(ex?"Stückzahl erhöht":"Hinzugefügt: "+invLabel(it)); });
+    setTimeout(()=>{ q.value=""; },0); toast(ex?"Stückzahl erhöht":"Hinzugefügt: "+invLabel(it)); after(it); });
   const sel=box.querySelector("#ivC"); sel.onchange=()=>{ cat=sel.value; q.focus(); q.dispatchEvent(new Event("input")); };
   paint();
 }
@@ -856,7 +998,7 @@ function collect(){
   E.extras={...(E.extras||{}),parking_info:($("#f_parking")?.value||"").trim(),tariff_info:($("#f_tariff")?.value||"").trim(),customer_info:($("#f_cinfo")?.value||"").trim(),project_name:($("#f_pname")?.value||"").trim(),sanitary:!!$("#f_sanitary")?.checked,cpms:($("#f_cpms")?.value||"").trim(),ocpp:$("#f_ocpp")?.value||"",payment:($("#f_payment")?.value||"").trim(),comms:($("#f_comms")?.value||"").trim(),inventory_note:($("#f_inv")?.value||"").trim()};
   document.querySelectorAll(".charger").forEach(el=>{ const c=E.chargers[+el.dataset.ci]; if(!c) return;
     c.label=el.querySelector(".c_label").value.trim(); c.model=el.querySelector(".c_model").value.trim();
-    el.querySelectorAll(".lp").forEach(r=>{ const x=c.connectors[+r.dataset.lj]; x.t=r.querySelector(".l_t").value; x.kw=r.querySelector(".l_kw").value.trim()||null; x.evse=r.querySelector(".l_evse").value.trim(); });
+    el.querySelectorAll(".lp").forEach(r=>{ const x=c.connectors[+r.dataset.lj]; x.t=r.querySelector(".l_t").value; x.kw=r.querySelector(".l_kw").value.trim()||null; x.evse=r.querySelector(".l_evse").value.trim(); if(r.querySelector(".l_kw").dataset.man==="1") x.man=true; });
   });
 }
 async function save(){
@@ -2022,6 +2164,22 @@ async function overviewView(){
   wireDates(OF,"of",loadOverview);
   loadOverview();
 }
+const PIN_BOX=["fbody","mdBody","tmBody","mkBody","simBody","cBody"];
+function pinTops(){ const m=$("#main"); if(!m) return;
+  m.querySelectorAll(".pinned").forEach(e=>{ e.classList.remove("pinned","pinlast"); e.style.top=""; }); m.classList.remove("haspin");
+  if(innerWidth<=1000||innerHeight<700||m.querySelector(".ov-split")) return;
+  const vh=innerHeight, list=[];
+  const walk=root=>{ for(const c of root.children){ const h=c.offsetHeight; if(!h||c.matches(".modal,.tip,script")) continue;
+      if(PIN_BOX.includes(c.id)) return h>vh*0.4?walk(c):undefined;
+      if(h>vh*0.28||c.matches(".grid,table")||c.querySelector("table,.cal,.grid,.akte-grid,.charger")) return; list.push(c); } };
+  walk(m);
+  const total=list.reduce((a,c)=>a+c.offsetHeight+14,0); if(!list.length||total>vh*0.5) return;
+  let top=($("header")?.offsetHeight||57)+6;
+  list.forEach((c,i)=>{ c.classList.add("pinned"); c.style.top=top+"px"; if(i===list.length-1) c.classList.add("pinlast"); top+=c.offsetHeight+(parseFloat(getComputedStyle(c).marginBottom)||0); });
+  m.style.setProperty("--pinb",(top-7)+"px"); m.classList.add("haspin"); }
+{ let t; const mo=new MutationObserver(()=>{ clearTimeout(t); t=setTimeout(pinTops,120); }); addEventListener("DOMContentLoaded",()=>{}); 
+  setTimeout(()=>{ const m=$("#main"); if(m) mo.observe(m,{childList:true,subtree:true}); },0);
+  addEventListener("resize",()=>{ clearTimeout(t); t=setTimeout(pinTops,150); }); }
 function ovFit(){ const sp=document.querySelector(".ov-split"); if(!sp) return;
   if(innerWidth<=1000||innerHeight<560){ sp.style.height=""; sp.classList.remove("fit"); return; }
   scrollTo(0,0); const t=sp.getBoundingClientRect().top; sp.style.height=Math.max(320,innerHeight-t-22)+"px"; sp.classList.add("fit"); }
