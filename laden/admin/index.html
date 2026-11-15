@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="20261112k">
+<meta name="build" content="20261115a">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>HAPPY CHARGING Support · Betreiber</title>
@@ -1318,7 +1318,7 @@ async function renderInc(no,box){
     const r=await api("incident",{ticket_no:no}), i=r.incident, st=stOf(i.station_id);
     const facts=[["Vorgang",`<code>${esc(i.ticket_no)}</code>`],["Projekt",esc(st?(st.project_id||st.id):i.station_id)+(st&&st.address?" · "+esc(st.address):"")],
       ["Ladepunkt",esc(i.connector?cpLabel(st,i.connector):"📍 Standort allgemein")+(evseOf(st,i.connector)?` · <code>${esc(evseOf(st,i.connector))}</code>`:"")],["Problem",esc(i.title||"–")],...(i.reported_by?[["Gemeldet von",`🔧 ${esc(i.reported_by.name)}${i.reported_by.company?" · "+esc(i.reported_by.company):""} <span class="muted">(${esc(FROLES[i.reported_by.role]||"Field-Service")})</span>`],["Beschreibung",esc(i.reported_by.desc||"–")+'<div class="i-fphoto"></div>']]:[]),
-      ["Erste Meldung",new Date(i.created_at).toLocaleString("de-DE")],["Letzte Meldung",new Date(i.last_report_at).toLocaleString("de-DE")],["Meldungen",i.reports+"×"],
+      ["Erste Meldung",new Date(i.created_at).toLocaleString("de-DE")],["Letzte Meldung",new Date(i.last_report_at).toLocaleString("de-DE")],["Meldungen",i.reports+"×"],["Standort bei Meldung",(()=>{ const L=(r.reports||[]).map(x=>custGeo(x.data&&x.data.geo,stOf(i.station_id))).filter(Boolean); return L.length?L.map(g=>geoLine(g)).join("<br>"):'<span class="muted">nicht übermittelt</span>'; })()],
       ["Info-Mail an",(i.subscribers||[]).length?(i.subscribers.map(x=>esc(x.email)).join(", ")):"–"],...(i.resolved_at?[["Erledigt",new Date(i.resolved_at).toLocaleString("de-DE")]]:[])];
     box.innerHTML=`<div class="i-tl">${incTimeline(i,r.reports)}</div><div class="akte-grid">
       <div><h3>Störung</h3><dl>${facts.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
@@ -1629,8 +1629,13 @@ async function fVis(){
     +`<div class="card"><h2 style="margin-bottom:4px">⏰ Erinnerungen – Standard</h2><p class="sub">Gilt für Checklisten-Termine (wenn in der Checkliste nichts Eigenes eingestellt ist) und für Mängel. Täglich um 7 Uhr geht eine Erinnerungs-Mail an das Team, wenn eine Schwelle erreicht oder ein Termin überschritten ist (Überfälliges zusätzlich jeden Montag).</p>
       <div class="row" style="gap:16px"><label><span class="dtag d-soon">orange</span> Erinnerung ab <input class="v-rm" inputmode="numeric" style="width:70px" value="${FVIS.remind??14}"> Tagen vorher</label>
       <label><span class="dtag d-urgent">hellrot</span> dringend ab <input class="v-ug" inputmode="numeric" style="width:70px" value="${FVIS.urgent??3}"> Tagen vorher</label><span><span class="dtag d-over">−X T.</span> = überfällig</span></div></div>
+`
+    +`<div class="card"><h2 style="margin-bottom:4px">📍 Standortprüfung im Service-Zugang</h2><p class="sub">Ein QR-Code lässt sich abfotografieren und woanders scannen. Deshalb wird beim Abschluss eines Protokolls der GPS-Standort des Geräts mit den Koordinaten des Projekts abgeglichen. Ist er nicht bestätigt (zu weit weg, Freigabe verweigert, Projekt ohne Koordinaten), greift die gewählte Regel.</p>
+      <div class="row" style="gap:16px;align-items:flex-end"><label style="flex:2;min-width:260px">Regel<select class="v-geo">${Object.entries(GEO_ML).map(([k,l])=>`<option value="${k}" ${(FVIS.geo_mode||"foto")===k?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
+      <label style="flex:1;min-width:140px">Radius um das Projekt (m)<input class="v-geor" inputmode="numeric" value="${FVIS.geo_radius??300}"></label></div>
+      <div class="hint">GPS in Innenräumen/Tiefgaragen ist oft ungenau – die gemeldete Genauigkeit (bis 150 m) wird großzügig mit eingerechnet. ${STATIONS.filter(x=>x.active!==false&&(x.lat==null||x.lng==null)).length?`<b style="color:var(--warn)">${STATIONS.filter(x=>x.active!==false&&(x.lat==null||x.lng==null)).length} Projekt(e) ohne Koordinaten</b> (${STATIONS.filter(x=>x.active!==false&&(x.lat==null||x.lng==null)).map(x=>esc(x.project_id||x.id)).join(", ")}) – dort ist der Standort nicht prüfbar; bitte im Projekt die Adresse neu auswählen.`:"Alle Projekte haben Koordinaten."}</div></div>
     <button class="btn" id="vSave">Speichern</button>`;
-  $("#vSave").onclick=async()=>{ try{ await fapi("settings_save",{incidents:[...document.querySelectorAll(".v-incidents:checked")].map(x=>x.value),defects:[...document.querySelectorAll(".v-defects:checked")].map(x=>x.value),remind:$(".v-rm").value,urgent:$(".v-ug").value,data_access:Object.fromEntries([...document.querySelectorAll(".v-da")].map(s=>[s.dataset.k,s.value]))}); CMETA=null; toast("Gespeichert ✓"); }catch(e){ toast(e.message,true); } };
+  $("#vSave").onclick=async()=>{ try{ await fapi("settings_save",{incidents:[...document.querySelectorAll(".v-incidents:checked")].map(x=>x.value),defects:[...document.querySelectorAll(".v-defects:checked")].map(x=>x.value),remind:$(".v-rm").value,urgent:$(".v-ug").value,geo_mode:$(".v-geo").value,geo_radius:$(".v-geor").value,data_access:Object.fromEntries([...document.querySelectorAll(".v-da")].map(s=>[s.dataset.k,s.value]))}); CMETA=null; toast("Gespeichert ✓"); }catch(e){ toast(e.message,true); } };
 }
 /* Mängel */
 let FD={status:"open",station:"",prio:"",sort:"prio"};
@@ -1674,6 +1679,7 @@ async function fDefects(){
       const cpsOf=(st&&st.connectors||[]).filter(c=>!d.charger||c.charger===d.charger);
       box.innerHTML=`<div class="akte-grid"><div><h3>Mangel ${esc(d.defect_no||"")}</h3><dl><dt>Mangel</dt><dd><b>${esc(d.item_text)}</b></dd><dt>Beschreibung</dt><dd>${esc(d.note||"–")}</dd><dt>Bereich</dt><dd>${esc(stLabel(d.station_id))} · ${esc(fWhere(d))}</dd>
         <dt>Quelle</dt><dd>${esc(SRC_L[d.source]||d.source||"")}${d.report_no?` · Protokoll <code>${esc(d.report_no)}</code>`:""}${d.incident_ticket?` · aus Störung <a href="#" class="to-inc4" data-no="${esc(d.incident_ticket)}"><code>${esc(d.incident_ticket)}</code></a>`:""}</dd><dt>Gemeldet</dt><dd>${fmtDT(d.created_at)} · ${esc(d.created_by||"")}</dd>
+        ${d.geo?`<dt>Standort</dt><dd>${geoLine(d.geo)}</dd>`:""}
         ${d.escalated_ticket?`<dt>Eskaliert</dt><dd>zur Störung ${d.escalated_ticket.split(", ").map(n=>`<a href="#" class="to-inc4" data-no="${esc(n)}"><code>${esc(n)}</code></a>`).join(", ")}</dd>`:""}
         ${d.resolved_at?`<dt>Behoben</dt><dd>${fmtDT(d.resolved_at)} · ${esc(d.resolved_by||"")}${d.resolve_note?"<br>"+esc(d.resolve_note):""}</dd>`:""}</dl>
         ${d.photo_url?`<a href="${esc(d.photo_url)}" target="_blank" rel="noopener"><img src="${esc(d.photo_url)}" style="width:160px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line);margin-top:8px"></a>`:""}
@@ -1723,12 +1729,21 @@ async function loadFR(){
     tb.innerHTML=r.reports.length?r.reports.map(x=>`<tr class="click" data-id="${esc(x.id)}"><td class="chev">▸</td><td>${fmtDT(x.finished_at)}</td><td><code>${esc(x.report_no)}</code>${x.ticket_no?`<br><small class="muted">${esc(x.ticket_no)}${x.resolved_ticket?" ✓ erledigt":""}</small>`:""}</td>
       <td><b>${esc(stLabel(x.station_id))}</b></td><td>${esc(fWhere(x))}</td><td>${esc(x.checklist_title||"")}</td><td>${esc(x.staff_name||"")}<br><small class="muted">${esc(x.company||"")} · ${esc(FROLES[x.role]||x.role||"")}</small></td>
       <td>${x.work_minutes!=null?`<b>${hmin(x.work_minutes)}</b>${x.time_corrected?' <span class="badge amber">korr.</span>':""}`:"–"}</td><td>${x.total_cost!=null?eur(x.total_cost):"–"}</td>
-      <td><span class="badge ${x.result==="ok"?"":"warn"}">${x.result==="ok"?"✓ ohne Mängel":"⚠ Mängel"}</span></td></tr>
+      <td><span class="badge ${x.result==="ok"?"":"warn"}">${x.result==="ok"?"✓ ohne Mängel":"⚠ Mängel"}</span> ${geoBadge(x.geo,x.geo_photo)}</td></tr>
       <tr class="akte hidden" data-for="${esc(x.id)}"><td colspan="10"><div class="akte-in">Lade …</div></td></tr>`).join(""):`<tr><td colspan="10" class="muted">Keine Protokolle im gewählten Zeitraum.</td></tr>`;
     tb.querySelectorAll("tr.click").forEach(row=>row.onclick=async()=>{ const id=row.dataset.id, ak=tb.querySelector(`tr.akte[data-for="${id}"]`), open=ak.classList.toggle("hidden")===false;
       row.querySelector(".chev").textContent=open?"▾":"▸"; row.classList.toggle("open",open); if(open) renderFR(id,ak.querySelector(".akte-in")); });
   }catch(e){ toast(e.message,true); }
 }
+function custGeo(v,st){ const R=(FVIS&&FVIS.geo_radius)||300; if(!v) return null; if(v==="denied") return {ok:false,reason:"Standortfreigabe verweigert"};
+  const [la,lo,acc,at]=String(v).split(","); const lat=+la,lng=+lo; if(!Number.isFinite(lat)||!Number.isFinite(lng)) return null;
+  if(!st||st.lat==null||st.lng==null) return {ok:false,lat,lng,acc:+acc||0,reason:"Projekt ohne Koordinaten"};
+  const d=geoDist(lat,lng,+st.lat,+st.lng), ok=d<=R+Math.min(+acc||0,150); return {ok,lat,lng,acc:+acc||0,dist:d,reason:ok?null:`${d>=1000?(d/1000).toFixed(1).replace(".",",")+" km":d+" m"} vom Standort entfernt`}; }
+const GEO_ML={aus:"Aus – keine Prüfung",hinweis:"Nur markieren (Abschluss immer möglich)",foto:"Foto-Beleg verlangen, wenn nicht vor Ort bestätigt",sperre:"Sperren – Abschluss nur am Standort"};
+function geoBadge(g,photo){ if(!g) return ""; if(g.ok) return `<span class="badge" title="${esc(`${g.dist} m vom Standort · ±${g.acc} m`)}">📍 vor Ort</span>`;
+  return `<span class="badge warn" title="${esc(g.reason||"")}">⚠ Standort ${photo?"· 📷":"?"}</span>`; }
+function geoLine(g){ if(!g) return "–"; const m=g.lat!=null?` · <a href="https://www.google.com/maps?q=${g.lat},${g.lng}" target="_blank" rel="noopener">Position ansehen ↗</a>`:"";
+  return g.ok?`<span class="chk-ok">✓ vor Ort bestätigt</span> <span class="muted">(${g.dist} m vom Projekt, Genauigkeit ±${g.acc} m)</span>${m}`:`<span class="chk-bad">⚠ nicht bestätigt</span> – ${esc(g.reason||"")}${g.acc?` <span class="muted">(±${g.acc} m)</span>`:""}${m}`; }
 async function renderFR(id,box){
   try{ const r=(await fapi("report_get",{id})).report, st=stOf(r.station_id);
     const val=a=>a.na?'<span class="muted" title="keine Angabe / nicht möglich">k. A.</span>':a.type==="check"?(a.ok===true?'<span class="chk-ok">✓ in Ordnung</span>':a.ok===false?'<span class="chk-bad">✗ Mangel</span>':"–"):a.type==="photo"?(a.photo_url?"":"–"):esc(a.value??"–");
@@ -1737,6 +1752,7 @@ async function renderFR(id,box){
       <dt>Nummer</dt><dd><code>${esc(r.report_no)}</code></dd><dt>Projekt</dt><dd>${esc(stLabel(r.station_id))}${st&&st.address?" · "+esc(st.address):""}</dd><dt>Bereich</dt><dd>${esc(fWhere(r))}</dd>
       <dt>Checkliste</dt><dd>${esc(r.checklist_title)}</dd><dt>Durchgeführt</dt><dd>${esc(r.staff_name)}${r.company?" · "+esc(r.company):""}<br><small class="muted">${esc(FROLES[r.role]||"")}</small></dd>
       <dt>Abgeschlossen</dt><dd>${new Date(r.finished_at).toLocaleString("de-DE")}</dd>
+      ${r.geo?`<dt>Standort</dt><dd>${geoLine(r.geo)}${r.geo_photo_url?`<br><a href="${esc(r.geo_photo_url)}" target="_blank" rel="noopener"><img src="${esc(r.geo_photo_url)}" style="width:150px;height:105px;object-fit:cover;border-radius:8px;border:1px solid var(--line);margin-top:6px" alt="Foto-Beleg"></a><br><small class="muted">Foto-Beleg${r.geo.photo_taken?" · aufgenommen "+fmtDT(r.geo.photo_taken):""}</small>`:""}</dd>`:""}
       ${r.ticket_no?`<dt>Störung</dt><dd><a href="#" class="to-inc3" data-no="${esc(r.ticket_no)}"><code>${esc(r.ticket_no)}</code></a>${r.resolved_ticket?" – vor Ort erledigt":""}</dd>`:""}</dl>
       <h3 style="margin-top:14px">⏱ Zeit &amp; Kosten</h3><dl>
         <dt>Vor Ort</dt><dd>${r.work_started_at?new Date(r.work_started_at).toLocaleDateString("de-DE")+" · "+tm(r.work_started_at)+" – "+tm(r.finished_at):"–"}</dd>

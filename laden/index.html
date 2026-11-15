@@ -193,6 +193,7 @@ nav.tabs button{position:relative}
 .step-ph{display:flex;gap:8px;margin:4px 0 10px}.step-ph .ph{flex:1;position:relative;overflow:hidden;margin:0}.step-ph input{position:absolute;inset:0;opacity:0}.sp-prev{display:flex;gap:10px;align-items:center;margin:0 0 12px;font-size:13px;color:#08603d}.sp-prev img{height:64px;border-radius:10px}
 .nbc{padding:0;overflow:hidden}.nbc h4{margin:0;padding:12px 14px 6px;font-size:15px}.nbc-ch{display:flex;gap:6px;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none}.nbc-ch button{flex:none;border:1px solid #dfe5e2;background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;white-space:nowrap;color:inherit}.nbc-ch button.on{background:#e8f6ef;border-color:#0a8f5a;color:#08603d;font-weight:600}
 .nbc-r{display:flex;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid #eef1ef;text-decoration:none;color:inherit}.nbc-i{flex:none;width:38px;height:38px;border-radius:50%;background:#f1f5f3;display:grid;place-items:center;font-size:19px}.nbc-m{flex:1;min-width:0}.nbc-n{font-weight:600;font-size:14.5px}.nbc-s{color:#667;font-size:12.5px}.nbc-go{flex:none;color:#0a8f5a;font-weight:700;font-size:13px}.nbc-more{display:block;width:100%;border:0;border-top:1px solid #eef1ef;background:#fafbfa;padding:10px;font-size:13.5px;color:#08603d;font-weight:600}
+.geo-note{font-size:12px;color:#667;margin:8px 2px 4px;line-height:1.4}
 .cinfo{background:#eef6ff;border-color:#c9defa;font-size:14.5px;line-height:1.45}.cinfo b{display:block;margin-bottom:4px}
 </style>
 </head>
@@ -379,7 +380,7 @@ const T = {
     ticketT:"Wir kümmern uns darum",ticketH:"Melden Sie die Störung hier – unser Service-Team prüft den Ladepunkt. Die Daten sind schon ausgefüllt.",
     sStation:"Station",sCp:"Ladepunkt",sProblem:"Problem",sTried:"Versucht",sTriedN:"{n} Schritt(e)",sTime:"Zeit",
     fDesc:"Was ist passiert? (optional)",fDescPh:"z. B. Fehlermeldung im Display…",fPhoto:"Foto (optional)",fEmail:"E-Mail für Ihre Bestätigung (optional)",fEmailPh:"name@mail.de",fPhone:"Telefon für Rückruf (optional)",fPhonePh:"+49 …",mailSent:"✉️ Eine Bestätigung mit Ihrer Vorgangsnummer wurde an <b>{m}</b> gesendet.",mailFail:"Die Bestätigungs-Mail konnte gerade nicht gesendet werden – bitte speichern Sie die Nummer.",
-    send:"Störung melden",sending:"Wird gesendet…",toChat:"Lieber im Chat klären",
+    send:"Störung melden",sending:"Wird gesendet…",geoNote:"📍 Damit wir sehen, dass die Meldung vor Ort erfolgt, wird – wenn Sie es erlauben – einmalig Ihr Standort mitgeschickt. Ohne Freigabe kommt die Meldung trotzdem an.",toChat:"Lieber im Chat klären",
     ticketNo:"Ihre Vorgangsnummer",ticketOk:"Unser Service-Team hat Ihre Meldung erhalten. Nennen Sie diese Nummer, falls Sie die Hotline anrufen.",
     ticketFail:"Meldung konnte nicht gesendet werden",ticketFailH:"Bitte rufen Sie unsere Hotline an und nennen Sie die Stations-ID <b>{id}</b>, Ladepunkt {cp}.",callHotline:"📞 Hotline anrufen",
     chatHello:"Hallo! Wir helfen Ihnen an Station {id}{cp}. Was ist das Problem?",chatBadge:"Assistent · unser Team liest live mit",chatHuman:"👩‍🔧 Ein Mitarbeiter ist im Chat",
@@ -408,7 +409,7 @@ const T = {
     ticketT:"We'll take care of it",ticketH:"Report the issue here – our service team will check the connector. Your details are already filled in.",
     sStation:"Station",sCp:"Connector",sProblem:"Issue",sTried:"Tried",sTriedN:"{n} step(s)",sTime:"Time",
     fDesc:"What happened? (optional)",fDescPh:"e.g. error message on the display…",fPhoto:"Photo (optional)",fEmail:"Email for your confirmation (optional)",fEmailPh:"name@mail.com",fPhone:"Phone for a call back (optional)",fPhonePh:"+44 …",mailSent:"✉️ A confirmation with your reference number has been sent to <b>{m}</b>.",mailFail:"The confirmation email could not be sent right now – please save the number.",
-    send:"Report issue",sending:"Sending…",toChat:"I'd rather use the chat",
+    send:"Report issue",sending:"Sending…",geoNote:"📍 To confirm the report is made on site, your location is sent once – if you allow it. Your report arrives either way.",toChat:"I'd rather use the chat",
     ticketNo:"Your reference number",ticketOk:"Our service team has received your report. Please quote this number if you call the hotline.",
     ticketFail:"The report could not be sent",ticketFailH:"Please call our hotline and give the station ID <b>{id}</b>, connector {cp}.",callHotline:"📞 Call the hotline",
     chatHello:"Hello! We're here to help at station {id}{cp}. What's the problem?",chatBadge:"Assistant · our team reads along live",chatHuman:"👩‍🔧 A team member is in the chat",
@@ -455,6 +456,11 @@ async function api(action, payload={}, opts={}){
   return j;
 }
 // Protokoll: jeder Schritt geht an den Server (Fehler werden ignoriert, Seite funktioniert weiter)
+/* Standort einmalig zur Meldung (Schutz gegen abfotografierte QR-Codes) – blockiert nie */
+function geoAsk(wait=0){ if(S.geo||S.geoDenied||!navigator.geolocation) return Promise.resolve();
+  if(!S.geoP) S.geoP=new Promise(res=>navigator.geolocation.getCurrentPosition(p=>{ S.geo={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy||0),at:new Date(p.timestamp||Date.now()).toISOString()}; res(); },
+    e=>{ if(e.code===1) S.geoDenied=true; S.geoP=null; res(); },{enableHighAccuracy:true,timeout:15000,maximumAge:120000}));
+  return wait?Promise.race([S.geoP,new Promise(r=>setTimeout(r,wait))]):S.geoP; }
 function track(type,data={},keepalive=false){
   if(evse()&&data.evse==null) data={...data,evse:evse()};
   if(curCp()&&data.cp_label==null) data={...data,cp_label:cpLabel(curCp())};
@@ -784,7 +790,9 @@ function ticketView(){
   <label class="f">${tr("fEmail")}</label><input class="f" id="email" type="email" inputmode="email" autocomplete="email" placeholder="${tr("fEmailPh")}" value="${esc(keep.email)}">
   <label class="f">${tr("fPhone")}</label><input class="f" id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="${tr("fPhonePh")}" value="${esc(keep.phone)}">
   <button class="btn primary" id="send">${tr("send")}</button>
+  <div class="geo-note">${tr("geoNote")}</div>
   <button class="btn ghost" id="toChat">${tr("toChat")}</button></div>`;
+  geoAsk();
   $("#toChat").onclick=()=>setTab("chat");
   $("#bk").onclick=()=>f.info?show(infoView):f.choose?show(chooseView):FLOWS[S.flow].steps&&FLOWS[S.flow].steps.length?show(stepView):home();
   $("#send").onclick=async e=>{
@@ -795,9 +803,10 @@ function ticketView(){
     const cname=($("#cname")?.value||"").trim(); S.lastEmail=email; S.lastPhone=phone; S.lastCard=card; S.lastEmsp=emsp; S.lastName=cname;   // nur für diesen Besuch vorbelegen
     const extra=[(S.choice||[]).length&&"Auswahl: "+S.choice.join(", "),$("#plate")?.value.trim()&&"Kennzeichen: "+$("#plate").value.trim().toUpperCase(),$("#where")?.value.trim()&&"Blockierter Platz: "+$("#where").value.trim()].filter(Boolean).join(" · ");
     if(extra) $("#desc").value=extra+($("#desc").value.trim()?" · "+$("#desc").value.trim():"");
-    const tdata={flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),name:cname,email,phone,card,emsp,contact:[email,phone].filter(Boolean).join(" · "),photo};
+    if(!S.geo&&!S.geoDenied) await geoAsk(2500);
+    const tdata={geo:S.geo?[S.geo.lat.toFixed(6),S.geo.lng.toFixed(6),S.geo.acc,S.geo.at].join(","):S.geoDenied?"denied":"",flow:S.flow,title:DE(f.t),title_local:L(f.t),tried:S.tried,desc:$("#desc").value.trim(),name:cname,email,phone,card,emsp,contact:[email,phone].filter(Boolean).join(" · "),photo};
     // Standort-Themen markieren keinen Ladepunkt als gestört (ohne Ladepunkt melden, gewählten Platz nur vermerken)
-    const r=f.site?await siteReport({...tdata,tried:undefined,spot:($("#where")?.value.trim())||(curCp()?cpLabel(curCp()):"")}).catch(()=>null):await track("ticket_submit",tdata);
+    const r=f.site?await siteReport({...tdata,geo:S.geo?{...S.geo}:{denied:!!S.geoDenied},tried:undefined,spot:($("#where")?.value.trim())||(curCp()?cpLabel(curCp()):"")}).catch(()=>null):await track("ticket_submit",tdata);
     S.attached=!!(r&&r.existing);
     S.ticketMail=r&&r.customerMail?{status:r.customerMail,to:email}:null;
     S.lastTicket=(r&&r.ticketNo)||null; S.ticketFailed=!S.lastTicket;
