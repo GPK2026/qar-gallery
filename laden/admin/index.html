@@ -605,11 +605,11 @@ function chargerHTML(c,i){
       <div class="no">LP ${j+1}</div>
       <select class="l_t">${TYPES.map(t=>`<option ${t===x.t?"selected":""}>${t}</option>`).join("")}</select>
       <span class="kww"><input class="l_kw" value="${x.kw??""}" placeholder="kW" inputmode="numeric" data-man="${x.man?1:""}" title="${x.man?"Leistung manuell angepasst (z. B. Drosselung) – wird beim Abgleich nicht überschrieben":"Leistung in kW"}">${x.man&&c.inv?`<button class="kwr" data-act="kwreset" title="Leistung wieder aus dem Produkt übernehmen">↺</button>`:x.man?'<span class="kwm" title="manuell">✎</span>':""}</span>
-      <input class="l_evse evse" value="${esc(x.evse)}" placeholder="EVSE-ID, z. B. DE*CPW*E1234673064*${j+1}">
+      <input class="l_evse evse" value="${esc(x.evse)}" placeholder="EVSE-ID, z. B. DE*DMO*E1234673064*${j+1}">
       <button class="icon-btn" data-act="rmlp" title="Ladepunkt entfernen">✕</button>
     </div>`).join("")}
     <div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="addlp">+ Ladepunkt</button>
-      <span class="muted" style="margin-left:8px">EVSE-Basis:</span><input class="c_base" style="width:240px" placeholder="DE*CPW*E1234673064"><button class="btn ghost sm" data-act="fill">leere EVSE-IDs ausfüllen</button></div>
+      <span class="muted" style="margin-left:8px">EVSE-Basis:</span><input class="c_base" style="width:240px" placeholder="DE*DMO*E1234673064"><button class="btn ghost sm" data-act="fill">leere EVSE-IDs ausfüllen</button></div>
   </div></div>`;
 }
 function wireChargers(){
@@ -900,7 +900,7 @@ async function invImportDialog(){
     paint(); };
 }
 
-/* ── Produktkatalog Software & Inventar (aus CUT POWER Projektvorlage + gängige Produkte) ── */
+/* ── Produktkatalog Software & Inventar (Projektvorlage + gängige Produkte) ── */
 const INV_CATS={lis_dc:"DC-Ladesäule / Dispenser",lis_ac:"AC-Ladestation",pu:"Power Unit / Power Cabinet",km:"Kabelmanagement / Powerstacks",pay:"Bezahlterminal",software:"Backend / CPMS",lm:"Lastmanagement",net:"Netzwerk / Router / SIM",video:"Videosystem",licht:"Lichtsystem",media:"Media / Werbedisplay",lock:"Schließanlage",dach:"Dachsystem",bess:"Batteriespeicher (BESS)",trafo:"Trafostation",mws:"Messwandler- / Verteilerschrank",fund:"Fundament",sonst:"Sonstiges / Baustelle"};
 const INV_RAW={
 lis_dc:{Alpitronic:["HYC 50 Wall Mount (2 x CCS bis 50 kW)","HYC 50 Pedestal (2 x CCS bis 50 kW)","HYC 200-1 (2 x CCS bis 100 kW)","HYC 200-2 (2 x CCS bis 200 kW)","HYC 300-2 (2 x CCS bis 150 kW)","HYC 300-2 (2 x CCS bis 150 kW, 1 x CHAdeMO bis 75 kW)","HYC 300-3 (2 x CCS bis 275 kW)","HYC 300-3 (2 x CCS bis 275 kW, 1 x CHAdeMO bis 75 kW)","HYC 300-4 (2 x CCS bis 300 kW)","HYC 300-4 (2 x CCS bis 300 kW, 1 x CHAdeMO bis 75 kW)","HYC 400-2 (2 x CCS bis 200 kW)","HYC 400-2 (2 x CCS bis 200 kW; Front-Display)","HYC 400-3 (2 x CCS bis 300 kW)","HYC 400-3 (2 x CCS bis 300 kW; Front-Display)","HYC 400-4 (2 x CCS bis 400 kW)","HYC 400-4 (2 x CCS bis 400 kW; Front-Display)","HYC 400-4 (2 x CCS LC bis 400 kW)","HYC 400-4 (1 x CCS LC bis 400 kW)","HYC 1000 Dispenser (1 x CCS bis 400 kW)","HYC 1000 Dispenser (2 x CCS bis 400 kW)","HYC 1000 Dispenser (1 x CCS LC bis 600 kW)","HYC 1000 Dispenser (2 x CCS LC bis 600 kW)","HYC 1000 Dispenser (1 x MCS bis 1.000 kW, 1 x CCS bis 600 kW)"],
@@ -1403,7 +1403,7 @@ async function customersView(){
     const def=CF.cat||(cl?cl.cats[0].k:"kunde_privat"); renderCust({cards:[],visits:[],kind:"person",category:CF.newCat||def,categories:[],stations:CF.station?[CF.station]:[]},tr.querySelector(".akte-in"),true); CF.newCat=""; };
   $("#cImp").onclick=()=>$("#cFile").click();
   $("#cFile").onchange=()=>{ const f=$("#cFile").files[0]; if(f) f.text().then(t=>importPreview(t,f.name)); $("#cFile").value=""; };
-  $("#cTpl").onclick=()=>dlCSV("kontakte-vorlage.csv",[["Name","Firma","E-Mail","Telefon","Kartennummer","Anbieter","Status","Notiz"],["Max Mustermann","Demo GmbH","max@example.com","+49 30 1234567","DE-CPW-004140-4","EnBW mobility+","aktiv",""]]);
+  $("#cTpl").onclick=()=>dlCSV("kontakte-vorlage.csv",[["Name","Firma","E-Mail","Telefon","Kartennummer","Anbieter","Status","Notiz"],["Max Mustermann","Demo GmbH","max@example.com","+49 30 1234567","DE-DMO-004140-4","EnBW mobility+","aktiv",""]]);
   $("#cExp").onclick=()=>{ const rows=[["Typ","Name","Firma","Kategorie","Weitere Kategorien","E-Mail","Telefon","Adresse","Stundensatz","km-Satz","Anfahrt","Kartennummer","Anbieter","Status","Tags","Notiz"]];
     custFiltered().forEach(c=>(c.cards&&c.cards.length?c.cards:[{}]).forEach(k=>rows.push([c.kind==="company"?"Firma":"Person",c.name||"",c.company||"",catLabel(c.category),(c.categories||[]).map(catLabel).join(", "),c.email||"",c.phone||"",c.address||"",
       c.rates&&c.rates.hourly!=null?String(c.rates.hourly).replace(".",","):"",c.rates&&c.rates.km!=null?String(c.rates.km).replace(".",","):"",c.rates&&c.rates.flat!=null?String(c.rates.flat).replace(".",","):"",k.card_no||"",k.emsp||"",k.status||"",(c.tags||[]).join(", "),c.notes||""])));
@@ -1442,7 +1442,7 @@ async function toggleCust(id,sec){
 }
 function renderCust(c,box,isNew,openSec){
   c.categories=c.categories||[]; c.stations=c.stations||[]; c.tags=c.tags||[]; c.rates=c.rates||{}; c.terms=c.terms||{};
-  const cardRow=k=>`<div class="crow"><input class="k-no" placeholder="Kartennummer, z. B. DE-CPW-004140-4" value="${esc(k.card_no||"")}"><input class="k-emsp" list="emspL" placeholder="Anbieter" value="${esc(k.emsp||"")}">
+  const cardRow=k=>`<div class="crow"><input class="k-no" placeholder="Kartennummer, z. B. DE-DMO-004140-4" value="${esc(k.card_no||"")}"><input class="k-emsp" list="emspL" placeholder="Anbieter" value="${esc(k.emsp||"")}">
     <select class="k-st">${Object.entries(CST).map(([v,l])=>`<option value="${v}" ${v===(k.status||"aktiv")?"selected":""}>${l}</option>`).join("")}</select><button class="btn ghost sm k-del" title="Karte entfernen">✕</button></div>`;
   const q=s=>box.querySelector(s), co=()=>q(".f-kind:checked")?q(".f-kind:checked").value==="company":c.kind==="company";
   const allCats=[c.category,...c.categories].filter(Boolean), kunde=allCats.some(k=>/^kunde_/.test(k)), roleCats=allCats.filter(isRoleCat), lief=allCats.some(k=>/^lief_/.test(k));
@@ -1465,7 +1465,7 @@ function renderCust(c,box,isNew,openSec){
       ${sec("cats","Weitere Kategorien",c.categories.length?c.categories.map(catLabel).join(", "):"keine",`<div class="rgroups">${((CMETA&&CMETA.clusters)||[]).map(g=>`<div class="rgroup"><div class="rg-h">${esc(g.l)}</div><div class="rg-b">${g.cats.map(x=>`<label><input type="checkbox" class="f-cats" value="${esc(x.k)}" ${c.categories.includes(x.k)?"checked":""}> ${esc(x.l)}</label>`).join("")}</div></div>`).join("")}</div>`)}
       ${sec("proj","Projekte / Standorte",c.stations.length?c.stations.map(stLabel).join(", "):"keinem Projekt zugeordnet",`<div style="max-height:160px;overflow:auto">${STATIONS.map(st=>`<label class="rl" style="display:flex;margin:3px 0"><input type="checkbox" class="f-st" value="${esc(st.id)}" ${c.stations.includes(st.id)?"checked":""}> <b>${esc(st.project_id||st.id)}</b>&nbsp;<span class="muted">${esc(st.name||"")}</span></label>`).join("")}</div><div class="hint">Zuordnung für Filter und Übersicht (z. B. Eigentümer, Standortpartner, Hausmeister).</div>`)}
       ${kunde||(c.cards||[]).length?sec("cards","Ladekarten",(c.cards||[]).length?(c.cards||[]).length+" Karte(n)":"keine",`<div class="cards-ed">${(c.cards||[]).map(cardRow).join("")}</div>
-        <datalist id="emspL">${["CutPower (Last Mile Solutions)","ADAC e-Charge","Aral pulse","BMW Charging","Chargemap","E.ON Drive","EnBW mobility+","EWE Go","Electroverse (Octopus)","Elli (VW)","IONITY","Maingau EinfachStromLaden","Mercedes me Charge","Plugsurfing","Shell Recharge","Tesla","Vattenfall InCharge"].map(x=>`<option value="${x}">`).join("")}</datalist>
+        <datalist id="emspL">${["Last Mile Solutions","ADAC e-Charge","Aral pulse","BMW Charging","Chargemap","E.ON Drive","EnBW mobility+","EWE Go","Electroverse (Octopus)","Elli (VW)","IONITY","Maingau EinfachStromLaden","Mercedes me Charge","Plugsurfing","Shell Recharge","Tesla","Vattenfall InCharge"].map(x=>`<option value="${x}">`).join("")}</datalist>
         <button class="btn ghost sm k-add">+ Karte</button>`,isNew&&kunde):""}
       ${!kunde||!isNew?sec("rates","💶 Sätze & Konditionen",rateTxt(c.rates)||(c.parent_id&&rateTxt(pr)?"über Firma: "+rateTxt(pr):catRate!=null?"Kategorie: "+eur(catRate)+"/h":"keine"),`
         <p class="hint" style="margin-top:0">Reihenfolge: <b>Person</b> → <b>Firma</b> (Rahmenvertrag) → <b>Kategorie</b> (Maintenance &amp; Actions › Sätze & Kosten). Leer = geerbt.</p>

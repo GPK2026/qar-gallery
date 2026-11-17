@@ -250,7 +250,7 @@ const CONFIG = {
   defaultStation: "DE-GR7-E0001",
   // Fallback-Stammdaten, falls der Server nicht erreichbar ist (eigentliche Daten: Tabelle charge_stations)
   stations: {
-    "DE-GR7-E0001": { addr: "Spandauer Damm 10, 14059 Berlin", cps: [{n:1,t:"CCS",evse:"DE*CPW*E1234673064*1",charger:1},{n:2,t:"CCS",evse:"DE*CPW*E1234673064*2",charger:1},{n:3,t:"CHAdeMO",evse:"DE*CPW*E1234673064*3",charger:1}], chargers:[{n:1,label:"LS#1"}],
+    "DE-GR7-E0001": { addr: "Spandauer Damm 10, 14059 Berlin", cps: [{n:1,t:"CCS",evse:"DE*DMO*E1234673064*1",charger:1},{n:2,t:"CCS",evse:"DE*DMO*E1234673064*2",charger:1},{n:3,t:"CHAdeMO",evse:"DE*DMO*E1234673064*3",charger:1}], chargers:[{n:1,label:"LS#1"}],
       review: "https://search.google.com/local/writereview?placeid=ChIJA7jglC5RqEcRd14VfDgAZJ0" }
   }
 };
@@ -395,7 +395,7 @@ const T = {
     knownAlt:"Diese Ladepunkte sind frei von Störungsmeldungen:",knownNoAlt:"Leider sind alle Ladepunkte dieses Chargers gestört gemeldet.",
     plusBtn:"Betrifft mich auch",plusMail:"E-Mail, wenn's wieder geht (optional)",plusSend:"Bestätigen",plusOk:"Danke – wir haben Ihre Meldung gezählt.",plusOkMail:"Wir schreiben Ihnen an {m}, sobald der Ladepunkt wieder funktioniert.",
     otherIssue:"Anderes Problem? Wählen Sie unten aus.",chgDown:"gestört",
-    fName:"Ihr Name (optional)",fNamePh:"Vor- und Nachname",fCard:"Nummer Ihrer Ladekarte (optional)",fCardPh:"z. B. DE-CPW-004140-4",fEmsp:"Anbieter der Ladekarte / App (optional)",fEmspPh:"z. B. EnBW mobility+",
+    fName:"Ihr Name (optional)",fNamePh:"Vor- und Nachname",fCard:"Nummer Ihrer Ladekarte (optional)",fCardPh:"z. B. DE-DMO-004140-4",fEmsp:"Anbieter der Ladekarte / App (optional)",fEmspPh:"z. B. EnBW mobility+",
     attached:"Diese Störung war bereits gemeldet – Ihre Meldung wurde ergänzt. Gleiche Vorgangsnummer für alle Betroffenen.",ticketAgo:"gemeldet {t}",shareTitle:"Störungsmeldung {no}",
     shareText:"Meine Störungsmeldung an der Ladesäule\nVorgangsnummer: {no}\nStation: {st}{evse}\nProblem: {pr}\nZeit: {time}\nHotline: {hl}",
     callHint:"Bitte halten Sie die EVSE-ID bereit – sie steht auch auf dem Aufkleber am Ladepunkt. Dann finden wir ihn sofort im System.",emergency:"Bei Rauch, Feuer oder Verletzten: <b>Notruf 112</b>",switchCp:"Ladepunkt wechseln",charger:"Charger",chooseCharger:"Charger wählen",chooseCp:"Ladepunkt wählen",chargerHint:"Wählen Sie einen Charger oder geben Sie oben ein paar Ziffern der EVSE-ID ein.",evseFind:"EVSE-ID vom Aufkleber",evsePh:"z. B. letzte Ziffern eingeben",evseNote:"· EVSE-ID mit dem Aufkleber vergleichen",evseNone:"Keine passende EVSE-ID gefunden – bitte Charger wählen.",pickT:"An welchem Ladepunkt stehen Sie?",pickH:"Jeder Ladepunkt hat einen Aufkleber mit seiner EVSE-ID – damit finden Sie ihn hier am schnellsten."},
@@ -424,7 +424,7 @@ const T = {
     knownAlt:"These connectors have no fault reports:",knownNoAlt:"Unfortunately all connectors of this charger are reported as faulty.",
     plusBtn:"Affects me too",plusMail:"Email when it works again (optional)",plusSend:"Confirm",plusOk:"Thanks – your report has been counted.",plusOkMail:"We'll write to {m} as soon as the connector works again.",
     otherIssue:"Different problem? Choose below.",chgDown:"faulty",
-    fName:"Your name (optional)",fNamePh:"First and last name",fCard:"Your charging card number (optional)",fCardPh:"e.g. DE-CPW-004140-4",fEmsp:"Card / app provider (optional)",fEmspPh:"e.g. Shell Recharge",
+    fName:"Your name (optional)",fNamePh:"First and last name",fCard:"Your charging card number (optional)",fCardPh:"e.g. DE-DMO-004140-4",fEmsp:"Card / app provider (optional)",fEmspPh:"e.g. Shell Recharge",
     attached:"This fault had already been reported – your report has been added. Same reference number for everyone affected.",ticketAgo:"reported {t}",shareTitle:"Issue report {no}",
     shareText:"My issue report at the charging station\nReference number: {no}\nStation: {st}{evse}\nIssue: {pr}\nTime: {time}\nHotline: {hl}",
     callHint:"Please have the EVSE ID ready – it is also on the sticker at the connector. Then we can find it in our system right away.",emergency:"In case of smoke, fire or injuries: <b>call 112</b>",switchCp:"Switch connector",charger:"Charger",chooseCharger:"Choose charger",chooseCp:"Choose connector",chargerHint:"Choose a charger or enter a few digits of the EVSE ID above.",evseFind:"EVSE ID from the sticker",evsePh:"e.g. enter the last digits",evseNote:"· compare the EVSE ID with the sticker",evseNone:"No matching EVSE ID – please choose a charger.",pickT:"Which connector are you at?",pickH:"Every connector has a sticker with its EVSE ID – that's the quickest way to find it here."}
@@ -590,7 +590,7 @@ function toTop(){ scroller().scrollTop=0; }
 function show(fn){ S.render=fn; fn(); }   // merkt sich die aktuelle Ansicht (für Sprachwechsel)
 
 // Gängige Ladekarten-/App-Anbieter (EMSP) als Vorschläge – freie Eingabe bleibt möglich
-const EMSP=["CutPower (Last Mile Solutions)","ADAC e-Charge","Aral pulse","BMW Charging","Chargemap","E.ON Drive","EnBW mobility+","EWE Go","Electroverse (Octopus)","Elli (VW)","IONITY","Lidl Plus","Maingau EinfachStromLaden","Mercedes me Charge","Mobility House","Plugsurfing","Shell Recharge","Stadtwerke-Karte","Tesla","Vattenfall InCharge","Zapmap"];
+const EMSP=["Last Mile Solutions","ADAC e-Charge","Aral pulse","BMW Charging","Chargemap","E.ON Drive","EnBW mobility+","EWE Go","Electroverse (Octopus)","Elli (VW)","IONITY","Lidl Plus","Maingau EinfachStromLaden","Mercedes me Charge","Mobility House","Plugsurfing","Shell Recharge","Stadtwerke-Karte","Tesla","Vattenfall InCharge","Zapmap"];
 
 /* ============ STÖRUNGSNUMMER MERKEN ============ */
 // Auf dem Gerät gespeichert (localStorage), damit die Nummer nach Zurück/Neuladen noch da ist
