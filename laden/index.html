@@ -161,6 +161,9 @@ nav.tabs button.on{color:var(--brand);font-weight:700}
 .msg.bot{background:#fff;border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
 .msg.me{background:var(--brand);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.pk-plate{display:inline-block;margin:10px 0 4px;padding:6px 14px;border:2px solid #111;border-radius:6px;font:700 20px/1.2 ui-monospace,monospace;letter-spacing:1px;background:#fff}
+.pk-l{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}.pk-in{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;background:#fff}
+#pkPlate{text-transform:uppercase;font-family:ui-monospace,monospace;letter-spacing:1px}.pk-cb{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:8px}
 .chip{border:1.5px solid var(--brand);background:#fff;border-radius:999px;padding:9px 14px;font-size:14px;color:#08603d;font-weight:500;text-align:left}
 .chip.danger{border-color:#e9a39b;color:var(--warn);background:var(--warn-soft)}
 .composer{padding:8px 12px 4px;display:flex;justify-content:center;border-bottom:1px solid var(--line)}
@@ -636,13 +639,60 @@ function wireNearby(){ const c=$("#nbc"); if(!c) return;
   c.querySelectorAll("[data-nbf]").forEach(b=>b.onclick=()=>{ NBF=b.dataset.nbf; c.outerHTML=nearbyCard(); wireNearby(); });
   const m=$("#nbMore"); if(m) m.onclick=()=>{ NBALL=true; c.outerHTML=nearbyCard(); wireNearby(); }; }
 
+/* ============ PARKEN WÄHREND DES LADENS (Kennzeichen ↔ Ladevorgang, ohne Kameras) ============ */
+const PARK_API="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-park";
+async function parkApi(action,d={}){ const r=await fetch(PARK_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,station:S.station,sid:S.sid,...d})});
+  const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||"Fehler"); return j; }
+const lsGet=k=>{ try{ return JSON.parse(localStorage.getItem(k)||"null"); }catch{ return null; } };
+const lsSet=(k,v)=>{ try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v)); }catch{} };
+const pkClaimKey=()=>"hc_park_claim_"+S.station;
+const pkT=x=>new Date(x).toLocaleTimeString(locale(),{hour:"2-digit",minute:"2-digit"});
+async function parkInit(){ if(!$("#parkBox")) return;
+  if(!S.park||S.park.st!==S.station){ try{ S.park={st:S.station,...await parkApi("site")}; }catch{ S.park={st:S.station,enabled:false}; } }
+  parkRender(); }
+function parkRender(res){ const box=$("#parkBox"); if(!box||!S.park||!S.park.enabled){ if(box) box.innerHTML=""; return; } const en=lang==="en", p=S.park;
+  clearTimeout(S.parkT); const cl=lsGet(pkClaimKey());
+  if(cl&&Date.now()-cl.ts<12*3600e3){
+    if(!res){ box.innerHTML=`<div class="card park"><b>🅿️ ${en?"Free parking while charging":"Kostenlos parken während des Ladens"}</b><p class="sub">…</p></div>`;
+      parkApi("claim_status",{id:cl.id}).then(parkRender).catch(()=>{ lsSet(pkClaimKey(),null); parkRender(); }); return; }
+    const tone={frei:"green",karenz:"amber",pruefung:"amber"}[res.status]||"red";
+    const head={frei:en?"Parking is free":"Parken ist frei",karenz:en?"Registered – start charging":"Vorgemerkt – bitte Ladevorgang starten",pruefung:en?"Under review":"Wird geprüft",ueberschritten:en?"Max. time exceeded":"Höchstdauer überschritten"}[res.status]||(en?"Regular parking fees apply":"Reguläre Parkgebühren");
+    box.innerHTML=`<div class="card park"><b>🅿️ ${en?"Free parking while charging":"Kostenlos parken während des Ladens"}</b>
+      <div class="pk-plate">${esc(res.plate)}</div><div class="sub" style="margin:0">${esc(res.bay||"")}</div>
+      <div class="note ${tone}" style="margin-top:10px"><b>${head}</b>${res.until?` – ${res.status==="karenz"?(en?"until":"bis"):(en?"free until":"frei bis")} <b>${pkT(res.until)}</b>`:""}<br><small>${esc(res.label||"")}</small>${res.over_max_soon?`<br><small>⚠️ ${en?"Please move your car soon.":"Bitte Fahrzeug bald umparken."}</small>`:""}</div>
+      ${res.status==="pruefung"?`<p class="sub">${en?"Our team checks this. You will not be charged for system errors.":"Unser Team prüft den Fall. Systemfehler gehen nicht zu Ihren Lasten."}</p>`:""}
+      <button class="btn ghost" id="pkNew">${en?"Change plate / charge point":"Kennzeichen oder Ladepunkt ändern"}</button></div>`;
+    $("#pkNew").onclick=()=>{ lsSet(pkClaimKey(),null); parkRender(); };
+    if(["karenz","frei","pruefung"].includes(res.status)) S.parkT=setTimeout(()=>{ if($("#parkBox")) parkRender(); },30000);
+    return; }
+  const last=lsGet("hc_park_plate")||{}, cur=curCp();
+  box.innerHTML=`<div class="card park"><b>🅿️ ${en?"Free parking while charging":"Kostenlos parken während des Ladens"}</b>
+    <p class="sub">${en?`Start charging, then enter your plate right away. Parking is free while charging (max. per bay, see below) plus ${p.after_min} min afterwards. No ticket needed.`:`Ladevorgang starten und direkt danach Kennzeichen eintragen. Parken ist frei, solange Sie laden (Höchstdauer je Platz siehe unten), plus ${p.after_min} Min. danach. Kein Parkschein nötig.`}</p>
+    <label class="pk-l">${en?"Charge point":"Ladepunkt"}</label>
+    <select id="pkBay" class="pk-in">${(p.bays||[]).map(b=>`<option value="${b.n}" ${cur&&cur.n===b.n?"selected":""}>${esc(b.label)} · max. ${b.max_min>=120?(b.max_min/60)+" h":b.max_min+" Min."}</option>`).join("")}</select>
+    <label class="pk-l">${en?"License plate":"Kennzeichen"}</label>
+    <input id="pkPlate" class="pk-in" autocomplete="off" autocapitalize="characters" placeholder="B-DEMO 123" value="${esc(last.plate||"")}">
+    <label class="pk-cb"><input type="checkbox" id="pkFor" ${last.foreign?"checked":""}> ${en?"Foreign plate":"Ausländisches Kennzeichen"}</label>
+    <label class="pk-cb"><input type="checkbox" id="pkMem" ${last.plate?"checked":""}> ${en?"Remember on this device":"Auf diesem Gerät merken"}</label>
+    <div id="pkErr"></div>
+    <button class="btn primary" id="pkGo">${en?"Register plate":"Kennzeichen eintragen"}</button>
+    <p class="privacy" style="margin-top:8px">${en?`Your plate is only used to confirm free parking to the parking operator and is deleted after 30 days.`:`Das Kennzeichen wird nur zur Bestätigung gegenüber dem Parkraumbetreiber genutzt und nach 30 Tagen gelöscht.`}${p.note?"<br>"+esc(p.note):""}</p></div>`;
+  $("#pkGo").onclick=async()=>{ const b=$("#pkGo"), plate=$("#pkPlate").value.trim(), foreign=$("#pkFor").checked;
+    if(!plate){ $("#pkErr").innerHTML=`<div class="note red">${en?"Please enter your plate.":"Bitte Kennzeichen eingeben."}</div>`; return; }
+    b.disabled=true; b.textContent="…"; await geoAsk(4000);
+    try{ const r=await parkApi("claim",{connector:+$("#pkBay").value,plate,foreign,geo:S.geo||null});
+      lsSet("hc_park_plate",$("#pkMem").checked?{plate,foreign}:null); lsSet(pkClaimKey(),{id:r.id,ts:Date.now()});
+      track("park_claim",{status:r.status,cp:+$("#pkBay").value}); parkRender(r); }
+    catch(e){ $("#pkErr").innerHTML=`<div class="note red">${esc(e.message)}</div>`; b.disabled=false; b.textContent=en?"Register plate":"Kennzeichen eintragen"; } };
+}
+
 /* ============ VIEWS ============ */
 function home(){
   S.flow=null;S.step=0;S.tried=[];S.stepPhoto=null; compact(false); S.render=home;
   const rts=recentTickets(), rt=rts[0], c=curCp(), inc=c&&incOf(c.n);
   const alts=c?((chargers().find(x=>x.n===(c.charger||1))||{cps:[]}).cps.filter(x=>x.n!==c.n&&!incOf(x.n))):[];
   const cinfo=(extras().customer_info||"").trim();
-  view.innerHTML=`${cinfo?`<div class="card cinfo"><b>ℹ️ ${lang==="en"?"Info for this site":"Info zum Standort"}</b><div>${esc(cinfo).replace(/\n/g,"<br>")}</div></div>`:""}${nearbyCard()}${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr(rts.length>1?"myTickets":"myTicket")}</span><span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small><button class="tk-x" id="tkX" aria-label="${tr("hide")}">✕</button></span></div>
+  view.innerHTML=`${cinfo?`<div class="card cinfo"><b>ℹ️ ${lang==="en"?"Info for this site":"Info zum Standort"}</b><div>${esc(cinfo).replace(/\n/g,"<br>")}</div></div>`:""}${nearbyCard()}<div id="parkBox"></div>${rt?`<div class="card tk-banner"><div class="tk-head"><span>🧾 ${tr(rts.length>1?"myTickets":"myTicket")}</span><span><small>${tr("ticketAgo",{t:ago(rt.ts)})}</small><button class="tk-x" id="tkX" aria-label="${tr("hide")}">✕</button></span></div>
     ${rts.length>1?`<div class="tk-list">${rts.map(t=>`<div class="tk-li"><span><code>${esc(t.no)}</code><br><small>${esc(t.cpl||"")} · ${ago(t.ts)}</small></span><button class="small-btn" data-copy="${esc(t.no)}">${tr("copy")}</button></div>`).join("")}</div>`
       :`<div class="ticket">${esc(rt.no)}</div>`}${rts.length>1?`<div class="tk-actions"><button class="btn ghost" id="shAll">${tr("tShare")}</button></div>`:ticketActions(rt)}</div>`:""}
   ${inc?`<div class="card known"><div class="step-t">⚠️ ${tr("knownT")}</div><p class="step-h">${esc(cpLabel(c))} · ${tr("knownH",{t:new Date(inc.since).toLocaleTimeString(locale(),{hour:"2-digit",minute:"2-digit"})+(Date.now()-new Date(inc.since)>20*3600e3?" ("+new Date(inc.since).toLocaleDateString(locale())+")":""),n:inc.reports})}</p>
@@ -655,7 +705,7 @@ function home(){
   <div class="grid">${siteTiles().map(k=>[k,FLOWS[k]]).map(([k,f])=>`<button class="tile site ${f.wide?"wide":""}" data-f="${k}"><span class="ic">${f.ic}</span><b>${L(f.t)}</b></button>`).join("")}</div>
   <p class="privacy">${tr("privacy")}${CONFIG.privacyUrl?` <a href="${CONFIG.privacyUrl}" target="_blank" rel="noopener">${tr("privacyLink")}</a>`:""}</p>
   <p class="svc-link"><a href="service/#${encodeURIComponent(S.label||S.station)}">🔧 ${tr("svc")}</a></p>`;
-  view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f)); wireNearby();
+  view.querySelectorAll(".tile").forEach(b=>b.onclick=()=>startFlow(b.dataset.f)); wireNearby(); parkInit();
   if(rt){ wireTicketActions(view.querySelector(".tk-banner"),rt);
     if($("#shAll")) $("#shAll").onclick=async e=>{ const text=rts.map(ticketText).join("\n\n"); if(navigator.share){ try{ await navigator.share({title:tr("myTickets"),text}); return; }catch(err){ if(err&&err.name==="AbortError") return; } } copyText(text,e.target); }; view.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>copyText(b.dataset.copy,b));
     $("#tkX").onclick=()=>{ rts.forEach(t=>hideTicket(t.no)); S.lastTicket=null; home(); }; }

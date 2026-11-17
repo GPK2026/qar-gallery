@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="build" content="20261115a">
+<meta name="build" content="20261117a">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>HAPPY CHARGING Support · Betreiber</title>
@@ -429,7 +429,7 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
   <button class="btn ghost sm hidden" id="logout">Abmelden</button>
 </div></header>
 <div id="navBg" class="navbg"></div>
-<nav id="nav" class="hidden" aria-label="Hauptmenü"><div class="nhead"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg><b>HAPPY CHARGING</b><button class="nclose" id="navX" aria-label="Menü schließen">✕</button></div><button class="on" data-v="overview"><span class="ni">📊</span>Übersicht</button><div class="ng">Betrieb</div><button data-v="projects"><span class="ni">📍</span>Projekte</button><button data-v="incidents"><span class="ni">⚡</span>Störungen</button><button data-v="defects"><span class="ni">🛠️</span>Mängel</button><button data-v="tickets"><span class="ni">📱</span>QR-Code-Aufrufe</button><div class="ng">Service & Aufträge</div><button data-v="termine"><span class="ni">📅</span>Termine</button><button data-v="field"><span class="ni">✅</span>Maintenance & Actions</button><button data-v="market"><span class="ni">🤝</span>Auftragsbörse</button><div class="ng">Kontakte</div><button data-v="customers"><span class="ni">👥</span>Kontakte</button><div class="ng">System</div><button data-v="sim"><span class="ni">🧪</span>Simulation</button><button data-v="settings"><span class="ni">⚙️</span>Einstellungen</button></nav>
+<nav id="nav" class="hidden" aria-label="Hauptmenü"><div class="nhead"><svg viewBox="190 90 800 1000"><polygon points="699,118 262,679 556,679 479,1062 916,501 622,501" fill="#F08C00"/></svg><b>HAPPY CHARGING</b><button class="nclose" id="navX" aria-label="Menü schließen">✕</button></div><button class="on" data-v="overview"><span class="ni">📊</span>Übersicht</button><div class="ng">Betrieb</div><button data-v="projects"><span class="ni">📍</span>Projekte</button><button data-v="incidents"><span class="ni">⚡</span>Störungen</button><button data-v="defects"><span class="ni">🛠️</span>Mängel</button><button data-v="tickets"><span class="ni">📱</span>QR-Code-Aufrufe</button><div class="ng">Service & Aufträge</div><button data-v="termine"><span class="ni">📅</span>Termine</button><button data-v="field"><span class="ni">✅</span>Maintenance & Actions</button><button data-v="market"><span class="ni">🤝</span>Auftragsbörse</button><button data-v="park"><span class="ni">🅿️</span>Parken & Laden</button><div class="ng">Kontakte</div><button data-v="customers"><span class="ni">👥</span>Kontakte</button><div class="ng">System</div><button data-v="sim"><span class="ni">🧪</span>Simulation</button><button data-v="settings"><span class="ni">⚙️</span>Einstellungen</button></nav>
 <div class="wrap" id="main"></div>
 <div class="toast" id="toast"></div>
 
@@ -467,7 +467,91 @@ function navOpen(o){ $("#nav").classList.toggle("open",o); $("#navBg").classList
 $("#navBtn").onclick=()=>navOpen(true); $("#navX").onclick=()=>navOpen(false); $("#navBg").onclick=()=>navOpen(false);
 addEventListener("keydown",e=>{ if(e.key==="Escape"&&$("#nav").classList.contains("open")) navOpen(false); });
 function go(v){ const tp=document.querySelector(".tip"); if(tp) tp.classList.add("hidden"); document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); navOpen(false);
-  { const on=document.querySelector("#nav button.on"); $("#curT").textContent=on?on.lastChild.textContent.trim():""; } scrollTo(0,0); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,termine:termineView,market:marketView,tickets:ticketsView,sim:simView,settings:settingsView})[v](); }
+  { const on=document.querySelector("#nav button.on"); $("#curT").textContent=on?on.lastChild.textContent.trim():""; } scrollTo(0,0); ({overview:overviewView,search:searchView,projects:projectsView,incidents:incidentsView,customers:customersView,field:fieldView,defects:defectsView,termine:termineView,market:marketView,park:parkView,tickets:ticketsView,sim:simView,settings:settingsView})[v](); }
+
+/* ---------- Parken & Laden (Kennzeichen ↔ Ladevorgang, ohne Kameras) ---------- */
+const PAPI="https://xsyuhfleesstrchcwspg.supabase.co/functions/v1/charge-park";
+async function papi(action,payload={}){
+  const r=await fetch(PAPI,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,sim_show:SIMSHOW,...payload})});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401){ logout(); throw new Error("Bitte neu anmelden"); }
+  if(!r.ok) throw new Error(j.error||("Fehler "+r.status)); return j; }
+let PK={days:7,data:null};
+const PK_ST={frei:["","frei"],karenz:["amber","Karenz"],pruefung:["amber","in Prüfung"],ueberschritten:["warn","überschritten"],gebuehrenpflichtig:["off","gebührenpflichtig"],kein_ladevorgang:["off","kein Ladevorgang"]};
+const pkBadge=s=>{ const [c,l]=PK_ST[s]||["off",s]; return `<span class="badge ${c}">${esc(l)}</span>`; };
+const pkTime=x=>x?new Date(x).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"–";
+const pkHM=x=>x?new Date(x).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"";
+async function parkView(){
+  main.innerHTML=`<div class="row" style="margin-bottom:12px"><div><h1>Parken & Laden</h1><p class="sub" style="margin:0">„Wer lädt, darf parken“: Kennzeichen wird an genau einen Ladevorgang gebunden; der Parkraumbetreiber fragt per API ab – ohne zusätzliche Kameras.</p></div>
+    <div class="seg" id="pkDays">${[[1,"24 h"],[7,"7 Tage"],[30,"30 Tage"]].map(([d,l])=>`<button data-d="${d}" class="${PK.days===d?"on":""}">${l}</button>`).join("")}</div></div>
+  <div id="pkBody"><div class="card muted">Lade …</div></div>`;
+  document.querySelectorAll("#pkDays button").forEach(b=>b.onclick=()=>{ PK.days=+b.dataset.d; document.querySelectorAll("#pkDays button").forEach(x=>x.classList.toggle("on",x===b)); pkLoad(); });
+  pkLoad(); }
+async function pkLoad(){ const box=$("#pkBody"); if(!box) return;
+  try{ PK.data=await papi("p_overview",{days:PK.days}); }catch(e){ box.innerHTML=`<div class="card"><span class="badge warn">${esc(e.message)}</span></div>`; return; }
+  const d=PK.data, ses=d.sessions||[], cl=d.claims||[], linked=ses.filter(s=>s.linked).length, conf=cl.filter(c=>c.status==="konflikt");
+  const pct=ses.length?Math.round(linked/ses.length*100):0, stOpts=d.stations.map(s=>`<option value="${esc(s.id)}">${esc(s.project_id||s.id)} – ${esc(s.name||"")}</option>`).join("");
+  box.innerHTML=`<div class="kpis">
+      <div class="kpi"><div class="k">Ladevorgänge</div><div class="v">${ses.length}</div><div class="s">${ses.filter(s=>s.status==="aktiv").length} aktiv</div></div>
+      <div class="kpi"><div class="k">Mit Kennzeichen verknüpft</div><div class="v">${pct} %</div><div class="s">${linked} von ${ses.length}</div></div>
+      <div class="kpi ${conf.length?"bad":""}"><div class="k">Konflikte offen</div><div class="v">${conf.length}</div><div class="s">manuell entscheiden</div></div>
+      <div class="kpi"><div class="k">Partner-Abfragen</div><div class="v">${d.checks.total}</div><div class="s">${d.checks.frei} frei · ${d.checks.kein} ohne Ladevorgang</div></div></div>
+    ${conf.length?`<div class="card"><h3 style="margin-top:0">⚠️ Konflikte</h3><p class="sub">Mehrere Kennzeichen für einen Ladevorgang oder zu spät eingetragen. Bis zur Entscheidung meldet die API „in Prüfung“ – keine Gebühr.</p>
+      ${conf.map(c=>`<div class="row" style="border-top:1px solid var(--line);padding:10px 0;gap:10px"><div style="flex:1;min-width:220px"><b style="font-family:ui-monospace,monospace">${esc(c.plate)}</b> ${c.plate_demo?'<span class="badge off">DEMO</span>':""}<br><small class="muted">${esc(c.project)} · ${esc(c.bay)} · ${pkTime(c.claimed_at)}</small><br><small>${esc(c.reason||"")}</small></div>
+        <button class="btn sm" data-ok="${c.id}">Freigeben</button><button class="btn sm ghost" data-no="${c.id}">Ablehnen</button></div>`).join("")}</div>`:""}
+    <div class="card" style="padding:0;overflow:auto"><div style="padding:14px 16px 4px"><h3 style="margin:0">Kennzeichen-Zuordnungen</h3></div><table><thead><tr><th>Eingetragen</th><th>Projekt</th><th>Ladepunkt</th><th>Kennzeichen</th><th>Status jetzt</th><th>frei bis</th><th>Hinweis</th></tr></thead><tbody>
+      ${cl.length?cl.slice(0,200).map(c=>`<tr><td>${pkTime(c.claimed_at)}</td><td>${esc(c.project)}</td><td>${esc(c.bay)}</td><td><b style="font-family:ui-monospace,monospace">${esc(c.plate)}</b> ${c.plate_demo?'<span class="badge off">DEMO</span>':""}</td><td>${pkBadge(c.now.status)}</td><td>${pkHM(c.now.until)}</td><td><small class="muted">${esc(c.reason||c.now.label||"")}</small></td></tr>`).join(""):`<tr><td colspan="7" class="muted">Noch keine Kennzeichen im Zeitraum.</td></tr>`}</tbody></table></div>
+    <div class="card" style="padding:0;overflow:auto"><div style="padding:14px 16px 4px"><h3 style="margin:0">Ladevorgänge</h3><p class="sub" style="margin:4px 0 0">Kommen vom OCPP-Broker oder per Webhook aus dem CPO-Backend (<code>session_event</code>).</p></div>
+      <div class="row" style="padding:8px 16px;gap:8px"><b style="font-size:13px">Demo:</b><select id="pkSt" style="width:auto">${stOpts}</select><select id="pkCp" style="width:auto"></select><button class="btn sm" id="pkStart">▶ Ladestart (DEMO)</button><button class="btn sm ghost" id="pkStop">■ Stopp</button></div>
+      <table><thead><tr><th>Start</th><th>Ende</th><th>Ladepunkt</th><th>kWh</th><th>Quelle</th><th>Kennzeichen</th></tr></thead><tbody>
+      ${ses.length?ses.slice(0,200).map(s=>`<tr><td>${pkTime(s.started_at)}</td><td>${s.status==="aktiv"?'<span class="badge">lädt</span>':pkTime(s.ended_at)}</td><td>${esc(s.bay)}</td><td>${s.kwh??"–"}</td><td><small>${esc(s.source||"")}${s.is_sim?' <span class="badge off">DEMO</span>':""}</small></td><td>${s.linked?'<span class="badge">verknüpft</span>':'<span class="badge off">–</span>'}</td></tr>`).join(""):`<tr><td colspan="6" class="muted">Keine Ladevorgänge im Zeitraum.</td></tr>`}</tbody></table></div>
+    <div class="card"><h3 style="margin-top:0">🔎 Kennzeichen prüfen</h3><div class="row" style="gap:8px"><input id="pkQ" placeholder="z. B. B-DEMO 1" style="flex:1;min-width:200px;font-family:ui-monospace,monospace;text-transform:uppercase"><button class="btn" id="pkQGo">Suchen</button></div><div id="pkQR"></div></div>
+    <div class="card"><h3 style="margin-top:0">📍 Standorte & Regeln</h3><p class="sub">Karenz bis Ladestart, Höchstdauer je Stellplatz, Nachlauf nach Ladeende. Eintragefenster = so lange nach Ladestart darf ein Kennzeichen noch zugeordnet werden.</p><div id="pkSites"></div></div>
+    <div class="card"><h3 style="margin-top:0">🔑 Schnittstellen</h3>
+      <p class="sub">Schlüssel werden nur einmal angezeigt und nur als Hash gespeichert. Neu erzeugen macht den alten ungültig. Daten werden nach ${d.retention_days} Tagen gelöscht.</p>
+      <div class="row" style="gap:8px;margin-bottom:8px"><span>Parkraumbetreiber (<code>check</code>): ${d.keys.partner?'<span class="badge">aktiv</span>':'<span class="badge off">kein Schlüssel</span>'}</span><button class="btn sm ghost" data-key="partner">Neu erzeugen</button></div>
+      <div class="row" style="gap:8px"><span>Ladebackend / Broker (<code>session_event</code>): ${d.keys.backend?'<span class="badge">aktiv</span>':'<span class="badge off">kein Schlüssel</span>'}</span><button class="btn sm ghost" data-key="backend">Neu erzeugen</button></div>
+      <div id="pkKey"></div>
+      <details style="margin-top:12px"><summary><b>API-Beispiele</b></summary><pre style="white-space:pre-wrap;font-size:12px;background:#f6f7f8;padding:10px;border-radius:8px">Parkraumbetreiber – Status je Kennzeichen
+curl -X POST ${PAPI} \\
+  -H "Content-Type: application/json" -H "x-api-key: hcp_…" \\
+  -d '{"action":"check","plates":["B-DEMO 1"],"at":"2026-11-17T15:00:00Z"}'
+→ status: frei | karenz | pruefung | ueberschritten | gebuehrenpflichtig | kein_ladevorgang
+  + until, bay, free_periods[{from,to,charging_until}]
+  Regel: „pruefung“ = keine Gebühr erheben.
+
+Broker / CPO-Backend – Ladestart und -ende
+curl -X POST ${PAPI} \\
+  -H "Content-Type: application/json" -H "x-api-key: hcb_…" \\
+  -d '{"action":"session_event","event":"start","evse":"DE*TST*E0000001*1","session_id":"TX-123"}'
+  event: start | stop | update  (optional: at, kwh, auth_hint)</pre></details></div>`;
+  box.querySelectorAll("[data-ok],[data-no]").forEach(b=>b.onclick=async()=>{ const ok=!!b.dataset.ok; if(!confirm(ok?"Kennzeichen freigeben? Andere Kennzeichen für diesen Ladevorgang werden abgelehnt.":"Zuordnung ablehnen? Die API meldet dann „gebührenpflichtig“.")) return;
+    try{ await papi("p_resolve",{id:b.dataset.ok||b.dataset.no,approve:ok}); toast("Gespeichert"); pkLoad(); }catch(e){ toast(e.message,true); } });
+  const fillCp=()=>{ const s=d.stations.find(x=>x.id===$("#pkSt").value); $("#pkCp").innerHTML=(s?s.bays:[]).map(b=>`<option value="${b.n}">${esc(b.label)}</option>`).join(""); };
+  if($("#pkSt")){ const en=d.sites.find(x=>x.enabled); if(en) $("#pkSt").value=en.station_id; fillCp(); $("#pkSt").onchange=fillCp; }
+  $("#pkStart").onclick=async()=>{ try{ await papi("p_session",{station:$("#pkSt").value,connector:+$("#pkCp").value}); toast("Demo-Ladevorgang gestartet"); pkLoad(); }catch(e){ toast(e.message,true); } };
+  $("#pkStop").onclick=async()=>{ try{ await papi("p_session",{station:$("#pkSt").value,connector:+$("#pkCp").value,stop:true}); toast("Gestoppt"); pkLoad(); }catch(e){ toast(e.message,true); } };
+  const look=async()=>{ const q=$("#pkQ").value.trim(); if(!q) return; try{ const r=await papi("p_lookup",{plate:q});
+      $("#pkQR").innerHTML=`<p style="margin:10px 0 4px"><b style="font-family:ui-monospace,monospace">${esc(r.plate)}</b> · ${r.claims.length} Zuordnung(en), ${r.checks.length} Partner-Abfrage(n)</p>`+(r.claims.map(c=>`<div style="border-top:1px solid var(--line);padding:6px 0">${pkBadge(c.now.status)} ${esc(c.project||"")} · ${esc(c.bay)} · eingetragen ${pkTime(c.claimed_at)}${c.now.until?" · frei bis "+pkHM(c.now.until):""}<br><small class="muted">${esc(c.now.label||"")}</small></div>`).join("")||'<p class="muted">Keine Zuordnung gefunden.</p>');
+    }catch(e){ $("#pkQR").innerHTML=`<p><span class="badge warn">${esc(e.message)}</span></p>`; } };
+  $("#pkQGo").onclick=look; $("#pkQ").onkeydown=e=>{ if(e.key==="Enter") look(); };
+  box.querySelectorAll("[data-key]").forEach(b=>b.onclick=async()=>{ const w=b.dataset.key; if(!confirm(`Neuen ${w==="partner"?"Parkraumbetreiber":"Backend"}-Schlüssel erzeugen? Der bisherige wird sofort ungültig.`)) return;
+    try{ const r=await papi("p_keys",{which:w}); $("#pkKey").innerHTML=`<div class="card" style="background:var(--amber-soft);margin-top:10px"><b>Nur jetzt sichtbar – bitte sicher weitergeben:</b><div class="row" style="gap:8px;margin-top:6px"><code style="flex:1;word-break:break-all">${esc(r.key)}</code><button class="btn sm" id="pkCopy">Kopieren</button></div></div>`;
+      $("#pkCopy").onclick=()=>{ navigator.clipboard&&navigator.clipboard.writeText(r.key); toast("Kopiert"); }; }catch(e){ toast(e.message,true); } });
+  pkSites(); }
+function pkSites(){ const d=PK.data, box=$("#pkSites"); if(!box) return;
+  box.innerHTML=d.stations.map(s=>{ const t=d.sites.find(x=>x.station_id===s.id)||{enabled:false,grace_min:15,max_min:60,after_min:15,claim_window_min:20,bay_max:{},note:""};
+    const num=(k,l,v)=>`<label style="font-size:12.5px">${l}<br><input type="number" min="0" data-f="${k}" value="${v}" style="width:90px"></label>`;
+    return `<details class="pk-site" data-st="${esc(s.id)}" style="border-top:1px solid var(--line);padding:10px 0"><summary><b>${esc(s.project_id||s.id)}</b> ${esc(s.name||"")} ${t.enabled?'<span class="badge">aktiv</span>':'<span class="badge off">aus</span>'}</summary>
+      <div class="row" style="gap:12px;margin-top:10px;align-items:flex-end"><label><input type="checkbox" data-f="enabled" ${t.enabled?"checked":""}> Parken beim Laden freischalten</label>
+        ${num("grace_min","Karenz (Min.)",t.grace_min)}${num("max_min","Höchstdauer Standard (Min.)",t.max_min)}${num("after_min","Nachlauf (Min.)",t.after_min)}${num("claim_window_min","Eintragefenster (Min.)",t.claim_window_min)}</div>
+      <p class="sub" style="margin:10px 0 4px">Höchstdauer je Ladepunkt (leer = Standard), z. B. 180 für beschilderte Plätze:</p>
+      <div class="row" style="gap:8px">${s.bays.map(b=>`<label style="font-size:12px">${esc(b.label)}<br><input type="number" min="5" data-bay="${b.n}" value="${t.bay_max&&t.bay_max[b.n]!=null?t.bay_max[b.n]:""}" placeholder="${t.max_min}" style="width:90px"></label>`).join("")}</div>
+      <label style="display:block;margin-top:8px;font-size:12.5px">Hinweis für Kunden<br><input data-f="note" value="${esc(t.note||"")}" maxlength="300" style="width:100%"></label>
+      <button class="btn sm" data-save style="margin-top:10px">Speichern</button></details>`; }).join("");
+  box.querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{ const el=b.closest(".pk-site"), f=k=>el.querySelector(`[data-f="${k}"]`), bay={};
+    el.querySelectorAll("[data-bay]").forEach(i=>{ if(i.value!=="") bay[i.dataset.bay]=+i.value; });
+    try{ await papi("p_sites_save",{site:{station_id:el.dataset.st,enabled:f("enabled").checked,grace_min:+f("grace_min").value,max_min:+f("max_min").value,after_min:+f("after_min").value,claim_window_min:+f("claim_window_min").value,bay_max:bay,note:f("note").value}}); toast("Gespeichert"); pkLoad(); }catch(e){ toast(e.message,true); } }); }
 
 /* ---------- Login ---------- */
 function loginView(){
